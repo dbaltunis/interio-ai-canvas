@@ -185,16 +185,8 @@ export const DynamicWindowWorksheet = forwardRef<{
         const templateDetails = existingWindowSummary.template_details as any;
         const fabricDetails = existingWindowSummary.fabric_details as any;
         
-        // STEP 1: Restore Window Type
-        if (existingWindowSummary.window_type_id) {
-          const windowTypeData = {
-            id: existingWindowSummary.window_type_id,
-            name: existingWindowSummary.window_type,
-            key: existingWindowSummary.window_type_key,
-            visual_key: existingWindowSummary.window_type_key
-          };
-          setSelectedWindowType(windowTypeData);
-        }
+        // STEP 1: Window Type - Not auto-restored to allow manual selection
+        // (Window type will need to be manually selected by the user)
         
         // STEP 2: Restore Treatment/Template
         let detectedCategory: TreatmentCategory = 'curtains';
@@ -371,10 +363,7 @@ export const DynamicWindowWorksheet = forwardRef<{
     if (existingMeasurement) {
       setMeasurements(existingMeasurement.measurements || {});
 
-      // Load window type if saved
-      if (existingMeasurement.window_type) {
-        setSelectedWindowType(existingMeasurement.window_type);
-      }
+      // Window type not auto-loaded to allow manual selection
 
       // Load template if saved
       if (existingMeasurement.template) {
