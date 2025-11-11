@@ -11,6 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { StoreTemplateGallery } from "./StoreTemplateGallery";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface QuickStoreSetupProps {
   open: boolean;
@@ -25,6 +28,8 @@ export const QuickStoreSetup = ({ open, onOpenChange, onComplete }: QuickStoreSe
   const [selectedTemplate, setSelectedTemplate] = useState<StoreTemplate | null>(null);
   
   const createStore = useCreateQuickStore();
+  const { integration: shopifyIntegration, isLoading: isLoadingShopify } = useShopifyIntegrationReal();
+  const hasShopifyConnected = !!shopifyIntegration?.is_connected;
 
   const handleTemplateSelect = (template: StoreTemplate) => {
     setSelectedTemplate(template);
@@ -59,6 +64,40 @@ export const QuickStoreSetup = ({ open, onOpenChange, onComplete }: QuickStoreSe
       }
     );
   };
+
+  // Block if Shopify is connected
+  if (hasShopifyConnected) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <AlertCircle className="h-6 w-6 text-destructive" />
+              Cannot Create InteriorApp Store
+            </DialogTitle>
+          </DialogHeader>
+          <Alert variant="destructive" className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <p className="font-semibold mb-2">You're already using Shopify for e-commerce</p>
+              <p className="text-sm mb-3">
+                You can only use one e-commerce platform at a time. To create an InteriorApp online store, 
+                you'll need to disconnect your Shopify integration first.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Go to your Shopify integration settings to disconnect.
+              </p>
+            </AlertDescription>
+          </Alert>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

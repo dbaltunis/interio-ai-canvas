@@ -60,46 +60,7 @@ export const ECommerceGatewayWidget = () => {
     );
   }
 
-  // If user has both
-  if (hasOnlineStore && hasShopifyConnected) {
-    return (
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-background">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <Store className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Your E-Commerce</CardTitle>
-          </div>
-          <CardDescription>Manage your stores and integrations</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Button 
-            onClick={() => navigate("/online-store")} 
-            className="w-full justify-between group"
-            variant="outline"
-          >
-            <span className="flex items-center gap-2">
-              <Store className="h-4 w-4" />
-              Manage Online Store
-            </span>
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </Button>
-          <Button 
-            onClick={() => setShowShopifyDialog(true)}
-            className="w-full justify-between group"
-            variant="outline"
-          >
-            <span className="flex items-center gap-2">
-              <ShoppingBag className="h-4 w-4" />
-              Manage Shopify Store
-            </span>
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // If user has only Online Store
+  // If user has only Online Store (Shopify check happens in creation flow)
   if (hasOnlineStore) {
     return (
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-background">

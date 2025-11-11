@@ -3,8 +3,11 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ShoppingBag, Info } from "lucide-react";
+import { ShoppingBag, Info, AlertCircle } from "lucide-react";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import { ShopifyGettingStartedGuide } from "./shopify/ShopifyGettingStartedGuide";
 import { ShopifyOverviewTabEnhanced } from "./shopify/ShopifyOverviewTabEnhanced";
 import { ShopifySetupTab } from "./shopify/ShopifySetupTab";
@@ -24,6 +27,21 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
   const syncAnalytics = useSyncShopifyAnalytics();
   const [activeTab, setActiveTab] = useState("guide");
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
+
+  // Check if user has InteriorApp Online Store
+  const { data: hasOnlineStore, isLoading: isLoadingStore } = useQuery({
+    queryKey: ['has-online-store-shopify-check'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      const { data } = await supabase
+        .from('online_stores')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      return !!data;
+    },
+  });
 
   const [formData, setFormData] = useState(() => ({
     shop_domain: integration?.shop_domain || "",
@@ -46,12 +64,46 @@ export const ShopifyIntegrationDialog = ({ open, onOpenChange }: ShopifyIntegrat
     setActiveTab("overview");
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingStore) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl">
           <div className="flex items-center justify-center p-8">
             <div className="text-center">Loading Shopify integration...</div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Block if InteriorApp store exists
+  if (hasOnlineStore && !integration?.is_connected) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <AlertCircle className="h-6 w-6 text-destructive" />
+              Cannot Connect Shopify
+            </DialogTitle>
+          </DialogHeader>
+          <Alert variant="destructive" className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <p className="font-semibold mb-2">You already have an InteriorApp online store</p>
+              <p className="text-sm mb-3">
+                You can only use one e-commerce platform at a time. To use Shopify instead, 
+                you'll need to delete your InteriorApp store first.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Go to Store → Settings to delete your store, then you can connect Shopify.
+              </p>
+            </AlertDescription>
+          </Alert>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Close
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

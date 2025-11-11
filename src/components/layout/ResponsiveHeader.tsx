@@ -61,22 +61,34 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   const canViewCalendar = useHasPermission('view_calendar');
   const canViewInventory = useHasPermission('view_inventory');
   
-  // Check if user has ANY online store (published or unpublished)
+  // Check if user has InteriorApp store AND NOT using Shopify
   const { data: hasOnlineStore } = useQuery({
     queryKey: ['has-online-store-nav'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-      const { data } = await supabase
+      
+      // Check for InteriorApp store
+      const { data: store } = await supabase
         .from('online_stores')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
-      console.log('[ResponsiveHeader] Online store check:', { hasStore: !!data });
-      return !!data;
+      
+      // Check for Shopify connection
+      const { data: shopify } = await supabase
+        .from('shopify_integrations')
+        .select('id, is_connected')
+        .eq('user_id', user.id)
+        .eq('is_connected', true)
+        .maybeSingle();
+      
+      const hasStore = !!store && !shopify?.is_connected;
+      console.log('[ResponsiveHeader] Store nav check:', { hasStore: !!store, hasShopify: !!shopify, showNav: hasStore });
+      return hasStore;
     },
-    staleTime: 0, // Always fetch fresh data
-    refetchOnMount: 'always', // Always refetch when component mounts
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
   
   // Filter nav items based on permissions
