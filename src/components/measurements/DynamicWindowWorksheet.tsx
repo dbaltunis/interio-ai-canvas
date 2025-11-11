@@ -1273,8 +1273,8 @@ export const DynamicWindowWorksheet = forwardRef<{
       [category]: processedItem
     }));
     
-    // Auto-navigate to measurements after selecting inventory item
-    setTimeout(() => setActiveTab('measurements'), 300);
+    // Auto-navigate to measurements after selecting inventory item with 1 second delay
+    setTimeout(() => setActiveTab('measurements'), 1000);
     
     // Auto-detect treatment type from fabric category
     if (category === 'fabric' && item?.category) {
@@ -1423,15 +1423,15 @@ export const DynamicWindowWorksheet = forwardRef<{
       <Tabs value={activeTab} onValueChange={setActiveTab}>
 
         {/* Window Type Selection */}
-        <TabsContent value="window-type" className="h-full">
+        <TabsContent value="window-type" className="h-full animate-fade-in">
           <Card className="h-full">
             <CardContent className="pt-4 sm:pt-6 h-full flex flex-col">
               <WindowTypeSelector 
                 selectedWindowType={selectedWindowType} 
                 onWindowTypeChange={(windowType) => {
                   setSelectedWindowType(windowType);
-                  // Auto-navigate to treatment selection after selecting window type
-                  setTimeout(() => setActiveTab('treatment'), 300);
+                  // Auto-navigate to treatment selection after selecting window type with 1 second delay
+                  setTimeout(() => setActiveTab('treatment'), 1000);
                 }} 
                 readOnly={readOnly} 
               />
@@ -1451,7 +1451,7 @@ export const DynamicWindowWorksheet = forwardRef<{
         </TabsContent>
 
         {/* Treatment Selection */}
-        <TabsContent value="treatment" className="h-full">
+        <TabsContent value="treatment" className="h-full animate-fade-in">
           <Card className="h-full">
             <CardContent className="pt-4 sm:pt-6 h-full flex flex-col">
               <ImprovedTreatmentSelector 
@@ -1491,8 +1491,8 @@ export const DynamicWindowWorksheet = forwardRef<{
                       }
                     }
                     
-                    // Auto-navigate to inventory selection after selecting treatment
-                    setTimeout(() => setActiveTab('inventory'), 300);
+                    // Auto-navigate to inventory selection after selecting treatment with 1 second delay
+                    setTimeout(() => setActiveTab('inventory'), 1000);
                   }
                 }} 
                 disabled={readOnly}
@@ -1514,7 +1514,7 @@ export const DynamicWindowWorksheet = forwardRef<{
         </TabsContent>
 
         {/* Inventory Selection */}
-        <TabsContent value="inventory" className="h-full">
+        <TabsContent value="inventory" className="h-full animate-fade-in">
           <Card className="h-full">
             <CardContent className="pt-4 sm:pt-6 h-full">
               <InventorySelectionPanel treatmentType={selectedTreatmentType} selectedItems={selectedItems} onItemSelect={handleItemSelect} onItemDeselect={handleItemDeselect} measurements={measurements} treatmentCategory={treatmentCategory} />
@@ -1523,7 +1523,7 @@ export const DynamicWindowWorksheet = forwardRef<{
         </TabsContent>
 
         {/* Measurements - Full Interactive Visual Experience */}
-        <TabsContent value="measurements" className="space-y-3 sm:space-y-4">
+        <TabsContent value="measurements" className="space-y-3 sm:space-y-4 animate-fade-in">
           <Card>
             <CardContent className="p-0">
               <div className="space-y-4 sm:space-y-6">
