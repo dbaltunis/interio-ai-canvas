@@ -13,7 +13,6 @@ import { useMaterialQueue, useBulkAddToQueue } from "@/hooks/useMaterialQueue";
 import { useNavigate } from "react-router-dom";
 import { useQuotes } from "@/hooks/useQuotes";
 import { supabase } from "@/integrations/supabase/client";
-import { MaterialsWorkflowStatus } from "./MaterialsWorkflowStatus";
 import { useProjects } from "@/hooks/useProjects";
 import { formatCurrency } from "@/utils/currency";
 import { useTreatmentMaterialsStatus } from "@/hooks/useProjectMaterialsStatus";
@@ -175,15 +174,20 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
     }
   };
 
-  // Transform materials for display
-  const displayMaterials = useMemo(() => {
+  // Transform materials for display and check queue status
+  const { availableMaterials, sentMaterials } = useMemo(() => {
     console.log('[MATERIALS] Processing materials:', treatmentMaterials.length, 'items');
     
-    return treatmentMaterials.map((material) => {
+    const allMaterials = treatmentMaterials.map((material) => {
       const inventoryItem = inventory?.find(item => item.id === material.itemId);
       const unitCost = inventoryItem?.cost_price || 0;
       const totalCost = unitCost * material.quantityUsed;
       const materialId = `${material.itemId}-${material.surfaceId}`;
+      
+      // Check if this material is in the queue
+      const isInQueue = queueItems?.some(
+        item => item.metadata?.treatment_material_id === materialId
+      ) || false;
       
       return {
         id: materialId,
@@ -200,10 +204,22 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
         currentQuantity: material.currentQuantity,
         lowStock: material.lowStock,
         isTracked: material.isTracked,
-        status: materialStatusMap[materialId] || 'not_processed'
+        status: isInQueue ? 'in_queue' : (materialStatusMap[materialId] || 'not_processed'),
+        isInQueue
       };
     });
-  }, [treatmentMaterials, inventory, materialStatusMap]);
+    
+    // Separate materials into available and already sent
+    const available = allMaterials.filter(m => !m.isInQueue);
+    const sent = allMaterials.filter(m => m.isInQueue);
+    
+    console.log('[MATERIALS] Available:', available.length, 'Sent:', sent.length);
+    
+    return { availableMaterials: available, sentMaterials: sent };
+  }, [treatmentMaterials, inventory, materialStatusMap, queueItems]);
+
+  // Use only available materials for display and selection
+  const displayMaterials = availableMaterials;
 
 
   // Toggle material selection
@@ -285,11 +301,10 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Materials Workflow Status */}
-      <MaterialsWorkflowStatus projectId={projectId} />
+      {/* Removed MaterialsWorkflowStatus as requested by user */}
       
       {/* Warning Banner when no materials found */}
-      {displayMaterials.length === 0 && (
+      {displayMaterials.length === 0 && sentMaterials.length === 0 && (
         <Card className="border-orange-500/50 bg-orange-50/50 dark:bg-orange-950/20">
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
@@ -312,8 +327,26 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
         </Card>
       )}
       
-      {/* Status Alert */}
-      {materialsInQueue > 0 && (
+      {/* Already Sent Materials Section */}
+      {sentMaterials.length > 0 && (
+        <Alert className="border-green-500/50 bg-green-50 dark:bg-green-950/20">
+          <Info className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <AlertDescription className="text-green-900 dark:text-green-100">
+            <span className="font-medium">{sentMaterials.length} material{sentMaterials.length !== 1 ? 's' : ''}</span> from this project {sentMaterials.length === 1 ? 'has' : 'have'} been sent to purchasing
+            <Button
+              variant="link"
+              size="sm"
+              className="ml-2 h-auto p-0 text-green-700 dark:text-green-300"
+              onClick={() => navigate('/?tab=ordering-hub')}
+            >
+              View in Purchasing →
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {/* Status Alert - Only show if there are unsent materials */}
+      {materialsInQueue > 0 && displayMaterials.length > 0 && (
         <Alert className="border-blue-500/50 bg-blue-50 dark:bg-blue-950/20">
           <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <AlertDescription className="text-blue-900 dark:text-blue-100">
@@ -330,17 +363,18 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
         </Alert>
       )}
       
-      {/* Auto-Extracted Materials from Treatments */}
+      {/* Auto-Extracted Materials from Treatments - Only Available Materials */}
+      {displayMaterials.length > 0 && (
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Package className="h-5 w-5 text-primary" />
-              <CardTitle>Materials from Treatments</CardTitle>
+              <CardTitle>Available Materials to Send</CardTitle>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="ml-2">
-                {displayMaterials.length} items detected
+                {displayMaterials.length} available
               </Badge>
               {selectedMaterials.size > 0 && (
                 <Badge variant="default">
@@ -349,6 +383,9 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
               )}
             </div>
           </div>
+          <CardDescription>
+            Select materials to send to purchasing. Already-sent materials are not shown.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {displayMaterials.length === 0 ? (
@@ -498,6 +535,28 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
           )}
         </CardContent>
       </Card>
+      )}
+      
+      {/* Show message if all materials have been sent */}
+      {displayMaterials.length === 0 && sentMaterials.length > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-8 text-muted-foreground">
+              <Package className="h-12 w-12 mx-auto mb-3 opacity-50 text-green-600" />
+              <h3 className="font-medium text-lg mb-1">All materials sent to purchasing</h3>
+              <p className="text-sm">All materials from this project have been sent to the purchasing queue.</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={() => navigate('/?tab=ordering-hub')}
+              >
+                View in Purchasing Hub →
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
