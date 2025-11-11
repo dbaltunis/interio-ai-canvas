@@ -208,6 +208,8 @@ export const useCreateQuickStore = () => {
     },
     onSuccess: (store) => {
       queryClient.invalidateQueries({ queryKey: ['online-store'] });
+      queryClient.invalidateQueries({ queryKey: ['has-online-store'] });
+      queryClient.invalidateQueries({ queryKey: ['has-online-store-nav'] });
       
       const storeUrl = store.custom_domain && store.domain_verified
         ? `https://${store.custom_domain}`

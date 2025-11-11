@@ -53,6 +53,8 @@ export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSet
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['online-store'] });
+      queryClient.invalidateQueries({ queryKey: ['has-online-store'] });
+      queryClient.invalidateQueries({ queryKey: ['has-online-store-nav'] });
       toast({
         title: store.is_published ? "Store Unpublished" : "Store Published!",
         description: store.is_published

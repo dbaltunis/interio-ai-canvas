@@ -99,6 +99,8 @@ export const useCreateStore = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['online-store'] });
+      queryClient.invalidateQueries({ queryKey: ['has-online-store'] });
+      queryClient.invalidateQueries({ queryKey: ['has-online-store-nav'] });
       toast({
         title: "Store created!",
         description: "Your online store is ready to customize.",
