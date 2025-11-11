@@ -58,7 +58,7 @@ export const useCreateQuickStore = () => {
           logo_url: businessSettings?.company_logo_url,
           custom_domain: customDomain,
           domain_verified: false,
-          is_published: true, // Auto-publish!
+          is_published: false, // Users can publish when ready
           seo_title: `${storeName}${businessSettings?.company_name ? ' - ' + businessSettings.company_name : ''}`,
           seo_description: `Explore custom window treatments and book appointments at ${storeName}. Quality products, expert installation, and personalized service.`,
           payment_provider: 'stripe',
@@ -216,8 +216,8 @@ export const useCreateQuickStore = () => {
         : `${window.location.origin}/store/${store.store_slug}`;
 
       toast({
-        title: "🎉 Store is LIVE!",
-        description: `Your store is published and ready for customers at ${storeUrl}`,
+        title: "Store Created!",
+        description: "Your store is ready to customize. Publish it when you're ready to go live.",
         duration: 6000,
       });
     },

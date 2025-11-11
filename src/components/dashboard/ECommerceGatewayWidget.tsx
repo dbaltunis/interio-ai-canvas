@@ -15,7 +15,7 @@ export const ECommerceGatewayWidget = () => {
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
   const navigate = useNavigate();
 
-  // Check if user has a published InterioApp Online Store
+  // Check if user has ANY InterioApp Online Store (published or draft)
   const { data: hasOnlineStore, isLoading: isLoadingStore } = useQuery({
     queryKey: ['has-online-store'],
     queryFn: async () => {
@@ -25,9 +25,8 @@ export const ECommerceGatewayWidget = () => {
         .from('online_stores')
         .select('id, is_published')
         .eq('user_id', user.id)
-        .eq('is_published', true)
         .maybeSingle();
-      console.log('[ECommerceGatewayWidget] Published online store query result:', data);
+      console.log('[ECommerceGatewayWidget] Online store query result:', data);
       return !!data;
     },
     staleTime: 0, // Always fetch fresh data

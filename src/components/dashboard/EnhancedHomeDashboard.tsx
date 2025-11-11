@@ -43,7 +43,7 @@ export const EnhancedHomeDashboard = () => {
   const { integration: shopifyIntegration } = useShopifyIntegrationReal();
   const isShopifyConnected = !!shopifyIntegration?.is_connected;
 
-  // Check if user has a published Online Store
+  // Check if user has ANY Online Store (published or not) for dashboard widgets
   const { data: hasOnlineStore, isLoading: isLoadingStore } = useQuery({
     queryKey: ['has-online-store'],
     queryFn: async () => {
@@ -53,9 +53,8 @@ export const EnhancedHomeDashboard = () => {
         .from('online_stores')
         .select('id, is_published')
         .eq('user_id', user.id)
-        .eq('is_published', true)
         .maybeSingle();
-      console.log('[EnhancedHomeDashboard] Published online store query result:', data);
+      console.log('[EnhancedHomeDashboard] Online store query result:', data);
       return !!data;
     },
     staleTime: 0, // Always fetch fresh data
