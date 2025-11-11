@@ -60,52 +60,10 @@ export const ECommerceGatewayWidget = () => {
     );
   }
 
-  // If user has only Online Store (Shopify check happens in creation flow)
-  if (hasOnlineStore) {
-    return (
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-background">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <Store className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Your Online Store</CardTitle>
-          </div>
-          <CardDescription>Manage your custom store and products</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button 
-            onClick={() => navigate("/online-store")} 
-            className="w-full justify-between group"
-          >
-            <span>Manage Store</span>
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // If user has only Shopify
-  if (hasShopifyConnected) {
-    return (
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-background">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <ShoppingBag className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Your Shopify Store</CardTitle>
-          </div>
-          <CardDescription>Manage your Shopify integration</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button 
-            onClick={() => setShowShopifyDialog(true)}
-            className="w-full justify-between group"
-          >
-            <span>Manage Shopify Store</span>
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </Button>
-        </CardContent>
-      </Card>
-    );
+  // Hide widget completely if user has already chosen a platform
+  // They'll see platform-specific widgets instead
+  if (hasOnlineStore || hasShopifyConnected) {
+    return null;
   }
 
   // If user has neither - show choice
