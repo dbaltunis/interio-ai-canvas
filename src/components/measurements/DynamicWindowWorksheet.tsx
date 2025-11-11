@@ -752,28 +752,42 @@ export const DynamicWindowWorksheet = forwardRef<{
                 : (selectedPricingMethod?.machine_price_per_drop ?? selectedTemplate.machine_price_per_drop ?? 0);
               manufacturingCost = pricePerUnit * (fabricCalculation.widthsRequired || 1);
             } else if (pricingType === 'per_metre') {
-              // ✅ FIX: For per_metre, calculate width after fullness (not total linear meters)
-              // This is the manufacturing width, not fabric usage
+              // ✅ FIX: For per_metre, calculate width after fullness + side hems + returns + waste
+              // This is the MANUFACTURING width to sew, not fabric usage
               const railWidthCm = parseFloat(measurements.rail_width || '0');
               const fullness = fabricCalculation.fullnessRatio || selectedTemplate.fullness_ratio || 2.5;
-              const requiredWidthCm = railWidthCm * fullness;
-              const requiredWidthM = requiredWidthCm / 100;
+              const sideHemsCm = fabricCalculation.totalSideHems || 0;
+              const returnsCm = fabricCalculation.returns || 0;
+              const wastePercent = fabricCalculation.wastePercent || selectedTemplate.waste_percent || 0;
+              
+              // Base width after fullness
+              const baseWidthCm = railWidthCm * fullness;
+              // Add hems and returns
+              const widthWithAllowancesCm = baseWidthCm + sideHemsCm + returnsCm;
+              // Add waste percentage
+              const finalWidthCm = widthWithAllowancesCm * (1 + wastePercent / 100);
+              const finalWidthM = finalWidthCm / 100;
               
               pricePerUnit = manufacturingType === 'hand'
                 ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
                 : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
               
-              // Multiply required width (after fullness) by manufacturing price per meter
-              manufacturingCost = pricePerUnit * requiredWidthM;
+              // Multiply final width by manufacturing price per meter
+              manufacturingCost = pricePerUnit * finalWidthM;
               
               console.log('💰 [SAVE] Per metre manufacturing calculation:', {
                 railWidthCm,
                 fullness,
-                requiredWidthCm,
-                requiredWidthM,
+                baseWidthCm,
+                sideHemsCm,
+                returnsCm,
+                widthWithAllowancesCm,
+                wastePercent,
+                finalWidthCm,
+                finalWidthM,
                 pricePerUnit,
                 manufacturingCost,
-                formula: `${railWidthCm}cm × ${fullness} = ${requiredWidthCm}cm (${requiredWidthM.toFixed(2)}m) × $${pricePerUnit}/m = $${manufacturingCost.toFixed(2)}`
+                formula: `${railWidthCm}cm × ${fullness} = ${baseWidthCm.toFixed(0)}cm + ${sideHemsCm}cm hems + ${returnsCm}cm returns + ${wastePercent}% waste = ${finalWidthCm.toFixed(0)}cm (${finalWidthM.toFixed(2)}m) × $${pricePerUnit}/m = $${manufacturingCost.toFixed(2)}`
               });
             } else if (pricingType === 'height_based' && selectedPricingMethod?.height_price_ranges) {
               const height = parseFloat(measurements.drop || '0');
@@ -790,7 +804,15 @@ export const DynamicWindowWorksheet = forwardRef<{
               pricePerUnit,
               quantity: pricingType === 'per_panel' ? fabricCalculation.curtainCount : 
                        pricingType === 'per_drop' ? fabricCalculation.widthsRequired : 
-                       pricingType === 'per_metre' ? `${((parseFloat(measurements.rail_width || '0') * (fabricCalculation.fullnessRatio || 2.5)) / 100).toFixed(2)}m` :
+                       pricingType === 'per_metre' ? (() => {
+                         const railWidthCm = parseFloat(measurements.rail_width || '0');
+                         const fullness = fabricCalculation.fullnessRatio || 2.5;
+                         const sideHemsCm = fabricCalculation.totalSideHems || 0;
+                         const returnsCm = fabricCalculation.returns || 0;
+                         const wastePercent = fabricCalculation.wastePercent || 0;
+                         const finalWidthCm = ((railWidthCm * fullness) + sideHemsCm + returnsCm) * (1 + wastePercent / 100);
+                         return `${(finalWidthCm / 100).toFixed(2)}m`;
+                       })() :
                        'N/A',
               manufacturingCost,
               manufacturingType: manufacturingType === 'hand' ? 'Hand Finished' : 'Machine Finished'
@@ -1607,17 +1629,23 @@ export const DynamicWindowWorksheet = forwardRef<{
                         : (selectedPricingMethod?.machine_price_per_drop ?? selectedTemplate.machine_price_per_drop ?? 0);
                       manufacturingCost = pricePerUnit * (fabricCalculation.widthsRequired || 1);
                       } else if (pricingType === 'per_metre') {
-                        // ✅ FIX: For per_metre, calculate width after fullness (not total linear meters)
+                        // ✅ FIX: For per_metre, calculate width after fullness + side hems + returns + waste
                         const railWidthCm = parseFloat(measurements.rail_width || '0');
                         const fullness = fabricCalculation.fullnessRatio || selectedTemplate.fullness_ratio || 2.5;
-                        const requiredWidthCm = railWidthCm * fullness;
-                        const requiredWidthM = requiredWidthCm / 100;
+                        const sideHemsCm = fabricCalculation.totalSideHems || 0;
+                        const returnsCm = fabricCalculation.returns || 0;
+                        const wastePercent = fabricCalculation.wastePercent || selectedTemplate.waste_percent || 0;
+                        
+                        const baseWidthCm = railWidthCm * fullness;
+                        const widthWithAllowancesCm = baseWidthCm + sideHemsCm + returnsCm;
+                        const finalWidthCm = widthWithAllowancesCm * (1 + wastePercent / 100);
+                        const finalWidthM = finalWidthCm / 100;
                         
                         pricePerUnit = manufacturingType === 'hand'
                           ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
                           : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
                         
-                        manufacturingCost = pricePerUnit * requiredWidthM;
+                        manufacturingCost = pricePerUnit * finalWidthM;
                       } else if (pricingType === 'height_based' && selectedPricingMethod?.height_price_ranges) {
                       // Height-based pricing from pricing method
                       const height = parseFloat(measurements.drop || '0');
