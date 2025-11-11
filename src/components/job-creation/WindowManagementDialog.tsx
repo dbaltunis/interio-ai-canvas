@@ -271,18 +271,9 @@ export const WindowManagementDialog = ({
     }
   };
 
-  // Dialog close handler with auto-save
+  // Dialog close handler - no auto-save, just close immediately
   const handleDialogClose = async (open: boolean) => {
     if (!open) {
-      try {
-        // Auto-save before closing for better UX
-        if (worksheetRef.current && typeof worksheetRef.current.autoSave === 'function') {
-          await worksheetRef.current.autoSave();
-          console.log("✅ Auto-saved before dialog close");
-        }
-      } catch (error) {
-        console.error("❌ Auto-save failed on close:", error);
-      }
       onClose();
     }
   };

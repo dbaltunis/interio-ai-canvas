@@ -28,29 +28,10 @@ const DialogOverlay = React.forwardRef<
 ))
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
-interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
-  onCloseWithSave?: () => Promise<void>;
-}
-
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  DialogContentProps
->(({ className, children, style, onCloseWithSave, ...props }, ref) => {
-  const [isSaving, setIsSaving] = React.useState(false);
-
-  const handleClose = async () => {
-    if (onCloseWithSave) {
-      setIsSaving(true);
-      try {
-        await onCloseWithSave();
-      } catch (error) {
-        console.error('Error saving on close:', error);
-      } finally {
-        setIsSaving(false);
-      }
-    }
-  };
-
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+>(({ className, children, style, ...props }, ref) => {
   return (
     <DialogPortal>
       <DialogOverlay />
