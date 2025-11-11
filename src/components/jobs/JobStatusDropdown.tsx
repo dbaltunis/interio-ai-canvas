@@ -127,14 +127,14 @@ export const JobStatusDropdown = ({
       <DropdownMenuTrigger asChild>
         <Button 
           variant="outline" 
-          className="h-auto px-4 py-2.5 border-2 hover:bg-muted/50"
+          className="h-auto px-3 py-1.5 border hover:bg-muted/50"
         >
-          <div className="flex items-center gap-2">
-            <div className={`w-2.5 h-2.5 rounded-full ${currentStatusDetails ? getStatusDotColor(currentStatusDetails.color) : 'bg-muted-foreground'}`} />
-            <span className="font-semibold text-base">
+          <div className="flex items-center gap-1.5">
+            <div className={`w-2 h-2 rounded-full ${currentStatusDetails ? getStatusDotColor(currentStatusDetails.color) : 'bg-muted-foreground'}`} />
+            <span className="font-medium text-sm">
               {currentStatusDetails?.name || currentStatus || 'No Status'}
             </span>
-            <ChevronDown className="h-4 w-4 ml-1" />
+            <ChevronDown className="h-3.5 w-3.5" />
           </div>
         </Button>
       </DropdownMenuTrigger>
