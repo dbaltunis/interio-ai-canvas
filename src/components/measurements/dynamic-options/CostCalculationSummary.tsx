@@ -402,6 +402,16 @@ export const CostCalculationSummary = ({
     fabricCalculation?.totalCost ?? calculatedFabricCost, 
     0
   );
+  
+  console.log('🔍 CostCalculationSummary - Fabric Cost Debug:', {
+    fabricCalculationTotalCost: fabricCalculation?.totalCost,
+    calculatedFabricCostProp: calculatedFabricCost,
+    finalFabricCost: fabricCost,
+    fabricCalculationLinearMeters: fabricCalculation?.linearMeters,
+    fabricCalculationPricePerMeter: fabricCalculation?.pricePerMeter,
+    formula: fabricCalculation ? `${fabricCalculation.linearMeters} × ${fabricCalculation.pricePerMeter} = ${fabricCalculation.linearMeters * fabricCalculation.pricePerMeter}` : 'N/A'
+  });
+  
   const liningCost = safeParseFloat(calculatedLiningCost, 0);
   const manufacturingCost = safeParseFloat(calculatedManufacturingCost, 0);
   const headingCost = safeParseFloat(calculatedHeadingCost, 0);
