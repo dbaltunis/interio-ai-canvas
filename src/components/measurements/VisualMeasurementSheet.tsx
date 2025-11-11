@@ -746,8 +746,7 @@ export const VisualMeasurementSheet = ({
               {selectedFabricItem && selectedTemplate && <AdaptiveFabricPricingDisplay selectedFabricItem={selectedFabricItem} fabricCalculation={fabricCalculation} template={selectedTemplate} measurements={measurements} treatmentCategory={treatmentCategory} />}
               
               {/* Fabric Rotation Toggle - Moved from Curtain Configuration */}
-              {treatmentCategory === 'curtains' && selectedFabricItem && measurements.rail_width && measurements.drop && (
-                <div className="container-level-1 rounded-lg p-3 mt-2">
+              {treatmentCategory === 'curtains' && selectedFabricItem && measurements.rail_width && measurements.drop && <div className="container-level-1 rounded-lg p-3 mt-2">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <Label className="text-sm font-semibold text-card-foreground cursor-pointer">
@@ -755,95 +754,77 @@ export const VisualMeasurementSheet = ({
                       </Label>
                       <div className="text-xs text-muted-foreground mt-1 space-y-1">
                         {(() => {
-                          const fabricWidthCm = selectedFabricItem.fabric_width || 137;
-                          const drop = parseFloat(measurements.drop) || 0;
-                          const headerHem = parseFloat(measurements.header_allowance_cm) || 8;
-                          const bottomHem = parseFloat(measurements.bottom_hem_cm) || 15;
-                          const pooling = parseFloat(measurements.pooling_amount_cm) || 0;
-                          const totalDrop = drop + headerHem + bottomHem + pooling;
+                      const fabricWidthCm = selectedFabricItem.fabric_width || 137;
+                      const drop = parseFloat(measurements.drop) || 0;
+                      const headerHem = parseFloat(measurements.header_allowance_cm) || 8;
+                      const bottomHem = parseFloat(measurements.bottom_hem_cm) || 15;
+                      const pooling = parseFloat(measurements.pooling_amount_cm) || 0;
+                      const totalDrop = drop + headerHem + bottomHem + pooling;
 
-                          // Use consistent thresholds with calculation logic
-                          const isNarrowFabric = fabricWidthCm < 250;
-                          const isWideFabric = fabricWidthCm >= 250;
-                          const canRailroad = totalDrop <= fabricWidthCm;
-                          const fabricRotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
-                          
-                          if (isWideFabric) {
-                            // For wide fabrics: toggle ON = railroaded (default), toggle OFF = vertical
-                            if (fabricRotated !== false) {
-                              // Toggle is ON (default for wide fabrics)
-                              if (canRailroad) {
-                                return (
-                                  <>
+                      // Use consistent thresholds with calculation logic
+                      const isNarrowFabric = fabricWidthCm < 250;
+                      const isWideFabric = fabricWidthCm >= 250;
+                      const canRailroad = totalDrop <= fabricWidthCm;
+                      const fabricRotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
+                      if (isWideFabric) {
+                        // For wide fabrics: toggle ON = railroaded (default), toggle OFF = vertical
+                        if (fabricRotated !== false) {
+                          // Toggle is ON (default for wide fabrics)
+                          if (canRailroad) {
+                            return <>
                                     <p>✓ Wide fabric ({fabricWidthCm}cm) - railroaded (default)</p>
                                     <p className="text-primary">Fabric width for drop, buying length for curtain width</p>
-                                  </>
-                                );
-                              } else {
-                                return (
-                                  <>
+                                  </>;
+                          } else {
+                            return <>
                                     <p>⚠ Wide fabric ({fabricWidthCm}cm) - cannot railroad</p>
                                     <p className="text-amber-600">Drop ({totalDrop.toFixed(0)}cm) exceeds fabric width - switch to vertical orientation</p>
-                                  </>
-                                );
-                              }
-                            } else {
-                              // Toggle is OFF - user manually switched to vertical
-                              return (
-                                <>
+                                  </>;
+                          }
+                        } else {
+                          // Toggle is OFF - user manually switched to vertical
+                          return <>
                                   <p>Wide fabric ({fabricWidthCm}cm) - switched to vertical orientation</p>
                                   <p className="text-primary">Buying drops of fabric, seaming for width</p>
-                                </>
-                              );
-                            }
-                          } else if (isNarrowFabric) {
-                            // For narrow fabrics: toggle OFF = vertical (default), toggle ON = railroaded
-                            if (fabricRotated) {
-                              // Toggle is ON - user wants to railroad
-                              if (canRailroad) {
-                                return (
-                                  <>
+                                </>;
+                        }
+                      } else if (isNarrowFabric) {
+                        // For narrow fabrics: toggle OFF = vertical (default), toggle ON = railroaded
+                        if (fabricRotated) {
+                          // Toggle is ON - user wants to railroad
+                          if (canRailroad) {
+                            return <>
                                     <p>Narrow fabric ({fabricWidthCm}cm) - rotated to railroaded</p>
                                     <p className="text-primary">Fabric width for drop, buying length for curtain width</p>
-                                  </>
-                                );
-                              } else {
-                                return (
-                                  <>
+                                  </>;
+                          } else {
+                            return <>
                                     <p>⚠ Narrow fabric ({fabricWidthCm}cm) - cannot railroad</p>
                                     <p className="text-amber-600">Drop ({totalDrop.toFixed(0)}cm) exceeds fabric width ({fabricWidthCm}cm)</p>
-                                  </>
-                                );
-                              }
-                            } else {
-                              // Toggle is OFF (default for narrow fabrics) - vertical orientation
-                              return (
-                                <>
+                                  </>;
+                          }
+                        } else {
+                          // Toggle is OFF (default for narrow fabrics) - vertical orientation
+                          return <>
                                   <p>✓ Narrow fabric ({fabricWidthCm}cm) - standard vertical (default)</p>
                                   <p className="text-primary">Buying drops for height, seaming widths for curtain width</p>
-                                </>
-                              );
-                            }
-                          }
-                          return <p>Standard fabric orientation</p>;
-                        })()}
+                                </>;
+                        }
+                      }
+                      return <p>Standard fabric orientation</p>;
+                    })()}
                       </div>
                     </div>
-                    <Switch 
-                      checked={measurements.fabric_rotated === true || measurements.fabric_rotated === 'true'} 
-                      onCheckedChange={checked => {
-                        console.log("Fabric rotation changed to:", checked);
-                        handleInputChange("fabric_rotated", checked.toString());
-                      }} 
-                      disabled={readOnly || !selectedFabricItem || (() => {
-                        const fabricWidthCm = selectedFabricItem.fabric_width || 137;
-                        const drop = parseFloat(measurements.drop) || 0;
-                        return drop >= fabricWidthCm;
-                      })()} 
-                    />
+                    <Switch checked={measurements.fabric_rotated === true || measurements.fabric_rotated === 'true'} onCheckedChange={checked => {
+                  console.log("Fabric rotation changed to:", checked);
+                  handleInputChange("fabric_rotated", checked.toString());
+                }} disabled={readOnly || !selectedFabricItem || (() => {
+                  const fabricWidthCm = selectedFabricItem.fabric_width || 137;
+                  const drop = parseFloat(measurements.drop) || 0;
+                  return drop >= fabricWidthCm;
+                })()} />
                   </div>
-                </div>
-              )}
+                </div>}
             </div>
 
             {/* Measurement Inputs Section */}
@@ -951,31 +932,25 @@ export const VisualMeasurementSheet = ({
                   </div>}
 
                 {/* Pooling Configuration - Moved from below */}
-                {selectedFabricItem && measurements.rail_width && measurements.drop && (
-                  <div className="mt-4 pt-3 border-t border-border">
-                    <h4 className="text-sm font-semibold text-card-foreground mb-3">Pooling Configuration</h4>
+                {selectedFabricItem && measurements.rail_width && measurements.drop && <div className="mt-4 pt-3 border-t border-border">
+                    
                     <div className="space-y-4">
                       <div>
                         <Label className="text-xs font-medium mb-2 block">Pooling Position</Label>
-                        <RadioGroup 
-                          value={poolingOption} 
-                          onValueChange={value => {
-                            console.log("Pooling option changed to:", value);
-                            handleInputChange("pooling_option", value);
-                            
-                            // Set default pooling amount when "below_floor" is selected
-                            if (value === "below_floor" && (!poolingAmount || poolingAmount === "0")) {
-                              const defaultValue = units.system === "imperial" ? "1" : "2"; // 1 inch or 2 cm
-                              handleInputChange("pooling_amount", defaultValue);
-                            }
-                            // Clear pooling amount when not below floor
-                            if (value !== "below_floor") {
-                              handleInputChange("pooling_amount", "");
-                            }
-                          }} 
-                          disabled={readOnly} 
-                          className="space-y-2"
-                        >
+                        <RadioGroup value={poolingOption} onValueChange={value => {
+                        console.log("Pooling option changed to:", value);
+                        handleInputChange("pooling_option", value);
+
+                        // Set default pooling amount when "below_floor" is selected
+                        if (value === "below_floor" && (!poolingAmount || poolingAmount === "0")) {
+                          const defaultValue = units.system === "imperial" ? "1" : "2"; // 1 inch or 2 cm
+                          handleInputChange("pooling_amount", defaultValue);
+                        }
+                        // Clear pooling amount when not below floor
+                        if (value !== "below_floor") {
+                          handleInputChange("pooling_amount", "");
+                        }
+                      }} disabled={readOnly} className="space-y-2">
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="above_floor" id="above_floor" />
                             <Label htmlFor="above_floor" className="text-xs">Above floor (hanging)</Label>
@@ -991,26 +966,15 @@ export const VisualMeasurementSheet = ({
                         </RadioGroup>
                       </div>
 
-                      {poolingOption === "below_floor" && (
-                        <div className="space-y-3">
+                      {poolingOption === "below_floor" && <div className="space-y-3">
                           <div>
                             <Label htmlFor="pooling_amount" className="text-xs font-medium">Pooling Amount</Label>
                             <p className="text-[10px] text-muted-foreground mb-1">How much fabric pools on the floor</p>
-                            <Input 
-                              id="pooling_amount" 
-                              type="number" 
-                              step="0.25" 
-                              value={poolingAmount} 
-                              onChange={e => handleInputChange("pooling_amount", e.target.value)} 
-                              placeholder="2.00" 
-                              readOnly={readOnly} 
-                              className="font-semibold text-sm" 
-                            />
+                            <Input id="pooling_amount" type="number" step="0.25" value={poolingAmount} onChange={e => handleInputChange("pooling_amount", e.target.value)} placeholder="2.00" readOnly={readOnly} className="font-semibold text-sm" />
                           </div>
                           
                           {/* Fabric Usage Impact Indicator */}
-                          {hasValue(poolingAmount) && selectedFabric && fabricCalculation && (
-                            <div className="p-2 bg-amber-100/50 border border-amber-300 rounded text-[10px]">
+                          {hasValue(poolingAmount) && selectedFabric && fabricCalculation && <div className="p-2 bg-amber-100/50 border border-amber-300 rounded text-[10px]">
                               <div className="font-medium text-amber-800 mb-1">
                                 ✓ Pooling included in fabric calculation
                               </div>
@@ -1019,21 +983,16 @@ export const VisualMeasurementSheet = ({
                                 <div>• Extra fabric: ~{(parseFloat(poolingAmount) / 100 * fabricCalculation.widthsRequired).toFixed(2)}{units.fabric}</div>
                                 <div>• Total fabric: {fabricCalculation.linearMeters.toFixed(2)}{units.fabric} (includes pooling)</div>
                               </div>
-                            </div>
-                          )}
+                            </div>}
                           
-                          {hasValue(poolingAmount) && !selectedFabric && (
-                            <div className="p-2 bg-amber-100/50 border border-amber-300 rounded text-[10px]">
+                          {hasValue(poolingAmount) && !selectedFabric && <div className="p-2 bg-amber-100/50 border border-amber-300 rounded text-[10px]">
                               <div className="text-amber-700">
                                 💡 Select a fabric above to see how pooling affects fabric usage
                               </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                            </div>}
+                        </div>}
                     </div>
-                  </div>
-                )}
+                  </div>}
               </div>
             </div>}
 
