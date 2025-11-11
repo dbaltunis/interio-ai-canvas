@@ -1,17 +1,6 @@
 // Common formatter utilities that work with the centralized markup system
-
-export const formatCurrency = (amount: number, currency: string = 'USD'): string => {
-  const currencySymbols: Record<string, string> = {
-    'NZD': 'NZ$',
-    'AUD': 'A$',
-    'USD': '$',
-    'GBP': '£',
-    'EUR': '€',
-    'ZAR': 'R'
-  };
-  
-  return `${currencySymbols[currency] || currency}${amount.toFixed(2)}`;
-};
+// Re-export the main currency formatter for consistency
+export { formatCurrency } from './currency';
 
 export const formatPercentage = (value: number, decimals: number = 1): string => {
   return `${value.toFixed(decimals)}%`;

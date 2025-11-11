@@ -219,15 +219,5 @@ export const formatMeasurement = (value: number, unit: string): string => {
   return `${value.toFixed(2)} ${unitLabels[unit] || unit}`;
 };
 
-export const formatCurrency = (value: number, currency: string): string => {
-  const currencySymbols: Record<string, string> = {
-    'NZD': 'NZ$',
-    'AUD': 'A$',
-    'USD': '$',
-    'GBP': '£',
-    'EUR': '€',
-    'ZAR': 'R'
-  };
-
-  return `${currencySymbols[currency] || currency}${value.toFixed(2)}`;
-};
+// Re-export the main currency formatter for consistency
+export { formatCurrency } from '@/utils/currency';
