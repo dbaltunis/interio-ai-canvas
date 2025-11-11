@@ -710,7 +710,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
         <div className="px-3 sm:px-6 py-4">
           {/* Single Row Layout */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            {/* Left Side: Navigation + Client + Job Name */}
+            {/* Left Side: Navigation + Title + Date */}
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <Button
                 variant="outline"
@@ -724,36 +724,47 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               
               <Separator orientation="vertical" className="h-6 bg-border/60" />
               
-              {client && (
-                <span className="text-sm font-medium text-muted-foreground truncate">
-                  {client.name}
-                </span>
-              )}
-              
-              <Separator orientation="vertical" className="h-6 bg-border/60 hidden sm:block" />
-              
-              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate min-w-0 flex items-center gap-2">
-                {project.name}
-                {duplicates && (
-                  <DuplicateJobIndicator 
-                    isDuplicate={duplicates.isDuplicate}
-                    duplicateCount={duplicates.children.length}
-                  />
-                )}
-              </h1>
+              <div className="flex flex-col min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl font-bold text-foreground truncate flex items-center gap-2">
+                  {project.name}
+                  {duplicates && (
+                    <DuplicateJobIndicator 
+                      isDuplicate={duplicates.isDuplicate}
+                      duplicateCount={duplicates.children.length}
+                    />
+                  )}
+                </h1>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  {client && (
+                    <>
+                      <span className="truncate">{client.name}</span>
+                      <span>•</span>
+                    </>
+                  )}
+                  <time className="font-medium">
+                    {new Date(project.created_at).toLocaleDateString('en-NZ', { 
+                      day: 'numeric',
+                      month: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </time>
+                </div>
+              </div>
             </div>
 
             {/* Right Side: Status + Actions */}
             <div className="flex items-center gap-3 shrink-0">
-              <JobStatusDropdown
-                currentStatusId={project.status_id}
-                currentStatus={project.status}
-                jobType="project"
-                jobId={project.id}
-                onStatusChange={(newStatus) => {
-                  // Status updated via mutation
-                }}
-              />
+              <div className="flex items-center">
+                <JobStatusDropdown
+                  currentStatusId={project.status_id}
+                  currentStatus={project.status}
+                  jobType="project"
+                  jobId={project.id}
+                  onStatusChange={(newStatus) => {
+                    // Status updated via mutation
+                  }}
+                />
+              </div>
               
               <ThreeDotMenu
                 items={[

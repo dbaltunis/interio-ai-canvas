@@ -125,16 +125,16 @@ export const JobStatusDropdown = ({
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-auto p-0 hover:bg-transparent">
+        <Button variant="outline" className="h-auto px-4 py-2.5 hover:bg-accent/50 transition-colors">
           <Badge 
             className={`${
               currentStatusDetails 
                 ? getStatusColor(currentStatusDetails.color)
                 : 'bg-muted/50 text-muted-foreground border-border'
-            } flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity border`}
+            } flex items-center gap-2.5 cursor-pointer text-base font-semibold px-3 py-1 border-0`}
           >
             {currentStatusDetails?.name || currentStatus || 'No Status'}
-            <ChevronDown className="h-3 w-3" />
+            <ChevronDown className="h-4 w-4" />
           </Badge>
         </Button>
       </DropdownMenuTrigger>
