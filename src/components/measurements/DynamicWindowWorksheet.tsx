@@ -1681,7 +1681,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                     );
                   })()}
                   
-                  <Button onClick={async () => {
+                <Button onClick={async () => {
                   setIsSaving(true);
                   
                   try {
@@ -1723,7 +1723,13 @@ export const DynamicWindowWorksheet = forwardRef<{
                       ? (!measurements.wall_width || !measurements.wall_height)
                       : (!measurements.rail_width || !measurements.drop)
                   )
-                } className="w-full">
+                } className={`w-full ${
+                  hasUnsavedChanges 
+                    ? 'bg-red-100 hover:bg-red-200 text-red-900 dark:bg-red-950 dark:hover:bg-red-900 dark:text-red-100 border border-red-300 dark:border-red-800' 
+                    : lastSaveTime && (Date.now() - lastSaveTime < 3000)
+                    ? 'bg-green-600 hover:bg-green-700 text-white dark:bg-green-700 dark:hover:bg-green-800'
+                    : ''
+                }`}>
                     {isSaving ? (
                       <>
                         <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-background border-t-foreground" />
