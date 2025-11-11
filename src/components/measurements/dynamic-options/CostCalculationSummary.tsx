@@ -67,6 +67,7 @@ export const CostCalculationSummary = ({
   selectedLining,
   selectedHeading,
   inventory,
+  fabricCalculation,
   selectedOptions = [],
   calculatedFabricCost,
   calculatedLiningCost,
@@ -395,8 +396,12 @@ export const CostCalculationSummary = ({
     }
   }
 
-  // CURTAINS: Use pre-calculated values or default to 0
-  const fabricCost = safeParseFloat(calculatedFabricCost, 0);
+  // CURTAINS: Use fabric calculation totalCost if available (from AdaptiveFabricPricingDisplay)
+  // This ensures consistency between the Fabric & Pricing Calculations and Cost Summary
+  const fabricCost = safeParseFloat(
+    fabricCalculation?.totalCost ?? calculatedFabricCost, 
+    0
+  );
   const liningCost = safeParseFloat(calculatedLiningCost, 0);
   const manufacturingCost = safeParseFloat(calculatedManufacturingCost, 0);
   const headingCost = safeParseFloat(calculatedHeadingCost, 0);
@@ -407,6 +412,9 @@ export const CostCalculationSummary = ({
 
   console.log('📊 Curtain costs:', {
     fabricCost,
+    fabricCalculationTotal: fabricCalculation?.totalCost,
+    calculatedFabricCostProp: calculatedFabricCost,
+    usingFabricCalculation: !!fabricCalculation?.totalCost,
     liningCost,
     manufacturingCost,
     headingCost,
