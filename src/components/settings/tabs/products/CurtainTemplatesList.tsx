@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,12 +12,14 @@ import { useCurtainTemplates, useDeleteCurtainTemplate, useCreateCurtainTemplate
 import { useHeadingInventory } from "@/hooks/useHeadingInventory";
 import { getDisplayNameFromSingular } from "@/types/treatmentCategories";
 import { useQueryClient } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 
 interface CurtainTemplatesListProps {
   onEdit: (template: CurtainTemplate) => void;
+  highlightedTemplateId?: string | null;
 }
 
-export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
+export const CurtainTemplatesList = ({ onEdit, highlightedTemplateId }: CurtainTemplatesListProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: templates = [], isLoading } = useCurtainTemplates();
@@ -26,6 +28,19 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
   const createTemplate = useCreateCurtainTemplate();
   const updateTemplate = useUpdateCurtainTemplate();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const templateRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // Scroll to highlighted template
+  useEffect(() => {
+    if (highlightedTemplateId && templateRefs.current[highlightedTemplateId]) {
+      setTimeout(() => {
+        templateRefs.current[highlightedTemplateId]?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 100);
+    }
+  }, [highlightedTemplateId, templates]);
 
   const handleToggleStoreVisibility = async (templateId: string, currentValue: boolean) => {
     try {
@@ -192,7 +207,14 @@ export const CurtainTemplatesList = ({ onEdit }: CurtainTemplatesListProps) => {
       )}
 
       {templates.map((template) => (
-        <Card key={template.id}>
+        <Card 
+          key={template.id}
+          ref={(el) => templateRefs.current[template.id] = el}
+          className={cn(
+            "transition-all duration-300",
+            highlightedTemplateId === template.id && "ring-2 ring-primary ring-offset-2 animate-pulse"
+          )}
+        >
           <CardHeader>
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3 flex-1">

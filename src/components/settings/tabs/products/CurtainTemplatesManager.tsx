@@ -5,7 +5,12 @@ import { CurtainTemplateForm } from "./CurtainTemplateForm";
 import { CurtainTemplatesList } from "./CurtainTemplatesList";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { CurtainTemplate } from "@/hooks/useCurtainTemplates";
-export const CurtainTemplatesManager = () => {
+
+interface CurtainTemplatesManagerProps {
+  highlightedTemplateId?: string | null;
+}
+
+export const CurtainTemplatesManager = ({ highlightedTemplateId }: CurtainTemplatesManagerProps) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<CurtainTemplate | null>(null);
   const handleAddTemplate = () => {
@@ -33,7 +38,7 @@ export const CurtainTemplatesManager = () => {
         </Button>
       </div>
 
-      <CurtainTemplatesList onEdit={handleEditTemplate} />
+      <CurtainTemplatesList onEdit={handleEditTemplate} highlightedTemplateId={highlightedTemplateId} />
 
       <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
         <SheetContent className="w-full sm:max-w-6xl">

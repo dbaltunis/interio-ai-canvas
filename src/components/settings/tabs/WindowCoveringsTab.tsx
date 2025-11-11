@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
@@ -6,7 +7,19 @@ import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
 import { WindowTreatmentOptionsManager } from "./components/WindowTreatmentOptionsManager";
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
 import { Layers, Settings, Sliders, Library } from "lucide-react";
+
 export const WindowCoveringsTab = () => {
+  const [activeTab, setActiveTab] = useState("templates");
+  const [highlightedTemplateId, setHighlightedTemplateId] = useState<string | null>(null);
+
+  const handleTemplateCloned = (templateId: string) => {
+    setActiveTab("templates");
+    setHighlightedTemplateId(templateId);
+    
+    // Clear highlight after animation
+    setTimeout(() => setHighlightedTemplateId(null), 3000);
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -17,7 +30,7 @@ export const WindowCoveringsTab = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="templates" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="templates" className="data-[state=active]:bg-primary/10">
                 <Layers className="h-4 w-4 mr-2" />
@@ -42,11 +55,11 @@ export const WindowCoveringsTab = () => {
             </TabsList>
 
             <TabsContent value="templates" className="mt-6">
-              <CurtainTemplatesManager />
+              <CurtainTemplatesManager highlightedTemplateId={highlightedTemplateId} />
             </TabsContent>
 
             <TabsContent value="system-library" className="mt-6">
-              <SystemTemplatesLibrary />
+              <SystemTemplatesLibrary onTemplateCloned={handleTemplateCloned} />
             </TabsContent>
 
             <TabsContent value="headings" className="mt-6">

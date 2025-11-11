@@ -35,18 +35,27 @@ const useTemplateOptionCount = (treatmentCategory: string) => {
   });
 };
 
-const TemplateCard = ({ template }: { template: any }) => {
+const TemplateCard = ({ template, onTemplateCloned }: { template: any; onTemplateCloned?: (templateId: string) => void }) => {
   const { data: optionCount } = useTemplateOptionCount(template.treatment_category);
   const cloneTemplate = useCloneSystemTemplate();
   const [showDialog, setShowDialog] = useState(false);
   const [customPrice, setCustomPrice] = useState<number>(template.unit_price || 0);
 
-  const handleClone = () => {
-    cloneTemplate.mutate({
-      systemTemplateId: template.id,
-      customPricing: customPrice,
-    });
-    setShowDialog(false);
+  const handleClone = async () => {
+    try {
+      const clonedTemplate = await cloneTemplate.mutateAsync({
+        systemTemplateId: template.id,
+        customPricing: customPrice,
+      });
+      setShowDialog(false);
+      
+      // Notify parent component with the new template ID
+      if (onTemplateCloned && clonedTemplate?.id) {
+        onTemplateCloned(clonedTemplate.id);
+      }
+    } catch (error) {
+      console.error("Error cloning template:", error);
+    }
   };
 
   return (
@@ -153,7 +162,11 @@ const TemplateCard = ({ template }: { template: any }) => {
   );
 };
 
-export const SystemTemplatesLibrary = () => {
+interface SystemTemplatesLibraryProps {
+  onTemplateCloned?: (templateId: string) => void;
+}
+
+export const SystemTemplatesLibrary = ({ onTemplateCloned }: SystemTemplatesLibraryProps) => {
   const { data: templates, isLoading } = useSystemTemplates();
 
   const getCategoryBadgeColor = (category: string | null) => {
@@ -224,7 +237,7 @@ export const SystemTemplatesLibrary = () => {
               
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {categoryTemplates?.map((template) => (
-                  <TemplateCard key={template.id} template={template} />
+                  <TemplateCard key={template.id} template={template} onTemplateCloned={onTemplateCloned} />
                 ))}
               </div>
             </div>
