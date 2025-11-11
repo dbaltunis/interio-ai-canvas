@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { formatCurrency } from "@/utils/unitConversion";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface CostBreakdownItem {
   id: string;
@@ -25,11 +26,13 @@ interface CostBreakdownDisplayProps {
 
 export function CostBreakdownDisplay({ 
   breakdown, 
-  currency = 'GBP', 
+  currency: currencyProp, 
   totalCost, 
   showDetails = false 
 }: CostBreakdownDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(showDetails);
+  const defaultCurrency = useCurrency();
+  const currency = currencyProp || defaultCurrency;
 
   const getCategoryBadgeVariant = (category: string) => {
     switch (category) {

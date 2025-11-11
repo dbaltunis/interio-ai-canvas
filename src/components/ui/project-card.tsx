@@ -5,6 +5,8 @@ import { StatusIndicator } from "@/components/ui/status-indicator";
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
 import { LucideIcon, Calendar, Clock, User, TrendingUp, AlertCircle } from 'lucide-react';
+import { formatCurrency } from "@/utils/currency";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface ProjectCardProps {
   project: {
@@ -27,6 +29,8 @@ interface ProjectCardProps {
 }
 
 export const ProjectCard = ({ project, onClick, className }: ProjectCardProps) => {
+  const currency = useCurrency();
+  
   const statusConfig = {
     planning: { label: 'Planning', status: 'info' as const, color: 'bg-blue-500/10 text-blue-600' },
     in_progress: { label: 'In Progress', status: 'warning' as const, color: 'bg-yellow-500/10 text-yellow-600' },
@@ -112,7 +116,7 @@ export const ProjectCard = ({ project, onClick, className }: ProjectCardProps) =
           {project.budget && project.spent !== undefined && (
             <div className="flex items-center gap-1">
               <TrendingUp className="h-4 w-4" />
-              <span>${project.spent}/${project.budget}</span>
+              <span>{formatCurrency(project.spent, currency)}/{formatCurrency(project.budget, currency)}</span>
             </div>
           )}
         </div>

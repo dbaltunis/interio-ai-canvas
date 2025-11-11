@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
 import { Calendar, Clock, Users, TrendingUp, AlertTriangle } from 'lucide-react';
+import { formatCurrency } from "@/utils/currency";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface EnhancedProjectCardProps {
   project: {
@@ -37,6 +39,8 @@ export const EnhancedProjectCard = ({
   className,
   variant = 'default'
 }: EnhancedProjectCardProps) => {
+  const currency = useCurrency();
+  
   const statusConfig = {
     planning: { label: 'Planning', status: 'info' as const, color: 'bg-blue-50 text-blue-700 border-blue-200' },
     in_progress: { label: 'In Progress', status: 'warning' as const, color: 'bg-amber-50 text-amber-700 border-amber-200' },
@@ -184,7 +188,7 @@ export const EnhancedProjectCard = ({
               <span className={cn(
                 project.spent > project.budget ? "text-red-600" : "text-muted-foreground"
               )}>
-                ${project.spent.toLocaleString()}/${project.budget.toLocaleString()}
+                {formatCurrency(project.spent, currency)}/{formatCurrency(project.budget, currency)}
               </span>
             </div>
           )}
