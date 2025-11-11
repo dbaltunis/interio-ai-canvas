@@ -223,7 +223,7 @@ export const DynamicCurtainOptions = ({
     : headingOptions;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 px-3">
       {/* Validation Alert */}
       {(validation.errors.length > 0 || validation.warnings.length > 0) && (
         <ValidationAlert 
@@ -232,254 +232,245 @@ export const DynamicCurtainOptions = ({
         />
       )}
 
-      {/* Heading Selection */}
+      {/* Heading Type - Top Level Category */}
       {availableHeadings.length > 0 && (
-        <div className="space-y-2">
-          <Label className="text-sm font-medium flex items-center gap-2">
-            Heading Type
-            <Badge variant="destructive" className="text-xs">Required</Badge>
-          </Label>
-          <Select
-            value={measurements.selected_heading || ''}
-            onValueChange={handleHeadingChange}
-            disabled={readOnly}
-          >
-            <SelectTrigger className="bg-background border-input">
-              <SelectValue placeholder="Select heading type" />
-            </SelectTrigger>
-            <SelectContent 
-              className="bg-popover border-border z-50 max-h-[300px]"
-              position="popper"
-              sideOffset={5}
-            >
-              {availableHeadings.map(heading => (
-                <SelectItem key={heading.id} value={heading.id} className="hover:bg-accent/50 transition-colors">
-                  <div className="flex items-center gap-3 w-full py-1">
-                    {heading.image_url && (
-                      <img 
-                        src={heading.image_url} 
-                        alt={heading.name}
-                        className="w-10 h-10 object-cover rounded border border-border"
-                      />
-                    )}
-                    <div className="flex items-center justify-between flex-1 gap-4">
-                      <span>{heading.name}</span>
-                      <div className="flex gap-2 text-xs text-muted-foreground">
-                        {(heading as any).fullness_ratio && (
-                          <span>Fullness: {(heading as any).fullness_ratio}x</span>
-                        )}
-                        {(heading.price_per_meter || heading.selling_price) && (
-                          <span>{formatCurrency(heading.price_per_meter || heading.selling_price || 0)}</span>
-                        )}
+        <div className="space-y-3">
+          <h4 className="font-medium text-foreground">Heading Type</h4>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Select Type</span>
+            <div className="w-64">
+              <Select
+                value={measurements.selected_heading || ''}
+                onValueChange={handleHeadingChange}
+                disabled={readOnly}
+              >
+                <SelectTrigger className="bg-background border-input">
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent 
+                  className="bg-popover border-border z-50 max-h-[300px]"
+                  position="popper"
+                  sideOffset={5}
+                >
+                  {availableHeadings.map(heading => (
+                    <SelectItem key={heading.id} value={heading.id}>
+                      <div className="flex items-center justify-between w-full gap-4">
+                        <span>{heading.name}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {formatCurrency(heading.price_per_meter || heading.selling_price || 0)}
+                        </Badge>
                       </div>
-                    </div>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Eyelet Ring - Nested under Heading (indented) */}
+          {availableRings.length > 0 && onEyeletRingChange && (
+            <div className="ml-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Ring Type</span>
+                <div className="w-64">
+                  <Select 
+                    value={selectedEyeletRing} 
+                    onValueChange={onEyeletRingChange}
+                    disabled={readOnly}
+                  >
+                    <SelectTrigger className="bg-background border-input">
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border-border z-50" position="popper" sideOffset={5}>
+                      {availableRings.map((ring) => (
+                        <SelectItem key={ring.id} value={ring.id}>
+                          <div className="flex items-center justify-between w-full gap-4">
+                            <span>{ring.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {ring.color} • {ring.diameter}mm
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Eyelet Ring Selection - Only show if eyelet heading selected */}
-      {availableRings.length > 0 && onEyeletRingChange && (
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Eyelet Ring</Label>
-          <Select 
-            value={selectedEyeletRing} 
-            onValueChange={onEyeletRingChange}
-            disabled={readOnly}
-          >
-            <SelectTrigger className="bg-background border-input">
-              <SelectValue placeholder="Choose eyelet ring" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover border-border z-50" position="popper" sideOffset={5}>
-              {availableRings.map((ring) => (
-                <SelectItem key={ring.id} value={ring.id}>
-                  <div className="flex items-center justify-between w-full gap-4">
-                    <span>{ring.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {ring.color} • {ring.diameter}mm
-                    </span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {/* Lining Selection */}
+      {/* Lining Type - Top Level Category */}
       {template.lining_types && template.lining_types.length > 0 && (
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Lining Type</Label>
-          <Select
-            value={measurements.selected_lining || ''}
-            onValueChange={handleLiningChange}
-          >
-            <SelectTrigger className="bg-background border-input">
-              <SelectValue placeholder="Select lining (optional)" />
-            </SelectTrigger>
-            <SelectContent 
-              className="bg-popover border-border"
-              position="popper"
-              sideOffset={5}
-            >
-              <SelectItem value="none">No Lining</SelectItem>
-              {template.lining_types.map((lining: any, index: number) => (
-                <SelectItem key={index} value={lining.type}>
-                  <div className="flex items-center justify-between w-full gap-4">
-                    <span>{lining.type}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatCurrency((lining.price_per_metre || 0) + (lining.labour_per_curtain || 0))}
-                    </span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="space-y-3">
+          <h4 className="font-medium text-foreground">Lining Type</h4>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Select Lining</span>
+            <div className="w-64">
+              <Select
+                value={measurements.selected_lining || ''}
+                onValueChange={handleLiningChange}
+              >
+                <SelectTrigger className="bg-background border-input">
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent 
+                  className="bg-popover border-border"
+                  position="popper"
+                  sideOffset={5}
+                >
+                  <SelectItem value="none">No Lining</SelectItem>
+                  {template.lining_types.map((lining: any, index: number) => (
+                    <SelectItem key={index} value={lining.type}>
+                      <div className="flex items-center justify-between w-full gap-4">
+                        <span>{lining.type}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {formatCurrency((lining.price_per_metre || 0) + (lining.labour_per_curtain || 0))}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Pricing Method Selection */}
+      {/* Pricing Method - Top Level Category */}
       {template.pricing_methods && template.pricing_methods.length > 1 && (
-        <div className="space-y-2">
-          <Label className="text-sm font-medium flex items-center gap-2">
-            Pricing Method
-            <Badge variant="secondary" className="text-xs">Choose fabric width</Badge>
-          </Label>
-          <Select
-            value={measurements.selected_pricing_method || ''}
-            onValueChange={handlePricingMethodChange}
-          >
-            <SelectTrigger className="bg-background border-input">
-              <SelectValue placeholder="Select pricing method" />
-            </SelectTrigger>
-            <SelectContent 
-              className="bg-popover border-border"
-              position="popper"
-              sideOffset={5}
-            >
-              {template.pricing_methods.map((method: any) => (
-                <SelectItem key={method.id} value={method.id}>
-                  <div className="flex items-center justify-between w-full gap-4">
-                    <span>{method.name}</span>
-                    <div className="flex gap-2 text-xs text-muted-foreground">
-                      <Badge variant="outline" className="text-xs">
-                        {method.fabric_width_type === 'wide' ? 'Wide Fabric' : 'Narrow Fabric'}
-                      </Badge>
-                      <span>{method.pricing_type}</span>
-                    </div>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="space-y-3">
+          <h4 className="font-medium text-foreground">Pricing Method</h4>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Fabric Width</span>
+            <div className="w-64">
+              <Select
+                value={measurements.selected_pricing_method || ''}
+                onValueChange={handlePricingMethodChange}
+              >
+                <SelectTrigger className="bg-background border-input">
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent 
+                  className="bg-popover border-border"
+                  position="popper"
+                  sideOffset={5}
+                >
+                  {template.pricing_methods.map((method: any) => (
+                    <SelectItem key={method.id} value={method.id}>
+                      <div className="flex items-center justify-between w-full gap-4">
+                        <span>{method.name}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {method.fabric_width_type === 'wide' ? 'Wide' : 'Narrow'}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Manufacturing Type Selection - Machine vs Hand Finished */}
+      {/* Manufacturing Type - Top Level Category */}
       {template.offers_hand_finished && (
-        <div className="space-y-2">
-          <Label className="text-sm font-medium flex items-center gap-2">
-            Make-Up Type
-            <Badge variant="secondary" className="text-xs">Affects pricing</Badge>
-          </Label>
-          <RadioGroup
-            value={measurements.manufacturing_type || template.manufacturing_type || 'machine'}
-            onValueChange={handleManufacturingTypeChange}
-            className="grid grid-cols-2 gap-3"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="machine" id="machine" />
-              <Label 
-                htmlFor="machine" 
-                className="cursor-pointer flex flex-col flex-1"
+        <div className="space-y-3">
+          <h4 className="font-medium text-foreground">Make-Up Type</h4>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Finish Type</span>
+            <div className="w-64">
+              <Select
+                value={measurements.manufacturing_type || template.manufacturing_type || 'machine'}
+                onValueChange={handleManufacturingTypeChange}
               >
-                <span className="font-medium">Machine Finished</span>
-                {machinePricePerMetre && machinePricePerMetre > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    {formatCurrency(machinePricePerMetre)}/m
-                  </span>
-                )}
-                {machinePricePerDrop && machinePricePerDrop > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    {formatCurrency(machinePricePerDrop)}/drop
-                  </span>
-                )}
-                {machinePricePerPanel && machinePricePerPanel > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    {formatCurrency(machinePricePerPanel)}/panel
-                  </span>
-                )}
-                {!machinePricePerMetre && !machinePricePerDrop && !machinePricePerPanel && (
-                  <span className="text-xs text-destructive">No price set</span>
-                )}
-              </Label>
+                <SelectTrigger className="bg-background border-input">
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent 
+                  className="bg-popover border-border"
+                  position="popper"
+                  sideOffset={5}
+                >
+                  <SelectItem value="machine">
+                    <div className="flex items-center justify-between w-full gap-4">
+                      <span>Machine Finished</span>
+                      {(machinePricePerMetre > 0 || machinePricePerDrop > 0 || machinePricePerPanel > 0) && (
+                        <div className="flex gap-1">
+                          {machinePricePerMetre > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {formatCurrency(machinePricePerMetre)}/m
+                            </Badge>
+                          )}
+                          {machinePricePerDrop > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {formatCurrency(machinePricePerDrop)}/drop
+                            </Badge>
+                          )}
+                          {machinePricePerPanel > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {formatCurrency(machinePricePerPanel)}/panel
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="hand">
+                    <div className="flex items-center justify-between w-full gap-4">
+                      <span>Hand Finished</span>
+                      {(handPricePerMetre > 0 || handPricePerDrop > 0 || handPricePerPanel > 0) && (
+                        <div className="flex gap-1">
+                          {handPricePerMetre > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {formatCurrency(handPricePerMetre)}/m
+                            </Badge>
+                          )}
+                          {handPricePerDrop > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {formatCurrency(handPricePerDrop)}/drop
+                            </Badge>
+                          )}
+                          {handPricePerPanel > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {formatCurrency(handPricePerPanel)}/panel
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="hand" id="hand" />
-              <Label 
-                htmlFor="hand" 
-                className="cursor-pointer flex flex-col flex-1"
-              >
-                <span className="font-medium">Hand Finished</span>
-                {handPricePerMetre && handPricePerMetre > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    {formatCurrency(handPricePerMetre)}/m
-                  </span>
-                )}
-                {handPricePerDrop && handPricePerDrop > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    {formatCurrency(handPricePerDrop)}/drop
-                  </span>
-                )}
-                {handPricePerPanel && handPricePerPanel > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    {formatCurrency(handPricePerPanel)}/panel
-                  </span>
-                )}
-                {!handPricePerMetre && !handPricePerDrop && !handPricePerPanel && (
-                  <span className="text-xs text-destructive">No price set</span>
-                )}
-              </Label>
-            </div>
-          </RadioGroup>
+          </div>
         </div>
       )}
 
       {/* Dynamic Treatment Options from Database */}
-      {treatmentOptions.length > 0 && (
-        <div className="space-y-4 pt-2 border-t border-border">
-          {treatmentOptions.map(option => {
-            console.log('🎯 RENDERING OPTION:', {
-              key: option.key,
-              label: option.label,
-              hasValues: !!option.option_values,
-              valueCount: option.option_values?.length,
-              firstValue: option.option_values?.[0]
-            });
-            
-            if (!option.visible || !option.option_values || option.option_values.length === 0) {
-              return null;
-            }
+      {treatmentOptions.length > 0 && treatmentOptions.map(option => {
+        if (!option.visible || !option.option_values || option.option_values.length === 0) {
+          return null;
+        }
 
-            return (
-              <div key={option.id} className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                {option.label}
-                {option.required && (
-                  <Badge variant="destructive" className="text-xs">Required</Badge>
-                )}
-                </Label>
-                
+        const selectedValueId = treatmentOptionSelections[option.key] || measurements[`treatment_option_${option.key}`];
+        const selectedValue = option.option_values.find(v => v.id === selectedValueId);
+        const subOptions = selectedValue?.extra_data?.sub_options;
+
+        return (
+          <div key={option.id} className="space-y-3">
+            <h4 className="font-medium text-foreground">{option.label}</h4>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Select {option.label}</span>
+              <div className="w-64">
                 <Select
-                  value={treatmentOptionSelections[option.key] || measurements[`treatment_option_${option.key}`] || ''}
+                  value={selectedValueId || ''}
                   onValueChange={(value) => handleTreatmentOptionChange(option.key, value)}
                   disabled={readOnly}
                 >
                   <SelectTrigger className="bg-background border-input">
-                    <SelectValue placeholder={`Select ${option.label.toLowerCase()}`} />
+                    <SelectValue placeholder="Select..." />
                   </SelectTrigger>
                   <SelectContent 
                     className="bg-popover border-border z-50"
@@ -490,118 +481,70 @@ export const DynamicCurtainOptions = ({
                       const price = getOptionPrice(value);
                       return (
                         <SelectItem key={value.id} value={value.id}>
-                          <div className="flex items-center gap-3 w-full">
-                            {value.extra_data?.image_url && (
-                              <img 
-                                src={value.extra_data.image_url} 
-                                alt={value.label}
-                                className="w-10 h-10 object-cover rounded border border-border"
-                              />
+                          <div className="flex items-center justify-between w-full gap-4">
+                            <span>{value.label}</span>
+                            {price > 0 && (
+                              <Badge variant="outline" className="text-xs">
+                                {formatCurrency(price)}
+                              </Badge>
                             )}
-                            <div className="flex items-center justify-between flex-1 gap-4">
-                              <div className="flex flex-col">
-                                <span>{value.label}</span>
-                                {value.extra_data?.description && (
-                                  <span className="text-xs text-muted-foreground">{value.extra_data.description}</span>
-                                )}
-                              </div>
-                              {price > 0 && (
-                                <Badge variant="outline" className="text-xs">
-                                  {formatCurrency(price)}
-                                </Badge>
-                              )}
-                            </div>
                           </div>
                         </SelectItem>
                       );
                     })}
                   </SelectContent>
                 </Select>
-
-                {/* CRITICAL: Render sub-options when a value is selected */}
-                {(() => {
-                  const selectedValueId = treatmentOptionSelections[option.key] || measurements[`treatment_option_${option.key}`];
-                  
-                  console.log('🔍🔍🔍 SUB-OPTIONS CHECK:', {
-                    optionKey: option.key,
-                    optionLabel: option.label,
-                    selectedValueId,
-                    treatmentOptionSelections,
-                    measurements: measurements[`treatment_option_${option.key}`]
-                  });
-                  
-                  if (!selectedValueId) {
-                    console.log('❌ No selected value ID for', option.key);
-                    return null;
-                  }
-                  
-                  const selectedValue = option.option_values.find(v => v.id === selectedValueId);
-                  console.log('🎯 Found selected value:', selectedValue);
-                  
-                  const subOptions = selectedValue?.extra_data?.sub_options;
-                  console.log('📦 Sub-options:', subOptions);
-                  
-                  if (!subOptions || subOptions.length === 0) {
-                    console.log('❌ No sub-options or empty array');
-                    return null;
-                  }
-                  
-                  console.log('✅✅✅ RENDERING SUB-OPTIONS:', subOptions);
-                  
-                  if (!subOptions || subOptions.length === 0) return null;
-                  
-                  return (
-                    <div className="ml-4 mt-3 space-y-3 pl-4 border-l-2 border-muted">
-                      {subOptions.map((subOption: any) => (
-                        <div key={subOption.id} className="space-y-2">
-                          <Label className="text-sm font-medium text-muted-foreground">
-                            {subOption.label}
-                          </Label>
-                          <Select
-                            value={treatmentOptionSelections[`${option.key}_${subOption.key}`] || ''}
-                            onValueChange={(choiceValue) => {
-                              // Save sub-option selection
-                              handleTreatmentOptionChange(`${option.key}_${subOption.key}`, choiceValue);
-                              
-                              // Also track pricing in the summary
-                              if (onOptionPriceChange) {
-                                const choice = subOption.choices?.find((c: any) => c.value === choiceValue);
-                                if (choice) {
-                                  const displayLabel = `${option.label} - ${subOption.label}: ${choice.label}`;
-                                  onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel);
-                                }
-                              }
-                            }}
-                            disabled={readOnly}
-                          >
-                            <SelectTrigger className="bg-background border-input">
-                              <SelectValue placeholder={`Select ${subOption.label.toLowerCase()}`} />
-                            </SelectTrigger>
-                            <SelectContent className="bg-popover border-border z-50">
-                              {subOption.choices.map((choice: any) => (
-                                <SelectItem key={choice.id} value={choice.value}>
-                                  <div className="flex items-center justify-between gap-4 w-full">
-                                    <span>{choice.label}</span>
-                                    {choice.price > 0 && (
-                                      <Badge variant="outline" className="text-xs">
-                                        +{formatCurrency(choice.price)}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+
+            {/* Sub-options - Nested under selected option (indented) */}
+            {subOptions && subOptions.length > 0 && (
+              <div className="ml-4 space-y-3">
+                {subOptions.map((subOption: any) => (
+                  <div key={subOption.id} className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">{subOption.label}</span>
+                    <div className="w-64">
+                      <Select
+                        value={treatmentOptionSelections[`${option.key}_${subOption.key}`] || ''}
+                        onValueChange={(choiceValue) => {
+                          handleTreatmentOptionChange(`${option.key}_${subOption.key}`, choiceValue);
+                          
+                          if (onOptionPriceChange) {
+                            const choice = subOption.choices?.find((c: any) => c.value === choiceValue);
+                            if (choice) {
+                              const displayLabel = `${option.label} - ${subOption.label}: ${choice.label}`;
+                              onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel);
+                            }
+                          }
+                        }}
+                        disabled={readOnly}
+                      >
+                        <SelectTrigger className="bg-background border-input">
+                          <SelectValue placeholder="Select..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border-border z-50">
+                          {subOption.choices.map((choice: any) => (
+                            <SelectItem key={choice.id} value={choice.value}>
+                              <div className="flex items-center justify-between gap-4 w-full">
+                                <span>{choice.label}</span>
+                                {choice.price > 0 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    +{formatCurrency(choice.price)}
+                                  </Badge>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
 
     </div>
   );
