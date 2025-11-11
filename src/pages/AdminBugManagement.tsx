@@ -24,7 +24,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Bug, Calendar, User, AlertCircle, CheckCircle2, Clock, XCircle, Users, Target } from "lucide-react";
+import { Bug, Calendar, User, AlertCircle, CheckCircle2, Clock, XCircle, Users, Target, Upload, X } from "lucide-react";
 import { format, parseISO, startOfWeek, endOfWeek, addWeeks, isBefore, isAfter, isWithinInterval } from "date-fns";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 
@@ -44,6 +44,7 @@ interface BugReport {
   app_version: string | null;
   assigned_to: string | null;
   target_fix_date: string | null;
+  images: string[] | null;
   created_at: string;
   updated_at: string;
   reporter?: {
@@ -77,6 +78,7 @@ export default function AdminBugManagement() {
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "roadmap">("list");
+  const [uploading, setUploading] = useState(false);
   const queryClient = useQueryClient();
   const { data: teamMembers } = useTeamMembers();
 
@@ -129,6 +131,89 @@ export default function AdminBugManagement() {
       })) as BugReport[];
     },
   });
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || !selectedBug) return;
+    
+    setUploading(true);
+    const files = Array.from(event.target.files);
+    const uploadedUrls: string[] = [];
+
+    try {
+      for (const file of files) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${selectedBug.id}/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError, data } = await supabase.storage
+          .from('bug-images')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('bug-images')
+          .getPublicUrl(fileName);
+
+        uploadedUrls.push(publicUrl);
+      }
+
+      const currentImages = selectedBug.images || [];
+      const newImages = [...currentImages, ...uploadedUrls];
+
+      await updateBug.mutateAsync({
+        bugId: selectedBug.id,
+        updates: { images: newImages }
+      });
+
+      setSelectedBug({ ...selectedBug, images: newImages });
+
+      toast({
+        title: "Images uploaded",
+        description: `${files.length} image(s) uploaded successfully.`,
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload images. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleImageDelete = async (imageUrl: string) => {
+    if (!selectedBug) return;
+
+    try {
+      const fileName = imageUrl.split('/bug-images/')[1];
+      if (fileName) {
+        await supabase.storage.from('bug-images').remove([fileName]);
+      }
+
+      const newImages = (selectedBug.images || []).filter(url => url !== imageUrl);
+      
+      await updateBug.mutateAsync({
+        bugId: selectedBug.id,
+        updates: { images: newImages }
+      });
+
+      setSelectedBug({ ...selectedBug, images: newImages });
+
+      toast({
+        title: "Image deleted",
+        description: "Image removed successfully.",
+      });
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete image.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const updateBug = useMutation({
     mutationFn: async ({ bugId, updates }: { bugId: string; updates: Partial<BugReport> }) => {
@@ -570,6 +655,46 @@ export default function AdminBugManagement() {
                       <p><strong>Viewport:</strong> {selectedBug.browser_info.viewport?.width} x {selectedBug.browser_info.viewport?.height}</p>
                     </>
                   )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Screenshots & Images</Label>
+                <div className="space-y-3">
+                  {selectedBug?.images && selectedBug.images.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {selectedBug.images.map((url, index) => (
+                        <div key={index} className="relative group">
+                          <img 
+                            src={url} 
+                            alt={`Bug screenshot ${index + 1}`}
+                            className="w-full h-32 object-cover rounded border"
+                          />
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleImageDelete(url)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageUpload}
+                      disabled={uploading}
+                      className="cursor-pointer"
+                    />
+                    {uploading && (
+                      <p className="text-sm text-muted-foreground mt-2">Uploading images...</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

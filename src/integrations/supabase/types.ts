@@ -1348,6 +1348,7 @@ export type Database = {
           description: string
           expected_behavior: string | null
           id: string
+          images: string[] | null
           priority: string | null
           resolution_notes: string | null
           resolved_at: string | null
@@ -1372,6 +1373,7 @@ export type Database = {
           description: string
           expected_behavior?: string | null
           id?: string
+          images?: string[] | null
           priority?: string | null
           resolution_notes?: string | null
           resolved_at?: string | null
@@ -1396,6 +1398,7 @@ export type Database = {
           description?: string
           expected_behavior?: string | null
           id?: string
+          images?: string[] | null
           priority?: string | null
           resolution_notes?: string | null
           resolved_at?: string | null
