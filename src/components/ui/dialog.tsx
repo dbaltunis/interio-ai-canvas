@@ -66,11 +66,9 @@ const DialogContent = React.forwardRef<
         {children}
         <DialogPrimitive.Close 
           className="absolute right-3 top-3 md:right-4 md:top-4 z-10 rounded-md p-1.5 md:p-2 bg-background hover:bg-accent text-foreground border border-border opacity-90 transition-all hover:opacity-100 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring disabled:pointer-events-none"
-          onClick={handleClose}
-          disabled={isSaving}
         >
           <X className="h-4 w-4 md:h-5 md:w-5" />
-          <span className="sr-only">{onCloseWithSave ? 'Save and Close' : 'Close'}</span>
+          <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPortal>
