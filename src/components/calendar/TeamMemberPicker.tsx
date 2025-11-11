@@ -71,7 +71,7 @@ export const TeamMemberPicker = ({ selectedMembers, onChange }: TeamMemberPicker
       )}
 
       {/* Team Member Picker Popover */}
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <Popover open={isOpen} onOpenChange={setIsOpen} modal={false}>
         <PopoverTrigger asChild>
           <Button variant="outline" className="w-full justify-start gap-2">
             <Users className="h-4 w-4" />
