@@ -692,7 +692,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
   const allTabs = [
     { id: "details", label: "Client", mobileLabel: "Client", icon: User },
-    { id: "rooms", label: "Rooms & Treatments", mobileLabel: "Rooms", icon: Package },
+    { id: "rooms", label: "Project", mobileLabel: "Project", icon: Package },
     { id: "quotation", label: "Quote", mobileLabel: "Quote", icon: FileText },
     { id: "workroom", label: "Workroom", mobileLabel: "Work", icon: Wrench },
     { id: "materials", label: "Materials", mobileLabel: "Materials", icon: Package },
