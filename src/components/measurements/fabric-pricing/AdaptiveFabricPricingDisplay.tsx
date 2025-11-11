@@ -518,13 +518,51 @@ export const AdaptiveFabricPricingDisplay = ({
                 calculationBreakdown = `${quantity} panel(s) [${measurements.curtain_type || 'single'}] × ${formatPrice(pricePerUnit)}/panel = ${formatPrice(totalCost)}`;
               } else {
                 // Linear meter calculation (default)
+                // ✅ FIX: For horizontal/railroaded fabric, show required WIDTH to order
+                // For vertical, show total length needed
                 pricePerUnit = fabricCalculation.pricePerMeter || selectedFabricItem?.selling_price || 0;
-                quantity = fabricCalculation.linearMeters || 0;
-                totalCost = quantity * pricePerUnit;
-                unitLabel = 'Linear Meters Required';
-                unitSuffix = 'm';
-                calculationText = `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
-                calculationBreakdown = `${fabricCalculation.widthsRequired || 0} width(s) × ${(fabricCalculation.totalDrop || 0).toFixed(0)}cm = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
+                
+                const isHorizontal = fabricCalculation.fabricRotated === true || 
+                                    fabricCalculation.fabricOrientation === 'horizontal';
+                
+                if (isHorizontal) {
+                  // Horizontal/Railroaded: Calculate required WIDTH to order
+                  const railWidthCm = fabricCalculation.railWidth || 0;
+                  const fullness = fabricCalculation.fullnessRatio || 2.5;
+                  const sideHemsCm = fabricCalculation.totalSideHems || 0;
+                  const returnsCm = fabricCalculation.returns || 0;
+                  const wastePercent = fabricCalculation.wastePercent || 0;
+                  
+                  // Required width = (rail width × fullness) + side hems + returns
+                  const requiredWidthCm = (railWidthCm * fullness) + sideHemsCm + returnsCm;
+                  // Add waste
+                  const requiredWidthWithWasteCm = requiredWidthCm * (1 + wastePercent / 100);
+                  const requiredWidthM = requiredWidthWithWasteCm / 100;
+                  
+                  quantity = requiredWidthM;
+                  totalCost = quantity * pricePerUnit;
+                  unitLabel = 'Linear Meters Required (Width)';
+                  unitSuffix = 'm';
+                  
+                  const breakdown = [
+                    `${railWidthCm.toFixed(0)}cm × ${fullness} = ${(railWidthCm * fullness).toFixed(0)}cm`
+                  ];
+                  if (sideHemsCm > 0) breakdown.push(`+ ${sideHemsCm.toFixed(0)}cm side hems`);
+                  if (returnsCm > 0) breakdown.push(`+ ${returnsCm.toFixed(0)}cm returns`);
+                  if (wastePercent > 0) breakdown.push(`+ ${wastePercent}% waste`);
+                  breakdown.push(`= ${requiredWidthWithWasteCm.toFixed(0)}cm (${quantity.toFixed(2)}m)`);
+                  
+                  calculationText = `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
+                  calculationBreakdown = breakdown.join(' ');
+                } else {
+                  // Vertical/Standard: Show total fabric length
+                  quantity = fabricCalculation.linearMeters || 0;
+                  totalCost = quantity * pricePerUnit;
+                  unitLabel = 'Linear Meters Required';
+                  unitSuffix = 'm';
+                  calculationText = `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
+                  calculationBreakdown = `${fabricCalculation.widthsRequired || 0} width(s) × ${(fabricCalculation.totalDrop || 0).toFixed(0)}cm = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
+                }
               }
               
               return (
