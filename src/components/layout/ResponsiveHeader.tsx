@@ -61,7 +61,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   const canViewCalendar = useHasPermission('view_calendar');
   const canViewInventory = useHasPermission('view_inventory');
   
-  // Check if user actually has an online store (not just permission)
+  // Check if user actually has a published online store
   const { data: hasOnlineStore } = useQuery({
     queryKey: ['has-online-store-nav'],
     queryFn: async () => {
@@ -69,10 +69,11 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
       if (!user) return false;
       const { data } = await supabase
         .from('online_stores')
-        .select('id')
+        .select('id, is_published')
         .eq('user_id', user.id)
+        .eq('is_published', true)
         .maybeSingle();
-      console.log('[ResponsiveHeader] Online store check:', { hasStore: !!data });
+      console.log('[ResponsiveHeader] Published online store check:', { hasStore: !!data });
       return !!data;
     },
     staleTime: 0, // Always fetch fresh data
