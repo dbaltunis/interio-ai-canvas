@@ -10,6 +10,7 @@ import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
+import { useFormattedDate } from "@/hooks/useFormattedDate";
 
 interface JobCardProps {
   quote: any;
@@ -37,6 +38,9 @@ export const JobCard = ({
   const { data: surfaces } = useSurfaces(project?.id);  
   const { data: treatments } = useTreatments(project?.id);
   const { data: jobStatuses = [] } = useJobStatuses();
+  
+  // Format dates using user preferences
+  const { formattedDate: formattedDueDate } = useFormattedDate(project?.due_date, false);
   
   const getStatusColor = (status: string) => {
     // Find status details from database
@@ -196,10 +200,10 @@ export const JobCard = ({
                 <p className="text-xs text-muted-foreground">
                   Job #{formatJobNumber(project.job_number)}
                 </p>
-                {project.due_date && (
+                {project.due_date && formattedDueDate && (
                   <p className="text-xs text-orange-600 flex items-center">
                     <Clock className="h-3 w-3 mr-1" />
-                    Due: {new Date(project.due_date).toLocaleDateString()}
+                    Due: {formattedDueDate}
                   </p>
                 )}
               </div>

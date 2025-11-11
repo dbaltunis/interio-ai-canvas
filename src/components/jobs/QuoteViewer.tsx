@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUpdateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, Edit, Mail, Download, Save, X } from "lucide-react";
+import { useFormattedDate } from "@/hooks/useFormattedDate";
 
 interface Quote {
   id: string;
@@ -42,6 +43,10 @@ export const QuoteViewer = ({ quote, isEditable = false, children }: QuoteViewer
     valid_until: quote.valid_until || '',
     notes: quote.notes || '',
   });
+  
+  // Format dates using user preferences
+  const { formattedDate: formattedCreatedDate } = useFormattedDate(quote.created_at, false);
+  const { formattedDate: formattedValidUntil } = useFormattedDate(quote.valid_until, false);
 
   const updateQuote = useUpdateQuote();
   const { toast } = useToast();
@@ -117,7 +122,7 @@ export const QuoteViewer = ({ quote, isEditable = false, children }: QuoteViewer
                 Quote {quote.quote_number}
               </DialogTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Created: {new Date(quote.created_at).toLocaleDateString()}
+                Created: {formattedCreatedDate || new Date(quote.created_at).toLocaleDateString()}
               </p>
             </div>
             <div className="flex items-center space-x-2">
@@ -233,7 +238,7 @@ export const QuoteViewer = ({ quote, isEditable = false, children }: QuoteViewer
                   <div>
                     <p className="text-sm text-muted-foreground">Valid Until</p>
                     <p className="font-medium">
-                      {quote.valid_until ? new Date(quote.valid_until).toLocaleDateString() : 'Not set'}
+                      {quote.valid_until ? (formattedValidUntil || new Date(quote.valid_until).toLocaleDateString()) : 'Not set'}
                     </p>
                   </div>
                   <div>

@@ -25,6 +25,7 @@ import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useProjects, useUpdateProject, useCreateProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
+import { useFormattedDate } from "@/hooks/useFormattedDate";
 import { ProjectDetailsTab } from "./tabs/ProjectDetailsTab";
 import { RoomsTab } from "./tabs/RoomsTab";
 import { QuotationTab } from "./tabs/QuotationTab";
@@ -70,6 +71,9 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   // Use defensive loading and state management
   const project = projects?.find(p => p.id === jobId);
   const client = project?.client_id ? clients?.find(c => c.id === project.client_id) : null;
+  
+  // Format dates using user preferences
+  const { formattedDate: formattedCreatedDate } = useFormattedDate(project?.created_at, false);
   
   // Calculate unprocessed materials count
   const unprocessedMaterialsCount = useMemo(() => {
@@ -737,7 +741,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                   </h1>
                 )}
                 <span className="text-sm text-muted-foreground">
-                  {new Date(project.created_at).toLocaleDateString()}
+                  {formattedCreatedDate || new Date(project.created_at).toLocaleDateString()}
                 </span>
               </div>
             </div>
