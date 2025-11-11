@@ -260,6 +260,8 @@ export const useBulkAddToQueue = () => {
       queryClient.invalidateQueries({ queryKey: ['material-queue-v2'] });
       queryClient.invalidateQueries({ queryKey: ['material-queue-stats'] });
       queryClient.invalidateQueries({ queryKey: ['treatment-materials-status'] });
+      queryClient.invalidateQueries({ queryKey: ['project-materials-usage'] });
+      queryClient.invalidateQueries({ queryKey: ['material-queue'] });
     },
     onError: (error: any) => {
       console.error('[useBulkAddToQueue] Mutation error:', error);
