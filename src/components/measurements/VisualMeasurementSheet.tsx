@@ -95,10 +95,16 @@ export const VisualMeasurementSheet = ({
   }
   const handleInputChange = (field: string, value: string) => {
     if (!readOnly) {
-      console.log(`🔥🔥🔥 LEVEL 0: VisualMeasurementSheet handleInputChange:`, { field, value });
+      console.log(`🔥🔥🔥 LEVEL 0: VisualMeasurementSheet handleInputChange:`, {
+        field,
+        value
+      });
       onMeasurementChange(field, value);
     } else {
-      console.log(`⚠️ VisualMeasurementSheet: Ignored change (readOnly):`, { field, value });
+      console.log(`⚠️ VisualMeasurementSheet: Ignored change (readOnly):`, {
+        field,
+        value
+      });
     }
   };
 
@@ -198,9 +204,8 @@ export const VisualMeasurementSheet = ({
       manufacturing_type: measurements.manufacturing_type,
       selected_heading: measurements.selected_heading,
       heading_fullness: measurements.heading_fullness,
-      selected_lining: measurements.selected_lining,
+      selected_lining: measurements.selected_lining
     });
-    
     if (!selectedFabric || !measurements.rail_width || !measurements.drop || !selectedTemplate) {
       console.log('⚠️ LEVEL 3: Missing required data for fabric calculation');
       return null;
@@ -228,21 +233,16 @@ export const VisualMeasurementSheet = ({
         heading_fullness: measurements.heading_fullness || selectedTemplate.default_fullness,
         selected_heading: measurements.selected_heading,
         // Fabric rotation setting
-        fabric_rotated: measurements.fabric_rotated === true || measurements.fabric_rotated === 'true',
+        fabric_rotated: measurements.fabric_rotated === true || measurements.fabric_rotated === 'true'
       };
-      
+
       // ✅ FIX: Pass heading inventory so calculator can look up fullness_ratio
-      const headingInventory = inventory.filter(item => 
-        item.category === 'heading' || 
-        item.subcategory === 'heading' ||
-        item.category === 'hardware' // Some headings might be in hardware category
+      const headingInventory = inventory.filter(item => item.category === 'heading' || item.subcategory === 'heading' || item.category === 'hardware' // Some headings might be in hardware category
       );
-      
       const fabricItemWithHeadings = {
         ...selectedFabricItem,
         headingOptions: headingInventory
       };
-      
       console.log('🎯 Enriched measurements before calculation:', {
         original: measurements,
         enriched: enrichedMeasurements,
@@ -261,20 +261,16 @@ export const VisualMeasurementSheet = ({
           horizontal: selectedFabricItem.pattern_repeat_horizontal
         }
       });
-      
+
       // Use the unified calculateFabricUsage function that handles both curtains AND blinds
-      const result = calculateFabricUsage(
-        enrichedMeasurements,
-        [selectedTemplate],
-        fabricItemWithHeadings
-      );
+      const result = calculateFabricUsage(enrichedMeasurements, [selectedTemplate], fabricItemWithHeadings);
 
       // Transform the result to match the expected format for display
       const width = parseFloat(measurements.rail_width);
       const height = parseFloat(measurements.drop);
       const pooling = parseFloat(measurements.pooling_amount || "0");
       const fabricWidthCm = selectedFabricItem.fabric_width || 137;
-      
+
       // ✅ FIX: Read hems from measurements (which get initialized from template)
       const headerHem = parseFloat(enrichedMeasurements.header_hem as any) || 8;
       const bottomHem = parseFloat(enrichedMeasurements.bottom_hem as any) || 8;
@@ -283,35 +279,31 @@ export const VisualMeasurementSheet = ({
       // ✅ Returns should come from template (user confirmed this is correct)
       const returnLeft = selectedTemplate.return_left || 0;
       const returnRight = selectedTemplate.return_right || 0;
-      
       const panelConfig = measurements.curtain_type || (selectedTemplate as any).panel_configuration || selectedTemplate.curtain_type;
       const curtainCount = panelConfig === 'pair' ? 2 : 1;
       const totalSideHems = sideHems * 2 * curtainCount;
       const totalDrop = height + headerHem + bottomHem + pooling;
-      
       const pricePerMeter = selectedFabricItem.price_per_meter || selectedFabricItem.selling_price || 0;
       const fabricRotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
-      
       console.log('VisualMeasurementSheet using unified fabric calculator:', {
         treatmentCategory: selectedTemplate.treatment_category,
         isBlind: /blind/i.test(selectedTemplate.treatment_category || ''),
         result,
-        measurements: { width, height, pooling }
+        measurements: {
+          width,
+          height,
+          pooling
+        }
       });
-
-      const calculatedTotalCost = result.details?.sqm ? (result.details.sqm * pricePerMeter) : (result.meters * pricePerMeter);
-      
+      const calculatedTotalCost = result.details?.sqm ? result.details.sqm * pricePerMeter : result.meters * pricePerMeter;
       console.log('📊 VisualMeasurementSheet fabricCalculation:', {
         hasBlindData: !!result.details?.sqm,
         sqm: result.details?.sqm,
         linearMeters: result.meters,
         pricePerMeter,
         calculatedTotalCost,
-        formula: result.details?.sqm 
-          ? `${result.details.sqm.toFixed(2)} sqm × £${pricePerMeter.toFixed(2)} = £${calculatedTotalCost.toFixed(2)}`
-          : `${result.meters.toFixed(2)} m × £${pricePerMeter.toFixed(2)} = £${calculatedTotalCost.toFixed(2)}`
+        formula: result.details?.sqm ? `${result.details.sqm.toFixed(2)} sqm × £${pricePerMeter.toFixed(2)} = £${calculatedTotalCost.toFixed(2)}` : `${result.meters.toFixed(2)} m × £${pricePerMeter.toFixed(2)} = £${calculatedTotalCost.toFixed(2)}`
       });
-      
       const fabricCalcResult = {
         linearMeters: result.meters,
         totalCost: calculatedTotalCost,
@@ -342,32 +334,25 @@ export const VisualMeasurementSheet = ({
         widthCalcNote: result.details?.widthCalcNote,
         heightCalcNote: result.details?.heightCalcNote
       };
-      
       console.log('🎯 VisualMeasurementSheet FINAL fabricCalculation:', fabricCalcResult);
-      
       return fabricCalcResult;
     } catch (error) {
       console.error('Error calculating fabric usage:', error);
     }
     return null;
-  }, [
-    selectedFabric, 
-    measurements.rail_width, 
-    measurements.drop, 
-    measurements.curtain_type, 
-    measurements.fabric_rotated,
-    measurements.selected_pricing_method, // ✅ ADD: Triggers recalc when pricing method changes
-    measurements.manufacturing_type, // ✅ ADD: Triggers recalc when manufacturing type changes
-    measurements.selected_heading, // ✅ ADD: Triggers recalc when heading changes
-    measurements.heading_fullness, // ✅ ADD: Triggers recalc when fullness changes
-    measurements.selected_lining, // ✅ ADD: Triggers recalc when lining changes
-    measurements.header_hem, // ✅ ADD: Triggers recalc when hems change
-    measurements.bottom_hem,
-    measurements.side_hem,
-    measurements.seam_hem,
-    selectedTemplate, 
-    inventory
-  ]);
+  }, [selectedFabric, measurements.rail_width, measurements.drop, measurements.curtain_type, measurements.fabric_rotated, measurements.selected_pricing_method,
+  // ✅ ADD: Triggers recalc when pricing method changes
+  measurements.manufacturing_type,
+  // ✅ ADD: Triggers recalc when manufacturing type changes
+  measurements.selected_heading,
+  // ✅ ADD: Triggers recalc when heading changes
+  measurements.heading_fullness,
+  // ✅ ADD: Triggers recalc when fullness changes
+  measurements.selected_lining,
+  // ✅ ADD: Triggers recalc when lining changes
+  measurements.header_hem,
+  // ✅ ADD: Triggers recalc when hems change
+  measurements.bottom_hem, measurements.side_hem, measurements.seam_hem, selectedTemplate, inventory]);
 
   // Notify parent when fabric calculation changes
   useEffect(() => {
@@ -434,30 +419,20 @@ export const VisualMeasurementSheet = ({
               <div className="w-full lg:w-2/5 flex-shrink-0 space-y-1.5 md:space-y-2">
                 {/* Original Visual Diagram first */}
                 {/* Specialized visualizers for panel glide, shutters, and awnings */}
-                {(treatmentCategory === 'panel_glide' || treatmentCategory === 'plantation_shutters' || treatmentCategory === 'shutters' || treatmentCategory === 'awning') ? (
-                  <TreatmentPreviewEngine
-                    windowType={windowType}
-                    treatmentType={treatmentCategory || treatmentType}
-                    measurements={{
-                      ...measurements,
-                      width: parseFloat(measurements.rail_width || measurements.width || '200'),
-                      height: parseFloat(measurements.drop || measurements.height || '200'),
-                      drop: parseFloat(measurements.drop || measurements.height || '200'),
-                      frame_type: measurements.frame_type,
-                      control_type: measurements.control_type,
-                      fabric_pattern: measurements.fabric_pattern,
-                      valance_style: measurements.valance_style,
-                      projection: measurements.projection
-                    }}
-                    template={selectedTemplate}
-                    selectedItems={{
-                      material: selectedFabric ? inventory.find(item => item.id === selectedFabric) : undefined
-                    }}
-                    hideDetails={true}
-                  />
-                ) :
-                /* Blinds visual */
-                (treatmentCategory === 'blinds' || treatmentCategory === 'roller_blinds' || treatmentCategory === 'venetian_blinds' || treatmentCategory === 'roman_blinds' || treatmentCategory === 'cellular_blinds' || treatmentCategory === 'cellular_shades' || treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'roller_blind' || selectedTemplate?.curtain_type === 'roman_blind' || selectedTemplate?.curtain_type === 'venetian_blind' || selectedTemplate?.curtain_type === 'vertical_blind' || selectedTemplate?.curtain_type === 'cellular_blind' || selectedTemplate?.curtain_type === 'cellular_shade') ? <DynamicBlindVisual windowType={windowType} measurements={measurements} template={selectedTemplate} blindType={treatmentCategory === 'roller_blinds' || treatmentCategory === 'blinds' || selectedTemplate?.curtain_type === 'roller_blind' ? 'roller' : treatmentCategory === 'venetian_blinds' || selectedTemplate?.curtain_type === 'venetian_blind' ? 'venetian' : treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'vertical_blind' ? 'vertical' : treatmentCategory === 'roman_blinds' || selectedTemplate?.curtain_type === 'roman_blind' ? 'roman' : treatmentCategory === 'cellular_blinds' || treatmentCategory === 'cellular_shades' || selectedTemplate?.curtain_type === 'cellular_blind' || selectedTemplate?.curtain_type === 'cellular_shade' ? 'cellular' : 'roller'} mountType={measurements.mount_type || 'outside'} chainSide={measurements.chain_side || 'right'} controlType={measurements.control_type} material={selectedFabricItem} /> : (/* Curtains visual */
+                {treatmentCategory === 'panel_glide' || treatmentCategory === 'plantation_shutters' || treatmentCategory === 'shutters' || treatmentCategory === 'awning' ? <TreatmentPreviewEngine windowType={windowType} treatmentType={treatmentCategory || treatmentType} measurements={{
+              ...measurements,
+              width: parseFloat(measurements.rail_width || measurements.width || '200'),
+              height: parseFloat(measurements.drop || measurements.height || '200'),
+              drop: parseFloat(measurements.drop || measurements.height || '200'),
+              frame_type: measurements.frame_type,
+              control_type: measurements.control_type,
+              fabric_pattern: measurements.fabric_pattern,
+              valance_style: measurements.valance_style,
+              projection: measurements.projection
+            }} template={selectedTemplate} selectedItems={{
+              material: selectedFabric ? inventory.find(item => item.id === selectedFabric) : undefined
+            }} hideDetails={true} /> : /* Blinds visual */
+            treatmentCategory === 'blinds' || treatmentCategory === 'roller_blinds' || treatmentCategory === 'venetian_blinds' || treatmentCategory === 'roman_blinds' || treatmentCategory === 'cellular_blinds' || treatmentCategory === 'cellular_shades' || treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'roller_blind' || selectedTemplate?.curtain_type === 'roman_blind' || selectedTemplate?.curtain_type === 'venetian_blind' || selectedTemplate?.curtain_type === 'vertical_blind' || selectedTemplate?.curtain_type === 'cellular_blind' || selectedTemplate?.curtain_type === 'cellular_shade' ? <DynamicBlindVisual windowType={windowType} measurements={measurements} template={selectedTemplate} blindType={treatmentCategory === 'roller_blinds' || treatmentCategory === 'blinds' || selectedTemplate?.curtain_type === 'roller_blind' ? 'roller' : treatmentCategory === 'venetian_blinds' || selectedTemplate?.curtain_type === 'venetian_blind' ? 'venetian' : treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'vertical_blind' ? 'vertical' : treatmentCategory === 'roman_blinds' || selectedTemplate?.curtain_type === 'roman_blind' ? 'roman' : treatmentCategory === 'cellular_blinds' || treatmentCategory === 'cellular_shades' || selectedTemplate?.curtain_type === 'cellular_blind' || selectedTemplate?.curtain_type === 'cellular_shade' ? 'cellular' : 'roller'} mountType={measurements.mount_type || 'outside'} chainSide={measurements.chain_side || 'right'} controlType={measurements.control_type} material={selectedFabricItem} /> : (/* Curtains visual */
             <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
 
               {/* Hardware - Track/Rod that follows window shape */}
@@ -718,9 +693,7 @@ export const VisualMeasurementSheet = ({
 
               {/* Floor Line */}
               <div className="absolute bottom-4 left-8 right-8 border-t-4 border-muted-foreground">
-                <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-base font-bold text-muted-foreground">
-                  Floor Line
-                </span>
+                
               </div>
 
               {/* Pooling measurement indicator - VERTICAL to measure pooled fabric height */}
@@ -777,16 +750,7 @@ export const VisualMeasurementSheet = ({
             <div className="lg:w-3/5 space-y-2">
               {/* ESSENTIAL MEASUREMENTS - Only show for curtains and blinds, NOT for wallpaper */}
               {treatmentCategory as string !== 'wallpaper' && <div className="container-level-1 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21l3-3 9.5-9.5a1.5 1.5 0 000-2.121L18.379 5.257a1.5 1.5 0 00-2.121 0L6.5 14.5 7 21z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="text-base font-bold text-card-foreground">Enter measurements</h4>
-                  </div>
-                </div>
+                
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -840,14 +804,12 @@ export const VisualMeasurementSheet = ({
 
               {/* Curtain Configuration - Panel Setup (Only for curtains) */}
               {treatmentCategory === 'curtains' && <div className="container-level-1 rounded-lg p-3">
-              <h4 className="text-base font-bold text-card-foreground mb-3">Curtain Configuration</h4>
+              
               
               <div className="space-y-2">
                 <div>
                   <Label className="text-xs font-semibold mb-2 block text-card-foreground">Curtain Type</Label>
-                  <div className="text-[10px] text-muted-foreground mb-2">
-                    Pair = 2 panels (4 side hems) | Single = 1 panel (2 side hems)
-                  </div>
+                  
                   <RadioGroup value={curtainType} onValueChange={value => {
                     console.log("Curtain type changed to:", value);
                     handleInputChange("curtain_type", value);
@@ -973,56 +935,21 @@ export const VisualMeasurementSheet = ({
 
 
               {/* CURTAIN-SPECIFIC FIELDS - Dynamic Options from Template */}
-              {treatmentType === 'curtains' && (
-                <div className="space-y-3 px-3">
-                  <DynamicCurtainOptions
-                    measurements={measurements}
-                    onChange={onMeasurementChange}
-                    template={selectedTemplate}
-                    selectedEyeletRing={measurements.selected_eyelet_ring}
-                    onEyeletRingChange={(ringId) => onMeasurementChange('selected_eyelet_ring', ringId)}
-                    onOptionPriceChange={(optionType, price, name) => {
-                      console.log(`Option ${optionType} changed: ${name} - ${price}`);
-                    }}
-                  />
-                </div>
-              )}
+              {treatmentType === 'curtains' && <div className="space-y-3 px-3">
+                  <DynamicCurtainOptions measurements={measurements} onChange={onMeasurementChange} template={selectedTemplate} selectedEyeletRing={measurements.selected_eyelet_ring} onEyeletRingChange={ringId => onMeasurementChange('selected_eyelet_ring', ringId)} onOptionPriceChange={(optionType, price, name) => {
+                console.log(`Option ${optionType} changed: ${name} - ${price}`);
+              }} />
+                </div>}
 
               {/* BLIND-SPECIFIC FIELDS - Dynamic Options */}
               {/* Show dynamic options for all blind and shutter types */}
-              {(treatmentType === 'blinds' ||
-                treatmentType === 'roller_blinds' || 
-                treatmentType === 'venetian_blinds' || 
-                treatmentType === 'roman_blinds' || 
-                treatmentType === 'vertical_blinds' || 
-                treatmentType === 'cellular_blinds' || 
-                treatmentType === 'cellular_shades' || 
-                treatmentType === 'panel_glide' || 
-                treatmentType === 'plantation_shutters' ||
-                treatmentType === 'shutters' ||
-                treatmentType === 'awning') && (
-                <div className="space-y-3 px-3">
-                  <DynamicRollerBlindFields
-                    measurements={measurements} 
-                    onChange={handleInputChange} 
-                    templateId={selectedTemplate?.id} 
-                    treatmentCategory={treatmentType} 
-                    readOnly={readOnly} 
-                    onOptionPriceChange={handleOptionPriceChange} 
-                    selectedOptions={selectedOptions} 
-                  />
-                </div>
-              )}
+              {(treatmentType === 'blinds' || treatmentType === 'roller_blinds' || treatmentType === 'venetian_blinds' || treatmentType === 'roman_blinds' || treatmentType === 'vertical_blinds' || treatmentType === 'cellular_blinds' || treatmentType === 'cellular_shades' || treatmentType === 'panel_glide' || treatmentType === 'plantation_shutters' || treatmentType === 'shutters' || treatmentType === 'awning') && <div className="space-y-3 px-3">
+                  <DynamicRollerBlindFields measurements={measurements} onChange={handleInputChange} templateId={selectedTemplate?.id} treatmentCategory={treatmentType} readOnly={readOnly} onOptionPriceChange={handleOptionPriceChange} selectedOptions={selectedOptions} />
+                </div>}
 
               {/* Additional Measurements for Curtain Makers - ONLY show for curtains */}
               {treatmentType === 'curtains' && <details className="group">
-                  <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-foreground hover:text-muted-foreground transition-colors p-2 bg-muted rounded border">
-                    <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                    More Details for Curtain Makers
-                    <span className="text-xs text-muted-foreground ml-auto">Optional measurements - Click to expand</span>
-                  </summary>
+                  
                 
                 <div className="mt-3 space-y-4">
                   {/* Professional Extension Measurements */}
