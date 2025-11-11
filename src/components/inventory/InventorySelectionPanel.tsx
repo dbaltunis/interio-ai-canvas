@@ -568,11 +568,9 @@ export const InventorySelectionPanel = ({
       </Dialog>
       </div>
 
-      {/* Category tabs */}
+      {/* Category tabs - Hidden as per user request */}
       <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-        <TabsList className="grid w-full h-9" style={{
-        gridTemplateColumns: `repeat(${availableTabs.length}, 1fr)`
-      }}>
+        <TabsList className="hidden">
           {availableTabs.map(({
           key,
           label,

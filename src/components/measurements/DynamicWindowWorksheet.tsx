@@ -1400,7 +1400,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                   disabled={readOnly} 
                   className={`px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1 ${
                     activeTab === step 
-                      ? 'bg-blue-600 text-white shadow-sm' 
+                      ? 'bg-blue-500/20 text-blue-700 border-2 border-blue-400 animate-pulse shadow-sm' 
                       : isCompleted 
                       ? 'bg-green-500/10 text-green-700 hover:bg-green-500/20' 
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -1516,41 +1516,8 @@ export const DynamicWindowWorksheet = forwardRef<{
         {/* Inventory Selection */}
         <TabsContent value="inventory" className="space-y-3 sm:space-y-4">
           <Card>
-            <CardContent className="pt-4 sm:pt-6 min-h-[350px] sm:min-h-[500px] flex flex-col">
+            <CardContent className="pt-4 sm:pt-6 min-h-[350px] sm:min-h-[500px]">
               <InventorySelectionPanel treatmentType={selectedTreatmentType} selectedItems={selectedItems} onItemSelect={handleItemSelect} onItemDeselect={handleItemDeselect} measurements={measurements} treatmentCategory={treatmentCategory} />
-              
-              <div className="mt-auto space-y-3">
-                {Object.values(selectedItems).some(item => item) && (
-                  <div className="p-2 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                      {Object.entries(selectedItems).map(([category, item]) => item && (
-                        <span key={category} className="text-xs">
-                          <span className="font-medium capitalize">{category}:</span> {item.name}
-                        </span>
-                      )).filter(Boolean).reduce((prev, curr) => [prev, ' • ', curr] as any)}
-                    </div>
-                  </div>
-                )}
-                
-                {!Object.values(selectedItems).some(item => item) && (
-                  // Only show "no selection required" for treatments that truly don't need fabric
-                  (treatmentCategory === 'wallpaper' || treatmentCategory.includes('blind') || treatmentCategory.includes('shutter')) ? (
-                    <div className="p-2 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
-                      <p className="text-xs text-muted-foreground flex items-center gap-2">
-                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                        {treatmentCategory === 'wallpaper' ? 'Select wallpaper' : 'No inventory required'}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="p-2 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
-                      <p className="text-xs text-amber-700 dark:text-amber-300">
-                        Please select fabric
-                      </p>
-                    </div>
-                  )
-                )}
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
