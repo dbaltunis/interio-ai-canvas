@@ -26,13 +26,7 @@ export const WindowTypeSelector = ({
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Set default selection to standard window after loading
-  useEffect(() => {
-    if (windowTypes.length > 0 && !selectedWindowType) {
-      const standardWindow = windowTypes.find(wt => wt.visual_key === 'standard') || windowTypes[0];
-      onWindowTypeChange(standardWindow);
-    }
-  }, [windowTypes, selectedWindowType, onWindowTypeChange]);
+  // Auto-selection removed - users must manually select their window type
   useEffect(() => {
     const fetchWindowTypes = async () => {
       try {
