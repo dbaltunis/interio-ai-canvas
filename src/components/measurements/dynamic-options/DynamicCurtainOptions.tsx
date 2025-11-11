@@ -223,7 +223,7 @@ export const DynamicCurtainOptions = ({
     : headingOptions;
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-3">
       {/* Validation Alert */}
       {(validation.errors.length > 0 || validation.warnings.length > 0) && (
         <ValidationAlert 
@@ -234,7 +234,7 @@ export const DynamicCurtainOptions = ({
 
       {/* Heading Selection */}
       {availableHeadings.length > 0 && (
-        <div className="space-y-2 stagger-item">
+        <div className="space-y-2">
           <Label className="text-sm font-medium flex items-center gap-2">
             Heading Type
             <Badge variant="destructive" className="text-xs">Required</Badge>
@@ -244,7 +244,7 @@ export const DynamicCurtainOptions = ({
             onValueChange={handleHeadingChange}
             disabled={readOnly}
           >
-            <SelectTrigger className="bg-background border-input transition-all duration-200 hover:border-primary/50">
+            <SelectTrigger className="bg-background border-input">
               <SelectValue placeholder="Select heading type" />
             </SelectTrigger>
             <SelectContent 

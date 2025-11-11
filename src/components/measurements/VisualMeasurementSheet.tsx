@@ -973,24 +973,20 @@ export const VisualMeasurementSheet = ({
 
 
               {/* CURTAIN-SPECIFIC FIELDS - Dynamic Options from Template */}
-              {treatmentType === 'curtains' && <Card className="border-primary/20 bg-primary/5">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Curtain Options</CardTitle>
-                    <p className="text-xs text-muted-foreground">Configure options from your template settings</p>
-                  </CardHeader>
-                  <CardContent className="space-y-4 pt-4">
-                    <DynamicCurtainOptions
-                      measurements={measurements}
-                      onChange={onMeasurementChange}
-                      template={selectedTemplate}
-                      selectedEyeletRing={measurements.selected_eyelet_ring}
-                      onEyeletRingChange={(ringId) => onMeasurementChange('selected_eyelet_ring', ringId)}
-                      onOptionPriceChange={(optionType, price, name) => {
-                        console.log(`Option ${optionType} changed: ${name} - ${price}`);
-                      }}
-                    />
-                  </CardContent>
-                </Card>}
+              {treatmentType === 'curtains' && (
+                <div className="space-y-3 px-3">
+                  <DynamicCurtainOptions
+                    measurements={measurements}
+                    onChange={onMeasurementChange}
+                    template={selectedTemplate}
+                    selectedEyeletRing={measurements.selected_eyelet_ring}
+                    onEyeletRingChange={(ringId) => onMeasurementChange('selected_eyelet_ring', ringId)}
+                    onOptionPriceChange={(optionType, price, name) => {
+                      console.log(`Option ${optionType} changed: ${name} - ${price}`);
+                    }}
+                  />
+                </div>
+              )}
 
               {/* BLIND-SPECIFIC FIELDS - Dynamic Options */}
               {/* Show dynamic options for all blind and shutter types */}
