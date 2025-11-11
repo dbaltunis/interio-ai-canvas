@@ -12,11 +12,13 @@ import { useUserNotificationSettings, useCreateOrUpdateNotificationSettings } fr
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, User, Bell, Globe, Shield, Lock, Eye, EyeOff } from "lucide-react";
+import { Upload, User, Bell, Globe, Shield, Lock, Eye, EyeOff, Calendar, Clock } from "lucide-react";
 import { LoadingFallback } from "@/components/ui/loading-fallback";
 import { FormSection } from "@/components/ui/form-section";
 import { FormFieldGroup } from "@/components/ui/form-field-group";
 import { compressImage, needsCompression, formatFileSize } from "@/utils/imageUtils";
+import { useFormattedDate, useFormattedTime } from "@/hooks/useFormattedDate";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 export const PersonalSettingsTab = () => {
   const {
     data: userProfile,
@@ -760,6 +762,9 @@ export const PersonalSettingsTab = () => {
             </Select>
           </FormFieldGroup>
         </div>
+
+        {/* Date & Time Preview */}
+        <DateTimePreview />
       </FormSection>
 
       {/* Security Settings */}
@@ -807,4 +812,49 @@ export const PersonalSettingsTab = () => {
         </div>
       </FormSection>
     </div>;
+};
+
+// Date & Time Preview Component
+const DateTimePreview = () => {
+  const now = new Date();
+  const { formattedDate: dateOnly } = useFormattedDate(now, false);
+  const { formattedDate: dateWithTime } = useFormattedDate(now, true);
+  const { formattedTime: timeOnly } = useFormattedTime(now);
+
+  return (
+    <Alert className="bg-muted/30 border-primary/20">
+      <div className="flex items-start gap-3">
+        <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 text-primary shrink-0">
+          <Calendar className="h-5 w-5" />
+        </div>
+        <div className="flex-1 space-y-2">
+          <h4 className="font-medium text-sm flex items-center gap-2">
+            Format Preview
+          </h4>
+          <AlertDescription className="space-y-2 text-sm">
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between p-2 rounded-md bg-background/50">
+                <span className="text-muted-foreground">Date only:</span>
+                <span className="font-mono font-medium">{dateOnly || "Loading..."}</span>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-md bg-background/50">
+                <span className="text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  Time only:
+                </span>
+                <span className="font-mono font-medium">{timeOnly || "Loading..."}</span>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-md bg-background/50">
+                <span className="text-muted-foreground">Date + Time:</span>
+                <span className="font-mono font-medium">{dateWithTime || "Loading..."}</span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground pt-2 border-t">
+              This preview shows how dates and times will appear throughout the app based on your current settings.
+            </p>
+          </AlertDescription>
+        </div>
+      </div>
+    </Alert>
+  );
 };
