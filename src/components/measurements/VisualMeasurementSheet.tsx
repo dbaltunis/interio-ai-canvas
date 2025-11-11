@@ -356,6 +356,14 @@ export const VisualMeasurementSheet = ({
 
   // Notify parent when fabric calculation changes
   useEffect(() => {
+    console.log('🔄 VisualMeasurementSheet: Fabric calculation changed, notifying parent:', {
+      hasFabricCalculation: !!fabricCalculation,
+      totalCost: fabricCalculation?.totalCost,
+      linearMeters: fabricCalculation?.linearMeters,
+      pricePerMeter: fabricCalculation?.pricePerMeter,
+      hasCallback: !!onFabricCalculationChange
+    });
+    
     if (onFabricCalculationChange) {
       onFabricCalculationChange(fabricCalculation);
     }

@@ -1585,6 +1585,14 @@ export const DynamicWindowWorksheet = forwardRef<{
 
                     // Calculate fabric cost
                     const fabricCost = fabricCalculation.totalCost || 0;
+                    
+                    console.log('💰 [UI] Fabric cost from fabricCalculation:', {
+                      fabricCalculationTotalCost: fabricCalculation.totalCost,
+                      fabricCalculationLinearMeters: fabricCalculation.linearMeters,
+                      fabricCalculationPricePerMeter: fabricCalculation.pricePerMeter,
+                      calculatedFabricCost: fabricCost,
+                      fullFabricCalculation: fabricCalculation
+                    });
 
                     // Calculate lining cost
                     let liningCost = 0;
