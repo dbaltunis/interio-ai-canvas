@@ -36,7 +36,7 @@ interface ResponsiveHeaderProps {
 const navItems = [
   { id: "dashboard", label: "Home", icon: LayoutDashboard, tourId: "dashboard-tab" },
   { id: "projects", label: "Jobs", icon: FolderOpen, tourId: "projects-tab", permission: "view_jobs" },
-  { id: "clients", label: "CRM", icon: Users, tourId: "clients-tab", permission: "view_clients" },
+  { id: "clients", label: "Clients", icon: Users, tourId: "clients-tab", permission: "view_clients" },
   { id: "quotes", label: "Emails", icon: FileText, tourId: "emails-tab", permission: "view_emails" },
   { id: "calendar", label: "Calendar", icon: Calendar, tourId: "calendar-tab", permission: "view_calendar" },
   { id: "inventory", label: "Library", icon: Package, tourId: "library-tab", permission: "view_inventory" },
