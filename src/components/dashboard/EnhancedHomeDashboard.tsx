@@ -88,8 +88,14 @@ export const EnhancedHomeDashboard = () => {
     console.log('[Dashboard] Integration status:', { hasOnlineStore, isShopifyConnected });
     
     const filtered = widgets.filter(widget => {
-      // Filter by integration type first - EXPLICIT checks
+      // MUTUAL EXCLUSIVITY: Only one e-commerce platform can be active
       if (widget.integrationType === 'shopify') {
+        // Hide Shopify widgets if InteriorApp store exists
+        if (hasOnlineStore) {
+          console.log(`[Dashboard] Hiding ${widget.id} - InteriorApp store exists (mutual exclusivity)`);
+          return false;
+        }
+        // Show Shopify widgets only if Shopify is connected
         if (!isShopifyConnected) {
           console.log(`[Dashboard] Hiding ${widget.id} - Shopify not connected`);
           return false;
@@ -97,6 +103,12 @@ export const EnhancedHomeDashboard = () => {
       }
       
       if (widget.integrationType === 'online_store') {
+        // Hide InteriorApp store widgets if Shopify is connected
+        if (isShopifyConnected) {
+          console.log(`[Dashboard] Hiding ${widget.id} - Shopify connected (mutual exclusivity)`);
+          return false;
+        }
+        // Show InteriorApp store widgets only if store exists
         if (hasOnlineStore !== true) {
           console.log(`[Dashboard] Hiding ${widget.id} - No online store (hasOnlineStore=${hasOnlineStore})`);
           return false;
