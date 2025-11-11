@@ -52,41 +52,9 @@ export const OnlineStoreTab = () => {
     );
   }
 
-  const hasOnlineStoreFeature = hasFeature('online_store');
-
-  const handleLaunchStoreClick = () => {
-    if (!hasOnlineStoreFeature) {
-      // User doesn't have feature - show upgrade prompt
-      return;
-    }
-    setShowCreationFlow(true);
-  };
-
   if (!store) {
     return (
-      <>
-        {!hasOnlineStoreFeature && (
-          <Alert className="mb-6 border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
-            <Lock className="h-5 w-5 text-primary" />
-            <AlertDescription className="flex items-center justify-between gap-4">
-              <div>
-                <p className="font-medium text-foreground mb-1">
-                  Upgrade to create your online store
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Launch a professional online store to accept orders, bookings, and payments.
-                </p>
-              </div>
-              <Button
-                onClick={() => navigate('/settings/subscription')}
-                className="shrink-0"
-              >
-                View Plans
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-        
+      <>        
         <Card>
           <CardHeader className="text-center pb-4">
             <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -130,9 +98,9 @@ export const OnlineStoreTab = () => {
                 <div className="mx-auto w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-yellow-500 flex items-center justify-center mb-3">
                   <Zap className="h-6 w-6 text-white" />
                 </div>
-                <h3 className="font-semibold mb-2">Instant Live</h3>
+                <h3 className="font-semibold mb-2">Prepare & Launch</h3>
                 <p className="text-xs text-muted-foreground">
-                  Store published immediately
+                  Publish when ready
                 </p>
               </div>
             </div>
@@ -140,21 +108,11 @@ export const OnlineStoreTab = () => {
             <div className="flex justify-center pt-6">
               <Button 
                 size="lg" 
-                onClick={handleLaunchStoreClick} 
-                disabled={!hasOnlineStoreFeature}
+                onClick={() => setShowCreationFlow(true)}
                 className="text-lg px-8 py-6"
               >
-                {hasOnlineStoreFeature ? (
-                  <>
-                    <Zap className="h-6 w-6 mr-2" />
-                    Launch Store in 2 Minutes
-                  </>
-                ) : (
-                  <>
-                    <Lock className="h-5 w-5 mr-2" />
-                    Upgrade to Launch Store
-                  </>
-                )}
+                <Zap className="h-6 w-6 mr-2" />
+                Launch Store in 2 Minutes
               </Button>
             </div>
           </CardContent>
