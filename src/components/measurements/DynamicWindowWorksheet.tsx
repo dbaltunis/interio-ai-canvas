@@ -1400,11 +1400,9 @@ export const DynamicWindowWorksheet = forwardRef<{
                   disabled={readOnly} 
                   className={`px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1 ${
                     activeTab === step 
-                      ? 'bg-primary text-primary-foreground' 
+                      ? 'bg-blue-600 text-white shadow-sm' 
                       : isCompleted 
                       ? 'bg-green-500/10 text-green-700 hover:bg-green-500/20' 
-                      : isNextStep
-                      ? 'bg-blue-500/20 text-blue-700 hover:bg-blue-500/30 border-2 border-blue-400 animate-pulse shadow-sm' 
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   } ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`}
                 >
@@ -1412,7 +1410,11 @@ export const DynamicWindowWorksheet = forwardRef<{
                   <StepIcon className="h-3.5 w-3.5 sm:hidden" />
                   <span className="hidden sm:inline">{stepNames[index]}</span>
                 </button>
-                {index < 3 && <div className="w-1 sm:w-2 h-[1px] bg-border" />}
+                {index < 3 && (
+                  <div className="flex items-center justify-center">
+                    <span className="text-green-600 text-sm font-bold">→</span>
+                  </div>
+                )}
               </div>;
         })}
         </div>
