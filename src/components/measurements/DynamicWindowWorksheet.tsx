@@ -1273,6 +1273,9 @@ export const DynamicWindowWorksheet = forwardRef<{
       [category]: processedItem
     }));
     
+    // Auto-navigate to measurements after selecting inventory item
+    setTimeout(() => setActiveTab('measurements'), 300);
+    
     // Auto-detect treatment type from fabric category
     if (category === 'fabric' && item?.category) {
       const fabricCat = item.category.toLowerCase();
@@ -1421,7 +1424,15 @@ export const DynamicWindowWorksheet = forwardRef<{
         <TabsContent value="window-type" className="space-y-3 sm:space-y-4">
           <Card>
             <CardContent className="pt-4 sm:pt-6 min-h-[350px] sm:min-h-[500px] flex flex-col">
-              <WindowTypeSelector selectedWindowType={selectedWindowType} onWindowTypeChange={setSelectedWindowType} readOnly={readOnly} />
+              <WindowTypeSelector 
+                selectedWindowType={selectedWindowType} 
+                onWindowTypeChange={(windowType) => {
+                  setSelectedWindowType(windowType);
+                  // Auto-navigate to treatment selection after selecting window type
+                  setTimeout(() => setActiveTab('treatment'), 300);
+                }} 
+                readOnly={readOnly} 
+              />
               
               <div className="mt-auto space-y-3">
                 {selectedWindowType && (
@@ -1477,6 +1488,9 @@ export const DynamicWindowWorksheet = forwardRef<{
                         console.error('❌ Error saving template name:', error);
                       }
                     }
+                    
+                    // Auto-navigate to inventory selection after selecting treatment
+                    setTimeout(() => setActiveTab('inventory'), 300);
                   }
                 }} 
                 disabled={readOnly}
