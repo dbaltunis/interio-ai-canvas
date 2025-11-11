@@ -35,34 +35,49 @@ export const HierarchicalOptions = ({
           )}
 
           {/* Apply dropdown pattern to all categories */}
-          <div className="space-y-4">
-            {category.subcategories?.map((subcategory) => (
-              <div key={subcategory.id} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h5 className="font-medium text-gray-800">{subcategory.name}</h5>
-                  <div className="w-64">
-                    <Select
-                      value={hierarchicalSelections[`${category.id}_${subcategory.id}`] || ""}
-                      onValueChange={(value) => onHierarchicalSelection(category.id, subcategory.id, value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select option..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subcategory.sub_subcategories?.map((subSub) => (
-                          <SelectItem key={subSub.id} value={subSub.id}>
-                            <div className="flex items-center justify-between w-full">
-                              <span>{subSub.name}</span>
-                              <Badge variant="outline" className="ml-2">
-                                {formatCurrency(subSub.base_price, currency)}
-                              </Badge>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+          <div className="space-y-3">
+            {category.subcategories?.map((subcategory) => {
+              const selectedValue = hierarchicalSelections[`${category.id}_${subcategory.id}`];
+              const selectedOption = subcategory.sub_subcategories?.find(s => s.id === selectedValue);
+              
+              return (
+                <div key={subcategory.id} className="space-y-3">
+                  <div className="grid grid-cols-[200px_1fr] gap-4 items-center">
+                    <h5 className="font-medium text-foreground">{subcategory.name}</h5>
+                    <div className="flex-1">
+                      <Select
+                        value={selectedValue || ""}
+                        onValueChange={(value) => onHierarchicalSelection(category.id, subcategory.id, value)}
+                      >
+                        <SelectTrigger className="bg-background">
+                          <SelectValue>
+                            {selectedOption ? (
+                              <div className="flex items-center justify-between w-full">
+                                <span>{selectedOption.name}</span>
+                                <Badge variant="outline" className="ml-2">
+                                  {formatCurrency(selectedOption.base_price, currency)}
+                                </Badge>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">Select {subcategory.name}</span>
+                            )}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          {subcategory.sub_subcategories?.map((subSub) => (
+                            <SelectItem key={subSub.id} value={subSub.id}>
+                              <div className="flex items-center justify-between w-full">
+                                <span>{subSub.name}</span>
+                                <Badge variant="outline" className="ml-2">
+                                  {formatCurrency(subSub.base_price, currency)}
+                                </Badge>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                </div>
 
                 {/* Show sub-subcategory extras only when a sub-subcategory is selected */}
                 {hierarchicalSelections[`${category.id}_${subcategory.id}`] && (
@@ -116,17 +131,17 @@ export const HierarchicalOptions = ({
                 {category.name.toLowerCase().includes('headrail') && 
                  hierarchicalSelections[`${category.id}_${subcategory.id}`] === 'motorised' && (
                   <div className="space-y-3 ml-4">
-                    <div className="flex items-center justify-between">
-                      <h5 className="font-medium text-gray-800">Remote</h5>
-                      <div className="w-64">
+                    <div className="grid grid-cols-[200px_1fr] gap-4 items-center">
+                      <h5 className="font-medium text-foreground">Remote</h5>
+                      <div className="flex-1">
                         <Select
                           value={hierarchicalSelections[`${category.id}_remote`] || ""}
                           onValueChange={(value) => onHierarchicalSelection(category.id, "remote", value)}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-background">
                             <SelectValue placeholder="Select remote..." />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-background z-50">
                             <SelectItem value="basic_remote">
                               <div className="flex items-center justify-between w-full">
                                 <span>Basic Remote</span>
@@ -158,7 +173,8 @@ export const HierarchicalOptions = ({
                   </div>
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       ))}

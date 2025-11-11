@@ -25,7 +25,7 @@ export const WindowCoveringOptionsCard = ({
   onOptionToggle 
 }: WindowCoveringOptionsCardProps) => {
   const { units } = useMeasurementUnits();
-  const { hierarchicalSelections, handleHierarchicalSelection } = useHierarchicalSelections();
+  const { hierarchicalSelections, handleHierarchicalSelection } = useHierarchicalSelections(hierarchicalOptions);
 
   const handleHierarchicalSelectionWrapper = (categoryId: string, subcategoryId: string, value: string) => {
     handleHierarchicalSelection(categoryId, subcategoryId, value, onOptionToggle);
