@@ -855,12 +855,15 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   return (
     <TooltipProvider>
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="basic">Basic</TabsTrigger>
           {formData.curtain_type === 'curtain' ? (
             <TabsTrigger value="heading">Heading</TabsTrigger>
           ) : (
-            <TabsTrigger value="treatment_settings">Treatment Settings</TabsTrigger>
+            <TabsTrigger value="treatment_settings">Options</TabsTrigger>
+          )}
+          {formData.curtain_type === 'curtain' && (
+            <TabsTrigger value="curtain_options">Options</TabsTrigger>
           )}
           <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
@@ -1041,6 +1044,121 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
               onLiningTypesChange={(types) => handleInputChange("lining_types", types)}
             />
           </TabsContent>
+
+          {/* Curtain Options Tab - For Curtain-Specific Options */}
+          {formData.curtain_type === 'curtain' && (
+            <TabsContent value="curtain_options" className="space-y-6">
+              {templateRules.length > 0 && (
+                <Card className="bg-blue-50 border-blue-200">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <Info className="h-4 w-4 text-blue-600" />
+                      <CardTitle className="text-sm text-blue-900">Rule Indicators Guide</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="default" className="text-xs gap-1 bg-blue-500">
+                        <Workflow className="h-3 w-3" />
+                        Condition
+                      </Badge>
+                      <span className="text-blue-800">This option triggers rules when a specific value is selected</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs gap-1 bg-purple-100 text-purple-800">
+                        <GitBranch className="h-3 w-3" />
+                        Controlled
+                      </Badge>
+                      <span className="text-blue-800">This option's visibility is controlled by rules (cannot manually toggle)</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {(() => {
+                const sortedOptions = [...allAvailableOptions]
+                  .filter((opt: any) => {
+                    if (opt.visible === true) return true;
+                    if (opt.visible === false && (!opt.option_values || opt.option_values.length === 0)) {
+                      return false;
+                    }
+                    return true;
+                  })
+                  .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0));
+                
+                const currentGroups = sortedOptions.map(opt => ({
+                  type: opt.key,
+                  label: opt.label,
+                  id: opt.id
+                }));
+                
+                if (categoriesLoading) {
+                  return (
+                    <Card>
+                      <CardContent className="p-8 text-center text-muted-foreground">
+                        Loading option types...
+                      </CardContent>
+                    </Card>
+                  );
+                }
+                
+                return currentGroups.length === 0 ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Curtain Options</CardTitle>
+                      <CardDescription>
+                        No option types configured for curtains yet
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Go to <strong>Settings → Products → Options</strong> and create option types for <strong>curtains</strong>.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEndOptions}
+                  >
+                    <SortableContext
+                      items={currentGroups.map((g: any) => g.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-4">
+                        {currentGroups.map((group) => {
+                          const matchingOption = allAvailableOptions.find(opt => opt.key === group.type);
+                          const isEnabled = matchingOption?.visible || false;
+                          const availableInOtherTemplates = allAvailableOptions.find(opt => opt.key === group.type);
+                          const allAvailableValues = availableInOtherTemplates?.option_values || [];
+                          const hasOptionsAvailable = allAvailableValues.length > 0;
+                          
+                          return (
+                            <SortableOptionCard
+                              key={group.id}
+                              option={matchingOption}
+                              group={group}
+                              isEnabled={isEnabled}
+                              allAvailableValues={allAvailableValues}
+                              hasOptionsAvailable={hasOptionsAvailable}
+                              formatPrice={formatOptionPrice}
+                              onToggle={handleToggleOption}
+                              onValueToggle={handleToggleOptionValue}
+                              onDragEnd={handleDragEnd}
+                              isUsedInRuleCondition={isUsedInRuleCondition}
+                              isControlledByRule={isControlledByRule}
+                              getRulesForOption={getRulesForOption}
+                            />
+                          );
+                        })}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                )
+              })()}
+            </TabsContent>
+          )}
 
           {/* Treatment Settings Tab - Only for Non-Curtain Window Coverings */}
           <TabsContent value="treatment_settings" className="space-y-6">
