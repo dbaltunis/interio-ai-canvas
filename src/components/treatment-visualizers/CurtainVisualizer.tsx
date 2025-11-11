@@ -143,12 +143,12 @@ export const CurtainVisualizer = ({
         
         {/* Drop indicator - curtain height measurement */}
         {measurements.drop && (
-          <div className={`absolute right-0 ${hardwareType === "track" ? "top-6" : "top-18"} ${hasPooling ? "bottom-8" : "bottom-4"} flex flex-col items-center z-10`}>
+          <div className={`absolute right-2 ${hardwareType === "track" ? "top-6" : "top-18"} ${hasPooling ? "bottom-8" : "bottom-4"} flex flex-col items-center z-20`}>
             {/* Top arrow */}
             <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-green-600"></div>
             {/* Measurement line */}
             <div className="flex-1 border-r-2 border-green-600 relative">
-              <span className="absolute top-1/2 -right-16 transform -translate-y-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg whitespace-nowrap">
+              <span className="absolute top-1/2 -right-20 transform -translate-y-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg whitespace-nowrap z-20">
                 Drop: {measurements.drop}cm
               </span>
             </div>
