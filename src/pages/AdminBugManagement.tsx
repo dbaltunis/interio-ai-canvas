@@ -451,7 +451,7 @@ export default function AdminBugManagement() {
               {selectedBug && format(new Date(selectedBug.created_at), "MMMM d, yyyy 'at' h:mm a")}
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
+          <ScrollArea className="h-[60vh]">
             <div className="space-y-4 pr-4">
               <div className="flex gap-2">
                 <Badge variant={selectedBug ? (statusConfig[selectedBug.status].color as any) : "default"}>
