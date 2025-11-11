@@ -181,27 +181,27 @@ export const ShopifyProductsSyncWidget = () => {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 space-y-6">
+      <CardContent className="flex-1 space-y-4">
         {/* Sync Stats */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
-            <div className="text-sm text-muted-foreground mb-1">Products in InterioApp</div>
-            <div className="text-3xl font-bold text-primary">{stats?.totalProducts || 0}</div>
-            <div className="text-xs text-muted-foreground mt-1">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
+            <div className="text-xs text-muted-foreground mb-1 truncate">Products in InterioApp</div>
+            <div className="text-2xl font-bold text-primary">{stats?.totalProducts || 0}</div>
+            <div className="text-[10px] text-muted-foreground mt-1 truncate">
               {stats?.totalProducts === 0 ? 'No products yet' : 'Ready to sync'}
             </div>
           </div>
           
-          <div className="bg-accent/5 rounded-lg p-4 border border-accent/10">
-            <div className="text-sm text-muted-foreground mb-1">Last Synced</div>
-            <div className="text-xl font-bold">
+          <div className="bg-accent/5 rounded-lg p-3 border border-accent/10">
+            <div className="text-xs text-muted-foreground mb-1 truncate">Last Synced</div>
+            <div className="text-lg font-bold">
               {timeSinceSync !== null ? (
                 timeSinceSync < 60 ? `${timeSinceSync}m ago` : `${Math.floor(timeSinceSync / 60)}h ago`
               ) : (
                 'Never'
               )}
             </div>
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="text-[10px] text-muted-foreground mt-1 truncate">
               {timeSinceSync === null ? 'No sync yet' : 'Auto-sync enabled'}
             </div>
           </div>
@@ -210,12 +210,12 @@ export const ShopifyProductsSyncWidget = () => {
         {/* Top Categories */}
         {topCategories.length > 0 && (
           <div>
-            <div className="text-sm font-medium mb-3">Top Product Categories</div>
-            <div className="space-y-2">
+            <div className="text-xs font-medium mb-2">Top Product Categories</div>
+            <div className="space-y-1.5">
               {topCategories.map(([category, count]) => (
                 <div key={category} className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground capitalize">{category}</span>
-                  <Badge variant="secondary">{count}</Badge>
+                  <span className="text-xs text-muted-foreground capitalize truncate">{category}</span>
+                  <Badge variant="secondary" className="text-xs shrink-0">{count}</Badge>
                 </div>
               ))}
             </div>
@@ -223,30 +223,30 @@ export const ShopifyProductsSyncWidget = () => {
         )}
 
         {/* Sync Actions */}
-        <div className="space-y-2 pt-4 border-t">
+        <div className="space-y-2 pt-3 border-t">
           <Button
             onClick={() => handleSync('pull')}
             disabled={isSyncingImport || isSyncingExport}
-            className="w-full"
+            className="w-full h-9"
             variant="outline"
           >
-            <ArrowDownLeft className={`mr-2 h-4 w-4 ${isSyncingImport ? 'animate-spin' : ''}`} />
-            Import from Shopify
+            <ArrowDownLeft className={`mr-1.5 h-3.5 w-3.5 ${isSyncingImport ? 'animate-spin' : ''}`} />
+            <span className="text-xs">Import from Shopify</span>
           </Button>
           <Button
             onClick={() => handleSync('push')}
             disabled={isSyncingImport || isSyncingExport || (stats?.totalProducts || 0) === 0}
-            className="w-full"
+            className="w-full h-9"
             variant="outline"
           >
-            <ArrowUpRight className={`mr-2 h-4 w-4 ${isSyncingExport ? 'animate-spin' : ''}`} />
-            Export to Shopify
+            <ArrowUpRight className={`mr-1.5 h-3.5 w-3.5 ${isSyncingExport ? 'animate-spin' : ''}`} />
+            <span className="text-xs">Export to Shopify</span>
           </Button>
         </div>
 
         {stats?.totalProducts === 0 && (
-          <div className="text-center p-4 bg-muted/50 rounded-lg">
-            <p className="text-sm text-muted-foreground">
+          <div className="text-center p-3 bg-muted/50 rounded-lg">
+            <p className="text-xs text-muted-foreground">
               No products found. Add products to your Shopify store or InterioApp inventory to start syncing.
             </p>
           </div>

@@ -87,92 +87,92 @@ export const ShopifyOrdersWidget = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {/* Orders Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="space-y-3">
+            {/* Orders Grid - Fully responsive */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Total Revenue */}
-              <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+              <div className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="p-2 rounded-full bg-green-500/10">
-                    <DollarSign className="h-4 w-4 text-green-600" />
+                  <div className="p-1.5 rounded-full bg-green-500/10">
+                    <DollarSign className="h-3.5 w-3.5 text-green-600" />
                   </div>
                 </div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">Total Revenue</p>
-                <p className="text-2xl font-bold">
+                <p className="text-xl font-bold">
                   {formatCurrency(analytics?.total_revenue || 0)}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-1 truncate">
                   {analytics?.orders_this_month || 0} orders this month
                 </p>
               </div>
 
               {/* Total Orders */}
-              <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+              <div className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="p-2 rounded-full bg-blue-500/10">
-                    <ShoppingCart className="h-4 w-4 text-blue-600" />
+                  <div className="p-1.5 rounded-full bg-blue-500/10">
+                    <ShoppingCart className="h-3.5 w-3.5 text-blue-600" />
                   </div>
                 </div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">Total Orders</p>
-                <p className="text-2xl font-bold">
+                <p className="text-xl font-bold">
                   {analytics?.total_orders || 0}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-1 truncate">
                   All time orders
                 </p>
               </div>
 
               {/* Average Order Value */}
-              <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+              <div className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="p-2 rounded-full bg-purple-500/10">
-                    <TrendingUp className="h-4 w-4 text-purple-600" />
+                  <div className="p-1.5 rounded-full bg-purple-500/10">
+                    <TrendingUp className="h-3.5 w-3.5 text-purple-600" />
                   </div>
                 </div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">Avg Order Value</p>
-                <p className="text-2xl font-bold">
+                <p className="text-xl font-bold">
                   {formatCurrency(analytics?.avg_order_value || 0)}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-1 truncate">
                   Average value
                 </p>
               </div>
 
               {/* Total Customers */}
-              <div className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+              <div className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="p-2 rounded-full bg-orange-500/10">
-                    <Users className="h-4 w-4 text-orange-600" />
+                  <div className="p-1.5 rounded-full bg-orange-500/10">
+                    <Users className="h-3.5 w-3.5 text-orange-600" />
                   </div>
                 </div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">Total Customers</p>
-                <p className="text-2xl font-bold">
+                <p className="text-xl font-bold">
                   {analytics?.total_customers || 0}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-1 truncate">
                   Unique customers
                 </p>
               </div>
+            </div>
 
-              {/* This Month Revenue */}
-              <div className="col-span-2 p-4 rounded-lg border bg-gradient-to-br from-primary/5 to-primary/10">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="h-4 w-4 text-primary" />
-                  <p className="text-sm font-semibold">This Month</p>
+            {/* This Month Revenue */}
+            <div className="p-3 rounded-lg border bg-gradient-to-br from-primary/5 to-primary/10">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                <p className="text-sm font-semibold">This Month</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">Revenue</p>
+                  <p className="text-lg font-bold truncate">
+                    {formatCurrency(analytics?.revenue_this_month || 0)}
+                  </p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Revenue</p>
-                    <p className="text-xl font-bold">
-                      {formatCurrency(analytics?.revenue_this_month || 0)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Orders</p>
-                    <p className="text-xl font-bold">
-                      {analytics?.orders_this_month || 0}
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Orders</p>
+                  <p className="text-lg font-bold">
+                    {analytics?.orders_this_month || 0}
+                  </p>
                 </div>
               </div>
             </div>
