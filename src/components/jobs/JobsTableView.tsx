@@ -507,7 +507,10 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     }));
   };
 
-  if (isLoading) {
+  // Show skeleton only for initial load, not on refetches (improves perceived performance)
+  // The Index.tsx already shows JobsPageSkeleton during component load
+  // So we skip showing another skeleton here to avoid double-loading states
+  if (isLoading && groupedData.length === 0) {
     return <JobsTableSkeleton />;
   }
 

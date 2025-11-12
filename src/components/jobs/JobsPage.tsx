@@ -68,25 +68,9 @@ const JobsPage = () => {
     refetchQuotes();
   };
 
-  // Show loading only on initial load, preserve navigation state during refetch
-  if (canViewJobs === undefined) {
-    console.warn('[JOBS] canViewJobs undefined - selectedJobId:', selectedJobId);
-    
-    // If we have a selectedJobId, try to render the detail page immediately
-    // This prevents the "Something went wrong" error during permission checks
-    if (selectedJobId) {
-      return <JobDetailPage jobId={selectedJobId} onBack={handleBackFromJob} />;
-    }
-    
-    return (
-      <div className="min-h-screen flex items-center justify-center animate-fade-in">
-        <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <div className="text-lg text-muted-foreground">Loading projects...</div>
-        </div>
-      </div>
-    );
-  }
+  // Optimistically render while permissions load - faster UX
+  // If permission check fails, it will show access denied screen
+  const isLoadingPermissions = canViewJobs === undefined;
 
   // If user doesn't have permission to view jobs, show access denied
   if (!canViewJobs) {

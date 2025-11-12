@@ -139,11 +139,7 @@ const App = () => {
                 <AuthProvider>
                   <EmailRealtimeProvider>
                   <BugReportDialog />
-                  <Suspense fallback={
-                    <div className="flex items-center justify-center min-h-screen">
-                      <LoadingState size="lg" text="Loading..." />
-                    </div>
-                  }>
+                  <Suspense fallback={<></>}>
                   <Routes>
                 {/* Public store routes */}
                 <Route path="/store/:storeSlug/*" element={

@@ -98,9 +98,7 @@ const Index = () => {
     case "dashboard":
         return (
           <Suspense fallback={<DashboardSkeleton />}>
-            <ComponentWrapper>
-              <Dashboard />
-            </ComponentWrapper>
+            <Dashboard />
           </Suspense>
         );
       case "online-store":
@@ -113,18 +111,14 @@ const Index = () => {
         );
       case "projects":
         return (
-          <Suspense fallback={<JobsPageSkeleton />}>
-            <ComponentWrapper>
-              <JobsPage key="jobs-persistent" />
-            </ComponentWrapper>
+          <Suspense fallback={<></>}>
+            <JobsPage key="jobs-persistent" />
           </Suspense>
         );
       case "clients":
         return (
           <Suspense fallback={<ClientManagementSkeleton />}>
-            <ComponentWrapper>
-              <ClientManagement onTabChange={handleTabChange} />
-            </ComponentWrapper>
+            <ClientManagement onTabChange={handleTabChange} />
           </Suspense>
         );
       case "quotes":
@@ -183,10 +177,8 @@ const Index = () => {
         );
       default:
         return (
-          <Suspense fallback={<JobsPageSkeleton />}>
-            <ComponentWrapper>
-              <JobsPage key="jobs-persistent" />
-            </ComponentWrapper>
+          <Suspense fallback={<></>}>
+            <JobsPage key="jobs-persistent" />
           </Suspense>
         );
     }
