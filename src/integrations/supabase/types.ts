@@ -7993,6 +7993,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          account_type: string | null
           avatar_url: string | null
           created_at: string | null
           default_notification_minutes: number | null
@@ -8017,6 +8018,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_type?: string | null
           avatar_url?: string | null
           created_at?: string | null
           default_notification_minutes?: number | null
@@ -8041,6 +8043,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_type?: string | null
           avatar_url?: string | null
           created_at?: string | null
           default_notification_minutes?: number | null
@@ -8229,6 +8232,7 @@ export type Database = {
       }
       user_subscriptions: {
         Row: {
+          admin_notes: string | null
           canceled_at: string | null
           created_at: string
           current_period_end: string | null
@@ -8238,12 +8242,14 @@ export type Database = {
           status: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          subscription_type: string | null
           total_users: number | null
           trial_ends_at: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          admin_notes?: string | null
           canceled_at?: string | null
           created_at?: string
           current_period_end?: string | null
@@ -8253,12 +8259,14 @@ export type Database = {
           status?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          subscription_type?: string | null
           total_users?: number | null
           trial_ends_at?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          admin_notes?: string | null
           canceled_at?: string | null
           created_at?: string
           current_period_end?: string | null
@@ -8268,6 +8276,7 @@ export type Database = {
           status?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          subscription_type?: string | null
           total_users?: number | null
           trial_ends_at?: string | null
           updated_at?: string
