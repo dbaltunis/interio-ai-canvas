@@ -29,6 +29,7 @@ import { useFormattedDate } from "@/hooks/useFormattedDate";
 import { ProjectDetailsTab } from "./tabs/ProjectDetailsTab";
 import { RoomsTab } from "./tabs/RoomsTab";
 import { QuotationTab } from "./tabs/QuotationTab";
+import { WorkOrderTab } from "./tabs/WorkOrderTab";
 import { ProjectMaterialsTab } from "./ProjectMaterialsTab";
 import { WorkroomTab } from "./tabs/WorkroomTab";
 import { EmailsTab } from "./tabs/EmailsTab";
@@ -698,7 +699,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     { id: "details", label: "Client", mobileLabel: "Client", icon: User },
     { id: "rooms", label: "Project", mobileLabel: "Project", icon: Package },
     { id: "quotation", label: "Quote", mobileLabel: "Quote", icon: FileText },
-    { id: "workroom", label: "Workroom", mobileLabel: "Work", icon: Wrench },
+    { id: "workorder", label: "Work Order", mobileLabel: "Work Order", icon: Wrench },
+    { id: "workroom", label: "Workroom", mobileLabel: "Workroom", icon: Wrench },
     { id: "materials", label: "Materials", mobileLabel: "Materials", icon: Package },
     { id: "emails", label: "Emails", mobileLabel: "Emails", icon: Mail },
     { id: "calendar", label: "Calendar", mobileLabel: "Calendar", icon: Calendar },
@@ -943,6 +945,12 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               <TabsContent value="quotation" className="mt-0">
                 <div className="modern-card p-2 sm:p-4 lg:p-6">
                   <QuotationTab projectId={jobId} />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="workorder" className="mt-0">
+                <div className="modern-card p-2 sm:p-4 lg:p-6">
+                  <WorkOrderTab projectId={jobId} />
                 </div>
               </TabsContent>
 
