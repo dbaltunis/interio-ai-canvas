@@ -120,7 +120,8 @@ const App = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-            <ReactQueryDevtools initialIsOpen={false} />
+            {/* Devtools only in development - automatically removed in production */}
+            {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
             <TooltipProvider>
             {/* Ensure custom themes also apply the dark class */}
             <ThemeProvider
