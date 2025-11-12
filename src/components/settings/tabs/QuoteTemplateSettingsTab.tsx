@@ -6,17 +6,21 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Separator } from "@/components/ui/separator";
 import { FileText, Image as ImageIcon, Settings, Eye } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { PrintableQuote } from "@/components/jobs/quotation/PrintableQuote";
 
 export const QuoteTemplateSettingsTab = () => {
   const { toast } = useToast();
   const { data: businessSettings } = useBusinessSettings();
   const [isSaving, setIsSaving] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Fetch active template
   const { data: activeTemplate, refetch } = useQuery({
@@ -36,6 +40,15 @@ export const QuoteTemplateSettingsTab = () => {
   });
 
   const [templateData, setTemplateData] = useState({
+    // Document Layout
+    orientation: 'portrait' as 'portrait' | 'landscape',
+    marginTop: 8,
+    marginRight: 8,
+    marginBottom: 6,
+    marginLeft: 8,
+    imageSize: 80,
+    imagePosition: 'left' as 'above' | 'center' | 'left',
+    
     companyName: businessSettings?.company_name || "",
     companyAddress: businessSettings?.address || "",
     companyPhone: businessSettings?.business_phone || "",
@@ -90,6 +103,19 @@ export const QuoteTemplateSettingsTab = () => {
     try {
       // Build template blocks structure
       const blocks = [
+        {
+          id: "document-settings",
+          type: "document-settings",
+          content: {
+            orientation: templateData.orientation,
+            marginTop: templateData.marginTop,
+            marginRight: templateData.marginRight,
+            marginBottom: templateData.marginBottom,
+            marginLeft: templateData.marginLeft,
+            imageSize: templateData.imageSize,
+            imagePosition: templateData.imagePosition
+          }
+        },
         {
           id: "header",
           type: "document-header",
@@ -202,8 +228,12 @@ export const QuoteTemplateSettingsTab = () => {
         </p>
       </div>
 
-      <Tabs defaultValue="header" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+      <Tabs defaultValue="layout" className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="layout">
+            <Settings className="h-4 w-4 mr-2" />
+            Layout
+          </TabsTrigger>
           <TabsTrigger value="header">
             <FileText className="h-4 w-4 mr-2" />
             Header
@@ -225,6 +255,140 @@ export const QuoteTemplateSettingsTab = () => {
             Printing
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="layout" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Document Layout</CardTitle>
+              <CardDescription>
+                Configure page size, orientation, margins, and image settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Orientation */}
+              <div className="space-y-2">
+                <Label htmlFor="orientation">Document Orientation</Label>
+                <Select 
+                  value={templateData.orientation} 
+                  onValueChange={(value: 'portrait' | 'landscape') => setTemplateData({ ...templateData, orientation: value })}
+                >
+                  <SelectTrigger id="orientation">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="portrait">Portrait (210mm × 297mm)</SelectItem>
+                    <SelectItem value="landscape">Landscape (297mm × 210mm)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Standard A4 size in selected orientation</p>
+              </div>
+
+              <Separator />
+
+              {/* Margins */}
+              <div className="space-y-4">
+                <div>
+                  <Label>Page Margins (mm)</Label>
+                  <p className="text-sm text-muted-foreground mt-1">Adjust spacing around document content</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="marginTop">Top</Label>
+                    <Input
+                      id="marginTop"
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={templateData.marginTop}
+                      onChange={(e) => setTemplateData({ ...templateData, marginTop: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="marginRight">Right</Label>
+                    <Input
+                      id="marginRight"
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={templateData.marginRight}
+                      onChange={(e) => setTemplateData({ ...templateData, marginRight: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="marginBottom">Bottom</Label>
+                    <Input
+                      id="marginBottom"
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={templateData.marginBottom}
+                      onChange={(e) => setTemplateData({ ...templateData, marginBottom: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="marginLeft">Left</Label>
+                    <Input
+                      id="marginLeft"
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={templateData.marginLeft}
+                      onChange={(e) => setTemplateData({ ...templateData, marginLeft: Number(e.target.value) })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Product Images */}
+              <div className="space-y-4">
+                <div>
+                  <Label>Product Image Settings</Label>
+                  <p className="text-sm text-muted-foreground mt-1">Control how product images appear</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="imagePosition">Image Position</Label>
+                  <Select 
+                    value={templateData.imagePosition} 
+                    onValueChange={(value: 'above' | 'center' | 'left') => setTemplateData({ ...templateData, imagePosition: value })}
+                  >
+                    <SelectTrigger id="imagePosition">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="above">Above Product Name</SelectItem>
+                      <SelectItem value="center">Center Aligned</SelectItem>
+                      <SelectItem value="left">Left Side</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Choose where images appear relative to product details</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="imageSize">Image Size (px)</Label>
+                  <div className="flex items-center gap-4">
+                    <Input
+                      id="imageSize"
+                      type="range"
+                      min="40"
+                      max="200"
+                      step="10"
+                      value={templateData.imageSize}
+                      onChange={(e) => setTemplateData({ ...templateData, imageSize: Number(e.target.value) })}
+                      className="flex-1"
+                    />
+                    <span className="text-sm font-medium w-20 text-right bg-muted px-3 py-1 rounded">{templateData.imageSize}px</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Default: 80px • Range: 40px - 200px
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="header" className="space-y-4">
           <Card>
@@ -599,10 +763,90 @@ export const QuoteTemplateSettingsTab = () => {
       </Tabs>
 
       <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={() => setShowPreview(true)}>
+          <Eye className="h-4 w-4 mr-2" />
+          Preview Document
+        </Button>
         <Button onClick={handleSave} disabled={isSaving}>
           {isSaving ? "Saving..." : "Save Template Settings"}
         </Button>
       </div>
+
+      {/* Preview Modal */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-auto p-0">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle>
+              Quote Preview - {templateData.orientation === 'portrait' ? 'Portrait' : 'Landscape'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center bg-muted p-6">
+            <div 
+              style={{
+                transform: templateData.orientation === 'landscape' ? 'scale(0.6)' : 'scale(0.7)',
+                transformOrigin: 'top center'
+              }}
+            >
+              <PrintableQuote 
+                blocks={[
+                  {
+                    type: 'document-settings',
+                    content: {
+                      orientation: templateData.orientation,
+                      marginTop: templateData.marginTop,
+                      marginRight: templateData.marginRight,
+                      marginBottom: templateData.marginBottom,
+                      marginLeft: templateData.marginLeft,
+                      imageSize: templateData.imageSize,
+                      imagePosition: templateData.imagePosition
+                    }
+                  },
+                  {
+                    type: 'document-header',
+                    content: {
+                      showLogo: templateData.showLogo,
+                      documentTitle: templateData.documentTitle,
+                      tagline: templateData.tagline
+                    }
+                  },
+                  {
+                    type: 'products',
+                    content: {
+                      showImages: templateData.showImages,
+                      showDetailedBreakdown: templateData.showDetailedBreakdown
+                    }
+                  }
+                ]}
+                projectData={{
+                  project: { name: 'Sample Project', job_number: 'QT-2024-001' },
+                  client: { name: 'John Smith', email: 'john@example.com', phone: '(555) 123-4567' },
+                  items: [
+                    {
+                      id: '1',
+                      name: 'Roman Blind',
+                      room: 'Living Room',
+                      total_cost: 450,
+                      image_url: 'https://images.unsplash.com/photo-1585412727339-54e4bae3bbf9',
+                      children: [
+                        { name: 'Fabric', total_cost: 280 },
+                        { name: 'Labor', total_cost: 120 },
+                        { name: 'Hardware', total_cost: 50 }
+                      ]
+                    }
+                  ],
+                  subtotal: 450,
+                  taxAmount: 36,
+                  total: 486,
+                  currency: 'GBP'
+                }}
+                isPrintMode={true}
+                showDetailedBreakdown={templateData.showDetailedBreakdown}
+                showImages={templateData.showImages}
+              />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

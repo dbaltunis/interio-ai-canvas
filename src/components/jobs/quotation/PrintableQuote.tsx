@@ -11,6 +11,14 @@ interface PrintableQuoteProps {
 
 export const PrintableQuote = React.forwardRef<HTMLDivElement, PrintableQuoteProps>(
   ({ blocks, projectData, isPrintMode = true, showDetailedBreakdown, showImages }, ref) => {
+    // Extract document settings from blocks
+    const documentSettings = blocks?.find((b: any) => b.type === 'document-settings')?.content || {};
+    const orientation = documentSettings.orientation || 'portrait';
+    const marginTop = documentSettings.marginTop || 8;
+    const marginRight = documentSettings.marginRight || 8;
+    const marginBottom = documentSettings.marginBottom || 6;
+    const marginLeft = documentSettings.marginLeft || 8;
+    
     return (
       <div 
         ref={ref}
@@ -21,9 +29,9 @@ export const PrintableQuote = React.forwardRef<HTMLDivElement, PrintableQuotePro
           lineHeight: '1.4',
           color: '#000000',
           backgroundColor: '#ffffff',
-          width: '210mm',
-          minHeight: '297mm',
-          padding: '8mm 8mm 6mm 8mm',
+          width: orientation === 'landscape' ? '297mm' : '210mm',
+          minHeight: orientation === 'landscape' ? '210mm' : '297mm',
+          padding: `${marginTop}mm ${marginRight}mm ${marginBottom}mm ${marginLeft}mm`,
           margin: '0',
           boxSizing: 'border-box',
           overflow: 'hidden',
