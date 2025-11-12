@@ -31,8 +31,10 @@ export const useTeamPresence = (search?: string) => {
   });
 
   useEffect(() => {
+    // Use unique channel name to prevent "tried to subscribe multiple times" error
+    const channelName = `presence-user-profiles-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const channel = supabase
-      .channel("presence-user-profiles")
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "user_profiles" },
