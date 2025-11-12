@@ -8692,6 +8692,36 @@ export type Database = {
         }
         Relationships: []
       }
+      work_order_templates: {
+        Row: {
+          active: boolean
+          blocks: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          blocks?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          blocks?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       workshop_items: {
         Row: {
           assigned_to: string | null
