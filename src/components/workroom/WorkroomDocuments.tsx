@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { Button } from "@/components/ui/button";
 import { WorkroomToolbar } from "./WorkroomToolbar";
 import { DocumentRenderer } from "./DocumentRenderer";
+import { PrintableWorkshop } from "./PrintableWorkshop";
+import { WorkshopPreviewModal } from "./WorkshopPreviewModal";
 import { useWorkshopData } from "@/hooks/useWorkshopData";
+import { generateQuotePDF } from "@/utils/generateQuotePDF";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import "@/styles/print.css";
 
 interface WorkroomDocumentsProps {
@@ -11,10 +16,25 @@ interface WorkroomDocumentsProps {
 
 export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId }) => {
   const { data, isLoading, error } = useWorkshopData(projectId);
+  const { toast } = useToast();
+  const printRef = useRef<HTMLDivElement>(null);
+  
   const [template, setTemplate] = useState<string>("workshop-info");
   const [groupByRoom, setGroupByRoom] = useState<boolean>(true);
   const [templateBlocks, setTemplateBlocks] = useState<any[] | undefined>();
   const [templateError, setTemplateError] = useState<string | null>(null);
+  
+  // Layout state
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
+  const [margins, setMargins] = useState<number>(8);
+  
+  // Filtering state
+  const [selectedRoom, setSelectedRoom] = useState<string>('all');
+  const [selectedTreatment, setSelectedTreatment] = useState<string>('all');
+  
+  // Preview & PDF state
+  const [showPreview, setShowPreview] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Debug logging
   useEffect(() => {
@@ -64,8 +84,94 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
     }
   };
 
+  // Extract available rooms and treatments for filtering
+  const availableRooms = useMemo(() => {
+    if (!data?.rooms) return [];
+    return data.rooms.map(r => r.roomName).filter(Boolean).sort();
+  }, [data]);
+  
+  const availableTreatments = useMemo(() => {
+    if (!data?.rooms) return [];
+    const treatments = new Set<string>();
+    data.rooms.forEach(room => {
+      room.items.forEach(item => {
+        if (item.treatmentType) treatments.add(item.treatmentType);
+      });
+    });
+    return Array.from(treatments).sort();
+  }, [data]);
+  
+  // Apply filters to data
+  const filteredData = useMemo(() => {
+    if (!data) return data;
+    
+    let filtered = { ...data };
+    
+    // Filter by room
+    if (selectedRoom && selectedRoom !== 'all') {
+      filtered.rooms = data.rooms.filter(room => room.roomName === selectedRoom);
+    }
+    
+    // Filter by treatment
+    if (selectedTreatment && selectedTreatment !== 'all') {
+      filtered.rooms = filtered.rooms.map(room => ({
+        ...room,
+        items: room.items.filter(item => item.treatmentType === selectedTreatment)
+      })).filter(room => room.items.length > 0);
+    }
+    
+    return filtered;
+  }, [data, selectedRoom, selectedTreatment]);
+  
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (selectedRoom && selectedRoom !== 'all') count++;
+    if (selectedTreatment && selectedTreatment !== 'all') count++;
+    return count;
+  }, [selectedRoom, selectedTreatment]);
+  
+  const handleClearFilters = () => {
+    setSelectedRoom('all');
+    setSelectedTreatment('all');
+  };
+  
   const onPrint = () => {
     window.print();
+  };
+  
+  const handleDownloadPDF = async () => {
+    if (!printRef.current || !filteredData) return;
+    
+    setIsGenerating(true);
+    try {
+      const projectName = filteredData.header.projectName || 'workshop';
+      const orderNumber = filteredData.header.orderNumber || 'document';
+      
+      await generateQuotePDF(printRef.current, {
+        filename: `workshop-${projectName}-${orderNumber}.pdf`,
+        margin: 0, // margins handled in component
+        imageQuality: 0.98,
+        scale: 2,
+      });
+      
+      toast({
+        title: "PDF Downloaded",
+        description: "Workshop document has been saved successfully.",
+      });
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      toast({
+        title: "PDF Generation Failed",
+        description: "Please try again or contact support.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
+  const handlePreview = () => {
+    setShowPreview(true);
   };
 
   if (isLoading) {
@@ -87,7 +193,44 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
     );
   }
 
-  // Empty state when no data
+  // Empty state when no data or filtered out completely
+  if (!filteredData || !filteredData.rooms || filteredData.rooms.length === 0) {
+    if (activeFiltersCount > 0 && data && data.rooms && data.rooms.length > 0) {
+      return (
+        <main className="space-y-4">
+          <WorkroomToolbar
+            selectedTemplate={template}
+            onTemplateChange={setTemplate}
+            groupByRoom={groupByRoom}
+            onToggleGroupBy={() => setGroupByRoom((v) => !v)}
+            onPrint={onPrint}
+            onPreview={handlePreview}
+            onDownloadPDF={handleDownloadPDF}
+            isGenerating={isGenerating}
+            orientation={orientation}
+            onOrientationChange={setOrientation}
+            margins={margins}
+            onMarginsChange={setMargins}
+            selectedRoom={selectedRoom}
+            onRoomChange={setSelectedRoom}
+            selectedTreatment={selectedTreatment}
+            onTreatmentChange={setSelectedTreatment}
+            availableRooms={availableRooms}
+            availableTreatments={availableTreatments}
+            activeFiltersCount={activeFiltersCount}
+            onClearFilters={handleClearFilters}
+          />
+          <div className="flex flex-col items-center justify-center p-12 space-y-4 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+            <p className="text-lg font-medium">No items match the current filters</p>
+            <Button variant="outline" onClick={handleClearFilters}>
+              Clear all filters
+            </Button>
+          </div>
+        </main>
+      );
+    }
+  }
+  
   if (!data || !data.rooms || data.rooms.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-12 space-y-6 border-2 border-dashed border-muted-foreground/30 rounded-lg">
@@ -112,14 +255,30 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
   }
 
   return (
-    <main className="space-y-4">
-      <WorkroomToolbar
-        selectedTemplate={template}
-        onTemplateChange={setTemplate}
-        groupByRoom={groupByRoom}
-        onToggleGroupBy={() => setGroupByRoom((v) => !v)}
-        onPrint={onPrint}
-      />
+    <>
+      <main className="space-y-4">
+        <WorkroomToolbar
+          selectedTemplate={template}
+          onTemplateChange={setTemplate}
+          groupByRoom={groupByRoom}
+          onToggleGroupBy={() => setGroupByRoom((v) => !v)}
+          onPrint={onPrint}
+          onPreview={handlePreview}
+          onDownloadPDF={handleDownloadPDF}
+          isGenerating={isGenerating}
+          orientation={orientation}
+          onOrientationChange={setOrientation}
+          margins={margins}
+          onMarginsChange={setMargins}
+          selectedRoom={selectedRoom}
+          onRoomChange={setSelectedRoom}
+          selectedTreatment={selectedTreatment}
+          onTreatmentChange={setSelectedTreatment}
+          availableRooms={availableRooms}
+          availableTreatments={availableTreatments}
+          activeFiltersCount={activeFiltersCount}
+          onClearFilters={handleClearFilters}
+        />
 
       {templateError && (
         <div className="p-4 border border-warning/50 bg-warning/10 rounded-lg">
@@ -129,14 +288,44 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
         </div>
       )}
 
-      <section>
-        <DocumentRenderer 
-          template={template} 
-          data={data}
-          blocks={templateBlocks}
-          projectId={projectId}
-        />
-      </section>
-    </main>
+        <section>
+          <DocumentRenderer 
+            template={template} 
+            data={filteredData}
+            blocks={templateBlocks}
+            projectId={projectId}
+          />
+        </section>
+        
+        {/* Hidden printable version for PDF generation */}
+        <div className="hidden">
+          {filteredData && (
+            <PrintableWorkshop
+              ref={printRef}
+              data={filteredData}
+              orientation={orientation}
+              margins={margins}
+            />
+          )}
+        </div>
+      </main>
+      
+      {/* Preview Modal */}
+      {filteredData && (
+        <WorkshopPreviewModal
+          open={showPreview}
+          onOpenChange={setShowPreview}
+          onDownloadPDF={handleDownloadPDF}
+          onPrint={onPrint}
+          isGenerating={isGenerating}
+        >
+          <PrintableWorkshop
+            data={filteredData}
+            orientation={orientation}
+            margins={margins}
+          />
+        </WorkshopPreviewModal>
+      )}
+    </>
   );
 };

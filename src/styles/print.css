@@ -79,4 +79,20 @@
     border: none !important;
     box-shadow: none !important;
   }
+  
+  /* Workshop-specific page break rules */
+  .workshop-room-section {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  
+  .workshop-item-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  
+  .workshop-page-break {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
 }

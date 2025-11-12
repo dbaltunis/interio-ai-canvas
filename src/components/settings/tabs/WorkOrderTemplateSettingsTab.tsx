@@ -56,8 +56,8 @@ export const WorkOrderTemplateSettingsTab = () => {
   useEffect(() => {
     if (activeTemplate?.blocks) {
       const blocks = Array.isArray(activeTemplate.blocks) ? activeTemplate.blocks : [];
-      const docSettings = blocks.find((b: any) => b.type === 'document-settings')?.content || {};
-      const displaySettings = blocks.find((b: any) => b.type === 'workorder-items')?.content || {};
+      const docSettings = (blocks.find((b: any) => b.type === 'document-settings') as any)?.content || {};
+      const displaySettings = (blocks.find((b: any) => b.type === 'workorder-items') as any)?.content || {};
 
       setTemplateData({
         orientation: docSettings.orientation || 'portrait',

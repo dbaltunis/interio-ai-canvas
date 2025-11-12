@@ -140,7 +140,7 @@ const Visual: React.FC<VisualProps> = ({ width, height, unit, itemId, treatment,
 
 export const RoomSection: React.FC<RoomSectionProps> = ({ section }) => {
   return (
-    <Card className="break-inside-avoid">
+    <Card className="workshop-room-section break-inside-avoid">
       <CardHeader>
         <CardTitle>{section.roomName}</CardTitle>
       </CardHeader>
@@ -152,7 +152,7 @@ export const RoomSection: React.FC<RoomSectionProps> = ({ section }) => {
             const isRollerBlind = treatmentType.toLowerCase().includes('roller');
             
             return (
-              <div key={item.id} className="rounded-md border p-3 bg-background">
+              <div key={item.id} className="workshop-item-card rounded-md border p-3 bg-background">
                 <div className="grid gap-4 md:grid-cols-3">
                   {/* Left: Visual */}
                   <div className="space-y-2">
