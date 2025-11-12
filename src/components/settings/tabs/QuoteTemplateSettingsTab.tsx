@@ -65,6 +65,11 @@ export const QuoteTemplateSettingsTab = () => {
     showTax: true,
     showTotal: true,
     
+    // Discount display
+    showDiscountType: true,        // Show "Percentage" or "Fixed Amount"
+    showDiscountAppliedTo: true,   // Show "All Items", "Fabrics Only", or "Specific Items"
+    showDiscountAmount: true,      // Show the discount amount
+    
     // Footer
     termsAndConditions: `Terms & Conditions:
 1. Payment terms: 50% deposit required, balance due upon completion
@@ -114,7 +119,10 @@ export const QuoteTemplateSettingsTab = () => {
           content: {
             showSubtotal: templateData.showSubtotal,
             showTax: templateData.showTax,
-            showTotal: templateData.showTotal
+            showTotal: templateData.showTotal,
+            showDiscountType: templateData.showDiscountType,
+            showDiscountAppliedTo: templateData.showDiscountAppliedTo,
+            showDiscountAmount: templateData.showDiscountAmount
           }
         },
         {
@@ -470,6 +478,56 @@ export const QuoteTemplateSettingsTab = () => {
                       id="showTotal"
                       checked={templateData.showTotal}
                       onCheckedChange={(checked) => setTemplateData({ ...templateData, showTotal: checked })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="my-4" />
+
+              <div className="space-y-2">
+                <Label>Discount Display</Label>
+                <p className="text-sm text-muted-foreground">
+                  Control which discount information appears on quotes (shown in red)
+                </p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="showDiscountType">Discount Type</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Show "Percentage" or "Fixed Amount"
+                      </p>
+                    </div>
+                    <Switch
+                      id="showDiscountType"
+                      checked={templateData.showDiscountType}
+                      onCheckedChange={(checked) => setTemplateData({ ...templateData, showDiscountType: checked })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="showDiscountAppliedTo">Applied To</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Show "All Items", "Fabrics Only", or "Specific Items"
+                      </p>
+                    </div>
+                    <Switch
+                      id="showDiscountAppliedTo"
+                      checked={templateData.showDiscountAppliedTo}
+                      onCheckedChange={(checked) => setTemplateData({ ...templateData, showDiscountAppliedTo: checked })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="showDiscountAmount">Discount Amount</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Show the calculated discount value
+                      </p>
+                    </div>
+                    <Switch
+                      id="showDiscountAmount"
+                      checked={templateData.showDiscountAmount}
+                      onCheckedChange={(checked) => setTemplateData({ ...templateData, showDiscountAmount: checked })}
                     />
                   </div>
                 </div>
