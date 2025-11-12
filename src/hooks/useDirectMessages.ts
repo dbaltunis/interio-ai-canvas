@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { useTeamPresence } from './useTeamPresence';
 
 export interface DirectMessage {
   id: string;
@@ -35,22 +36,19 @@ export const useDirectMessages = () => {
   const queryClient = useQueryClient();
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
 
+  // Use cached team presence data instead of making separate RPC calls
+  const { data: teamPresence = [] } = useTeamPresence();
+
   // Conversations: use presence view for consistent status
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
-    queryKey: ['conversations', user?.id],
+    queryKey: ['conversations', user?.id, teamPresence.length],
     queryFn: async (): Promise<Conversation[]> => {
-      if (!user) return [];
-
-      // Get visible team (presence-enabled) - RLS ensures same account access
-      const { data: presenceRows, error: presenceError } = await supabase
-        .rpc('get_team_presence', { search_param: null });
-
-      if (presenceError) throw presenceError;
+      if (!user || teamPresence.length === 0) return [];
 
       // Build conversations with unread counts (simple per-user count)
       const results: Conversation[] = [];
 
-      for (const row of presenceRows || []) {
+      for (const row of teamPresence) {
         // Count unread
         const { count, error: countError } = await supabase
           .from('direct_messages')
@@ -79,7 +77,7 @@ export const useDirectMessages = () => {
           user_id: row.user_id,
           user_profile: {
             display_name: row.display_name || 'Unknown User',
-            avatar_url: row.avatar_url,
+            avatar_url: undefined,
             status: (row.status as string) || 'offline',
           },
           last_message: lastMsgs?.[0] as DirectMessage | undefined,
@@ -100,7 +98,7 @@ export const useDirectMessages = () => {
         return bTime - aTime; // Most recent first
       });
     },
-    enabled: !!user,
+    enabled: !!user && teamPresence.length > 0,
   });
 
   // Fetch messages for active conversation

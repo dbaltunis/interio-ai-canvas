@@ -24,9 +24,10 @@ export const useTeamPresence = (search?: string) => {
       if (error) throw error;
       return (data as TeamMemberPresence[]) || [];
     },
-    refetchOnWindowFocus: true,
-    refetchInterval: 10_000, // Refetch every 10 seconds for real-time updates
-    staleTime: 5_000, // Consider data stale after 5 seconds
+    staleTime: 2 * 60 * 1000, // Cache for 2 minutes - presence doesn't need real-time updates
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    refetchOnWindowFocus: false, // Don't refetch on focus - rely on realtime updates
+    refetchInterval: 2 * 60 * 1000, // Refetch every 2 minutes as backup
   });
 
   useEffect(() => {

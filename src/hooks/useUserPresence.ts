@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useTeamPresence } from './useTeamPresence';
 
 export interface UserPresence {
   user_id: string;
@@ -23,30 +24,22 @@ export const useUserPresence = () => {
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState<string>('');
 
-  // Get all active users with real presence data, including current user
-  const { data: activeUsers = [], isLoading } = useQuery({
-    queryKey: ['user-presence'],
-    queryFn: async (): Promise<UserPresence[]> => {
-      const { data, error } = await supabase
-        .rpc('get_team_presence', { search_param: null });
-
-      if (error) throw error;
-
-      return data.map(profile => ({
-        user_id: profile.user_id,
-        status: profile.user_id === user?.id ? 'online' : profile.status as 'online' | 'away' | 'busy' | 'offline' | 'never_logged_in',
-        last_seen: profile.last_seen,
-        user_profile: {
-          display_name: profile.display_name || 'Unknown User',
-          avatar_url: profile.avatar_url,
-          role: profile.role,
-          status_message: profile.status_message
-        },
-        current_activity: undefined
-      }));
+  // Use cached team presence data instead of making separate RPC calls
+  const { data: teamPresence = [], isLoading } = useTeamPresence();
+  
+  // Transform team presence data to UserPresence format
+  const activeUsers: UserPresence[] = teamPresence.map(profile => ({
+    user_id: profile.user_id,
+    status: profile.user_id === user?.id ? 'online' : profile.status as 'online' | 'away' | 'busy' | 'offline' | 'never_logged_in',
+    last_seen: profile.last_seen || new Date().toISOString(),
+    user_profile: {
+      display_name: profile.display_name || 'Unknown User',
+      avatar_url: undefined,
+      role: profile.role,
+      status_message: undefined
     },
-    refetchInterval: 60000, // Refresh every 60 seconds (reduced from 30s)
-  });
+    current_activity: undefined
+  }));
 
   // Update current user's presence using the new database functions
   const updatePresenceMutation = useMutation({
@@ -81,7 +74,7 @@ export const useUserPresence = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-presence'] });
+      queryClient.invalidateQueries({ queryKey: ['team-presence'] });
     }
   });
 
@@ -138,30 +131,7 @@ export const useUserPresence = () => {
     }
   }, [user, currentPage]);
 
-  // Set up real-time subscriptions
-  useEffect(() => {
-    if (!user) return;
-
-    const channelName = `user-presence-${Date.now()}-${Math.random()}`;
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_profiles'
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['user-presence'] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient, user]);
+  // Realtime subscriptions are now handled by useTeamPresence hook
 
   const updateStatus = (status: UserPresence['status'], activity?: string) => {
     updatePresenceMutation.mutate({ status, activity });
