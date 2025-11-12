@@ -77,7 +77,7 @@ export default function AdminBugManagement() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"list" | "roadmap">("list");
+  const [viewMode, setViewMode] = useState<"kanban" | "list" | "roadmap">("kanban");
   const [uploading, setUploading] = useState(false);
   const queryClient = useQueryClient();
   const { data: teamMembers } = useTeamMembers();
@@ -249,6 +249,26 @@ export default function AdminBugManagement() {
 
   const StatusIcon = selectedBug ? statusConfig[selectedBug.status].icon : AlertCircle;
 
+  // Group bugs by status for kanban view
+  const groupBugsByStatus = () => {
+    if (!filteredBugs) return [];
+    
+    return [
+      { status: 'new', label: 'New', bugs: filteredBugs.filter(b => b.status === 'new') },
+      { status: 'investigating', label: 'Investigating', bugs: filteredBugs.filter(b => b.status === 'investigating') },
+      { status: 'in_progress', label: 'In Progress', bugs: filteredBugs.filter(b => b.status === 'in_progress') },
+      { status: 'resolved', label: 'Resolved', bugs: filteredBugs.filter(b => b.status === 'resolved') },
+      { status: 'closed', label: 'Closed', bugs: filteredBugs.filter(b => b.status === 'closed') },
+    ];
+  };
+
+  const quickUpdateStatus = async (bug: BugReport, newStatus: BugReport["status"]) => {
+    await updateBug.mutateAsync({
+      bugId: bug.id,
+      updates: { status: newStatus }
+    });
+  };
+
   // Group bugs by week for roadmap view
   const groupBugsByWeek = () => {
     if (!filteredBugs) return [];
@@ -303,43 +323,74 @@ export default function AdminBugManagement() {
         <p className="text-muted-foreground">Review and manage bug reports from users</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Reports</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Bug className="h-4 w-4" />
+              Total Reports
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{bugs?.length || 0}</div>
+            <div className="text-3xl font-bold">{bugs?.length || 0}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-destructive/5 to-destructive/10 border-destructive/20">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">New</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-destructive" />
+              New
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">
+            <div className="text-3xl font-bold text-destructive">
               {bugs?.filter((b) => b.status === "new").length || 0}
             </div>
+            <p className="text-xs text-muted-foreground mt-1">Needs attention</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Clock className="h-4 w-4 text-warning" />
+              Active
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-3xl font-bold">
               {bugs?.filter((b) => b.status === "in_progress" || b.status === "investigating").length || 0}
             </div>
+            <p className="text-xs text-muted-foreground mt-1">Being worked on</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-success/5 to-success/10 border-success/20">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Resolved</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-success" />
+              Resolved
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-success">
+            <div className="text-3xl font-bold text-success">
               {bugs?.filter((b) => b.status === "resolved" || b.status === "closed").length || 0}
             </div>
+            <p className="text-xs text-muted-foreground mt-1">Completed</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-muted/50 to-muted border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Resolution Rate
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">
+              {bugs && bugs.length > 0 
+                ? Math.round((bugs.filter((b) => b.status === "resolved" || b.status === "closed").length / bugs.length) * 100)
+                : 0}%
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Overall progress</p>
           </CardContent>
         </Card>
       </div>
@@ -353,7 +404,8 @@ export default function AdminBugManagement() {
             </div>
             <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as any)} className="w-auto">
               <TabsList>
-                <TabsTrigger value="list">List View</TabsTrigger>
+                <TabsTrigger value="kanban">Kanban</TabsTrigger>
+                <TabsTrigger value="list">List</TabsTrigger>
                 <TabsTrigger value="roadmap">Roadmap</TabsTrigger>
               </TabsList>
             </Tabs>
@@ -395,6 +447,89 @@ export default function AdminBugManagement() {
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">Loading bug reports...</div>
+          ) : viewMode === "kanban" ? (
+            // Kanban View
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              {groupBugsByStatus().map((column) => {
+                const StatusIcon = statusConfig[column.status as keyof typeof statusConfig].icon;
+                const statusColor = statusConfig[column.status as keyof typeof statusConfig].color;
+                
+                return (
+                  <div key={column.status} className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <StatusIcon className="h-4 w-4" />
+                        <h3 className="font-semibold text-sm">{column.label}</h3>
+                      </div>
+                      <Badge variant="outline" className="ml-2">{column.bugs.length}</Badge>
+                    </div>
+                    <ScrollArea className="h-[600px]">
+                      <div className="space-y-2 pr-2">
+                        {column.bugs.map((bug) => (
+                          <Card
+                            key={bug.id}
+                            className="cursor-pointer hover:shadow-md transition-all border-l-4"
+                            style={{
+                              borderLeftColor: statusColor === 'destructive' ? 'hsl(var(--destructive))' :
+                                               statusColor === 'warning' ? 'hsl(var(--warning))' :
+                                               statusColor === 'success' ? 'hsl(var(--success))' :
+                                               'hsl(var(--muted))'
+                            }}
+                            onClick={() => setSelectedBug(bug)}
+                          >
+                            <CardContent className="p-3 space-y-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <h4 className="font-medium text-sm line-clamp-2">{bug.title}</h4>
+                                <Badge 
+                                  variant={priorityConfig[bug.priority].color as any}
+                                  className="text-xs shrink-0"
+                                >
+                                  {bug.priority}
+                                </Badge>
+                              </div>
+                              
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {bug.description}
+                              </p>
+                              
+                              <div className="flex items-center justify-between pt-2 border-t">
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  {bug.assignee ? (
+                                    <>
+                                      <Users className="h-3 w-3" />
+                                      <span className="truncate max-w-[80px]">
+                                        {bug.assignee.display_name?.split(' ')[0] || bug.assignee.email.split('@')[0]}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">Unassigned</span>
+                                  )}
+                                </div>
+                                {bug.target_fix_date && (
+                                  <div className="flex items-center gap-1 text-xs">
+                                    <Calendar className="h-3 w-3" />
+                                    {format(parseISO(bug.target_fix_date), "MMM d")}
+                                  </div>
+                                )}
+                              </div>
+
+                              {bug.app_version && (
+                                <Badge variant="outline" className="text-xs">{bug.app_version}</Badge>
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                        {column.bugs.length === 0 && (
+                          <div className="text-center py-8 text-xs text-muted-foreground">
+                            No bugs
+                          </div>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                );
+              })}
+            </div>
           ) : viewMode === "list" ? (
             filteredBugs && filteredBugs.length > 0 ? (
               <div className="space-y-4">
