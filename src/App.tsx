@@ -36,6 +36,8 @@ import Purchasing from "./pages/Purchasing";
 import AdminBugManagement from "./pages/AdminBugManagement";
 import Documentation from "./pages/Documentation";
 import OnlineStore from "./pages/OnlineStore";
+import AdminAnalytics from "./pages/AdminAnalytics";
+import AdminAccountManagement from "./pages/AdminAccountManagement";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -206,6 +208,24 @@ const App = () => {
                   <AdminRoute>
                     <ErrorBoundary>
                       <AdminBugManagement />
+                    </ErrorBoundary>
+                  </AdminRoute>
+                } />
+
+                {/* Admin Analytics Dashboard */}
+                <Route path="/admin/analytics" element={
+                  <AdminRoute>
+                    <ErrorBoundary>
+                      <AdminAnalytics />
+                    </ErrorBoundary>
+                  </AdminRoute>
+                } />
+
+                {/* Admin Account Management */}
+                <Route path="/admin/accounts" element={
+                  <AdminRoute>
+                    <ErrorBoundary>
+                      <AdminAccountManagement />
                     </ErrorBoundary>
                   </AdminRoute>
                 } />
