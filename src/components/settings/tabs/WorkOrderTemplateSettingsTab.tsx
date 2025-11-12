@@ -56,24 +56,24 @@ export const WorkOrderTemplateSettingsTab = () => {
   useEffect(() => {
     if (activeTemplate?.blocks) {
       const blocks = Array.isArray(activeTemplate.blocks) ? activeTemplate.blocks : [];
-      const docSettings = blocks.find((b: any) => b.type === 'document-settings') as any;
-      const displaySettings = blocks.find((b: any) => b.type === 'workorder-items') as any;
+      const docSettings = blocks.find((b: any) => b.type === 'document-settings')?.content || {};
+      const displaySettings = blocks.find((b: any) => b.type === 'workorder-items')?.content || {};
 
       setTemplateData({
-        orientation: docSettings?.content?.orientation || 'portrait',
-        marginTop: docSettings?.content?.marginTop || 8,
-        marginRight: docSettings?.content?.marginRight || 8,
-        marginBottom: docSettings?.content?.marginBottom || 6,
-        marginLeft: docSettings?.content?.marginLeft || 8,
-        imageSize: docSettings?.content?.imageSize || 80,
-        imagePosition: docSettings?.content?.imagePosition || 'above',
-        showRoomNames: displaySettings?.content?.showRoomNames !== false,
-        showMaterials: displaySettings?.content?.showMaterials !== false,
-        showMeasurements: displaySettings?.content?.showMeasurements !== false,
-        showCheckpoints: displaySettings?.content?.showCheckpoints !== false,
-        showAssignee: displaySettings?.content?.showAssignee !== false,
-        showDueDates: displaySettings?.content?.showDueDates !== false,
-        showProgressBars: displaySettings?.content?.showProgressBars !== false,
+        orientation: docSettings.orientation || 'portrait',
+        marginTop: docSettings.marginTop || 8,
+        marginRight: docSettings.marginRight || 8,
+        marginBottom: docSettings.marginBottom || 6,
+        marginLeft: docSettings.marginLeft || 8,
+        imageSize: docSettings.imageSize || 80,
+        imagePosition: docSettings.imagePosition || 'above',
+        showRoomNames: displaySettings.showRoomNames !== false,
+        showMaterials: displaySettings.showMaterials !== false,
+        showMeasurements: displaySettings.showMeasurements !== false,
+        showCheckpoints: displaySettings.showCheckpoints !== false,
+        showAssignee: displaySettings.showAssignee !== false,
+        showDueDates: displaySettings.showDueDates !== false,
+        showProgressBars: displaySettings.showProgressBars !== false,
       });
     }
   }, [activeTemplate]);

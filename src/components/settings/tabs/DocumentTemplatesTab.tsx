@@ -1,8 +1,7 @@
 import { SavedTemplatesManager } from "../templates/SavedTemplatesManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QuoteTemplateSettingsTab } from "./QuoteTemplateSettingsTab";
-import { WorkOrderTemplateSettingsTab } from "./WorkOrderTemplateSettingsTab";
-import { FileText, Settings, Wrench } from "lucide-react";
+import { FileText, Settings } from "lucide-react";
 
 export const DocumentTemplatesTab = () => {
   return (
@@ -16,7 +15,7 @@ export const DocumentTemplatesTab = () => {
       </div>
       
       <Tabs defaultValue="visual" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="visual">
             <FileText className="h-4 w-4 mr-2" />
             Visual Templates
@@ -24,10 +23,6 @@ export const DocumentTemplatesTab = () => {
           <TabsTrigger value="quotes">
             <Settings className="h-4 w-4 mr-2" />
             Quote Settings
-          </TabsTrigger>
-          <TabsTrigger value="workorders">
-            <Wrench className="h-4 w-4 mr-2" />
-            Work Orders
           </TabsTrigger>
         </TabsList>
         
@@ -37,10 +32,6 @@ export const DocumentTemplatesTab = () => {
         
         <TabsContent value="quotes">
           <QuoteTemplateSettingsTab />
-        </TabsContent>
-        
-        <TabsContent value="workorders">
-          <WorkOrderTemplateSettingsTab />
         </TabsContent>
       </Tabs>
     </div>

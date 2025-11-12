@@ -87,7 +87,7 @@ export const WorkOrderTab = ({ projectId, quoteId }: WorkOrderTabProps) => {
     
     const blocksArray = Array.isArray(blocks) ? blocks : [];
     const itemsBlock = blocksArray.find((b: any) => b?.type === 'workorder-items') as any;
-    const docSettings = blocksArray.find((b: any) => b?.type === 'document-settings') as any;
+    const docSettings = blocksArray.find((b: any) => b?.type === 'document-settings')?.content || {};
     
     return {
       showImages: itemsBlock?.content?.showImages ?? true,
@@ -97,17 +97,14 @@ export const WorkOrderTab = ({ projectId, quoteId }: WorkOrderTabProps) => {
       showMaterials: itemsBlock?.content?.showMaterials ?? true,
       showMeasurements: itemsBlock?.content?.showMeasurements ?? true,
       showCheckpoints: itemsBlock?.content?.showCheckpoints ?? true,
-      ...(docSettings?.content || {}),
+      ...docSettings,
     };
   }, [selectedTemplate]);
 
   // Build work order data
   const workOrderData = useMemo(() => {
-    // Get client from project - handle both client and clients properties
-    const projectClient = (project as any)?.client || (project as any)?.clients || null;
-    
     return buildWorkOrderData(
-      { ...project, client: projectClient },
+      { ...project, client: project?.client },
       treatments || [],
       rooms || [],
       templateSettings
