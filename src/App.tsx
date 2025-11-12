@@ -7,6 +7,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from 'react';
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AdminRoute } from "./components/auth/AdminRoute";
@@ -14,30 +15,29 @@ import { AuthPage } from "./components/auth/AuthPage";
 import { ErrorBoundary } from "./components/performance/ErrorBoundary";
 import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
 import { BugReportDialog } from "@/components/bug-report/BugReportDialog";
-// CalendarSyncProvider removed - using Google Calendar OAuth only
-import NotFound from "./pages/NotFound";
-import Index from "./pages/Index";
-import Settings from "./pages/Settings";
 import { ThemeProvider } from "next-themes";
 import { ThemeDarkSync } from "./components/system/ThemeDarkSync";
 import { InteractionUnlockGuard } from "./components/system/InteractionUnlockGuard";
-import { installNavLogger } from "./debug/navLogger";
-// Ensure theme variables and custom classes are loaded globally
+import { LoadingState } from "./components/ui/loading-state";
 import "@/styles/theme.css";
 
-import AcceptInvitation from "./pages/AcceptInvitation";
-import ResetPassword from "./pages/ResetPassword";
-import { PublicBookingPage } from "./components/calendar/PublicBookingPage";
-import { PublicStorePage } from "./components/public-store/PublicStorePage";
-import { SubscriptionTest } from "./pages/SubscriptionTest";
-import { ManualQuoteTest } from "./pages/ManualQuoteTest";
-import Billing from "./pages/Billing";
-import Purchasing from "./pages/Purchasing";
-import AdminBugManagement from "./pages/AdminBugManagement";
-import Documentation from "./pages/Documentation";
-import OnlineStore from "./pages/OnlineStore";
-import AdminAnalytics from "./pages/AdminAnalytics";
-import AdminAccountManagement from "./pages/AdminAccountManagement";
+// Lazy load all route components for better code splitting
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Index = lazy(() => import("./pages/Index"));
+const Settings = lazy(() => import("./pages/Settings"));
+const AcceptInvitation = lazy(() => import("./pages/AcceptInvitation"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const PublicBookingPage = lazy(() => import("./components/calendar/PublicBookingPage").then(m => ({ default: m.PublicBookingPage })));
+const PublicStorePage = lazy(() => import("./components/public-store/PublicStorePage").then(m => ({ default: m.PublicStorePage })));
+const SubscriptionTest = lazy(() => import("./pages/SubscriptionTest").then(m => ({ default: m.SubscriptionTest })));
+const ManualQuoteTest = lazy(() => import("./pages/ManualQuoteTest").then(m => ({ default: m.ManualQuoteTest })));
+const Billing = lazy(() => import("./pages/Billing"));
+const Purchasing = lazy(() => import("./pages/Purchasing"));
+const AdminBugManagement = lazy(() => import("./pages/AdminBugManagement"));
+const Documentation = lazy(() => import("./pages/Documentation"));
+const OnlineStore = lazy(() => import("./pages/OnlineStore"));
+const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
+const AdminAccountManagement = lazy(() => import("./pages/AdminAccountManagement"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -139,6 +139,11 @@ const App = () => {
                 <AuthProvider>
                   <EmailRealtimeProvider>
                   <BugReportDialog />
+                  <Suspense fallback={
+                    <div className="flex items-center justify-center min-h-screen">
+                      <LoadingState size="lg" text="Loading..." />
+                    </div>
+                  }>
                   <Routes>
                 {/* Public store routes */}
                 <Route path="/store/:storeSlug/*" element={
@@ -277,6 +282,7 @@ const App = () => {
                 {/* Catch all other routes */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </Suspense>
                   </EmailRealtimeProvider>
                   </AuthProvider>
                 </BrowserRouter>

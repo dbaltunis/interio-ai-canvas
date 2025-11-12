@@ -1,36 +1,43 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, lazy, Suspense } from "react";
 import { useKPIConfig } from "@/hooks/useKPIConfig";
 import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { WelcomeHeader } from "./WelcomeHeader";
-import { DashboardCustomizationButton } from "./DashboardCustomizationButton";
 import { DashboardWidgetCustomizer } from "./DashboardWidgetCustomizer";
-import { UpcomingEventsWidget } from "./UpcomingEventsWidget";
-import { StatusOverviewWidget } from "./StatusOverviewWidget";
-import { RecentEmailsWidget } from "./RecentEmailsWidget";
-import { RevenuePieChart } from "./RevenuePieChart";
-import { CalendarConnectionCard } from "./CalendarConnectionCard";
 import { ECommerceGatewayWidget } from "./ECommerceGatewayWidget";
-import { OnlineStoreAnalyticsWidget } from "./OnlineStoreAnalyticsWidget";
-import { OnlineStoreOrdersWidget } from "./OnlineStoreOrdersWidget";
-import { OnlineStoreProductsWidget } from "./OnlineStoreProductsWidget";
-import { ShopifyAnalyticsCard } from "./ShopifyAnalyticsCard";
-import { ShopifyOrdersWidget } from "./ShopifyOrdersWidget";
-import { ShopifyProductsSyncWidget } from "./ShopifyProductsSyncWidget";
-import { ShopifyProductCategoriesWidget } from "./ShopifyProductCategoriesWidget";
 import { DraggableKPISection } from "./DraggableKPISection";
-import { TeamMembersWidget } from "./TeamMembersWidget";
-import { RecentlyCreatedJobsWidget } from "./RecentlyCreatedJobsWidget";
-import { RecentAppointmentsWidget } from "./RecentAppointmentsWidget";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
-import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useBatchedDashboardQueries } from "@/hooks/useBatchedDashboardQueries";
 import { useEmailKPIs } from "@/hooks/useEmails";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { ShopifyIntegrationDialog } from "@/components/library/ShopifyIntegrationDialog";
-import { Users, FileText, Package, DollarSign, Mail, MousePointerClick, Clock, TrendingUp, Store, CalendarCheck } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Users, FileText, DollarSign, Mail, MousePointerClick, Clock, CalendarCheck } from "lucide-react";
 import { useHasPermission } from "@/hooks/usePermissions";
+
+// Lazy load non-critical widgets for better initial load performance
+const UpcomingEventsWidget = lazy(() => import("./UpcomingEventsWidget").then(m => ({ default: m.UpcomingEventsWidget })));
+const StatusOverviewWidget = lazy(() => import("./StatusOverviewWidget").then(m => ({ default: m.StatusOverviewWidget })));
+const RecentEmailsWidget = lazy(() => import("./RecentEmailsWidget").then(m => ({ default: m.RecentEmailsWidget })));
+const RevenuePieChart = lazy(() => import("./RevenuePieChart").then(m => ({ default: m.RevenuePieChart })));
+const CalendarConnectionCard = lazy(() => import("./CalendarConnectionCard").then(m => ({ default: m.CalendarConnectionCard })));
+const OnlineStoreAnalyticsWidget = lazy(() => import("./OnlineStoreAnalyticsWidget").then(m => ({ default: m.OnlineStoreAnalyticsWidget })));
+const OnlineStoreOrdersWidget = lazy(() => import("./OnlineStoreOrdersWidget").then(m => ({ default: m.OnlineStoreOrdersWidget })));
+const OnlineStoreProductsWidget = lazy(() => import("./OnlineStoreProductsWidget").then(m => ({ default: m.OnlineStoreProductsWidget })));
+const ShopifyAnalyticsCard = lazy(() => import("./ShopifyAnalyticsCard").then(m => ({ default: m.ShopifyAnalyticsCard })));
+const ShopifyOrdersWidget = lazy(() => import("./ShopifyOrdersWidget").then(m => ({ default: m.ShopifyOrdersWidget })));
+const ShopifyProductsSyncWidget = lazy(() => import("./ShopifyProductsSyncWidget").then(m => ({ default: m.ShopifyProductsSyncWidget })));
+const ShopifyProductCategoriesWidget = lazy(() => import("./ShopifyProductCategoriesWidget").then(m => ({ default: m.ShopifyProductCategoriesWidget })));
+const TeamMembersWidget = lazy(() => import("./TeamMembersWidget").then(m => ({ default: m.TeamMembersWidget })));
+const RecentlyCreatedJobsWidget = lazy(() => import("./RecentlyCreatedJobsWidget").then(m => ({ default: m.RecentlyCreatedJobsWidget })));
+const RecentAppointmentsWidget = lazy(() => import("./RecentAppointmentsWidget").then(m => ({ default: m.RecentAppointmentsWidget })));
+
+// Widget skeleton fallback
+const WidgetSkeleton = () => (
+  <div className="space-y-3 p-4">
+    <Skeleton className="h-6 w-32" />
+    <Skeleton className="h-20 w-full" />
+    <Skeleton className="h-4 w-3/4" />
+  </div>
+);
 
 
 export const EnhancedHomeDashboard = () => {
@@ -38,30 +45,26 @@ export const EnhancedHomeDashboard = () => {
   const [showWidgetCustomizer, setShowWidgetCustomizer] = useState(false);
   const { kpiConfigs, toggleKPI, reorderKPIs, getEnabledKPIs } = useKPIConfig();
   const { widgets, toggleWidget, reorderWidgets, getEnabledWidgets, getAvailableWidgets, updateWidgetSize } = useDashboardWidgets();
-  const { data: stats } = useDashboardStats();
+  
+  // Use batched queries for better performance
+  const { criticalStats, secondaryStats, hasOnlineStore } = useBatchedDashboardQueries();
+  
+  // Combine stats from both queries
+  const stats = useMemo(() => {
+    if (!criticalStats.data) return null;
+    return {
+      totalClients: criticalStats.data.totalClients,
+      pendingQuotes: criticalStats.data.pendingQuotes,
+      totalRevenue: criticalStats.data.totalRevenue,
+      lowStockItems: secondaryStats.data?.lowStockItems || 0,
+      totalAppointments: secondaryStats.data?.totalAppointments || 0,
+      activeSchedulers: secondaryStats.data?.activeSchedulers || 0,
+    };
+  }, [criticalStats.data, secondaryStats.data]);
+  
   const { data: emailKPIs } = useEmailKPIs();
   const { integration: shopifyIntegration } = useShopifyIntegrationReal();
   const isShopifyConnected = !!shopifyIntegration?.is_connected;
-
-  // Check if user has ANY Online Store (published or not) for dashboard widgets
-  const { data: hasOnlineStore, isLoading: isLoadingStore } = useQuery({
-    queryKey: ['has-online-store'],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-      const { data } = await supabase
-        .from('online_stores')
-        .select('id, is_published')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      console.log('[EnhancedHomeDashboard] Online store query result:', data);
-      return !!data;
-    },
-    staleTime: 0, // Always fetch fresh data
-    refetchOnMount: 'always', // Always refetch when component mounts
-  });
-
-  console.log('[Dashboard] hasOnlineStore:', hasOnlineStore, 'isShopifyConnected:', isShopifyConnected);
   
   // Permission checks for widgets
   const canViewCalendar = useHasPermission('view_calendar');
@@ -81,72 +84,39 @@ export const EnhancedHomeDashboard = () => {
   // Filter enabled widgets by permissions AND integration type
   const enabledWidgets = useMemo(() => {
     // Don't filter until we know the store status
-    if (isLoadingStore) return [];
+    if (hasOnlineStore.isLoading) return [];
     
     const widgets = getEnabledWidgets();
-    console.log('[Dashboard] All enabled widgets before filtering:', widgets.map(w => ({ id: w.id, permission: w.requiredPermission, integrationType: w.integrationType })));
-    console.log('[Dashboard] Integration status:', { hasOnlineStore, isShopifyConnected });
-    
     const filtered = widgets.filter(widget => {
       // MUTUAL EXCLUSIVITY: Only one e-commerce platform can be active
       if (widget.integrationType === 'shopify') {
         // Hide Shopify widgets if InteriorApp store exists
-        if (hasOnlineStore) {
-          console.log(`[Dashboard] Hiding ${widget.id} - InteriorApp store exists (mutual exclusivity)`);
-          return false;
-        }
+        if (hasOnlineStore.data) return false;
         // Show Shopify widgets only if Shopify is connected
-        if (!isShopifyConnected) {
-          console.log(`[Dashboard] Hiding ${widget.id} - Shopify not connected`);
-          return false;
-        }
+        if (!isShopifyConnected) return false;
       }
       
       if (widget.integrationType === 'online_store') {
         // Hide InteriorApp store widgets if Shopify is connected
-        if (isShopifyConnected) {
-          console.log(`[Dashboard] Hiding ${widget.id} - Shopify connected (mutual exclusivity)`);
-          return false;
-        }
+        if (isShopifyConnected) return false;
         // Show InteriorApp store widgets only if store exists
-        if (hasOnlineStore !== true) {
-          console.log(`[Dashboard] Hiding ${widget.id} - No online store (hasOnlineStore=${hasOnlineStore})`);
-          return false;
-        }
+        if (hasOnlineStore.data !== true) return false;
       }
 
       // Then check permissions
       if (!widget.requiredPermission) return true;
 
       // Check specific permissions - ONLY show if explicitly true
-      if (widget.requiredPermission === 'view_calendar') {
-        const result = canViewCalendar === true;
-        console.log(`[Dashboard] Widget ${widget.id} requires view_calendar:`, { canViewCalendar, result });
-        return result;
-      }
-      if (widget.requiredPermission === 'view_shopify') {
-        const result = canViewShopify === true;
-        console.log(`[Dashboard] Widget ${widget.id} requires view_shopify:`, { canViewShopify, result });
-        return result;
-      }
-      if (widget.requiredPermission === 'view_emails') {
-        const result = canViewEmails === true;
-        console.log(`[Dashboard] Widget ${widget.id} requires view_emails:`, { canViewEmails, result });
-        return result;
-      }
-      if (widget.requiredPermission === 'view_inventory') {
-        const result = canViewInventory === true;
-        console.log(`[Dashboard] Widget ${widget.id} requires view_inventory:`, { canViewInventory, result });
-        return result;
-      }
+      if (widget.requiredPermission === 'view_calendar') return canViewCalendar === true;
+      if (widget.requiredPermission === 'view_shopify') return canViewShopify === true;
+      if (widget.requiredPermission === 'view_emails') return canViewEmails === true;
+      if (widget.requiredPermission === 'view_inventory') return canViewInventory === true;
 
-      // If permission check is undefined or false, DON'T show
       return false;
     });
     
-    console.log('[Dashboard] Filtered enabled widgets:', filtered.map(w => w.id));
     return filtered;
-  }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, isShopifyConnected, hasOnlineStore, isLoadingStore]);
+  }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, isShopifyConnected, hasOnlineStore.data, hasOnlineStore.isLoading]);
 
   // Prepare KPI data for primary metrics
   const primaryKPIs = [
@@ -254,7 +224,7 @@ export const EnhancedHomeDashboard = () => {
       {/* E-Commerce Gateway Widget */}
       <ECommerceGatewayWidget />
 
-      {/* Dynamic Widgets Grid */}
+      {/* Dynamic Widgets Grid - Lazy loaded for performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {enabledWidgets.map((widget) => {
           const sizeClasses = {
@@ -263,83 +233,50 @@ export const EnhancedHomeDashboard = () => {
             large: "col-span-full"
           };
           
-          switch (widget.id) {
-            case "shopify-orders":
-              return isShopifyConnected ? (
-                <div key={widget.id} className={sizeClasses[widget.size]}>
-                  <ShopifyOrdersWidget />
-                </div>
-              ) : null;
-            
-            case "shopify-products":
-              return isShopifyConnected ? (
-                <div key={widget.id} className={sizeClasses[widget.size]}>
-                  <ShopifyProductsSyncWidget />
-                </div>
-              ) : null;
-            
-            case "shopify-categories":
-              return isShopifyConnected ? (
-                <div key={widget.id} className={sizeClasses[widget.size]}>
-                  <ShopifyProductCategoriesWidget />
-                </div>
-              ) : null;
-            
-            case "shopify":
-              return isShopifyConnected ? (
-                <div key={widget.id} className={sizeClasses[widget.size]}>
-                  <ShopifyAnalyticsCard />
-                </div>
-              ) : null;
-            
-            case "team":
-              return <div key={widget.id} className={sizeClasses[widget.size]}><TeamMembersWidget /></div>;
-            
-            case "events":
-              return <div key={widget.id} className={sizeClasses[widget.size]}><UpcomingEventsWidget /></div>;
-            
-            case "recent-appointments":
-              return <div key={widget.id} className={sizeClasses[widget.size]}><RecentAppointmentsWidget /></div>;
-            
-            case "emails":
-              return <div key={widget.id} className={sizeClasses[widget.size]}><RecentEmailsWidget /></div>;
-            
-            case "status":
-              return <div key={widget.id} className={sizeClasses[widget.size]}><StatusOverviewWidget /></div>;
-            
-            case "revenue":
-              return <div key={widget.id} className={sizeClasses[widget.size]}><RevenuePieChart /></div>;
-            
-            case "calendar-connection":
-              return <div key={widget.id} className={sizeClasses[widget.size]}><CalendarConnectionCard /></div>;
-            
-            case "recent-jobs":
-              return <div key={widget.id} className={sizeClasses[widget.size]}><RecentlyCreatedJobsWidget /></div>;
-            
-            case "online-store-analytics":
-              return hasOnlineStore ? (
-                <div key={widget.id} className={sizeClasses[widget.size]}>
-                  <OnlineStoreAnalyticsWidget />
-                </div>
-              ) : null;
-            
-            case "online-store-orders":
-              return hasOnlineStore ? (
-                <div key={widget.id} className={sizeClasses[widget.size]}>
-                  <OnlineStoreOrdersWidget />
-                </div>
-              ) : null;
-            
-            case "online-store-products":
-              return hasOnlineStore ? (
-                <div key={widget.id} className={sizeClasses[widget.size]}>
-                  <OnlineStoreProductsWidget />
-                </div>
-              ) : null;
-            
-            default:
-              return null;
-          }
+          const renderWidget = () => {
+            switch (widget.id) {
+              case "shopify-orders":
+                return isShopifyConnected ? <ShopifyOrdersWidget /> : null;
+              case "shopify-products":
+                return isShopifyConnected ? <ShopifyProductsSyncWidget /> : null;
+              case "shopify-categories":
+                return isShopifyConnected ? <ShopifyProductCategoriesWidget /> : null;
+              case "shopify":
+                return isShopifyConnected ? <ShopifyAnalyticsCard /> : null;
+              case "team":
+                return <TeamMembersWidget />;
+              case "events":
+                return <UpcomingEventsWidget />;
+              case "recent-appointments":
+                return <RecentAppointmentsWidget />;
+              case "emails":
+                return <RecentEmailsWidget />;
+              case "status":
+                return <StatusOverviewWidget />;
+              case "revenue":
+                return <RevenuePieChart />;
+              case "calendar-connection":
+                return <CalendarConnectionCard />;
+              case "recent-jobs":
+                return <RecentlyCreatedJobsWidget />;
+              case "online-store-analytics":
+                return hasOnlineStore.data ? <OnlineStoreAnalyticsWidget /> : null;
+              case "online-store-orders":
+                return hasOnlineStore.data ? <OnlineStoreOrdersWidget /> : null;
+              case "online-store-products":
+                return hasOnlineStore.data ? <OnlineStoreProductsWidget /> : null;
+              default:
+                return null;
+            }
+          };
+
+          return (
+            <div key={widget.id} className={sizeClasses[widget.size]}>
+              <Suspense fallback={<WidgetSkeleton />}>
+                {renderWidget()}
+              </Suspense>
+            </div>
+          );
         })}
       </div>
 

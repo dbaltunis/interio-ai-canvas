@@ -78,73 +78,68 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               setTheme('light');
             }
           } catch {}
+          // Defer non-critical operations to avoid blocking initial render
           setTimeout(() => {
             try {
               if (session?.user?.id) {
                 const userId = session.user.id;
-                // 1) Only link if parent_account_id is missing
-                (async () => {
-                  try {
-                    const { data: profile } = await supabase
-                      .from('user_profiles')
-                      .select('parent_account_id')
-                      .eq('user_id', userId)
-                      .maybeSingle();
-
-                    if (!profile || !profile.parent_account_id) {
-                      await linkUserToAccount(userId).catch(() => {});
-                    }
-                  } catch (e) {
-                    console.warn('[AuthProvider] profile check failed:', e);
-                  }
-                })();
-
-                // 2) Auto-accept any pending invitation for this email (seeds role-based permissions)
-                const email = session.user.email;
-                if (email) {
+                // 1) Only link if parent_account_id is missing - run in background
+                setTimeout(() => {
                   (async () => {
                     try {
-                      console.log('[AuthProvider] Checking for pending invitations for:', email);
-                      const { data: invites, error: invErr } = await supabase
-                        .from('user_invitations')
-                        .select('invitation_token, invited_email, status, expires_at, role')
-                        .eq('invited_email', email)
-                        .eq('status', 'pending')
-                        .gt('expires_at', new Date().toISOString())
-                        .limit(1);
+                      const { data: profile } = await supabase
+                        .from('user_profiles')
+                        .select('parent_account_id')
+                        .eq('user_id', userId)
+                        .maybeSingle();
 
-                      if (invErr) {
-                        console.warn('[AuthProvider] Error checking invitations:', invErr);
-                        return;
-                      }
-
-                      if (invites && invites.length > 0) {
-                        const token = invites[0].invitation_token;
-                        console.log('[AuthProvider] Found pending invitation, accepting token:', token);
-                        if (token) {
-                          const { data: acceptResult, error: acceptError } = await supabase.rpc('accept_user_invitation', {
-                            invitation_token_param: token,
-                            user_id_param: userId,
-                          });
-                          if (acceptError) {
-                            console.error('[AuthProvider] Auto-accept invitation failed:', acceptError);
-                          } else {
-                            console.log('[AuthProvider] Auto-accepted invitation:', acceptResult);
-                            // Force refresh permission queries after successful acceptance
-                            setTimeout(() => {
-                              queryClient.invalidateQueries({ queryKey: ['user-permissions'] });
-                              queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
-                              queryClient.invalidateQueries({ queryKey: ['team-presence'] });
-                            }, 100);
-                          }
-                        }
-                      } else {
-                        console.log('[AuthProvider] No pending invitations found for:', email);
+                      if (!profile || !profile.parent_account_id) {
+                        await linkUserToAccount(userId).catch(() => {});
                       }
                     } catch (e) {
-                      console.error('[AuthProvider] Invitation auto-accept error:', e);
+                      console.warn('[AuthProvider] profile check failed:', e);
                     }
                   })();
+                }, 500); // Defer by 500ms
+
+                // 2) Auto-accept any pending invitation for this email - run in background
+                const email = session.user.email;
+                if (email) {
+                  setTimeout(() => {
+                    (async () => {
+                      try {
+                        const { data: invites, error: invErr } = await supabase
+                          .from('user_invitations')
+                          .select('invitation_token, invited_email, status, expires_at, role')
+                          .eq('invited_email', email)
+                          .eq('status', 'pending')
+                          .gt('expires_at', new Date().toISOString())
+                          .limit(1);
+
+                        if (invErr) return;
+
+                        if (invites && invites.length > 0) {
+                          const token = invites[0].invitation_token;
+                          if (token) {
+                            const { error: acceptError } = await supabase.rpc('accept_user_invitation', {
+                              invitation_token_param: token,
+                              user_id_param: userId,
+                            });
+                            if (!acceptError) {
+                              // Refresh permission queries after successful acceptance
+                              setTimeout(() => {
+                                queryClient.invalidateQueries({ queryKey: ['user-permissions'] });
+                                queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+                                queryClient.invalidateQueries({ queryKey: ['team-presence'] });
+                              }, 100);
+                            }
+                          }
+                        }
+                      } catch (e) {
+                        console.warn('[AuthProvider] Invitation auto-accept error:', e);
+                      }
+                    })();
+                  }, 1000); // Defer by 1s
                 }
               }
               // Refresh permission-dependent UI
@@ -180,12 +175,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     );
 
-    // Get initial session with timeout
+    // Get initial session with reduced timeout for faster loading
     const initAuth = async () => {
       try {
         const result = await Promise.race([
           supabase.auth.getSession(),
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Auth timeout')), 5000))
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Auth timeout')), 2000))
         ]);
         
         if (result?.data?.session) {
