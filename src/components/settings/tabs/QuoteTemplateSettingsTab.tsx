@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,6 +97,56 @@ export const QuoteTemplateSettingsTab = () => {
     accentColor: "#3b82f6",
     fontFamily: "Helvetica",
   });
+
+  // Load saved template data
+  useEffect(() => {
+    if (activeTemplate?.blocks && Array.isArray(activeTemplate.blocks)) {
+      const newData = { ...templateData };
+      
+      activeTemplate.blocks.forEach((block: any) => {
+        if (block.type === 'document-settings' && block.content) {
+          newData.orientation = block.content.orientation || newData.orientation;
+          newData.marginTop = block.content.marginTop ?? newData.marginTop;
+          newData.marginRight = block.content.marginRight ?? newData.marginRight;
+          newData.marginBottom = block.content.marginBottom ?? newData.marginBottom;
+          newData.marginLeft = block.content.marginLeft ?? newData.marginLeft;
+          newData.imageSize = block.content.imageSize ?? newData.imageSize;
+          newData.imagePosition = block.content.imagePosition || newData.imagePosition;
+        }
+        if (block.type === 'document-header' && block.content) {
+          newData.headerLayout = block.content.layout || newData.headerLayout;
+          newData.showLogo = block.content.showLogo ?? newData.showLogo;
+          newData.documentTitle = block.content.documentTitle || newData.documentTitle;
+          newData.tagline = block.content.tagline || newData.tagline;
+          newData.showClientCompany = block.content.showClientCompany ?? newData.showClientCompany;
+          newData.showClientEmail = block.content.showClientEmail ?? newData.showClientEmail;
+          newData.showClientPhone = block.content.showClientPhone ?? newData.showClientPhone;
+          newData.showClientAddress = block.content.showClientAddress ?? newData.showClientAddress;
+        }
+        if (block.type === 'products' && block.content) {
+          newData.showImages = block.content.showImages ?? newData.showImages;
+          newData.itemsLayout = block.content.layout || newData.itemsLayout;
+        }
+        if (block.type === 'totals' && block.content) {
+          newData.showSubtotal = block.content.showSubtotal ?? newData.showSubtotal;
+          newData.showTax = block.content.showTax ?? newData.showTax;
+          newData.showTotal = block.content.showTotal ?? newData.showTotal;
+          newData.showDiscountType = block.content.showDiscountType ?? newData.showDiscountType;
+          newData.showDiscountAppliedTo = block.content.showDiscountAppliedTo ?? newData.showDiscountAppliedTo;
+          newData.showDiscountAmount = block.content.showDiscountAmount ?? newData.showDiscountAmount;
+        }
+        if (block.type === 'text' && block.content?.text) {
+          newData.termsAndConditions = block.content.text;
+        }
+        if (block.type === 'signature' && block.content) {
+          newData.showSignature = true;
+          newData.signatureLabel = block.content.signatureLabel || newData.signatureLabel;
+        }
+      });
+      
+      setTemplateData(newData);
+    }
+  }, [activeTemplate]);
 
   const handleSave = async () => {
     setIsSaving(true);
