@@ -68,12 +68,9 @@ const JobsPage = () => {
     refetchQuotes();
   };
 
-  // Optimistically render while permissions load - faster UX
-  // If permission check fails, it will show access denied screen
-  const isLoadingPermissions = canViewJobs === undefined;
-
-  // If user doesn't have permission to view jobs, show access denied
-  if (!canViewJobs) {
+  // Only block if permission is explicitly denied (false), not undefined (loading)
+  // This allows skeleton to show immediately while permissions load
+  if (canViewJobs === false) {
     return (
       <div className="min-h-screen flex items-center justify-center animate-fade-in">
         <Card className="max-w-md">

@@ -98,32 +98,44 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
-  // Fetch notes, appointments, and duplicate info for projects
+  // Fetch notes, appointments, and duplicate info for projects - OPTIMIZED
   useEffect(() => {
     const fetchIndicators = async () => {
       const projectIds = projects.map(p => p.id);
       if (projectIds.length === 0) return;
 
-      // Fetch notes count
-      const { data: notesData } = await (supabase as any)
-        .from('project_notes')
-        .select('project_id', { count: 'exact', head: false })
-        .in('project_id', projectIds);
+      // Batch ALL queries in parallel using Promise.all for maximum performance
+      const [notesResult, appointmentsResult, duplicateChildrenResult] = await Promise.all([
+        // Fetch notes count
+        (supabase as any)
+          .from('project_notes')
+          .select('project_id', { count: 'exact', head: false })
+          .in('project_id', projectIds),
+        
+        // Fetch appointments
+        supabase
+          .from('appointments')
+          .select('*')
+          .in('project_id', projectIds),
+        
+        // Fetch ALL duplicate children in ONE query instead of looping
+        supabase
+          .from('projects')
+          .select('parent_job_id')
+          .in('parent_job_id', projectIds)
+          .not('parent_job_id', 'is', null)
+      ]);
 
+      // Process notes count
       const notesCount: Record<string, number> = {};
-      (notesData || []).forEach((note: any) => {
+      (notesResult.data || []).forEach((note: any) => {
         notesCount[note.project_id] = (notesCount[note.project_id] || 0) + 1;
       });
       setProjectNotes(notesCount);
 
-      // Fetch appointments
-      const { data: appointmentsData } = await supabase
-        .from('appointments')
-        .select('*')
-        .in('project_id', projectIds);
-
+      // Process appointments
       const appointmentsMap: Record<string, any[]> = {};
-      (appointmentsData || []).forEach((apt: any) => {
+      (appointmentsResult.data || []).forEach((apt: any) => {
         if (!appointmentsMap[apt.project_id]) {
           appointmentsMap[apt.project_id] = [];
         }
@@ -131,24 +143,24 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
       });
       setProjectAppointments(appointmentsMap);
 
-      // Fetch duplicate information for all projects
+      // Process duplicates efficiently
       const duplicatesMap: Record<string, any> = {};
       
-      for (const project of projects) {
-        // Check if this job has a parent (is a duplicate)
-        const isDuplicate = !!project.parent_job_id;
-        
-        // Count children (duplicates of this job)
-        const { count: childrenCount } = await supabase
-          .from('projects')
-          .select('*', { count: 'exact', head: true })
-          .eq('parent_job_id', project.id);
-        
+      // Count children for each project from the single batched query
+      const childrenCounts: Record<string, number> = {};
+      (duplicateChildrenResult.data || []).forEach((child: any) => {
+        if (child.parent_job_id) {
+          childrenCounts[child.parent_job_id] = (childrenCounts[child.parent_job_id] || 0) + 1;
+        }
+      });
+      
+      // Build duplicates map
+      projects.forEach(project => {
         duplicatesMap[project.id] = {
-          isDuplicate,
-          duplicateCount: childrenCount || 0
+          isDuplicate: !!project.parent_job_id,
+          duplicateCount: childrenCounts[project.id] || 0
         };
-      }
+      });
       
       setDuplicateData(duplicatesMap);
     };

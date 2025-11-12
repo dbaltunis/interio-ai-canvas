@@ -123,11 +123,11 @@ export const useUserPermissions = () => {
       return permissions.map(permission => ({ permission_name: permission }));
     },
     enabled: !!user && !authLoading,
-    staleTime: 0, // NO CACHING - always fetch fresh
-    gcTime: 0, // NO CACHING
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes - reduces redundant queries
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
     retry: 3,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    refetchOnWindowFocus: true, // Still refresh on focus for security
+    refetchOnMount: false, // Don't refetch on every mount - use cache
     notifyOnChangeProps: ['data', 'error'],
   });
 };
