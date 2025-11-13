@@ -668,7 +668,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
             </Button>
 
             {/* Quote Content Editor Button - Admin Only */}
-            {userRole?.isAdmin && (businessSettings as any)?.manual_quote_editing_enabled && (
+            {userRole?.isAdmin && (
               <Button
                 variant="outline"
                 size="sm"
