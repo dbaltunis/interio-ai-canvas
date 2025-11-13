@@ -7,12 +7,19 @@ import { Pencil, RotateCcw } from "lucide-react";
 import { WorkshopData } from "@/hooks/useWorkshopData";
 import { MaterialsTable } from "../sections/MaterialsTable";
 import { RoomSection } from "../sections/RoomSection";
+import { WorkshopInformationLandscape } from "./WorkshopInformationLandscape";
 
 interface WorkshopInformationProps {
   data: WorkshopData;
+  orientation?: 'portrait' | 'landscape';
 }
 
-export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data }) => {
+export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, orientation = 'portrait' }) => {
+  // Use landscape layout for landscape orientation
+  if (orientation === 'landscape') {
+    return <WorkshopInformationLandscape data={data} />;
+  }
+
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
   

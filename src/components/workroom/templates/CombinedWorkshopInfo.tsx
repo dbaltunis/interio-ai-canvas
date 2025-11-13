@@ -6,13 +6,14 @@ import { VisualSnapshot } from "../VisualSnapshot";
 
 interface CombinedWorkshopInfoProps {
   data: WorkshopData;
+  orientation?: 'portrait' | 'landscape';
 }
 
-export const CombinedWorkshopInfo: React.FC<CombinedWorkshopInfoProps> = ({ data }) => {
+export const CombinedWorkshopInfo: React.FC<CombinedWorkshopInfoProps> = ({ data, orientation = 'portrait' }) => {
   return (
     <div className="space-y-6">
       {/* Keep the original workshop information exactly as-is */}
-      <WorkshopInformation data={data} />
+      <WorkshopInformation data={data} orientation={orientation} />
 
       {/* Visual previews section */}
       <section className="break-inside-avoid">

@@ -12,13 +12,15 @@ interface DocumentRendererProps {
   data?: WorkshopData;
   blocks?: any[];
   projectId?: string;
+  orientation?: 'portrait' | 'landscape';
 }
 
 export const DocumentRenderer: React.FC<DocumentRendererProps> = ({ 
   template, 
   data, 
   blocks, 
-  projectId
+  projectId,
+  orientation = 'portrait'
 }) => {
   // Fetch business settings
   const { data: businessSettings, isLoading: loadingBusinessSettings } = useBusinessSettings();
@@ -133,8 +135,8 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
 
   switch (template) {
     case "workshop-info":
-      return <CombinedWorkshopInfo data={data} />;
+      return <CombinedWorkshopInfo data={data} orientation={orientation} />;
     default:
-      return <WorkshopInformation data={data} />;
+      return <WorkshopInformation data={data} orientation={orientation} />;
   }
 };

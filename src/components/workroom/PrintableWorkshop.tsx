@@ -32,7 +32,7 @@ export const PrintableWorkshop = React.forwardRef<HTMLDivElement, PrintableWorks
           position: 'relative'
         }}
       >
-        <WorkshopInformation data={data} />
+        <WorkshopInformation data={data} orientation={orientation} />
       </div>
     );
   }

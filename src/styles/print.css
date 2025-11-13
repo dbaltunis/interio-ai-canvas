@@ -95,4 +95,24 @@
     page-break-before: always !important;
     break-before: page !important;
   }
+
+  /* Page numbering for printed documents */
+  @page {
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+    }
+  }
+
+  /* Page number display */
+  .page-number::after {
+    content: counter(page);
+  }
+  
+  .total-pages::after {
+    content: counter(pages);
+  }
+  
+  .page-number-placeholder {
+    display: block !important;
+  }
 }
