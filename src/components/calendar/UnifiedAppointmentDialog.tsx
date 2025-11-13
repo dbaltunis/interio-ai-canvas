@@ -795,16 +795,6 @@ export const UnifiedAppointmentDialog = ({
 
             {isEditing && (
               <>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowSharingDialog(true)}
-                  disabled={isSaving}
-                  className="h-10 w-10"
-                >
-                  <Share className="w-4 h-4" />
-                </Button>
-                
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button 
