@@ -111,14 +111,18 @@ export const WorkroomToolbar: React.FC<WorkroomToolbarProps> = ({
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" disabled={loading} className="gap-2">
               <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Document</span>
+              <span className="hidden sm:inline">
+                {selectedTemplate === 'workshop-info' ? 'Workshop Details' : 
+                 selectedTemplate === 'installation' ? 'Installation Instructions' :
+                 selectedTemplate === 'fitting' ? 'Fitting Instructions' : 'Work Orders'}
+              </span>
               <ChevronDown className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56 bg-background z-50">
             <DropdownMenuLabel>Work Orders</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => onTemplateChange('workshop-info')}>
-              Work Order 1
+              Workshop Details
             </DropdownMenuItem>
             
             <DropdownMenuSeparator />
@@ -129,21 +133,6 @@ export const WorkroomToolbar: React.FC<WorkroomToolbarProps> = ({
             <DropdownMenuItem onClick={() => onTemplateChange('fitting')}>
               Fitting Instructions
             </DropdownMenuItem>
-            
-            {templates.length > 0 && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Custom Templates</DropdownMenuLabel>
-                {templates.map((template) => (
-                  <DropdownMenuItem
-                    key={template.id}
-                    onClick={() => onTemplateChange(template.id)}
-                  >
-                    {template.name}
-                  </DropdownMenuItem>
-                ))}
-              </>
-            )}
           </DropdownMenuContent>
         </DropdownMenu>
 
