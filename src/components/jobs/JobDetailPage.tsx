@@ -25,7 +25,6 @@ import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useProjects, useUpdateProject, useCreateProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
-import { useQuotes } from "@/hooks/useQuotes";
 import { useFormattedDate } from "@/hooks/useFormattedDate";
 import { ProjectDetailsTab } from "./tabs/ProjectDetailsTab";
 import { RoomsTab } from "./tabs/RoomsTab";
@@ -63,7 +62,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const updateProject = useUpdateProject();
   const createProject = useCreateProject();
   const { data: duplicates } = useJobDuplicates(jobId);
-  const { data: quotes = [] } = useQuotes(jobId);
   
   // Fetch materials data for badge indicators
   const { data: treatmentMaterials = [] } = useProjectMaterialsUsage(jobId);
@@ -72,13 +70,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   // Use defensive loading and state management
   const project = projects?.find(p => p.id === jobId);
   const client = project?.client_id ? clients?.find(c => c.id === project.client_id) : null;
-  
-  // Determine the primary quote (first non-draft, or first quote if all are drafts)
-  const primaryQuote = useMemo(() => {
-    return quotes.find(q => q.status && q.status.toLowerCase() !== 'draft') || quotes[0];
-  }, [quotes]);
-  
-  const primaryQuoteId = primaryQuote?.id;
   
   // Format dates using user preferences
   const { formattedDate: formattedCreatedDate } = useFormattedDate(project?.created_at, false);
@@ -904,7 +895,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
               <TabsContent value="quotation" className="mt-0">
                 <div className="modern-card p-2 sm:p-4 lg:p-6">
-                  <QuotationTab projectId={jobId} quoteId={primaryQuoteId} />
+                  <QuotationTab projectId={jobId} />
                 </div>
               </TabsContent>
 
