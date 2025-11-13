@@ -1,19 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Pencil, RotateCcw } from "lucide-react";
+import { Pencil, RotateCcw, Save } from "lucide-react";
 import { WorkshopData } from "@/hooks/useWorkshopData";
+import { useWorkshopNotes } from "@/hooks/useWorkshopNotes";
 
 interface WorkshopInformationLandscapeProps {
   data: WorkshopData;
+  projectId?: string;
 }
 
-export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscapeProps> = ({ data }) => {
+export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscapeProps> = ({ data, projectId }) => {
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
-  const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
-  const [productionNotes, setProductionNotes] = useState<string>("");
+  
+  // Use workshop notes hook for database persistence
+  const {
+    productionNotes,
+    itemNotes,
+    setProductionNotes,
+    setItemNote,
+    saveNotes,
+    isLoading,
+    isSaving
+  } = useWorkshopNotes(projectId);
   
   const hasOverrides = Object.keys(overrides).length > 0;
   
@@ -27,12 +38,11 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
   
   const handleReset = () => {
     setOverrides({});
-    setItemNotes({});
-    setProductionNotes("");
   };
   
-  const handleItemNoteChange = (itemId: string, note: string) => {
-    setItemNotes(prev => ({ ...prev, [itemId]: note }));
+  const handleSaveAndClose = async () => {
+    await saveNotes();
+    setEditing(false);
   };
   
   const getItemNote = (itemId: string, defaultNote?: string) => {
@@ -103,11 +113,21 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
             <Button
               variant={editing ? "default" : "outline"}
               size="sm"
-              onClick={() => setEditing(!editing)}
+              onClick={editing ? handleSaveAndClose : () => setEditing(true)}
+              disabled={isSaving}
               className="h-7 text-xs"
             >
-              <Pencil className="h-3 w-3 mr-1" />
-              {editing ? "Done" : "Edit"}
+              {editing ? (
+                <>
+                  <Save className="h-3 w-3 mr-1" />
+                  {isSaving ? "Saving..." : "Save & Done"}
+                </>
+              ) : (
+                <>
+                  <Pencil className="h-3 w-3 mr-1" />
+                  Edit
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -257,7 +277,7 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                         {editing ? (
                           <Textarea
                             value={getItemNote(item.id, item.notes)}
-                            onChange={(e) => handleItemNoteChange(item.id, e.target.value)}
+                            onChange={(e) => setItemNote(item.id, e.target.value)}
                             className="text-[9px] min-h-[40px] w-full"
                             placeholder="Add manufacturing notes for this item..."
                           />

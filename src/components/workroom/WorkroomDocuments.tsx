@@ -331,6 +331,7 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
               data={filteredData}
               orientation={orientation}
               margins={margins}
+              projectId={projectId}
             />
           )}
         </div>

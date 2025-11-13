@@ -12,12 +12,13 @@ import { WorkshopInformationLandscape } from "./WorkshopInformationLandscape";
 interface WorkshopInformationProps {
   data: WorkshopData;
   orientation?: 'portrait' | 'landscape';
+  projectId?: string;
 }
 
-export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, orientation = 'portrait' }) => {
+export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, orientation = 'portrait', projectId }) => {
   // Use landscape layout for landscape orientation
   if (orientation === 'landscape') {
-    return <WorkshopInformationLandscape data={data} />;
+    return <WorkshopInformationLandscape data={data} projectId={projectId} />;
   }
 
   const [editing, setEditing] = useState(false);
