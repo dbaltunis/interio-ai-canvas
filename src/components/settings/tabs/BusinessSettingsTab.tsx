@@ -13,7 +13,6 @@ import { FormFieldGroup } from "@/components/ui/form-field-group";
 import { SimpleLogoUpload } from "./SimpleLogoUpload";
 import { useUploadFile, useGetFileUrl } from "@/hooks/useFileStorage";
 import { useHasPermission } from "@/hooks/usePermissions";
-import { ManualQuoteEditingSettings } from "../ManualQuoteEditingSettings";
 
 export const BusinessSettingsTab = () => {
   const { data: businessSettings, isLoading } = useBusinessSettings();
@@ -523,11 +522,6 @@ export const BusinessSettingsTab = () => {
             </div>
           </FormFieldGroup>
         </FormSection>
-      )}
-
-      {/* Manual Quote Editing Settings - Admin Only */}
-      {isAdmin && (
-        <ManualQuoteEditingSettings />
       )}
 
       <SimpleLogoUpload
