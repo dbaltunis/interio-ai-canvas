@@ -595,7 +595,10 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction 
-              onClick={handleDeleteEvent}
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteEvent();
+              }}
               disabled={deleteAppointment.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
