@@ -291,7 +291,7 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
         </div>
       )}
 
-        <section className="bg-muted/30 p-4 md:p-8 rounded-lg overflow-auto">
+        <section className="bg-background p-4 md:p-8 rounded-lg overflow-auto">
           <div 
             className={orientation === 'landscape' ? 'w-fit' : 'max-w-[210mm] mx-auto'}
           >
