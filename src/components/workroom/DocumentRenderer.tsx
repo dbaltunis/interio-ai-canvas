@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { WorkshopData } from "@/hooks/useWorkshopData";
 import { WorkshopInformation } from "./templates/WorkshopInformation";
 import { CombinedWorkshopInfo } from "./templates/CombinedWorkshopInfo";
@@ -6,6 +6,10 @@ import { LivePreview } from "../settings/templates/visual-editor/LivePreview";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+
+// Lazy load the new templates
+const InstallationInstructions = lazy(() => import("./templates/InstallationInstructions").then(m => ({ default: m.InstallationInstructions })));
+const FittingInstructions = lazy(() => import("./templates/FittingInstructions").then(m => ({ default: m.FittingInstructions })));
 
 interface DocumentRendererProps {
   template: string;
@@ -136,6 +140,18 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
   switch (template) {
     case "workshop-info":
       return <CombinedWorkshopInfo data={data} orientation={orientation} />;
+    case "installation":
+      return (
+        <Suspense fallback={<div className="p-6">Loading installation template...</div>}>
+          <InstallationInstructions data={data} orientation={orientation} />
+        </Suspense>
+      );
+    case "fitting":
+      return (
+        <Suspense fallback={<div className="p-6">Loading fitting template...</div>}>
+          <FittingInstructions data={data} orientation={orientation} />
+        </Suspense>
+      );
     default:
       return <WorkshopInformation data={data} orientation={orientation} />;
   }
