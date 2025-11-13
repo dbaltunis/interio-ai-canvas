@@ -202,6 +202,13 @@ export const useWorkshopData = (projectId?: string) => {
         quantity: opt.quantity || 1,
       }));
       
+      console.log(`🔍 Treatment Options for ${s.name}:`, {
+        surfaceId: s.id,
+        selectedOptions: summary?.selected_options,
+        mappedOptions: options,
+        optionsCount: options.length
+      });
+      
       const liningDetails = summary?.lining_details?.type ? {
         type: summary.lining_details.type,
         name: summary.lining_details.name || summary.lining_details.type,

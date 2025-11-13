@@ -12,6 +12,7 @@ interface WorkshopInformationLandscapeProps {
 export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscapeProps> = ({ data }) => {
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
+  const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
   
   const hasOverrides = Object.keys(overrides).length > 0;
   
@@ -25,6 +26,15 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
   
   const handleReset = () => {
     setOverrides({});
+    setItemNotes({});
+  };
+  
+  const handleItemNoteChange = (itemId: string, note: string) => {
+    setItemNotes(prev => ({ ...prev, [itemId]: note }));
+  };
+  
+  const getItemNote = (itemId: string, defaultNote?: string) => {
+    return itemNotes[itemId] ?? defaultNote ?? "";
   };
   
   const EditableField: React.FC<{
@@ -121,14 +131,14 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
       {/* Items Table */}
       {data.rooms.map((room, roomIdx) => (
         <div key={roomIdx} className="workshop-room-section mb-6">
-          <h3 className="text-sm font-bold bg-gray-800 text-white px-3 py-2 mb-0">{room.roomName}</h3>
+          <h3 className="text-sm font-bold bg-blue-100 text-blue-900 px-3 py-2 mb-0">{room.roomName}</h3>
           <table className="w-full border-collapse bg-white text-[10px]">
             <thead>
-              <tr className="bg-gray-900 text-white">
-                <th className="w-[10%] text-left py-2 px-2 border-r border-gray-700">Item</th>
-                <th className="w-[32%] text-left py-2 px-2 border-r border-gray-700">Fabric & Details</th>
-                <th className="w-[22%] text-left py-2 px-2 border-r border-gray-700">Measurements</th>
-                <th className="w-[36%] text-left py-2 px-2">Sewing Details</th>
+              <tr className="bg-blue-50 text-gray-800 border-b-2 border-blue-200">
+                <th className="w-[10%] text-left py-2 px-2 border-r border-gray-200 font-semibold">Item</th>
+                <th className="w-[32%] text-left py-2 px-2 border-r border-gray-200 font-semibold">Fabric & Details</th>
+                <th className="w-[22%] text-left py-2 px-2 border-r border-gray-200 font-semibold">Measurements</th>
+                <th className="w-[36%] text-left py-2 px-2 font-semibold">Sewing Details</th>
               </tr>
             </thead>
             <tbody>
@@ -240,6 +250,21 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                           )}
                         </div>
                       )}
+                      <div className="text-[9px] mt-2 pt-2 border-t border-gray-200">
+                        <div className="font-medium text-gray-700 mb-1">Notes:</div>
+                        {editing ? (
+                          <Textarea
+                            value={getItemNote(item.id, item.notes)}
+                            onChange={(e) => handleItemNoteChange(item.id, e.target.value)}
+                            className="text-[9px] min-h-[40px] w-full"
+                            placeholder="Add manufacturing notes for this item..."
+                          />
+                        ) : (
+                          <div className="text-gray-600 italic min-h-[20px]">
+                            {getItemNote(item.id, item.notes) || "No notes"}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>
