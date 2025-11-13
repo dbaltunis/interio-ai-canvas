@@ -52,7 +52,9 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
   }, [projectId, data, isLoading, error]);
 
   useEffect(() => {
-    if (template !== "workshop-info" && template !== "packing-slip" && template !== "box-label" && template !== "wraps") {
+    // Don't load blocks for built-in templates
+    const builtInTemplates = ["workshop-info", "installation", "fitting", "packing-slip", "box-label", "wraps"];
+    if (!builtInTemplates.includes(template)) {
       loadTemplateBlocks(template);
     } else {
       setTemplateBlocks(undefined);

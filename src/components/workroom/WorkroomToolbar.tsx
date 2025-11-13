@@ -122,12 +122,13 @@ export const WorkroomToolbar: React.FC<WorkroomToolbarProps> = ({
             </DropdownMenuItem>
             
             <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-xs text-muted-foreground cursor-not-allowed">
-              Installation
-            </DropdownMenuLabel>
-            <DropdownMenuLabel className="text-xs text-muted-foreground cursor-not-allowed">
-              Fitting
-            </DropdownMenuLabel>
+            <DropdownMenuLabel>Installation & Fitting</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => onTemplateChange('installation')}>
+              Installation Instructions
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onTemplateChange('fitting')}>
+              Fitting Instructions
+            </DropdownMenuItem>
             
             {templates.length > 0 && (
               <>
