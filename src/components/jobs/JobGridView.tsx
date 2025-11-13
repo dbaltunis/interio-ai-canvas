@@ -5,6 +5,8 @@ import { JobStatusBadge } from "./JobStatusBadge";
 import { JobActionsMenu } from "./JobActionsMenu";
 import { formatCurrency } from "@/utils/currency";
 import { DuplicateJobIndicator } from "./DuplicateJobIndicator";
+import { ArchiveIndicator } from "./ArchiveIndicator";
+import { useJobStatuses } from "@/hooks/useJobStatuses";
 
 interface JobGridViewProps {
   jobs: any[];
@@ -14,6 +16,8 @@ interface JobGridViewProps {
 }
 
 export const JobGridView = ({ jobs, onJobView, onJobEdit, onJobCopy }: JobGridViewProps) => {
+  const { data: jobStatuses = [] } = useJobStatuses();
+  
   // Count duplicates for each job
   const duplicateCounts = jobs.reduce((acc, job) => {
     if (job.parent_job_id) {
@@ -27,6 +31,13 @@ export const JobGridView = ({ jobs, onJobView, onJobEdit, onJobCopy }: JobGridVi
       {jobs.map((job) => {
         const isDuplicate = !!job.parent_job_id;
         const duplicateCount = duplicateCounts[job.id] || 0;
+        
+        // Check if job is archived
+        const isArchived = (() => {
+          if (!job.status_id) return false;
+          const status = jobStatuses.find(s => s.id === job.status_id);
+          return status?.name?.toLowerCase().includes('completed') || false;
+        })();
         
         return (
           <Card 
@@ -49,7 +60,10 @@ export const JobGridView = ({ jobs, onJobView, onJobEdit, onJobCopy }: JobGridVi
                       className="ml-auto"
                     />
                   </div>
-                  <JobStatusBadge statusId={job.status_id || null} fallbackText={job.status || "No Status"} />
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <JobStatusBadge statusId={job.status_id || null} fallbackText={job.status || "No Status"} />
+                    <ArchiveIndicator isArchived={isArchived} />
+                  </div>
                 </div>
                 <div onClick={(e) => e.stopPropagation()} className="ml-2">
                   <JobActionsMenu 

@@ -25,7 +25,7 @@ export const JobsFilter = ({
   const [isOpen, setIsOpen] = useState(false);
   const { data: jobStatuses = [] } = useJobStatuses();
   
-  const hasActiveFilters = searchTerm || statusFilter !== "all";
+  const hasActiveFilters = searchTerm || (statusFilter !== "all" && statusFilter !== "archived");
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -38,7 +38,7 @@ export const JobsFilter = ({
           <Filter className="h-4 w-4" />
           {hasActiveFilters && (
             <span className="absolute -top-1 -right-1 bg-brand-primary text-white rounded-full text-xs px-1.5 py-0.5">
-              {(searchTerm ? 1 : 0) + (statusFilter !== "all" ? 1 : 0)}
+              {(searchTerm ? 1 : 0) + ((statusFilter !== "all" && statusFilter !== "archived") ? 1 : 0)}
             </span>
           )}
         </Button>
@@ -77,6 +77,12 @@ export const JobsFilter = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="archived">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 rounded-full bg-orange-500" />
+                      <span>Archived</span>
+                    </div>
+                  </SelectItem>
                   {jobStatuses.map(status => (
                     <SelectItem key={status.id} value={status.name.toLowerCase()}>
                       <div className="flex items-center space-x-2">

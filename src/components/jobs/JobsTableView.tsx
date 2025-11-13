@@ -55,6 +55,7 @@ import { MobileJobsView } from "./MobileJobsView";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useJobDuplicates } from "@/hooks/useJobDuplicates";
 import { DuplicateJobIndicator } from "./DuplicateJobIndicator";
+import { ArchiveIndicator } from "./ArchiveIndicator";
 
 interface JobsTableViewProps {
   onJobSelect: (quote: any) => void;
@@ -269,6 +270,14 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   }).filter(group => {
     if (!group) return false;
     if (!group.isMatch && searchTerm) return false;
+    
+    // Handle archived filter - check if status name contains "completed"
+    if (statusFilter === 'archived') {
+      if (!group.project?.status_id) return false;
+      const status = jobStatuses.find(s => s.id === group.project.status_id);
+      return status?.name?.toLowerCase().includes('completed') || false;
+    }
+    
     if (statusFilter === 'all') return true;
     return group.project?.status === statusFilter;
   }) as Array<{ project: any; quotes: any[]; isMatch: boolean }>;
@@ -707,7 +716,17 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
         );
       
       case 'status':
-        return <JobStatusBadge statusId={project.status_id || null} fallbackText={project.status || "No Status"} />;
+        const isArchived = (() => {
+          if (!project.status_id) return false;
+          const status = jobStatuses.find(s => s.id === project.status_id);
+          return status?.name?.toLowerCase().includes('completed') || false;
+        })();
+        return (
+          <div className="flex items-center gap-2">
+            <JobStatusBadge statusId={project.status_id || null} fallbackText={project.status || "No Status"} />
+            <ArchiveIndicator isArchived={isArchived} variant="compact" />
+          </div>
+        );
       
       case 'created':
         return (
