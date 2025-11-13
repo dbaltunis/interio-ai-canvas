@@ -288,10 +288,12 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
         </div>
       )}
 
-        <section className="bg-muted/30 p-8 rounded-lg overflow-auto">
-          <div className="max-w-[210mm] mx-auto">
+        <section className="bg-muted/30 p-4 md:p-8 rounded-lg overflow-auto">
+          <div 
+            className={orientation === 'landscape' ? 'w-fit' : 'max-w-[210mm] mx-auto'}
+          >
             <div 
-              className="bg-white shadow-2xl mx-auto workshop-printable"
+              className="bg-white shadow-2xl workshop-printable"
               style={{
                 width: orientation === 'landscape' ? '297mm' : '210mm',
                 minHeight: orientation === 'landscape' ? '210mm' : '297mm',
