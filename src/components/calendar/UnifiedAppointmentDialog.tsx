@@ -239,15 +239,29 @@ export const UnifiedAppointmentDialog = ({
   };
 
   const handleDelete = async () => {
+    console.log('🔴 DELETE CLICKED - Appointment:', appointment);
+    console.log('🔴 DELETE CLICKED - Has ID?', !!appointment?.id);
+    console.log('🔴 DELETE CLICKED - Is Pending?', deleteAppointment.isPending);
+    
     // Prevent multiple simultaneous delete calls
-    if (!appointment || !appointment.id || deleteAppointment.isPending) return;
+    if (!appointment || !appointment.id || deleteAppointment.isPending) {
+      console.log('🔴 DELETE BLOCKED - Reason:', {
+        noAppointment: !appointment,
+        noId: !appointment?.id,
+        isPending: deleteAppointment.isPending
+      });
+      return;
+    }
+    
+    console.log('🔴 DELETING APPOINTMENT ID:', appointment.id);
     
     try {
       await deleteAppointment.mutateAsync(appointment.id);
+      console.log('🔴 DELETE SUCCESS');
       onOpenChange(false);
       resetForm();
     } catch (error) {
-      console.error('Failed to delete appointment:', error);
+      console.error('🔴 DELETE ERROR:', error);
     }
   };
 
