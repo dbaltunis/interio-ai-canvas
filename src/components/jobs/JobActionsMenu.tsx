@@ -19,12 +19,10 @@ import {
   Edit,
   Eye,
   Share,
-  FileDown,
   Mail,
   Calendar,
   Phone,
-  Archive,
-  Workflow
+  Archive
 } from "lucide-react";
 import { JobNotesDialog } from "./JobNotesDialog";
 import { JobTeamDialog } from "./JobTeamDialog";
@@ -51,7 +49,6 @@ interface JobActionsMenuProps {
   onJobEdit?: (jobId: string) => void;
   onJobView?: (jobId: string) => void;
   onDuplicate?: () => void;
-  onExportPDF?: () => void;
   onArchive?: () => void;
 }
 
@@ -63,7 +60,6 @@ export const JobActionsMenu = ({
   onJobEdit, 
   onJobView,
   onDuplicate,
-  onExportPDF,
   onArchive
 }: JobActionsMenuProps) => {
   const [showNotes, setShowNotes] = useState(false);
@@ -160,24 +156,6 @@ export const JobActionsMenu = ({
     }
   };
 
-  const handleExportPDFClick = () => {
-    if (onExportPDF) {
-      onExportPDF();
-    } else {
-      toast({
-        title: "Export",
-        description: "Export functionality not available",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleWorkflows = () => {
-    toast({
-      title: "Workflows",
-      description: "Workflow functionality coming soon",
-    });
-  };
 
   const handleArchiveClick = () => {
     if (onArchive) {
@@ -231,16 +209,6 @@ export const JobActionsMenu = ({
           <DropdownMenuItem onClick={handleDuplicateJob}>
             <Copy className="mr-2 h-4 w-4" />
             Duplicate Job
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem onClick={handleExportPDFClick}>
-            <FileDown className="mr-2 h-4 w-4" />
-            Export to PDF
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem onClick={handleWorkflows}>
-            <Workflow className="mr-2 h-4 w-4" />
-            Workflows
           </DropdownMenuItem>
           
           <DropdownMenuSeparator />

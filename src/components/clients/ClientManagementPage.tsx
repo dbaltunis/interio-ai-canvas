@@ -13,7 +13,7 @@ import { ClientImportExport } from "./ClientImportExport";
 import { ClientFormWithLeadIntelligence } from "./ClientFormWithLeadIntelligence";
 import { JobsPagination } from "../jobs/JobsPagination";
 import { ErrorFallback } from "@/components/ui/error-fallback";
-import { LoadingFallback } from "@/components/ui/loading-fallback";
+import { ClientManagementSkeleton } from "./skeleton/ClientManagementSkeleton";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { Badge } from "@/components/ui/badge";
@@ -70,12 +70,7 @@ export const ClientManagementPage = ({
         console.log("Edit client:", selectedClient);
       }} onTabChange={onTabChange} />;
     }
-    return <div className="min-h-screen flex items-center justify-center animate-fade-in">
-        <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <div className="text-lg text-muted-foreground">Loading clients...</div>
-        </div>
-      </div>;
+    return <ClientManagementSkeleton />;
   }
 
   // If user doesn't have permission to view clients, show access denied
@@ -177,7 +172,7 @@ export const ClientManagementPage = ({
     }} onTabChange={onTabChange} />;
   }
   if (isLoading || isLoadingStats) {
-    return <LoadingFallback title="Loading clients..." />;
+    return <ClientManagementSkeleton />;
   }
 
   // Return mobile view for mobile devices  

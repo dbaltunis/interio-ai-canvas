@@ -14,7 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy, Calendar, Columns3, FileDown, Archive, Workflow } from "lucide-react";
+import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy, Calendar, Columns3, Archive } from "lucide-react";
 import { useQuotes, useDeleteQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useProjects, useUpdateProject, useCreateProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
@@ -564,19 +564,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     }
   };
 
-  const handleExportPDF = async (project: any) => {
-    toast({
-      title: "Export PDF",
-      description: "Please open the job details to export PDF",
-    });
-  };
-
-  const handleWorkflows = () => {
-    toast({
-      title: "Workflows",
-      description: "Feature coming soon"
-    });
-  };
 
   const handleArchiveJob = async () => {
     if (!projectToArchive) return;
@@ -835,14 +822,6 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                 <DropdownMenuItem onClick={() => handleDuplicateJob(project)}>
                   <Copy className="mr-2 h-4 w-4" />
                   Duplicate Job
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExportPDF(project)}>
-                  <FileDown className="mr-2 h-4 w-4" />
-                  Export to PDF
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleWorkflows}>
-                  <Workflow className="mr-2 h-4 w-4" />
-                  Workflows
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
