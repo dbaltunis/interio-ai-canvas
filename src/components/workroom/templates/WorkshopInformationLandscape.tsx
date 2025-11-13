@@ -13,6 +13,7 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
+  const [productionNotes, setProductionNotes] = useState<string>("");
   
   const hasOverrides = Object.keys(overrides).length > 0;
   
@@ -27,6 +28,7 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
   const handleReset = () => {
     setOverrides({});
     setItemNotes({});
+    setProductionNotes("");
   };
   
   const handleItemNoteChange = (itemId: string, note: string) => {
@@ -277,9 +279,22 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
       {/* Production Notes Section */}
       <div className="border-t pt-3 mt-4">
         <h3 className="text-xs font-bold uppercase tracking-wide mb-2">Production Notes</h3>
-        <div className="bg-gray-50 rounded p-3 min-h-[60px] text-xs text-gray-600">
-          <p className="italic">Additional manufacturing instructions can be added here...</p>
-        </div>
+        {editing ? (
+          <Textarea
+            value={productionNotes}
+            onChange={(e) => setProductionNotes(e.target.value)}
+            className="text-xs min-h-[80px] w-full"
+            placeholder="Add general manufacturing instructions, special handling notes, or additional details..."
+          />
+        ) : (
+          <div className="bg-gray-50 rounded p-3 min-h-[60px] text-xs text-gray-600">
+            {productionNotes ? (
+              <p className="whitespace-pre-wrap">{productionNotes}</p>
+            ) : (
+              <p className="italic">No additional production notes. Click Edit to add instructions.</p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Footer info */}
