@@ -23,20 +23,35 @@ export const VisualSnapshot: React.FC<VisualSnapshotProps> = ({ item, width = 42
     const doCapture = async () => {
       if (!captureRef.current) return;
 
-      // Wait a frame to ensure child components render
+      // Wait longer for full rendering and CSS application
+      await new Promise((r) => setTimeout(r, 300));
       await new Promise((r) => requestAnimationFrame(() => r(null)));
 
       const node = captureRef.current;
       const canvas = await html2canvas(node, {
-        backgroundColor: null,
+        backgroundColor: '#ffffff',
         scale,
         useCORS: true,
         logging: false,
-        onclone: (doc) => {
-          // Ensure the node is visible during capture in the cloned DOM
+        allowTaint: true,
+        foreignObjectRendering: true,
+        imageTimeout: 0,
+        onclone: (doc, element) => {
+          // Ensure the node is visible and properly styled during capture
           const clonedNode = doc.getElementById(node.id);
           if (clonedNode) {
-            clonedNode.setAttribute("style", `position: static; left: 0; top: 0; opacity: 1; pointer-events: auto;`);
+            clonedNode.style.position = 'static';
+            clonedNode.style.left = '0';
+            clonedNode.style.top = '0';
+            clonedNode.style.opacity = '1';
+            clonedNode.style.pointerEvents = 'auto';
+            clonedNode.style.transform = 'none';
+            
+            // Force all child elements to be visible and preserve styles
+            const allElements = clonedNode.querySelectorAll('*');
+            allElements.forEach((el: any) => {
+              el.style.opacity = window.getComputedStyle(el.parentElement || el).opacity || '1';
+            });
           }
         },
       });
@@ -46,7 +61,7 @@ export const VisualSnapshot: React.FC<VisualSnapshotProps> = ({ item, width = 42
     };
 
     doCapture().catch((e) => {
-      console.warn("VisualSnapshot capture failed:", e);
+      console.error("VisualSnapshot capture failed:", e);
       setDataUrl(null);
     });
 
@@ -83,12 +98,14 @@ export const VisualSnapshot: React.FC<VisualSnapshotProps> = ({ item, width = 42
           left: "-10000px",
           top: "-10000px",
           width: `${captureWidth}px`,
+          minHeight: "400px",
           opacity: 1,
           pointerEvents: "none",
           zIndex: -1,
+          backgroundColor: "#ffffff",
         }}
       >
-        <div className="w-[420px] max-w-none">
+        <div className="w-[420px] max-w-none" style={{ minHeight: "400px" }}>
           <WorksheetVisual
             windowType={wsProps.windowType}
             measurements={wsProps.measurements}
