@@ -19,10 +19,12 @@ import {
   Edit,
   Eye,
   Share,
-  Download,
+  FileDown,
   Mail,
   Calendar,
-  Phone
+  Phone,
+  Archive,
+  Workflow
 } from "lucide-react";
 import { JobNotesDialog } from "./JobNotesDialog";
 import { JobTeamDialog } from "./JobTeamDialog";
@@ -48,6 +50,9 @@ interface JobActionsMenuProps {
   onJobCopy?: (jobId: string) => void;
   onJobEdit?: (jobId: string) => void;
   onJobView?: (jobId: string) => void;
+  onDuplicate?: () => void;
+  onExportPDF?: () => void;
+  onArchive?: () => void;
 }
 
 export const JobActionsMenu = ({ 
@@ -56,13 +61,17 @@ export const JobActionsMenu = ({
   project, 
   onJobCopy, 
   onJobEdit, 
-  onJobView 
+  onJobView,
+  onDuplicate,
+  onExportPDF,
+  onArchive
 }: JobActionsMenuProps) => {
   const [showNotes, setShowNotes] = useState(false);
   const [showTeam, setShowTeam] = useState(false);
   const [showProgress, setShowProgress] = useState(false);
   const [showClientDetails, setShowClientDetails] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   
   const { toast } = useToast();
   const deleteQuote = useDeleteQuote();
@@ -139,11 +148,54 @@ export const JobActionsMenu = ({
     });
   };
 
-  const handleDownloadJob = () => {
+  const handleDuplicateJob = () => {
+    if (onDuplicate) {
+      onDuplicate();
+    } else {
+      toast({
+        title: "Duplicate",
+        description: "Duplicate functionality not available",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleExportPDFClick = () => {
+    if (onExportPDF) {
+      onExportPDF();
+    } else {
+      toast({
+        title: "Export",
+        description: "Export functionality not available",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleWorkflows = () => {
     toast({
-      title: "Download",
-      description: "Download functionality coming soon",
+      title: "Workflows",
+      description: "Workflow functionality coming soon",
     });
+  };
+
+  const handleArchiveClick = () => {
+    if (onArchive) {
+      setShowArchiveDialog(true);
+    } else {
+      toast({
+        title: "Archive",
+        description: "Archive functionality not available",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const confirmArchive = () => {
+    if (onArchive) {
+      onArchive();
+      setShowArchiveDialog(false);
+    }
   };
 
   return (
@@ -169,26 +221,33 @@ export const JobActionsMenu = ({
             </DropdownMenuItem>
           )}
           
-          <DropdownMenuItem onClick={handleCopyJob}>
+          <DropdownMenuItem onClick={() => setShowNotes(true)}>
+            <StickyNote className="mr-2 h-4 w-4" />
+            Write Note
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+          
+          <DropdownMenuItem onClick={handleDuplicateJob}>
             <Copy className="mr-2 h-4 w-4" />
-            Copy Job
+            Duplicate Job
           </DropdownMenuItem>
           
-          <DropdownMenuItem onClick={handleShareJob}>
-            <Share className="mr-2 h-4 w-4" />
-            Share Job
+          <DropdownMenuItem onClick={handleExportPDFClick}>
+            <FileDown className="mr-2 h-4 w-4" />
+            Export to PDF
           </DropdownMenuItem>
           
-          <DropdownMenuItem onClick={handleDownloadJob}>
-            <Download className="mr-2 h-4 w-4" />
-            Download PDF
+          <DropdownMenuItem onClick={handleWorkflows}>
+            <Workflow className="mr-2 h-4 w-4" />
+            Workflows
           </DropdownMenuItem>
           
           <DropdownMenuSeparator />
           
-          <DropdownMenuItem onClick={() => setShowNotes(true)}>
-            <StickyNote className="mr-2 h-4 w-4" />
-            Job Notes
+          <DropdownMenuItem onClick={handleShareJob}>
+            <Share className="mr-2 h-4 w-4" />
+            Share Job
           </DropdownMenuItem>
           
           <DropdownMenuItem onClick={() => setShowProgress(true)}>
@@ -219,17 +278,18 @@ export const JobActionsMenu = ({
                 <Calendar className="mr-2 h-4 w-4" />
                 Schedule Appointment
               </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
             </>
           )}
           
-          {/* Disabled: Team invitations temporarily disabled
-          <DropdownMenuItem onClick={() => setShowTeam(true)}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Invite Team
+          <DropdownMenuItem 
+            onClick={handleArchiveClick}
+            className="text-orange-600 focus:text-orange-600"
+          >
+            <Archive className="mr-2 h-4 w-4" />
+            Archive Job
           </DropdownMenuItem>
-          */}
-          
-          <DropdownMenuSeparator />
           
           <DropdownMenuItem 
             onClick={() => setShowDeleteDialog(true)}
@@ -289,6 +349,27 @@ export const JobActionsMenu = ({
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Archive Confirmation Dialog */}
+      <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive Job</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to archive job {quote.quote_number}? This will move it to Completed status.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmArchive}
+              className="bg-orange-600 text-white hover:bg-orange-700"
+            >
+              Archive
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

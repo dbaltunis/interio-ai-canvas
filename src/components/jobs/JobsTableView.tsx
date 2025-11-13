@@ -14,9 +14,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy, Calendar, Columns3 } from "lucide-react";
+import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy, Calendar, Columns3, FileDown, Archive, Workflow } from "lucide-react";
 import { useQuotes, useDeleteQuote, useUpdateQuote } from "@/hooks/useQuotes";
-import { useProjects } from "@/hooks/useProjects";
+import { useProjects, useUpdateProject, useCreateProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
 import { useUsers } from "@/hooks/useUsers";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { generateQuotePDF } from "@/utils/generateQuotePDF";
 import {
   DropdownMenu, 
   DropdownMenuContent, 
@@ -82,10 +83,14 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   const [quoteToDelete, setQuoteToDelete] = useState<any>(null);
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
   const [selectedQuoteForNotes, setSelectedQuoteForNotes] = useState<any>(null);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [projectToArchive, setProjectToArchive] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [projectNotes, setProjectNotes] = useState<Record<string, number>>({});
   const [projectAppointments, setProjectAppointments] = useState<Record<string, any[]>>({});
   const [duplicateData, setDuplicateData] = useState<Record<string, any>>({});
+  const updateProject = useUpdateProject();
+  const createProject = useCreateProject();
 
   // Filter columns for tablet view - show only 5 most important columns
   const tabletImportantColumns = ['job_no', 'client', 'status', 'total', 'actions'];
@@ -505,6 +510,120 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     setNotesDialogOpen(true);
   };
 
+  const handleDuplicateJob = async (project: any) => {
+    try {
+      toast({ title: "Duplicating job...", description: "This may take a moment" });
+      
+      // Duplicate the project
+      const { data: newProject, error: projectError } = await supabase
+        .from('projects')
+        .insert([{
+          ...project,
+          id: undefined,
+          created_at: undefined,
+          updated_at: undefined,
+          job_number: `${project.job_number}-COPY`,
+          name: `${project.name} (Copy)`
+        }])
+        .select()
+        .single();
+      
+      if (projectError) throw projectError;
+      
+      // Copy rooms, surfaces, treatments, quotes etc
+      const { data: rooms } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('project_id', project.id);
+      
+      if (rooms && rooms.length > 0) {
+        const roomsCopy = rooms.map(r => ({
+          ...r,
+          id: undefined,
+          project_id: newProject.id
+        }));
+        await supabase.from('rooms').insert(roomsCopy);
+      }
+      
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      await queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      
+      toast({
+        title: "✓ Job Duplicated Successfully",
+        description: `Created copy of job. Opening new job...`
+      });
+      
+      window.location.href = `/?tab=projects&jobId=${newProject.id}`;
+    } catch (error) {
+      console.error('Error duplicating job:', error);
+      toast({
+        title: "Error",
+        description: "Failed to duplicate job. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleExportPDF = async (project: any) => {
+    toast({
+      title: "Export PDF",
+      description: "Please open the job details to export PDF",
+    });
+  };
+
+  const handleWorkflows = () => {
+    toast({
+      title: "Workflows",
+      description: "Feature coming soon"
+    });
+  };
+
+  const handleArchiveJob = async () => {
+    if (!projectToArchive) return;
+    
+    try {
+      const { data: archivedStatus } = await supabase
+        .from("job_statuses")
+        .select("id")
+        .eq("user_id", projectToArchive.user_id)
+        .eq("category", "Project")
+        .eq("is_active", true)
+        .ilike("name", "%completed%")
+        .order("slot_number", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      
+      if (archivedStatus) {
+        await updateProject.mutateAsync({
+          id: projectToArchive.id,
+          status_id: archivedStatus.id
+        });
+
+        toast({
+          title: "Success",
+          description: "Job archived successfully"
+        });
+        
+        setArchiveDialogOpen(false);
+        setProjectToArchive(null);
+      } else {
+        toast({
+          title: "Info",
+          description: "No 'Completed' status found. Create one in Settings to archive jobs.",
+          variant: "default"
+        });
+        setArchiveDialogOpen(false);
+      }
+    } catch (error) {
+      console.error('Error archiving job:', error);
+      toast({
+        title: "Error",
+        description: "Failed to archive job. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleNoteSaved = (projectId: string) => {
     setProjectNotes(prev => ({
       ...prev,
@@ -713,11 +832,36 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleDuplicateJob(project)}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Duplicate Job
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportPDF(project)}>
+                  <FileDown className="mr-2 h-4 w-4" />
+                  Export to PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleWorkflows}>
+                  <Workflow className="mr-2 h-4 w-4" />
+                  Workflows
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={() => {
+                    setProjectToArchive(project);
+                    setArchiveDialogOpen(true);
+                  }}
+                  className="text-orange-600 focus:text-orange-600"
+                >
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archive Job
+                </DropdownMenuItem>
                 {canDeleteJobs && (
                   <DropdownMenuItem onClick={() => {
                     setQuoteToDelete({ id: project.id, projects: project });
                     setDeleteDialogOpen(true);
-                  }}>
+                  }}
+                  className="text-destructive focus:text-destructive"
+                  >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete Job
                   </DropdownMenuItem>
@@ -800,6 +944,31 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive Job</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to archive this job? This will move it to Completed status.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setArchiveDialogOpen(false);
+              setProjectToArchive(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleArchiveJob}
+              className="bg-orange-600 text-white hover:bg-orange-700"
+            >
+              Archive
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
