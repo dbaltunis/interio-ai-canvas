@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { BrandHeader } from './BrandHeader';
 import { UserProfile } from './UserProfile';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 // Removed NotificationDropdown - simplified UI
 import { TeamCollaborationCenter } from '../collaboration/TeamCollaborationCenter';
 import { AINotificationToast } from '../collaboration/AINotificationToast';
@@ -54,12 +55,15 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   const { conversations } = useDirectMessages();
   const { data: queueCount } = useMaterialQueueCount();
   
-  // Permission checks
+  // Permission checks - these return undefined while loading
   const canViewJobs = useHasPermission('view_jobs');
   const canViewClients = useHasPermission('view_clients');
   const canViewEmails = useHasPermission('view_emails');
   const canViewCalendar = useHasPermission('view_calendar');
   const canViewInventory = useHasPermission('view_inventory');
+  
+  // Check if permissions are still loading
+  const permissionsLoading = canViewJobs === undefined;
   
   // Check if user has InteriorApp store AND NOT using Shopify
   const { data: hasOnlineStore } = useQuery({
@@ -124,38 +128,47 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
 
           {/* Center: Navigation items */}
           <nav className="flex items-center space-x-2 lg:space-x-3">
-            {visibleNavItems.map((item) => {
-              const Icon = item.icon;
-              const showBadge = item.badge && queueCount && queueCount > 0;
-              
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onTabChange(item.id)}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative",
-                    activeTab === item.id 
-                      ? "bg-primary text-primary-foreground shadow-sm border border-primary/20" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                  )}
-                  data-tour-id={item.tourId}
-                >
-                  <Icon className={cn(
-                    "h-4 w-4 transition-transform",
-                    activeTab === item.id && "scale-110"
-                  )} />
-                  <span className={cn(activeTab === item.id && "font-semibold")}>{item.label}</span>
-                  {showBadge && (
-                    <Badge 
-                      variant="destructive" 
-                      className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]"
-                    >
-                      {queueCount}
-                    </Badge>
-                  )}
-                </button>
-              );
-            })}
+            {permissionsLoading ? (
+              // Show skeleton while permissions are loading
+              <>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} className="h-9 w-24" />
+                ))}
+              </>
+            ) : (
+              visibleNavItems.map((item) => {
+                const Icon = item.icon;
+                const showBadge = item.badge && queueCount && queueCount > 0;
+                
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => onTabChange(item.id)}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative",
+                      activeTab === item.id 
+                        ? "bg-primary text-primary-foreground shadow-sm border border-primary/20" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    )}
+                    data-tour-id={item.tourId}
+                  >
+                    <Icon className={cn(
+                      "h-4 w-4 transition-transform",
+                      activeTab === item.id && "scale-110"
+                    )} />
+                    <span className={cn(activeTab === item.id && "font-semibold")}>{item.label}</span>
+                    {showBadge && (
+                      <Badge 
+                        variant="destructive" 
+                        className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]"
+                      >
+                        {queueCount}
+                      </Badge>
+                    )}
+                  </button>
+                );
+              })
+            )}
           </nav>
           {/* Right: User Profile */}
           <div className="flex items-center gap-3">

@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   FolderOpen, 
   Users, 
@@ -43,11 +44,14 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   const { conversations } = useDirectMessages();
   const { data: queueCount } = useMaterialQueueCount();
   
-  // Permission checks
+  // Permission checks - these return undefined while loading
   const canViewDashboard = useHasPermission('view_dashboard');
   const canViewJobs = useHasPermission('view_jobs');
   const canViewClients = useHasPermission('view_clients');
   const canViewCalendar = useHasPermission('view_calendar');
+  
+  // Check if permissions are still loading
+  const permissionsLoading = canViewJobs === undefined;
   
   // Check if user actually has an online store (not just permission)
   const { data: hasOnlineStore } = useQuery({
@@ -93,7 +97,18 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-background/95 backdrop-blur-md border-t border-border shadow-lg pb-safe">
-        <div className={cn("relative grid h-16", gridCols)}>
+        {permissionsLoading ? (
+          // Show skeleton while permissions are loading
+          <div className="grid grid-cols-5 h-16">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex flex-col items-center justify-center gap-1 px-2">
+                <Skeleton className="h-6 w-6 rounded" />
+                <Skeleton className="h-3 w-12" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className={cn("relative grid h-16", gridCols)}>
           {/* First half of items */}
           {visibleNavItems.slice(0, Math.floor(visibleNavItems.length / 2)).map((item) => {
             const Icon = item.icon;
@@ -172,6 +187,7 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
             );
           })}
         </div>
+        )}
       </nav>
       
       <CreateActionDialog 
