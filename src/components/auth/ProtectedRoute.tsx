@@ -2,6 +2,7 @@
 import { ReactNode } from 'react';
 import { useAuth } from './AuthProvider';
 import { AuthPage } from './AuthPage';
+import { AppLoadingSkeleton } from './AppLoadingSkeleton';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -15,11 +16,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (loading) {
     console.log('ProtectedRoute: Showing loading screen');
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
+    return <AppLoadingSkeleton />;
   }
 
   if (!user) {
