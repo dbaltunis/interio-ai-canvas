@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useUserRole } from "@/hooks/useUserRole";
 import { 
   DollarSign, 
   TrendingUp, 
@@ -18,6 +19,10 @@ export const BusinessInventoryOverview = () => {
   const { data: allInventory, isLoading } = useEnhancedInventory();
   const canManageInventory = useHasPermission('manage_inventory');
   const canViewInventory = useHasPermission('view_inventory');
+  const { data: roleData, isLoading: roleLoading } = useUserRole();
+  
+  // Financial data requires admin/owner role AND vendor cost viewing permission
+  const canViewFinancialData = roleData?.isAdmin || roleData?.isOwner || roleData?.canViewVendorCosts;
   
   // Filter out treatment options - only show physical inventory
   const inventory = allInventory?.filter(item => item.category !== 'treatment_option') || [];
@@ -95,7 +100,7 @@ export const BusinessInventoryOverview = () => {
     }).format(amount);
   };
 
-  if (isLoading) {
+  if (isLoading || roleLoading) {
     return <div className="text-muted-foreground">Loading business metrics...</div>;
   }
 
@@ -121,8 +126,8 @@ export const BusinessInventoryOverview = () => {
 
   return (
     <div className="space-y-6">
-      {/* Primary Financial KPIs - Only visible to users with manage_inventory permission */}
-      {canManageInventory === true && (
+      {/* Primary Financial KPIs - Only visible to admins with financial viewing permissions */}
+      {canViewFinancialData && (
         <div>
           <h2 className="text-lg font-semibold text-foreground mb-4">Financial Overview</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
