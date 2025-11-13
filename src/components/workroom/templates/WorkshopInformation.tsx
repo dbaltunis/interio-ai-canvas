@@ -122,10 +122,149 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
 
       <MaterialsTable data={data} />
 
+      {/* Enhanced Work Order Items */}
       <div className="space-y-4">
-        {data.rooms.map((section, idx) => (
-          <RoomSection key={`${section.roomName}-${idx}`} section={section} />)
-        )}
+        {data.rooms.map((room, roomIdx) => (
+          <div key={roomIdx} className="space-y-3">
+            <h3 className="text-lg font-semibold border-b pb-2">{room.roomName}</h3>
+            {room.items.map((item) => (
+              <Card key={item.id} className="workshop-item-card border-2">
+                <CardHeader className="bg-muted/30 pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-base">{item.location}</CardTitle>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {item.treatmentType || 'No treatment specified'}
+                      </div>
+                    </div>
+                    {item.visualDetails?.thumbnailUrl && (
+                      <img 
+                        src={item.visualDetails.thumbnailUrl}
+                        alt="Fabric"
+                        className="w-16 h-16 object-cover rounded border-2 ml-3"
+                      />
+                    )}
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="space-y-4 pt-4">
+                  {/* Fabric Details Section */}
+                  {item.fabricDetails && (
+                    <div>
+                      <h4 className="text-sm font-bold text-blue-700 mb-2">FABRIC DETAILS</h4>
+                      <div className="text-xs space-y-1">
+                        <div className="font-medium">{item.fabricDetails.name}</div>
+                        <div className="text-muted-foreground">
+                          Fabric Width: {item.fabricDetails.fabricWidth}cm | 
+                          Roll Direction: {item.fabricDetails.rollDirection}
+                        </div>
+                        {item.fabricDetails.patternRepeat && (
+                          <div>Pattern Repeat: {item.fabricDetails.patternRepeat}cm</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Fabric Usage Section */}
+                  {item.fabricUsage && (
+                    <div className="bg-green-50 p-3 rounded border border-green-200">
+                      <h4 className="text-sm font-bold text-green-800 mb-2">FABRIC USAGE</h4>
+                      <div className="text-xs space-y-1">
+                        <div className="font-medium text-green-700">
+                          Total: {item.fabricUsage.linearMeters.toFixed(2)}m ({item.fabricUsage.linearYards.toFixed(1)} yards)
+                        </div>
+                        <div>
+                          Widths Required: {item.fabricUsage.widthsRequired} | 
+                          Seams: {item.fabricUsage.seamsRequired}
+                        </div>
+                        {item.fabricUsage.leftover > 0 && (
+                          <div className="text-muted-foreground">
+                            Leftover: ~{item.fabricUsage.leftover.toFixed(1)}cm per width
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Measurements Section */}
+                  {item.measurements && (
+                    <div>
+                      <h4 className="text-sm font-bold mb-2">MEASUREMENTS</h4>
+                      <div className="text-xs font-mono space-y-1">
+                        {item.measurements.width && (
+                          <div>Rail Width: {item.measurements.width}{item.measurements.unit}</div>
+                        )}
+                        {item.measurements.drop && (
+                          <div>Drop: {item.measurements.drop}{item.measurements.unit}</div>
+                        )}
+                        {item.measurements.pooling && item.measurements.pooling > 0 && (
+                          <div>Pooling: {item.measurements.pooling}{item.measurements.unit}</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Sewing Specifications */}
+                  {(item.fullness || item.hems) && (
+                    <div className="bg-purple-50 p-3 rounded border border-purple-200">
+                      <h4 className="text-sm font-bold text-purple-800 mb-2">SEWING SPECIFICATIONS</h4>
+                      <div className="text-xs space-y-1">
+                        {item.fullness && (
+                          <div className="font-medium">
+                            Fullness: {item.fullness.ratio}x ({item.fullness.headingType})
+                          </div>
+                        )}
+                        {item.hems && (
+                          <div className="space-y-0.5 mt-2">
+                            <div>Header Hem: {item.hems.header}cm | Bottom Hem: {item.hems.bottom}cm</div>
+                            <div>Side Hems: {item.hems.side}cm each</div>
+                            {item.fabricUsage && item.fabricUsage.seamsRequired > 0 && (
+                              <div className="text-orange-700 font-medium">
+                                Seam Allowance: {item.hems.seam}cm per join (×{item.fabricUsage.seamsRequired} seams)
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Options & Extras */}
+                  {item.options && item.options.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-bold mb-2">OPTIONS & EXTRAS</h4>
+                      <ul className="text-xs space-y-1">
+                        {item.options.map((opt, idx) => (
+                          <li key={idx}>• {opt.name}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {/* Lining */}
+                  {item.liningDetails && (
+                    <div>
+                      <h4 className="text-sm font-bold mb-2">LINING</h4>
+                      <div className="text-xs">
+                        Type: {item.liningDetails.name}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Production Notes */}
+                  <div className="border-t pt-3">
+                    <h4 className="text-xs font-bold mb-1">PRODUCTION NOTES</h4>
+                    <Textarea 
+                      placeholder="Add any special instructions..."
+                      className="text-xs min-h-[50px]"
+                      defaultValue={item.notes}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ))}
       </div>
     </section>
   );

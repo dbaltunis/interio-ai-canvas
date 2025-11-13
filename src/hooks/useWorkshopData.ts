@@ -14,12 +14,61 @@ export interface WorkshopRoomItem {
   measurements?: {
     width?: number;
     height?: number;
+    drop?: number;
+    pooling?: number;
     unit?: string;
   };
   treatmentType?: string;
   notes?: string;
   summary?: any;
   surface?: any;
+  
+  // Manufacturing details
+  fabricDetails?: {
+    name: string;
+    fabricWidth: number;
+    imageUrl?: string;
+    pricePerUnit?: number;
+    rollDirection?: string;
+    patternRepeat?: number;
+  };
+  
+  fabricUsage?: {
+    linearMeters: number;
+    linearYards: number;
+    widthsRequired: number;
+    seamsRequired: number;
+    leftover?: number;
+  };
+  
+  hems?: {
+    header: number;
+    bottom: number;
+    side: number;
+    seam?: number;
+  };
+  
+  fullness?: {
+    ratio: number;
+    headingType: string;
+  };
+  
+  options?: Array<{
+    name: string;
+    optionKey: string;
+    price: number;
+    quantity?: number;
+  }>;
+  
+  liningDetails?: {
+    type: string;
+    name?: string;
+  };
+  
+  visualDetails?: {
+    thumbnailUrl?: string;
+    showImage: boolean;
+  };
 }
 
 export interface WorkshopRoomSection {
@@ -108,22 +157,80 @@ export const useWorkshopData = (projectId?: string) => {
         surfaceType: s.surface_type,
         finalTreatmentType: summary?.template_name || summary?.treatment_type || s.surface_type || undefined
       });
+      
+      // Extract manufacturing details from summary
+      const fabricDetails = summary?.fabric_details ? {
+        name: summary.fabric_details.name || 'Unknown Fabric',
+        fabricWidth: summary.fabric_details.fabric_width || 137,
+        imageUrl: summary.fabric_details.image_url,
+        pricePerUnit: summary.fabric_details.selling_price,
+        rollDirection: summary.measurements_details?.fabric_rotated ? 'Horizontal' : 'Vertical',
+        patternRepeat: summary.fabric_details.pattern_repeat,
+      } : undefined;
+      
+      const linearMeters = summary?.linear_meters || 0;
+      const widthsRequired = summary?.widths_required || 1;
+      const fabricUsage = {
+        linearMeters,
+        linearYards: linearMeters * 1.09361,
+        widthsRequired,
+        seamsRequired: Math.max(0, widthsRequired - 1),
+        leftover: summary?.measurements_details?.leftover || 0,
+      };
+      
+      const hems = {
+        header: summary?.measurements_details?.header_hem || summary?.template_details?.header_allowance || 15,
+        bottom: summary?.measurements_details?.bottom_hem || summary?.template_details?.bottom_hem || 10,
+        side: summary?.measurements_details?.side_hem || summary?.template_details?.side_hems || 5,
+        seam: summary?.measurements_details?.seam_hem || summary?.template_details?.seam_hems || 3,
+      };
+      
+      const fullness = {
+        ratio: summary?.measurements_details?.fullness_ratio || summary?.measurements_details?.heading_fullness || summary?.template_details?.fullness_ratio || 2.5,
+        headingType: summary?.heading_details?.heading_name || summary?.template_details?.heading_type || 'Standard',
+      };
+      
+      const options = (summary?.selected_options || []).map((opt: any) => ({
+        name: opt.name || opt.option_name || 'Option',
+        optionKey: opt.optionKey || opt.option_key || '',
+        price: opt.price || 0,
+        quantity: opt.quantity || 1,
+      }));
+      
+      const liningDetails = summary?.lining_details?.type ? {
+        type: summary.lining_details.type,
+        name: summary.lining_details.name || summary.lining_details.type,
+      } : undefined;
+      
+      const visualDetails = {
+        thumbnailUrl: summary?.fabric_details?.image_url,
+        showImage: true,
+      };
 
       const item: WorkshopRoomItem = {
         id: s.id,
         name: s.name || "Window",
         roomName: getRoomName(s.room_id),
-        location: undefined,
+        location: s.name || "Window",
         quantity: 1,
         measurements: {
           width,
           height,
+          drop: summary?.drop || summary?.measurements_details?.drop,
+          pooling: summary?.measurements_details?.pooling || summary?.pooling_amount,
           unit: (width || height) ? getLengthUnitLabel() : undefined,
         },
         treatmentType: summary?.template_name || summary?.treatment_type || s.surface_type || undefined,
         notes: s.notes || undefined,
         summary: summary,
         surface: s,
+        fabricDetails,
+        fabricUsage,
+        hems,
+        fullness,
+        options,
+        liningDetails,
+        visualDetails,
       };
 
       const section = ensureSectionByRoomId(s.room_id);

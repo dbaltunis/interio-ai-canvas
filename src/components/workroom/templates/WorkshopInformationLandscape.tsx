@@ -100,7 +100,7 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
           </div>
         </div>
         
-        {/* Three-column header info */}
+        {/* Header info */}
         <div className="grid grid-cols-4 gap-3 text-xs">
           <div>
             <div className="text-[9px] font-semibold text-gray-600 uppercase tracking-wide">Project</div>
@@ -108,76 +108,146 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
           </div>
           <EditableField label="Order #" field="orderNumber" />
           <EditableField label="Client" field="clientName" />
-          <EditableField label="Created" field="createdDate" />
-          
           <EditableField label="Due Date" field="dueDate" />
+        </div>
+        
+        <div className="grid grid-cols-3 gap-3 text-xs mt-2">
+          <EditableField label="Created" field="createdDate" />
           <EditableField label="Assigned Maker" field="assignedMaker" />
-          <EditableField label="Shipping Address" field="shippingAddress" className="col-span-2" multiline />
+          <EditableField label="Shipping Address" field="shippingAddress" multiline />
         </div>
       </div>
 
-      {/* Items Table - Optimized for Landscape */}
-      <div>
-        <h2 className="text-sm font-bold mb-2 uppercase tracking-wide">Order Items</h2>
-        <table className="w-full text-xs border-collapse">
-          <thead>
-            <tr className="bg-gray-100 border-b-2 border-gray-900">
-              <th className="text-left py-2 px-2 font-semibold">Room</th>
-              <th className="text-left py-2 px-2 font-semibold">Location</th>
-              <th className="text-left py-2 px-2 font-semibold">Treatment</th>
-              <th className="text-right py-2 px-2 font-semibold">Width</th>
-              <th className="text-right py-2 px-2 font-semibold">Height</th>
-              <th className="text-center py-2 px-2 font-semibold">Qty</th>
-              <th className="text-left py-2 px-2 font-semibold">Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.rooms.map((room, roomIdx) => (
-              <React.Fragment key={`room-${roomIdx}`}>
-                {room.items.map((item, itemIdx) => (
-                  <tr 
-                    key={`${room.roomName}-${itemIdx}`}
-                    className="border-b border-gray-200 workshop-item-card hover:bg-gray-50"
-                  >
-                    <td className="py-2 px-2 font-medium">{room.roomName}</td>
-                    <td className="py-2 px-2">{item.location || "—"}</td>
-                    <td className="py-2 px-2">
-                      <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-[10px] font-medium">
-                        {item.treatmentType || "Standard"}
-                      </span>
-                    </td>
-                    <td className="py-2 px-2 text-right font-mono">
-                      {item.measurements?.width ? `${item.measurements.width}` : "—"}
-                    </td>
-                    <td className="py-2 px-2 text-right font-mono">
-                      {item.measurements?.height ? `${item.measurements.height}` : "—"}
-                    </td>
-                    <td className="py-2 px-2 text-center font-medium">
-                      {item.quantity || 1}
-                    </td>
-                    <td className="py-2 px-2 text-[10px] text-gray-600">
-                      {item.notes || "—"}
-                    </td>
-                  </tr>
-                ))}
-                {/* Room subtotal row */}
-                {roomIdx < data.rooms.length - 1 && (
-                  <tr className="bg-gray-50">
-                    <td colSpan={7} className="py-1"></td>
-                  </tr>
-                )}
-              </React.Fragment>
-            ))}
-          </tbody>
-          <tfoot className="border-t-2 border-gray-900">
-            <tr className="bg-gray-100 font-bold">
-              <td colSpan={5} className="py-2 px-2 text-right">Total Items:</td>
-              <td className="py-2 px-2 text-center">{data.projectTotals?.itemsCount || 0}</td>
-              <td className="py-2 px-2"></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+      {/* Items Table */}
+      {data.rooms.map((room, roomIdx) => (
+        <div key={roomIdx} className="workshop-room-section mb-6">
+          <h3 className="text-sm font-bold bg-gray-800 text-white px-3 py-2 mb-0">{room.roomName}</h3>
+          <table className="w-full border-collapse bg-white text-[10px]">
+            <thead>
+              <tr className="bg-gray-900 text-white">
+                <th className="w-[10%] text-left py-2 px-2 border-r border-gray-700">Item</th>
+                <th className="w-[32%] text-left py-2 px-2 border-r border-gray-700">Fabric & Details</th>
+                <th className="w-[22%] text-left py-2 px-2 border-r border-gray-700">Measurements</th>
+                <th className="w-[36%] text-left py-2 px-2">Sewing Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {room.items.map((item, itemIdx) => (
+                <tr key={item.id} className="border-b border-gray-200 hover:bg-gray-50 workshop-item-row">
+                  {/* Item column with thumbnail */}
+                  <td className="py-3 px-2 align-top border-r border-gray-200">
+                    <div className="space-y-1">
+                      <div className="font-medium">{item.location}</div>
+                      {item.visualDetails?.thumbnailUrl && (
+                        <img 
+                          src={item.visualDetails.thumbnailUrl} 
+                          alt="Fabric" 
+                          className="w-12 h-12 object-cover rounded border"
+                        />
+                      )}
+                    </div>
+                  </td>
+                  
+                  {/* Fabric & Details column */}
+                  <td className="py-3 px-2 align-top border-r border-gray-200">
+                    <div className="space-y-0.5">
+                      <div className="font-semibold text-blue-700">
+                        {item.fabricDetails?.name || 'No fabric selected'}
+                      </div>
+                      {item.fabricDetails && (
+                        <>
+                          <div className="text-[9px] text-gray-600">
+                            Fabric Width: {item.fabricDetails.fabricWidth}cm, 
+                            {item.fabricDetails.rollDirection === 'Horizontal' ? ' ↔️ Horizontal' : ' ↕️ Vertical'}
+                          </div>
+                          {item.fabricDetails.patternRepeat && (
+                            <div className="text-[9px]">
+                              Pattern Repeat: {item.fabricDetails.patternRepeat}cm
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {item.fabricUsage && (
+                        <>
+                          <div className="font-medium text-green-700 mt-1">
+                            Usage: {item.fabricUsage.linearMeters.toFixed(2)}m 
+                            ({item.fabricUsage.widthsRequired} width{item.fabricUsage.widthsRequired > 1 ? 's' : ''})
+                          </div>
+                          {item.fabricUsage.seamsRequired > 0 && (
+                            <div className="text-[9px] text-orange-600 font-medium">
+                              ⚠️ {item.fabricUsage.seamsRequired} seam(s) required
+                            </div>
+                          )}
+                          {item.fabricUsage.leftover > 0 && (
+                            <div className="text-[9px] text-gray-500">
+                              Leftover: ~{item.fabricUsage.leftover.toFixed(1)}cm per width
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {item.options && item.options.length > 0 && (
+                        <div className="text-[9px] mt-1 pt-1 border-t border-gray-200">
+                          <div className="font-medium">Options:</div>
+                          {item.options.map((opt, idx) => (
+                            <div key={idx}>• {opt.name}</div>
+                          ))}
+                        </div>
+                      )}
+                      {item.liningDetails && (
+                        <div className="text-[9px]">
+                          Lining: {item.liningDetails.name}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  
+                  {/* Measurements column */}
+                  <td className="py-3 px-2 align-top border-r border-gray-200">
+                    <div className="space-y-0.5 font-mono">
+                      {item.measurements?.width && (
+                        <div>Width: {item.measurements.width}{item.measurements.unit}</div>
+                      )}
+                      {item.measurements?.drop && (
+                        <div>Drop: {item.measurements.drop}{item.measurements.unit}</div>
+                      )}
+                      {item.measurements?.pooling && item.measurements.pooling > 0 && (
+                        <div>Pool: {item.measurements.pooling}{item.measurements.unit}</div>
+                      )}
+                      <div className="text-[9px] text-gray-500 mt-1">
+                        {item.treatmentType || 'No treatment'}
+                      </div>
+                    </div>
+                  </td>
+                  
+                  {/* Sewing Details column */}
+                  <td className="py-3 px-2 align-top">
+                    <div className="space-y-0.5">
+                      {item.fullness && (
+                        <div className="font-medium text-purple-700">
+                          Fullness: {item.fullness.ratio}x ({item.fullness.headingType})
+                        </div>
+                      )}
+                      {item.hems && (
+                        <div className="text-[9px] space-y-0.5 mt-1">
+                          <div className="font-medium">Hem Allowances:</div>
+                          <div>• Header: {item.hems.header}cm</div>
+                          <div>• Bottom: {item.hems.bottom}cm</div>
+                          <div>• Side: {item.hems.side}cm (each)</div>
+                          {item.fabricUsage && item.fabricUsage.seamsRequired > 0 && (
+                            <div className="text-orange-600 font-medium">
+                              • Seam: {item.hems.seam}cm (per join × {item.fabricUsage.seamsRequired})
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ))}
 
       {/* Production Notes Section */}
       <div className="border-t pt-3 mt-4">
