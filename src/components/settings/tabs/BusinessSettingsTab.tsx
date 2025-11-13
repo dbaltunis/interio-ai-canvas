@@ -316,8 +316,7 @@ export const BusinessSettingsTab = () => {
         </div>
 
         <FormFieldGroup 
-          label="Website" 
-          description="Your company website URL"
+          label="Website"
         >
           <Input
             value={formData.website}
@@ -328,8 +327,7 @@ export const BusinessSettingsTab = () => {
         </FormFieldGroup>
 
         <FormFieldGroup 
-          label="Company Logo" 
-          description="Upload your company logo (will be used in documents and quotes)"
+          label="Company Logo"
         >
           <div className="space-y-3">
             {formData.company_logo_url ? (
