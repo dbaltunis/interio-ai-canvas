@@ -52,6 +52,7 @@ export const useWorkshopNotes = (projectId?: string): WorkshopNotesHook => {
     if (!projectId) return;
 
     const loadItemNotes = async () => {
+      setIsLoading(true);
       try {
         const { data, error } = await supabase
           .from("surfaces")
@@ -70,6 +71,8 @@ export const useWorkshopNotes = (projectId?: string): WorkshopNotesHook => {
         setItemNotes(notesMap);
       } catch (error) {
         console.error("Error loading item notes:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -118,7 +121,7 @@ export const useWorkshopNotes = (projectId?: string): WorkshopNotesHook => {
       const updatePromises = Object.entries(itemNotes).map(([itemId, note]) =>
         supabase
           .from("surfaces")
-          .update({ notes: note })
+          .update({ notes: note } as any)
           .eq("id", itemId)
       );
 
