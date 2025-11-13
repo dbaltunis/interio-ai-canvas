@@ -14,7 +14,12 @@ interface DocumentRendererProps {
   projectId?: string;
 }
 
-export const DocumentRenderer: React.FC<DocumentRendererProps> = ({ template, data, blocks, projectId }) => {
+export const DocumentRenderer: React.FC<DocumentRendererProps> = ({ 
+  template, 
+  data, 
+  blocks, 
+  projectId
+}) => {
   // Fetch business settings
   const { data: businessSettings, isLoading: loadingBusinessSettings } = useBusinessSettings();
   

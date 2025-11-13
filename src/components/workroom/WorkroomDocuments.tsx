@@ -288,13 +288,33 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
         </div>
       )}
 
-        <section>
-          <DocumentRenderer 
-            template={template} 
-            data={filteredData}
-            blocks={templateBlocks}
-            projectId={projectId}
-          />
+        <section className="bg-muted/30 p-8 rounded-lg overflow-auto">
+          <div className="max-w-[210mm] mx-auto">
+            <div 
+              className="bg-white shadow-2xl mx-auto workshop-printable"
+              style={{
+                width: orientation === 'landscape' ? '297mm' : '210mm',
+                minHeight: orientation === 'landscape' ? '210mm' : '297mm',
+              }}
+            >
+              <div
+                style={{
+                  padding: `${margins}mm`,
+                  fontFamily: 'Arial, Helvetica, sans-serif',
+                  fontSize: '10pt',
+                  lineHeight: '1.4',
+                  color: '#000000',
+                }}
+              >
+                <DocumentRenderer 
+                  template={template} 
+                  data={filteredData}
+                  blocks={templateBlocks}
+                  projectId={projectId}
+                />
+              </div>
+            </div>
+          </div>
         </section>
         
         {/* Hidden printable version for PDF generation */}
