@@ -127,15 +127,17 @@ export const useUserPermissions = () => {
     gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
     retry: 3,
     refetchOnWindowFocus: true, // Still refresh on focus for security
-    refetchOnMount: false, // Don't refetch on every mount - use cache
+    refetchOnMount: true, // Always refetch on mount to ensure fresh data
     notifyOnChangeProps: ['data', 'error'],
+    placeholderData: undefined, // Don't show stale data while loading
   });
 };
 
 export const useHasPermission = (permission: string) => {
   const { data: permissions, isLoading } = useUserPermissions();
   
-  if (isLoading && permissions === undefined) return undefined;
+  // Return undefined if loading OR if data hasn't loaded yet
+  if (isLoading || permissions === undefined) return undefined;
   
   return permissions?.some(p => p.permission_name === permission) || false;
 };
