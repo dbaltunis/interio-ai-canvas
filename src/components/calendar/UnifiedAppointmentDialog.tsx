@@ -240,7 +240,7 @@ export const UnifiedAppointmentDialog = ({
 
   const handleDelete = async () => {
     // Prevent multiple simultaneous delete calls
-    if (deleteAppointment.isPending) return;
+    if (!appointment || !appointment.id || deleteAppointment.isPending) return;
     
     try {
       await deleteAppointment.mutateAsync(appointment.id);
