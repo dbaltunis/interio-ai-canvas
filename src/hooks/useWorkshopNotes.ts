@@ -84,30 +84,51 @@ export const useWorkshopNotes = (projectId?: string): WorkshopNotesHook => {
   };
 
   const saveNotes = async () => {
-    if (!projectId) return;
+    if (!projectId) {
+      console.error("No projectId provided");
+      return;
+    }
+
+    console.log("=== SAVING NOTES ===");
+    console.log("Production notes:", productionNotes);
+    console.log("Item notes:", itemNotes);
 
     setIsSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
       if (!user) throw new Error("Not authenticated");
 
+      console.log("User authenticated:", user.id);
+
       // Save production notes to project_notes table
-      const { data: existingNote } = await supabase
+      const { data: existingNote, error: fetchError } = await supabase
         .from("project_notes")
         .select("id")
         .eq("project_id", projectId)
         .eq("type", "production_notes")
         .maybeSingle();
 
+      if (fetchError) {
+        console.error("Error fetching existing note:", fetchError);
+        throw fetchError;
+      }
+
       if (existingNote) {
-        // Update existing note
-        await supabase
+        console.log("Updating existing production note:", existingNote.id);
+        const { error: updateError } = await supabase
           .from("project_notes")
           .update({ content: productionNotes })
           .eq("id", existingNote.id);
+        
+        if (updateError) {
+          console.error("Error updating production note:", updateError);
+          throw updateError;
+        }
+        console.log("Production note updated successfully");
       } else if (productionNotes.trim()) {
-        // Insert new note
-        await supabase
+        console.log("Inserting new production note");
+        const { error: insertError } = await supabase
           .from("project_notes")
           .insert({
             project_id: projectId,
@@ -115,31 +136,49 @@ export const useWorkshopNotes = (projectId?: string): WorkshopNotesHook => {
             content: productionNotes,
             type: "production_notes",
           });
+        
+        if (insertError) {
+          console.error("Error inserting production note:", insertError);
+          throw insertError;
+        }
+        console.log("Production note inserted successfully");
       }
 
       // Save item notes to surfaces table
-      const updatePromises = Object.entries(itemNotes).map(([itemId, note]) =>
-        supabase
+      console.log("Saving item notes, count:", Object.keys(itemNotes).length);
+      const updatePromises = Object.entries(itemNotes).map(async ([itemId, note]) => {
+        console.log(`Updating surface ${itemId} with note:`, note);
+        const { error } = await supabase
           .from("surfaces")
           .update({ notes: note } as any)
-          .eq("id", itemId)
-      );
+          .eq("id", itemId);
+        
+        if (error) {
+          console.error(`Error updating surface ${itemId}:`, error);
+          throw error;
+        }
+        console.log(`Surface ${itemId} updated successfully`);
+        return true;
+      });
 
       await Promise.all(updatePromises);
+      console.log("All item notes saved successfully");
 
       toast({
         title: "Notes saved",
         description: "Your workshop notes have been saved successfully.",
       });
     } catch (error) {
-      console.error("Error saving notes:", error);
+      console.error("=== ERROR SAVING NOTES ===", error);
       toast({
         title: "Error",
-        description: "Failed to save notes. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to save notes. Please try again.",
         variant: "destructive",
       });
+      throw error;
     } finally {
       setIsSaving(false);
+      console.log("=== SAVE COMPLETE ===");
     }
   };
 
