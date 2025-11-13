@@ -81,14 +81,19 @@ export const DynamicCurtainOptions = ({
     onChange('selected_heading', headingId);
     
     // ✅ FIX: Update heading fullness ratio when heading is selected
-    if (heading && (heading as any).fullness_ratio) {
-      console.log('🔥🔥🔥 Setting heading fullness:', (heading as any).fullness_ratio);
-      onChange('heading_fullness', (heading as any).fullness_ratio);
-    }
-    
-    // Check for eyelet rings
     if (heading && heading.metadata) {
       const metadata = heading.metadata as any;
+      
+      // Check for multiple fullness ratios first
+      if (metadata.use_multiple_ratios && metadata.multiple_fullness_ratios && metadata.multiple_fullness_ratios.length > 0) {
+        console.log('🔥🔥🔥 Setting first fullness from multiple ratios:', metadata.multiple_fullness_ratios[0]);
+        onChange('heading_fullness', metadata.multiple_fullness_ratios[0]);
+      } else if (metadata.fullness_ratio) {
+        console.log('🔥🔥🔥 Setting heading fullness:', metadata.fullness_ratio);
+        onChange('heading_fullness', metadata.fullness_ratio);
+      }
+      
+      // Check for eyelet rings
       console.log('🔍 DynamicCurtainOptions - Selected heading:', {
         id: heading.id,
         name: heading.name,
@@ -106,6 +111,11 @@ export const DynamicCurtainOptions = ({
       } else {
         setAvailableRings([]);
       }
+    } else if (heading && (heading as any).fullness_ratio) {
+      // Fallback for headings without metadata
+      console.log('🔥🔥🔥 Setting heading fullness from direct property:', (heading as any).fullness_ratio);
+      onChange('heading_fullness', (heading as any).fullness_ratio);
+      setAvailableRings([]);
     } else {
       setAvailableRings([]);
     }
@@ -267,6 +277,59 @@ export const DynamicCurtainOptions = ({
             </div>
           </div>
 
+          {/* Multiple Fullness Ratio Selector - Show when heading has multiple options */}
+          {(() => {
+            const selectedHeading = headingOptions.find(h => h.id === measurements.selected_heading);
+            if (!selectedHeading || !selectedHeading.metadata) return null;
+            
+            const metadata = selectedHeading.metadata as any;
+            if (!metadata.use_multiple_ratios || !metadata.multiple_fullness_ratios || metadata.multiple_fullness_ratios.length <= 1) {
+              return null;
+            }
+            
+            return (
+              <div className="ml-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Fullness Ratio</span>
+                  <div className="w-64">
+                    <Select 
+                      value={measurements.heading_fullness?.toString() || metadata.multiple_fullness_ratios[0].toString()} 
+                      onValueChange={(value) => onChange('heading_fullness', parseFloat(value))}
+                      disabled={readOnly}
+                    >
+                      <SelectTrigger className="bg-background border-input">
+                        <SelectValue placeholder="Select fullness..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border-border z-50" position="popper" sideOffset={5}>
+                        {metadata.multiple_fullness_ratios.map((ratio: number) => (
+                          <SelectItem key={ratio} value={ratio.toString()}>
+                            <div className="flex items-center justify-between w-full gap-4">
+                              <span>{ratio}x Fullness</span>
+                              <Badge variant="secondary" className="text-xs">
+                                {ratio}x
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                {/* Extra Fabric Info */}
+                {metadata.extra_fabric && metadata.extra_fabric > 0 && (
+                  <div className="ml-4 p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-blue-700 dark:text-blue-300 font-medium">
+                        +{metadata.extra_fabric} {units.fabric} extra fabric included
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Eyelet Ring - Nested under Heading (indented) */}
           {availableRings.length > 0 && onEyeletRingChange && (
             <div className="ml-4 space-y-3">
@@ -298,6 +361,49 @@ export const DynamicCurtainOptions = ({
               </div>
             </div>
           )}
+          
+          {/* Advanced Settings Display - Show for selected heading */}
+          {(() => {
+            const selectedHeading = headingOptions.find(h => h.id === measurements.selected_heading);
+            if (!selectedHeading || !selectedHeading.metadata) return null;
+            
+            const metadata = selectedHeading.metadata as any;
+            const hasAdvancedSettings = metadata.heading_type || metadata.spacing || metadata.eyelet_diameter;
+            
+            if (!hasAdvancedSettings) return null;
+            
+            return (
+              <div className="ml-4 mt-3 p-3 bg-muted/30 border border-border/50 rounded-lg">
+                <div className="text-xs font-semibold text-foreground mb-2">Advanced Settings</div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {metadata.heading_type && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Type:</span>
+                      <span className="text-foreground font-medium capitalize">{metadata.heading_type}</span>
+                    </div>
+                  )}
+                  {metadata.spacing && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Spacing:</span>
+                      <span className="text-foreground font-medium">{metadata.spacing}cm</span>
+                    </div>
+                  )}
+                  {metadata.eyelet_diameter && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Eyelet:</span>
+                      <span className="text-foreground font-medium">{metadata.eyelet_diameter}mm</span>
+                    </div>
+                  )}
+                  {metadata.eyelet_color && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Color:</span>
+                      <span className="text-foreground font-medium capitalize">{metadata.eyelet_color.replace('-', ' ')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 
