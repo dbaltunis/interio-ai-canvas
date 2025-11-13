@@ -138,6 +138,9 @@ export const EventDetailsModal = ({ isOpen, onClose, appointment }: EventDetails
   };
 
   const handleDelete = async () => {
+    // Prevent multiple simultaneous delete calls
+    if (deleteAppointment.isPending) return;
+    
     try {
       await deleteAppointment.mutateAsync(appointment.id);
       onClose();
@@ -146,6 +149,7 @@ export const EventDetailsModal = ({ isOpen, onClose, appointment }: EventDetails
         description: "Event deleted successfully",
       });
     } catch (error) {
+      console.error("Error deleting event:", error);
       toast({
         title: "Error",
         description: "Failed to delete event",

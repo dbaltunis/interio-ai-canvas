@@ -239,6 +239,9 @@ export const UnifiedAppointmentDialog = ({
   };
 
   const handleDelete = async () => {
+    // Prevent multiple simultaneous delete calls
+    if (deleteAppointment.isPending) return;
+    
     try {
       await deleteAppointment.mutateAsync(appointment.id);
       onOpenChange(false);
@@ -802,7 +805,12 @@ export const UnifiedAppointmentDialog = ({
                 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="icon" disabled={isLoading} className="h-10 w-10">
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      disabled={isLoading || deleteAppointment.isPending} 
+                      className="h-10 w-10"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </AlertDialogTrigger>
@@ -814,12 +822,15 @@ export const UnifiedAppointmentDialog = ({
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogCancel disabled={deleteAppointment.isPending}>
+                        Cancel
+                      </AlertDialogCancel>
                       <AlertDialogAction
                         onClick={handleDelete}
+                        disabled={deleteAppointment.isPending}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
-                        Delete
+                        {deleteAppointment.isPending ? "Deleting..." : "Delete"}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

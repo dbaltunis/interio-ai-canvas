@@ -149,25 +149,28 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
     });
   };
 
-  const handleDeleteEvent = () => {
-    if (selectedEvent) {
-      deleteAppointment.mutate(selectedEvent.id, {
-        onSuccess: () => {
-          setSelectedEvent(null);
-          setShowDeleteDialog(false);
-          toast({
-            title: "Event Deleted",
-            description: "The event has been successfully deleted.",
-            importance: 'silent',
-          });
-        },
-        onError: () => {
-          toast({
-            title: "Error",
-            description: "Failed to delete the event. Please try again.",
-            variant: "destructive",
-          });
-        }
+  const handleDeleteEvent = async () => {
+    // Prevent multiple simultaneous delete calls
+    if (!selectedEvent || deleteAppointment.isPending) return;
+    
+    try {
+      await deleteAppointment.mutateAsync(selectedEvent.id);
+      
+      // Close dialog and clear selection AFTER successful deletion
+      setShowDeleteDialog(false);
+      setSelectedEvent(null);
+      
+      toast({
+        title: "Event Deleted",
+        description: "The event has been successfully deleted.",
+        importance: 'silent',
+      });
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete the event. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -588,12 +591,15 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteAppointment.isPending}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDeleteEvent}
+              disabled={deleteAppointment.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete Event
+              {deleteAppointment.isPending ? "Deleting..." : "Delete Event"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
