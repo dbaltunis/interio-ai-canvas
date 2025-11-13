@@ -351,7 +351,6 @@ export const SecurityPrivacyTab = () => {
           <div className="space-y-4">
             <SettingsToggle
               label="Login Notifications"
-              description="Email notifications for new login attempts"
               checked={loginNotifications}
               onCheckedChange={handleLoginNotificationsChange}
               disabled={isLoading || updateSecuritySettings.isPending}
@@ -359,7 +358,6 @@ export const SecurityPrivacyTab = () => {
             
             <SettingsToggle
               label="Security Alerts"
-              description="Notifications for suspicious account activity"
               checked={securityAlerts}
               onCheckedChange={handleSecurityAlertsChange}
               disabled={isLoading || updateSecuritySettings.isPending}
@@ -377,14 +375,12 @@ export const SecurityPrivacyTab = () => {
           <div className="space-y-4">
             <SettingsToggle
               label="Analytics Data"
-              description="Share usage analytics to help improve the service"
               checked={analyticsOptIn}
               onCheckedChange={setAnalyticsOptIn}
             />
             
             <SettingsToggle
               label="Third-party Data Sharing"
-              description="Allow data sharing with integrated services"
               checked={dataSharing}
               onCheckedChange={setDataSharing}
             />
@@ -399,7 +395,7 @@ export const SecurityPrivacyTab = () => {
           <div className="space-y-4">
             <SettingsAction
               title="Download Your Data"
-              description="Export all your personal data in a portable format"
+              description=""
               actionLabel="Download Archive"
               onAction={downloadDataArchive}
               icon={<Download className="h-4 w-4" />}
@@ -407,7 +403,7 @@ export const SecurityPrivacyTab = () => {
             
             <SettingsAction
               title="Clear Login History"
-              description="Remove all stored login history and session data"
+              description=""
               actionLabel="Clear History"
               onAction={clearLoginHistory}
               icon={<History className="h-4 w-4" />}

@@ -515,7 +515,7 @@ export const PersonalSettingsTab = () => {
         </div>
 
 
-        <FormFieldGroup label="Email Address" description={emailChangeRequested ? "Email change pending - check your inbox for verification" : "Your account email address"}>
+        <FormFieldGroup label="Email Address">
           {!isEmailEditing ? <div className="flex items-center gap-2">
               <Input value={user?.email || ""} disabled className="bg-muted flex-1" />
               <Button variant="outline" size="sm" onClick={handleEmailEdit} className="hover:bg-primary hover:text-primary-foreground">
@@ -560,11 +560,8 @@ export const PersonalSettingsTab = () => {
           
           <div className="grid gap-4">
             <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="space-y-1">
+              <div>
                 <p className="font-medium text-sm">Email Notifications</p>
-                <p className="text-xs text-muted-foreground">
-                  Receive email notifications for appointments and updates
-                </p>
               </div>
               <div className="flex items-center gap-2">
                 <Switch checked={notificationData.email_notifications_enabled} onCheckedChange={async checked => {
@@ -581,11 +578,8 @@ export const PersonalSettingsTab = () => {
             </div>
 
             <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="space-y-1">
+              <div>
                 <p className="font-medium text-sm">SMS Notifications</p>
-                <p className="text-xs text-muted-foreground">
-                  Receive SMS notifications for urgent updates
-                </p>
               </div>
               <div className="flex items-center gap-2">
                 <Switch checked={notificationData.sms_notifications_enabled} onCheckedChange={async checked => {
@@ -608,7 +602,7 @@ export const PersonalSettingsTab = () => {
       <FormSection title="Password & Security" description="Update your password and security settings" icon={<Lock className="h-5 w-5" />} isEditing={isPasswordEditing} onEdit={handlePasswordEdit} onSave={handlePasswordChange} onCancel={handlePasswordCancel} isSaving={isPasswordSaving} savedSuccessfully={passwordSavedSuccessfully}>
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-6">
-            <FormFieldGroup label="Current Password" description="Enter your current password to confirm identity">
+            <FormFieldGroup label="Current Password">
               <div className="relative">
                 <Input type={showPassword.current ? "text" : "password"} value={passwordData.current_password} onChange={e => setPasswordData(prev => ({
                 ...prev,
@@ -625,7 +619,7 @@ export const PersonalSettingsTab = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormFieldGroup label="New Password" description="Must be at least 6 characters">
+            <FormFieldGroup label="New Password">
               <div className="relative">
                 <Input type={showPassword.new ? "text" : "password"} value={passwordData.new_password} onChange={e => setPasswordData(prev => ({
                 ...prev,
@@ -640,7 +634,7 @@ export const PersonalSettingsTab = () => {
               </div>
             </FormFieldGroup>
 
-            <FormFieldGroup label="Confirm New Password" description="Re-enter your new password">
+            <FormFieldGroup label="Confirm New Password">
               <div className="relative">
                 <Input type={showPassword.confirm ? "text" : "password"} value={passwordData.confirm_password} onChange={e => setPasswordData(prev => ({
                 ...prev,
