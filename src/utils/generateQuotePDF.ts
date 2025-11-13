@@ -5,6 +5,7 @@ export interface PDFOptions {
   margin?: number | [number, number, number, number];
   imageQuality?: number;
   scale?: number;
+  orientation?: 'portrait' | 'landscape';
 }
 
 /**
@@ -20,7 +21,13 @@ export const generateQuotePDF = async (
     margin = 10,
     imageQuality = 0.98,
     scale = 2,
+    orientation = 'portrait',
   } = options;
+
+  // Set dimensions based on orientation
+  const isLandscape = orientation === 'landscape';
+  const windowWidth = isLandscape ? 1123 : 794;
+  const windowHeight = isLandscape ? 794 : 1123;
 
   const pdfOptions = {
     margin,
@@ -36,13 +43,13 @@ export const generateQuotePDF = async (
       letterRendering: true,
       allowTaint: false,
       backgroundColor: '#ffffff',
-      windowWidth: 794, // A4 width in pixels at 96 DPI
-      windowHeight: 1123, // A4 height in pixels at 96 DPI
+      windowWidth,
+      windowHeight,
     },
     jsPDF: {
       unit: 'mm',
       format: 'a4',
-      orientation: 'portrait' as const,
+      orientation: orientation as 'portrait' | 'landscape',
       compress: true,
     },
     pagebreak: {
@@ -72,7 +79,13 @@ export const generateQuotePDFBlob = async (
     margin = 10,
     imageQuality = 0.98,
     scale = 2,
+    orientation = 'portrait',
   } = options;
+
+  // Set dimensions based on orientation
+  const isLandscape = orientation === 'landscape';
+  const windowWidth = isLandscape ? 1123 : 794;
+  const windowHeight = isLandscape ? 794 : 1123;
 
   const pdfOptions = {
     margin,
@@ -87,13 +100,13 @@ export const generateQuotePDFBlob = async (
       letterRendering: true,
       allowTaint: false,
       backgroundColor: '#ffffff',
-      windowWidth: 794,
-      windowHeight: 1123,
+      windowWidth,
+      windowHeight,
     },
     jsPDF: {
       unit: 'mm',
       format: 'a4',
-      orientation: 'portrait' as const,
+      orientation: orientation as 'portrait' | 'landscape',
       compress: true,
     },
     pagebreak: {

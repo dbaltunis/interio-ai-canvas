@@ -152,6 +152,7 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
         margin: 0, // margins handled in component
         imageQuality: 0.98,
         scale: 2,
+        orientation: orientation, // Pass the current orientation setting
       });
       
       toast({
