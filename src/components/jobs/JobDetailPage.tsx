@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Package, FileText, Wrench, Mail, Calendar, Clock, MoreHorizontal, Copy, FileDown, Archive, Trash2, Workflow } from "lucide-react";
+import { ArrowLeft, User, Package, FileText, Wrench, Mail, Calendar, Clock, MoreHorizontal, Copy, Archive, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,7 +38,6 @@ import { JobSkeleton } from "./JobSkeleton";
 import { JobNotFound } from "./JobNotFound";
 import { useProjectMaterialsUsage } from "@/hooks/useProjectMaterialsUsage";
 import { useTreatmentMaterialsStatus } from "@/hooks/useProjectMaterialsStatus";
-import { generateQuotePDF } from "@/utils/generateQuotePDF";
 import { supabase } from "@/integrations/supabase/client";
 import { useJobDuplicates } from "@/hooks/useJobDuplicates";
 import { DuplicateJobIndicator } from "./DuplicateJobIndicator";
@@ -553,40 +552,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     }
   };
 
-  const handleExportPDF = async () => {
-    try {
-      const element = document.getElementById('quote-live-preview');
-      if (!element) {
-        toast({
-          title: "Error",
-          description: "Quote preview not available. Please switch to the Quote tab first.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      toast({
-        title: "Generating PDF...",
-        description: "Please wait..."
-      });
-
-      const filename = `${project?.job_number || project?.name || 'job'}.pdf`;
-      await generateQuotePDF(element, { filename });
-      
-      toast({
-        title: "Success",
-        description: "PDF exported successfully"
-      });
-    } catch (error) {
-      console.error('Error exporting PDF:', error);
-      toast({
-        title: "Error",
-        description: "Failed to export PDF. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
   const handleArchiveJob = async () => {
     try {
       if (!project) return;
@@ -764,18 +729,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                     label: 'Duplicate Job',
                     icon: <Copy className="h-4 w-4" />,
                     onClick: handleDuplicateJob
-                  },
-                  {
-                    label: 'Export to PDF',
-                    icon: <FileDown className="h-4 w-4" />,
-                    onClick: handleExportPDF
-                  },
-                  {
-                    label: 'Workflows',
-                    icon: <Workflow className="h-4 w-4" />,
-                    onClick: () => {
-                      toast({ title: "Workflows", description: "Feature coming soon" });
-                    }
                   },
                   {
                     label: 'Archive Job',
