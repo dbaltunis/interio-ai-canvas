@@ -125,26 +125,74 @@ export const useTreatments = (projectId?: string, quoteId?: string) => {
         }
         
         console.log("Fetching treatments for project:", projectId);
-        let query = supabase
+        
+        // First try to get from treatments table
+        let treatmentsQuery = supabase
           .from("treatments")
           .select("*")
           .eq("project_id", projectId);
         
-        // Filter by quote_id if provided
         if (quoteId) {
-          query = query.eq("quote_id", quoteId);
+          treatmentsQuery = treatmentsQuery.eq("quote_id", quoteId);
         }
         
-        const { data, error } = await query.order("created_at", { ascending: false });
+        const { data: treatmentsData, error: treatmentsError } = await treatmentsQuery.order("created_at", { ascending: false });
         
-        if (error) {
-          console.error("Error fetching project treatments:", error);
-          throw error;
+        if (treatmentsError) {
+          console.error("Error fetching project treatments:", treatmentsError);
         }
         
-        console.log("Raw project treatments data:", data);
-        const processedData = (data || []).map((treatment, index) => {
-          console.log(`Processing project treatment ${index + 1}/${data?.length}:`, treatment.id);
+        // If no treatments found, try workshop_items table (fallback for projects with workshop data)
+        if (!treatmentsData || treatmentsData.length === 0) {
+          console.log("No treatments found, trying workshop_items table");
+          const { data: workshopData, error: workshopError } = await supabase
+            .from("workshop_items")
+            .select("*")
+            .eq("project_id", projectId)
+            .order("created_at", { ascending: false });
+          
+          if (workshopError) {
+            console.error("Error fetching workshop items:", workshopError);
+            throw workshopError;
+          }
+          
+          console.log("Raw workshop items data:", workshopData);
+          
+          // Transform workshop_items to treatment format
+          const data = (workshopData || []).map((item: any) => ({
+            id: item.id,
+            project_id: item.project_id,
+            window_id: item.window_id,
+            quote_id: quoteId,
+            user_id: item.user_id,
+            room_name: item.room_name,
+            surface_name: item.surface_name,
+            treatment_type: item.treatment_type,
+            measurements: item.measurements,
+            fabric_details: item.fabric_details,
+            treatment_details: item.manufacturing_details || {},
+            calculation_details: {},
+            total_price: item.total_price || 0,
+            material_cost: item.material_cost || 0,
+            labor_cost: item.labor_cost || 0,
+            unit_price: item.unit_price || 0,
+            quantity: item.quantity || 1,
+            created_at: item.created_at,
+            updated_at: item.updated_at
+          }));
+          
+          const processedData = (data || []).map((treatment, index) => {
+            console.log(`Processing workshop item ${index + 1}/${data?.length}:`, treatment.id);
+            return processTreatmentData(treatment);
+          });
+          
+          console.log("Processed workshop items as treatments:", processedData.length, "items");
+          return processedData;
+        }
+        
+        console.log("Raw project treatments data:", treatmentsData);
+        const processedData = (treatmentsData || []).map((treatment, index) => {
+          console.log(`Processing project treatment ${index + 1}/${treatmentsData?.length}:`, treatment.id);
           return processTreatmentData(treatment);
         });
         
