@@ -239,29 +239,17 @@ export const UnifiedAppointmentDialog = ({
   };
 
   const handleDelete = async () => {
-    console.log('🔴 DELETE CLICKED - Appointment:', appointment);
-    console.log('🔴 DELETE CLICKED - Has ID?', !!appointment?.id);
-    console.log('🔴 DELETE CLICKED - Is Pending?', deleteAppointment.isPending);
-    
     // Prevent multiple simultaneous delete calls
     if (!appointment || !appointment.id || deleteAppointment.isPending) {
-      console.log('🔴 DELETE BLOCKED - Reason:', {
-        noAppointment: !appointment,
-        noId: !appointment?.id,
-        isPending: deleteAppointment.isPending
-      });
       return;
     }
     
-    console.log('🔴 DELETING APPOINTMENT ID:', appointment.id);
-    
     try {
       await deleteAppointment.mutateAsync(appointment.id);
-      console.log('🔴 DELETE SUCCESS');
       onOpenChange(false);
       resetForm();
     } catch (error) {
-      console.error('🔴 DELETE ERROR:', error);
+      console.error('Failed to delete appointment:', error);
     }
   };
 
@@ -338,7 +326,7 @@ export const UnifiedAppointmentDialog = ({
     }));
   };
 
-  const isLoading = createAppointment.isPending || updateAppointment.isPending || deleteAppointment.isPending;
+  const isSaving = createAppointment.isPending || updateAppointment.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -792,10 +780,10 @@ export const UnifiedAppointmentDialog = ({
           <div className="flex gap-3">
             <Button
               onClick={handleSubmit}
-              disabled={!event.title || !event.date || !event.startTime || !event.endTime || !isValidDateRange || isLoading}
+              disabled={!event.title || !event.date || !event.startTime || !event.endTime || !isValidDateRange || isSaving}
               className="flex-1 h-10"
             >
-              {isLoading ? (
+              {isSaving ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   {isEditing ? 'Updating...' : 'Creating...'}
@@ -811,7 +799,7 @@ export const UnifiedAppointmentDialog = ({
                   variant="outline"
                   size="icon"
                   onClick={() => setShowSharingDialog(true)}
-                  disabled={isLoading}
+                  disabled={isSaving}
                   className="h-10 w-10"
                 >
                   <Share className="w-4 h-4" />
@@ -822,7 +810,7 @@ export const UnifiedAppointmentDialog = ({
                     <Button 
                       variant="outline" 
                       size="icon" 
-                      disabled={isLoading || deleteAppointment.isPending} 
+                      disabled={deleteAppointment.isPending} 
                       className="h-10 w-10"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -841,11 +829,8 @@ export const UnifiedAppointmentDialog = ({
                       </AlertDialogCancel>
                       <AlertDialogAction
                         onClick={(e) => {
-                          console.log('🟢 BUTTON CLICKED!', { appointment, hasId: !!appointment?.id });
                           e.preventDefault();
-                          console.log('🟢 AFTER preventDefault, calling handleDelete...');
                           handleDelete();
-                          console.log('🟢 handleDelete called');
                         }}
                         disabled={deleteAppointment.isPending}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
