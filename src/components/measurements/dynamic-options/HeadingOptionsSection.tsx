@@ -14,6 +14,8 @@ interface HeadingOptionsSectionProps {
   onHeadingChange: (headingId: string) => void;
   selectedEyeletRing?: string;
   onEyeletRingChange?: (ringId: string) => void;
+  headingFullness?: number;
+  onHeadingFullnessChange?: (fullness: number) => void;
   readOnly?: boolean;
 }
 
@@ -23,9 +25,11 @@ export const HeadingOptionsSection = ({
   onHeadingChange,
   selectedEyeletRing,
   onEyeletRingChange,
+  headingFullness,
+  onHeadingFullnessChange,
   readOnly = false
 }: HeadingOptionsSectionProps) => {
-  const { units } = useMeasurementUnits();
+  const { units, getLengthUnitLabel } = useMeasurementUnits();
   const { data: inventory = [], isLoading } = useEnhancedInventory();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
   const [availableRings, setAvailableRings] = useState<EyeletRing[]>([]);
@@ -57,12 +61,21 @@ export const HeadingOptionsSection = ({
       return template.fullness_ratio;
     }
     
+    // If there's a manually set fullness, use that
+    if (headingFullness) {
+      return headingFullness;
+    }
+    
     // Check inventory items first for multiple ratios
     const selectedItem = inventory.find(item => item.id === selectedHeading);
     if (selectedItem && selectedItem.metadata) {
       const metadata = selectedItem.metadata as any;
       if (metadata.use_multiple_ratios && metadata.multiple_fullness_ratios && metadata.multiple_fullness_ratios.length > 0) {
-        return metadata.multiple_fullness_ratios.join(' / ') + 'x';
+        // Return first ratio as default
+        return metadata.multiple_fullness_ratios[0];
+      }
+      if (metadata.fullness_ratio) {
+        return metadata.fullness_ratio;
       }
     }
     
@@ -72,6 +85,52 @@ export const HeadingOptionsSection = ({
     }
 
     return template.fullness_ratio;
+  };
+
+  // Get available fullness ratios for current heading
+  const getAvailableFullnessRatios = (): number[] => {
+    if (selectedHeading === 'standard') {
+      return [];
+    }
+    
+    const selectedItem = inventory.find(item => item.id === selectedHeading);
+    if (selectedItem && selectedItem.metadata) {
+      const metadata = selectedItem.metadata as any;
+      if (metadata.use_multiple_ratios && metadata.multiple_fullness_ratios && metadata.multiple_fullness_ratios.length > 1) {
+        return metadata.multiple_fullness_ratios;
+      }
+    }
+    
+    return [];
+  };
+
+  // Get extra fabric for current heading
+  const getExtraFabric = (): number => {
+    if (selectedHeading === 'standard') {
+      return 0;
+    }
+    
+    const selectedItem = inventory.find(item => item.id === selectedHeading);
+    if (selectedItem && selectedItem.metadata) {
+      const metadata = selectedItem.metadata as any;
+      return metadata.extra_fabric || 0;
+    }
+    
+    return 0;
+  };
+
+  // Get advanced settings for current heading
+  const getAdvancedSettings = () => {
+    if (selectedHeading === 'standard') {
+      return null;
+    }
+    
+    const selectedItem = inventory.find(item => item.id === selectedHeading);
+    if (selectedItem && selectedItem.metadata) {
+      return selectedItem.metadata as any;
+    }
+    
+    return null;
   };
 
   // Check if selected heading is eyelet type and load available rings
@@ -182,6 +241,31 @@ export const HeadingOptionsSection = ({
         </div>
       )}
 
+      {/* Multiple Fullness Ratio Selector */}
+      {getAvailableFullnessRatios().length > 0 && onHeadingFullnessChange && (
+        <div>
+          <Label className="text-sm font-medium mb-2 block text-card-foreground">Fullness Ratio</Label>
+          <Select 
+            value={headingFullness?.toString() || getAvailableFullnessRatios()[0]?.toString()} 
+            onValueChange={(value) => onHeadingFullnessChange(parseFloat(value))}
+            disabled={readOnly}
+          >
+            <SelectTrigger className="h-10 text-sm container-level-2 border-border">
+              <SelectValue placeholder="Choose fullness ratio" />
+            </SelectTrigger>
+            <SelectContent className="container-level-1 border-2 border-border z-50">
+              {getAvailableFullnessRatios().map((ratio) => (
+                <SelectItem key={ratio} value={ratio.toString()} className="text-card-foreground">
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-sm font-medium">{ratio}x Fullness</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {/* Compact template info */}
       <div className="container-level-3 rounded-lg p-3">
         <div className="grid grid-cols-2 gap-3">
@@ -193,6 +277,12 @@ export const HeadingOptionsSection = ({
             <div className="font-semibold text-card-foreground text-xs mb-1">Type</div>
             <div className="text-card-foreground font-medium text-sm truncate">{template.manufacturing_type}</div>
           </div>
+          {getExtraFabric() > 0 && (
+            <div>
+              <div className="font-semibold text-card-foreground text-xs mb-1">Extra Fabric</div>
+              <div className="text-primary font-bold text-sm">+{getExtraFabric()} {getLengthUnitLabel()}</div>
+            </div>
+          )}
           {template.heading_upcharge_per_metre && (
             <div>
               <div className="font-semibold text-card-foreground text-xs mb-1">Per meter</div>
@@ -206,6 +296,33 @@ export const HeadingOptionsSection = ({
             </div>
           )}
         </div>
+        
+        {/* Advanced Settings Display */}
+        {getAdvancedSettings() && (
+          <div className="mt-3 pt-3 border-t border-border">
+            <div className="text-xs font-semibold text-card-foreground mb-2">Advanced Settings</div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {getAdvancedSettings()?.heading_type && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Type:</span>
+                  <span className="text-card-foreground font-medium capitalize">{getAdvancedSettings()?.heading_type}</span>
+                </div>
+              )}
+              {getAdvancedSettings()?.spacing && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Spacing:</span>
+                  <span className="text-card-foreground font-medium">{getAdvancedSettings()?.spacing}cm</span>
+                </div>
+              )}
+              {getAdvancedSettings()?.eyelet_diameter && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Eyelet:</span>
+                  <span className="text-card-foreground font-medium">{getAdvancedSettings()?.eyelet_diameter}mm</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
