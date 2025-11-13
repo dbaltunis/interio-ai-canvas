@@ -186,8 +186,13 @@ export const useWorkshopData = (projectId?: string) => {
       };
       
       const fullness = {
-        ratio: summary?.measurements_details?.fullness_ratio || summary?.measurements_details?.heading_fullness || summary?.template_details?.fullness_ratio || 2.5,
+        ratio: summary?.measurements_details?.fullness_ratio || 
+               summary?.measurements_details?.heading_fullness || 
+               summary?.heading_details?.fullness_ratio ||
+               summary?.template_details?.fullness_ratio || 2.5,
         headingType: summary?.heading_details?.heading_name || summary?.template_details?.heading_type || 'Standard',
+        extraFabric: summary?.heading_details?.extra_fabric || 0,
+        hardware: summary?.heading_details?.hardware || undefined,
       };
       
       const options = (summary?.selected_options || []).map((opt: any) => ({

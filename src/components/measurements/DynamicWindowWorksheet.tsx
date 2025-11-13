@@ -842,23 +842,52 @@ export const DynamicWindowWorksheet = forwardRef<{
 
           // Create proper heading details with correct name and cost
           const finalHeadingCost = headingCost;
-          let headingDetails = {};
+          let headingDetails: any = {};
           console.log("🎯 Creating heading details:", {
             selectedHeading,
             headingName,
             finalHeadingCost
           });
+          
+          // Get selected heading metadata for advanced settings
+          const selectedHeadingOption = headingOptionsFromSettings.find(h => h.id === selectedHeading) as any;
+          const headingMetadata = selectedHeadingOption?.metadata as any;
+          
+          // Calculate hardware quantity if applicable
+          let hardwareQuantity = 0;
+          if (headingMetadata?.spacing && parseFloat(measurements.rail_width) > 0) {
+            const railWidthCm = parseFloat(measurements.rail_width);
+            const spacingCm = parseFloat(headingMetadata.spacing);
+            hardwareQuantity = Math.ceil(railWidthCm / spacingCm) + 1;
+          }
+          
           if (selectedHeading && selectedHeading !== 'standard') {
             headingDetails = {
               heading_name: headingName,
               id: selectedHeading,
-              cost: finalHeadingCost
+              cost: finalHeadingCost,
+              fullness_ratio: parseFloat(measurements.heading_fullness) || 2.5,
+              extra_fabric: headingMetadata?.extra_fabric || 0,
+              heading_type: headingMetadata?.heading_type,
+              spacing: headingMetadata?.spacing,
+              eyelet_diameter: headingMetadata?.eyelet_diameter,
+              eyelet_color: headingMetadata?.eyelet_color,
+              use_multiple_ratios: headingMetadata?.use_multiple_ratios,
+              multiple_fullness_ratios: headingMetadata?.multiple_fullness_ratios,
+              hardware: headingMetadata?.heading_type ? {
+                type: headingMetadata.heading_type === 'eyelet' ? 'rings' : 'hooks',
+                quantity: hardwareQuantity,
+                spacing: headingMetadata.spacing,
+                diameter: headingMetadata.eyelet_diameter,
+                color: headingMetadata.eyelet_color
+              } : undefined
             };
           } else {
             headingDetails = {
               heading_name: 'Standard',
               id: 'standard',
-              cost: 0
+              cost: 0,
+              fullness_ratio: parseFloat(measurements.heading_fullness) || 2.5
             };
           }
           console.log("🎯 Final heading details for save:", headingDetails);

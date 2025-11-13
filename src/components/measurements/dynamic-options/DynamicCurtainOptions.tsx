@@ -362,48 +362,6 @@ export const DynamicCurtainOptions = ({
             </div>
           )}
           
-          {/* Advanced Settings Display - Show for selected heading */}
-          {(() => {
-            const selectedHeading = headingOptions.find(h => h.id === measurements.selected_heading);
-            if (!selectedHeading || !selectedHeading.metadata) return null;
-            
-            const metadata = selectedHeading.metadata as any;
-            const hasAdvancedSettings = metadata.heading_type || metadata.spacing || metadata.eyelet_diameter;
-            
-            if (!hasAdvancedSettings) return null;
-            
-            return (
-              <div className="ml-4 mt-3 p-3 bg-muted/30 border border-border/50 rounded-lg">
-                <div className="text-xs font-semibold text-foreground mb-2">Advanced Settings</div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {metadata.heading_type && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Type:</span>
-                      <span className="text-foreground font-medium capitalize">{metadata.heading_type}</span>
-                    </div>
-                  )}
-                  {metadata.spacing && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Spacing:</span>
-                      <span className="text-foreground font-medium">{metadata.spacing}cm</span>
-                    </div>
-                  )}
-                  {metadata.eyelet_diameter && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Eyelet:</span>
-                      <span className="text-foreground font-medium">{metadata.eyelet_diameter}mm</span>
-                    </div>
-                  )}
-                  {metadata.eyelet_color && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Color:</span>
-                      <span className="text-foreground font-medium capitalize">{metadata.eyelet_color.replace('-', ' ')}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
         </div>
       )}
 
