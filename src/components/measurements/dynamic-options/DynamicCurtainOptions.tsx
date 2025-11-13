@@ -258,9 +258,10 @@ export const DynamicCurtainOptions = ({
                   <SelectValue placeholder="Select..." />
                 </SelectTrigger>
                 <SelectContent 
-                  className="bg-popover border-border z-50 max-h-[300px]"
+                  className="z-[9999] bg-popover border-border shadow-lg max-h-[300px]"
                   position="popper"
                   sideOffset={5}
+                  align="end"
                 >
                   {availableHeadings.map(heading => (
                     <SelectItem key={heading.id} value={heading.id}>
@@ -300,7 +301,7 @@ export const DynamicCurtainOptions = ({
                       <SelectTrigger className="bg-background border-input">
                         <SelectValue placeholder="Select fullness..." />
                       </SelectTrigger>
-                      <SelectContent className="bg-popover border-border z-50" position="popper" sideOffset={5}>
+                      <SelectContent className="z-[9999] bg-popover border-border shadow-lg" position="popper" sideOffset={5} align="end">
                         {metadata.multiple_fullness_ratios.map((ratio: number) => (
                           <SelectItem key={ratio} value={ratio.toString()}>
                             <div className="flex items-center justify-between w-full gap-4">
@@ -344,7 +345,7 @@ export const DynamicCurtainOptions = ({
                     <SelectTrigger className="bg-background border-input">
                       <SelectValue placeholder="Select..." />
                     </SelectTrigger>
-                    <SelectContent className="bg-popover border-border z-50" position="popper" sideOffset={5}>
+                    <SelectContent className="z-[9999] bg-popover border-border shadow-lg" position="popper" sideOffset={5} align="end">
                       {availableRings.map((ring) => (
                         <SelectItem key={ring.id} value={ring.id}>
                           <div className="flex items-center justify-between w-full gap-4">
@@ -380,9 +381,10 @@ export const DynamicCurtainOptions = ({
                   <SelectValue placeholder="Select..." />
                 </SelectTrigger>
                 <SelectContent 
-                  className="bg-popover border-border"
+                  className="z-[9999] bg-popover border-border shadow-lg"
                   position="popper"
                   sideOffset={5}
+                  align="end"
                 >
                   <SelectItem value="none">No Lining</SelectItem>
                   {template.lining_types.map((lining: any, index: number) => (
@@ -417,9 +419,10 @@ export const DynamicCurtainOptions = ({
                   <SelectValue placeholder="Select..." />
                 </SelectTrigger>
                 <SelectContent 
-                  className="bg-popover border-border"
+                  className="z-[9999] bg-popover border-border shadow-lg"
                   position="popper"
                   sideOffset={5}
+                  align="end"
                 >
                   {template.pricing_methods.map((method: any) => (
                     <SelectItem key={method.id} value={method.id}>
@@ -586,7 +589,7 @@ export const DynamicCurtainOptions = ({
                         <SelectTrigger className="bg-background border-input">
                           <SelectValue placeholder="Select..." />
                         </SelectTrigger>
-                        <SelectContent className="bg-popover border-border z-50">
+                        <SelectContent className="z-[9999] bg-popover border-border shadow-lg" position="popper" sideOffset={5} align="end">
                           {subOption.choices.map((choice: any) => (
                             <SelectItem key={choice.id} value={choice.value}>
                               <div className="flex items-center justify-between gap-4 w-full">
