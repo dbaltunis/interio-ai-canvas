@@ -28,7 +28,7 @@ import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 import { generateQuotePDF, generateQuotePDFBlob } from '@/utils/generateQuotePDF';
 import { InlineDiscountPanel } from "@/components/jobs/quotation/InlineDiscountPanel";
 import { useQuoteDiscount } from "@/hooks/useQuoteDiscount";
-import { ManualQuoteItemsEditor } from "../quotation/ManualQuoteItemsEditor";
+import { QuoteContentEditor } from "../quotation/QuoteContentEditor";
 import { useUserRole } from "@/hooks/useUserRole";
 
 interface QuotationTabProps {
@@ -57,7 +57,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   const [showQuotationItems, setShowQuotationItems] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
-  const [isManualEditorOpen, setIsManualEditorOpen] = useState(false);
+  const [isContentEditorOpen, setIsContentEditorOpen] = useState(false);
 
   const { data: projects } = useProjects();
   const { data: treatments } = useTreatments(projectId, quoteId);
@@ -667,16 +667,16 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
               Discount
             </Button>
 
-            {/* Manual Editor Button - Admin Only */}
-            {userRole?.isAdmin && businessSettings?.manual_quote_editing_enabled && (
+            {/* Quote Content Editor Button - Admin Only */}
+            {userRole?.isAdmin && (businessSettings as any)?.manual_quote_editing_enabled && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setIsManualEditorOpen(true)}
+                onClick={() => setIsContentEditorOpen(true)}
                 className="h-9 px-4 border-primary/50 text-primary hover:bg-primary/10"
               >
                 <Edit3 className="h-4 w-4 mr-2" />
-                Edit Items
+                Edit Quote
               </Button>
             )}
 
@@ -863,8 +863,8 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         }
       />
 
-      {/* Manual Quote Items Editor - Admin Only */}
-      {userRole?.isAdmin && businessSettings?.manual_quote_editing_enabled && currentQuote && (() => {
+      {/* Quote Content Editor - Admin Only */}
+      {userRole?.isAdmin && (businessSettings as any)?.manual_quote_editing_enabled && currentQuote && (() => {
         let currency = 'GBP';
         try {
           if (businessSettings?.measurement_units) {
@@ -877,17 +877,37 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
           console.error('Error parsing currency:', e);
         }
         return (
-          <ManualQuoteItemsEditor
-            open={isManualEditorOpen}
-            onOpenChange={setIsManualEditorOpen}
+          <QuoteContentEditor
+            open={isContentEditorOpen}
+            onOpenChange={setIsContentEditorOpen}
             quoteId={currentQuote.id}
+            projectId={projectId}
+            clientId={client?.id}
             currency={currency}
-            initialSubtotal={currentQuote.subtotal || 0}
-            initialTaxRate={currentQuote.tax_rate || 0}
-            initialTaxAmount={currentQuote.tax_amount || 0}
-            initialTotal={currentQuote.total_amount || 0}
-            initialNotes={currentQuote.notes || ''}
-            onSave={handleSaveManualEdit}
+            initialData={{
+              clientName: client?.name || '',
+              clientEmail: client?.email || '',
+              clientPhone: client?.phone || '',
+              clientAddress: client?.address || '',
+              quoteNumber: currentQuote.quote_number || '',
+              orderNumber: '',
+              notes: currentQuote.notes || '',
+              terms: '',
+              products: treatments?.map(t => ({
+                id: t.id,
+                name: t.treatment_name || '',
+                description: t.notes || '',
+                quantity: t.quantity || 1,
+                unit_price: t.unit_price || 0,
+                total_price: t.total_price || 0,
+              })) || [],
+              taxRate: currentQuote.tax_rate || 10,
+            }}
+            onSave={() => {
+              queryClient.invalidateQueries({ queryKey: ['quotes', projectId] });
+              queryClient.invalidateQueries({ queryKey: ['treatments', projectId] });
+              queryClient.invalidateQueries({ queryKey: ['project-client', projectId] });
+            }}
           />
         );
       })()}

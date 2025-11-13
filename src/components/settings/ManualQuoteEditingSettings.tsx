@@ -15,7 +15,7 @@ export const ManualQuoteEditingSettings = () => {
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = React.useState(false);
 
-  const isEnabled = businessSettings?.manual_quote_editing_enabled || false;
+  const isEnabled = (businessSettings as any)?.manual_quote_editing_enabled || false;
 
   const handleToggle = async (enabled: boolean) => {
     if (!businessSettings?.id) return;
@@ -24,7 +24,7 @@ export const ManualQuoteEditingSettings = () => {
     try {
       const { error } = await supabase
         .from("business_settings")
-        .update({ manual_quote_editing_enabled: enabled })
+        .update({ manual_quote_editing_enabled: enabled } as any)
         .eq("id", businessSettings.id);
 
       if (error) throw error;
