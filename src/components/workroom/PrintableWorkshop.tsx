@@ -6,10 +6,11 @@ interface PrintableWorkshopProps {
   data: WorkshopData;
   orientation: 'portrait' | 'landscape';
   margins: number;
+  projectId?: string;
 }
 
 export const PrintableWorkshop = React.forwardRef<HTMLDivElement, PrintableWorkshopProps>(
-  ({ data, orientation, margins }, ref) => {
+  ({ data, orientation, margins, projectId }, ref) => {
     const width = orientation === 'landscape' ? '297mm' : '210mm';
     const minHeight = orientation === 'landscape' ? '210mm' : '297mm';
     
@@ -32,7 +33,7 @@ export const PrintableWorkshop = React.forwardRef<HTMLDivElement, PrintableWorks
           position: 'relative'
         }}
       >
-        <WorkshopInformation data={data} orientation={orientation} />
+        <WorkshopInformation data={data} orientation={orientation} projectId={projectId} />
       </div>
     );
   }

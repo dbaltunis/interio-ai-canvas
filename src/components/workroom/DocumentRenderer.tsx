@@ -153,6 +153,6 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
         </Suspense>
       );
     default:
-      return <WorkshopInformation data={data} orientation={orientation} />;
+      return <WorkshopInformation data={data} orientation={orientation} projectId={projectId} />;
   }
 };
