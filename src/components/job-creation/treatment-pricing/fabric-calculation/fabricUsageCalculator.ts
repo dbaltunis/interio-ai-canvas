@@ -56,7 +56,7 @@ export const calculateFabricUsage = (
   });
   
   const railWidth = parseFloat(formData.rail_width) || 0;
-  const drop = parseFloat(formData.drop) || 0;
+  let drop = parseFloat(formData.drop) || 0;
   
   // Get the treatment template
   const selectedTemplate = treatmentTypesData.find(
@@ -65,6 +65,9 @@ export const calculateFabricUsage = (
   
   // ✅ FIX: Get fullness from selected heading or template, NOT hardcoded
   let fullness = 2.5; // Default fallback only
+  
+  // Get extra fabric from selected heading metadata
+  let extraFabric = 0;
   
   // Priority 1: Use heading's fullness ratio if selected
   if (formData.selected_heading) {
@@ -75,6 +78,12 @@ export const calculateFabricUsage = (
       const headingFullness = selectedHeading?.fullness_ratio || selectedHeading?.fullness;
       if (headingFullness) {
         fullness = parseFloat(headingFullness);
+      }
+      
+      // Extract extra_fabric from heading metadata
+      const metadata = selectedHeading?.metadata as any;
+      if (metadata?.extra_fabric) {
+        extraFabric = parseFloat(metadata.extra_fabric) || 0;
       }
     }
   }
@@ -97,7 +106,17 @@ export const calculateFabricUsage = (
     selectedHeading: formData.selected_heading,
     templateFullness: selectedTemplate?.default_fullness || selectedTemplate?.fullness_ratio,
     headingOptionsAvailable: selectedFabricItem?.headingOptions?.length,
-    finalFullness: fullness
+    finalFullness: fullness,
+    extraFabric
+  });
+  
+  // Add extra fabric to drop if applicable (from heading metadata)
+  drop = drop + extraFabric;
+  
+  console.log('📏 Drop calculation with extra fabric:', {
+    originalDrop: parseFloat(formData.drop) || 0,
+    extraFabric,
+    finalDrop: drop
   });
   
   // Check if this is a blind - use square meter calculation
