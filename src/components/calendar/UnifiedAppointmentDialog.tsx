@@ -841,8 +841,11 @@ export const UnifiedAppointmentDialog = ({
                       </AlertDialogCancel>
                       <AlertDialogAction
                         onClick={(e) => {
+                          console.log('🟢 BUTTON CLICKED!', { appointment, hasId: !!appointment?.id });
                           e.preventDefault();
+                          console.log('🟢 AFTER preventDefault, calling handleDelete...');
                           handleDelete();
+                          console.log('🟢 handleDelete called');
                         }}
                         disabled={deleteAppointment.isPending}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
