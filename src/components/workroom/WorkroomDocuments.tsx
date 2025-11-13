@@ -25,7 +25,7 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
   const [templateError, setTemplateError] = useState<string | null>(null);
   
   // Layout state
-  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('landscape');
   const [margins, setMargins] = useState<number>(8);
   
   // Filtering state
