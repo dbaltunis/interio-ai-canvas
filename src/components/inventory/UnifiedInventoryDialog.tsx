@@ -2168,22 +2168,42 @@ export const UnifiedInventoryDialog = ({
                                 </div>
                               </div>
 
-                              {pricePerMeter && maxLength && (
-                                <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
-                                  <AlertDescription className="text-xs space-y-1">
-                                    <p><strong>How pricing works:</strong></p>
-                                    <p>• You set: {currencySymbol}{pricePerMeter} per {pricingUnitLabel}</p>
-                                    <p>• Customer requests: Any length up to {maxLength}{lengthLabel}</p>
-                                    <p>• System calculates: Length × Price per {pricingUnitLabel}</p>
-                                    <p className="font-mono bg-background/50 p-2 rounded mt-2">
-                                      <strong>Example:</strong> {maxLength}{lengthLabel} × {currencySymbol}{pricePerMeter} = {currencySymbol}{(parseFloat(pricePerMeter) * parseFloat(maxLength)).toFixed(2)}
-                                    </p>
-                                    <p className="text-amber-600 dark:text-amber-500 mt-2">
-                                      ⚠️ This price will be used in quotes and option pricing automatically
-                                    </p>
-                                  </AlertDescription>
-                                </Alert>
-                              )}
+                              {pricePerMeter && maxLength && (() => {
+                                // Calculate the correct price based on unit conversion
+                                const lengthValue = parseFloat(maxLength);
+                                const priceValue = parseFloat(pricePerMeter);
+                                
+                                // Convert length to pricing unit
+                                let convertedLength = lengthValue;
+                                if (lengthUnit === 'cm') {
+                                  convertedLength = lengthValue / 100; // cm to meters
+                                } else if (lengthUnit === 'mm') {
+                                  convertedLength = lengthValue / 1000; // mm to meters
+                                } else if (lengthUnit === 'inches') {
+                                  convertedLength = lengthValue / 12; // inches to feet
+                                }
+                                // For 'm', 'feet', 'yards' - no conversion needed as they're already the pricing unit
+                                
+                                const totalPrice = (convertedLength * priceValue).toFixed(2);
+                                
+                                return (
+                                  <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
+                                    <AlertDescription className="text-xs space-y-1">
+                                      <p><strong>How pricing works:</strong></p>
+                                      <p>• You set: {currencySymbol}{pricePerMeter} per {pricingUnitLabel}</p>
+                                      <p>• Customer requests: Any length up to {maxLength}{lengthLabel}</p>
+                                      <p>• System calculates: Length ÷ {lengthUnit === 'cm' ? '100' : lengthUnit === 'mm' ? '1000' : lengthUnit === 'inches' ? '12' : '1'} × Price per {pricingUnitLabel}</p>
+                                      <p className="font-mono bg-background/50 p-2 rounded mt-2">
+                                        <strong>Example:</strong> {maxLength}{lengthLabel} = {convertedLength.toFixed(2)} {pricingUnitLabel.includes('meter') ? 'meters' : pricingUnitLabel.includes('foot') ? 'feet' : pricingUnitLabel}<br/>
+                                        {convertedLength.toFixed(2)} × {currencySymbol}{pricePerMeter} = {currencySymbol}{totalPrice}
+                                      </p>
+                                      <p className="text-amber-600 dark:text-amber-500 mt-2">
+                                        ⚠️ This price will be used in quotes and option pricing automatically
+                                      </p>
+                                    </AlertDescription>
+                                  </Alert>
+                                );
+                              })()}
                             </div>
                           </div>
                         </div>
