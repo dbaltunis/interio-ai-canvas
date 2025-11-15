@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Package, Upload, Download, Search, Eye, EyeOff, GripVertical, Info } from "lucide-react";
+import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Package, Upload, Download, Search, Eye, EyeOff, GripVertical, Info, Link as LinkIcon } from "lucide-react";
 import { PricingGridUpload, PricingGridRow, PricingGridType } from "@/components/pricing/PricingGridUpload";
 import { PricingHierarchyBadge } from "@/components/pricing/PricingHierarchyBadge";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +24,7 @@ import { useInventoryCategories } from "@/hooks/useInventoryCategories";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { SortableOptionItem } from "./SortableOptionItem";
+import { InventorySyncDialog } from "./InventorySyncDialog";
 
 export const WindowTreatmentOptionsManager = () => {
   const queryClient = useQueryClient();
@@ -87,6 +88,10 @@ export const WindowTreatmentOptionsManager = () => {
   const [selectedInventoryCategoryId, setSelectedInventoryCategoryId] = useState<string | null>(null);
   const [showCreateInventoryForm, setShowCreateInventoryForm] = useState(false);
   const [expandedOptions, setExpandedOptions] = useState<Set<string>>(new Set());
+  
+  // Inventory sync states
+  const [syncDialogOpen, setSyncDialogOpen] = useState(false);
+  const [syncTargetOptionType, setSyncTargetOptionType] = useState<string>('');
   const [newInventoryItem, setNewInventoryItem] = useState({
     name: '',
     description: '',
@@ -323,6 +328,102 @@ export const WindowTreatmentOptionsManager = () => {
           variant: "destructive"
         });
       }
+    }
+  };
+
+  // Inventory sync handlers
+  const handleSyncFromInventory = (optionTypeKey: string) => {
+    setSyncTargetOptionType(optionTypeKey);
+    setSyncDialogOpen(true);
+  };
+
+  const handleInventorySyncConfirm = async (
+    selectedIds: string[],
+    pricingMode: 'selling' | 'cost' | 'cost_with_markup',
+    markupPercentage: number
+  ) => {
+    try {
+      if (!syncTargetOptionType) return false;
+
+      // Get or create the treatment option
+      let treatmentOption = relevantOptions.find(opt => opt.key === syncTargetOptionType);
+      
+      if (!treatmentOption) {
+        // Create the treatment option first
+        try {
+          treatmentOption = await createTreatmentOption.mutateAsync({
+            key: syncTargetOptionType,
+            label: optionTypeCategories.find(o => o.type_key === syncTargetOptionType)?.type_label || syncTargetOptionType,
+            input_type: 'select',
+            visible: true,
+            order_index: 0,
+            treatment_category: activeTreatment,
+            is_system_default: false,
+            required: false,
+          });
+        } catch (error: any) {
+          toast({
+            title: "Failed to create option",
+            description: error.message,
+            variant: "destructive",
+          });
+          return false;
+        }
+      }
+
+      // Fetch inventory items
+      const { data: inventoryItems, error: fetchError } = await supabase
+        .from('enhanced_inventory_items')
+        .select('*')
+        .in('id', selectedIds);
+
+      if (fetchError) throw fetchError;
+
+      // Create option values from inventory items
+      for (const item of inventoryItems) {
+        let basePrice = 0;
+        
+        if (pricingMode === 'selling') {
+          basePrice = item.selling_price || 0;
+        } else if (pricingMode === 'cost') {
+          basePrice = item.cost_price || 0;
+        } else if (pricingMode === 'cost_with_markup') {
+          basePrice = (item.cost_price || 0) * (1 + markupPercentage / 100);
+        }
+
+        const valueCode = item.name.trim().toLowerCase().replace(/\s+/g, '_');
+        
+        await createOptionValue.mutateAsync({
+          option_id: treatmentOption.id,
+          code: valueCode,
+          label: item.name,
+          order_index: treatmentOption.option_values?.length || 0,
+          extra_data: {
+            price: basePrice,
+            pricing_method: 'fixed',
+            synced_from_inventory: true,
+          },
+          inventory_item_id: item.id,
+        });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+      queryClient.invalidateQueries({ queryKey: ['option-values'] });
+      queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
+
+      toast({
+        title: "Sync successful",
+        description: `Created ${inventoryItems.length} option(s) from inventory.`,
+      });
+
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Sync failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
     }
   };
 
@@ -1405,6 +1506,15 @@ export const WindowTreatmentOptionsManager = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Inventory Sync Dialog */}
+        <InventorySyncDialog
+          open={syncDialogOpen}
+          onOpenChange={setSyncDialogOpen}
+          onSync={handleInventorySyncConfirm}
+          title="Sync Options from Inventory"
+          description="Select inventory items to create as selectable options. Each item will become an option with its price and details."
+        />
       </CardContent>
     </Card>
   );
