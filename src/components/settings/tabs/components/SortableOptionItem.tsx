@@ -150,59 +150,63 @@ export const SortableOptionItem = ({
             {hasSubOptions && ` • ${value.extra_data.sub_options.length} sub-categories`}
           </div>
         </div>
-        {value.inventory_item_id && (
-          <InventoryStockBadge itemId={value.inventory_item_id} />
-        )}
-        <div className="flex gap-2">
-          {/* Toggle Visibility Button */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onToggleVisibility(value)}
-                >
-                  {value.hidden_by_user ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {value.hidden_by_user ? "Show in setup" : "Hide from setup"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onEdit(value)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          
-          {/* Delete Button with Tooltip for System Defaults */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div>
+        <div className="flex items-center gap-3 ml-auto">
+          {value.inventory_item_id && (
+            <InventoryStockBadge itemId={value.inventory_item_id} />
+          )}
+          <div className="flex gap-1 md:gap-2">
+            {/* Toggle Visibility Button */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
-                    size="sm"
-                    onClick={() => onDelete(value)}
-                    disabled={isSystemDefault}
-                    className={isSystemDefault ? "opacity-50 cursor-not-allowed" : ""}
+                    size="icon"
+                    className="h-9 w-9 md:h-8 md:w-8"
+                    onClick={() => onToggleVisibility(value)}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    {value.hidden_by_user ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                   </Button>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isSystemDefault 
-                  ? "Cannot delete system defaults. Use hide instead." 
-                  : "Delete option"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {value.hidden_by_user ? "Show in setup" : "Hide from setup"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 md:h-8 md:w-8"
+              onClick={() => onEdit(value)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            
+            {/* Delete Button with Tooltip for System Defaults */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`h-9 w-9 md:h-8 md:w-8 ${isSystemDefault ? "opacity-50 cursor-not-allowed" : ""}`}
+                      onClick={() => onDelete(value)}
+                      disabled={isSystemDefault}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isSystemDefault 
+                    ? "Cannot delete system defaults. Use hide instead." 
+                    : "Delete option"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
       </div>
       
