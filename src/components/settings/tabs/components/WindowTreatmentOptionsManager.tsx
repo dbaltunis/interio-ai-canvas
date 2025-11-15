@@ -408,10 +408,29 @@ export const WindowTreatmentOptionsManager = () => {
         
         setFormData({ ...formData, sub_options: newSubOptions });
 
-        toast({
-          title: "Choices added",
-          description: `Added ${inventoryItems.length} choice(s) from inventory.`,
+        // Check if any items had no price
+        const itemsWithoutPrice = inventoryItems.filter(item => {
+          if (pricingMode === 'selling') {
+            return !(item.selling_price || item.price_per_unit || item.price_per_meter || item.price_per_yard);
+          } else if (pricingMode === 'cost') {
+            return !item.cost_price;
+          } else {
+            return !item.cost_price;
+          }
         });
+
+        if (itemsWithoutPrice.length > 0) {
+          toast({
+            title: "Warning: Some items have no price",
+            description: `${itemsWithoutPrice.length} item(s) were added with $0 price. Set prices in Inventory to update.`,
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Choices added",
+            description: `Added ${inventoryItems.length} choice(s) from inventory with pricing.`,
+          });
+        }
 
         setSyncTargetSubOption(null);
         return true;
@@ -1263,10 +1282,16 @@ export const WindowTreatmentOptionsManager = () => {
                                         className={linkedInventoryItem ? 'bg-muted cursor-not-allowed' : ''}
                                       />
                                       {linkedInventoryItem && (
-                                        <Badge variant="secondary" className="absolute -top-2 -right-2 text-xs">
-                                          <LinkIcon className="h-3 w-3 mr-1" />
-                                          Inventory
-                                        </Badge>
+                                        <>
+                                          <Badge variant="secondary" className="absolute -top-2 -right-2 text-xs">
+                                            <LinkIcon className="h-3 w-3 mr-1" />
+                                            Inventory
+                                          </Badge>
+                                          <div className="text-xs text-muted-foreground mt-1">
+                                            Price from: {linkedInventoryItem.name}
+                                            {displayPrice > 0 ? ` • $${displayPrice.toFixed(2)}` : ' • No price set in inventory'}
+                                          </div>
+                                        </>
                                       )}
                                     </div>
                                     <Button
