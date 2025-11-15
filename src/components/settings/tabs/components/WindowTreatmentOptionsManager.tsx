@@ -1226,9 +1226,8 @@ export const WindowTreatmentOptionsManager = () => {
                                 ? inventoryItems.find(item => item.id === choice.inventory_item_id)
                                 : null;
                               
-                              const displayPrice = linkedInventoryItem
-                                ? (linkedInventoryItem.price_per_unit || linkedInventoryItem.selling_price || linkedInventoryItem.cost_price || 0)
-                                : choice.price;
+                              // Use the stored price from choice.price (set during sync)
+                              const displayPrice = choice.price || 0;
                               
                               return (
                                 <div key={choice.id} className="space-y-1">
