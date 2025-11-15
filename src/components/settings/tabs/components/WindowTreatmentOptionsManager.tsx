@@ -362,11 +362,12 @@ export const WindowTreatmentOptionsManager = () => {
           let basePrice = 0;
           
           if (pricingMode === 'selling') {
-            basePrice = item.selling_price || 0;
+            basePrice = item.selling_price || item.price_per_unit || item.price_per_meter || item.price_per_yard || 0;
           } else if (pricingMode === 'cost') {
             basePrice = item.cost_price || 0;
           } else if (pricingMode === 'cost_with_markup') {
-            basePrice = (item.cost_price || 0) * (1 + markupPercentage / 100);
+            const costPrice = item.cost_price || 0;
+            basePrice = costPrice > 0 ? costPrice * (1 + markupPercentage / 100) : 0;
           }
 
           newSubOptions[syncTargetSubOption].choices.push({
@@ -431,11 +432,12 @@ export const WindowTreatmentOptionsManager = () => {
         let basePrice = 0;
         
         if (pricingMode === 'selling') {
-          basePrice = item.selling_price || 0;
+          basePrice = item.selling_price || item.price_per_unit || item.price_per_meter || item.price_per_yard || 0;
         } else if (pricingMode === 'cost') {
           basePrice = item.cost_price || 0;
         } else if (pricingMode === 'cost_with_markup') {
-          basePrice = (item.cost_price || 0) * (1 + markupPercentage / 100);
+          const costPrice = item.cost_price || 0;
+          basePrice = costPrice > 0 ? costPrice * (1 + markupPercentage / 100) : 0;
         }
 
         const valueCode = item.name.trim().toLowerCase().replace(/\s+/g, '_');
