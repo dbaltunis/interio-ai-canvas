@@ -60,7 +60,7 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
     const values = parseCSVLine(lines[i]);
     const errors: string[] = [];
     
-    const rotationValue = values[19]?.replace(/^"|"$/g, '').toLowerCase();
+    const rotationValue = values[20]?.replace(/^"|"$/g, '').toLowerCase();
     const canRotate = rotationValue === 'yes' || rotationValue === 'true' || rotationValue === '1';
     
     const item: any = {
@@ -69,26 +69,27 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
       sku: values[1]?.replace(/^"|"$/g, ''),
       description: values[2]?.replace(/^"|"$/g, ''),
       subcategory: values[3]?.replace(/^"|"$/g, ''),
-      quantity: parseFloat(values[4]) || 0,
-      unit: values[5]?.replace(/^"|"$/g, '') || 'meters',
-      cost_price: parseFloat(values[6]) || 0,
-      selling_price: parseFloat(values[7]) || 0,
-      price_per_meter: parseFloat(values[7]) || 0,
-      supplier: values[8]?.replace(/^"|"$/g, ''),
-      location: values[9]?.replace(/^"|"$/g, ''),
-      reorder_point: parseFloat(values[10]) || 0,
-      fabric_width: parseFloat(values[11]) || null,
-      pattern_repeat_vertical: parseFloat(values[12]) || null,
-      pattern_repeat_horizontal: parseFloat(values[13]) || null,
-      fabric_composition: values[14]?.replace(/^"|"$/g, ''),
-      fabric_grade: values[15]?.replace(/^"|"$/g, ''),
-      color: values[16]?.replace(/^"|"$/g, ''),
-      collection_name: values[17]?.replace(/^"|"$/g, ''),
-      image_url: values[20]?.replace(/^"|"$/g, ''),
+      product_category: values[4]?.replace(/^"|"$/g, ''),
+      quantity: parseFloat(values[5]) || 0,
+      unit: values[6]?.replace(/^"|"$/g, '') || 'meters',
+      cost_price: parseFloat(values[7]) || 0,
+      selling_price: parseFloat(values[8]) || 0,
+      price_per_meter: parseFloat(values[8]) || 0,
+      supplier: values[9]?.replace(/^"|"$/g, ''),
+      location: values[10]?.replace(/^"|"$/g, ''),
+      reorder_point: parseFloat(values[11]) || 0,
+      fabric_width: parseFloat(values[12]) || null,
+      pattern_repeat_vertical: parseFloat(values[13]) || null,
+      pattern_repeat_horizontal: parseFloat(values[14]) || null,
+      fabric_composition: values[15]?.replace(/^"|"$/g, ''),
+      fabric_grade: values[16]?.replace(/^"|"$/g, ''),
+      color: values[17]?.replace(/^"|"$/g, ''),
+      collection_name: values[18]?.replace(/^"|"$/g, ''),
+      image_url: values[21]?.replace(/^"|"$/g, ''),
       metadata: {
-        maxLength: parseFloat(values[18]) || null,
+        maxLength: parseFloat(values[19]) || null,
         rotationAllowance: canRotate,
-        priceGroup: values[21]?.replace(/^"|"$/g, '') || null,
+        priceGroup: values[22]?.replace(/^"|"$/g, '') || null,
       },
     };
 
@@ -114,6 +115,21 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
     
     if (!item.subcategory || !validSubcategories.includes(item.subcategory)) {
       errors.push(`Invalid subcategory. Must be one of: ${validSubcategories.join(', ')}`);
+    }
+
+    const validProductCategories = [
+      'roller_blinds',
+      'venetian_blinds', 
+      'vertical_blinds',
+      'roman_blinds',
+      'curtains',
+      'shutters',
+      'panel_blinds',
+      'other'
+    ];
+    
+    if (item.product_category && !validProductCategories.includes(item.product_category)) {
+      errors.push(`Invalid product_category. Must be one of: ${validProductCategories.join(', ')}`);
     }
 
     if (errors.length > 0) {
@@ -301,7 +317,7 @@ export const parseTrimmingsCSV = (csvData: string): ValidationResult => {
 export const exportCategoryInventory = (items: any[], category: string): string => {
   if (category === 'fabrics') {
     const headers = [
-      'name', 'sku', 'description', 'subcategory', 'quantity', 'unit', 'cost_price', 'selling_price',
+      'name', 'sku', 'description', 'subcategory', 'product_category', 'quantity', 'unit', 'cost_price', 'selling_price',
       'supplier', 'location', 'reorder_point', 'fabric_width', 'pattern_repeat_vertical',
       'pattern_repeat_horizontal', 'fabric_composition', 'fabric_grade', 'color', 'collection_name',
       'max_length', 'rotation_allowance', 'image_url', 'price_group'
@@ -312,6 +328,7 @@ export const exportCategoryInventory = (items: any[], category: string): string 
       `"${item.sku || ''}"`,
       `"${item.description || ''}"`,
       `"${item.subcategory || ''}"`,
+      `"${item.product_category || ''}"`,
       item.quantity || 0,
       `"${item.unit || 'meters'}"`,
       item.cost_price || 0,
