@@ -528,7 +528,31 @@ export const WindowTreatmentOptionsManager = () => {
   const selectedInventoryItem = inventoryItems.find(item => item.id === formData.inventory_item_id);
 
   const handleSelectInventoryItem = (itemId: string | null) => {
-    setFormData({ ...formData, inventory_item_id: itemId });
+    if (itemId) {
+      // Find the selected inventory item and auto-fill form fields
+      const selectedItem = inventoryItems.find(item => item.id === itemId);
+      if (selectedItem) {
+        setFormData({
+          ...formData,
+          inventory_item_id: itemId,
+          // Auto-fill name from inventory item if form name is empty
+          name: formData.name || selectedItem.name,
+          // Auto-fill price from inventory item
+          price: selectedItem.price_per_unit || formData.price,
+          // Keep existing pricing method or default to fixed
+          pricing_method: formData.pricing_method || 'fixed',
+        });
+        
+        toast({
+          title: "Inventory item linked",
+          description: `Form fields auto-filled with data from "${selectedItem.name}"`,
+        });
+      }
+    } else {
+      // Just clear the inventory link
+      setFormData({ ...formData, inventory_item_id: null });
+    }
+    
     setShowInventoryDialog(false);
     setInventorySearchQuery('');
     setSelectedInventoryCategoryId(null);
