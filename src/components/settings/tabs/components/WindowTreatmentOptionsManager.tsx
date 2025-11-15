@@ -532,20 +532,29 @@ export const WindowTreatmentOptionsManager = () => {
       // Find the selected inventory item and auto-fill form fields
       const selectedItem = inventoryItems.find(item => item.id === itemId);
       if (selectedItem) {
+        // Auto-generate value from inventory item name
+        const autoValue = selectedItem.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '')
+          .replace(/_+/g, '_');
+        
         setFormData({
           ...formData,
           inventory_item_id: itemId,
-          // Auto-fill name from inventory item if form name is empty
-          name: formData.name || selectedItem.name,
-          // Auto-fill price from inventory item
-          price: selectedItem.price_per_unit || formData.price,
-          // Keep existing pricing method or default to fixed
-          pricing_method: formData.pricing_method || 'fixed',
+          // Always update with selected item data
+          name: selectedItem.name,
+          value: autoValue,
+          // Update price from inventory item (try price_per_unit, then selling_price, then cost_price)
+          price: selectedItem.price_per_unit || selectedItem.selling_price || selectedItem.cost_price || 0,
+          // Set pricing method to fixed
+          pricing_method: 'fixed',
         });
         
+        const priceValue = selectedItem.price_per_unit || selectedItem.selling_price || selectedItem.cost_price || 0;
         toast({
           title: "Inventory item linked",
-          description: `Form fields auto-filled with data from "${selectedItem.name}"`,
+          description: `Fields updated with "${selectedItem.name}" - £${priceValue.toFixed(2)}`,
         });
       }
     } else {
