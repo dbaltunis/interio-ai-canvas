@@ -160,7 +160,7 @@ export const WindowTreatmentOptionsManager = () => {
   // For display, we'll show all unique option values across all options
   const allOptionValues = relevantOptions.flatMap(opt => opt.option_values || []);
   
-  // Deduplicate by code and filter hidden options
+  // Deduplicate by code - keep all options including hidden ones so they can be unhidden
   const uniqueOptionValues = allOptionValues
     .reduce((acc, val) => {
       if (!acc.find(v => v.code === val.code)) {
@@ -168,8 +168,12 @@ export const WindowTreatmentOptionsManager = () => {
       }
       return acc;
     }, [] as OptionValue[])
-    .filter(v => !v.hidden_by_user)
-    .sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+    .sort((a, b) => {
+      // Sort: visible items first (by order_index), then hidden items at the bottom
+      if (a.hidden_by_user && !b.hidden_by_user) return 1;
+      if (!a.hidden_by_user && b.hidden_by_user) return -1;
+      return (a.order_index || 0) - (b.order_index || 0);
+    });
 
   const handleSave = async () => {
     if (!formData.name.trim() || !formData.value.trim()) {

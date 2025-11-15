@@ -54,7 +54,7 @@ export const SortableOptionItem = ({
   const isSystemDefault = parentOption?.is_system_default || false;
 
   return (
-    <div ref={setNodeRef} style={style} className="border rounded-lg">
+    <div ref={setNodeRef} style={style} className={`border rounded-lg ${value.hidden_by_user ? 'opacity-60 bg-muted/30' : ''}`}>
       <div className="flex items-center justify-between p-3 hover:bg-muted/50">
         {/* Drag Handle */}
         <div
