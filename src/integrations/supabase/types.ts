@@ -4591,6 +4591,7 @@ export type Database = {
           code: string
           created_at: string | null
           extra_data: Json | null
+          hidden_by_user: boolean | null
           id: string
           inventory_item_id: string | null
           is_system_default: boolean | null
@@ -4602,6 +4603,7 @@ export type Database = {
           code: string
           created_at?: string | null
           extra_data?: Json | null
+          hidden_by_user?: boolean | null
           id?: string
           inventory_item_id?: string | null
           is_system_default?: boolean | null
@@ -4613,6 +4615,7 @@ export type Database = {
           code?: string
           created_at?: string | null
           extra_data?: Json | null
+          hidden_by_user?: boolean | null
           id?: string
           inventory_item_id?: string | null
           is_system_default?: boolean | null

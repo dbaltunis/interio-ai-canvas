@@ -9,6 +9,7 @@ export interface OptionValue {
   order_index: number;
   extra_data?: any;
   inventory_item_id?: string | null; // Link to enhanced_inventory_items
+  hidden_by_user?: boolean; // NEW: Track if user wants to hide this option
 }
 
 export interface TreatmentOption {
@@ -23,6 +24,7 @@ export interface TreatmentOption {
   validation?: any;
   tracks_inventory?: boolean; // Whether this option type should link to inventory
   option_values?: OptionValue[];
+  is_system_default?: boolean; // NEW: Track if this is a system default option
 }
 
 export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 'template' | 'category' = 'template') => {
