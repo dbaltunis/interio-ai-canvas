@@ -80,7 +80,7 @@ export const WindowTreatmentOptionsManager = () => {
       id: string;
       label: string;
       key: string;
-      choices: Array<{ id: string; label: string; value: string; price: number }>;
+      choices: Array<{ id: string; label: string; value: string; price: number; inventory_item_id?: string }>;
     }>
   });
   const [showInventoryDialog, setShowInventoryDialog] = useState(false);
@@ -92,6 +92,7 @@ export const WindowTreatmentOptionsManager = () => {
   // Inventory sync states
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const [syncTargetOptionType, setSyncTargetOptionType] = useState<string>('');
+  const [syncTargetSubOption, setSyncTargetSubOption] = useState<number | null>(null);
   const [newInventoryItem, setNewInventoryItem] = useState({
     name: '',
     description: '',
@@ -332,8 +333,9 @@ export const WindowTreatmentOptionsManager = () => {
   };
 
   // Inventory sync handlers
-  const handleSyncFromInventory = (optionTypeKey: string) => {
+  const handleSyncFromInventory = (optionTypeKey: string, subOptionIdx?: number) => {
     setSyncTargetOptionType(optionTypeKey);
+    setSyncTargetSubOption(subOptionIdx !== undefined ? subOptionIdx : null);
     setSyncDialogOpen(true);
   };
 
@@ -343,6 +345,51 @@ export const WindowTreatmentOptionsManager = () => {
     markupPercentage: number
   ) => {
     try {
+      // Check if we're syncing to a sub-category choice
+      if (syncTargetSubOption !== null) {
+        // Fetch inventory items
+        const { data: inventoryItems, error: fetchError } = await supabase
+          .from('enhanced_inventory_items')
+          .select('*')
+          .in('id', selectedIds);
+
+        if (fetchError) throw fetchError;
+
+        // Add choices to the sub-option
+        const newSubOptions = [...formData.sub_options];
+        
+        for (const item of inventoryItems) {
+          let basePrice = 0;
+          
+          if (pricingMode === 'selling') {
+            basePrice = item.selling_price || 0;
+          } else if (pricingMode === 'cost') {
+            basePrice = item.cost_price || 0;
+          } else if (pricingMode === 'cost_with_markup') {
+            basePrice = (item.cost_price || 0) * (1 + markupPercentage / 100);
+          }
+
+          newSubOptions[syncTargetSubOption].choices.push({
+            id: crypto.randomUUID(),
+            label: item.name,
+            value: item.name.trim().toLowerCase().replace(/\s+/g, '_'),
+            price: basePrice,
+            inventory_item_id: item.id,
+          });
+        }
+        
+        setFormData({ ...formData, sub_options: newSubOptions });
+
+        toast({
+          title: "Choices added",
+          description: `Added ${inventoryItems.length} choice(s) from inventory.`,
+        });
+
+        setSyncTargetSubOption(null);
+        return true;
+      }
+
+      // Original logic for syncing to treatment options
       if (!syncTargetOptionType) return false;
 
       // Get or create the treatment option
@@ -1152,24 +1199,35 @@ export const WindowTreatmentOptionsManager = () => {
                                 </Button>
                               </div>
                             ))}
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const newSubOptions = [...formData.sub_options];
-                                newSubOptions[subIdx].choices.push({
-                                  id: crypto.randomUUID(),
-                                  label: '',
-                                  value: '',
-                                  price: 0
-                                });
-                                setFormData({ ...formData, sub_options: newSubOptions });
-                              }}
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Add Choice
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const newSubOptions = [...formData.sub_options];
+                                  newSubOptions[subIdx].choices.push({
+                                    id: crypto.randomUUID(),
+                                    label: '',
+                                    value: '',
+                                    price: 0
+                                  });
+                                  setFormData({ ...formData, sub_options: newSubOptions });
+                                }}
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Choice
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleSyncFromInventory(activeOptionType, subIdx)}
+                              >
+                                <LinkIcon className="h-4 w-4 mr-2" />
+                                Select from Inventory
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       ))}
