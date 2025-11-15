@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Package, Upload, Download, Search, Eye, EyeOff, GripVertical } from "lucide-react";
+import { PricingGridUpload, PricingGridRow, PricingGridType } from "@/components/pricing/PricingGridUpload";
+import { PricingHierarchyBadge } from "@/components/pricing/PricingHierarchyBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -71,7 +73,8 @@ export const WindowTreatmentOptionsManager = () => {
     price: 0 as number,
     inventory_item_id: null as string | null,
     pricing_method: 'fixed' as string,
-    pricing_grid_data: [] as Array<{ width: number; price: number }>,
+    pricing_grid_data: [] as PricingGridRow[],
+    pricing_grid_type: 'width' as PricingGridType,
     sub_options: [] as Array<{
       id: string;
       label: string;
@@ -108,6 +111,7 @@ export const WindowTreatmentOptionsManager = () => {
       inventory_item_id: null,
       pricing_method: 'fixed',
       pricing_grid_data: [],
+      pricing_grid_type: 'width',
       sub_options: []
     });
   };
@@ -240,6 +244,7 @@ export const WindowTreatmentOptionsManager = () => {
             price: Number(formData.price) || 0,
             pricing_method: formData.pricing_method,
             pricing_grid_data: formData.pricing_grid_data,
+            pricing_grid_type: formData.pricing_grid_type,
             sub_options: formData.sub_options
           },
           inventory_item_id: formData.inventory_item_id || null,
@@ -275,6 +280,7 @@ export const WindowTreatmentOptionsManager = () => {
       inventory_item_id: value.inventory_item_id || null,
       pricing_method: value.extra_data?.pricing_method || 'fixed',
       pricing_grid_data: value.extra_data?.pricing_grid_data || [],
+      pricing_grid_type: value.extra_data?.pricing_grid_type || 'width',
       sub_options: value.extra_data?.sub_options || []
     });
     setEditingValue(value);
@@ -913,99 +919,12 @@ export const WindowTreatmentOptionsManager = () => {
                       </div>
                     ) : (
                       <div className="col-span-2 space-y-3">
-                        <Label>Price Table</Label>
-                        <div className="space-y-2">
-                          <div className="grid grid-cols-[1fr,1fr,auto] gap-2 text-sm font-medium">
-                            <div>Max width (cm)</div>
-                            <div>Price</div>
-                            <div className="w-10"></div>
-                          </div>
-                          {formData.pricing_grid_data.map((row, idx) => (
-                            <div key={idx} className="grid grid-cols-[1fr,1fr,auto] gap-2">
-                              <Input
-                                type="number"
-                                value={row.width}
-                                onChange={(e) => {
-                                  const newData = [...formData.pricing_grid_data];
-                                  newData[idx].width = parseFloat(e.target.value) || 0;
-                                  setFormData({ ...formData, pricing_grid_data: newData });
-                                }}
-                                placeholder="60"
-                              />
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={row.price}
-                                onChange={(e) => {
-                                  const newData = [...formData.pricing_grid_data];
-                                  newData[idx].price = parseFloat(e.target.value) || 0;
-                                  setFormData({ ...formData, pricing_grid_data: newData });
-                                }}
-                                placeholder="300"
-                              />
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  const newData = formData.pricing_grid_data.filter((_, i) => i !== idx);
-                                  setFormData({ ...formData, pricing_grid_data: newData });
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          ))}
-                          <div className="grid grid-cols-2 gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setFormData({
-                                  ...formData,
-                                  pricing_grid_data: [...formData.pricing_grid_data, { width: 0, price: 0 }]
-                                });
-                              }}
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Add pricing
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => document.getElementById('csv-upload')?.click()}
-                            >
-                              <Upload className="h-4 w-4 mr-2" />
-                              Import CSV
-                            </Button>
-                          </div>
-                          <input
-                            id="csv-upload"
-                            type="file"
-                            accept=".csv"
-                            onChange={handleCSVImport}
-                            className="hidden"
-                          />
-                        </div>
-                        <div className="bg-muted/50 border rounded-lg p-3">
-                          <div className="flex items-start gap-2 text-sm">
-                            <div className="text-muted-foreground mt-0.5">ℹ️</div>
-                            <div className="flex-1">
-                              <div className="font-medium mb-1">CSV Import Instructions</div>
-                              <div className="text-xs text-muted-foreground mb-2">
-                                CSV format: width,price (one per line). Make sure width uses the same unit as your settings (cm for metric, in for imperial).
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleDownloadCSVTemplate}
-                                className="h-7 text-xs"
-                              >
-                                <Download className="h-3 w-3 mr-1" />
-                                Download CSV template
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
+                        <PricingGridUpload
+                          value={formData.pricing_grid_data}
+                          onChange={(data) => setFormData({ ...formData, pricing_grid_data: data })}
+                          gridType={formData.pricing_grid_type}
+                          onGridTypeChange={(type) => setFormData({ ...formData, pricing_grid_type: type, pricing_grid_data: [] })}
+                        />
                       </div>
                     )}
 
