@@ -46,25 +46,50 @@ export const OptionsArchitectureGuide = () => {
           </div>
         </div>
 
-        {/* Section 2: Options Tab - Hierarchical Structure */}
+        {/* Section 2: Options Tab - For Simple Options */}
         <div className="space-y-3 border-t pt-4">
           <div className="flex items-center gap-2">
             <Sliders className="h-4 w-4 text-primary" />
-            <h3 className="font-semibold text-lg">2. Options Tab - Hierarchical Structure</h3>
+            <h3 className="font-semibold text-lg">2. Options Tab - Simple Configuration</h3>
           </div>
           <div className="pl-6 space-y-3 text-sm">
             <Alert>
               <AlertDescription>
-                <strong>Purpose:</strong> Create hardware configurations with a 4-level hierarchy:
+                <strong>Purpose:</strong> Create simple, flat options that apply across ALL templates:
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li><strong>Lining Options:</strong> Standard, Blackout, Thermal</li>
+                  <li><strong>Mount Types:</strong> Inside Mount, Outside Mount, Ceiling Mount</li>
+                  <li><strong>Simple Hardware:</strong> Single-choice items with no nested configurations</li>
+                  <li>Each option can have pricing (fixed, per-unit, or pricing grid)</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
+            
+            <p className="text-xs text-primary font-medium">
+              ✅ Use when: Options don't need sub-choices or nested configurations
+            </p>
+          </div>
+        </div>
+
+        {/* Section 3: Hardware Tab - Hierarchical Structure */}
+        <div className="space-y-3 border-t pt-4">
+          <div className="flex items-center gap-2">
+            <Settings className="h-4 w-4 text-primary" />
+            <h3 className="font-semibold text-lg">3. Hardware Tab - Hierarchical Configuration</h3>
+          </div>
+          <div className="pl-6 space-y-3 text-sm">
+            <Alert>
+              <AlertDescription>
+                <strong>Purpose:</strong> Create complex hardware configurations with a 4-level hierarchy:
                 <div className="mt-3 space-y-2 pl-3 border-l-2 border-primary/30">
                   <div>
-                    <strong className="text-primary">Level 1: Category</strong> (e.g., "Hardware Options", "Lining Types")
+                    <strong className="text-primary">Level 1: Category</strong> (e.g., "Hardware Options")
                     <div className="pl-4 mt-1 text-muted-foreground">
                       → <strong className="text-primary">Level 2: Subcategory</strong> (e.g., "Motorised", "Regular/Manual")
                       <div className="pl-4 mt-1">
-                        → <strong className="text-primary">Level 3: Sub-subcategory</strong> (e.g., "Rods", "Tracks")
+                        → <strong className="text-primary">Level 3: Type</strong> (e.g., "Rods", "Tracks")
                         <div className="pl-4 mt-1">
-                          → <strong className="text-primary">Level 4: Extras</strong> (e.g., specific rod model, colors, finials, brackets)
+                          → <strong className="text-primary">Level 4: Extras</strong> (e.g., specific models, colors, finials, brackets)
                         </div>
                       </div>
                     </div>
@@ -74,30 +99,24 @@ export const OptionsArchitectureGuide = () => {
             </Alert>
             
             <div className="p-3 bg-muted rounded-lg">
-              <p className="font-medium mb-2">Example: Curtain Hardware Setup</p>
+              <p className="font-medium mb-2">Example: Complete Hardware Flow</p>
               <div className="space-y-1 text-xs pl-2 border-l-2 border-primary/30">
-                <div><strong>Category:</strong> Hardware Options</div>
+                <div><strong>1. Category:</strong> Hardware Options</div>
                 <div className="pl-3">
-                  <strong>→ Subcategory:</strong> Motorised
+                  <strong>→ 2. Subcategory:</strong> Motorised
                   <div className="pl-3">
-                    <strong>→ Sub-subcategory:</strong> Motor Type (Standard, Smart)
+                    <strong>→ 3. Type:</strong> Tracks
                     <div className="pl-3">
-                      <strong>→ Extras:</strong> Remote Control, Wall Switch, Motor Side (Left/Right)
+                      <strong>→ 4. Extras:</strong> Track Model (from inventory), White Color (+$0), Standard Motor (+$250), Left Side Motor, Remote Control (+$50)
                     </div>
                   </div>
                 </div>
-                <div className="pl-3">
-                  <strong>→ Subcategory:</strong> Regular (Manual)
+                <div className="pl-3 mt-2">
+                  <strong>→ 2. Subcategory:</strong> Regular (Manual)
                   <div className="pl-3">
-                    <strong>→ Sub-subcategory:</strong> Rods
+                    <strong>→ 3. Type:</strong> Rods
                     <div className="pl-3">
-                      <strong>→ Extras:</strong> Rod Models (from inventory), Colors, Finials, Brackets
-                    </div>
-                  </div>
-                  <div className="pl-3">
-                    <strong>→ Sub-subcategory:</strong> Tracks
-                    <div className="pl-3">
-                      <strong>→ Extras:</strong> Track Models (from inventory), Colors, Brackets, Chain Control
+                      <strong>→ 4. Extras:</strong> Rod Model (from inventory), Chrome Color (+$15), Crystal Finials (+$25), Wall Brackets (+$10)
                     </div>
                   </div>
                 </div>
@@ -105,16 +124,16 @@ export const OptionsArchitectureGuide = () => {
             </div>
 
             <p className="text-xs text-primary font-medium">
-              ✅ Used in: Template Editor → Options Tab (enable/disable which option categories appear for this template)
+              ✅ Use when: Options need multiple nested choices (motorised vs manual, rods vs tracks, colors, accessories)
             </p>
           </div>
         </div>
 
-        {/* Section 3: Template Editor */}
+        {/* Section 4: Template Editor */}
         <div className="space-y-3 border-t pt-4">
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4 text-primary" />
-            <h3 className="font-semibold text-lg">3. Template Editor → Options Tab</h3>
+            <h3 className="font-semibold text-lg">4. Template Editor → Options Tab</h3>
           </div>
           <div className="pl-6 space-y-2 text-sm">
             <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200">
@@ -145,19 +164,23 @@ export const OptionsArchitectureGuide = () => {
           <ul className="space-y-2 text-sm pl-4">
             <li className="flex gap-2">
               <span>•</span>
-              <span><strong>Headings</strong> = Physical inventory items with manufacturing specs</span>
+              <span><strong>Headings</strong> = Physical inventory items with manufacturing specs (fullness ratios, pricing)</span>
             </li>
             <li className="flex gap-2">
               <span>•</span>
-              <span><strong>Options</strong> = Hardware choices that work across many templates</span>
+              <span><strong>Options Tab</strong> = Simple, flat hardware choices (linings, mounts, single-choice items)</span>
             </li>
             <li className="flex gap-2">
               <span>•</span>
-              <span><strong>Template Options Tab</strong> = Enable/disable what shows for THIS template</span>
+              <span><strong>Hardware Tab</strong> = Complex nested configurations (motorised/manual → rods/tracks → colors/accessories)</span>
             </li>
             <li className="flex gap-2">
               <span>•</span>
-              <span className="text-muted-foreground">Create options once in Options Tab, reuse across multiple templates</span>
+              <span><strong>Template Options Tab</strong> = Enable/disable what shows for THIS specific template</span>
+            </li>
+            <li className="flex gap-2">
+              <span>•</span>
+              <span className="text-muted-foreground">Create options once, reuse across multiple templates by toggling them on/off</span>
             </li>
           </ul>
         </div>

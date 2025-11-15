@@ -7,7 +7,8 @@ import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
 import { WindowTreatmentOptionsManager } from "./components/WindowTreatmentOptionsManager";
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
 import { OptionsArchitectureGuide } from "./components/OptionsArchitectureGuide";
-import { Layers, Settings, Sliders, Library, HelpCircle } from "lucide-react";
+import { HierarchicalOptionsManager } from "./components/HierarchicalOptionsManager";
+import { Layers, Settings, Sliders, Library, HelpCircle, Wrench } from "lucide-react";
 
 export const WindowCoveringsTab = () => {
   const [activeTab, setActiveTab] = useState("templates");
@@ -32,7 +33,7 @@ export const WindowCoveringsTab = () => {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="templates" className="data-[state=active]:bg-primary/10">
                 <Layers className="h-4 w-4 mr-2" />
                 My Templates
@@ -48,6 +49,10 @@ export const WindowCoveringsTab = () => {
               <TabsTrigger value="treatment-options" className="data-[state=active]:bg-primary/10">
                 <Sliders className="h-4 w-4 mr-2" />
                 Options
+              </TabsTrigger>
+              <TabsTrigger value="hardware" className="data-[state=active]:bg-primary/10">
+                <Wrench className="h-4 w-4 mr-2" />
+                Hardware
               </TabsTrigger>
               <TabsTrigger value="defaults" className="data-[state=active]:bg-primary/10">
                 <Settings className="h-4 w-4 mr-2" />
@@ -73,6 +78,10 @@ export const WindowCoveringsTab = () => {
 
             <TabsContent value="treatment-options" className="mt-6">
               <WindowTreatmentOptionsManager />
+            </TabsContent>
+
+            <TabsContent value="hardware" className="mt-6">
+              <HierarchicalOptionsManager />
             </TabsContent>
 
             <TabsContent value="defaults" className="mt-6">
