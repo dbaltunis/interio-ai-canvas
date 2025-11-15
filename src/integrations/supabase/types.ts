@@ -4626,8 +4626,10 @@ export type Database = {
         Row: {
           active: boolean | null
           created_at: string | null
+          hidden_by_user: boolean | null
           id: string
           is_system_default: boolean | null
+          sort_order: number | null
           treatment_category: string
           type_key: string
           type_label: string
@@ -4637,8 +4639,10 @@ export type Database = {
         Insert: {
           active?: boolean | null
           created_at?: string | null
+          hidden_by_user?: boolean | null
           id?: string
           is_system_default?: boolean | null
+          sort_order?: number | null
           treatment_category: string
           type_key: string
           type_label: string
@@ -4648,8 +4652,10 @@ export type Database = {
         Update: {
           active?: boolean | null
           created_at?: string | null
+          hidden_by_user?: boolean | null
           id?: string
           is_system_default?: boolean | null
+          sort_order?: number | null
           treatment_category?: string
           type_key?: string
           type_label?: string
