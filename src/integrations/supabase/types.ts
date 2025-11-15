@@ -96,12 +96,15 @@ export type Database = {
           fullness_ratio: number | null
           id: string
           image_url: string | null
+          inventory_item_id: string | null
           is_default: boolean | null
           is_required: boolean | null
+          last_sync_date: string | null
           name: string
           pricing_method: string
           sort_order: number | null
           sub_subcategory_id: string
+          synced_from_inventory: boolean | null
           updated_at: string
         }
         Insert: {
@@ -113,12 +116,15 @@ export type Database = {
           fullness_ratio?: number | null
           id?: string
           image_url?: string | null
+          inventory_item_id?: string | null
           is_default?: boolean | null
           is_required?: boolean | null
+          last_sync_date?: string | null
           name: string
           pricing_method?: string
           sort_order?: number | null
           sub_subcategory_id: string
+          synced_from_inventory?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -130,15 +136,25 @@ export type Database = {
           fullness_ratio?: number | null
           id?: string
           image_url?: string | null
+          inventory_item_id?: string | null
           is_default?: boolean | null
           is_required?: boolean | null
+          last_sync_date?: string | null
           name?: string
           pricing_method?: string
           sort_order?: number | null
           sub_subcategory_id?: string
+          synced_from_inventory?: boolean | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "_legacy_option_extras_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_inventory_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "option_extras_sub_subcategory_id_fkey"
             columns: ["sub_subcategory_id"]
@@ -159,12 +175,15 @@ export type Database = {
           fullness_ratio: number | null
           id: string
           image_url: string | null
+          inventory_item_id: string | null
+          last_sync_date: string | null
           name: string
           pricing_grid_data: Json | null
           pricing_grid_type: string | null
           pricing_method: string
           sort_order: number | null
           subcategory_id: string
+          synced_from_inventory: boolean | null
           updated_at: string
         }
         Insert: {
@@ -177,12 +196,15 @@ export type Database = {
           fullness_ratio?: number | null
           id?: string
           image_url?: string | null
+          inventory_item_id?: string | null
+          last_sync_date?: string | null
           name: string
           pricing_grid_data?: Json | null
           pricing_grid_type?: string | null
           pricing_method?: string
           sort_order?: number | null
           subcategory_id: string
+          synced_from_inventory?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -195,15 +217,25 @@ export type Database = {
           fullness_ratio?: number | null
           id?: string
           image_url?: string | null
+          inventory_item_id?: string | null
+          last_sync_date?: string | null
           name?: string
           pricing_grid_data?: Json | null
           pricing_grid_type?: string | null
           pricing_method?: string
           sort_order?: number | null
           subcategory_id?: string
+          synced_from_inventory?: boolean | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "_legacy_option_sub_subcategories_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_inventory_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "option_sub_subcategories_subcategory_id_fkey"
             columns: ["subcategory_id"]
@@ -225,11 +257,14 @@ export type Database = {
           fullness_ratio: number | null
           id: string
           image_url: string | null
+          inventory_item_id: string | null
+          last_sync_date: string | null
           name: string
           pricing_grid_data: Json | null
           pricing_grid_type: string | null
           pricing_method: string
           sort_order: number | null
+          synced_from_inventory: boolean | null
           updated_at: string
         }
         Insert: {
@@ -243,11 +278,14 @@ export type Database = {
           fullness_ratio?: number | null
           id?: string
           image_url?: string | null
+          inventory_item_id?: string | null
+          last_sync_date?: string | null
           name: string
           pricing_grid_data?: Json | null
           pricing_grid_type?: string | null
           pricing_method?: string
           sort_order?: number | null
+          synced_from_inventory?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -261,14 +299,24 @@ export type Database = {
           fullness_ratio?: number | null
           id?: string
           image_url?: string | null
+          inventory_item_id?: string | null
+          last_sync_date?: string | null
           name?: string
           pricing_grid_data?: Json | null
           pricing_grid_type?: string | null
           pricing_method?: string
           sort_order?: number | null
+          synced_from_inventory?: boolean | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "_legacy_option_subcategories_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_inventory_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "option_subcategories_category_id_fkey"
             columns: ["category_id"]

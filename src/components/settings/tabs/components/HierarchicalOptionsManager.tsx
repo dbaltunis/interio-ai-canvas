@@ -4,13 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Link as LinkIcon, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { TREATMENT_CATEGORIES, TreatmentCategoryDbValue } from "@/types/treatmentCategories";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { InventorySyncDialog } from "./InventorySyncDialog";
+import { useInventorySync } from "@/hooks/useInventorySync";
 
 interface HierarchicalCategory {
   id: string;
@@ -27,6 +30,9 @@ interface HierarchicalSubcategory {
   description?: string;
   pricing_method: string;
   base_price: number;
+  inventory_item_id?: string;
+  synced_from_inventory?: boolean;
+  last_sync_date?: string;
   sub_subcategories?: HierarchicalSubSubcategory[];
 }
 
@@ -37,6 +43,9 @@ interface HierarchicalSubSubcategory {
   description?: string;
   pricing_method: string;
   base_price: number;
+  inventory_item_id?: string;
+  synced_from_inventory?: boolean;
+  last_sync_date?: string;
   extras?: HierarchicalExtra[];
 }
 
@@ -49,6 +58,9 @@ interface HierarchicalExtra {
   base_price: number;
   is_required: boolean;
   is_default: boolean;
+  inventory_item_id?: string;
+  synced_from_inventory?: boolean;
+  last_sync_date?: string;
 }
 
 export const HierarchicalOptionsManager = () => {
@@ -61,6 +73,11 @@ export const HierarchicalOptionsManager = () => {
   const [showSubSubcategoryDialog, setShowSubSubcategoryDialog] = useState(false);
   const [showExtraDialog, setShowExtraDialog] = useState(false);
   const [selectedParentId, setSelectedParentId] = useState<string>("");
+  
+  // Inventory sync states
+  const [syncDialogOpen, setSyncDialogOpen] = useState(false);
+  const [syncTarget, setSyncTarget] = useState<{ type: 'subcategory' | 'sub_subcategory'; id: string } | null>(null);
+  const { syncSubSubcategories, syncExtras, refreshFromInventory } = useInventorySync();
   
   const [categoryForm, setCategoryForm] = useState({
     name: "",
@@ -232,7 +249,28 @@ export const HierarchicalOptionsManager = () => {
     },
   });
 
+  // Inventory sync handlers
+  const handleSyncDialogOpen = (type: 'subcategory' | 'sub_subcategory', id: string) => {
+    setSyncTarget({ type, id });
+    setSyncDialogOpen(true);
+  };
+
+  const handleSyncConfirm = async (
+    selectedIds: string[],
+    pricingMode: 'selling' | 'cost' | 'cost_with_markup',
+    markupPercentage: number
+  ) => {
+    if (!syncTarget) return false;
+
+    if (syncTarget.type === 'subcategory') {
+      return await syncSubSubcategories(syncTarget.id, selectedIds, pricingMode, markupPercentage);
+    } else {
+      return await syncExtras(syncTarget.id, selectedIds, pricingMode, markupPercentage);
+    }
+  };
+
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>Hierarchical Hardware Options</CardTitle>
@@ -316,6 +354,14 @@ export const HierarchicalOptionsManager = () => {
                           <Plus className="h-3 w-3 mr-1" />
                           Add Item (Rod/Track)
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSyncDialogOpen('subcategory', subcategory.id)}
+                        >
+                          <LinkIcon className="h-3 w-3 mr-1" />
+                          Sync from Inventory
+                        </Button>
                       </div>
 
                       {subcategory.sub_subcategories?.map((subSub) => (
@@ -327,18 +373,47 @@ export const HierarchicalOptionsManager = () => {
                                 {subSub.pricing_method} - ${subSub.base_price}
                               </p>
                             </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setSelectedParentId(subSub.id);
-                                setShowExtraDialog(true);
-                              }}
-                            >
-                              <Plus className="h-3 w-3 mr-1" />
-                              Add Extra
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedParentId(subSub.id);
+                                  setShowExtraDialog(true);
+                                }}
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Add Extra
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleSyncDialogOpen('sub_subcategory', subSub.id)}
+                              >
+                                <LinkIcon className="h-3 w-3 mr-1" />
+                                Sync Extras
+                              </Button>
+                            </div>
                           </div>
+
+                          {subSub.inventory_item_id && (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                              <Badge variant="secondary" className="text-xs">
+                                <LinkIcon className="h-3 w-3 mr-1" />
+                                Linked to Inventory
+                              </Badge>
+                              {subSub.last_sync_date && (
+                                <span>Last synced: {new Date(subSub.last_sync_date).toLocaleDateString()}</span>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => refreshFromInventory(subSub.id, 'sub_subcategory', subSub.inventory_item_id!, 'selling', 0)}
+                              >
+                                <RefreshCw className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
 
                           {subSub.extras && subSub.extras.length > 0 && (
                             <div className="pl-4 space-y-1">
@@ -608,5 +683,17 @@ export const HierarchicalOptionsManager = () => {
         </Dialog>
       </CardContent>
     </Card>
+
+    {/* Inventory Sync Dialog */}
+    <InventorySyncDialog
+      open={syncDialogOpen}
+      onOpenChange={setSyncDialogOpen}
+      onSync={handleSyncConfirm}
+      title={syncTarget?.type === 'subcategory' ? "Sync Sub-subcategories from Inventory" : "Sync Extras from Inventory"}
+      description={syncTarget?.type === 'subcategory' 
+        ? "Select inventory items to create sub-subcategories. Each item will become a selectable option."
+        : "Select inventory items to create extras. These will be additional options for the selected sub-subcategory."}
+    />
+    </>
   );
 };
