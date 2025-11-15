@@ -405,19 +405,21 @@ export const DynamicCurtainOptions = ({
         </div>
       )}
 
-      {/* Pricing Method - Top Level Category */}
+      {/* Fabric Width Type Selection */}
       {template.pricing_methods && template.pricing_methods.length > 1 && (
-        <div className="space-y-3">
-          <h4 className="font-medium text-foreground">Pricing Method</h4>
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Fabric Width</span>
+            <div className="space-y-1">
+              <h4 className="font-medium text-foreground">Fabric Width Type</h4>
+              <p className="text-xs text-muted-foreground">Select the fabric width category for pricing</p>
+            </div>
             <div className="w-64">
               <Select
                 value={measurements.selected_pricing_method || ''}
                 onValueChange={handlePricingMethodChange}
               >
                 <SelectTrigger className="bg-background border-input">
-                  <SelectValue placeholder="Select..." />
+                  <SelectValue placeholder="Select width type..." />
                 </SelectTrigger>
                 <SelectContent 
                   className="z-[9999] bg-popover border-border shadow-lg"
@@ -430,7 +432,7 @@ export const DynamicCurtainOptions = ({
                       <div className="flex items-center justify-between w-full gap-4">
                         <span>{method.name}</span>
                         <Badge variant="outline" className="text-xs">
-                          {method.fabric_width_type === 'wide' ? 'Wide' : 'Narrow'}
+                          {method.fabric_width_type === 'wide' ? 'Wide' : 'Standard'}
                         </Badge>
                       </div>
                     </SelectItem>
@@ -442,24 +444,27 @@ export const DynamicCurtainOptions = ({
         </div>
       )}
 
-      {/* Manufacturing Type - Top Level Category */}
+      {/* Manufacturing Finish Type */}
       {template.offers_hand_finished && (
-        <div className="space-y-3">
-          <h4 className="font-medium text-foreground">Make-Up Type</h4>
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Finish Type</span>
+            <div className="space-y-1">
+              <h4 className="font-medium text-foreground">Manufacturing Finish</h4>
+              <p className="text-xs text-muted-foreground">Choose between machine or hand-finished</p>
+            </div>
             <div className="w-64">
               <Select
                 value={measurements.manufacturing_type || template.manufacturing_type || 'machine'}
                 onValueChange={handleManufacturingTypeChange}
               >
                 <SelectTrigger className="bg-background border-input">
-                  <SelectValue placeholder="Select..." />
+                  <SelectValue placeholder="Select finish..." />
                 </SelectTrigger>
                 <SelectContent 
-                  className="bg-popover border-border"
+                  className="z-[9999] bg-popover border-border shadow-lg"
                   position="popper"
                   sideOffset={5}
+                  align="end"
                 >
                   <SelectItem value="machine">
                     <div className="flex items-center justify-between w-full gap-4">
