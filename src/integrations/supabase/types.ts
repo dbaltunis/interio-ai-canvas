@@ -19,6 +19,7 @@ export type Database = {
           active: boolean | null
           affects_fabric_calculation: boolean | null
           affects_labor_calculation: boolean | null
+          base_price: number | null
           calculation_method: string | null
           category_type: string
           created_at: string
@@ -29,6 +30,9 @@ export type Database = {
           image_url: string | null
           is_required: boolean | null
           name: string
+          pricing_grid_data: Json | null
+          pricing_grid_type: string | null
+          pricing_method: string | null
           sort_order: number | null
           treatment_type: string | null
           updated_at: string
@@ -38,6 +42,7 @@ export type Database = {
           active?: boolean | null
           affects_fabric_calculation?: boolean | null
           affects_labor_calculation?: boolean | null
+          base_price?: number | null
           calculation_method?: string | null
           category_type?: string
           created_at?: string
@@ -48,6 +53,9 @@ export type Database = {
           image_url?: string | null
           is_required?: boolean | null
           name: string
+          pricing_grid_data?: Json | null
+          pricing_grid_type?: string | null
+          pricing_method?: string | null
           sort_order?: number | null
           treatment_type?: string | null
           updated_at?: string
@@ -57,6 +65,7 @@ export type Database = {
           active?: boolean | null
           affects_fabric_calculation?: boolean | null
           affects_labor_calculation?: boolean | null
+          base_price?: number | null
           calculation_method?: string | null
           category_type?: string
           created_at?: string
@@ -67,6 +76,9 @@ export type Database = {
           image_url?: string | null
           is_required?: boolean | null
           name?: string
+          pricing_grid_data?: Json | null
+          pricing_grid_type?: string | null
+          pricing_method?: string | null
           sort_order?: number | null
           treatment_type?: string | null
           updated_at?: string
@@ -148,6 +160,8 @@ export type Database = {
           id: string
           image_url: string | null
           name: string
+          pricing_grid_data: Json | null
+          pricing_grid_type: string | null
           pricing_method: string
           sort_order: number | null
           subcategory_id: string
@@ -164,6 +178,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           name: string
+          pricing_grid_data?: Json | null
+          pricing_grid_type?: string | null
           pricing_method?: string
           sort_order?: number | null
           subcategory_id: string
@@ -180,6 +196,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           name?: string
+          pricing_grid_data?: Json | null
+          pricing_grid_type?: string | null
           pricing_method?: string
           sort_order?: number | null
           subcategory_id?: string
@@ -208,6 +226,8 @@ export type Database = {
           id: string
           image_url: string | null
           name: string
+          pricing_grid_data: Json | null
+          pricing_grid_type: string | null
           pricing_method: string
           sort_order: number | null
           updated_at: string
@@ -224,6 +244,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           name: string
+          pricing_grid_data?: Json | null
+          pricing_grid_type?: string | null
           pricing_method?: string
           sort_order?: number | null
           updated_at?: string
@@ -240,6 +262,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           name?: string
+          pricing_grid_data?: Json | null
+          pricing_grid_type?: string | null
           pricing_method?: string
           sort_order?: number | null
           updated_at?: string
@@ -4598,6 +4622,9 @@ export type Database = {
           label: string
           option_id: string
           order_index: number | null
+          pricing_grid_data: Json | null
+          pricing_grid_type: string | null
+          pricing_method: string | null
         }
         Insert: {
           code: string
@@ -4610,6 +4637,9 @@ export type Database = {
           label: string
           option_id: string
           order_index?: number | null
+          pricing_grid_data?: Json | null
+          pricing_grid_type?: string | null
+          pricing_method?: string | null
         }
         Update: {
           code?: string
@@ -4622,6 +4652,9 @@ export type Database = {
           label?: string
           option_id?: string
           order_index?: number | null
+          pricing_grid_data?: Json | null
+          pricing_grid_type?: string | null
+          pricing_method?: string | null
         }
         Relationships: [
           {
@@ -7534,6 +7567,7 @@ export type Database = {
       }
       treatment_options: {
         Row: {
+          base_price: number | null
           created_at: string | null
           id: string
           input_type: Database["public"]["Enums"]["option_input_type"]
@@ -7541,6 +7575,9 @@ export type Database = {
           key: string
           label: string
           order_index: number | null
+          pricing_grid_data: Json | null
+          pricing_grid_type: string | null
+          pricing_method: string | null
           required: boolean | null
           template_id: string | null
           tracks_inventory: boolean | null
@@ -7551,6 +7588,7 @@ export type Database = {
           visible: boolean | null
         }
         Insert: {
+          base_price?: number | null
           created_at?: string | null
           id?: string
           input_type: Database["public"]["Enums"]["option_input_type"]
@@ -7558,6 +7596,9 @@ export type Database = {
           key: string
           label: string
           order_index?: number | null
+          pricing_grid_data?: Json | null
+          pricing_grid_type?: string | null
+          pricing_method?: string | null
           required?: boolean | null
           template_id?: string | null
           tracks_inventory?: boolean | null
@@ -7568,6 +7609,7 @@ export type Database = {
           visible?: boolean | null
         }
         Update: {
+          base_price?: number | null
           created_at?: string | null
           id?: string
           input_type?: Database["public"]["Enums"]["option_input_type"]
@@ -7575,6 +7617,9 @@ export type Database = {
           key?: string
           label?: string
           order_index?: number | null
+          pricing_grid_data?: Json | null
+          pricing_grid_type?: string | null
+          pricing_method?: string | null
           required?: boolean | null
           template_id?: string | null
           tracks_inventory?: boolean | null
