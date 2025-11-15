@@ -2152,19 +2152,21 @@ export const UnifiedInventoryDialog = ({
                                 
                                 <div className="space-y-2">
                                   <Label htmlFor="maxLength">
-                                    Maximum Length ({lengthLabel})
+                                    Maximum Length ({lengthLabel}) <span className="text-muted-foreground font-normal">(Optional)</span>
                                   </Label>
                                   <Input
                                     id="maxLength"
                                     type="number"
                                     step="0.1"
                                     min="0"
-                                    placeholder={`e.g., 600`}
+                                    placeholder={`Optional: e.g., 600`}
                                     value={maxLength}
                                     onChange={(e) => setMaxLength(e.target.value)}
                                   />
                                   <p className="text-xs text-muted-foreground">
-                                    Maximum length available for quotes
+                                    {maxLength 
+                                      ? `This limit will be shown in calculators and quotes` 
+                                      : `Leave empty for unlimited length availability`}
                                   </p>
                                 </div>
                               </div>
