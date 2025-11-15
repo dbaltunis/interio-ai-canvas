@@ -1221,43 +1221,73 @@ export const WindowTreatmentOptionsManager = () => {
                           {/* Choices for this sub-category */}
                           <div className="ml-4 space-y-2">
                             <Label className="text-xs text-muted-foreground">Choices</Label>
-                            {subOption.choices.map((choice, choiceIdx) => (
-                              <div key={choice.id} className="grid grid-cols-[1fr,1fr,auto,auto] gap-2">
-                                <Input
-                                  placeholder="Label (e.g. Red)"
-                                  value={choice.label}
-                                  onChange={(e) => {
-                                    const newSubOptions = [...formData.sub_options];
-                                    newSubOptions[subIdx].choices[choiceIdx].label = e.target.value;
-                                    newSubOptions[subIdx].choices[choiceIdx].value = e.target.value.toLowerCase().replace(/\s+/g, '_');
-                                    setFormData({ ...formData, sub_options: newSubOptions });
-                                  }}
-                                />
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  placeholder="Extra price"
-                                  value={choice.price}
-                                  onChange={(e) => {
-                                    const newSubOptions = [...formData.sub_options];
-                                    newSubOptions[subIdx].choices[choiceIdx].price = parseFloat(e.target.value) || 0;
-                                    setFormData({ ...formData, sub_options: newSubOptions });
-                                  }}
-                                />
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    const newSubOptions = [...formData.sub_options];
-                                    newSubOptions[subIdx].choices = newSubOptions[subIdx].choices.filter((_, i) => i !== choiceIdx);
-                                    setFormData({ ...formData, sub_options: newSubOptions });
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
-                            ))}
+                            {subOption.choices.map((choice, choiceIdx) => {
+                              const linkedInventoryItem = choice.inventory_item_id 
+                                ? inventoryItems.find(item => item.id === choice.inventory_item_id)
+                                : null;
+                              
+                              const displayPrice = linkedInventoryItem
+                                ? (linkedInventoryItem.price_per_unit || linkedInventoryItem.selling_price || linkedInventoryItem.cost_price || 0)
+                                : choice.price;
+                              
+                              return (
+                                <div key={choice.id} className="space-y-1">
+                                  <div className="grid grid-cols-[1fr,1fr,auto,auto] gap-2">
+                                    <Input
+                                      placeholder="Label (e.g. Red)"
+                                      value={choice.label}
+                                      onChange={(e) => {
+                                        const newSubOptions = [...formData.sub_options];
+                                        newSubOptions[subIdx].choices[choiceIdx].label = e.target.value;
+                                        newSubOptions[subIdx].choices[choiceIdx].value = e.target.value.toLowerCase().replace(/\s+/g, '_');
+                                        setFormData({ ...formData, sub_options: newSubOptions });
+                                      }}
+                                    />
+                                    <div className="relative">
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        placeholder={linkedInventoryItem ? "From inventory" : "Extra price"}
+                                        value={displayPrice}
+                                        onChange={(e) => {
+                                          if (!linkedInventoryItem) {
+                                            const newSubOptions = [...formData.sub_options];
+                                            newSubOptions[subIdx].choices[choiceIdx].price = parseFloat(e.target.value) || 0;
+                                            setFormData({ ...formData, sub_options: newSubOptions });
+                                          }
+                                        }}
+                                        disabled={!!linkedInventoryItem}
+                                        className={linkedInventoryItem ? 'bg-muted cursor-not-allowed' : ''}
+                                      />
+                                      {linkedInventoryItem && (
+                                        <Badge variant="secondary" className="absolute -top-2 -right-2 text-xs">
+                                          <LinkIcon className="h-3 w-3 mr-1" />
+                                          Inventory
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        const newSubOptions = [...formData.sub_options];
+                                        newSubOptions[subIdx].choices = newSubOptions[subIdx].choices.filter((_, i) => i !== choiceIdx);
+                                        setFormData({ ...formData, sub_options: newSubOptions });
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </div>
+                                  {linkedInventoryItem && (
+                                    <div className="ml-2 text-xs text-muted-foreground flex items-center gap-2">
+                                      <LinkIcon className="h-3 w-3" />
+                                      <span>Price from: <span className="font-medium">{linkedInventoryItem.name}</span></span>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
                             <div className="flex gap-2">
                               <Button
                                 type="button"
