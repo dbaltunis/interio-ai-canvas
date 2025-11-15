@@ -366,9 +366,10 @@ export const DynamicCurtainOptions = ({
         </div>
       )}
 
-      {/* Lining Type - Top Level Category */}
-      {template.lining_types && template.lining_types.length > 0 && (
-        <div className="space-y-3">
+        {/* Lining Type - Top Level Category - Only show if not in treatment options */}
+        {template.lining_types && template.lining_types.length > 0 && 
+          !treatmentOptions.some(opt => opt.key === 'lining_type' && opt.visible) && (
+          <div className="space-y-3">
           <h4 className="font-medium text-foreground">Lining Type</h4>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Select Lining</span>
@@ -567,7 +568,20 @@ export const DynamicCurtainOptions = ({
             {/* Sub-options - Nested under selected option (indented) */}
             {subOptions && subOptions.length > 0 && (
               <div className="ml-4 space-y-3">
-                {subOptions.map((subOption: any) => (
+                {subOptions.map((subOption: any) => {
+                  // Check if sub-option has condition
+                  if (subOption.condition) {
+                    const conditionKey = Object.keys(subOption.condition)[0];
+                    const requiredValue = subOption.condition[conditionKey];
+                    const actualValue = treatmentOptionSelections[`${option.key}_${conditionKey}`];
+                    
+                    // Skip rendering if condition not met
+                    if (actualValue !== requiredValue) {
+                      return null;
+                    }
+                  }
+                  
+                  return (
                   <div key={subOption.id} className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">{subOption.label}</span>
                     <div className="w-64">
@@ -606,7 +620,8 @@ export const DynamicCurtainOptions = ({
                       </Select>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
