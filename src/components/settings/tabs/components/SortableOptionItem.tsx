@@ -155,25 +155,7 @@ export const SortableOptionItem = ({
             <InventoryStockBadge itemId={value.inventory_item_id} />
           )}
           <div className="flex gap-1 md:gap-2">
-            {/* Toggle Visibility Button */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 md:h-8 md:w-8"
-                    onClick={() => onToggleVisibility(value)}
-                  >
-                    {value.hidden_by_user ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {value.hidden_by_user ? "Show in setup" : "Hide from setup"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
+            {/* Edit Button - Most common action, placed first */}
             <Button
               variant="ghost"
               size="icon"
@@ -183,7 +165,7 @@ export const SortableOptionItem = ({
               <Edit className="h-4 w-4" />
             </Button>
             
-            {/* Delete Button with Tooltip for System Defaults */}
+            {/* Delete Button - Destructive action */}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -203,6 +185,25 @@ export const SortableOptionItem = ({
                   {isSystemDefault 
                     ? "Cannot delete system defaults. Use hide instead." 
                     : "Delete option"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Toggle Visibility Button - Placed last to avoid accidental clicks */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 md:h-8 md:w-8"
+                    onClick={() => onToggleVisibility(value)}
+                  >
+                    {value.hidden_by_user ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {value.hidden_by_user ? "Show in setup" : "Hide from setup"}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
