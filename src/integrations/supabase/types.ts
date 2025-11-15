@@ -1431,6 +1431,7 @@ export type Database = {
           features_enabled: Json | null
           id: string
           inventory_config: Json | null
+          manual_quote_editing_enabled: boolean | null
           measurement_units: string | null
           minimum_profit_margin_percentage: number | null
           pricing_settings: Json | null
@@ -1460,6 +1461,7 @@ export type Database = {
           features_enabled?: Json | null
           id?: string
           inventory_config?: Json | null
+          manual_quote_editing_enabled?: boolean | null
           measurement_units?: string | null
           minimum_profit_margin_percentage?: number | null
           pricing_settings?: Json | null
@@ -1489,6 +1491,7 @@ export type Database = {
           features_enabled?: Json | null
           id?: string
           inventory_config?: Json | null
+          manual_quote_editing_enabled?: boolean | null
           measurement_units?: string | null
           minimum_profit_margin_percentage?: number | null
           pricing_settings?: Json | null
@@ -7222,6 +7225,7 @@ export type Database = {
           height: number | null
           id: string
           name: string
+          notes: string | null
           project_id: string
           room_id: string
           surface_height: number | null
@@ -7236,6 +7240,7 @@ export type Database = {
           height?: number | null
           id?: string
           name: string
+          notes?: string | null
           project_id: string
           room_id: string
           surface_height?: number | null
@@ -7250,6 +7255,7 @@ export type Database = {
           height?: number | null
           id?: string
           name?: string
+          notes?: string | null
           project_id?: string
           room_id?: string
           surface_height?: number | null
