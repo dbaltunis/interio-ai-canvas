@@ -1,0 +1,4 @@
+name,sku,description,subcategory,quantity,unit,cost_price,selling_price,supplier,location,reorder_point,roll_width,roll_length,pattern_repeat_vertical,pattern_repeat_horizontal,coverage_per_roll,color,collection_name,material_type,washability,fire_rating
+"Botanical Wallpaper","WP-001","Tropical leaf pattern wallpaper","wallpaper","30","rolls","45.00","85.00","Wallcoverings Ltd","Storage Room A","10","53","1000","64","53","5.3","Green Multi","Jungle Dreams","Non-woven","Washable","Class B"
+"Textured Grasscloth","WP-002","Natural grasscloth texture","wallpaper","20","rolls","65.00","120.00","Natural Wall Co","Storage Room B","8","91","730","0","0","6.6","Natural Beige","Earth Tones","Grasscloth","Dry Clean Only","Class A"
+"Vinyl Wall Mural","MURAL-001","Custom printed wall mural","wall_panels_murals","5","pieces","200.00","450.00","Custom Prints","Flat Storage","2","300","250","0","0","7.5","Custom","Modern Art","Vinyl","Wipeable","Class C"

@@ -4,13 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Minus, Image as ImageIcon, Trash2, Edit } from "lucide-react";
+import { Minus, Image as ImageIcon, Trash2, Edit, FileSpreadsheet, Plus, Search } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { EditInventoryDialog } from "./EditInventoryDialog";
+import { CategoryImportExport } from "./CategoryImportExport";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { JobsPagination } from "../jobs/JobsPagination";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface HardwareInventoryViewProps {
   searchQuery: string;
@@ -94,7 +102,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-green-500/10 rounded-lg">
             <Minus className="h-6 w-6 text-green-500" />
@@ -105,6 +113,31 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
               {filteredItems.length} hardware items in inventory
             </p>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Import/Export
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Import/Export Hardware</DialogTitle>
+              </DialogHeader>
+              <CategoryImportExport category="hardware" onImportComplete={refetch} />
+            </DialogContent>
+          </Dialog>
+          <AddInventoryDialog
+            trigger={
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add
+              </Button>
+            }
+            initialCategory="hardware"
+          />
         </div>
       </div>
 
