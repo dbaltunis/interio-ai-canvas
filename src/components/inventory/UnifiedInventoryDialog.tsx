@@ -566,17 +566,30 @@ export const UnifiedInventoryDialog = ({
         eyelet_ring_ids: eyeletRings.map(r => r.id)
       };
       
-      // Add pricing metadata for tracks/rods
+      // Add pricing metadata AND set selling_price for all items (not just tracks/rods)
       if (formData.subcategory === 'track' || formData.subcategory === 'rod') {
         const pricingMetadata: any = {
           pricingMode,
         };
         
         if (pricingMode === 'simple') {
-          pricingMetadata.pricePerMeter = parseFloat(pricePerMeter) || 0;
+          const priceValue = parseFloat(pricePerMeter) || 0;
+          pricingMetadata.pricePerMeter = priceValue;
           pricingMetadata.maxLength = parseFloat(maxLength) || 0;
+          
+          // Set selling_price to price per meter so it's available in options
+          cleanData.price_per_unit = priceValue;
+          if (!cleanData.selling_price || cleanData.selling_price === 0) {
+            cleanData.selling_price = priceValue;
+          }
         } else {
-          pricingMetadata.lengthPricingGrid = pricingGridRows.filter(row => row.length && row.price);
+          const validRows = pricingGridRows.filter(row => row.length && row.price);
+          pricingMetadata.lengthPricingGrid = validRows;
+          
+          // Set selling_price to the first grid price as base price
+          if (validRows.length > 0 && (!cleanData.selling_price || cleanData.selling_price === 0)) {
+            cleanData.selling_price = parseFloat(validRows[0].price) || 0;
+          }
         }
         
         cleanData.metadata = pricingMetadata;
@@ -2106,12 +2119,16 @@ export const UnifiedInventoryDialog = ({
                               <DollarSign className="h-4 w-4 text-blue-500" />
                             </div>
                             <div className="flex-1 space-y-3">
-                              <div>
-                                <h4 className="text-sm font-semibold">Simple Pricing</h4>
-                                <p className="text-xs text-muted-foreground">
-                                  Set one price per {pricingUnitLabel}. System auto-calculates total based on length.
-                                </p>
-                              </div>
+                                <div>
+                                  <h4 className="text-sm font-semibold">Simple Pricing</h4>
+                                  <p className="text-xs text-muted-foreground">
+                                    Set one price per {pricingUnitLabel}. When customers request any length, 
+                                    the system automatically calculates: (requested length) × (price per {pricingUnitLabel}) = total price.
+                                  </p>
+                                  <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+                                    💡 This price will appear in Settings → Options and be used in all quotes
+                                  </p>
+                                </div>
                               
                               <div className="grid gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
@@ -2153,10 +2170,17 @@ export const UnifiedInventoryDialog = ({
 
                               {pricePerMeter && maxLength && (
                                 <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
-                                  <AlertDescription className="text-xs">
-                                    <strong>Example calculation:</strong> For {maxLength}{lengthLabel}, 
-                                    customer pays {currencySymbol}{(parseFloat(pricePerMeter) * parseFloat(maxLength)).toFixed(2)} 
-                                    ({maxLength}{lengthLabel} × {currencySymbol}{pricePerMeter} per {pricingUnitLabel})
+                                  <AlertDescription className="text-xs space-y-1">
+                                    <p><strong>How pricing works:</strong></p>
+                                    <p>• You set: {currencySymbol}{pricePerMeter} per {pricingUnitLabel}</p>
+                                    <p>• Customer requests: Any length up to {maxLength}{lengthLabel}</p>
+                                    <p>• System calculates: Length × Price per {pricingUnitLabel}</p>
+                                    <p className="font-mono bg-background/50 p-2 rounded mt-2">
+                                      <strong>Example:</strong> {maxLength}{lengthLabel} × {currencySymbol}{pricePerMeter} = {currencySymbol}{(parseFloat(pricePerMeter) * parseFloat(maxLength)).toFixed(2)}
+                                    </p>
+                                    <p className="text-amber-600 dark:text-amber-500 mt-2">
+                                      ⚠️ This price will be used in quotes and option pricing automatically
+                                    </p>
                                   </AlertDescription>
                                 </Alert>
                               )}
@@ -2176,58 +2200,89 @@ export const UnifiedInventoryDialog = ({
                               <div>
                                 <h4 className="text-sm font-semibold">Length-Based Pricing Grid</h4>
                                 <p className="text-xs text-muted-foreground">
-                                  Define the <strong>TOTAL PRICE</strong> for specific lengths. 
-                                  The system will match the customer's requested length to the closest available length in your grid.
+                                  Define specific lengths with their TOTAL PRICES. When customers request a length, 
+                                  the system finds the closest match in your grid. Perfect for bulk pricing tiers.
+                                </p>
+                                <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+                                  💡 Upload a CSV file with all your pricing tiers at once
                                 </p>
                               </div>
 
                               <Alert className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900">
                                 <AlertDescription className="text-xs space-y-2">
-                                  <p><strong>Important:</strong> Enter the TOTAL PRICE for each length, not incremental prices.</p>
+                                  <p><strong>How to use pricing grid:</strong></p>
+                                  <p>1. Download the CSV template below</p>
+                                  <p>2. Fill in: Length (in {lengthLabel}) and TOTAL PRICE for that length</p>
+                                  <p>3. Upload the completed CSV file</p>
                                   <p className="font-mono bg-background/50 p-2 rounded">
-                                    Example: 100{lengthLabel} = {currencySymbol}17 • 200{lengthLabel} = {currencySymbol}34 • 300{lengthLabel} = {currencySymbol}51
+                                    <strong>Example CSV content:</strong><br/>
+                                    Length ({lengthLabel}),Price ({currencySymbol})<br/>
+                                    100,17.00<br/>
+                                    200,34.00<br/>
+                                    300,51.00
+                                  </p>
+                                  <p className="text-amber-600 dark:text-amber-500">
+                                    ⚠️ Enter TOTAL PRICE for each length, not price per unit
                                   </p>
                                 </AlertDescription>
                               </Alert>
 
-                              <div className="flex gap-2">
-                                <Input
-                                  type="file"
-                                  accept=".csv"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                      const reader = new FileReader();
-                                      reader.onload = (event) => {
-                                        const csv = event.target?.result as string;
-                                        const rows = csv.split('\n').slice(1);
-                                        const parsedRows = rows
-                                          .filter(row => row.trim())
-                                          .map(row => {
-                                            const [length, price] = row.split(',');
-                                            return { length: length?.trim() || '', price: price?.trim() || '' };
-                                          });
-                                        setPricingGridRows(parsedRows);
-                                        toast({ title: "CSV uploaded", description: `${parsedRows.length} pricing rows loaded` });
-                                      };
-                                      reader.readAsText(file);
-                                    }
-                                  }}
-                                />
+                              <div className="flex flex-col sm:flex-row gap-2">
+                                <div className="flex-1">
+                                  <Label htmlFor="csvUpload" className="cursor-pointer">
+                                    <div className="flex items-center gap-2 p-3 border-2 border-dashed rounded-lg hover:border-primary hover:bg-primary/5 transition-colors">
+                                      <Upload className="h-4 w-4" />
+                                      <span className="text-sm">Upload CSV File</span>
+                                    </div>
+                                    <Input
+                                      id="csvUpload"
+                                      type="file"
+                                      accept=".csv"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          const reader = new FileReader();
+                                          reader.onload = (event) => {
+                                            const csv = event.target?.result as string;
+                                            const rows = csv.split('\n').slice(1);
+                                            const parsedRows = rows
+                                              .filter(row => row.trim())
+                                              .map(row => {
+                                                const [length, price] = row.split(',');
+                                                return { length: length?.trim() || '', price: price?.trim() || '' };
+                                              });
+                                            setPricingGridRows(parsedRows);
+                                            toast({ 
+                                              title: "✅ CSV uploaded successfully", 
+                                              description: `Loaded ${parsedRows.length} pricing tiers from your file` 
+                                            });
+                                          };
+                                          reader.readAsText(file);
+                                        }
+                                      }}
+                                    />
+                                  </Label>
+                                </div>
                                 <Button
                                   type="button"
                                   variant="outline"
+                                  className="whitespace-nowrap"
                                   onClick={() => {
-                                    const csv = `Length (${lengthLabel}),Price (${currencySymbol})\n100,17.00\n200,34.00\n300,51.00`;
+                                    const csv = `Length (${lengthLabel}),Price (${currencySymbol})\n100,17.00\n200,34.00\n300,51.00\n400,68.00\n500,85.00`;
                                     const blob = new Blob([csv], { type: 'text/csv' });
                                     const url = URL.createObjectURL(blob);
                                     const a = document.createElement('a');
                                     a.href = url;
-                                    a.download = 'pricing-template.csv';
+                                    a.download = `pricing-template-${lengthLabel}.csv`;
                                     a.click();
+                                    toast({
+                                      title: "📥 Template downloaded",
+                                      description: "Open the CSV file, fill in your pricing, and upload it back"
+                                    });
                                   }}
                                 >
-                                  Download Template
+                                  Download CSV Template
                                 </Button>
                               </div>
 
