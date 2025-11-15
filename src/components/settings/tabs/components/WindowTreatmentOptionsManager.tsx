@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Package, Upload, Download, Search, Eye, EyeOff, GripVertical } from "lucide-react";
+import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Package, Upload, Download, Search, Eye, EyeOff, GripVertical, Info } from "lucide-react";
 import { PricingGridUpload, PricingGridRow, PricingGridType } from "@/components/pricing/PricingGridUpload";
 import { PricingHierarchyBadge } from "@/components/pricing/PricingHierarchyBadge";
 import { supabase } from "@/integrations/supabase/client";
@@ -684,6 +684,32 @@ export const WindowTreatmentOptionsManager = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Cleanup Notice Banner */}
+        {activeTreatment === 'curtains' && (
+          <div className="mb-6 p-4 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+              </div>
+              <div className="flex-1 text-sm">
+                <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                  📋 Architecture Cleanup Completed
+                </h4>
+                <div className="text-blue-800 dark:text-blue-200 space-y-2">
+                  <p>
+                    <strong>Removed Duplicate Tabs:</strong> "Heading Types" and "Fullness Options" have been removed 
+                    from this section to avoid confusion.
+                  </p>
+                  <p className="text-xs">
+                    💡 <strong>Why?</strong> These are managed in the <strong>Headings</strong> section (inventory items 
+                    with pricing, images, and fullness ratios). Options here are for hardware choices like brackets, 
+                    motors, tracks, and linings.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Treatment Type Selection */}
         <div className="mb-6">
           <Label>Treatment Type</Label>

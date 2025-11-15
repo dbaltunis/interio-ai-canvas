@@ -6,7 +6,8 @@ import { SystemTemplatesLibrary } from "./components/SystemTemplatesLibrary";
 import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
 import { WindowTreatmentOptionsManager } from "./components/WindowTreatmentOptionsManager";
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
-import { Layers, Settings, Sliders, Library } from "lucide-react";
+import { OptionsArchitectureGuide } from "./components/OptionsArchitectureGuide";
+import { Layers, Settings, Sliders, Library, HelpCircle } from "lucide-react";
 
 export const WindowCoveringsTab = () => {
   const [activeTab, setActiveTab] = useState("templates");
@@ -31,7 +32,7 @@ export const WindowCoveringsTab = () => {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="templates" className="data-[state=active]:bg-primary/10">
                 <Layers className="h-4 w-4 mr-2" />
                 My Templates
@@ -51,6 +52,10 @@ export const WindowCoveringsTab = () => {
               <TabsTrigger value="defaults" className="data-[state=active]:bg-primary/10">
                 <Settings className="h-4 w-4 mr-2" />
                 Defaults
+              </TabsTrigger>
+              <TabsTrigger value="guide" className="data-[state=active]:bg-primary/10">
+                <HelpCircle className="h-4 w-4 mr-2" />
+                Guide
               </TabsTrigger>
             </TabsList>
 
@@ -72,6 +77,10 @@ export const WindowCoveringsTab = () => {
 
             <TabsContent value="defaults" className="mt-6">
               <ManufacturingDefaults />
+            </TabsContent>
+
+            <TabsContent value="guide" className="mt-6">
+              <OptionsArchitectureGuide />
             </TabsContent>
           </Tabs>
         </CardContent>
