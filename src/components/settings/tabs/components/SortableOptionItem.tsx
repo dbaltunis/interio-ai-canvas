@@ -65,14 +65,18 @@ export const SortableOptionItem = ({
           <GripVertical className="h-5 w-5 text-muted-foreground" />
         </div>
 
-        <div className="flex-1">
+        <div 
+          className="flex-1 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => onEdit(value)}
+        >
           <div className="flex items-center gap-2 flex-wrap">
             {hasSubOptions && (
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-6 w-6 p-0"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent triggering edit
                   const newExpanded = new Set(expandedOptions);
                   if (isExpanded) {
                     newExpanded.delete(value.id);
@@ -150,21 +154,11 @@ export const SortableOptionItem = ({
             {hasSubOptions && ` • ${value.extra_data.sub_options.length} sub-categories`}
           </div>
         </div>
-        <div className="flex items-center gap-3 ml-auto">
+        <div className="flex items-center gap-3 ml-auto" onClick={(e) => e.stopPropagation()}>
           {value.inventory_item_id && (
             <InventoryStockBadge itemId={value.inventory_item_id} />
           )}
           <div className="flex gap-1 md:gap-2">
-            {/* Edit Button - Most common action, placed first */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 md:h-8 md:w-8"
-              onClick={() => onEdit(value)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            
             {/* Delete Button - Destructive action */}
             <TooltipProvider>
               <Tooltip>
