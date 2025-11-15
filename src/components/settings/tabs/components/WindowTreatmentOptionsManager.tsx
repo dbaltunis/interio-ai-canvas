@@ -922,67 +922,65 @@ export const WindowTreatmentOptionsManager = () => {
                   <TabsTrigger value={opt.type_key} className="px-3 pr-10">
                     {opt.type_label}
                   </TabsTrigger>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      await toggleOptionTypeVisibility.mutateAsync({ 
+                        id: opt.id, 
+                        hidden: true 
+                      });
+                      
+                      // Switch to first available type after hiding
+                      if (optionTypeCategories.length > 1) {
+                        const nextType = optionTypeCategories.find(t => t.type_key !== opt.type_key);
+                        if (nextType) setActiveOptionType(nextType.type_key);
+                      }
+                    }}
+                    className="absolute right-8 top-1/2 -translate-y-1/2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Hide this option type"
+                  >
+                    <EyeOff className="h-3 w-3" />
+                  </Button>
                   {!opt.is_system_default && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          await toggleOptionTypeVisibility.mutateAsync({ 
-                            id: opt.id, 
-                            hidden: true 
-                          });
-                          
-                          // Switch to first available type after hiding
-                          if (optionTypeCategories.length > 1) {
-                            const nextType = optionTypeCategories.find(t => t.type_key !== opt.type_key);
-                            if (nextType) setActiveOptionType(nextType.type_key);
-                          }
-                        }}
-                        className="absolute right-8 top-1/2 -translate-y-1/2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Hide this option type"
-                      >
-                        <EyeOff className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (confirm(`Delete "${opt.type_label}" type? This will remove all its options.`)) {
-                            try {
-                              await supabase
-                                .from('option_type_categories')
-                                .delete()
-                                .eq('id', opt.id);
-                              
-                              queryClient.invalidateQueries({ queryKey: ['option-type-categories'] });
-                              toast({
-                                title: "Type deleted",
-                                description: `${opt.type_label} has been deleted.`,
-                              });
-                              
-                              // Switch to first available type
-                              if (optionTypeCategories.length > 1) {
-                                const nextType = optionTypeCategories.find(t => t.type_key !== opt.type_key);
-                                if (nextType) setActiveOptionType(nextType.type_key);
-                              }
-                            } catch (error: any) {
-                              toast({
-                                title: "Delete failed",
-                                description: error.message,
-                                variant: "destructive"
-                              });
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (confirm(`Delete "${opt.type_label}" type? This will remove all its options.`)) {
+                          try {
+                            await supabase
+                              .from('option_type_categories')
+                              .delete()
+                              .eq('id', opt.id);
+                            
+                            queryClient.invalidateQueries({ queryKey: ['option-type-categories'] });
+                            toast({
+                              title: "Type deleted",
+                              description: `${opt.type_label} has been deleted.`,
+                            });
+                            
+                            // Switch to first available type
+                            if (optionTypeCategories.length > 1) {
+                              const nextType = optionTypeCategories.find(t => t.type_key !== opt.type_key);
+                              if (nextType) setActiveOptionType(nextType.type_key);
                             }
+                          } catch (error: any) {
+                            toast({
+                              title: "Delete failed",
+                              description: error.message,
+                              variant: "destructive"
+                            });
                           }
-                        }}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Delete this option type"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </>
+                        }
+                      }}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Delete this option type"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
                   )}
                 </div>
               ))}
