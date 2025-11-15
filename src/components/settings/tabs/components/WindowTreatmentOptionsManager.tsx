@@ -833,21 +833,33 @@ export const WindowTreatmentOptionsManager = () => {
                       <Input
                         id="name"
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="e.g. 38mm Tube"
+                        onChange={(e) => {
+                          const name = e.target.value;
+                          // Auto-generate value from name: lowercase, spaces/special chars to underscores
+                          const value = name
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]+/g, '_') // Replace non-alphanumeric with underscore
+                            .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
+                            .replace(/_+/g, '_'); // Replace multiple underscores with single
+                          
+                          setFormData({ ...formData, name, value });
+                        }}
+                        placeholder="e.g., 38mm Tube"
                       />
                     </div>
                     
                     <div>
-                      <Label htmlFor="value">Value *</Label>
+                      <Label htmlFor="value">Auto-Generated Value</Label>
                       <Input
                         id="value"
                         value={formData.value}
-                        onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-                        placeholder="e.g. 38mm"
+                        readOnly
+                        disabled
+                        className="bg-muted cursor-not-allowed"
+                        placeholder="Generated automatically"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Lowercase with underscores for multi-word values
+                        Auto-generated from display name (lowercase with underscores)
                       </p>
                     </div>
 
