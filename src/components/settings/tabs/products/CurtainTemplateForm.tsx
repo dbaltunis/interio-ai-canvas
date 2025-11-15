@@ -19,7 +19,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CurtainTemplate, useCreateCurtainTemplate, useUpdateCurtainTemplate } from "@/hooks/useCurtainTemplates";
 import { EyeletRingManager } from "./EyeletRingManager";
-import { LiningTypeManager } from "./LiningTypeManager";
 import { PricingGridUploader } from "./PricingGridUploader";
 import { TemplateGridManager } from "./TemplateGridManager";
 import { HardwareCompatibilityManager } from "./HardwareCompatibilityManager";
@@ -1038,11 +1037,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
               </CardContent>
             </Card>
 
-            {/* Lining Configuration */}
-            <LiningTypeManager 
-              liningTypes={formData.lining_types}
-              onLiningTypesChange={(types) => handleInputChange("lining_types", types)}
-            />
           </TabsContent>
 
           {/* Curtain Options Tab - For Curtain-Specific Options */}
