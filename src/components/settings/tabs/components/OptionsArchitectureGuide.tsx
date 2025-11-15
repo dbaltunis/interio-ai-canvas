@@ -46,29 +46,66 @@ export const OptionsArchitectureGuide = () => {
           </div>
         </div>
 
-        {/* Section 2: Options Tab */}
+        {/* Section 2: Options Tab - Hierarchical Structure */}
         <div className="space-y-3 border-t pt-4">
           <div className="flex items-center gap-2">
             <Sliders className="h-4 w-4 text-primary" />
-            <h3 className="font-semibold text-lg">2. Options Tab</h3>
+            <h3 className="font-semibold text-lg">2. Options Tab - Hierarchical Structure</h3>
           </div>
-          <div className="pl-6 space-y-2 text-sm">
+          <div className="pl-6 space-y-3 text-sm">
             <Alert>
               <AlertDescription>
-                <strong>Purpose:</strong> Create hardware and configuration choices that apply across ALL templates of a treatment type:
-                <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li><strong>Hardware Options:</strong> Brackets, Motors, Tracks, Controls</li>
-                  <li><strong>Lining Options:</strong> Standard, Blackout, Thermal</li>
-                  <li><strong>Mount Types:</strong> Inside Mount, Outside Mount, Ceiling Mount</li>
-                  <li>Each option can have pricing (fixed, per-unit, or pricing grid)</li>
-                </ul>
+                <strong>Purpose:</strong> Create hardware configurations with a 4-level hierarchy:
+                <div className="mt-3 space-y-2 pl-3 border-l-2 border-primary/30">
+                  <div>
+                    <strong className="text-primary">Level 1: Category</strong> (e.g., "Hardware Options", "Lining Types")
+                    <div className="pl-4 mt-1 text-muted-foreground">
+                      → <strong className="text-primary">Level 2: Subcategory</strong> (e.g., "Motorised", "Regular/Manual")
+                      <div className="pl-4 mt-1">
+                        → <strong className="text-primary">Level 3: Sub-subcategory</strong> (e.g., "Rods", "Tracks")
+                        <div className="pl-4 mt-1">
+                          → <strong className="text-primary">Level 4: Extras</strong> (e.g., specific rod model, colors, finials, brackets)
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </AlertDescription>
             </Alert>
-            <p className="text-muted-foreground">
-              <strong>Examples:</strong> "Standard Bracket (+$15)", "Battery Motor (+$150)", "Blackout Lining (+$12/m)"
-            </p>
+            
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="font-medium mb-2">Example: Curtain Hardware Setup</p>
+              <div className="space-y-1 text-xs pl-2 border-l-2 border-primary/30">
+                <div><strong>Category:</strong> Hardware Options</div>
+                <div className="pl-3">
+                  <strong>→ Subcategory:</strong> Motorised
+                  <div className="pl-3">
+                    <strong>→ Sub-subcategory:</strong> Motor Type (Standard, Smart)
+                    <div className="pl-3">
+                      <strong>→ Extras:</strong> Remote Control, Wall Switch, Motor Side (Left/Right)
+                    </div>
+                  </div>
+                </div>
+                <div className="pl-3">
+                  <strong>→ Subcategory:</strong> Regular (Manual)
+                  <div className="pl-3">
+                    <strong>→ Sub-subcategory:</strong> Rods
+                    <div className="pl-3">
+                      <strong>→ Extras:</strong> Rod Models (from inventory), Colors, Finials, Brackets
+                    </div>
+                  </div>
+                  <div className="pl-3">
+                    <strong>→ Sub-subcategory:</strong> Tracks
+                    <div className="pl-3">
+                      <strong>→ Extras:</strong> Track Models (from inventory), Colors, Brackets, Chain Control
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <p className="text-xs text-primary font-medium">
-              ✅ Used in: Template Editor → Options Tab (enable/disable which options appear for this template)
+              ✅ Used in: Template Editor → Options Tab (enable/disable which option categories appear for this template)
             </p>
           </div>
         </div>
