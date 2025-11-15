@@ -1,16 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Wallpaper, Plus, Search, Trash2, Image as ImageIcon, Edit } from "lucide-react";
+import { Wallpaper, Plus, Search, Image as ImageIcon, Trash2, Edit, FileSpreadsheet } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { EditInventoryDialog } from "./EditInventoryDialog";
+import { CategoryImportExport } from "./CategoryImportExport";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { JobsPagination } from "../jobs/JobsPagination";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface WallcoveringInventoryViewProps {
   searchQuery: string;
@@ -114,7 +122,6 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Search - Compact */}
           <div className="relative w-64">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -124,6 +131,20 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
               className="pl-9 h-9"
             />
           </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Import/Export
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Import/Export Wallpaper</DialogTitle>
+              </DialogHeader>
+              <CategoryImportExport category="wallpaper" onImportComplete={refetch} />
+            </DialogContent>
+          </Dialog>
           {/* Add Button with Context */}
           <AddInventoryDialog
             trigger={

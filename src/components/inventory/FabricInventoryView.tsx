@@ -4,13 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Home, Plus, Search, Image as ImageIcon, Trash2, Edit } from "lucide-react";
+import { Home, Plus, Search, Image as ImageIcon, Trash2, Edit, FileSpreadsheet } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { EditInventoryDialog } from "./EditInventoryDialog";
+import { CategoryImportExport } from "./CategoryImportExport";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { JobsPagination } from "../jobs/JobsPagination";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface FabricInventoryViewProps {
   searchQuery: string;
@@ -120,7 +128,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-blue-500/10 rounded-lg">
             <Home className="h-6 w-6 text-blue-500" />
@@ -133,7 +141,6 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Search - Compact */}
           <div className="relative w-64">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -143,7 +150,20 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
               className="pl-9 h-9"
             />
           </div>
-          {/* Add Button with Context */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Import/Export
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Import/Export Fabrics</DialogTitle>
+              </DialogHeader>
+              <CategoryImportExport category="fabrics" onImportComplete={refetch} />
+            </DialogContent>
+          </Dialog>
           <AddInventoryDialog
             trigger={
               <Button>
@@ -151,9 +171,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                 Add
               </Button>
             }
-            onSuccess={refetch}
             initialCategory="fabric"
-            initialSubcategory={activeCategory !== "all" ? activeCategory : undefined}
           />
         </div>
       </div>

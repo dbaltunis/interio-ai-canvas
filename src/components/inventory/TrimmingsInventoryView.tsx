@@ -2,12 +2,20 @@ import { useEnhancedInventoryByCategory } from "@/hooks/useEnhancedInventory";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Sparkles } from "lucide-react";
+import { Edit, Trash2, Sparkles, FileSpreadsheet } from "lucide-react";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
+import { CategoryImportExport } from "./CategoryImportExport";
 import { useToast } from "@/hooks/use-toast";
 import { useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface TrimmingsInventoryViewProps {
   searchQuery: string;
@@ -59,15 +67,31 @@ export const TrimmingsInventoryView = ({ searchQuery, viewMode }: TrimmingsInven
   return (
     <>
       <div className="space-y-4">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center gap-4 flex-wrap">
           <p className="text-sm text-muted-foreground">
             {filteredTrimmings.length} trimming{filteredTrimmings.length !== 1 ? 's' : ''} found
           </p>
-          <AddInventoryDialog
-            trigger={<Button>Add Trimming</Button>}
-            onSuccess={refetch}
-            initialCategory="trimming"
-          />
+          <div className="flex gap-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Import/Export
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Import/Export Trimmings</DialogTitle>
+                </DialogHeader>
+                <CategoryImportExport category="trimmings" onImportComplete={refetch} />
+              </DialogContent>
+            </Dialog>
+            <AddInventoryDialog
+              trigger={<Button>Add Trimming</Button>}
+              onSuccess={refetch}
+              initialCategory="trimming"
+            />
+          </div>
         </div>
 
         <div className={viewMode === "grid" ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "space-y-3"}>
