@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Package, Upload, Download, Search, Eye, EyeOff } from "lucide-react";
+import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Package, Upload, Download, Search, Eye, EyeOff, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,6 +19,9 @@ import { TREATMENT_CATEGORIES, TreatmentCategoryDbValue } from "@/types/treatmen
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { InventoryStockBadge } from "./InventoryStockBadge";
 import { useInventoryCategories } from "@/hooks/useInventoryCategories";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { SortableOptionItem } from "./SortableOptionItem";
 
 export const WindowTreatmentOptionsManager = () => {
   const queryClient = useQueryClient();
@@ -124,13 +127,16 @@ export const WindowTreatmentOptionsManager = () => {
   // For display, we'll show all unique option values across all options
   const allOptionValues = relevantOptions.flatMap(opt => opt.option_values || []);
   
-  // Deduplicate by code
-  const uniqueOptionValues = allOptionValues.reduce((acc, val) => {
-    if (!acc.find(v => v.code === val.code)) {
-      acc.push(val);
-    }
-    return acc;
-  }, [] as OptionValue[]);
+  // Deduplicate by code and filter hidden options
+  const uniqueOptionValues = allOptionValues
+    .reduce((acc, val) => {
+      if (!acc.find(v => v.code === val.code)) {
+        acc.push(val);
+      }
+      return acc;
+    }, [] as OptionValue[])
+    .filter(v => !v.hidden_by_user)
+    .sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
 
   const handleSave = async () => {
     if (!formData.name.trim() || !formData.value.trim()) {
@@ -275,12 +281,26 @@ export const WindowTreatmentOptionsManager = () => {
     setIsCreating(false);
   };
 
-  const handleDelete = async (valueCode: string) => {
+  const handleDelete = async (value: OptionValue) => {
+    // Check if this is a system default
+    const parentOption = relevantOptions.find(opt => 
+      opt.option_values?.some(v => v.code === value.code)
+    );
+    
+    if (parentOption?.is_system_default) {
+      toast({
+        title: "Cannot delete system default",
+        description: "System default options cannot be deleted. Use the hide button to hide them from your setup.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (confirm('Are you sure you want to delete this option from all templates?')) {
       try {
         // Delete this value from all templates
         for (const opt of relevantOptions) {
-          const existingVal = opt.option_values?.find(v => v.code === valueCode);
+          const existingVal = opt.option_values?.find(v => v.code === value.code);
           if (existingVal) {
             await deleteOptionValue.mutateAsync(existingVal.id);
           }
@@ -297,6 +317,85 @@ export const WindowTreatmentOptionsManager = () => {
           variant: "destructive"
         });
       }
+    }
+  };
+
+  const handleToggleVisibility = async (value: OptionValue) => {
+    try {
+      const newHiddenState = !value.hidden_by_user;
+      
+      // Update all instances of this option value
+      for (const opt of relevantOptions) {
+        const existingVal = opt.option_values?.find(v => v.code === value.code);
+        if (existingVal) {
+          await updateOptionValue.mutateAsync({
+            id: existingVal.id,
+            updates: { hidden_by_user: newHiddenState }
+          });
+        }
+      }
+      
+      toast({
+        title: newHiddenState ? "Option hidden" : "Option visible",
+        description: newHiddenState 
+          ? "This option is now hidden from your setup" 
+          : "This option is now visible in your setup",
+      });
+    } catch (error) {
+      console.error('Error toggling visibility:', error);
+      toast({
+        title: "Update failed",
+        description: "Failed to update option visibility. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = uniqueOptionValues.findIndex(v => v.id === active.id);
+    const newIndex = uniqueOptionValues.findIndex(v => v.id === over.id);
+
+    const reorderedValues = arrayMove(uniqueOptionValues, oldIndex, newIndex);
+
+    // Update order_index for all reordered items
+    try {
+      for (let i = 0; i < reorderedValues.length; i++) {
+        const value = reorderedValues[i];
+        
+        // Update all instances of this option value
+        for (const opt of relevantOptions) {
+          const existingVal = opt.option_values?.find(v => v.code === value.code);
+          if (existingVal) {
+            await updateOptionValue.mutateAsync({
+              id: existingVal.id,
+              updates: { order_index: i }
+            });
+          }
+        }
+      }
+      
+      toast({
+        title: "Order updated",
+        description: "Options have been reordered successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating order:', error);
+      toast({
+        title: "Reorder failed",
+        description: "Failed to update option order. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -1024,147 +1123,45 @@ export const WindowTreatmentOptionsManager = () => {
               )}
 
               {/* Options List */}
-              <div className="space-y-2">
-                {uniqueOptionValues.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-                    <p className="font-medium">No {optType.type_label.toLowerCase()} found</p>
-                    <p className="text-xs mt-1">Click "Add Option" to create one</p>
-                  </div>
-                ) : (
-                  uniqueOptionValues.map((value) => {
-                    const hasSubOptions = value.extra_data?.sub_options?.length > 0;
-                    const isExpanded = expandedOptions.has(value.id);
-                    
-                    return (
-                      <div key={value.code} className="border rounded-lg">
-                        <div className="flex items-center justify-between p-3 hover:bg-muted/50">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              {hasSubOptions && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => {
-                                    const newExpanded = new Set(expandedOptions);
-                                    if (isExpanded) {
-                                      newExpanded.delete(value.id);
-                                    } else {
-                                      newExpanded.add(value.id);
-                                    }
-                                    setExpandedOptions(newExpanded);
-                                  }}
-                                >
-                                  {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                </Button>
-                              )}
-                              <div className="font-medium uppercase">{value.label}</div>
-                              
-                              {/* Visibility Indicator */}
-                              {value.extra_data?.visible === false ? (
-                                <Badge variant="outline" className="flex items-center gap-1 text-xs bg-muted text-muted-foreground">
-                                  <EyeOff className="h-3 w-3" />
-                                  Hidden
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="flex items-center gap-1 text-xs bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
-                                  <Eye className="h-3 w-3" />
-                                  Visible
-                                </Badge>
-                              )}
-                              
-                              {value.extra_data?.pricing_method === 'pricing-grid' ? (
-                            <Badge variant="secondary" className="text-xs">
-                              Price Table
-                            </Badge>
-                          ) : value.extra_data?.price && value.extra_data.price > 0 ? (
-                            <Badge variant="secondary" className="text-xs">
-                              {value.extra_data?.pricing_method === 'percentage' 
-                                ? `${value.extra_data.price}%`
-                                : `+$${value.extra_data.price.toFixed(2)}`}
-                            </Badge>
-                          ) : null}
-                          {value.extra_data?.pricing_method && value.extra_data.pricing_method !== 'fixed' && (
-                            <Badge variant="outline" className="text-xs">
-                              {value.extra_data.pricing_method === 'per-unit' ? 'Per Unit' :
-                               value.extra_data.pricing_method === 'per-meter' ? 'Per Meter' :
-                               value.extra_data.pricing_method === 'per-sqm' ? 'Per m²' :
-                               value.extra_data.pricing_method === 'per-panel' ? 'Per Panel' :
-                               value.extra_data.pricing_method === 'per-drop' ? 'Per Drop' :
-                               value.extra_data.pricing_method === 'percentage' ? 'Percentage' :
-                               value.extra_data.pricing_method === 'pricing-grid' ? 'Price Table' :
-                               value.extra_data.pricing_method}
-                            </Badge>
-                          )}
-                          {value.inventory_item_id && (
-                            <Badge variant="outline" className="flex items-center gap-1 text-xs">
-                              <Package className="h-3 w-3" />
-                              Linked
-                            </Badge>
-                          )}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              Value: {value.code}
-                              {value.extra_data?.pricing_method === 'pricing-grid' 
-                                ? ` • ${value.extra_data.pricing_grid_data?.length || 0} price tiers`
-                                : value.extra_data?.price !== undefined 
-                                  ? ` • ${value.extra_data.price === 0 ? 'Included' : 
-                                      value.extra_data?.pricing_method === 'percentage' 
-                                        ? `${value.extra_data.price}%`
-                                        : `+$${value.extra_data.price.toFixed(2)}`}`
-                                  : ''}
-                              {hasSubOptions && ` • ${value.extra_data.sub_options.length} sub-categories`}
-                            </div>
-                          </div>
-                          {value.inventory_item_id && (
-                            <InventoryStockBadge itemId={value.inventory_item_id} />
-                          )}
-                          <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(value)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(value.code)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {/* Sub-Options Display */}
-                        {isExpanded && hasSubOptions && (
-                          <div className="px-3 pb-3 pt-0 space-y-2 border-t bg-muted/20">
-                            {value.extra_data.sub_options.map((subOption: any) => (
-                              <div key={subOption.id} className="p-2 bg-background rounded border">
-                                <div className="font-medium text-sm mb-1">{subOption.label}</div>
-                                <div className="flex flex-wrap gap-1">
-                                  {subOption.choices?.map((choice: any) => (
-                                    <Badge key={choice.id} variant="outline" className="text-xs">
-                                      {choice.label}
-                                      {choice.price > 0 && ` +$${choice.price.toFixed(2)}`}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={uniqueOptionValues.map(v => v.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2">
+                    {uniqueOptionValues.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+                        <p className="font-medium">No {optType.type_label.toLowerCase()} found</p>
+                        <p className="text-xs mt-1">Click "Add Option" to create one</p>
                       </div>
-                    );
-                  })
-                )}
-              </div>
+                    ) : (
+                      uniqueOptionValues.map((value) => (
+                        <SortableOptionItem
+                          key={value.id}
+                          value={value}
+                          relevantOptions={relevantOptions}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
+                          onToggleVisibility={handleToggleVisibility}
+                          expandedOptions={expandedOptions}
+                          setExpandedOptions={setExpandedOptions}
+                          inventoryItems={inventoryItems}
+                        />
+                      ))
+                    )}
+                  </div>
+                </SortableContext>
+              </DndContext>
             </TabsContent>
           );
         })}
         </Tabs>
         )}
+
 
         {/* Create Option Type Dialog */}
         <Dialog open={showCreateOptionTypeDialog} onOpenChange={setShowCreateOptionTypeDialog}>
