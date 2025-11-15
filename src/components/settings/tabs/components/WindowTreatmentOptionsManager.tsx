@@ -15,7 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAllTreatmentOptions, useCreateOptionValue, useUpdateOptionValue, useDeleteOptionValue, useCreateTreatmentOption } from "@/hooks/useTreatmentOptionsManagement";
 import type { TreatmentOption, OptionValue } from "@/hooks/useTreatmentOptions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useOptionTypeCategories, useCreateOptionTypeCategory } from "@/hooks/useOptionTypeCategories";
+import { useOptionTypeCategories, useCreateOptionTypeCategory, useToggleOptionTypeVisibility } from "@/hooks/useOptionTypeCategories";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TREATMENT_CATEGORIES, TreatmentCategoryDbValue } from "@/types/treatmentCategories";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
@@ -53,11 +53,33 @@ export const WindowTreatmentOptionsManager = () => {
   // Fetch option type categories dynamically from database
   const { data: optionTypeCategories = [], isLoading: categoriesLoading } = useOptionTypeCategories(activeTreatment);
   
+  // Fetch hidden option types for restore functionality
+  const { data: hiddenCategories = [] } = useQuery({
+    queryKey: ['hidden-option-categories', activeTreatment],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      
+      const { data, error } = await supabase
+        .from('option_type_categories')
+        .select('*')
+        .eq('active', true)
+        .eq('hidden_by_user', true)
+        .eq('treatment_category', activeTreatment)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!activeTreatment,
+  });
+  
   const createTreatmentOption = useCreateTreatmentOption();
   const createOptionValue = useCreateOptionValue();
   const updateOptionValue = useUpdateOptionValue();
   const deleteOptionValue = useDeleteOptionValue();
   const createOptionTypeCategory = useCreateOptionTypeCategory();
+  const toggleOptionTypeVisibility = useToggleOptionTypeVisibility();
   const { toast } = useToast();
   
   // Fetch inventory items for linking
@@ -67,6 +89,7 @@ export const WindowTreatmentOptionsManager = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [editingValue, setEditingValue] = useState<OptionValue | null>(null);
   const [showCreateOptionTypeDialog, setShowCreateOptionTypeDialog] = useState(false);
+  const [showHiddenOptionsDialog, setShowHiddenOptionsDialog] = useState(false);
   const [newOptionTypeData, setNewOptionTypeData] = useState({ type_label: '', type_key: '' });
   const [formData, setFormData] = useState({
     name: '',
@@ -900,42 +923,66 @@ export const WindowTreatmentOptionsManager = () => {
                     {opt.type_label}
                   </TabsTrigger>
                   {!opt.is_system_default && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        if (confirm(`Delete "${opt.type_label}" type? This will remove all its options.`)) {
-                          try {
-                            await supabase
-                              .from('option_type_categories')
-                              .delete()
-                              .eq('id', opt.id);
-                            
-                            queryClient.invalidateQueries({ queryKey: ['option-type-categories'] });
-                            toast({
-                              title: "Type deleted",
-                              description: `${opt.type_label} has been deleted.`,
-                            });
-                            
-                            // Switch to first available type
-                            if (optionTypeCategories.length > 1) {
-                              const nextType = optionTypeCategories.find(t => t.type_key !== opt.type_key);
-                              if (nextType) setActiveOptionType(nextType.type_key);
-                            }
-                          } catch (error: any) {
-                            toast({
-                              title: "Delete failed",
-                              description: error.message,
-                              variant: "destructive"
-                            });
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          await toggleOptionTypeVisibility.mutateAsync({ 
+                            id: opt.id, 
+                            hidden: true 
+                          });
+                          
+                          // Switch to first available type after hiding
+                          if (optionTypeCategories.length > 1) {
+                            const nextType = optionTypeCategories.find(t => t.type_key !== opt.type_key);
+                            if (nextType) setActiveOptionType(nextType.type_key);
                           }
-                        }
-                      }}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
+                        }}
+                        className="absolute right-8 top-1/2 -translate-y-1/2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Hide this option type"
+                      >
+                        <EyeOff className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (confirm(`Delete "${opt.type_label}" type? This will remove all its options.`)) {
+                            try {
+                              await supabase
+                                .from('option_type_categories')
+                                .delete()
+                                .eq('id', opt.id);
+                              
+                              queryClient.invalidateQueries({ queryKey: ['option-type-categories'] });
+                              toast({
+                                title: "Type deleted",
+                                description: `${opt.type_label} has been deleted.`,
+                              });
+                              
+                              // Switch to first available type
+                              if (optionTypeCategories.length > 1) {
+                                const nextType = optionTypeCategories.find(t => t.type_key !== opt.type_key);
+                                if (nextType) setActiveOptionType(nextType.type_key);
+                              }
+                            } catch (error: any) {
+                              toast({
+                                title: "Delete failed",
+                                description: error.message,
+                                variant: "destructive"
+                              });
+                            }
+                          }
+                        }}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Delete this option type"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </>
                   )}
                 </div>
               ))}
@@ -948,6 +995,18 @@ export const WindowTreatmentOptionsManager = () => {
                 <Plus className="h-3 w-3 mr-1" />
                 New Type
               </Button>
+              {hiddenCategories.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowHiddenOptionsDialog(true)}
+                  className="ml-1"
+                  title={`Show ${hiddenCategories.length} hidden option type(s)`}
+                >
+                  <Eye className="h-3 w-3 mr-1" />
+                  Hidden ({hiddenCategories.length})
+                </Button>
+              )}
               </TabsList>
               </div>
             </ScrollArea>
@@ -1332,6 +1391,59 @@ export const WindowTreatmentOptionsManager = () => {
               </Button>
               <Button onClick={handleCreateOptionType}>
                 Create Option Type
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Show Hidden Options Dialog */}
+        <Dialog open={showHiddenOptionsDialog} onOpenChange={setShowHiddenOptionsDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Hidden Option Types</DialogTitle>
+              <DialogDescription>
+                These option types are hidden from your {getTreatmentLabel(activeTreatment)} options. Click to show them again.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-2 py-4 max-h-[400px] overflow-y-auto">
+              {hiddenCategories.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <EyeOff className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p className="font-medium">No hidden options</p>
+                  <p className="text-sm mt-1">All option types are currently visible</p>
+                </div>
+              ) : (
+                hiddenCategories.map((opt) => (
+                  <div 
+                    key={opt.id}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div>
+                      <div className="font-medium">{opt.type_label}</div>
+                      <div className="text-xs text-muted-foreground">{opt.type_key}</div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        await toggleOptionTypeVisibility.mutateAsync({ 
+                          id: opt.id, 
+                          hidden: false 
+                        });
+                      }}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Show
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowHiddenOptionsDialog(false)}>
+                Close
               </Button>
             </DialogFooter>
           </DialogContent>

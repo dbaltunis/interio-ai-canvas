@@ -10,6 +10,8 @@ export interface OptionTypeCategory {
   type_label: string;
   is_system_default: boolean;
   active: boolean;
+  sort_order: number;
+  hidden_by_user: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -24,7 +26,9 @@ export const useOptionTypeCategories = (treatmentCategory?: string) => {
         .from('option_type_categories')
         .select('*')
         .eq('active', true)
-        .order('type_label');
+        .eq('hidden_by_user', false) // Filter out hidden items
+        .order('sort_order', { ascending: true })
+        .order('type_label', { ascending: true });
       
       if (treatmentCategory) {
         query = query.eq('treatment_category', treatmentCategory);
@@ -51,7 +55,7 @@ export const useCreateOptionTypeCategory = () => {
   const { toast } = useToast();
   
   return useMutation({
-    mutationFn: async (category: Omit<OptionTypeCategory, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'is_system_default' | 'active'>) => {
+    mutationFn: async (category: Omit<OptionTypeCategory, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'is_system_default' | 'active' | 'sort_order' | 'hidden_by_user'>) => {
       // Use getSession() instead of getUser() to get the session with auth token
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
@@ -66,11 +70,23 @@ export const useCreateOptionTypeCategory = () => {
         throw new Error('Authentication session missing. Please sign in again.');
       }
       
+      // Get the maximum sort_order for this treatment category to append at the end
+      const { data: existingCategories } = await supabase
+        .from('option_type_categories')
+        .select('sort_order')
+        .eq('treatment_category', category.treatment_category)
+        .order('sort_order', { ascending: false })
+        .limit(1);
+      
+      const maxSortOrder = existingCategories?.[0]?.sort_order ?? -1;
+      
       const insertData = {
         ...category,
         user_id: session.user.id,
         is_system_default: false,
         active: true,
+        sort_order: maxSortOrder + 1, // Always append at the end
+        hidden_by_user: false,
       };
       
       console.log('📝 Inserting option type:', insertData);
@@ -106,29 +122,31 @@ export const useCreateOptionTypeCategory = () => {
   });
 };
 
-export const useDeleteOptionTypeCategory = () => {
+export const useToggleOptionTypeVisibility = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, hidden }: { id: string; hidden: boolean }) => {
       const { error } = await supabase
         .from('option_type_categories')
-        .update({ active: false })
+        .update({ hidden_by_user: hidden })
         .eq('id', id);
       
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['option-type-categories'] });
       toast({
-        title: "Option type deleted",
-        description: "The option type has been removed.",
+        title: variables.hidden ? "Option type hidden" : "Option type shown",
+        description: variables.hidden 
+          ? "This option type is now hidden from your view." 
+          : "This option type is now visible.",
       });
     },
     onError: (error) => {
       toast({
-        title: "Failed to delete option type",
+        title: "Failed to update visibility",
         description: error.message,
         variant: "destructive",
       });
