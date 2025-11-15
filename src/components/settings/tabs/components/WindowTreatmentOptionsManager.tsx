@@ -919,7 +919,7 @@ export const WindowTreatmentOptionsManager = () => {
               <TabsList className="inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground w-max">
               {optionTypeCategories.map(opt => (
                 <div key={opt.type_key} className="relative group">
-                  <TabsTrigger value={opt.type_key} className="px-3 pr-10">
+                  <TabsTrigger value={opt.type_key} className={`px-3 ${opt.is_system_default ? 'pr-10' : 'pr-16'}`}>
                     {opt.type_label}
                   </TabsTrigger>
                   <Button
@@ -938,7 +938,7 @@ export const WindowTreatmentOptionsManager = () => {
                         if (nextType) setActiveOptionType(nextType.type_key);
                       }
                     }}
-                    className="absolute right-8 top-1/2 -translate-y-1/2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className={`absolute ${opt.is_system_default ? 'right-2' : 'right-8'} top-1/2 -translate-y-1/2 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity`}
                     title="Hide this option type"
                   >
                     <EyeOff className="h-3 w-3" />
@@ -976,7 +976,7 @@ export const WindowTreatmentOptionsManager = () => {
                           }
                         }
                       }}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                       title="Delete this option type"
                     >
                       <X className="h-3 w-3" />
