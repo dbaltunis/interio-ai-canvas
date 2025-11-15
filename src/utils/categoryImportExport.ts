@@ -60,7 +60,11 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
     const values = parseCSVLine(lines[i]);
     const errors: string[] = [];
     
+    const rotationValue = values[19]?.replace(/^"|"$/g, '').toLowerCase();
+    const canRotate = rotationValue === 'yes' || rotationValue === 'true' || rotationValue === '1';
+    
     const item: any = {
+      category: 'fabric',
       name: values[0]?.replace(/^"|"$/g, ''),
       sku: values[1]?.replace(/^"|"$/g, ''),
       description: values[2]?.replace(/^"|"$/g, ''),
@@ -69,6 +73,7 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
       unit: values[5]?.replace(/^"|"$/g, '') || 'meters',
       cost_price: parseFloat(values[6]) || 0,
       selling_price: parseFloat(values[7]) || 0,
+      price_per_meter: parseFloat(values[7]) || 0,
       supplier: values[8]?.replace(/^"|"$/g, ''),
       location: values[9]?.replace(/^"|"$/g, ''),
       reorder_point: parseFloat(values[10]) || 0,
@@ -79,10 +84,12 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
       fabric_grade: values[15]?.replace(/^"|"$/g, ''),
       color: values[16]?.replace(/^"|"$/g, ''),
       collection_name: values[17]?.replace(/^"|"$/g, ''),
+      image_url: values[20]?.replace(/^"|"$/g, ''),
       metadata: {
         maxLength: parseFloat(values[18]) || null,
+        rotationAllowance: canRotate,
+        priceGroup: values[21]?.replace(/^"|"$/g, '') || null,
       },
-      price_group: values[19]?.replace(/^"|"$/g, ''),
     };
 
     // Validation
@@ -95,8 +102,18 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
     const quantityError = validateNumber(item.quantity, 'Quantity', 0);
     if (quantityError) errors.push(quantityError);
 
-    if (!item.subcategory || !['curtain_fabric', 'roller_fabric', 'furniture_fabric', 'sheer_fabric'].includes(item.subcategory)) {
-      errors.push('Invalid subcategory. Must be: curtain_fabric, roller_fabric, furniture_fabric, or sheer_fabric');
+    const validSubcategories = [
+      'curtain_fabric', 
+      'roller_fabric', 
+      'roman_blind_fabric', 
+      'upholstery_fabric', 
+      'sheer_fabric', 
+      'blockout_fabric',
+      'furniture_fabric'
+    ];
+    
+    if (!item.subcategory || !validSubcategories.includes(item.subcategory)) {
+      errors.push(`Invalid subcategory. Must be one of: ${validSubcategories.join(', ')}`);
     }
 
     if (errors.length > 0) {
@@ -287,7 +304,7 @@ export const exportCategoryInventory = (items: any[], category: string): string 
       'name', 'sku', 'description', 'subcategory', 'quantity', 'unit', 'cost_price', 'selling_price',
       'supplier', 'location', 'reorder_point', 'fabric_width', 'pattern_repeat_vertical',
       'pattern_repeat_horizontal', 'fabric_composition', 'fabric_grade', 'color', 'collection_name',
-      'max_length', 'price_group'
+      'max_length', 'rotation_allowance', 'image_url', 'price_group'
     ];
     
     const rows = items.map(item => [
@@ -310,7 +327,9 @@ export const exportCategoryInventory = (items: any[], category: string): string 
       `"${item.color || ''}"`,
       `"${item.collection_name || ''}"`,
       (item as any).metadata?.maxLength || '',
-      `"${item.price_group || ''}"`
+      (item as any).metadata?.rotationAllowance ? 'yes' : 'no',
+      `"${item.image_url || ''}"`,
+      `"${(item as any).metadata?.priceGroup || ''}"`
     ].join(','));
 
     return [headers.join(','), ...rows].join('\n');
