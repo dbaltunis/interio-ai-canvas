@@ -42,6 +42,9 @@ export const SimpleFabricCalculator = ({ product, storeData, onSubmitQuote, onAd
     waste_percent: 10,
   }), [fullness]);
 
+  // Get max length from pricing metadata (if available)
+  const maxLength = product.inventory_item?.metadata?.maxLength;
+  
   // Calculate fabric requirements
   const calculation = useMemo(() => {
     const railWidthNum = parseFloat(measurements.railWidth);
@@ -65,6 +68,9 @@ export const SimpleFabricCalculator = ({ product, storeData, onSubmitQuote, onAd
     const totalMeters = (widthsNeeded * fabricDropCm) / 100;
     const totalMetersWithWaste = totalMeters * 1.1; // 10% waste
     
+    // Check if exceeds max length
+    const exceedsMaxLength = maxLength && totalMetersWithWaste * 100 > maxLength;
+    
     // Calculate costs
     const fabricPrice = product.inventory_item?.selling_price || product.inventory_item?.unit_price || 0;
     const fabricCost = totalMetersWithWaste * fabricPrice;
@@ -79,8 +85,9 @@ export const SimpleFabricCalculator = ({ product, storeData, onSubmitQuote, onAd
       totalPrice,
       fabricWidth,
       fullnessMultiplier,
+      exceedsMaxLength,
     };
-  }, [measurements, fullness, product.inventory_item]);
+  }, [measurements, fullness, product.inventory_item, maxLength]);
 
   const handleSubmitQuote = (customerInfo: any) => {
     onSubmitQuote({
@@ -239,7 +246,23 @@ export const SimpleFabricCalculator = ({ product, storeData, onSubmitQuote, onAd
                       <span className="text-muted-foreground">Fullness ratio:</span>
                       <span className="font-medium">{calculation.fullnessMultiplier}x</span>
                     </div>
+                    {maxLength && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Maximum available:</span>
+                        <span className="font-medium">{(maxLength / 100).toFixed(2)}m</span>
+                      </div>
+                    )}
                   </div>
+                  {calculation.exceedsMaxLength && (
+                    <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 mt-2">
+                      <p className="text-sm text-destructive font-medium">
+                        ⚠️ Requested length exceeds maximum available ({(maxLength / 100).toFixed(2)}m)
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Please adjust your measurements or contact us for a custom order
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">

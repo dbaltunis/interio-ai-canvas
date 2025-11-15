@@ -63,7 +63,8 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
       type: item.category || 'fabric',
       width: 137, // Default fabric width
       cost_per_unit: item.unit_price || 0,
-      unit: 'yard'
+      unit: 'yard',
+      metadata: (item as any).metadata || {} // Preserve metadata including maxLength
     }));
     
     console.log('FabricSelector - Found fabrics:', fabricItems.length);
@@ -229,12 +230,17 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
                         </span>
                       )}
                     </div>
-                    {selectedFabric.quantity !== undefined && (
-                      <div className="text-xs text-green-600 mt-1">
-                        ✓ {selectedFabric.quantity} {selectedFabric.unit || units.fabric} available
-                      </div>
-                    )}
-                  </div>
+                     {selectedFabric.quantity !== undefined && (
+                       <div className="text-xs text-green-600 mt-1">
+                         ✓ {selectedFabric.quantity} {selectedFabric.unit || units.fabric} available
+                       </div>
+                     )}
+                     {(selectedFabric as any).metadata?.maxLength && (
+                       <div className="text-xs text-blue-600 mt-1">
+                         📏 Max length: {((selectedFabric as any).metadata.maxLength / 100).toFixed(2)}m
+                       </div>
+                     )}
+                   </div>
                 </div>
               ) : (
                 <div>
@@ -338,6 +344,7 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
                                 <div className="text-sm text-muted-foreground">
                                   {fabric.width && `${fabric.width}" wide`}
                                   {fabric.quantity !== undefined && ` • ${fabric.quantity} ${fabric.unit || 'units'} available`}
+                                  {(fabric as any).metadata?.maxLength && ` • Max: ${((fabric as any).metadata.maxLength / 100).toFixed(2)}m`}
                                 </div>
                               </div>
                               <div className="text-right">
