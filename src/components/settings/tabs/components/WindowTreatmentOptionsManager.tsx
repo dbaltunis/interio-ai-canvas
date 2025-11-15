@@ -1102,7 +1102,7 @@ export const WindowTreatmentOptionsManager = () => {
                           <SelectItem value="per-panel">Per Panel</SelectItem>
                           <SelectItem value="per-drop">Per Drop</SelectItem>
                           <SelectItem value="percentage">Percentage</SelectItem>
-                          <SelectItem value="pricing-grid">Price Table (Entered Width)</SelectItem>
+                          <SelectItem value="pricing-grid">Price Table</SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground mt-1">
@@ -1136,7 +1136,7 @@ export const WindowTreatmentOptionsManager = () => {
                     )}
 
                     <div className="col-span-2">
-                      <Label htmlFor="inventory">Link to Inventory (Optional)</Label>
+                      <Label htmlFor="inventory">Link to Inventory</Label>
                       <Button
                         type="button"
                         variant="outline"
