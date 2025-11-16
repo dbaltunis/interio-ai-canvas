@@ -51,17 +51,14 @@ serve(async (req) => {
 
     console.log('Authenticated user:', user.id);
 
-    // Check user role
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('user_profiles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
+    // Check if user is System Owner
+    const { data: isSystemOwner, error: roleError } = await supabaseAdmin
+      .rpc('is_system_owner', { _user_id: user.id });
 
-    if (profileError || !profile || !['Owner', 'Admin'].includes(profile.role)) {
-      console.error('Permission denied for user:', user.id, 'role:', profile?.role);
+    if (roleError || !isSystemOwner) {
+      console.error('Not authorized - not a System Owner. Error:', roleError);
       return new Response(
-        JSON.stringify({ error: 'Permission denied. Only Admins and Owners can create accounts.' }),
+        JSON.stringify({ error: 'Unauthorized - System Owner role required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

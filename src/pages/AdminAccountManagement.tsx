@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { AccountDetailsDialog } from "@/components/admin/AccountDetailsDialog";
 import { CreateAccountDialog } from "@/components/admin/CreateAccountDialog";
 import { AccountWithDetails } from "@/types/subscriptions";
+import { SystemOwnerRoute } from "@/components/auth/SystemOwnerRoute";
 
 export default function AdminAccountManagement() {
   const [search, setSearch] = useState("");
@@ -62,14 +63,15 @@ export default function AdminAccountManagement() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Account Management</h1>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Create New Account
-        </Button>
-      </div>
+    <SystemOwnerRoute>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Account Management</h1>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Create New Account
+          </Button>
+        </div>
 
       {/* Filters */}
       <Card>
@@ -180,5 +182,6 @@ export default function AdminAccountManagement() {
         }}
       />
     </div>
+  </SystemOwnerRoute>
   );
 }
