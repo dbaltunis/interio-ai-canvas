@@ -52,11 +52,11 @@ serve(async (req) => {
     console.log('Authenticated user:', user.id);
 
     // Check if user is System Owner
-    const { data: isSystemOwner, error: roleError } = await supabaseAdmin
-      .rpc('is_system_owner', { _user_id: user.id });
+    const { data: userRole, error: roleCheckError } = await supabaseAdmin
+      .rpc('get_user_role', { _user_id: user.id });
 
-    if (roleError || !isSystemOwner) {
-      console.error('Not authorized - not a System Owner. Error:', roleError);
+    if (roleCheckError || userRole !== 'System Owner') {
+      console.error('Not authorized - not a System Owner. Role:', userRole, 'Error:', roleCheckError);
       return new Response(
         JSON.stringify({ error: 'Unauthorized - System Owner role required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
