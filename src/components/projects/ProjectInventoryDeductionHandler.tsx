@@ -11,7 +11,7 @@ export const ProjectInventoryDeductionHandler = () => {
 
   useEffect(() => {
     const handleStatusChange = async (event: CustomEvent) => {
-      const { projectId, newStatus } = event.detail;
+      const { projectId, newStatus, newStatusId } = event.detail;
       
       try {
         // Get all inventory items used in this project
@@ -22,10 +22,11 @@ export const ProjectInventoryDeductionHandler = () => {
           return;
         }
 
-        // Trigger deduction
+        // Trigger deduction with status ID
         await inventoryDeduction.mutateAsync({
           projectId,
           statusName: newStatus,
+          statusId: newStatusId, // Pass status ID for checking
           items
         });
       } catch (error) {
