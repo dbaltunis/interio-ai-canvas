@@ -9,6 +9,7 @@ import { AccountType } from "@/types/subscriptions";
 import { Search, UserPlus } from "lucide-react";
 import { format } from "date-fns";
 import { AccountDetailsDialog } from "@/components/admin/AccountDetailsDialog";
+import { CreateAccountDialog } from "@/components/admin/CreateAccountDialog";
 import { AccountWithDetails } from "@/types/subscriptions";
 
 export default function AdminAccountManagement() {
@@ -16,6 +17,7 @@ export default function AdminAccountManagement() {
   const [accountTypeFilter, setAccountTypeFilter] = useState<AccountType | "all">("all");
   const [subscriptionStatusFilter, setSubscriptionStatusFilter] = useState<string | "all">("all");
   const [selectedAccount, setSelectedAccount] = useState<AccountWithDetails | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const { data: accounts, isLoading } = useAdminAccounts({
     accountType: accountTypeFilter === "all" ? undefined : accountTypeFilter,
@@ -63,9 +65,9 @@ export default function AdminAccountManagement() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Account Management</h1>
-        <Button>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
           <UserPlus className="mr-2 h-4 w-4" />
-          Create Test Account
+          Create New Account
         </Button>
       </div>
 
@@ -168,6 +170,15 @@ export default function AdminAccountManagement() {
           onOpenChange={(open) => !open && setSelectedAccount(null)}
         />
       )}
+
+      {/* Create Account Dialog */}
+      <CreateAccountDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSuccess={() => {
+          // Accounts will auto-refresh via React Query
+        }}
+      />
     </div>
   );
 }
