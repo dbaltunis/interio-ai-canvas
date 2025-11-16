@@ -1,6 +1,6 @@
 export const formatCurrency = (
   amount: number,
-  currency: string = 'NZD', // Default to NZD to match useCurrency hook
+  currency: string = 'EUR', // Default to EUR
   locale?: string
 ) => {
   try {

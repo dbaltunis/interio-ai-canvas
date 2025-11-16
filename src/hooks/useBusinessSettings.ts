@@ -62,11 +62,11 @@ export interface MeasurementUnits {
 }
 
 export const defaultMeasurementUnits: MeasurementUnits = {
-  system: 'imperial',
-  length: 'inches',
-  area: 'sq_inches', 
-  fabric: 'yards',
-  currency: 'USD'
+  system: 'metric',
+  length: 'cm',
+  area: 'sq_cm', 
+  fabric: 'm',
+  currency: 'EUR'
 };
 
 export const useBusinessSettings = () => {
