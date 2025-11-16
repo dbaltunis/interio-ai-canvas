@@ -10,7 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Plus, DollarSign, Ruler, Package, Store, TrendingUp, Trash2, ImageIcon, Upload, X } from "lucide-react";
+import { Plus, DollarSign, Ruler, Package, Store, TrendingUp, Trash2, ImageIcon, Upload, X, QrCode } from "lucide-react";
+import { QRCodeDisplay } from "./QRCodeDisplay";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateEnhancedInventoryItem, useUpdateEnhancedInventoryItem, useDeleteEnhancedInventoryItem, useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useVendors } from "@/hooks/useVendors";
@@ -887,11 +888,12 @@ export const UnifiedInventoryDialog = ({
 
           {formData.subcategory && (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>
                 <TabsTrigger value="specifications">Specifications</TabsTrigger>
                 <TabsTrigger value="pricing">Pricing</TabsTrigger>
                 <TabsTrigger value="inventory">Vendor & Stock</TabsTrigger>
+                {mode === "edit" && <TabsTrigger value="qrcode">QR Code</TabsTrigger>}
               </TabsList>
 
               {/* BASIC INFO TAB */}
@@ -2614,6 +2616,31 @@ export const UnifiedInventoryDialog = ({
                   </CardContent>
                 </Card>
               </TabsContent>
+
+              {/* QR CODE TAB */}
+              {mode === "edit" && item?.id && (
+                <TabsContent value="qrcode" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <QrCode className="h-5 w-5" />
+                        QR Code
+                      </CardTitle>
+                      <CardDescription>
+                        Scan this QR code with your camera to quickly access this item's information
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex justify-center py-8">
+                      <QRCodeDisplay
+                        itemId={item.id}
+                        itemName={item.name}
+                        size={256}
+                        showActions={true}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              )}
             </Tabs>
           )}
 
