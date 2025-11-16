@@ -171,37 +171,8 @@ export const useUpdateQuote = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<QuoteUpdate>) => {
-      // Check if status is changing and if we need to regenerate the number
-      if (updates.status_id) {
-        const { data: oldQuote } = await supabase
-          .from("quotes")
-          .select("quote_number, status_id, job_statuses(name)")
-          .eq("id", id)
-          .single();
-        
-        const { data: newStatus } = await supabase
-          .from("job_statuses")
-          .select("name")
-          .eq("id", updates.status_id)
-          .single();
-        
-        if (oldQuote && newStatus) {
-          const oldStatusName = (oldQuote as any).job_statuses?.name || '';
-          const newStatusName = newStatus.name;
-          
-          if (shouldRegenerateNumber(oldStatusName, newStatusName)) {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-              const entityType = getEntityTypeFromStatus(newStatusName);
-              if (entityType) {
-                const newNumber = await generateSequenceNumber(user.id, entityType, 'QT');
-                updates.quote_number = newNumber;
-              }
-            }
-          }
-        }
-      }
-      
+      // Update quote directly - no number regeneration on status changes
+      // Quote numbers should remain stable throughout their lifecycle
       const { data, error } = await supabase
         .from("quotes")
         .update(updates)

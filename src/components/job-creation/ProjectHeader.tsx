@@ -98,6 +98,16 @@ export const ProjectHeader = ({
     
     const statusInfo = jobStatuses?.find(s => s.name.toLowerCase() === newStatus.toLowerCase());
     
+    if (!statusInfo) {
+      console.error('Status not found:', newStatus);
+      toast({
+        title: "Error",
+        description: "Status not found",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       // Update both project and quote status if available
       const updatePromises = [];
@@ -108,21 +118,21 @@ export const ProjectHeader = ({
         : projectId;
       
       if (actualProjectId) {
-        console.log('Updating project status:', { projectId: actualProjectId, status: newStatus });
+        console.log('Updating project status:', { projectId: actualProjectId, status_id: statusInfo.id });
         updatePromises.push(
           updateProject.mutateAsync({
             id: actualProjectId,
-            status: newStatus
+            status_id: statusInfo.id
           })
         );
       }
 
       if (quoteId) {
-        console.log('Updating quote status:', { quoteId, status: newStatus });
+        console.log('Updating quote status:', { quoteId, status_id: statusInfo.id });
         updatePromises.push(
           updateQuote.mutateAsync({
             id: quoteId,
-            status: newStatus
+            status_id: statusInfo.id
           })
         );
       }
