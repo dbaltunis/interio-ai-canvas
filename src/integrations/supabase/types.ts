@@ -9116,6 +9116,10 @@ export type Database = {
         Args: { user_role: string }
         Returns: string[]
       }
+      get_effective_account_owner: {
+        Args: { user_id_param: string }
+        Returns: string
+      }
       get_invitation_by_token: {
         Args: { invitation_token_param: string }
         Returns: {
