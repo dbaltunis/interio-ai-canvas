@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { JobsPagination } from "../jobs/JobsPagination";
 import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
 import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
-import { InventoryFilters } from "../library/InventoryFilters";
+import { FilterButton } from "../library/FilterButton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QRCodeDisplay } from "./QRCodeDisplay";
 import {
@@ -212,15 +212,24 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
         </div>
       </div>
 
-      {/* Filters */}
-      <InventoryFilters
-        selectedVendor={localVendor}
-        selectedCollection={localCollection}
-        searchTerm={localSearch}
-        onVendorChange={setLocalVendor}
-        onCollectionChange={setLocalCollection}
-        onSearchChange={setLocalSearch}
-      />
+      {/* Search and Filters */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, SKU, or description..."
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <FilterButton
+          selectedVendor={localVendor}
+          selectedCollection={localCollection}
+          onVendorChange={setLocalVendor}
+          onCollectionChange={setLocalCollection}
+        />
+      </div>
 
       {/* Category Tabs */}
       <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
