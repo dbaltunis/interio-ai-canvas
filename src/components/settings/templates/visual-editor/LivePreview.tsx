@@ -934,7 +934,25 @@ const LivePreviewBlock = ({
                               </div>
                             </td>
                             <td style={{ padding: '5px 6px', fontSize: '13px', color: '#000', fontWeight: '400', verticalAlign: 'top', wordWrap: 'break-word', overflowWrap: 'break-word', backgroundColor: '#ffffff' }}>
-                              {item.description && !item.description.toLowerCase().includes('option') ? item.description : (item.notes || '-')}
+                              {options.length > 0 ? (
+                                <div>
+                                  {item.description && !item.description.toLowerCase().includes('option') && (
+                                    <div style={{ marginBottom: '6px' }}>{item.description}</div>
+                                  )}
+                                  <div style={{ fontSize: '12px' }}>
+                                    <strong>Options:</strong>
+                                    <ul style={{ margin: '4px 0 0 0', paddingLeft: '16px', listStyleType: 'disc' }}>
+                                      {options.map((opt: any, idx: number) => (
+                                        <li key={idx} style={{ marginBottom: '2px' }}>
+                                          <strong>{opt.name}:</strong> {opt.value}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+                              ) : (
+                                item.description || item.notes || '-'
+                              )}
                             </td>
                             <td style={{ padding: '5px 6px', fontSize: '14px', fontWeight: '400', color: '#000', textAlign: 'center', verticalAlign: 'top', backgroundColor: '#ffffff' }}>
                               {item.quantity || 1}
@@ -947,47 +965,6 @@ const LivePreviewBlock = ({
                             </td>
                           </tr>
                           
-                          {/* Options breakdown rows */}
-                          {options.length > 0 && showDetailedProducts && options.map((option: any, optIdx: number) => (
-                            <tr key={`option-${itemNumber}-${optIdx}`} style={{ 
-                              backgroundColor: '#fafafa',
-                              borderBottom: isPrintMode ? 'none' : (optIdx === options.length - 1 && breakdown.length === 0 ? '1px solid #ddd' : '1px solid #e8e8e8')
-                            }}>
-                              <td style={{ padding: '4px 6px 4px 20px', fontSize: '13px', backgroundColor: '#fafafa' }} colSpan={2}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  {showImages && option.image_url && (
-                                    <img 
-                                      src={option.image_url}
-                                      alt={option.name}
-                                      className="print-image"
-                                      style={{
-                                        width: '22px',
-                                        height: '22px',
-                                        objectFit: 'cover',
-                                        borderRadius: '2px',
-                                        border: isPrintMode ? 'none' : '1px solid #ddd',
-                                        flexShrink: 0
-                                      }}
-                                    />
-                                  )}
-                                  <span style={{ fontWeight: '500', color: '#000' }}>
-                                    {option.name}:
-                                  </span>
-                                  <span style={{ color: '#666' }}>
-                                    {option.value}
-                                  </span>
-                                </div>
-                              </td>
-                              <td style={{ textAlign: 'center', fontSize: '12px', color: '#666', backgroundColor: '#fafafa' }}>-</td>
-                              <td style={{ textAlign: 'right', fontSize: '12px', color: '#666', backgroundColor: '#fafafa' }}>
-                                {option.unit_price > 0 ? `${renderTokenValue('currency_symbol')}${option.unit_price.toFixed(2)}` : '-'}
-                              </td>
-                              <td style={{ textAlign: 'right', fontSize: '13px', fontWeight: '500', color: '#000', backgroundColor: '#fafafa' }}>
-                                {option.total_cost > 0 ? `${renderTokenValue('currency_symbol')}${option.total_cost.toFixed(2)}` : '-'}
-                              </td>
-                            </tr>
-                          ))}
-
                           {/* Detailed breakdown rows - indented */}
                           {breakdown.length > 0 && showDetailedProducts && breakdown.map((breakdownItem: any, bidx: number) => (
                             <tr key={bidx} style={{ 
