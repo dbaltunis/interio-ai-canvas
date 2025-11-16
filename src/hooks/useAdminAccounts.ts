@@ -11,82 +11,21 @@ export const useAdminAccounts = (filters?: {
   return useQuery({
     queryKey: ["adminAccounts", filters],
     queryFn: async (): Promise<AccountWithDetails[]> => {
-      // First get all account owners
-      let query = supabase
-        .from("user_profiles")
-        .select("user_id, display_name, account_type, parent_account_id, created_at")
-        .is("parent_account_id", null)
-        .order("created_at", { ascending: false });
+      // Call edge function that has service role access
+      const { data, error } = await supabase.functions.invoke('get-admin-accounts', {
+        body: {
+          accountType: filters?.accountType,
+          subscriptionStatus: filters?.subscriptionStatus,
+          search: filters?.search,
+        }
+      });
 
-      // Apply account type filter
-      if (filters?.accountType) {
-        query = query.eq("account_type", filters.accountType);
+      if (error) {
+        console.error('Error fetching admin accounts:', error);
+        throw error;
       }
 
-      const { data: profiles, error } = await query;
-      if (error) throw error;
-
-      // Get emails from auth.users
-      const userIds = profiles.map(p => p.user_id);
-      const { data: authUsers } = await supabase.rpc('get_user_email', { user_id: userIds[0] });
-      
-      // Get all emails in one query using auth admin (won't work, so we'll get from profile or use a workaround)
-      // For now, we'll assume email might not be available and handle it gracefully
-      
-      // Get subscription data for each account
-      const accounts = await Promise.all(
-        profiles.map(async (profile) => {
-          // Get user email - we'll use the user_id as a fallback
-          const { data: authUser } = await supabase.auth.admin.getUserById(profile.user_id);
-          const email = authUser?.user?.email || `user-${profile.user_id.slice(0, 8)}`;
-
-          // Get subscription
-          const { data: subscription } = await supabase
-            .from("user_subscriptions")
-            .select("*, subscription_plans(*)")
-            .eq("user_id", profile.user_id)
-            .maybeSingle();
-
-          // Get team members count
-          const { count: teamMembersCount } = await supabase
-            .from("user_profiles")
-            .select("*", { count: "exact", head: true })
-            .eq("parent_account_id", profile.user_id);
-
-          const account: AccountWithDetails = {
-            user_id: profile.user_id,
-            display_name: profile.display_name,
-            email,
-            account_type: profile.account_type as AccountType,
-            parent_account_id: profile.parent_account_id,
-            created_at: profile.created_at,
-            subscription: subscription as any,
-            team_members_count: teamMembersCount || 0,
-          };
-
-          return account;
-        })
-      );
-
-      // Apply search filter
-      let filteredAccounts = accounts;
-      if (filters?.search) {
-        const searchLower = filters.search.toLowerCase();
-        filteredAccounts = accounts.filter(
-          (acc) =>
-            acc.display_name?.toLowerCase().includes(searchLower) ||
-            acc.email.toLowerCase().includes(searchLower)
-        );
-      }
-
-      // Apply subscription status filter
-      if (filters?.subscriptionStatus) {
-        filteredAccounts = filteredAccounts.filter(
-          (acc) => acc.subscription?.status === filters.subscriptionStatus
-        );
-      }
-
-      return filteredAccounts;
+      return data.accounts || [];
     },
   });
 };
