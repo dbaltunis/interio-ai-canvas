@@ -141,26 +141,34 @@ export const FilterButton = ({
               </Select>
             </div>
 
-            {availableTags.length > 0 && onTagsChange && (
+            {onTagsChange && (
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground">Tags</label>
-                <div className="max-h-40 overflow-y-auto space-y-2 p-2 border border-border rounded-md">
-                  {availableTags.map((tag) => (
-                    <div key={tag} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`tag-${tag}`}
-                        checked={selectedTags.includes(tag)}
-                        onCheckedChange={() => toggleTag(tag)}
-                      />
-                      <label
-                        htmlFor={`tag-${tag}`}
-                        className="text-sm cursor-pointer flex-1"
-                      >
-                        {tag}
-                      </label>
-                    </div>
-                  ))}
-                </div>
+                {availableTags.length > 0 ? (
+                  <div className="max-h-40 overflow-y-auto space-y-2 p-2 border border-border rounded-md">
+                    {availableTags.map((tag) => (
+                      <div key={tag} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`tag-${tag}`}
+                          checked={selectedTags.includes(tag)}
+                          onCheckedChange={() => toggleTag(tag)}
+                        />
+                        <label
+                          htmlFor={`tag-${tag}`}
+                          className="text-sm cursor-pointer flex-1"
+                        >
+                          {tag}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-3 border border-border rounded-md bg-muted/30">
+                    <p className="text-xs text-muted-foreground">
+                      No tags yet. Add tags to items by editing them and entering comma-separated tags in the <span className="font-medium">Basic</span> tab.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
