@@ -19,7 +19,7 @@ import { ThemeProvider } from "next-themes";
 import { ThemeDarkSync } from "./components/system/ThemeDarkSync";
 import { InteractionUnlockGuard } from "./components/system/InteractionUnlockGuard";
 import { LoadingState } from "./components/ui/loading-state";
-import { ProjectInventoryDeductionHandler } from "./components/projects/ProjectInventoryDeductionHandler";
+import { ProjectInventoryTrackingHandler } from "./components/projects/ProjectInventoryTrackingHandler";
 import "@/styles/theme.css";
 
 // Lazy load all route components for better code splitting
@@ -283,7 +283,7 @@ const App = () => {
               </Routes>
               </Suspense>
                    </EmailRealtimeProvider>
-                   <ProjectInventoryDeductionHandler />
+                   <ProjectInventoryTrackingHandler />
                    </AuthProvider>
                  </BrowserRouter>
               </ThemeProvider>
