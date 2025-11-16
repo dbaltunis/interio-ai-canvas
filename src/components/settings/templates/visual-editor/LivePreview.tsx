@@ -737,10 +737,6 @@ const LivePreviewBlock = ({
             // Skip if this is not a real breakdown item
             if (!child.isChild) return;
             
-            // Skip options - they'll be shown separately
-            const isOption = child.category === 'option' || child.category === 'options';
-            if (isOption) return;
-            
             breakdown.push({
               id: child.id || `${item.id}-child-${idx}`,
               name: child.name || 'Item',
@@ -769,31 +765,6 @@ const LivePreviewBlock = ({
         });
         
         return breakdown;
-      };
-
-      // Get options from children array - these are displayed separately
-      const getItemOptions = (item: any) => {
-        const options = [];
-        
-        if (item.children && Array.isArray(item.children) && item.children.length > 0) {
-          item.children.forEach((child: any, idx: number) => {
-            // Only include options
-            const isOption = child.category === 'option' || child.category === 'options';
-            if (!isOption || !child.isChild) return;
-            
-            options.push({
-              id: child.id || `${item.id}-option-${idx}`,
-              name: child.name || 'Option',
-              value: child.description || child.value || '',
-              unit_price: child.unit_price || 0,
-              total_cost: child.total || 0,
-              image_url: child.image_url,
-              quantity: child.quantity || 1
-            });
-          });
-        }
-        
-        return options;
       };
       
       console.log('[PRODUCTS BLOCK] Rendering products:', {
@@ -888,7 +859,6 @@ const LivePreviewBlock = ({
                     {(items as any[]).map((item: any, itemIndex: number) => {
                       const itemNumber = groupByRoom ? itemIndex + 1 : Object.values(groupedItems).flat().indexOf(item) + 1;
                       const breakdown = getItemizedBreakdown(item);
-                      const options = getItemOptions(item);
                       
                       console.log('[PRODUCT ROW]', {
                         itemNumber,
@@ -896,7 +866,6 @@ const LivePreviewBlock = ({
                         total_cost: item.total_cost,
                         unit_price: item.unit_price,
                         total: item.total,
-                        optionsCount: options.length,
                         allItemData: item
                       });
                       
@@ -983,47 +952,6 @@ const LivePreviewBlock = ({
                               </td>
                               <td style={{ padding: '3px 6px', fontSize: '13px', fontWeight: '400', color: '#000', textAlign: 'right', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
                                 {renderTokenValue('currency_symbol')}{(breakdownItem.total_cost || 0).toFixed(2)}
-                              </td>
-                            </tr>
-                          ))}
-                          
-                          {/* Options rows - displayed separately with images and proper pricing */}
-                          {options.length > 0 && options.map((option: any, oidx: number) => (
-                            <tr key={`option-${oidx}`} style={{ 
-                              backgroundColor: '#fafafa',
-                              borderBottom: isPrintMode ? 'none' : (oidx === options.length - 1 ? '1px solid #ddd' : '1px solid #e8e8e8')
-                            }}>
-                              <td style={{ padding: '3px 6px 3px 20px', fontSize: '13px', color: '#000', fontWeight: '400', backgroundColor: '#fafafa' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  {showImages && option.image_url && (
-                                    <img 
-                                      src={option.image_url} 
-                                      alt={option.name || 'Option'}
-                                      className="print-image"
-                                      style={{ 
-                                        width: '22px', 
-                                        height: '22px', 
-                                        objectFit: 'cover', 
-                                        borderRadius: '2px',
-                                        border: isPrintMode ? 'none' : '1px solid #ddd',
-                                        flexShrink: 0
-                                      }}
-                                    />
-                                  )}
-                                  <span style={{ fontSize: '12px' }}>{option.name}</span>
-                                </div>
-                              </td>
-                              <td style={{ padding: '3px 6px', fontSize: '12px', color: '#666', fontWeight: '400', backgroundColor: '#fafafa' }}>
-                                {option.value || '-'}
-                              </td>
-                              <td style={{ padding: '3px 6px', fontSize: '12px', color: '#666', fontWeight: '400', textAlign: 'center', backgroundColor: '#fafafa' }}>
-                                -
-                              </td>
-                              <td style={{ padding: '3px 6px', fontSize: '12px', fontWeight: '400', color: '#000', textAlign: 'right', whiteSpace: 'nowrap', backgroundColor: '#fafafa' }}>
-                                {option.unit_price > 0 ? `${renderTokenValue('currency_symbol')}${option.unit_price.toFixed(2)}` : '-'}
-                              </td>
-                              <td style={{ padding: '3px 6px', fontSize: '12px', fontWeight: '400', color: '#000', textAlign: 'right', whiteSpace: 'nowrap', backgroundColor: '#fafafa' }}>
-                                {option.total_cost > 0 ? `${renderTokenValue('currency_symbol')}${option.total_cost.toFixed(2)}` : '-'}
                               </td>
                             </tr>
                           ))}
