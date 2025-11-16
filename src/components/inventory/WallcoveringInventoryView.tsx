@@ -347,9 +347,9 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
               </>
             ) : (
               <>
-                <div className="rounded-md border">
+                <div className="rounded-md border bg-card">
                 <table className="w-full">
-                  <thead className="bg-muted/50">
+                  <thead className="bg-muted/20 border-b">
                     <tr>
                       <th className="px-4 py-3 w-12">
                         <Checkbox
@@ -375,7 +375,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
                     {paginatedItems.map((item) => {
                       const isSelected = selectedItems.includes(item.id);
                       return (
-                        <tr key={item.id} className="border-t hover:bg-muted/30">
+                        <tr key={item.id} className="border-t hover:bg-accent/50 transition-colors">
                           <td className="px-4 py-3">
                             <Checkbox
                               checked={isSelected}
