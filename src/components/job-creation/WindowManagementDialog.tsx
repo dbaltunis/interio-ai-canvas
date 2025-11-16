@@ -352,6 +352,15 @@ export const WindowManagementDialog = ({
     return String(value);
   };
 
+  // Sync edit values whenever source values change
+  useEffect(() => {
+    setEditProductValue(treatmentName);
+  }, [treatmentName]);
+
+  useEffect(() => {
+    setEditDescriptionValue(treatmentDescription);
+  }, [treatmentDescription]);
+
   useEffect(() => {
     console.log('🔄 Treatment data changed:', { currentTreatment, windowSummary, templateId: currentTemplateId });
     
@@ -363,33 +372,27 @@ export const WindowManagementDialog = ({
                    cleanValue(currentTreatment.product_name) || 
                    cleanValue(currentTreatment.treatment_type);
       setTreatmentName(name);
-      setEditProductValue(name);
       
       // Description: use inventory item name from fabric_details
       const fabricDetails = currentTreatment.fabric_details as any;
       const desc = cleanValue(fabricDetails?.fabric_type) || 
                    cleanValue(currentTreatment.description);
       setTreatmentDescription(desc);
-      setEditDescriptionValue(desc);
     } else if (windowSummary) {
       // Treatment name: use template name from windows_summary
       const name = cleanValue(windowSummary.template_name) || 
                    cleanValue(windowSummary.treatment_type);
       setTreatmentName(name);
-      setEditProductValue(name);
       
       // Description: use inventory item name from fabric_details
       const fabricDetails = windowSummary.fabric_details as any;
       const desc = cleanValue(fabricDetails?.fabric_type) || 
                    cleanValue(windowSummary.description_text);
       setTreatmentDescription(desc);
-      setEditDescriptionValue(desc);
     } else {
       // Clear fields if no treatment
       setTreatmentName('');
-      setEditProductValue('');
       setTreatmentDescription('');
-      setEditDescriptionValue('');
     }
   }, [currentTemplateId, currentTreatment?.treatment_name, currentTreatment?.fabric_details, currentTreatment, windowSummary, windowSummary?.template_name, windowSummary?.fabric_details, windowSummary?.updated_at]);
 
@@ -479,7 +482,7 @@ export const WindowManagementDialog = ({
                 <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[280px] max-w-[320px] h-[32px]">
                   <span className="text-xs font-medium text-muted-foreground shrink-0">Treatment:</span>
                   {isEditingProduct ? (
-                    <>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
                       <Input
                         value={editProductValue}
                         onChange={(e) => setEditProductValue(e.target.value)}
@@ -493,11 +496,15 @@ export const WindowManagementDialog = ({
                             setIsEditingProduct(false);
                           }
                         }}
-                        className="h-4 text-xs font-semibold border-0 bg-transparent px-0 focus-visible:ring-0"
+                        onBlur={() => {
+                          handleTreatmentNameUpdate(editProductValue);
+                          setIsEditingProduct(false);
+                        }}
+                        className="h-6 text-xs font-semibold flex-1 min-w-0 bg-background border-input"
                         autoFocus
                         maxLength={100}
+                        placeholder="Enter treatment name"
                       />
-                      <span className="text-[10px] text-muted-foreground shrink-0">{editProductValue.length}/100</span>
                       <Button 
                         variant="ghost" 
                         size="sm" 
@@ -506,7 +513,7 @@ export const WindowManagementDialog = ({
                           handleTreatmentNameUpdate(editProductValue);
                           setIsEditingProduct(false);
                         }}
-                        className="h-4 w-4 p-0 hover:bg-transparent text-green-600 hover:text-green-700"
+                        className="h-6 w-6 p-0 hover:bg-transparent text-green-600 hover:text-green-700 shrink-0"
                       >
                         <Check className="h-3.5 w-3.5" />
                       </Button>
@@ -518,22 +525,19 @@ export const WindowManagementDialog = ({
                           setEditProductValue(treatmentName);
                           setIsEditingProduct(false);
                         }}
-                        className="h-4 w-4 p-0 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                        className="h-6 w-6 p-0 hover:bg-transparent text-muted-foreground hover:text-foreground shrink-0"
                       >
                         <X className="h-3.5 w-3.5" />
                       </Button>
-                    </>
+                    </div>
                   ) : (
                     <>
                       <span className="text-xs font-semibold truncate flex-1">{treatmentName || 'Untitled'}</span>
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => {
-                          setEditProductValue(treatmentName);
-                          setIsEditingProduct(true);
-                        }}
-                        className="h-4 w-4 p-0 hover:bg-transparent opacity-60 hover:opacity-100"
+                        onClick={() => setIsEditingProduct(true)}
+                        className="h-6 w-6 p-0 hover:bg-transparent opacity-60 hover:opacity-100 shrink-0"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
@@ -544,7 +548,7 @@ export const WindowManagementDialog = ({
                 <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[280px] max-w-[320px] h-[32px]">
                   <span className="text-xs font-medium text-muted-foreground shrink-0">Description:</span>
                   {isEditingDescription ? (
-                    <>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
                       <Input
                         value={editDescriptionValue}
                         onChange={(e) => setEditDescriptionValue(e.target.value)}
@@ -558,11 +562,15 @@ export const WindowManagementDialog = ({
                             setIsEditingDescription(false);
                           }
                         }}
-                        className="h-4 text-xs border-0 bg-transparent px-0 focus-visible:ring-0"
+                        onBlur={() => {
+                          handleDescriptionUpdate(editDescriptionValue);
+                          setIsEditingDescription(false);
+                        }}
+                        className="h-6 text-xs flex-1 min-w-0 bg-background border-input"
                         autoFocus
                         maxLength={200}
+                        placeholder="Enter description"
                       />
-                      <span className="text-[10px] text-muted-foreground shrink-0">{editDescriptionValue.length}/200</span>
                       <Button 
                         variant="ghost" 
                         size="sm" 
@@ -571,7 +579,7 @@ export const WindowManagementDialog = ({
                           handleDescriptionUpdate(editDescriptionValue);
                           setIsEditingDescription(false);
                         }}
-                        className="h-4 w-4 p-0 hover:bg-transparent text-green-600 hover:text-green-700"
+                        className="h-6 w-6 p-0 hover:bg-transparent text-green-600 hover:text-green-700 shrink-0"
                       >
                         <Check className="h-3.5 w-3.5" />
                       </Button>
@@ -583,22 +591,19 @@ export const WindowManagementDialog = ({
                           setEditDescriptionValue(treatmentDescription);
                           setIsEditingDescription(false);
                         }}
-                        className="h-4 w-4 p-0 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                        className="h-6 w-6 p-0 hover:bg-transparent text-muted-foreground hover:text-foreground shrink-0"
                       >
                         <X className="h-3.5 w-3.5" />
                       </Button>
-                    </>
+                    </div>
                   ) : (
                     <>
                       <span className="text-xs truncate flex-1">{treatmentDescription || 'Optional...'}</span>
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => {
-                          setEditDescriptionValue(treatmentDescription);
-                          setIsEditingDescription(true);
-                        }}
-                        className="h-4 w-4 p-0 hover:bg-transparent opacity-60 hover:opacity-100"
+                        onClick={() => setIsEditingDescription(true)}
+                        className="h-6 w-6 p-0 hover:bg-transparent opacity-60 hover:opacity-100 shrink-0"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
