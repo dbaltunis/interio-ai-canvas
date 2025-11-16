@@ -94,7 +94,6 @@ serve(async (req) => {
       .insert({
         user_id: newUser.user.id,
         display_name: displayName,
-        email: email,
         role: 'Owner', // New accounts are owners of their account
         account_type: accountType,
         parent_account_id: null, // This is a parent account
