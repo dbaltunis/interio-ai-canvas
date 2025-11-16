@@ -106,7 +106,7 @@ export const useEnhancedInventory = () => {
         .from("enhanced_inventory_items")
         .select(`
           *,
-          vendor:vendors!vendor_id(id, name),
+          vendor:vendors!enhanced_inventory_items_vendor_id_fkey(id, name),
           collection:collections!collection_id(id, name)
         `)
         .eq("active", true)
@@ -131,7 +131,7 @@ export const useEnhancedInventoryByCategory = (category: string) => {
         .from("enhanced_inventory_items")
         .select(`
           *,
-          vendor:vendors!vendor_id(id, name),
+          vendor:vendors!enhanced_inventory_items_vendor_id_fkey(id, name),
           collection:collections!collection_id(id, name)
         `)
         .eq("category", category)
