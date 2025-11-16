@@ -65,9 +65,14 @@ export const useUserRole = () => {
         canViewMarkup = showMarkupToStaff; // Staff can see if enabled
       }
 
+      // Use secure server-side function to check system owner status
+      const { data: isSystemOwnerData } = await supabase
+        .rpc("is_system_owner" as any, { _user_id: user.id });
+
       return {
         role,
         isOwner,
+        isSystemOwner: isSystemOwnerData || false, // Use secure function result
         isAdmin: isAdminData || false, // Use secure function result
         isManager: isManagerOrAdmin || isOwner,
         canManageMarkup: isAdminData || false, // Use secure function result
