@@ -727,6 +727,15 @@ const LivePreviewBlock = ({
         
         const allOptions: any[] = [];
         
+        console.log('[OPTIONS PARSING] Item children:', item.children?.map((c: any) => ({
+          name: c.name,
+          category: c.category,
+          description: c.description,
+          image_url: c.image_url,
+          unit_price: c.unit_price,
+          total: c.total
+        })));
+        
         item.children.forEach((child: any) => {
           if (!child.isChild) return;
           
@@ -740,6 +749,11 @@ const LivePreviewBlock = ({
             if (description.includes(',') && description.includes(':')) {
               // Parse comma-separated options like "test: aaasdasf, chain_tidy: Wall Mounted"
               const parts = description.split(',').map((s: string) => s.trim());
+              
+              // Try to get total price and divide by number of options
+              const totalPrice = child.total || child.total_cost || 0;
+              const pricePerOption = parts.length > 0 ? totalPrice / parts.length : 0;
+              
               parts.forEach((part: string) => {
                 const colonIndex = part.indexOf(':');
                 if (colonIndex > 0) {
@@ -749,9 +763,9 @@ const LivePreviewBlock = ({
                     id: `${child.id}-${optName}`,
                     name: optName,
                     value: optValue,
-                    image_url: null,
-                    unit_price: 0,
-                    total_cost: 0
+                    image_url: child.image_url || null,
+                    unit_price: pricePerOption,
+                    total_cost: pricePerOption
                   });
                 }
               });
@@ -763,12 +777,13 @@ const LivePreviewBlock = ({
                 value: description,
                 image_url: child.image_url,
                 unit_price: child.unit_price || 0,
-                total_cost: child.total || 0
+                total_cost: child.total || child.total_cost || 0
               });
             }
           }
         });
         
+        console.log('[OPTIONS PARSED]:', allOptions);
         return allOptions;
       };
 
@@ -973,25 +988,30 @@ const LivePreviewBlock = ({
                                     <ul style={{ margin: 0, paddingLeft: '18px', listStyleType: 'disc' }}>
                                       {options.map((opt: any, idx: number) => (
                                         <li key={idx} style={{ marginBottom: '4px', lineHeight: '1.5' }}>
-                                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                             {showImages && opt.image_url && (
                                               <img 
                                                 src={opt.image_url}
                                                 alt={opt.name}
                                                 className="print-image"
                                                 style={{
-                                                  width: '20px',
-                                                  height: '20px',
+                                                  width: '24px',
+                                                  height: '24px',
                                                   objectFit: 'cover',
-                                                  borderRadius: '2px',
+                                                  borderRadius: '3px',
                                                   border: '1px solid #ddd',
                                                   flexShrink: 0
                                                 }}
                                               />
                                             )}
-                                            <span style={{ color: '#000' }}>
+                                            <span style={{ color: '#000', flex: '1' }}>
                                               <strong>{opt.name}:</strong> {opt.value}
                                             </span>
+                                            {opt.total_cost > 0 && (
+                                              <span style={{ color: '#000', fontWeight: '500', fontSize: '12px', whiteSpace: 'nowrap' }}>
+                                                {renderTokenValue('currency_symbol')}{opt.total_cost.toFixed(2)}
+                                              </span>
+                                            )}
                                           </div>
                                         </li>
                                       ))}
