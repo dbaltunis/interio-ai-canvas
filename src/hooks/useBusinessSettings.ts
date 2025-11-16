@@ -12,11 +12,14 @@ export interface FeatureFlags {
 }
 
 export interface InventoryConfig {
+  track_inventory: boolean;
   track_leftovers: boolean;
   waste_buffer_percentage: number;
   auto_reorder_enabled: boolean;
   reorder_threshold_percentage: number;
   default_location: string;
+  deduction_status_ids: string[];
+  ecommerce_sync_enabled: boolean;
 }
 
 export interface BusinessSettings {

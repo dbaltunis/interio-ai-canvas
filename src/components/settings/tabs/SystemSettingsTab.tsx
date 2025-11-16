@@ -15,6 +15,8 @@ import { SettingsInheritanceInfo } from "../SettingsInheritanceInfo";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { NumberSequenceSettings } from "@/components/settings/NumberSequenceSettings";
+import { InventoryDeductionSettings } from "@/components/settings/InventoryDeductionSettings";
+import { StatusManagement } from "../user-management/StatusManagement";
 
 export const SystemSettingsTab = () => {
   const [notifications, setNotifications] = useState({
@@ -53,6 +55,12 @@ export const SystemSettingsTab = () => {
 
       {/* Number Sequences Configuration */}
       <NumberSequenceSettings />
+
+      {/* Inventory Deduction Configuration */}
+      <InventoryDeductionSettings />
+
+      {/* Status Management */}
+      <StatusManagement />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Appearance */}

@@ -183,9 +183,13 @@ export const useUpdateProject = () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       
       // Trigger inventory deduction event for external handling
-      if (statusChanged && newStatusName) {
+      if (statusChanged && newStatusName && project.status_id) {
         window.dispatchEvent(new CustomEvent('project-status-changed', {
-          detail: { projectId: project.id, newStatus: newStatusName }
+          detail: { 
+            projectId: project.id, 
+            newStatus: newStatusName,
+            newStatusId: project.status_id
+          }
         }));
       }
     },
