@@ -59,6 +59,7 @@ export const useInventory = () => {
         active: item.active ?? true,
         created_at: item.created_at,
         updated_at: item.updated_at,
+        tags: item.tags || [],
         vendor: item.supplier ? { 
           name: item.supplier, 
           email: `${item.supplier.toLowerCase().replace(/\s+/g, '')}@example.com`,
@@ -71,7 +72,6 @@ export const useInventory = () => {
         },
         product_code: item.sku,
         fabric_width: item.fabric_width || item.width,
-        tags: [],
         images: [],
         specifications: {},
         status: (item.quantity || 0) > 0 ? 'in_stock' : 'out_of_stock'

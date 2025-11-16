@@ -33,7 +33,7 @@ export const InventoryImportDialog: React.FC = () => {
       "price_per_yard","price_per_meter","price_per_unit","markup_percentage",
       "width","height","depth","weight","color","finish","collection_name","image_url",
       "labor_hours","fullness_ratio","service_rate",
-      "price_group","product_category"
+      "price_group","product_category","tags"
     ],
     []
   );
@@ -82,6 +82,9 @@ export const InventoryImportDialog: React.FC = () => {
       }
       if (key === "active") {
         val = String(val).toLowerCase() === "true";
+      }
+      if (key === "tags") {
+        val = String(val).split(',').map(t => t.trim()).filter(t => t);
       }
       obj[key] = val;
     });
