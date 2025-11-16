@@ -19,6 +19,7 @@ export interface InventoryConfig {
   reorder_threshold_percentage: number;
   default_location: string;
   deduction_status_ids: string[];
+  reversal_status_ids: string[];
   ecommerce_sync_enabled: boolean;
 }
 

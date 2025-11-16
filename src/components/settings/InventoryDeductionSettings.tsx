@@ -41,11 +41,13 @@ export const InventoryDeductionSettings = () => {
     reorder_threshold_percentage: 20,
     default_location: '',
     deduction_status_ids: [],
+    reversal_status_ids: [],
     ecommerce_sync_enabled: false,
   };
   
   const trackInventory = inventoryConfig.track_inventory ?? false;
   const deductionStatusIds = inventoryConfig.deduction_status_ids || [];
+  const reversalStatusIds = inventoryConfig.reversal_status_ids || [];
   const ecommerceEnabled = inventoryConfig.ecommerce_sync_enabled ?? false;
 
   const handleToggleTracking = async (enabled: boolean) => {
@@ -101,6 +103,37 @@ export const InventoryDeductionSettings = () => {
       toast({
         title: "Error",
         description: "Failed to update deduction statuses",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleReversalStatus = async (statusId: string, checked: boolean) => {
+    if (!businessSettings?.id) return;
+
+    const updatedStatusIds = checked
+      ? [...reversalStatusIds, statusId]
+      : reversalStatusIds.filter(id => id !== statusId);
+
+    try {
+      await updateSettings.mutateAsync({
+        id: businessSettings.id,
+        inventory_config: {
+          ...inventoryConfig,
+          reversal_status_ids: updatedStatusIds,
+        }
+      });
+
+      toast({
+        title: "Status updated",
+        description: checked 
+          ? "Status added to inventory reversal triggers"
+          : "Status removed from inventory reversal triggers",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update reversal statuses",
         variant: "destructive",
       });
     }
@@ -199,10 +232,79 @@ export const InventoryDeductionSettings = () => {
 
             {deductionStatusIds.length > 0 && (
               <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                <p className="text-sm font-medium mb-2">Active Triggers:</p>
+                <p className="text-sm font-medium mb-2">Active Deduction Triggers:</p>
                 <div className="flex flex-wrap gap-2">
                   {jobStatuses
                     .filter(status => deductionStatusIds.includes(status.id))
+                    .map(status => (
+                      <Badge
+                        key={status.id}
+                        style={{ backgroundColor: status.color }}
+                        className="text-white"
+                      >
+                        {status.name}
+                      </Badge>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Reversal Section */}
+        {trackInventory && (
+          <div className="space-y-4 pt-4 border-t">
+            <div>
+              <Label className="text-base text-orange-600 dark:text-orange-400">Reversal Trigger Statuses</Label>
+              <p className="text-sm text-muted-foreground mt-1">
+                Select which statuses should return inventory to stock. Items will be added back when a project changes to any of these statuses.
+              </p>
+            </div>
+
+            {isLoading ? (
+              <div className="text-sm text-muted-foreground">Loading statuses...</div>
+            ) : jobStatuses.length === 0 ? (
+              <div className="text-sm text-muted-foreground">
+                No statuses available.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {jobStatuses.map((status) => (
+                  <div
+                    key={status.id}
+                    className="flex items-center space-x-3 p-3 rounded-lg border border-orange-200 dark:border-orange-900 bg-card hover:bg-orange-50 dark:hover:bg-orange-950/20 transition-colors"
+                  >
+                    <Checkbox
+                      id={`reversal-${status.id}`}
+                      checked={reversalStatusIds.includes(status.id)}
+                      onCheckedChange={(checked) => handleToggleReversalStatus(status.id, checked as boolean)}
+                      disabled={isLoading}
+                    />
+                    <label
+                      htmlFor={`reversal-${status.id}`}
+                      className="flex items-center gap-2 flex-1 cursor-pointer"
+                    >
+                      <Badge
+                        style={{ backgroundColor: status.color }}
+                        className="text-white"
+                      >
+                        {status.name}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {status.category}
+                      </span>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {reversalStatusIds.length > 0 && (
+              <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-900">
+                <p className="text-sm font-medium mb-2 text-orange-900 dark:text-orange-100">Active Reversal Triggers:</p>
+                <div className="flex flex-wrap gap-2">
+                  {jobStatuses
+                    .filter(status => reversalStatusIds.includes(status.id))
                     .map(status => (
                       <Badge
                         key={status.id}
