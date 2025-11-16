@@ -11,6 +11,7 @@ interface InventoryUsageItem {
 interface DeductInventoryParams {
   projectId: string;
   statusName: string;
+  statusId: string; // Status UUID for checking against configured deduction statuses
   items: InventoryUsageItem[];
 }
 
@@ -23,7 +24,7 @@ export const useProjectInventoryDeduction = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ projectId, statusName, items }: DeductInventoryParams) => {
+    mutationFn: async ({ projectId, statusName, statusId, items }: DeductInventoryParams) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
@@ -43,25 +44,14 @@ export const useProjectInventoryDeduction = () => {
         return { deducted: false, reason: 'Inventory tracking is disabled' };
       }
 
-      // Get the status ID from the project to check against configured statuses
-      const { data: project } = await supabase
-        .from('projects')
-        .select('status_id, job_statuses(id, name)')
-        .eq('id', projectId)
-        .single();
-
-      if (!project?.status_id) {
-        console.log('Project status not found');
-        return { deducted: false, reason: 'Project status not found' };
-      }
-
-      const currentStatusId = project.status_id;
-
-      // Check if this status is configured to trigger deduction
-      if (!deductionStatusIds.includes(currentStatusId)) {
-        console.log(`Status "${statusName}" (ID: ${currentStatusId}) is not configured to trigger inventory deduction`);
+      // Check if this status ID is configured to trigger deduction
+      if (!deductionStatusIds.includes(statusId)) {
+        console.log(`Status "${statusName}" (ID: ${statusId}) is not configured to trigger inventory deduction`);
+        console.log('Configured status IDs:', deductionStatusIds);
         return { deducted: false, reason: 'Status not configured for deduction' };
       }
+
+      console.log(`✓ Status "${statusName}" is configured for deduction. Processing...`);
 
       // Check if inventory has already been deducted for this project
       const { data: existingDeductions } = await supabase
