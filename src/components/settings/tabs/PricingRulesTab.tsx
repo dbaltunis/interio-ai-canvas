@@ -261,41 +261,7 @@ export const PricingRulesTab = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium">Dynamic Pricing</h4>
-                <p className="text-sm text-brand-neutral">Adjust prices based on market conditions</p>
-              </div>
-              <Switch 
-                checked={formData.dynamic_pricing_enabled}
-                onCheckedChange={(checked) => setFormData(prev => prev ? {...prev, dynamic_pricing_enabled: checked} : null)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium">Quantity Discounts</h4>
-                <p className="text-sm text-brand-neutral">Apply automatic bulk discounts</p>
-              </div>
-              <Switch 
-                checked={formData.quantity_discounts_enabled}
-                onCheckedChange={(checked) => setFormData(prev => prev ? {...prev, quantity_discounts_enabled: checked} : null)}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium">Show Markup to Staff</h4>
-              <p className="text-sm text-brand-neutral">Allow managers and staff to see markup details</p>
-            </div>
-            <Switch 
-              checked={formData.show_markup_to_staff}
-              onCheckedChange={(checked) => setFormData(prev => prev ? {...prev, show_markup_to_staff: checked} : null)}
-            />
-          </div>
-
-          <Button 
+          <Button
             className="bg-brand-primary hover:bg-brand-accent"
             onClick={handleSaveGlobalSettings}
             disabled={updateMarkupSettings.isPending}
