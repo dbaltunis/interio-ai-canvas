@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Edit, Trash2, Sparkles, FileSpreadsheet } from "lucide-react";
+import { Edit, Trash2, Sparkles, FileSpreadsheet, QrCode } from "lucide-react";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
 import { CategoryImportExport } from "./CategoryImportExport";
@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
 import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { QRCodeDisplay } from "./QRCodeDisplay";
 import { useState } from "react";
 import {
   Dialog,
@@ -88,6 +90,15 @@ export const TrimmingsInventoryView = ({ searchQuery, viewMode }: TrimmingsInven
   return (
     <>
       <div className="space-y-4">
+        {selectedItems.length > 0 && (
+          <InventoryBulkActionsBar
+            selectedCount={selectedItems.length}
+            onClearSelection={clearSelection}
+            onBulkDelete={handleBulkDelete}
+            selectedItems={filteredTrimmings.filter(item => selectedItems.includes(item.id))}
+          />
+        )}
+
         <div className="flex justify-between items-center gap-4 flex-wrap">
           <p className="text-sm text-muted-foreground">
             {filteredTrimmings.length} trimming{filteredTrimmings.length !== 1 ? 's' : ''} found
@@ -132,9 +143,24 @@ export const TrimmingsInventoryView = ({ searchQuery, viewMode }: TrimmingsInven
                     )}
                   </div>
                   <div className="flex gap-1">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <QrCode className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto">
+                        <QRCodeDisplay
+                          itemId={trimming.id}
+                          itemName={trimming.name}
+                          size={150}
+                          showActions={false}
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <Button 
                       variant="ghost" 
-                      size="sm"
+                      size="sm" 
                       onClick={() => setEditingItem(trimming)}
                     >
                       <Edit className="h-4 w-4" />

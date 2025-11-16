@@ -8,6 +8,7 @@ import { Search, Plus, Filter, Grid, List, Package, Home, Minus, Palette, Wallpa
 import { QRCodeScanner } from "./QRCodeScanner";
 import { QRCodeQuickActions } from "./QRCodeQuickActions";
 import { EditInventoryDialog } from "./EditInventoryDialog";
+import { toast } from "sonner";
 import { BusinessInventoryOverview } from "./BusinessInventoryOverview";
 import { FabricInventoryView } from "./FabricInventoryView";
 import { HardwareInventoryView } from "./HardwareInventoryView";
@@ -58,17 +59,18 @@ export const ModernInventoryDashboard = () => {
       setScannedItemId(itemId);
       setSelectedItem(item);
       setShowQuickActions(true);
+    } else {
+      toast.error('Item not found');
     }
   };
 
-  const handleViewDetails = () => {
-    if (selectedItem) {
-      setShowQuickActions(false);
-      // The EditInventoryDialog will open with the item
-    }
+  const handleViewDetails = (item: any) => {
+    setSelectedItem(item);
+    setShowQuickActions(false);
   };
 
-  const handleEdit = () => {
+  const handleEdit = (item: any) => {
+    setSelectedItem(item);
     setShowQuickActions(false);
   };
 

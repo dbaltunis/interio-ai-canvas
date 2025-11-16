@@ -67,12 +67,16 @@ export const QRCodeScanner = ({ open, onOpenChange, onScan }: QRCodeScannerProps
   };
 
   const stopScanning = async () => {
-    if (scannerRef.current && scanning) {
+    if (scannerRef.current) {
       try {
-        await scannerRef.current.stop();
+        const state = await scannerRef.current.getState();
+        if (state === 2) { // Scanner is running
+          await scannerRef.current.stop();
+        }
         setScanning(false);
       } catch (err) {
-        console.error('Error stopping scanner:', err);
+        // Silently handle - scanner might already be stopped
+        setScanning(false);
       }
     }
   };

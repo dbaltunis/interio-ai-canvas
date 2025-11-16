@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Edit, Trash2, Package } from "lucide-react";
+import { Edit, Trash2, Package, QrCode } from "lucide-react";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +12,8 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
 import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
 import { format } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { QRCodeDisplay } from "./QRCodeDisplay";
 import { useState } from "react";
 
 interface RemnantsInventoryViewProps {
@@ -100,6 +102,15 @@ export const RemnantsInventoryView = ({ searchQuery, viewMode }: RemnantsInvento
   return (
     <>
       <div className="space-y-4">
+        {selectedItems.length > 0 && (
+          <InventoryBulkActionsBar
+            selectedCount={selectedItems.length}
+            onClearSelection={clearSelection}
+            onBulkDelete={handleBulkDelete}
+            selectedItems={remnants.filter(item => selectedItems.includes(item.id))}
+          />
+        )}
+
         <div className="flex justify-between items-center">
           <p className="text-sm text-muted-foreground">
             {remnants.length} remnant{remnants.length !== 1 ? 's' : ''} found
@@ -131,6 +142,21 @@ export const RemnantsInventoryView = ({ searchQuery, viewMode }: RemnantsInvento
                     )}
                   </div>
                   <div className="flex gap-1">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <QrCode className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto">
+                        <QRCodeDisplay
+                          itemId={remnant.id}
+                          itemName={remnant.name}
+                          size={150}
+                          showActions={false}
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <Button 
                       variant="ghost" 
                       size="sm"

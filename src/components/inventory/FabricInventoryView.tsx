@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Home, Plus, Search, Image as ImageIcon, Trash2, Edit, FileSpreadsheet } from "lucide-react";
+import { Home, Plus, Search, Image as ImageIcon, Trash2, Edit, FileSpreadsheet, QrCode } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { EditInventoryDialog } from "./EditInventoryDialog";
@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { JobsPagination } from "../jobs/JobsPagination";
 import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
 import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { QRCodeDisplay } from "./QRCodeDisplay";
 import {
   Dialog,
   DialogContent,
@@ -348,6 +350,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                       <th className="px-4 py-3 text-left text-sm font-medium">Width</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Price</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Stock</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">QR</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
                     </tr>
                   </thead>
@@ -383,6 +386,23 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                             <Badge variant={item.quantity && item.quantity > 0 ? "default" : "secondary"}>
                               {item.quantity || 0}m
                             </Badge>
+                          </td>
+                          <td className="px-4 py-3">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <QrCode className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto">
+                                <QRCodeDisplay
+                                  itemId={item.id}
+                                  itemName={item.name}
+                                  size={180}
+                                  showActions={false}
+                                />
+                              </PopoverContent>
+                            </Popover>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-1">
