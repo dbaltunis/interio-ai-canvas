@@ -129,73 +129,78 @@ export const FeatureFlagsSettings = () => {
             />
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5 flex items-center gap-3">
-              <Layers className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <Label htmlFor="auto_extract_materials">Auto-Extract Materials</Label>
-                <p className="text-sm text-muted-foreground">
-                  Automatically calculate materials from project treatments
-                </p>
+          {/* Hidden - not functional yet */}
+          {false && (
+            <>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5 flex items-center gap-3">
+                  <Layers className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <Label htmlFor="auto_extract_materials">Auto-Extract Materials</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Automatically calculate materials from project treatments
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="auto_extract_materials"
+                  checked={features.auto_extract_materials}
+                  onCheckedChange={(checked) => handleFeatureToggle('auto_extract_materials', checked)}
+                />
               </div>
-            </div>
-            <Switch
-              id="auto_extract_materials"
-              checked={features.auto_extract_materials}
-              onCheckedChange={(checked) => handleFeatureToggle('auto_extract_materials', checked)}
-            />
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5 flex items-center gap-3">
-              <Archive className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <Label htmlFor="leftover_tracking">Leftover Tracking</Label>
-                <p className="text-sm text-muted-foreground">
-                  Track and manage leftover materials from projects
-                </p>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5 flex items-center gap-3">
+                  <Archive className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <Label htmlFor="leftover_tracking">Leftover Tracking</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Track and manage leftover materials from projects
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="leftover_tracking"
+                  checked={features.leftover_tracking}
+                  onCheckedChange={(checked) => handleFeatureToggle('leftover_tracking', checked)}
+                />
               </div>
-            </div>
-            <Switch
-              id="leftover_tracking"
-              checked={features.leftover_tracking}
-              onCheckedChange={(checked) => handleFeatureToggle('leftover_tracking', checked)}
-            />
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5 flex items-center gap-3">
-              <Calendar className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <Label htmlFor="order_batching">Order Batching</Label>
-                <p className="text-sm text-muted-foreground">
-                  Batch multiple orders by supplier and date
-                </p>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5 flex items-center gap-3">
+                  <Calendar className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <Label htmlFor="order_batching">Order Batching</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Batch multiple orders by supplier and date
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="order_batching"
+                  checked={features.order_batching}
+                  onCheckedChange={(checked) => handleFeatureToggle('order_batching', checked)}
+                />
               </div>
-            </div>
-            <Switch
-              id="order_batching"
-              checked={features.order_batching}
-              onCheckedChange={(checked) => handleFeatureToggle('order_batching', checked)}
-            />
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5 flex items-center gap-3">
-              <MapPin className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <Label htmlFor="multi_location_inventory">Multi-Location Inventory</Label>
-                <p className="text-sm text-muted-foreground">
-                  Manage inventory across multiple locations
-                </p>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5 flex items-center gap-3">
+                  <MapPin className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <Label htmlFor="multi_location_inventory">Multi-Location Inventory</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Manage inventory across multiple locations
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="multi_location_inventory"
+                  checked={features.multi_location_inventory}
+                  onCheckedChange={(checked) => handleFeatureToggle('multi_location_inventory', checked)}
+                />
               </div>
-            </div>
-            <Switch
-              id="multi_location_inventory"
-              checked={features.multi_location_inventory}
-              onCheckedChange={(checked) => handleFeatureToggle('multi_location_inventory', checked)}
-            />
-          </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
