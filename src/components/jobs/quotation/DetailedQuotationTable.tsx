@@ -179,59 +179,104 @@ const QuotationItemRow: React.FC<{
   // If item has children (detailed breakdown), show parent + children
   if (hasChildren) {
     return (
-      <div className="border rounded-lg overflow-hidden">
-        {/* PARENT ROW */}
-        <div className="flex items-center justify-between p-3 bg-card text-card-foreground">
-          <div className="flex items-center space-x-3 flex-1">
-            {item.image_url && (
-              <QuoteItemImage 
-                src={item.image_url} 
-                alt={item.name} 
-                size={48}
-              />
+      <div className="border rounded-lg overflow-hidden mb-3">
+        {/* PARENT ROW - Main Product */}
+        <div className="flex items-start gap-4 p-4 bg-card border-b">
+          {item.image_url && (
+            <QuoteItemImage 
+              src={item.image_url} 
+              alt={item.name} 
+              size={60}
+              className="flex-shrink-0"
+            />
+          )}
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-base text-foreground mb-1">{item.name}</div>
+            {item.description && item.description !== '-' && (
+              <div className="text-sm text-muted-foreground mb-2">{item.description}</div>
             )}
-            <div className="flex-1">
-              <div className="font-medium text-sm text-foreground">{item.name}</div>
-              <div className="text-xs text-muted-foreground">{item.description}</div>
-            </div>
+            
+            {/* Breakdown items (Fabric, Manufacturing) */}
+            {item.children.filter((c: any) => c.category !== 'option' && c.category !== 'options').length > 0 && (
+              <div className="space-y-1.5 mt-3">
+                {item.children
+                  .filter((child: any) => child.category !== 'option' && child.category !== 'options')
+                  .map((child: any, idx: number) => (
+                    <div key={idx} className="flex items-center gap-3 text-sm">
+                      {child.image_url && (
+                        <QuoteItemImage 
+                          src={child.image_url} 
+                          alt={child.name} 
+                          size={28}
+                          className="flex-shrink-0"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <span className="font-medium text-foreground">{child.name}</span>
+                        {child.description && child.description !== '-' && (
+                          <span className="text-muted-foreground ml-2">- {child.description}</span>
+                        )}
+                        {child.quantity > 0 && (
+                          <span className="text-muted-foreground ml-2">
+                            ({Number(child.quantity).toFixed(2)}{child.unit ? ` ${child.unit}` : ''})
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-right text-sm whitespace-nowrap">
+                        {child.unit_price > 0 && (
+                          <div className="text-muted-foreground">
+                            {formatCurrency(child.unit_price, currency)} × {Number(child.quantity).toFixed(2)}
+                          </div>
+                        )}
+                        <div className="font-medium text-foreground">
+                          {formatCurrency(child.total || 0, currency)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+            
+            {/* Options section - clean bullet list */}
+            {item.children.filter((c: any) => c.category === 'option' || c.category === 'options').length > 0 && (
+              <div className="mt-3 pt-3 border-t">
+                <div className="text-sm font-medium text-foreground mb-2">Options:</div>
+                <ul className="space-y-1">
+                  {item.children
+                    .filter((opt: any) => opt.category === 'option' || opt.category === 'options')
+                    .map((opt: any, idx: number) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm">
+                        {opt.image_url && (
+                          <QuoteItemImage 
+                            src={opt.image_url} 
+                            alt={opt.name} 
+                            size={20}
+                            className="flex-shrink-0 mt-0.5"
+                          />
+                        )}
+                        <div className="flex-1 flex items-start justify-between gap-3">
+                          <span className="text-foreground">
+                            <span className="font-medium">{opt.name}:</span>{' '}
+                            <span className="text-muted-foreground">{opt.description || opt.value || '-'}</span>
+                          </span>
+                          {opt.total > 0 && (
+                            <span className="font-medium text-foreground whitespace-nowrap">
+                              {formatCurrency(opt.total, currency)}
+                            </span>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
           </div>
-          <div className="text-right">
-            <div className="font-medium text-foreground">{formatCurrency(item.total || 0, currency)}</div>
+          
+          {/* Total Price */}
+          <div className="text-right flex-shrink-0">
+            <div className="text-lg font-semibold text-foreground">{formatCurrency(item.total || 0, currency)}</div>
           </div>
         </div>
-        
-        {/* CHILDREN ROWS - Show detailed breakdown */}
-        {item.children.map((child: any, index: number) => (
-          <div 
-            key={child.id || `child-${index}`} 
-            className="flex items-center justify-between p-3 bg-muted/10 border-t text-sm pl-8"
-          >
-            <div className="flex items-center space-x-3 flex-1">
-              {child.image_url && (
-                <QuoteItemImage 
-                  src={child.image_url} 
-                  alt={child.name} 
-                  size={32}
-                />
-              )}
-              <div className="flex-1">
-                <div className="font-medium text-foreground">{child.name}</div>
-                {child.description && child.description !== '-' && (
-                  <div className="text-xs text-muted-foreground">{child.description}</div>
-                )}
-                {child.quantity && (
-                  <div className="text-xs text-muted-foreground">
-                    {Number(child.quantity).toFixed(2)}{child.unit ? ` ${child.unit}` : ''} 
-                    {child.unit_price ? ` × ${formatCurrency(child.unit_price, currency)}` : ''}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="text-right font-medium text-foreground">
-              {formatCurrency(child.total || 0, currency)}
-            </div>
-          </div>
-        ))}
       </div>
     );
   }
