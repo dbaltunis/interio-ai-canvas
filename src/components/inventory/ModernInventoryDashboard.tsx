@@ -55,34 +55,38 @@ export const ModernInventoryDashboard = () => {
   const hasAnyInventoryAccess = useHasAnyPermission(['view_inventory', 'manage_inventory']);
   
   // Filter out treatment options - only show physical inventory
-  const inventory = allInventory?.filter(item => {
-    if (item.category === 'treatment_option') return false;
-    
-    // Apply vendor filter
-    if (selectedVendor && item.vendor_id !== selectedVendor) return false;
-    
-    // Apply collection filter
-    if (selectedCollection && item.collection_id !== selectedCollection) return false;
-    
-    // Apply tags filter
-    if (selectedTags.length > 0) {
-      const itemTags = item.tags || [];
-      const hasMatchingTag = selectedTags.some(tag => itemTags.includes(tag));
-      if (!hasMatchingTag) return false;
-    }
-    
-    // Apply search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        item.name?.toLowerCase().includes(query) ||
-        item.sku?.toLowerCase().includes(query) ||
-        item.description?.toLowerCase().includes(query)
-      );
-    }
-    
-    return true;
-  }) || [];
+  // NOTE: Filters only apply on sub-tabs (Fabrics, Hardware, etc), NOT on overview
+  const allPhysicalInventory = allInventory?.filter(item => item.category !== 'treatment_option') || [];
+  
+  // For overview tab, show all inventory without filters
+  const inventory = activeTab === 'overview' 
+    ? allPhysicalInventory
+    : allPhysicalInventory.filter(item => {
+        // Apply vendor filter
+        if (selectedVendor && item.vendor_id !== selectedVendor) return false;
+        
+        // Apply collection filter
+        if (selectedCollection && item.collection_id !== selectedCollection) return false;
+        
+        // Apply tags filter
+        if (selectedTags.length > 0) {
+          const itemTags = item.tags || [];
+          const hasMatchingTag = selectedTags.some(tag => itemTags.includes(tag));
+          if (!hasMatchingTag) return false;
+        }
+        
+        // Apply search query
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase();
+          return (
+            item.name?.toLowerCase().includes(query) ||
+            item.sku?.toLowerCase().includes(query) ||
+            item.description?.toLowerCase().includes(query)
+          );
+        }
+        
+        return true;
+      });
 
   const handleScan = (itemId: string) => {
     const item = inventory.find((i) => i.id === itemId);
