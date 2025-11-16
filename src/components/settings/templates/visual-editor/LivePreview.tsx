@@ -721,26 +721,55 @@ const LivePreviewBlock = ({
       const hasRealData = projectItems.length > 0;
 
       // Get comprehensive breakdown - FROM CHILDREN ARRAY (has correct pricing)
-      // Extract options from item children
+      // Extract and parse options from item children
       const getItemOptions = (item: any) => {
         if (!item.children || !Array.isArray(item.children)) return [];
         
-        return item.children
-          .filter((child: any) => 
-            child.isChild && (
-              child.category === 'option' || 
+        const allOptions: any[] = [];
+        
+        item.children.forEach((child: any) => {
+          if (!child.isChild) return;
+          
+          // Check if this is an options category
+          if (child.category === 'option' || 
               child.category === 'options' ||
-              child.name?.toLowerCase().includes('option')
-            )
-          )
-          .map((opt: any) => ({
-            id: opt.id,
-            name: opt.name || opt.label || 'Option',
-            value: opt.description || opt.value || '',
-            image_url: opt.image_url,
-            unit_price: opt.unit_price || 0,
-            total_cost: opt.total || 0
-          }));
+              child.name?.toLowerCase().includes('option')) {
+            
+            // If description has comma-separated options, parse them
+            const description = child.description || child.value || '';
+            if (description.includes(',') && description.includes(':')) {
+              // Parse comma-separated options like "test: aaasdasf, chain_tidy: Wall Mounted"
+              const parts = description.split(',').map((s: string) => s.trim());
+              parts.forEach((part: string) => {
+                const colonIndex = part.indexOf(':');
+                if (colonIndex > 0) {
+                  const optName = part.substring(0, colonIndex).trim();
+                  const optValue = part.substring(colonIndex + 1).trim();
+                  allOptions.push({
+                    id: `${child.id}-${optName}`,
+                    name: optName,
+                    value: optValue,
+                    image_url: null,
+                    unit_price: 0,
+                    total_cost: 0
+                  });
+                }
+              });
+            } else {
+              // Single option
+              allOptions.push({
+                id: child.id,
+                name: child.name || 'Option',
+                value: description,
+                image_url: child.image_url,
+                unit_price: child.unit_price || 0,
+                total_cost: child.total || 0
+              });
+            }
+          }
+        });
+        
+        return allOptions;
       };
 
       const getItemizedBreakdown = (item: any) => {
