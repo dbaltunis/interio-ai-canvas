@@ -104,13 +104,11 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
     if (quantityError) errors.push(quantityError);
 
     const validSubcategories = [
-      'curtain_fabric', 
-      'roller_fabric', 
-      'roman_blind_fabric', 
-      'upholstery_fabric', 
-      'sheer_fabric', 
-      'blockout_fabric',
-      'furniture_fabric'
+      'curtain_fabric',
+      'roller_fabric',
+      'blind_fabric',
+      'furniture_fabric',
+      'sheer_fabric'
     ];
     
     if (!item.subcategory || !validSubcategories.includes(item.subcategory)) {
