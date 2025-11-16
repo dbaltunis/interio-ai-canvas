@@ -28,6 +28,8 @@ import {
 interface HardwareInventoryViewProps {
   searchQuery: string;
   viewMode: "grid" | "list";
+  selectedVendor?: string;
+  selectedCollection?: string;
 }
 
 const HARDWARE_CATEGORIES = [
@@ -41,7 +43,7 @@ const HARDWARE_CATEGORIES = [
 
 const ITEMS_PER_PAGE = 24;
 
-export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInventoryViewProps) => {
+export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection }: HardwareInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState("all");
@@ -68,7 +70,10 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
     const matchesCategory = activeCategory === "all" || 
       item.subcategory === activeCategory;
 
-    return matchesGlobalSearch && matchesCategory;
+    const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
+    const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
+
+    return matchesGlobalSearch && matchesCategory && matchesVendor && matchesCollection;
   });
 
   // Pagination

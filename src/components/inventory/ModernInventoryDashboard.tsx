@@ -411,7 +411,12 @@ export const ModernInventoryDashboard = () => {
             onCollectionChange={setSelectedCollection}
             onSearchChange={setSearchQuery}
           />
-          <FabricInventoryView searchQuery={searchQuery} viewMode={viewMode} />
+          <FabricInventoryView 
+            searchQuery={searchQuery} 
+            viewMode={viewMode}
+            selectedVendor={selectedVendor}
+            selectedCollection={selectedCollection}
+          />
         </TabsContent>
 
         <TabsContent value="hardware" className="space-y-6">
@@ -423,7 +428,12 @@ export const ModernInventoryDashboard = () => {
             onCollectionChange={setSelectedCollection}
             onSearchChange={setSearchQuery}
           />
-          <HardwareInventoryView searchQuery={searchQuery} viewMode={viewMode} />
+          <HardwareInventoryView 
+            searchQuery={searchQuery} 
+            viewMode={viewMode}
+            selectedVendor={selectedVendor}
+            selectedCollection={selectedCollection}
+          />
         </TabsContent>
 
         <TabsContent value="wallcoverings" className="space-y-6">
@@ -435,7 +445,12 @@ export const ModernInventoryDashboard = () => {
             onCollectionChange={setSelectedCollection}
             onSearchChange={setSearchQuery}
           />
-          <WallcoveringInventoryView searchQuery={searchQuery} viewMode={viewMode} />
+          <WallcoveringInventoryView 
+            searchQuery={searchQuery} 
+            viewMode={viewMode}
+            selectedVendor={selectedVendor}
+            selectedCollection={selectedCollection}
+          />
         </TabsContent>
 
         <TabsContent value="headings" className="space-y-6">
@@ -447,7 +462,12 @@ export const ModernInventoryDashboard = () => {
             onCollectionChange={setSelectedCollection}
             onSearchChange={setSearchQuery}
           />
-          <HeadingInventoryView searchQuery={searchQuery} viewMode={viewMode} />
+          <HeadingInventoryView 
+            searchQuery={searchQuery} 
+            viewMode={viewMode}
+            selectedVendor={selectedVendor}
+            selectedCollection={selectedCollection}
+          />
         </TabsContent>
 
         <TabsContent value="trimmings" className="space-y-6">
