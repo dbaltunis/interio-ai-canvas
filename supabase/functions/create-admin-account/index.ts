@@ -97,7 +97,6 @@ serve(async (req) => {
         role: 'Owner', // New accounts are owners of their account
         account_type: accountType,
         parent_account_id: null, // This is a parent account
-        onboarding_completed: false,
       });
 
     if (profileInsertError) {
