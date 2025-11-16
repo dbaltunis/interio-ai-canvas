@@ -1,20 +1,24 @@
-import { Button } from "@/components/ui/button";
-import { Trash2, X } from "lucide-react";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Trash2, X, QrCode } from "lucide-react";
+import { QRCodeLabelGenerator } from "./QRCodeLabelGenerator";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface InventoryBulkActionsBarProps {
   selectedCount: number;
   onClearSelection: () => void;
   onBulkDelete: () => void;
+  selectedItems?: any[];
 }
 
 export const InventoryBulkActionsBar = ({
   selectedCount,
   onClearSelection,
   onBulkDelete,
+  selectedItems = [],
 }: InventoryBulkActionsBarProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showLabelGenerator, setShowLabelGenerator] = useState(false);
 
   const handleDelete = () => {
     onBulkDelete();
@@ -31,6 +35,14 @@ export const InventoryBulkActionsBar = ({
             <span className="text-sm text-muted-foreground">Bulk Actions</span>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowLabelGenerator(true)}
+            >
+              <QrCode className="h-4 w-4 mr-2" />
+              Print QR Labels
+            </Button>
             <Button 
               variant="destructive" 
               size="sm" 
@@ -63,6 +75,12 @@ export const InventoryBulkActionsBar = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <QRCodeLabelGenerator
+        open={showLabelGenerator}
+        onOpenChange={setShowLabelGenerator}
+        items={selectedItems}
+      />
     </>
   );
 };

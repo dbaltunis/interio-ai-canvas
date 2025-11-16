@@ -193,11 +193,12 @@ export const HardwareInventoryView = ({ searchQuery, viewMode }: HardwareInvento
         {HARDWARE_CATEGORIES.map((cat) => (
           <TabsContent key={cat.key} value={cat.key} className="mt-6 space-y-4">
             {selectedItems.length > 0 && (
-              <InventoryBulkActionsBar
-                selectedCount={selectedItems.length}
-                onClearSelection={clearSelection}
-                onBulkDelete={handleBulkDelete}
-              />
+        <InventoryBulkActionsBar
+          selectedCount={selectedItems.length}
+          onClearSelection={clearSelection}
+          onBulkDelete={handleBulkDelete}
+          selectedItems={hardwareItems.filter(item => selectedItems.includes(item.id))}
+        />
             )}
             
             {viewMode === "grid" ? (

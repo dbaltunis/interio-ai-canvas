@@ -4,7 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Filter, Grid, List, Package, Home, Minus, Palette, Wallpaper, Lock } from "lucide-react";
+import { Search, Plus, Filter, Grid, List, Package, Home, Minus, Palette, Wallpaper, Lock, QrCode } from "lucide-react";
+import { QRCodeScanner } from "./QRCodeScanner";
+import { QRCodeQuickActions } from "./QRCodeQuickActions";
+import { EditInventoryDialog } from "./EditInventoryDialog";
 import { BusinessInventoryOverview } from "./BusinessInventoryOverview";
 import { FabricInventoryView } from "./FabricInventoryView";
 import { HardwareInventoryView } from "./HardwareInventoryView";
@@ -33,6 +36,10 @@ export const ModernInventoryDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [showSearch, setShowSearch] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scannedItemId, setScannedItemId] = useState<string | null>(null);
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   const { data: allInventory, refetch } = useEnhancedInventory();
   const { data: vendors } = useVendors();
   const isMobile = useIsMobile();
@@ -44,6 +51,26 @@ export const ModernInventoryDashboard = () => {
   
   // Filter out treatment options - only show physical inventory
   const inventory = allInventory?.filter(item => item.category !== 'treatment_option') || [];
+
+  const handleScan = (itemId: string) => {
+    const item = inventory.find((i) => i.id === itemId);
+    if (item) {
+      setScannedItemId(itemId);
+      setSelectedItem(item);
+      setShowQuickActions(true);
+    }
+  };
+
+  const handleViewDetails = () => {
+    if (selectedItem) {
+      setShowQuickActions(false);
+      // The EditInventoryDialog will open with the item
+    }
+  };
+
+  const handleEdit = () => {
+    setShowQuickActions(false);
+  };
 
   // If no inventory permissions at all, show access denied
   if (hasAnyInventoryAccess === false) {
@@ -140,6 +167,14 @@ export const ModernInventoryDashboard = () => {
               </div>
 
               {/* Primary Actions */}
+              <Button
+                variant="outline"
+                onClick={() => setShowScanner(true)}
+              >
+                <QrCode className="h-4 w-4 mr-2" />
+                Scan
+              </Button>
+
               <AddInventoryDialog
                 trigger={
                   <Button variant="default">
@@ -424,6 +459,22 @@ export const ModernInventoryDashboard = () => {
           ]
         }}
       />
+
+      <QRCodeScanner
+        open={showScanner}
+        onOpenChange={setShowScanner}
+        onScan={handleScan}
+      />
+
+      {selectedItem && (
+        <QRCodeQuickActions
+          open={showQuickActions}
+          onOpenChange={setShowQuickActions}
+          itemId={selectedItem.id}
+          onViewDetails={handleViewDetails}
+          onEdit={handleEdit}
+        />
+      )}
     </div>
   );
 };
