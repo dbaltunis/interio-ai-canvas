@@ -38,12 +38,13 @@ export const useQuoteVersions = (projectId: string) => {
       const newVersion = maxVersion + 1;
       console.log('📊 Version info:', { maxVersion, newVersion });
       
-      // Generate new quote number with version
-      // Always use the first quote's base number to ensure consistency
-      const firstQuote = quoteVersions?.[0];
-      const baseQuoteNumber = firstQuote?.quote_number?.split('-v')[0] || currentQuote.quote_number.split('-v')[0];
-      const newQuoteNumber = newVersion === 1 ? baseQuoteNumber : `${baseQuoteNumber}-v${newVersion}`;
-      console.log('🔢 Quote numbers:', { baseQuoteNumber, newQuoteNumber });
+      // Generate new quote number using number sequence system
+      const { generateSequenceNumber } = await import('./useNumberSequenceGeneration');
+      const newBaseNumber = await generateSequenceNumber(user.id, 'quote', 'QT');
+      
+      // Append version suffix if this is version 2 or higher
+      const newQuoteNumber = newVersion === 1 ? newBaseNumber : `${newBaseNumber}-v${newVersion}`;
+      console.log('🔢 Quote numbers:', { newBaseNumber, newQuoteNumber, version: newVersion });
 
       // Get first "Quote" category status as default (Draft status)
       let firstQuoteStatus = await supabase

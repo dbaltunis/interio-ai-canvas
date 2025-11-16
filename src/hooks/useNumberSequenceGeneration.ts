@@ -43,6 +43,7 @@ export const generateSequenceNumber = async (
 
 /**
  * Determines if a new number should be generated when status changes
+ * Regenerates when moving between entity types (forward OR backward)
  */
 export const shouldRegenerateNumber = (
   oldStatusName: string,
@@ -51,6 +52,7 @@ export const shouldRegenerateNumber = (
   const oldEntityType = getEntityTypeFromStatus(oldStatusName);
   const newEntityType = getEntityTypeFromStatus(newStatusName);
   
-  // Only regenerate if the entity type actually changes
+  // Regenerate if entity types differ (works both forward and backward)
+  // AND the new entity type is valid
   return oldEntityType !== newEntityType && newEntityType !== null;
 };
