@@ -35,6 +35,11 @@ export const useProjectInventoryReversal = () => {
       // Check if inventory tracking is enabled
       if (!inventoryConfig?.track_inventory) {
         console.log('Inventory tracking is disabled');
+        toast({
+          title: "Inventory Not Tracked",
+          description: "Enable inventory tracking in Settings to automatically return materials",
+          importance: 'normal'
+        });
         return { reversed: false, reason: 'Inventory tracking is disabled' };
       }
 
@@ -60,6 +65,11 @@ export const useProjectInventoryReversal = () => {
 
       if (!deductionTransactions || deductionTransactions.length === 0) {
         console.log('No previous deduction found for this project - nothing to reverse');
+        toast({
+          title: "Nothing to Reverse",
+          description: "No inventory was deducted from this project",
+          importance: 'normal'
+        });
         return { reversed: false, reason: 'No previous deduction found' };
       }
 
@@ -73,6 +83,11 @@ export const useProjectInventoryReversal = () => {
 
       if (existingReversals && existingReversals.length > 0) {
         console.log('Inventory already reversed for this project');
+        toast({
+          title: "Already Reversed",
+          description: "Inventory was already returned to stock for this project",
+          importance: 'normal'
+        });
         return { reversed: false, reason: 'Already reversed' };
       }
 
@@ -127,10 +142,11 @@ export const useProjectInventoryReversal = () => {
           continue;
         }
 
+        const itemName = items.find(i => i.inventory_item_id === itemId)?.item_name || 'Unknown';
         reversedItems.push({
           itemId,
           quantity: originalQuantity,
-          name: deduction.notes?.split(' - ')[0] || 'Unknown item'
+          name: itemName
         });
 
         console.log(`✓ Reversed ${originalQuantity} units of item ${itemId}`);
@@ -148,9 +164,11 @@ export const useProjectInventoryReversal = () => {
     },
     onSuccess: (result) => {
       if (result.reversed) {
+        const materialNames = result.details?.map(d => d.name).join(', ') || '';
         toast({
-          title: "Inventory returned",
-          description: `${result.itemsReversed} item(s) returned to stock for status: ${result.statusName}`,
+          title: "Inventory Returned",
+          description: `${result.itemsReversed} material(s) returned: ${materialNames}`,
+          importance: 'important'
         });
         
         // Invalidate relevant queries
