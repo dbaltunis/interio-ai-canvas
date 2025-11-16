@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pencil, Check, X } from "lucide-react";
@@ -12,6 +12,11 @@ interface WindowRenameButtonProps {
 export const WindowRenameButton = ({ windowName, onRename, disabled }: WindowRenameButtonProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(windowName);
+
+  // Sync local state with prop changes
+  useEffect(() => {
+    setEditName(windowName);
+  }, [windowName]);
 
   const handleSave = () => {
     if (editName.trim() && editName.trim() !== windowName) {
@@ -35,8 +40,10 @@ export const WindowRenameButton = ({ windowName, onRename, disabled }: WindowRen
             if (e.key === 'Enter') handleSave();
             if (e.key === 'Escape') handleCancel();
           }}
-          className="h-8 text-sm font-semibold flex-1"
+          onBlur={handleSave}
+          className="h-8 text-sm font-semibold flex-1 bg-background border-input"
           autoFocus
+          placeholder="Enter design name"
         />
         <Button
           size="sm"
