@@ -22,7 +22,6 @@ import { InventoryDemoData } from "./InventoryDemoData";
 import { ReorderNotificationSystem } from "./ReorderNotificationSystem";
 import { InventoryImportExport } from "./InventoryImportExport";
 import { VendorDashboard } from "../vendors/VendorDashboard";
-import { InventoryFilters } from "../library/InventoryFilters";
 
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useVendors } from "@/hooks/useVendors";
@@ -403,14 +402,6 @@ export const ModernInventoryDashboard = () => {
         </TabsContent>
 
         <TabsContent value="fabrics" className="space-y-6">
-          <InventoryFilters
-            selectedVendor={selectedVendor}
-            selectedCollection={selectedCollection}
-            searchTerm={searchQuery}
-            onVendorChange={setSelectedVendor}
-            onCollectionChange={setSelectedCollection}
-            onSearchChange={setSearchQuery}
-          />
           <FabricInventoryView 
             searchQuery={searchQuery} 
             viewMode={viewMode}
@@ -420,14 +411,6 @@ export const ModernInventoryDashboard = () => {
         </TabsContent>
 
         <TabsContent value="hardware" className="space-y-6">
-          <InventoryFilters
-            selectedVendor={selectedVendor}
-            selectedCollection={selectedCollection}
-            searchTerm={searchQuery}
-            onVendorChange={setSelectedVendor}
-            onCollectionChange={setSelectedCollection}
-            onSearchChange={setSearchQuery}
-          />
           <HardwareInventoryView 
             searchQuery={searchQuery} 
             viewMode={viewMode}
@@ -437,14 +420,6 @@ export const ModernInventoryDashboard = () => {
         </TabsContent>
 
         <TabsContent value="wallcoverings" className="space-y-6">
-          <InventoryFilters
-            selectedVendor={selectedVendor}
-            selectedCollection={selectedCollection}
-            searchTerm={searchQuery}
-            onVendorChange={setSelectedVendor}
-            onCollectionChange={setSelectedCollection}
-            onSearchChange={setSearchQuery}
-          />
           <WallcoveringInventoryView 
             searchQuery={searchQuery} 
             viewMode={viewMode}
@@ -454,16 +429,8 @@ export const ModernInventoryDashboard = () => {
         </TabsContent>
 
         <TabsContent value="headings" className="space-y-6">
-          <InventoryFilters
-            selectedVendor={selectedVendor}
-            selectedCollection={selectedCollection}
-            searchTerm={searchQuery}
-            onVendorChange={setSelectedVendor}
-            onCollectionChange={setSelectedCollection}
-            onSearchChange={setSearchQuery}
-          />
           <HeadingInventoryView 
-            searchQuery={searchQuery} 
+            searchQuery={searchQuery}
             viewMode={viewMode}
             selectedVendor={selectedVendor}
             selectedCollection={selectedCollection}
