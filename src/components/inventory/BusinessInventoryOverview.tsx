@@ -126,166 +126,178 @@ export const BusinessInventoryOverview = () => {
 
   return (
     <div className="space-y-6">
-      {/* Primary Financial KPIs - Only visible to admins with financial viewing permissions */}
-      {canViewFinancialData && (
-        <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">Financial Overview</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="border-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Stock on Hand (Cost)</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(totalStockCost)}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {stockedItems.length} items in stock
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Stock on Hand (Retail)</CardTitle>
-                <TrendingUp className="h-4 w-4 text-green-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">{formatCurrency(totalStockRetail)}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Potential profit: {formatCurrency(potentialProfit)}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Catalog Items</CardTitle>
-                <Package className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">{catalogItems.length}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Avg price: {formatCurrency(avgCatalogPrice)}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{inventory.length}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {Object.keys(categoryStats).length} categories
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
-
-      {/* Inventory Health & Operational Metrics - Non-financial data */}
-      {canViewInventory === true && (
-        <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">Inventory Health</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card className="border-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-orange-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-orange-600">{lowStockItems.length}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Items need reordering
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Aging Inventory (90+ days)</CardTitle>
-                <Clock className="h-4 w-4 text-amber-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-amber-600">{deadStock.length}</div>
-                {canManageInventory === true && (
+      {/* Primary KPIs - Financial data restricted to admins, but counts visible to all */}
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-4">
+          {canViewFinancialData ? "Financial Overview" : "Inventory Overview"}
+        </h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {canViewFinancialData && (
+            <>
+              <Card className="border-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Stock on Hand (Cost)</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{formatCurrency(totalStockCost)}</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Value: {formatCurrency(deadStockValue)}
+                    {stockedItems.length} items in stock
                   </p>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card className="border-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Stock Efficiency</CardTitle>
-                <Archive className="h-4 w-4 text-green-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  {inventory.length > 0 ? Math.round(((inventory.length - deadStock.length) / inventory.length) * 100) : 0}%
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Active inventory utilization
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
+              <Card className="border-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Stock on Hand (Retail)</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">{formatCurrency(totalStockRetail)}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Potential profit: {formatCurrency(potentialProfit)}
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          )}
 
-      {/* Category Performance - Only visible with view_inventory, profit only with manage_inventory */}
-      {canViewInventory === true && (
-        <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">Category Performance</h2>
           <Card className="border-2">
-            <CardHeader>
-              <CardTitle className="text-base">Top Categories by Item Count</CardTitle>
-              <CardDescription>
-                Inventory distribution by category
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Catalog Items</CardTitle>
+              <Package className="h-4 w-4 text-blue-600" />
             </CardHeader>
-            <CardContent className="space-y-4">
-              {topCategories.length > 0 ? (
-                topCategories.map(([category, stats]) => {
-                  const maxValue = topCategories[0][1].value;
-                  const percentage = (stats.value / maxValue) * 100;
-                  
-                  return (
-                    <div key={category} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium capitalize">{category}</span>
-                          <Badge variant="secondary" className="text-xs">
-                            {stats.count} items
-                          </Badge>
-                        </div>
-                        {canManageInventory === true && (
-                          <div className="text-right">
-                            <div className="font-semibold">{formatCurrency(stats.value)}</div>
-                            <div className="text-xs text-muted-foreground">
-                              Profit: {formatCurrency(stats.profit)}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <Progress value={percentage} className="h-2" />
-                    </div>
-                  );
-                })
-              ) : (
-                <p className="text-sm text-muted-foreground">No category data available</p>
-              )}
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{catalogItems.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {canViewFinancialData ? `Avg price: ${formatCurrency(avgCatalogPrice)}` : "Items with prices set"}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{inventory.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {Object.keys(categoryStats).length} categories
+              </p>
             </CardContent>
           </Card>
         </div>
-      )}
+      </div>
 
-      {/* Low Stock Items Alert - Only visible with view_inventory */}
-      {canViewInventory === true && lowStockItems.length > 0 && (
+      {/* Inventory Health & Operational Metrics - Visible to all with inventory access */}
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-4">Inventory Health</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {/* Stock count card - always visible */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Items in Stock</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stockedItems.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Items with inventory
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">{lowStockItems.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Items need reordering
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Aging Inventory (90+ days)</CardTitle>
+              <Clock className="h-4 w-4 text-amber-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-amber-600">{deadStock.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {canViewFinancialData ? `Value: ${formatCurrency(deadStockValue)}` : "Items in stock 90+ days"}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Stock Efficiency</CardTitle>
+              <BarChart3 className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {stockedItems.length > 0 ? Math.round((stockedItems.length / inventory.length) * 100) : 0}%
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Active inventory utilization
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Category Performance - Visible to all, profit only with financial permissions */}
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-4">Category Performance</h2>
+        <Card className="border-2">
+          <CardHeader>
+            <CardTitle className="text-base">Top Categories by Item Count</CardTitle>
+            <CardDescription>
+              Inventory distribution by category
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {topCategories.length > 0 ? (
+              topCategories.map(([category, stats]) => {
+                const maxValue = topCategories[0][1].count;
+                const percentage = (stats.count / maxValue) * 100;
+                
+                return (
+                  <div key={category} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium capitalize">{category}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {stats.count} items
+                        </Badge>
+                      </div>
+                      {canViewFinancialData && (
+                        <div className="text-right">
+                          <div className="font-semibold">{formatCurrency(stats.value)}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Profit: {formatCurrency(stats.profit)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <Progress value={percentage} className="h-2" />
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-sm text-muted-foreground">No category data available</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Low Stock Items Alert - Visible to all */}
+      {lowStockItems.length > 0 && (
         <Card className="border-2 border-orange-200 bg-orange-50/50 dark:bg-orange-950/20 dark:border-orange-900">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
