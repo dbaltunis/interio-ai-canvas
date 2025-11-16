@@ -33,7 +33,8 @@ const ENTITY_TYPES: { value: EntityType; label: string; description: string }[] 
   { value: 'draft', label: 'Drafts', description: 'Draft document numbers' },
   { value: 'quote', label: 'Quotes', description: 'Quote numbers' },
   { value: 'order', label: 'Orders', description: 'Order numbers' },
-  { value: 'invoice', label: 'Invoices', description: 'Invoice numbers' },
+  // Invoice sequences not yet implemented in backend
+  // { value: 'invoice', label: 'Invoices', description: 'Invoice numbers' },
 ];
 
 export const NumberSequenceSettings = () => {
@@ -60,8 +61,8 @@ export const NumberSequenceSettings = () => {
 
   const handleAddNew = () => {
     setNewSequence({
-      entity_type: 'job',
-      prefix: 'JOB-',
+      entity_type: 'quote',
+      prefix: 'QUOTE-',
       next_number: 1,
       padding: 4,
       active: true,
@@ -127,7 +128,7 @@ export const NumberSequenceSettings = () => {
               Number Sequences
             </CardTitle>
             <CardDescription>
-              Configure sequential numbering for jobs, quotes, orders, and invoices
+              Configure sequential numbering for jobs, quotes, and orders
             </CardDescription>
           </div>
           {availableEntityTypes.length > 0 && (
@@ -176,7 +177,7 @@ export const NumberSequenceSettings = () => {
                     value={newSequence.prefix}
                     onChange={(e) => setNewSequence({ ...newSequence, prefix: e.target.value })}
                     className="w-24"
-                    placeholder="JOB-"
+                    placeholder="PREFIX-"
                   />
                 </TableCell>
                 <TableCell>
@@ -329,10 +330,10 @@ export const NumberSequenceSettings = () => {
         <div className="mt-4 p-4 bg-muted/50 rounded-lg">
           <h4 className="font-medium mb-2">How Number Sequences Work</h4>
           <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-            <li><strong>Prefix:</strong> Text that appears before the number (e.g., "JOB-", "INV-")</li>
+            <li><strong>Prefix:</strong> Text that appears before the number (e.g., "QUOTE-", "ORDER-")</li>
             <li><strong>Next Number:</strong> The next sequential number to be used</li>
             <li><strong>Padding:</strong> How many digits the number should have (adds leading zeros)</li>
-            <li><strong>Example:</strong> Prefix "JOB-" + Next Number 42 + Padding 4 = "JOB-0042"</li>
+            <li><strong>Example:</strong> Prefix "QUOTE-" + Next Number 42 + Padding 4 = "QUOTE-0042"</li>
             <li><strong>Active:</strong> Only active sequences will be used for new records</li>
           </ul>
         </div>
