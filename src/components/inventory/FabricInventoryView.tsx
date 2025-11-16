@@ -52,6 +52,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
   const [pricingGrids, setPricingGrids] = useState<Array<{ id: string; grid_code: string | null; name: string }>>([]);
   const [localVendor, setLocalVendor] = useState<string | undefined>(selectedVendor);
   const [localCollection, setLocalCollection] = useState<string | undefined>(selectedCollection);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const fabricItems = inventory?.filter(item => 
     item.category === 'fabric'
@@ -95,8 +96,11 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
 
     const matchesVendor = !localVendor || item.vendor_id === localVendor;
     const matchesCollection = !localCollection || item.collection_id === localCollection;
+    
+    const matchesTags = selectedTags.length === 0 || 
+      (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
 
-    return matchesGlobalSearch && matchesLocalSearch && matchesCategory && matchesVendor && matchesCollection;
+    return matchesGlobalSearch && matchesLocalSearch && matchesCategory && matchesVendor && matchesCollection && matchesTags;
   });
 
   // Pagination
@@ -226,8 +230,10 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
         <FilterButton
           selectedVendor={localVendor}
           selectedCollection={localCollection}
+          selectedTags={selectedTags}
           onVendorChange={setLocalVendor}
           onCollectionChange={setLocalCollection}
+          onTagsChange={setSelectedTags}
         />
       </div>
 
@@ -384,6 +390,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
                       <th className="px-4 py-3 text-left text-sm font-medium">Width</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Price</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Stock</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Tags</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">QR</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
                     </tr>
@@ -420,6 +427,24 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
                             <Badge variant={item.quantity && item.quantity > 0 ? "default" : "secondary"}>
                               {item.quantity || 0}m
                             </Badge>
+                          </td>
+                          <td className="px-4 py-3">
+                            {item.tags && item.tags.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {item.tags.slice(0, 2).map((tag) => (
+                                  <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                                {item.tags.length > 2 && (
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                    +{item.tags.length - 2}
+                                  </Badge>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             <Popover>
