@@ -126,12 +126,52 @@ export const BusinessInventoryOverview = () => {
 
   return (
     <div className="space-y-6">
-      {/* Primary KPIs - Financial data restricted to admins, but counts visible to all */}
+      {/* Primary KPIs - Basic counts always visible, financial data restricted */}
       <div>
         <h2 className="text-lg font-semibold text-foreground mb-4">
           {canViewFinancialData ? "Financial Overview" : "Inventory Overview"}
         </h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {/* ALWAYS SHOW THESE - No permission check */}
+          <Card className="border-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{inventory.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Active inventory items
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Items in Stock</CardTitle>
+              <Archive className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stockedItems.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Items with quantity &gt; 0
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Catalog Items</CardTitle>
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{catalogItems.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Items with prices set
+              </p>
+            </CardContent>
+          </Card>
+
           {canViewFinancialData && (
             <>
               <Card className="border-2">
@@ -161,32 +201,6 @@ export const BusinessInventoryOverview = () => {
               </Card>
             </>
           )}
-
-          <Card className="border-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Catalog Items</CardTitle>
-              <Package className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{catalogItems.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {canViewFinancialData ? `Avg price: ${formatCurrency(avgCatalogPrice)}` : "Items with prices set"}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{inventory.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {Object.keys(categoryStats).length} categories
-              </p>
-            </CardContent>
-          </Card>
         </div>
       </div>
 
