@@ -17,9 +17,10 @@ interface HeadingInventoryViewProps {
   viewMode: "grid" | "list";
   selectedVendor?: string;
   selectedCollection?: string;
+  selectedStorageLocation?: string;
 }
 
-export const HeadingInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection }: HeadingInventoryViewProps) => {
+export const HeadingInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection, selectedStorageLocation }: HeadingInventoryViewProps) => {
   const { data: headings = [], refetch } = useEnhancedInventoryByCategory('heading');
   const deleteItem = useDeleteEnhancedInventoryItem();
   const loadDefaults = useLoadDefaultHeadings();
@@ -35,7 +36,8 @@ export const HeadingInventoryView = ({ searchQuery, viewMode, selectedVendor, se
       heading.description?.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .filter(heading => !selectedVendor || heading.vendor_id === selectedVendor)
-    .filter(heading => !selectedCollection || heading.collection_id === selectedCollection);
+    .filter(heading => !selectedCollection || heading.collection_id === selectedCollection)
+    .filter(heading => !selectedStorageLocation || heading.location === selectedStorageLocation);
 
   const handleDelete = async (id: string, name: string) => {
     if (confirm(`Delete ${name}?`)) {

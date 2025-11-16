@@ -13,18 +13,22 @@ interface FilterButtonProps {
   selectedVendor?: string;
   selectedCollection?: string;
   selectedTags?: string[];
+  selectedStorageLocation?: string;
   onVendorChange: (vendorId?: string) => void;
   onCollectionChange: (collectionId?: string) => void;
   onTagsChange?: (tags: string[]) => void;
+  onStorageLocationChange?: (location?: string) => void;
 }
 
 export const FilterButton = ({
   selectedVendor,
   selectedCollection,
   selectedTags = [],
+  selectedStorageLocation,
   onVendorChange,
   onCollectionChange,
   onTagsChange,
+  onStorageLocationChange,
 }: FilterButtonProps) => {
   const { data: vendors } = useVendors();
   const { data: allCollections } = useCollections();
@@ -43,6 +47,18 @@ export const FilterButton = ({
     return Array.from(tagsSet).sort();
   }, [inventory]);
 
+  // Extract all unique storage locations from inventory
+  const availableLocations = useMemo(() => {
+    if (!inventory) return [];
+    const locationsSet = new Set<string>();
+    inventory.forEach(item => {
+      if (item.location) {
+        locationsSet.add(item.location);
+      }
+    });
+    return Array.from(locationsSet).sort();
+  }, [inventory]);
+
   // Show vendor-specific collections if vendor is selected, otherwise show all
   const displayCollections = selectedVendor ? vendorCollections : allCollections;
   
@@ -50,6 +66,7 @@ export const FilterButton = ({
   const activeFilterCount = [
     selectedVendor, 
     selectedCollection,
+    selectedStorageLocation,
     ...(selectedTags.length > 0 ? ['tags'] : [])
   ].filter(Boolean).length;
 
@@ -57,6 +74,7 @@ export const FilterButton = ({
     onVendorChange(undefined);
     onCollectionChange(undefined);
     if (onTagsChange) onTagsChange([]);
+    if (onStorageLocationChange) onStorageLocationChange(undefined);
   };
 
   const toggleTag = (tag: string) => {
@@ -140,6 +158,28 @@ export const FilterButton = ({
                 </SelectContent>
               </Select>
             </div>
+
+            {onStorageLocationChange && (
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Storage Location</label>
+                <Select
+                  value={selectedStorageLocation || "all"}
+                  onValueChange={(val) => onStorageLocationChange(val === "all" ? undefined : val)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All Locations" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border-border z-50">
+                    <SelectItem value="all">All Locations</SelectItem>
+                    {availableLocations.map((location) => (
+                      <SelectItem key={location} value={location}>
+                        {location}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {onTagsChange && (
               <div className="space-y-2">

@@ -21,6 +21,7 @@ interface FabricInventoryViewProps {
   viewMode: "grid" | "list";
   selectedVendor?: string;
   selectedCollection?: string;
+  selectedStorageLocation?: string;
 }
 
 const FABRIC_CATEGORIES = [
@@ -33,7 +34,7 @@ const FABRIC_CATEGORIES = [
 
 const ITEMS_PER_PAGE = 24;
 
-export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection }: FabricInventoryViewProps) => {
+export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection, selectedStorageLocation }: FabricInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState("all");
@@ -79,8 +80,9 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
 
     const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
     const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
+    const matchesLocation = !selectedStorageLocation || item.location === selectedStorageLocation;
 
-    return matchesSearch && matchesCategory && matchesVendor && matchesCollection;
+    return matchesSearch && matchesCategory && matchesVendor && matchesCollection && matchesLocation;
   });
 
   // Pagination

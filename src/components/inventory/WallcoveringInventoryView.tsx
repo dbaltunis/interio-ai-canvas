@@ -21,6 +21,7 @@ interface WallcoveringInventoryViewProps {
   viewMode: "grid" | "list";
   selectedVendor?: string;
   selectedCollection?: string;
+  selectedStorageLocation?: string;
 }
 
 const WALLCOVERING_CATEGORIES = [
@@ -32,7 +33,7 @@ const WALLCOVERING_CATEGORIES = [
 
 const ITEMS_PER_PAGE = 24;
 
-export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection }: WallcoveringInventoryViewProps) => {
+export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection, selectedStorageLocation }: WallcoveringInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState("all");
@@ -61,8 +62,9 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
 
     const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
     const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
+    const matchesLocation = !selectedStorageLocation || item.location === selectedStorageLocation;
 
-    return matchesSearch && matchesCategory && matchesVendor && matchesCollection;
+    return matchesSearch && matchesCategory && matchesVendor && matchesCollection && matchesLocation;
   });
 
   // Pagination

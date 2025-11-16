@@ -45,6 +45,7 @@ export const ModernInventoryDashboard = () => {
   const [selectedVendor, setSelectedVendor] = useState<string | undefined>();
   const [selectedCollection, setSelectedCollection] = useState<string | undefined>();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedStorageLocation, setSelectedStorageLocation] = useState<string | undefined>();
   const { data: allInventory, refetch } = useEnhancedInventory();
   const { data: vendors } = useVendors();
   const isMobile = useIsMobile();
@@ -67,6 +68,9 @@ export const ModernInventoryDashboard = () => {
         
         // Apply collection filter
         if (selectedCollection && item.collection_id !== selectedCollection) return false;
+        
+        // Apply storage location filter
+        if (selectedStorageLocation && item.location !== selectedStorageLocation) return false;
         
         // Apply tags filter
         if (selectedTags.length > 0) {
@@ -185,9 +189,11 @@ export const ModernInventoryDashboard = () => {
             selectedVendor={selectedVendor}
             selectedCollection={selectedCollection}
             selectedTags={selectedTags}
+            selectedStorageLocation={selectedStorageLocation}
             onVendorChange={setSelectedVendor}
             onCollectionChange={setSelectedCollection}
             onTagsChange={setSelectedTags}
+            onStorageLocationChange={setSelectedStorageLocation}
           />
           
           {!isMobile && (
@@ -449,6 +455,7 @@ export const ModernInventoryDashboard = () => {
             viewMode={viewMode}
             selectedVendor={selectedVendor}
             selectedCollection={selectedCollection}
+            selectedStorageLocation={selectedStorageLocation}
           />
         </TabsContent>
 
@@ -458,6 +465,7 @@ export const ModernInventoryDashboard = () => {
             viewMode={viewMode}
             selectedVendor={selectedVendor}
             selectedCollection={selectedCollection}
+            selectedStorageLocation={selectedStorageLocation}
           />
         </TabsContent>
 
@@ -467,6 +475,7 @@ export const ModernInventoryDashboard = () => {
             viewMode={viewMode}
             selectedVendor={selectedVendor}
             selectedCollection={selectedCollection}
+            selectedStorageLocation={selectedStorageLocation}
           />
         </TabsContent>
 
@@ -476,6 +485,7 @@ export const ModernInventoryDashboard = () => {
             viewMode={viewMode}
             selectedVendor={selectedVendor}
             selectedCollection={selectedCollection}
+            selectedStorageLocation={selectedStorageLocation}
           />
         </TabsContent>
 
