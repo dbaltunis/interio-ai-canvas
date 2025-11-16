@@ -5,11 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Wallpaper, Plus, Search, Image as ImageIcon, Trash2, Edit, FileSpreadsheet, QrCode } from "lucide-react";
+import { Wallpaper, Image as ImageIcon, Trash2, Edit, QrCode } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
-import { AddInventoryDialog } from "./AddInventoryDialog";
 import { EditInventoryDialog } from "./EditInventoryDialog";
-import { CategoryImportExport } from "./CategoryImportExport";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { JobsPagination } from "../jobs/JobsPagination";
@@ -17,13 +15,6 @@ import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
 import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QRCodeDisplay } from "./QRCodeDisplay";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 interface WallcoveringInventoryViewProps {
   searchQuery: string;
@@ -62,12 +53,9 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
   } = useBulkInventorySelection(wallcoveringItems);
 
   const filteredItems = wallcoveringItems.filter(item => {
-    const matchesGlobalSearch = item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.sku?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesLocalSearch = item.name?.toLowerCase().includes(localSearch.toLowerCase()) ||
-      item.sku?.toLowerCase().includes(localSearch.toLowerCase()) ||
-      item.supplier?.toLowerCase().includes(localSearch.toLowerCase());
+    const matchesSearch = item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.supplier?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesCategory = activeCategory === "all" || 
       item.subcategory === activeCategory;
@@ -75,7 +63,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
     const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
     const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
 
-    return matchesGlobalSearch && matchesLocalSearch && matchesCategory && matchesVendor && matchesCollection;
+    return matchesSearch && matchesCategory && matchesVendor && matchesCollection;
   });
 
   // Pagination
