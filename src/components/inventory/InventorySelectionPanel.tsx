@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Package, Palette, Wrench, Check, X, Plus, Edit3 } from "lucide-react";
+import { Search, Package, Palette, Wrench, Check, X, Plus, Edit3, ScanLine } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
 import {
   Select,
   SelectContent,
@@ -54,6 +55,7 @@ export const InventorySelectionPanel = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("fabric");
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [manualEntry, setManualEntry] = useState({
     name: "",
     price: "",
@@ -164,6 +166,45 @@ export const InventorySelectionPanel = ({
     } catch (error) {
       console.error("❌ Error creating inventory item:", error);
       // Error toast is already handled by the mutation
+    }
+  };
+
+  // Handle QR code scan
+  const handleQRScan = async (itemId: string) => {
+    try {
+      // Look up the item in inventory
+      const allItems = [...inventory, ...treatmentFabrics];
+      const scannedItem = allItems.find(item => item.id === itemId);
+      
+      if (scannedItem) {
+        // Determine which category this item belongs to
+        let targetCategory = activeCategory;
+        
+        if (scannedItem.category === 'fabric' || scannedItem.category?.toLowerCase().includes('fabric')) {
+          targetCategory = 'fabric';
+        } else if (scannedItem.category?.toLowerCase().includes('hardware') || 
+                   scannedItem.category?.toLowerCase().includes('track') ||
+                   scannedItem.category?.toLowerCase().includes('pole')) {
+          targetCategory = 'hardware';
+        } else {
+          targetCategory = 'material';
+        }
+        
+        // Switch to the correct tab if needed
+        if (targetCategory !== activeCategory) {
+          setActiveCategory(targetCategory);
+        }
+        
+        // Select the item
+        onItemSelect(targetCategory, scannedItem);
+        
+        toast.success(`${scannedItem.name} selected`);
+      } else {
+        toast.error("Item not found in inventory");
+      }
+    } catch (error) {
+      console.error('Error handling QR scan:', error);
+      toast.error("Failed to process scanned item");
     }
   };
 
@@ -408,11 +449,20 @@ export const InventorySelectionPanel = ({
           />
         </div>
         
+        <Button 
+          variant="outline" 
+          className="h-12 px-4 shrink-0"
+          onClick={() => setScannerOpen(true)}
+        >
+          <ScanLine className="h-4 w-4 mr-2" />
+          Scan QR
+        </Button>
+        
         <Dialog open={showManualEntry} onOpenChange={setShowManualEntry}>
           <DialogTrigger asChild>
             <Button 
               variant="outline" 
-              className="h-12 px-4"
+              className="h-12 px-4 shrink-0"
             >
               <Edit3 className="h-4 w-4 mr-2" />
               Manual Entry
@@ -609,5 +659,11 @@ export const InventorySelectionPanel = ({
           </TabsContent>;
         })}
       </Tabs>
+      
+      <QRCodeScanner
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onScan={handleQRScan}
+      />
     </div>;
 };
