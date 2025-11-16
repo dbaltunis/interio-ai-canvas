@@ -4,9 +4,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CheckCircle, Search } from 'lucide-react';
+import { CheckCircle, Search, ScanLine } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMeasurementWizardStore } from '@/stores/measurementWizardStore';
+import { QRCodeScanner } from '@/components/inventory/QRCodeScanner';
+import { useToast } from '@/hooks/use-toast';
 
 export const FabricStep: React.FC = () => {
   const { 
@@ -23,6 +25,8 @@ export const FabricStep: React.FC = () => {
   const [interlinings, setInterlinings] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchFabrics = async () => {
@@ -65,6 +69,50 @@ export const FabricStep: React.FC = () => {
 
     fetchFabrics();
   }, []);
+
+  const handleQRScan = async (itemId: string) => {
+    try {
+      // Look up the item in our loaded lists
+      const allItems = [...fabrics, ...linings, ...interlinings];
+      const scannedItem = allItems.find(item => item.id === itemId);
+      
+      if (scannedItem) {
+        // Auto-select based on type
+        if (scannedItem.type === 'fabric') {
+          setFabric(scannedItem);
+          toast({
+            title: "Fabric Selected",
+            description: `${scannedItem.name} has been selected.`,
+          });
+        } else if (scannedItem.type === 'lining') {
+          setLining(scannedItem);
+          toast({
+            title: "Lining Selected",
+            description: `${scannedItem.name} has been selected.`,
+          });
+        } else if (scannedItem.type === 'interlining') {
+          setInterlining(scannedItem);
+          toast({
+            title: "Interlining Selected",
+            description: `${scannedItem.name} has been selected.`,
+          });
+        }
+      } else {
+        toast({
+          title: "Item Not Found",
+          description: "This item is not available for fabric selection.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error handling QR scan:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process scanned item.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const filterItems = (items: any[]) => {
     if (!searchTerm) return items;
@@ -173,14 +221,25 @@ export const FabricStep: React.FC = () => {
           Select the main fabric and any linings or interlinings for your window treatment.
         </p>
         
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search fabrics, linings, or interlinings..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+        <div className="flex gap-2 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search fabrics, linings, or interlinings..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="default"
+            onClick={() => setScannerOpen(true)}
+            className="shrink-0"
+          >
+            <ScanLine className="h-4 w-4 mr-2" />
+            Scan QR
+          </Button>
         </div>
       </div>
 
@@ -267,6 +326,12 @@ export const FabricStep: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      <QRCodeScanner
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onScan={handleQRScan}
+      />
     </div>
   );
 };
