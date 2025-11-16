@@ -721,6 +721,28 @@ const LivePreviewBlock = ({
       const hasRealData = projectItems.length > 0;
 
       // Get comprehensive breakdown - FROM CHILDREN ARRAY (has correct pricing)
+      // Extract options from item children
+      const getItemOptions = (item: any) => {
+        if (!item.children || !Array.isArray(item.children)) return [];
+        
+        return item.children
+          .filter((child: any) => 
+            child.isChild && (
+              child.category === 'option' || 
+              child.category === 'options' ||
+              child.name?.toLowerCase().includes('option')
+            )
+          )
+          .map((opt: any) => ({
+            id: opt.id,
+            name: opt.name || opt.label || 'Option',
+            value: opt.description || opt.value || '',
+            image_url: opt.image_url,
+            unit_price: opt.unit_price || 0,
+            total_cost: opt.total || 0
+          }));
+      };
+
       const getItemizedBreakdown = (item: any) => {
         const breakdown = [];
         
@@ -736,6 +758,13 @@ const LivePreviewBlock = ({
           item.children.forEach((child: any, idx: number) => {
             // Skip if this is not a real breakdown item
             if (!child.isChild) return;
+            
+            // Skip options - they'll be displayed separately
+            if (child.category === 'option' || 
+                child.category === 'options' || 
+                child.name?.toLowerCase().includes('option')) {
+              return;
+            }
             
             breakdown.push({
               id: child.id || `${item.id}-child-${idx}`,
@@ -859,6 +888,7 @@ const LivePreviewBlock = ({
                     {(items as any[]).map((item: any, itemIndex: number) => {
                       const itemNumber = groupByRoom ? itemIndex + 1 : Object.values(groupedItems).flat().indexOf(item) + 1;
                       const breakdown = getItemizedBreakdown(item);
+                      const options = getItemOptions(item);
                       
                       console.log('[PRODUCT ROW]', {
                         itemNumber,
@@ -866,6 +896,8 @@ const LivePreviewBlock = ({
                         total_cost: item.total_cost,
                         unit_price: item.unit_price,
                         total: item.total,
+                        optionsCount: options.length,
+                        breakdownCount: breakdown.length,
                         allItemData: item
                       });
                       
@@ -873,7 +905,7 @@ const LivePreviewBlock = ({
                         <React.Fragment key={`item-${roomName}-${itemIndex}`}>
                           {/* Main product row */}
                           <tr style={{ 
-                            borderBottom: (breakdown.length > 0 && showDetailedProducts) || isPrintMode ? 'none' : '1px solid #ddd',
+                            borderBottom: ((breakdown.length > 0 || options.length > 0) && showDetailedProducts) || isPrintMode ? 'none' : '1px solid #ddd',
                             backgroundColor: '#fff'
                           }}>
                             <td style={{ padding: '5px 6px', fontSize: '15px', fontWeight: '500', color: '#000', verticalAlign: 'top', backgroundColor: '#ffffff' }}>
@@ -901,8 +933,8 @@ const LivePreviewBlock = ({
                                 </span>
                               </div>
                             </td>
-                            <td style={{ padding: '5px 6px', fontSize: '13px', color: '#666', fontWeight: '400', verticalAlign: 'top', wordWrap: 'break-word', overflowWrap: 'break-word', backgroundColor: '#ffffff' }}>
-                              {item.notes || item.description || '-'}
+                            <td style={{ padding: '5px 6px', fontSize: '13px', color: '#000', fontWeight: '400', verticalAlign: 'top', wordWrap: 'break-word', overflowWrap: 'break-word', backgroundColor: '#ffffff' }}>
+                              {item.description && !item.description.toLowerCase().includes('option') ? item.description : (item.notes || '-')}
                             </td>
                             <td style={{ padding: '5px 6px', fontSize: '14px', fontWeight: '400', color: '#000', textAlign: 'center', verticalAlign: 'top', backgroundColor: '#ffffff' }}>
                               {item.quantity || 1}
@@ -915,6 +947,47 @@ const LivePreviewBlock = ({
                             </td>
                           </tr>
                           
+                          {/* Options breakdown rows */}
+                          {options.length > 0 && showDetailedProducts && options.map((option: any, optIdx: number) => (
+                            <tr key={`option-${itemNumber}-${optIdx}`} style={{ 
+                              backgroundColor: '#fafafa',
+                              borderBottom: isPrintMode ? 'none' : (optIdx === options.length - 1 && breakdown.length === 0 ? '1px solid #ddd' : '1px solid #e8e8e8')
+                            }}>
+                              <td style={{ padding: '4px 6px 4px 20px', fontSize: '13px', backgroundColor: '#fafafa' }} colSpan={2}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  {showImages && option.image_url && (
+                                    <img 
+                                      src={option.image_url}
+                                      alt={option.name}
+                                      className="print-image"
+                                      style={{
+                                        width: '22px',
+                                        height: '22px',
+                                        objectFit: 'cover',
+                                        borderRadius: '2px',
+                                        border: isPrintMode ? 'none' : '1px solid #ddd',
+                                        flexShrink: 0
+                                      }}
+                                    />
+                                  )}
+                                  <span style={{ fontWeight: '500', color: '#000' }}>
+                                    {option.name}:
+                                  </span>
+                                  <span style={{ color: '#666' }}>
+                                    {option.value}
+                                  </span>
+                                </div>
+                              </td>
+                              <td style={{ textAlign: 'center', fontSize: '12px', color: '#666', backgroundColor: '#fafafa' }}>-</td>
+                              <td style={{ textAlign: 'right', fontSize: '12px', color: '#666', backgroundColor: '#fafafa' }}>
+                                {option.unit_price > 0 ? `${renderTokenValue('currency_symbol')}${option.unit_price.toFixed(2)}` : '-'}
+                              </td>
+                              <td style={{ textAlign: 'right', fontSize: '13px', fontWeight: '500', color: '#000', backgroundColor: '#fafafa' }}>
+                                {option.total_cost > 0 ? `${renderTokenValue('currency_symbol')}${option.total_cost.toFixed(2)}` : '-'}
+                              </td>
+                            </tr>
+                          ))}
+
                           {/* Detailed breakdown rows - indented */}
                           {breakdown.length > 0 && showDetailedProducts && breakdown.map((breakdownItem: any, bidx: number) => (
                             <tr key={bidx} style={{ 
