@@ -169,6 +169,7 @@ export const UnifiedInventoryDialog = ({
     fullness_ratio: 0,
     treatment_type: "",
     heading_installation_notes: "",
+    tags: [] as string[],
   });
   
   const [eyeletRings, setEyeletRings] = useState<EyeletRing[]>([]);
@@ -241,6 +242,7 @@ export const UnifiedInventoryDialog = ({
         fullness_ratio: item.fullness_ratio || 0,
         treatment_type: item.treatment_type || "",
         heading_installation_notes: item.heading_installation_notes || "",
+        tags: item.tags || [],
       });
       
       // Load eyelet rings if present - convert IDs to full objects
@@ -670,6 +672,7 @@ export const UnifiedInventoryDialog = ({
           fullness_ratio: 0,
           treatment_type: "",
           heading_installation_notes: "",
+          tags: [],
         });
         setTrackInventory(false);
       }
@@ -945,6 +948,19 @@ export const UnifiedInventoryDialog = ({
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         placeholder="Product description..."
                       />
+                    </div>
+                    
+                    <div className="md:col-span-2">
+                      <Label htmlFor="tags">Tags</Label>
+                      <Input
+                        id="tags"
+                        value={formData.tags.join(', ')}
+                        onChange={(e) => setFormData({ ...formData, tags: e.target.value.split(',').map(t => t.trim()).filter(t => t) })}
+                        placeholder="e.g., plain, linen, luxury (comma-separated)"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Add searchable tags to help categorize and find this item
+                      </p>
                     </div>
                   </CardContent>
                 </Card>

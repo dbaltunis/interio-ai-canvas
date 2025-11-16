@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Package, Palette, Wrench, Check, X, Plus, Edit3, ScanLine } from "lucide-react";
+import { FilterButton } from "@/components/library/FilterButton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
 import {
@@ -56,6 +57,9 @@ export const InventorySelectionPanel = ({
   const [activeCategory, setActiveCategory] = useState("fabric");
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState<string | undefined>();
+  const [selectedCollection, setSelectedCollection] = useState<string | undefined>();
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [manualEntry, setManualEntry] = useState({
     name: "",
     price: "",
@@ -214,7 +218,10 @@ export const InventorySelectionPanel = ({
     if (category === "fabric") {
       return treatmentFabrics.filter(item => {
         const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || item.description?.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesSearch;
+        const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
+        const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
+        const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
+        return matchesSearch && matchesVendor && matchesCollection && matchesTags;
       });
     }
 
@@ -228,7 +235,10 @@ export const InventorySelectionPanel = ({
     const filtered = inventory.filter(item => {
       const matchesCategory = categoryMap[category]?.some(cat => item.category?.toLowerCase().includes(cat.toLowerCase()));
       const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || item.description?.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesCategory && matchesSearch;
+      const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
+      const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
+      const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
+      return matchesCategory && matchesSearch && matchesVendor && matchesCollection && matchesTags;
     });
     
     console.log(`📦 Found ${filtered.length} items for category "${category}". Item categories:`, 
@@ -448,6 +458,15 @@ export const InventorySelectionPanel = ({
             className="pl-12 h-12 text-base transition-all duration-200 focus:scale-[1.02]"
           />
         </div>
+        
+        <FilterButton
+          selectedVendor={selectedVendor}
+          selectedCollection={selectedCollection}
+          selectedTags={selectedTags}
+          onVendorChange={setSelectedVendor}
+          onCollectionChange={setSelectedCollection}
+          onTagsChange={setSelectedTags}
+        />
         
         <Button 
           variant="outline" 

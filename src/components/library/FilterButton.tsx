@@ -5,33 +5,67 @@ import { Filter, X } from "lucide-react";
 import { useVendors } from "@/hooks/useVendors";
 import { useCollections, useCollectionsByVendor } from "@/hooks/useCollections";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { useMemo } from "react";
 
 interface FilterButtonProps {
   selectedVendor?: string;
   selectedCollection?: string;
+  selectedTags?: string[];
   onVendorChange: (vendorId?: string) => void;
   onCollectionChange: (collectionId?: string) => void;
+  onTagsChange?: (tags: string[]) => void;
 }
 
 export const FilterButton = ({
   selectedVendor,
   selectedCollection,
+  selectedTags = [],
   onVendorChange,
   onCollectionChange,
+  onTagsChange,
 }: FilterButtonProps) => {
   const { data: vendors } = useVendors();
   const { data: allCollections } = useCollections();
   const { data: vendorCollections } = useCollectionsByVendor(selectedVendor);
+  const { data: inventory } = useEnhancedInventory();
+
+  // Extract all unique tags from inventory
+  const availableTags = useMemo(() => {
+    if (!inventory) return [];
+    const tagsSet = new Set<string>();
+    inventory.forEach(item => {
+      if (item.tags && Array.isArray(item.tags)) {
+        item.tags.forEach(tag => tagsSet.add(tag));
+      }
+    });
+    return Array.from(tagsSet).sort();
+  }, [inventory]);
 
   // Show vendor-specific collections if vendor is selected, otherwise show all
   const displayCollections = selectedVendor ? vendorCollections : allCollections;
   
   // Count active filters
-  const activeFilterCount = [selectedVendor, selectedCollection].filter(Boolean).length;
+  const activeFilterCount = [
+    selectedVendor, 
+    selectedCollection,
+    ...(selectedTags.length > 0 ? ['tags'] : [])
+  ].filter(Boolean).length;
 
   const clearFilters = () => {
     onVendorChange(undefined);
     onCollectionChange(undefined);
+    if (onTagsChange) onTagsChange([]);
+  };
+
+  const toggleTag = (tag: string) => {
+    if (!onTagsChange) return;
+    if (selectedTags.includes(tag)) {
+      onTagsChange(selectedTags.filter(t => t !== tag));
+    } else {
+      onTagsChange([...selectedTags, tag]);
+    }
   };
 
   return (
@@ -106,6 +140,29 @@ export const FilterButton = ({
                 </SelectContent>
               </Select>
             </div>
+
+            {availableTags.length > 0 && onTagsChange && (
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Tags</label>
+                <div className="max-h-40 overflow-y-auto space-y-2 p-2 border border-border rounded-md">
+                  {availableTags.map((tag) => (
+                    <div key={tag} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`tag-${tag}`}
+                        checked={selectedTags.includes(tag)}
+                        onCheckedChange={() => toggleTag(tag)}
+                      />
+                      <label
+                        htmlFor={`tag-${tag}`}
+                        className="text-sm cursor-pointer flex-1"
+                      >
+                        {tag}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </PopoverContent>
