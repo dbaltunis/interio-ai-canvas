@@ -2,12 +2,15 @@ import { useEnhancedInventoryByCategory } from "@/hooks/useEnhancedInventory";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Edit, Trash2, Sparkles, FileSpreadsheet } from "lucide-react";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
 import { CategoryImportExport } from "./CategoryImportExport";
 import { useToast } from "@/hooks/use-toast";
 import { useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
+import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
+import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
 import { useState } from "react";
 import {
   Dialog,
@@ -27,6 +30,24 @@ export const TrimmingsInventoryView = ({ searchQuery, viewMode }: TrimmingsInven
   const deleteItem = useDeleteEnhancedInventoryItem();
   const { toast } = useToast();
   const [editingItem, setEditingItem] = useState<any>(null);
+
+  const {
+    selectedItems,
+    selectItem,
+    selectAll,
+    clearSelection,
+    selectionStats,
+  } = useBulkInventorySelection(trimmings);
+
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(selectedItems.map(id => deleteItem.mutateAsync(id)));
+      toast({ title: `${selectedItems.length} items deleted successfully` });
+      clearSelection();
+    } catch (error) {
+      toast({ title: "Failed to delete some items", variant: "destructive" });
+    }
+  };
 
   const filteredTrimmings = trimmings.filter(trimming =>
     trimming.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||

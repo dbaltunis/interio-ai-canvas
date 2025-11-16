@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Home, Plus, Search, Image as ImageIcon, Trash2, Edit, FileSpreadsheet } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { AddInventoryDialog } from "./AddInventoryDialog";
@@ -12,6 +13,8 @@ import { CategoryImportExport } from "./CategoryImportExport";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { JobsPagination } from "../jobs/JobsPagination";
+import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
+import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +46,19 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
   const [currentPage, setCurrentPage] = useState(1);
   const [pricingGrids, setPricingGrids] = useState<Array<{ id: string; grid_code: string | null; name: string }>>([]);
 
+  const fabricItems = inventory?.filter(item => 
+    item.category === 'fabric'
+  ) || [];
+
+  // Bulk selection
+  const {
+    selectedItems,
+    selectItem,
+    selectAll,
+    clearSelection,
+    selectionStats,
+  } = useBulkInventorySelection(fabricItems);
+
   // Fetch pricing grids for displaying grid names
   useEffect(() => {
     const fetchPricingGrids = async () => {
@@ -58,10 +74,6 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
     
     fetchPricingGrids();
   }, []);
-
-  const fabricItems = inventory?.filter(item => 
-    item.category === 'fabric'
-  ) || [];
 
   const filteredItems = fabricItems.filter(item => {
     const matchesGlobalSearch = item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -115,6 +127,29 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
         description: "Fabric deleted successfully",
       });
       refetch();
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(
+        selectedItems.map(itemId => 
+          supabase.from('inventory').delete().eq('id', itemId)
+        )
+      );
+      
+      toast({
+        title: "Items deleted",
+        description: `${selectedItems.length} items deleted successfully`,
+      });
+      clearSelection();
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete some items",
+        variant: "destructive",
+      });
     }
   };
 
@@ -192,6 +227,14 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
 
         {FABRIC_CATEGORIES.map((cat) => (
           <TabsContent key={cat.key} value={cat.key} className="mt-6 space-y-4">
+            {selectedItems.length > 0 && (
+              <InventoryBulkActionsBar
+                selectedCount={selectedItems.length}
+                onClearSelection={clearSelection}
+                onBulkDelete={handleBulkDelete}
+              />
+            )}
+            
             {viewMode === "grid" ? (
               <>
                 <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
@@ -290,6 +333,13 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                 <table className="w-full">
                   <thead className="bg-muted/50">
                     <tr>
+                      <th className="px-4 py-3 w-12">
+                        <Checkbox
+                          checked={selectionStats.allSelected}
+                          onCheckedChange={(checked) => selectAll(!!checked)}
+                          aria-label="Select all"
+                        />
+                      </th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Image</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Name</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">SKU</th>
@@ -301,50 +351,60 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedItems.map((item) => (
-                      <tr key={item.id} className="border-t hover:bg-muted/30">
-                        <td className="px-4 py-3">
-                          {item.image_url ? (
-                            <img src={item.image_url} alt={item.name} className="h-12 w-12 rounded object-cover" />
-                          ) : (
-                            <div className="h-12 w-12 rounded bg-muted flex items-center justify-center">
-                              <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 font-medium">{item.name}</td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground">{item.sku || '-'}</td>
-                        <td className="px-4 py-3 text-sm">{item.supplier || '-'}</td>
-                        <td className="px-4 py-3 text-sm">{item.fabric_width ? `${item.fabric_width}cm` : '-'}</td>
-                        <td className="px-4 py-3 font-medium">
-                          {formatPrice(item.price_per_meter || item.selling_price || 0)}/m
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge variant={item.quantity && item.quantity > 0 ? "default" : "secondary"}>
-                            {item.quantity || 0}m
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1">
-                            <EditInventoryDialog 
-                              item={item}
-                              trigger={
-                                <Button variant="ghost" size="sm">
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              }
+                    {paginatedItems.map((item) => {
+                      const isSelected = selectedItems.includes(item.id);
+                      return (
+                        <tr key={item.id} className="border-t hover:bg-muted/30">
+                          <td className="px-4 py-3">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={(checked) => selectItem(item.id, !!checked)}
+                              aria-label={`Select ${item.name}`}
                             />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(item.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-4 py-3">
+                            {item.image_url ? (
+                              <img src={item.image_url} alt={item.name} className="h-12 w-12 rounded object-cover" />
+                            ) : (
+                              <div className="h-12 w-12 rounded bg-muted flex items-center justify-center">
+                                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 font-medium">{item.name}</td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">{item.sku || '-'}</td>
+                          <td className="px-4 py-3 text-sm">{item.supplier || '-'}</td>
+                          <td className="px-4 py-3 text-sm">{item.fabric_width ? `${item.fabric_width}cm` : '-'}</td>
+                          <td className="px-4 py-3 font-medium">
+                            {formatPrice(item.price_per_meter || item.selling_price || 0)}/m
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge variant={item.quantity && item.quantity > 0 ? "default" : "secondary"}>
+                              {item.quantity || 0}m
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1">
+                              <EditInventoryDialog 
+                                item={item}
+                                trigger={
+                                  <Button variant="ghost" size="sm">
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                }
+                              />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(item.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

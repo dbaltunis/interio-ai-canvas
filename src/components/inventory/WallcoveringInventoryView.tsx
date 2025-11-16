@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Wallpaper, Plus, Search, Image as ImageIcon, Trash2, Edit, FileSpreadsheet } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { AddInventoryDialog } from "./AddInventoryDialog";
@@ -12,6 +13,8 @@ import { CategoryImportExport } from "./CategoryImportExport";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { JobsPagination } from "../jobs/JobsPagination";
+import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
+import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +47,15 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
   const wallcoveringItems = inventory?.filter(item => 
     item.category === 'wallcovering'
   ) || [];
+
+  // Bulk selection
+  const {
+    selectedItems,
+    selectItem,
+    selectAll,
+    clearSelection,
+    selectionStats,
+  } = useBulkInventorySelection(wallcoveringItems);
 
   const filteredItems = wallcoveringItems.filter(item => {
     const matchesGlobalSearch = item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -96,6 +108,29 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
         description: "Wallcovering deleted successfully",
       });
       refetch();
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(
+        selectedItems.map(itemId => 
+          supabase.from('inventory').delete().eq('id', itemId)
+        )
+      );
+      
+      toast({
+        title: "Items deleted",
+        description: `${selectedItems.length} items deleted successfully`,
+      });
+      clearSelection();
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete some items",
+        variant: "destructive",
+      });
     }
   };
 
@@ -176,6 +211,14 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
 
         {WALLCOVERING_CATEGORIES.map((cat) => (
           <TabsContent key={cat.key} value={cat.key} className="mt-6 space-y-4">
+            {selectedItems.length > 0 && (
+              <InventoryBulkActionsBar
+                selectedCount={selectedItems.length}
+                onClearSelection={clearSelection}
+                onBulkDelete={handleBulkDelete}
+              />
+            )}
+            
             {viewMode === "grid" ? (
               <>
                 <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
@@ -305,6 +348,13 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
                 <table className="w-full">
                   <thead className="bg-muted/50">
                     <tr>
+                      <th className="px-4 py-3 w-12">
+                        <Checkbox
+                          checked={selectionStats.allSelected}
+                          onCheckedChange={(checked) => selectAll(!!checked)}
+                          aria-label="Select all"
+                        />
+                      </th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Image</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Name</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">SKU</th>
@@ -318,85 +368,95 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedItems.map((item) => (
-                      <tr key={item.id} className="border-t hover:bg-muted/30">
-                        <td className="px-4 py-3">
-                          {item.image_url ? (
-                            <img src={item.image_url} alt={item.name} className="h-12 w-12 rounded object-cover" />
-                          ) : (
-                            <div className="h-12 w-12 rounded bg-muted flex items-center justify-center">
-                              <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 font-medium">{item.name}</td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground">{item.sku || '-'}</td>
-                        <td className="px-4 py-3 text-sm">{item.supplier || '-'}</td>
-                        <td className="px-4 py-3">
-                          {(item as any).wallpaper_sold_by ? (
-                            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-xs">
-                              {(item as any).wallpaper_sold_by === 'per_roll' ? 'Per Roll' : 
-                               (item as any).wallpaper_sold_by === 'per_unit' ? 'Per Meter' : 
-                               (item as any).wallpaper_sold_by === 'per_sqm' ? 'Per m²' : 'Per Unit'}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-sm">
-                          {(item as any).wallpaper_roll_width && (item as any).wallpaper_roll_length ? (
-                            <span>{(item as any).wallpaper_roll_width}cm × {(item as any).wallpaper_roll_length}m</span>
-                          ) : (
-                            <Badge variant="secondary" className="text-xs">Not specified</Badge>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-sm">
-                          {item.pattern_repeat_vertical ? `${item.pattern_repeat_vertical}cm` : '-'}
-                        </td>
-                        <td className="px-4 py-3 font-medium">
-                          <div className="flex flex-col">
-                            <span>{formatPrice(item.price_per_meter || item.selling_price || 0)}</span>
-                            {(item as any).wallpaper_sold_by && (
-                              <span className="text-xs text-muted-foreground">
-                                per {(item as any).wallpaper_sold_by === 'per_roll' ? 'roll' : 
-                                     (item as any).wallpaper_sold_by === 'per_unit' ? 'meter' : 
-                                     (item as any).wallpaper_sold_by === 'per_sqm' ? 'm²' : 'unit'}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          {item.quantity > 0 || (item as any).stock_quantity > 0 ? (
-                            <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20">
-                              {(item as any).stock_quantity || item.quantity || 0} {(item as any).wallpaper_sold_by === 'per_roll' ? 'rolls' : 'units'}
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
-                              Not tracked
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1">
-                            <EditInventoryDialog 
-                              item={item}
-                              trigger={
-                                <Button variant="ghost" size="sm">
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              }
+                    {paginatedItems.map((item) => {
+                      const isSelected = selectedItems.includes(item.id);
+                      return (
+                        <tr key={item.id} className="border-t hover:bg-muted/30">
+                          <td className="px-4 py-3">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={(checked) => selectItem(item.id, !!checked)}
+                              aria-label={`Select ${item.name}`}
                             />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(item.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-4 py-3">
+                            {item.image_url ? (
+                              <img src={item.image_url} alt={item.name} className="h-12 w-12 rounded object-cover" />
+                            ) : (
+                              <div className="h-12 w-12 rounded bg-muted flex items-center justify-center">
+                                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 font-medium">{item.name}</td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">{item.sku || '-'}</td>
+                          <td className="px-4 py-3 text-sm">{item.supplier || '-'}</td>
+                          <td className="px-4 py-3">
+                            {(item as any).wallpaper_sold_by ? (
+                              <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-xs">
+                                {(item as any).wallpaper_sold_by === 'per_roll' ? 'Per Roll' : 
+                                 (item as any).wallpaper_sold_by === 'per_unit' ? 'Per Meter' : 
+                                 (item as any).wallpaper_sold_by === 'per_sqm' ? 'Per m²' : 'Per Unit'}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {(item as any).wallpaper_roll_width && (item as any).wallpaper_roll_length ? (
+                              <span>{(item as any).wallpaper_roll_width}cm × {(item as any).wallpaper_roll_length}m</span>
+                            ) : (
+                              <Badge variant="secondary" className="text-xs">Not specified</Badge>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {item.pattern_repeat_vertical ? `${item.pattern_repeat_vertical}cm` : '-'}
+                          </td>
+                          <td className="px-4 py-3 font-medium">
+                            <div className="flex flex-col">
+                              <span>{formatPrice(item.price_per_meter || item.selling_price || 0)}</span>
+                              {(item as any).wallpaper_sold_by && (
+                                <span className="text-xs text-muted-foreground">
+                                  per {(item as any).wallpaper_sold_by === 'per_roll' ? 'roll' : 
+                                       (item as any).wallpaper_sold_by === 'per_unit' ? 'meter' : 
+                                       (item as any).wallpaper_sold_by === 'per_sqm' ? 'm²' : 'unit'}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            {item.quantity > 0 || (item as any).stock_quantity > 0 ? (
+                              <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20">
+                                {(item as any).stock_quantity || item.quantity || 0} {(item as any).wallpaper_sold_by === 'per_roll' ? 'rolls' : 'units'}
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+                                Not tracked
+                              </Badge>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1">
+                              <EditInventoryDialog 
+                                item={item}
+                                trigger={
+                                  <Button variant="ghost" size="sm">
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                }
+                              />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(item.id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
