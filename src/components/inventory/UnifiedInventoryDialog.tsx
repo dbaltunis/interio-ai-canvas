@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Plus, DollarSign, Ruler, Package, Store, TrendingUp, Trash2, ImageIcon, Upload, X, QrCode } from "lucide-react";
 import { QRCodeDisplay } from "./QRCodeDisplay";
+import { InventoryTrackingInfo } from "./InventoryTrackingInfo";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateEnhancedInventoryItem, useUpdateEnhancedInventoryItem, useDeleteEnhancedInventoryItem, useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useVendors } from "@/hooks/useVendors";
@@ -2613,6 +2614,8 @@ export const UnifiedInventoryDialog = ({
                         </div>
                       </div>
                     )}
+                    
+                    <InventoryTrackingInfo className="mt-4" />
                   </CardContent>
                 </Card>
               </TabsContent>
