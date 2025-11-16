@@ -2,6 +2,9 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { FolderTree, List, LayoutGrid } from "lucide-react";
+import { useVendors } from "@/hooks/useVendors";
+import { useCollections } from "@/hooks/useCollections";
+import { useInventoryStats } from "@/hooks/useEnhancedInventory";
 
 interface LibraryTabsProps {
   activeTab: string;
@@ -11,6 +14,15 @@ interface LibraryTabsProps {
 }
 
 export const LibraryTabs = ({ activeTab, onTabChange, viewMode, onViewModeChange }: LibraryTabsProps) => {
+  const { data: vendors } = useVendors();
+  const { data: collections } = useCollections();
+  const { data: stats } = useInventoryStats();
+
+  const vendorCount = vendors?.length || 0;
+  const collectionCount = collections?.length || 0;
+  const fabricCount = stats?.byCategory?.['fabric'] || 0;
+  const hardwareCount = stats?.byCategory?.['hardware'] || 0;
+
   return (
     <div className="flex items-center justify-between">
       <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
@@ -20,16 +32,16 @@ export const LibraryTabs = ({ activeTab, onTabChange, viewMode, onViewModeChange
             Categories
           </TabsTrigger>
           <TabsTrigger value="vendors">
-            Vendors (4)
+            Vendors ({vendorCount})
           </TabsTrigger>
           <TabsTrigger value="fabrics">
-            Fabrics (3)
+            Fabrics ({fabricCount})
           </TabsTrigger>
           <TabsTrigger value="hardware">
-            Hardware (2)
+            Hardware ({hardwareCount})
           </TabsTrigger>
           <TabsTrigger value="collections">
-            Collections (8)
+            Collections ({collectionCount})
           </TabsTrigger>
         </TabsList>
       </Tabs>

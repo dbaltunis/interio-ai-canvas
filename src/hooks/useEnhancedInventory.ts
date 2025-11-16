@@ -251,3 +251,46 @@ export const useDeleteEnhancedInventoryItem = () => {
     },
   });
 };
+
+export const useInventoryStats = () => {
+  return useQuery({
+    queryKey: ["inventory-stats"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Get total inventory count by category
+      const { data: items, error } = await supabase
+        .from("enhanced_inventory_items")
+        .select("category, vendor_id, collection_id")
+        .eq("user_id", user.id)
+        .eq("active", true);
+
+      if (error) throw error;
+
+      const stats = {
+        total: items?.length || 0,
+        byCategory: {} as Record<string, number>,
+        byVendor: {} as Record<string, number>,
+        byCollection: {} as Record<string, number>,
+      };
+
+      items?.forEach((item) => {
+        // Count by category
+        if (item.category) {
+          stats.byCategory[item.category] = (stats.byCategory[item.category] || 0) + 1;
+        }
+        // Count by vendor
+        if (item.vendor_id) {
+          stats.byVendor[item.vendor_id] = (stats.byVendor[item.vendor_id] || 0) + 1;
+        }
+        // Count by collection
+        if (item.collection_id) {
+          stats.byCollection[item.collection_id] = (stats.byCollection[item.collection_id] || 0) + 1;
+        }
+      });
+
+      return stats;
+    },
+  });
+};

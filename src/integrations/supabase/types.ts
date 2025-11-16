@@ -1921,6 +1921,59 @@ export type Database = {
         }
         Relationships: []
       }
+      collections: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          name: string
+          season: string | null
+          tags: string[] | null
+          updated_at: string | null
+          user_id: string
+          vendor_id: string
+          year: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          season?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id: string
+          vendor_id: string
+          year?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          season?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+          vendor_id?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collections_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       components_temp: {
         Row: {
           active: boolean | null
@@ -2708,6 +2761,7 @@ export type Database = {
         Row: {
           active: boolean | null
           category: string
+          collection_id: string | null
           collection_name: string | null
           color: string | null
           cost_price: number
@@ -2786,6 +2840,7 @@ export type Database = {
         Insert: {
           active?: boolean | null
           category: string
+          collection_id?: string | null
           collection_name?: string | null
           color?: string | null
           cost_price?: number
@@ -2864,6 +2919,7 @@ export type Database = {
         Update: {
           active?: boolean | null
           category?: string
+          collection_id?: string | null
           collection_name?: string | null
           color?: string | null
           cost_price?: number
@@ -2940,6 +2996,13 @@ export type Database = {
           width?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "enhanced_inventory_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "enhanced_inventory_items_vendor_id_fkey"
             columns: ["vendor_id"]
