@@ -5,12 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Minus, Image as ImageIcon, Trash2, Edit, FileSpreadsheet, Plus, Search, QrCode } from "lucide-react";
+import { Minus, Image as ImageIcon, Trash2, Edit, QrCode } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
-import { AddInventoryDialog } from "./AddInventoryDialog";
 import { EditInventoryDialog } from "./EditInventoryDialog";
-import { CategoryImportExport } from "./CategoryImportExport";
-import { FilterButton } from "../library/FilterButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { JobsPagination } from "../jobs/JobsPagination";
@@ -18,13 +15,6 @@ import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
 import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QRCodeDisplay } from "./QRCodeDisplay";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 interface HardwareInventoryViewProps {
   searchQuery: string;
@@ -144,46 +134,6 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-green-500/10 rounded-lg">
-            <Minus className="h-6 w-6 text-green-500" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Hardware</h2>
-            <p className="text-sm text-muted-foreground">
-              {filteredItems.length} hardware items in inventory
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Import/Export
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Import/Export Hardware</DialogTitle>
-              </DialogHeader>
-              <CategoryImportExport category="hardware" onImportComplete={refetch} />
-            </DialogContent>
-          </Dialog>
-          <AddInventoryDialog
-            trigger={
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add
-              </Button>
-            }
-            initialCategory="hardware"
-          />
-        </div>
-      </div>
-
       {/* Category Tabs */}
       <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
         <TabsList className="bg-background border-b border-border/50 rounded-none p-0 h-auto flex w-full justify-start gap-0">

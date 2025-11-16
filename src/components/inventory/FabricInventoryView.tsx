@@ -5,26 +5,16 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Home, Plus, Search, Image as ImageIcon, Trash2, Edit, FileSpreadsheet, QrCode } from "lucide-react";
+import { Home, Image as ImageIcon, Trash2, Edit, QrCode } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
-import { AddInventoryDialog } from "./AddInventoryDialog";
 import { EditInventoryDialog } from "./EditInventoryDialog";
-import { CategoryImportExport } from "./CategoryImportExport";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { JobsPagination } from "../jobs/JobsPagination";
 import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
 import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
-import { FilterButton } from "../library/FilterButton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QRCodeDisplay } from "./QRCodeDisplay";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 interface FabricInventoryViewProps {
   searchQuery: string;
@@ -47,12 +37,8 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
   const { data: inventory, refetch } = useEnhancedInventory();
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState("all");
-  const [localSearch, setLocalSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pricingGrids, setPricingGrids] = useState<Array<{ id: string; grid_code: string | null; name: string }>>([]);
-  const [localVendor, setLocalVendor] = useState<string | undefined>(selectedVendor);
-  const [localCollection, setLocalCollection] = useState<string | undefined>(selectedCollection);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const fabricItems = inventory?.filter(item => 
     item.category === 'fabric'
@@ -84,23 +70,17 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
   }, []);
 
   const filteredItems = fabricItems.filter(item => {
-    const matchesGlobalSearch = item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.sku?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesLocalSearch = item.name?.toLowerCase().includes(localSearch.toLowerCase()) ||
-      item.sku?.toLowerCase().includes(localSearch.toLowerCase()) ||
-      item.supplier?.toLowerCase().includes(localSearch.toLowerCase());
+    const matchesSearch = item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.supplier?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesCategory = activeCategory === "all" || 
       item.subcategory === activeCategory;
 
-    const matchesVendor = !localVendor || item.vendor_id === localVendor;
-    const matchesCollection = !localCollection || item.collection_id === localCollection;
-    
-    const matchesTags = selectedTags.length === 0 || 
-      (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
+    const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
+    const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
 
-    return matchesGlobalSearch && matchesLocalSearch && matchesCategory && matchesVendor && matchesCollection && matchesTags;
+    return matchesSearch && matchesCategory && matchesVendor && matchesCollection;
   });
 
   // Pagination
@@ -113,11 +93,6 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
   // Reset to page 1 when filters change
   const handleCategoryChange = (category: string) => {
     setActiveCategory(category);
-    setCurrentPage(1);
-  };
-  
-  const handleSearchChange = (search: string) => {
-    setLocalSearch(search);
     setCurrentPage(1);
   };
 
@@ -176,66 +151,6 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-blue-500/10 rounded-lg">
-            <Home className="h-6 w-6 text-blue-500" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Fabrics</h2>
-            <p className="text-sm text-muted-foreground">
-              {filteredItems.length} fabrics in inventory
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Import/Export
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Import/Export Fabrics</DialogTitle>
-              </DialogHeader>
-              <CategoryImportExport category="fabrics" onImportComplete={refetch} />
-            </DialogContent>
-          </Dialog>
-          <AddInventoryDialog
-            trigger={
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add
-              </Button>
-            }
-            initialCategory="fabric"
-          />
-        </div>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, SKU, or description..."
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <FilterButton
-          selectedVendor={localVendor}
-          selectedCollection={localCollection}
-          selectedTags={selectedTags}
-          onVendorChange={setLocalVendor}
-          onCollectionChange={setLocalCollection}
-          onTagsChange={setSelectedTags}
-        />
-      </div>
 
       {/* Category Tabs */}
       <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
@@ -508,7 +423,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
                   <div>
                     <h3 className="text-lg font-semibold">No fabrics found</h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {localSearch || searchQuery ? 'Try adjusting your search' : 'Add your first fabric to get started'}
+                      {searchQuery ? 'Try adjusting your search' : 'Add your first fabric to get started'}
                     </p>
                   </div>
                 </div>
