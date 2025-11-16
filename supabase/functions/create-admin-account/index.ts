@@ -111,15 +111,15 @@ serve(async (req) => {
     console.log('Profile created for user:', newUser.user.id);
 
     // Step 3: Create user role
-    const { error: roleError } = await supabaseAdmin
+    const { error: roleInsertError } = await supabaseAdmin
       .from('user_roles')
       .insert({
         user_id: newUser.user.id,
         role: 'Owner',
       });
 
-    if (roleError) {
-      console.error('Error creating role:', roleError);
+    if (roleInsertError) {
+      console.error('Error creating role:', roleInsertError);
       // Note: We continue even if role creation fails, as it might be auto-created by triggers
     }
 
