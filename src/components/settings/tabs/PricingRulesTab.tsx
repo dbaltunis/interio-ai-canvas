@@ -271,8 +271,8 @@ export const PricingRulesTab = () => {
         </CardContent>
       </Card>
 
-      {/* Pricing Rules Management */}
-      <PricingRulesSection />
+      {/* Pricing Rules Management - Hidden (not fully functional) */}
+      {false && <PricingRulesSection />}
 
       {/* Category-Specific Pricing */}
       <Card>
