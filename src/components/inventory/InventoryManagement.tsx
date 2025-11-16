@@ -4,14 +4,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, AlertTriangle, TrendingUp, Package, ShoppingBag, Shield } from "lucide-react";
-import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { useEnhancedInventory, useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { InventoryImportDialog } from "./InventoryImportDialog";
 import { ShopifySyncManager } from "./ShopifySyncManager";
 import { ShopifyQuickSetupBanner } from "./ShopifyQuickSetupBanner";
 import { ShopifyIntegrationDialog } from "../library/ShopifyIntegrationDialog";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
+import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
+import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
+import { useToast } from "@/hooks/use-toast";
 
 export const InventoryManagement = () => {
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
@@ -23,6 +27,17 @@ export const InventoryManagement = () => {
 
   const { data: inventory, isLoading } = useEnhancedInventory();
   const { integration } = useShopifyIntegrationReal();
+  const deleteInventoryItem = useDeleteEnhancedInventoryItem();
+  const { toast } = useToast();
+  
+  // Bulk selection
+  const {
+    selectedItems,
+    selectItem,
+    selectAll,
+    clearSelection,
+    selectionStats,
+  } = useBulkInventorySelection(inventory || []);
   
   // Calculate low stock items from enhanced inventory
   const lowStockItems = inventory?.filter(item => 
@@ -75,6 +90,27 @@ export const InventoryManagement = () => {
       style: 'currency',
       currency: 'USD',
     }).format(amount);
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(
+        selectedItems.map(itemId => deleteInventoryItem.mutateAsync(itemId))
+      );
+      
+      toast({
+        title: "Items deleted",
+        description: `Successfully deleted ${selectedItems.length} items`,
+      });
+      
+      clearSelection();
+    } catch (error) {
+      toast({
+        title: "Error deleting items",
+        description: "Some items could not be deleted",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -202,6 +238,14 @@ export const InventoryManagement = () => {
           <CardTitle>Current Inventory</CardTitle>
         </CardHeader>
         <CardContent>
+          {selectedItems.length > 0 && canManageInventory && (
+            <InventoryBulkActionsBar
+              selectedCount={selectedItems.length}
+              onClearSelection={clearSelection}
+              onBulkDelete={handleBulkDelete}
+            />
+          )}
+          
           {!inventory || inventory.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Package className="mx-auto h-12 w-12 mb-4" />
@@ -211,6 +255,15 @@ export const InventoryManagement = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {canManageInventory && (
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectionStats.allSelected}
+                        onCheckedChange={(checked) => selectAll(!!checked)}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Item</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Stock</TableHead>
@@ -223,9 +276,19 @@ export const InventoryManagement = () => {
               <TableBody>
                 {inventory.map((item) => {
                   const isLowStock = lowStockItems?.some(lowItem => lowItem.id === item.id);
+                  const isSelected = selectedItems.includes(item.id);
                   
                   return (
                     <TableRow key={item.id}>
+                      {canManageInventory && (
+                        <TableCell>
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={(checked) => selectItem(item.id, !!checked)}
+                            aria-label={`Select ${item.name}`}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell>
                         <div className="font-medium">{item.name}</div>
                         {item.sku && (
