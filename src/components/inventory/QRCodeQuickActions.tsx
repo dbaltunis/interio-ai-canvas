@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,8 +24,8 @@ interface QRCodeQuickActionsProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   itemId: string;
-  onViewDetails: () => void;
-  onEdit: () => void;
+  onViewDetails: (item: any) => void;
+  onEdit: (item: any) => void;
 }
 
 export const QRCodeQuickActions = ({
@@ -91,6 +91,9 @@ export const QRCodeQuickActions = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Quick Actions</DialogTitle>
+          <DialogDescription>
+            Quickly adjust quantity or manage this inventory item
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -172,7 +175,7 @@ export const QRCodeQuickActions = ({
             <Button
               variant="outline"
               onClick={() => {
-                onViewDetails();
+                onViewDetails(item);
                 onOpenChange(false);
               }}
             >
@@ -182,7 +185,7 @@ export const QRCodeQuickActions = ({
             <Button
               variant="outline"
               onClick={() => {
-                onEdit();
+                onEdit(item);
                 onOpenChange(false);
               }}
             >
