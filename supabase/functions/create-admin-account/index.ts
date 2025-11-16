@@ -88,22 +88,24 @@ serve(async (req) => {
 
     console.log('User created:', newUser.user.id);
 
-    // Step 2: Create user profile
-    const { error: profileInsertError } = await supabaseAdmin
+    // Step 2: Update user profile (it may have been auto-created by trigger)
+    const { error: profileUpsertError } = await supabaseAdmin
       .from('user_profiles')
-      .insert({
+      .upsert({
         user_id: newUser.user.id,
         display_name: displayName,
         role: 'Owner', // New accounts are owners of their account
         account_type: accountType,
         parent_account_id: null, // This is a parent account
+      }, {
+        onConflict: 'user_id'
       });
 
-    if (profileInsertError) {
-      console.error('Error creating profile:', profileInsertError);
+    if (profileUpsertError) {
+      console.error('Error updating profile:', profileUpsertError);
       // Rollback: delete auth user
       await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
-      throw new Error(`Failed to create profile: ${profileInsertError.message}`);
+      throw new Error(`Failed to update profile: ${profileUpsertError.message}`);
     }
 
     console.log('Profile created for user:', newUser.user.id);
