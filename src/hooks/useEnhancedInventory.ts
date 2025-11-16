@@ -85,6 +85,9 @@ export interface EnhancedInventoryItem {
   price_group?: string | null;
   product_category?: string | null;
   
+  // Tags for categorization and search
+  tags?: string[];
+  
   // Timestamps
   created_at: string;
   updated_at: string;
