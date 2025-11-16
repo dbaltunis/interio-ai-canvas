@@ -28,6 +28,8 @@ import {
 interface FabricInventoryViewProps {
   searchQuery: string;
   viewMode: "grid" | "list";
+  selectedVendor?: string;
+  selectedCollection?: string;
 }
 
 const FABRIC_CATEGORIES = [
@@ -40,7 +42,7 @@ const FABRIC_CATEGORIES = [
 
 const ITEMS_PER_PAGE = 24;
 
-export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryViewProps) => {
+export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection }: FabricInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState("all");
@@ -88,7 +90,10 @@ export const FabricInventoryView = ({ searchQuery, viewMode }: FabricInventoryVi
     const matchesCategory = activeCategory === "all" || 
       item.subcategory === activeCategory;
 
-    return matchesGlobalSearch && matchesLocalSearch && matchesCategory;
+    const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
+    const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
+
+    return matchesGlobalSearch && matchesLocalSearch && matchesCategory && matchesVendor && matchesCollection;
   });
 
   // Pagination

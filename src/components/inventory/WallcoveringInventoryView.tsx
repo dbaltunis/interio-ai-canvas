@@ -28,6 +28,8 @@ import {
 interface WallcoveringInventoryViewProps {
   searchQuery: string;
   viewMode: "grid" | "list";
+  selectedVendor?: string;
+  selectedCollection?: string;
 }
 
 const WALLCOVERING_CATEGORIES = [
@@ -39,7 +41,7 @@ const WALLCOVERING_CATEGORIES = [
 
 const ITEMS_PER_PAGE = 24;
 
-export const WallcoveringInventoryView = ({ searchQuery, viewMode }: WallcoveringInventoryViewProps) => {
+export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection }: WallcoveringInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState("all");
@@ -70,7 +72,10 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode }: Wallcoverin
     const matchesCategory = activeCategory === "all" || 
       item.subcategory === activeCategory;
 
-    return matchesGlobalSearch && matchesLocalSearch && matchesCategory;
+    const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
+    const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
+
+    return matchesGlobalSearch && matchesLocalSearch && matchesCategory && matchesVendor && matchesCollection;
   });
 
   // Pagination

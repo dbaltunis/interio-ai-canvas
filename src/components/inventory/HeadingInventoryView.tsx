@@ -15,9 +15,11 @@ import { EyeletRing } from "./EyeletRingSelector";
 interface HeadingInventoryViewProps {
   searchQuery: string;
   viewMode: "grid" | "list";
+  selectedVendor?: string;
+  selectedCollection?: string;
 }
 
-export const HeadingInventoryView = ({ searchQuery, viewMode }: HeadingInventoryViewProps) => {
+export const HeadingInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection }: HeadingInventoryViewProps) => {
   const { data: headings = [], refetch } = useEnhancedInventoryByCategory('heading');
   const deleteItem = useDeleteEnhancedInventoryItem();
   const loadDefaults = useLoadDefaultHeadings();
@@ -31,7 +33,9 @@ export const HeadingInventoryView = ({ searchQuery, viewMode }: HeadingInventory
     .filter(heading =>
       heading.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       heading.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    )
+    .filter(heading => !selectedVendor || heading.vendor_id === selectedVendor)
+    .filter(heading => !selectedCollection || heading.collection_id === selectedCollection);
 
   const handleDelete = async (id: string, name: string) => {
     if (confirm(`Delete ${name}?`)) {

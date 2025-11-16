@@ -32,7 +32,8 @@ export const InventoryStockBadge = ({ itemId }: InventoryStockBadgeProps) => {
     );
   }
 
-  if (!item) return null;
+  // Don't show badge if item doesn't exist or quantity is null/undefined (not tracking)
+  if (!item || item.quantity == null) return null;
 
   const isLowStock = item.quantity <= (item.reorder_point || 0);
   const isOutOfStock = item.quantity <= 0;
