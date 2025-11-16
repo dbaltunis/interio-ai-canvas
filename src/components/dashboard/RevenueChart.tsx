@@ -1,6 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 
 interface RevenueChartProps {
   data: Array<{
@@ -11,6 +12,8 @@ interface RevenueChartProps {
 }
 
 export const RevenueChart = ({ data }: RevenueChartProps) => {
+  const { formatCurrency } = useFormattedCurrency();
+
   return (
     <Card>
       <CardHeader>
@@ -32,7 +35,7 @@ export const RevenueChart = ({ data }: RevenueChartProps) => {
               />
               <Tooltip 
                 formatter={(value, name) => [
-                  name === 'revenue' ? `$${value}` : value,
+                  name === 'revenue' ? formatCurrency(Number(value)) : value,
                   name === 'revenue' ? 'Revenue' : 'Quotes'
                 ]}
                 contentStyle={{

@@ -10,11 +10,13 @@ export const useCurrency = () => {
   const currency = (() => {
     try {
       const measurementUnits: MeasurementUnits = businessSettings?.measurement_units 
-        ? JSON.parse(businessSettings.measurement_units) 
+        ? (typeof businessSettings.measurement_units === 'string' 
+            ? JSON.parse(businessSettings.measurement_units)
+            : businessSettings.measurement_units)
         : defaultMeasurementUnits;
-      return measurementUnits.currency || 'NZD';
+      return measurementUnits.currency || 'EUR';
     } catch {
-      return 'NZD';
+      return 'EUR';
     }
   })();
 

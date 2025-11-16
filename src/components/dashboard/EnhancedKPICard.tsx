@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LucideIcon, RefreshCw, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
 import { KPIConfig } from '@/hooks/useKPIConfig';
 import { cn } from '@/lib/utils';
+import { useFormattedCurrency } from '@/hooks/useFormattedCurrency';
 
 interface EnhancedKPICardProps {
   config: KPIConfig;
@@ -31,6 +32,7 @@ export const EnhancedKPICard = ({
 }: EnhancedKPICardProps) => {
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const { formatCurrency } = useFormattedCurrency();
 
   // Auto refresh based on interval
   useEffect(() => {
@@ -54,6 +56,10 @@ export const EnhancedKPICard = ({
   };
 
   const getDisplayValue = () => {
+    // Format currency for revenue-type KPIs
+    if (typeof value === 'number' && (config.id?.includes('revenue') || config.id?.includes('value'))) {
+      return formatCurrency(value, { decimals: 0 });
+    }
     if (typeof value === 'number' && config.displayFormat === 'gauge') {
       return `${value}%`;
     }

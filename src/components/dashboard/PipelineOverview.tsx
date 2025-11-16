@@ -2,6 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 
 interface PipelineData {
   stage: string;
@@ -16,13 +17,15 @@ interface PipelineOverviewProps {
 }
 
 export const PipelineOverview = ({ data, totalValue }: PipelineOverviewProps) => {
+  const { formatCurrency } = useFormattedCurrency();
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-lg">
           <span className="text-foreground">Sales Pipeline</span>
           <Badge variant="outline" className="text-base font-semibold bg-primary/10 text-primary border-primary/20">
-            ${totalValue.toLocaleString()}
+            {formatCurrency(totalValue, { decimals: 0 })}
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -34,7 +37,7 @@ export const PipelineOverview = ({ data, totalValue }: PipelineOverviewProps) =>
               <div className="flex items-center gap-3">
                 <span className="text-sm text-muted-foreground">{stage.count} quotes</span>
                 <Badge variant="secondary" className="text-xs bg-muted/50">
-                  ${stage.value.toLocaleString()}
+                  {formatCurrency(stage.value, { decimals: 0 })}
                 </Badge>
               </div>
             </div>

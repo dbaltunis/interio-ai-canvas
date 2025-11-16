@@ -4,10 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 
 export const RevenuePieChart = () => {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: projects, isLoading: projectsLoading } = useProjects();
+  const { formatCurrency } = useFormattedCurrency();
 
   const isLoading = statsLoading || projectsLoading;
 
@@ -58,7 +60,7 @@ export const RevenuePieChart = () => {
           </CardTitle>
           <div className="text-right shrink-0">
             <p className="text-xl font-bold text-foreground">
-              ${totalRevenue.toLocaleString()}
+              {formatCurrency(totalRevenue, { decimals: 0 })}
             </p>
           </div>
         </div>
@@ -87,7 +89,7 @@ export const RevenuePieChart = () => {
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value: number) => `$${value.toLocaleString()}`}
+                formatter={(value: number) => formatCurrency(value, { decimals: 0 })}
                 contentStyle={{
                   backgroundColor: "hsl(var(--card))",
                   border: "1px solid hsl(var(--border))",
