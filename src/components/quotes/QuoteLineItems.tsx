@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +19,7 @@ interface LineItem {
 }
 
 interface QuoteLineItemsProps {
+  initialItems?: LineItem[];
   items: LineItem[];
   onItemsChange: (items: LineItem[]) => void;
   subtotal: number;
@@ -28,6 +30,7 @@ interface QuoteLineItemsProps {
 }
 
 export const QuoteLineItems = ({
+  initialItems,
   items,
   onItemsChange,
   subtotal,
@@ -36,6 +39,8 @@ export const QuoteLineItems = ({
   total,
   onTaxRateChange
 }: QuoteLineItemsProps) => {
+  const [lineItems, setLineItems] = useState<LineItem[]>(initialItems || []);
+  const { formatCurrency } = useFormattedCurrency();
   const [newItem, setNewItem] = useState<Omit<LineItem, 'id' | 'total'>>({
     description: "",
     quantity: 1,
@@ -79,12 +84,6 @@ export const QuoteLineItems = ({
     onItemsChange(items.filter(item => item.id !== id));
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
 
   return (
     <div className="space-y-6">

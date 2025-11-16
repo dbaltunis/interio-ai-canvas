@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -30,6 +31,7 @@ export const CreatePurchaseOrderDialog = ({ open, onOpenChange }: CreatePurchase
   const [expectedDelivery, setExpectedDelivery] = useState("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<OrderItem[]>([{ inventory_item_id: "", quantity: 1, unit_price: 0 }]);
+  const { formatCurrency } = useFormattedCurrency();
 
   const addItem = () => {
     setItems([...items, { inventory_item_id: "", quantity: 1, unit_price: 0 }]);

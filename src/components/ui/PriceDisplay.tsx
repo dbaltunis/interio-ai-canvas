@@ -2,7 +2,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { useMarkupSettings, calculateWithMarkup, calculateMarkupAmount } from "@/hooks/useMarkupSettings";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -25,22 +25,10 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
 }) => {
   const { data: markupSettings } = useMarkupSettings();
   const { data: userRole } = useUserRole();
-  const { units } = useMeasurementUnits();
+  const { formatCurrency } = useFormattedCurrency();
 
   const finalPrice = calculateWithMarkup(baseCost, category, markupSettings);
   const markupAmount = calculateMarkupAmount(baseCost, category, markupSettings);
-  
-  const formatCurrency = (amount: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
-  };
 
   const sizeClasses = {
     sm: 'text-sm',

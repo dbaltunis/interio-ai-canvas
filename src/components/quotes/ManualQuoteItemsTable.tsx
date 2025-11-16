@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useManualQuoteItems } from '@/hooks/useManualQuoteItems';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useFormattedCurrency } from '@/hooks/useFormattedCurrency';
 import {
   Table,
   TableBody,
@@ -40,6 +41,8 @@ const UNITS = ['unit', 'hour', 'sqm', 'meter', 'piece', 'set', 'roll', 'panel'];
 
 export const ManualQuoteItemsTable: React.FC<ManualQuoteItemsTableProps> = ({ quoteId }) => {
   const { items, addItem, updateItem, deleteItem, totalAmount, totalTax, grandTotal } = useManualQuoteItems(quoteId);
+  const [isAddingItem, setIsAddingItem] = useState(false);
+  const { formatCurrency } = useFormattedCurrency();
   const [newItem, setNewItem] = useState({
     item_name: '',
     description: '',
@@ -194,7 +197,7 @@ export const ManualQuoteItemsTable: React.FC<ManualQuoteItemsTableProps> = ({ qu
                     />
                   </TableCell>
                   <TableCell className="font-medium">
-                    ${item.total_price.toFixed(2)}
+                    {formatCurrency(item.total_price)}
                   </TableCell>
                   <TableCell>
                     <Button
@@ -298,7 +301,7 @@ export const ManualQuoteItemsTable: React.FC<ManualQuoteItemsTableProps> = ({ qu
                   />
                 </TableCell>
                 <TableCell className="font-medium">
-                  ${(newItem.quantity * newItem.unit_price).toFixed(2)}
+                  {formatCurrency(newItem.quantity * newItem.unit_price)}
                 </TableCell>
                 <TableCell>
                   <Button

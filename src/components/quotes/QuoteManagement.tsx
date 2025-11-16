@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,6 +41,7 @@ export const QuoteManagement = ({ quote, onBack }: QuoteManagementProps) => {
   const { toast } = useToast();
   const updateQuote = useUpdateQuote();
   const { data: clients } = useClients();
+  const { formatCurrency } = useFormattedCurrency();
 
   const selectedClient = quote.client_id ? clients?.find(c => c.id === quote.client_id) : null;
 
@@ -106,12 +108,6 @@ export const QuoteManagement = ({ quote, onBack }: QuoteManagementProps) => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
 
   return (
     <div className="min-h-screen bg-white w-full">

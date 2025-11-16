@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Home, Image as ImageIcon, Trash2, Edit, QrCode } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { EditInventoryDialog } from "./EditInventoryDialog";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { JobsPagination } from "../jobs/JobsPagination";
@@ -37,6 +38,7 @@ const ITEMS_PER_PAGE = 24;
 export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection, selectedStorageLocation }: FabricInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { toast } = useToast();
+  const { formatCurrency: formatPrice } = useFormattedCurrency();
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pricingGrids, setPricingGrids] = useState<Array<{ id: string; grid_code: string | null; name: string }>>([]);
@@ -144,12 +146,6 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(price);
-  };
 
   return (
     <div className="space-y-6">
