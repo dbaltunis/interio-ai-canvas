@@ -62,10 +62,12 @@ export const SettingsView = () => {
             <span className="hidden sm:inline font-medium">Personal</span>
           </TabsTrigger>
           
+          {/* HIDDEN: Billing tab - Not ready yet
           <TabsTrigger value="billing" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <CreditCard className="h-4 w-4" />
             <span className="hidden sm:inline font-medium">Billing</span>
           </TabsTrigger>
+          */}
           
           {canViewSettings && <TabsTrigger value="business" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
               <Building2 className="h-4 w-4" />
@@ -123,6 +125,7 @@ export const SettingsView = () => {
           </Card>
         </TabsContent>
 
+        {/* HIDDEN: Billing tab content - Not ready yet
         <TabsContent value="billing" className="animate-fade-in">
           <Card className="hover:shadow-md transition-all duration-300">
             <CardContent className="p-6">
@@ -130,6 +133,7 @@ export const SettingsView = () => {
             </CardContent>
           </Card>
         </TabsContent>
+        */}
 
         {canViewSettings && <TabsContent value="business" className="animate-fade-in">
             <Card className="hover:shadow-md transition-all duration-300">
