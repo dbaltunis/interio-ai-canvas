@@ -5,7 +5,7 @@ import { useUserInvitations } from "@/hooks/useUserInvitations";
 import { useUsers } from "@/hooks/useUsers";
 import { UserList } from "../user-management/UserList";
 import { PendingInvitations } from "../user-management/PendingInvitations";
-import { StatusManagement } from "../user-management/StatusManagement";
+
 import { RolePermissions } from "../user-management/RolePermissions";
 import { PermissionManager } from "../user-management/PermissionManager";
 import { TeamOverview } from "../user-management/TeamOverview";
@@ -50,10 +50,8 @@ export const UserManagementTab = () => {
         />
         
         {/* Show pending invitations prominently if there are any */}
-        {pendingInvitations.length > 0 ? (
+        {pendingInvitations.length > 0 && (
           <PendingInvitations invitations={pendingInvitations} />
-        ) : (
-          <StatusManagement />
         )}
       </div>
       

@@ -27,26 +27,39 @@ export const useProjectInventoryDeduction = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Check business settings for which statuses trigger deduction
+      // Fetch business settings to check if inventory tracking is enabled
       const { data: settings } = await supabase
         .from('business_settings')
         .select('inventory_config')
         .eq('user_id', user.id)
+        .maybeSingle();
+
+      const inventoryConfig = (settings?.inventory_config as any) || {};
+      const trackInventory = inventoryConfig.track_inventory ?? false;
+      const deductionStatusIds = inventoryConfig.deduction_status_ids || [];
+
+      if (!trackInventory) {
+        console.log('Inventory tracking is disabled in settings');
+        return { deducted: false, reason: 'Inventory tracking is disabled' };
+      }
+
+      // Get the status ID from the project to check against configured statuses
+      const { data: project } = await supabase
+        .from('projects')
+        .select('status_id, job_statuses(id, name)')
+        .eq('id', projectId)
         .single();
 
-      const inventoryConfig = (settings?.inventory_config && typeof settings.inventory_config === 'object') 
-        ? settings.inventory_config as Record<string, any>
-        : {};
-        
-      const deductionStatuses = (inventoryConfig.deduction_statuses as string[]) || ['order', 'ordered', 'confirmed', 'in production'];
-      
-      // Check if this status should trigger deduction
-      const shouldDeduct = deductionStatuses.some((s: string) => 
-        statusName.toLowerCase().includes(s.toLowerCase())
-      );
+      if (!project?.status_id) {
+        console.log('Project status not found');
+        return { deducted: false, reason: 'Project status not found' };
+      }
 
-      if (!shouldDeduct) {
-        console.log(`Status "${statusName}" does not trigger inventory deduction`);
+      const currentStatusId = project.status_id;
+
+      // Check if this status is configured to trigger deduction
+      if (!deductionStatusIds.includes(currentStatusId)) {
+        console.log(`Status "${statusName}" (ID: ${currentStatusId}) is not configured to trigger inventory deduction`);
         return { deducted: false, reason: 'Status not configured for deduction' };
       }
 

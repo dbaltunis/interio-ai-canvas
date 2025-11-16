@@ -20,11 +20,14 @@ export const FeatureFlagsSettings = () => {
   };
 
   const inventoryConfig: InventoryConfig = (settings?.inventory_config as unknown as InventoryConfig) || {
+    track_inventory: false,
     track_leftovers: true,
     waste_buffer_percentage: 5,
     auto_reorder_enabled: false,
     reorder_threshold_percentage: 20,
     default_location: "main_warehouse",
+    deduction_status_ids: [],
+    ecommerce_sync_enabled: false,
   };
 
   const handleFeatureToggle = async (featureKey: keyof FeatureFlags, enabled: boolean) => {
