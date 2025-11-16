@@ -1,4 +1,4 @@
-name,sku,description,subcategory,quantity,unit,cost_price,selling_price,supplier,vendor_name,collection_name,location,reorder_point,trimming_width,color,material_composition,price_per_meter
-"Bullion Fringe","TRIM-001","Luxury bullion fringe trim","fringe","100","meters","8.50","18.00","Trim Specialists","Trim Specialists","Classic Elegance","Drawer 1","20","8","Gold","100% Rayon","18.00"
-"Decorative Cord","CORD-001","Twisted decorative cord","cord","150","meters","5.00","12.00","Cord & More","Cord & More","Heritage","Drawer 2","30","1.5","Burgundy","Cotton Polyester","12.00"
-"Tassel Tieback","TASSEL-001","Handmade tassel tieback pair","tassel","40","pairs","15.00","35.00","Handcraft Imports","Handcraft Imports","Luxury Living","Display Box","10","12","Cream Gold","Silk Cotton","35.00"
+name,sku,description,subcategory,quantity,unit,cost_price,selling_price,supplier,vendor_name,collection_name,location,reorder_point,trimming_width,color,material_composition,price_per_meter,tags
+"Bullion Fringe","TRIM-001","Luxury bullion fringe trim","fringe","100","meters","8.50","18.00","Trim Specialists","Trim Specialists","Classic Elegance","Drawer 1","20","8","Gold","100% Rayon","18.00","fringe,luxury,gold"
+"Decorative Cord","CORD-001","Twisted decorative cord","cord","150","meters","5.00","12.00","Cord & More","Cord & More","Heritage","Drawer 2","30","1.5","Burgundy","Cotton Polyester","12.00","cord,twisted,burgundy"
+"Tassel Tieback","TASSEL-001","Handmade tassel tieback pair","tassel","40","pairs","15.00","35.00","Handcraft Imports","Handcraft Imports","Luxury Living","Display Box","10","12","Cream Gold","Silk Cotton","35.00","tassel,handmade,luxury"

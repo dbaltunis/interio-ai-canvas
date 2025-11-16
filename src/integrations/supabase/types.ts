@@ -2821,6 +2821,7 @@ export type Database = {
           subcategory: string | null
           supplier: string | null
           system_type: string | null
+          tags: string[] | null
           treatment_type: string | null
           unit: string | null
           updated_at: string
@@ -2900,6 +2901,7 @@ export type Database = {
           subcategory?: string | null
           supplier?: string | null
           system_type?: string | null
+          tags?: string[] | null
           treatment_type?: string | null
           unit?: string | null
           updated_at?: string
@@ -2979,6 +2981,7 @@ export type Database = {
           subcategory?: string | null
           supplier?: string | null
           system_type?: string | null
+          tags?: string[] | null
           treatment_type?: string | null
           unit?: string | null
           updated_at?: string
