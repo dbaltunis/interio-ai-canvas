@@ -655,8 +655,8 @@ export const PersonalSettingsTab = () => {
         </div>
       </FormSection>
 
-      {/* Localization & Preferences */}
-      <FormSection title="Localization & Preferences" description="Configure your timezone, language, and regional settings" icon={<Globe className="h-5 w-5" />} isEditing={false} onEdit={() => {}} onSave={() => {}} onCancel={() => {}} isSaving={false}>
+      {/* Localization & Preferences - HIDDEN until fully functional */}
+      {false && <FormSection title="Localization & Preferences" description="Configure your timezone, language, and regional settings" icon={<Globe className="h-5 w-5" />} isEditing={false} onEdit={() => {}} onSave={() => {}} onCancel={() => {}} isSaving={false}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormFieldGroup label="Timezone">
             <Select value={preferencesData.timezone} onValueChange={async value => {
@@ -753,10 +753,10 @@ export const PersonalSettingsTab = () => {
 
         {/* Date & Time Preview */}
         <DateTimePreview key={`${preferencesData.date_format}-${preferencesData.time_format}-${preferencesData.timezone}`} />
-      </FormSection>
+      </FormSection>}
 
-      {/* Security Settings */}
-      <FormSection title="Security & Privacy" description="Manage your account security and privacy settings" icon={<Shield className="h-5 w-5" />} isEditing={false} onEdit={() => {}} onSave={handleSaveSecuritySettings} onCancel={() => {}} isSaving={updateSecuritySettings.isPending}>
+      {/* Security Settings - HIDDEN until fully functional */}
+      {false && <FormSection title="Security & Privacy" description="Manage your account security and privacy settings" icon={<Shield className="h-5 w-5" />} isEditing={false} onEdit={() => {}} onSave={handleSaveSecuritySettings} onCancel={() => {}} isSaving={updateSecuritySettings.isPending}>
         <div className="grid gap-4">
           <div className="flex items-center justify-between p-4 border rounded-lg">
             <div className="space-y-1">
@@ -798,7 +798,7 @@ export const PersonalSettingsTab = () => {
           </div>
 
         </div>
-      </FormSection>
+      </FormSection>}
     </div>;
 };
 
