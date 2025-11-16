@@ -63,8 +63,7 @@ export default function AdminAccountManagement() {
   }
 
   return (
-    <SystemOwnerRoute>
-      <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Account Management</h1>
           <Button onClick={() => setIsCreateDialogOpen(true)}>
@@ -182,6 +181,5 @@ export default function AdminAccountManagement() {
         }}
       />
     </div>
-  </SystemOwnerRoute>
   );
 }
