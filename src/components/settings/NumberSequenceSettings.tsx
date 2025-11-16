@@ -327,15 +327,23 @@ export const NumberSequenceSettings = () => {
           </TableBody>
         </Table>
 
-        <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-          <h4 className="font-medium mb-2">How Number Sequences Work</h4>
-          <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-            <li><strong>Prefix:</strong> Text that appears before the number (e.g., "QUOTE-", "ORDER-")</li>
-            <li><strong>Next Number:</strong> The next sequential number to be used</li>
-            <li><strong>Padding:</strong> How many digits the number should have (adds leading zeros)</li>
-            <li><strong>Example:</strong> Prefix "QUOTE-" + Next Number 42 + Padding 4 = "QUOTE-0042"</li>
-            <li><strong>Active:</strong> Only active sequences will be used for new records</li>
-          </ul>
+        <div className="mt-4 space-y-4">
+          <div className="p-4 bg-muted/50 rounded-lg">
+            <h4 className="font-medium mb-2">How Number Sequences Work</h4>
+            <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+              <li><strong>Prefix:</strong> Text that appears before the number (e.g., "QUOTE-", "ORDER-")</li>
+              <li><strong>Next Number:</strong> The next sequential number to be used</li>
+              <li><strong>Padding:</strong> How many digits the number should have (adds leading zeros)</li>
+              <li><strong>Example:</strong> Prefix "QUOTE-" + Next Number 42 + Padding 4 = "QUOTE-0042"</li>
+              <li><strong>Active:</strong> Only active sequences will be used for new records</li>
+            </ul>
+          </div>
+          
+          <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-sm text-blue-900 dark:text-blue-100">
+              <strong>Coming Soon:</strong> Invoice number sequences
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>
