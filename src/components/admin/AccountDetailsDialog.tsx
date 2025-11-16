@@ -11,6 +11,9 @@ interface AccountDetailsDialogProps {
 }
 
 export function AccountDetailsDialog({ account, open, onOpenChange }: AccountDetailsDialogProps) {
+  const handleAccountDeleted = () => {
+    onOpenChange(false);
+  };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -25,7 +28,7 @@ export function AccountDetailsDialog({ account, open, onOpenChange }: AccountDet
           </TabsList>
 
           <TabsContent value="info" className="space-y-4">
-            <AccountInfoPanel account={account} />
+            <AccountInfoPanel account={account} onAccountDeleted={handleAccountDeleted} />
           </TabsContent>
 
           <TabsContent value="subscription" className="space-y-4">

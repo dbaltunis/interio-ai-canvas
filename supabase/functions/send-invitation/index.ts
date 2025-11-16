@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import sgMail from "https://esm.sh/@sendgrid/mail@8.1.2"
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -15,17 +14,46 @@ serve(async (req) => {
   try {
     const { invitedEmail, invitedName, inviterName, inviterEmail, role, invitationToken } = await req.json()
 
-    // Create a Supabase client with the Auth context of the user that called the function
-    const supabaseClient = createClient(
+    console.log(`Sending invitation email to ${invitedEmail} (${invitedName})`);
+
+    // Create a Supabase client with service role for accessing integration settings
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get the current user
-    const { data: { user } } = await supabaseClient.auth.getUser()
-    if (!user) {
-      throw new Error('Not authenticated')
+    // Get user from auth header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Authorization header is required');
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (authError || !user) {
+      throw new Error('Invalid authorization');
+    }
+
+    // Get the account owner for shared settings
+    const { data: accountOwner } = await supabase.rpc('get_account_owner', { 
+      user_id_param: user.id 
+    });
+    
+    const ownerId = accountOwner || user.id;
+
+    // Get account owner's SendGrid integration (shared by team)
+    const { data: integrationSettings } = await supabase
+      .from('integration_settings')
+      .select('*')
+      .eq('account_owner_id', ownerId)
+      .eq('integration_type', 'sendgrid')
+      .eq('active', true)
+      .maybeSingle();
+
+    // Use SendGrid API key from integration settings or fallback to env
+    const sendgridApiKey = integrationSettings?.configuration?.sendgrid_api_key || Deno.env.get('SENDGRID_API_KEY');
+    if (!sendgridApiKey) {
+      console.error('SendGrid API key not found in integration_settings or environment');
+      throw new Error('SendGrid API key not configured. Please configure SendGrid in your integration settings.');
     }
 
     // Create invitation link with secure domain
@@ -40,7 +68,7 @@ serve(async (req) => {
     const logoUrl = Deno.env.get('BRAND_LOGO_URL') || `${siteUrl}/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png`;
 
     // Email content with InterioApp branding
-    const emailContent = `
+    const emailHtml = `
       <!DOCTYPE html>
       <html>
       <head>
