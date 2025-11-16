@@ -25,7 +25,7 @@ const handler = async (req: Request): Promise<Response> => {
     const now = new Date().toISOString();
     const { data: notifications, error } = await supabase
       .from('appointment_notifications')
-      .select('*, appointments(title, start_time, location, video_meeting_link), user_profiles(display_name)')
+      .select('*, appointments(title, start_time, location, video_meeting_link)')
       .eq('status', 'pending')
       .lte('scheduled_for', now);
 
