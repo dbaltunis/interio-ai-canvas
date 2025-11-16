@@ -327,6 +327,22 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
                           </span>
                         </div>
                       </div>
+                      
+                      {item.tags && item.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-2 border-t">
+                          {item.tags.slice(0, 3).map((tag: string, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0">
+                              {tag}
+                            </Badge>
+                          ))}
+                          {item.tags.length > 3 && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                              +{item.tags.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                      
                       <div className="pt-2 border-t">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">Stock:</span>

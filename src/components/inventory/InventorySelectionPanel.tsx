@@ -381,6 +381,22 @@ export const InventorySelectionPanel = ({
                     {item.quantity > 0 ? `${item.quantity} ${item.unit || 'm'}` : 'Out'}
                   </Badge>}
               </div>
+              
+              {/* Tags */}
+              {item.tags && item.tags.length > 0 && (
+                <div className="flex flex-wrap gap-0.5 pt-1">
+                  {item.tags.slice(0, 2).map((tag: string, idx: number) => (
+                    <Badge key={idx} variant="outline" className="text-[8px] px-1 py-0 h-3.5">
+                      {tag}
+                    </Badge>
+                  ))}
+                  {item.tags.length > 2 && (
+                    <Badge variant="secondary" className="text-[8px] px-1 py-0 h-3.5">
+                      +{item.tags.length - 2}
+                    </Badge>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

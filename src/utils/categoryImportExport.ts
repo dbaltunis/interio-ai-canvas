@@ -86,6 +86,7 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
       color: values[17]?.replace(/^"|"$/g, ''),
       collection_name: values[18]?.replace(/^"|"$/g, ''),
       image_url: values[21]?.replace(/^"|"$/g, ''),
+      tags: values[23]?.replace(/^"|"$/g, '').split(',').map(t => t.trim()).filter(t => t) || [],
       metadata: {
         maxLength: parseFloat(values[19]) || null,
         rotationAllowance: canRotate,
@@ -168,6 +169,7 @@ export const parseHardwareCSV = (csvData: string): ValidationResult => {
       hardware_load_capacity: parseFloat(values[13]) || null,
       hardware_weight: parseFloat(values[14]) || null,
       mounting_type: values[15]?.replace(/^"|"$/g, ''),
+      tags: values[18]?.replace(/^"|"$/g, '').split(',').map(t => t.trim()).filter(t => t) || [],
       metadata: {
         compatible_with: values[16]?.replace(/^"|"$/g, ''),
         dimensions: values[17]?.replace(/^"|"$/g, ''),
@@ -222,6 +224,7 @@ export const parseWallpaperCSV = (csvData: string): ValidationResult => {
       roll_length: parseFloat(values[12]) || null,
       pattern_repeat_vertical: parseFloat(values[13]) || null,
       pattern_repeat_horizontal: parseFloat(values[14]) || null,
+      tags: values[21]?.replace(/^"|"$/g, '').split(',').map(t => t.trim()).filter(t => t) || [],
       metadata: {
         coverage_per_roll: parseFloat(values[15]) || null,
         material_type: values[18]?.replace(/^"|"$/g, ''),
@@ -281,6 +284,7 @@ export const parseTrimmingsCSV = (csvData: string): ValidationResult => {
       supplier: values[8]?.replace(/^"|"$/g, ''),
       location: values[9]?.replace(/^"|"$/g, ''),
       reorder_point: parseFloat(values[10]) || 0,
+      tags: values[16]?.replace(/^"|"$/g, '').split(',').map(t => t.trim()).filter(t => t) || [],
       metadata: {
         trimming_width: parseFloat(values[11]) || null,
         material_composition: values[13]?.replace(/^"|"$/g, ''),
