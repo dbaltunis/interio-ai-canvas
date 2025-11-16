@@ -11,6 +11,7 @@ import { lazy, Suspense } from 'react';
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AdminRoute } from "./components/auth/AdminRoute";
+import { SystemOwnerRoute } from "./components/auth/SystemOwnerRoute";
 import { AuthPage } from "./components/auth/AuthPage";
 import { ErrorBoundary } from "./components/performance/ErrorBoundary";
 import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
@@ -227,11 +228,11 @@ const App = () => {
 
                 {/* Admin Account Management */}
                 <Route path="/admin/accounts" element={
-                  <AdminRoute>
+                  <SystemOwnerRoute>
                     <ErrorBoundary>
                       <AdminAccountManagement />
                     </ErrorBoundary>
-                  </AdminRoute>
+                  </SystemOwnerRoute>
                 } />
 
                 {/* Test pages for Phase 1 features */}
