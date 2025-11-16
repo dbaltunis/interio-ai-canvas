@@ -43,6 +43,8 @@ import { useJobDuplicates } from "@/hooks/useJobDuplicates";
 import { DuplicateJobIndicator } from "./DuplicateJobIndicator";
 import { DuplicateJobsSection } from "./DuplicateJobsSection";
 import { useQueryClient } from "@tanstack/react-query";
+import { useQuotes } from "@/hooks/useQuotes";
+
 
 interface JobDetailPageProps {
   jobId: string;
@@ -62,7 +64,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const updateProject = useUpdateProject();
   const createProject = useCreateProject();
   const { data: duplicates } = useJobDuplicates(jobId);
-  
+  const { data: currentQuotes } = useQuotes(jobId);
+
   // Fetch materials data for badge indicators
   const { data: treatmentMaterials = [] } = useProjectMaterialsUsage(jobId);
   const { data: materialStatusMap = {} } = useTreatmentMaterialsStatus(jobId);
@@ -895,7 +898,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
 
               <TabsContent value="quotation" className="mt-0">
                 <div className="modern-card p-2 sm:p-4 lg:p-6">
-                  <QuotationTab projectId={jobId} />
+                  <QuotationTab projectId={jobId} quoteId={typeof currentQuotes != 'undefined' && currentQuotes.length > 0 ? currentQuotes[0].id : '0'}/>
+                  {/*<QuotationTab projectId={jobId} />*/}
                 </div>
               </TabsContent>
 

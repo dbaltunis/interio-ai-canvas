@@ -1535,7 +1535,7 @@ export const LivePreview = ({
           color: '#000000 !important',
           padding: 0,
           margin: 0,
-          width: '100%'
+          width: '90%'
         }}
       >
         {blocks.map((block, index) => (
