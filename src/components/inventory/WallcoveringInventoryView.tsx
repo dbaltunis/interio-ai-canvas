@@ -36,7 +36,6 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
   const { data: inventory, refetch } = useEnhancedInventory();
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState("all");
-  const [localSearch, setLocalSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   const wallcoveringItems = inventory?.filter(item => 
@@ -75,11 +74,6 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
   
   const handleCategoryChange = (category: string) => {
     setActiveCategory(category);
-    setCurrentPage(1);
-  };
-  
-  const handleSearchChange = (search: string) => {
-    setLocalSearch(search);
     setCurrentPage(1);
   };
 
@@ -138,57 +132,6 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-purple-500/10 rounded-lg">
-            <Wallpaper className="h-6 w-6 text-purple-500" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Wallcoverings</h2>
-            <p className="text-sm text-muted-foreground">
-              {filteredItems.length} wallcoverings in inventory
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search wallcoverings..."
-              value={localSearch}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9 h-9"
-            />
-          </div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                Import/Export
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Import/Export Wallpaper</DialogTitle>
-              </DialogHeader>
-              <CategoryImportExport category="wallpaper" onImportComplete={refetch} />
-            </DialogContent>
-          </Dialog>
-          {/* Add Button with Context */}
-          <AddInventoryDialog
-            trigger={
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add
-              </Button>
-            }
-            onSuccess={refetch}
-            initialCategory="wallcovering"
-            initialSubcategory={activeCategory !== "all" ? activeCategory : undefined}
-          />
-        </div>
-      </div>
 
       {/* Category Tabs */}
       <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
@@ -494,7 +437,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
                   <div>
                     <h3 className="text-lg font-semibold">No wallcoverings found</h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {localSearch || searchQuery ? 'Try adjusting your search' : 'Add your first wallcovering to get started'}
+                      {searchQuery ? 'Try adjusting your search' : 'Add your first wallcovering to get started'}
                     </p>
                   </div>
                 </div>
