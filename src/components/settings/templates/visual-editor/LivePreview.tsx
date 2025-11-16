@@ -937,14 +937,33 @@ const LivePreviewBlock = ({
                               {options.length > 0 ? (
                                 <div>
                                   {item.description && !item.description.toLowerCase().includes('option') && (
-                                    <div style={{ marginBottom: '6px' }}>{item.description}</div>
+                                    <div style={{ marginBottom: '8px', color: '#000' }}>{item.description}</div>
                                   )}
-                                  <div style={{ fontSize: '12px' }}>
-                                    <strong>Options:</strong>
-                                    <ul style={{ margin: '4px 0 0 0', paddingLeft: '16px', listStyleType: 'disc' }}>
+                                  <div style={{ fontSize: '12px', color: '#000' }}>
+                                    <div style={{ fontWeight: '600', marginBottom: '6px' }}>Options:</div>
+                                    <ul style={{ margin: 0, paddingLeft: '18px', listStyleType: 'disc' }}>
                                       {options.map((opt: any, idx: number) => (
-                                        <li key={idx} style={{ marginBottom: '2px' }}>
-                                          <strong>{opt.name}:</strong> {opt.value}
+                                        <li key={idx} style={{ marginBottom: '4px', lineHeight: '1.5' }}>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                            {showImages && opt.image_url && (
+                                              <img 
+                                                src={opt.image_url}
+                                                alt={opt.name}
+                                                className="print-image"
+                                                style={{
+                                                  width: '20px',
+                                                  height: '20px',
+                                                  objectFit: 'cover',
+                                                  borderRadius: '2px',
+                                                  border: '1px solid #ddd',
+                                                  flexShrink: 0
+                                                }}
+                                              />
+                                            )}
+                                            <span style={{ color: '#000' }}>
+                                              <strong>{opt.name}:</strong> {opt.value}
+                                            </span>
+                                          </div>
                                         </li>
                                       ))}
                                     </ul>
