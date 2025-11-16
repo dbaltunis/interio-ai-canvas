@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { 
   DollarSign, 
   TrendingUp, 
@@ -20,6 +21,7 @@ export const BusinessInventoryOverview = () => {
   const canManageInventory = useHasPermission('manage_inventory');
   const canViewInventory = useHasPermission('view_inventory');
   const { data: roleData, isLoading: roleLoading } = useUserRole();
+  const { formatCurrency } = useFormattedCurrency();
   
   // Financial data requires admin/owner role AND vendor cost viewing permission
   const canViewFinancialData = roleData?.isAdmin || roleData?.isOwner || roleData?.canViewVendorCosts;
@@ -91,14 +93,6 @@ export const BusinessInventoryOverview = () => {
     .sort((a, b) => b[1].value - a[1].value)
     .slice(0, 5);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   if (isLoading || roleLoading) {
     return <div className="text-muted-foreground">Loading business metrics...</div>;

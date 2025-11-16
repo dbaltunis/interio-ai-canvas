@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
@@ -19,8 +20,9 @@ interface AssemblyComponent {
 }
 
 export const AssemblyKitBuilder = () => {
-  const { data: markupSettings } = useMarkupSettings();
   const [selectedComponents, setSelectedComponents] = useState<AssemblyComponent[]>([]);
+  const { data: markupSettings } = useMarkupSettings();
+  const { formatCurrency } = useFormattedCurrency();
   const [assemblyName, setAssemblyName] = useState("");
   const [assemblyDescription, setAssemblyDescription] = useState("");
   const [assemblyType, setAssemblyType] = useState<string>("");
@@ -128,7 +130,7 @@ export const AssemblyKitBuilder = () => {
                       </div>
                       <div>
                         <div className="font-medium text-sm">{component.name}</div>
-                        <div className="text-xs text-muted-foreground">${component.unit_price}</div>
+                        <div className="text-xs text-muted-foreground">{formatCurrency(component.unit_price)}</div>
                       </div>
                     </div>
                     <Button 
@@ -171,7 +173,7 @@ export const AssemblyKitBuilder = () => {
                       <div className="flex-1">
                         <div className="font-medium text-sm">{component.name}</div>
                         <div className="text-xs text-muted-foreground">
-                          ${component.unit_price} each
+                          {formatCurrency(component.unit_price)} each
                         </div>
                       </div>
                       
@@ -209,15 +211,15 @@ export const AssemblyKitBuilder = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span>Total Cost:</span>
-                    <span className="font-medium">${totalCost.toFixed(2)}</span>
+                    <span className="font-medium">{formatCurrency(totalCost)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Suggested Price (markup applied):</span>
-                    <span className="font-medium text-green-600">${suggestedPrice.toFixed(2)}</span>
+                    <span className="font-medium text-green-600">{formatCurrency(suggestedPrice)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Profit Margin:</span>
-                    <span className="font-medium">${(suggestedPrice - totalCost).toFixed(2)}</span>
+                    <span className="font-medium">{formatCurrency(suggestedPrice - totalCost)}</span>
                   </div>
                 </div>
 

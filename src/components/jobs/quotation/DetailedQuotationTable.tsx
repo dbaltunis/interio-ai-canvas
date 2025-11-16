@@ -327,8 +327,7 @@ const QuotationItemRow: React.FC<{
       {hasBreakdown && showDetailedView && isExpanded && (
         <div className="border-t bg-muted/20 p-3">
           <QuoteItemBreakdown 
-            breakdown={item.breakdown} 
-            currency={currency}
+            breakdown={item.breakdown}
           />
         </div>
       )}
