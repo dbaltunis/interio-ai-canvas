@@ -200,38 +200,81 @@ const QuotationItemRow: React.FC<{
           </div>
         </div>
         
-        {/* CHILDREN ROWS - Show detailed breakdown */}
-        {item.children.map((child: any, index: number) => (
-          <div 
-            key={child.id || `child-${index}`} 
-            className="flex items-center justify-between p-3 bg-muted/10 border-t text-sm pl-8"
-          >
-            <div className="flex items-center space-x-3 flex-1">
-              {child.image_url && (
-                <QuoteItemImage 
-                  src={child.image_url} 
-                  alt={child.name} 
-                  size={32}
-                />
-              )}
-              <div className="flex-1">
-                <div className="font-medium text-foreground">{child.name}</div>
-                {child.description && child.description !== '-' && (
-                  <div className="text-xs text-muted-foreground">{child.description}</div>
+        {/* CHILDREN ROWS - Separate options from other breakdown items */}
+        {item.children
+          .filter((child: any) => child.category !== 'option' && child.category !== 'options')
+          .map((child: any, index: number) => (
+            <div 
+              key={child.id || `child-${index}`} 
+              className="flex items-center justify-between p-3 bg-muted/10 border-t text-sm pl-8"
+            >
+              <div className="flex items-center space-x-3 flex-1">
+                {child.image_url && (
+                  <QuoteItemImage 
+                    src={child.image_url} 
+                    alt={child.name} 
+                    size={32}
+                  />
                 )}
-                {child.quantity && (
-                  <div className="text-xs text-muted-foreground">
-                    {Number(child.quantity).toFixed(2)}{child.unit ? ` ${child.unit}` : ''} 
-                    {child.unit_price ? ` × ${formatCurrency(child.unit_price, currency)}` : ''}
-                  </div>
-                )}
+                <div className="flex-1">
+                  <div className="font-medium text-foreground">{child.name}</div>
+                  {child.description && child.description !== '-' && (
+                    <div className="text-xs text-muted-foreground">{child.description}</div>
+                  )}
+                  {child.quantity && (
+                    <div className="text-xs text-muted-foreground">
+                      {Number(child.quantity).toFixed(2)}{child.unit ? ` ${child.unit}` : ''} 
+                      {child.unit_price ? ` × ${formatCurrency(child.unit_price, currency)}` : ''}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="text-right font-medium text-foreground">
+                {formatCurrency(child.total || 0, currency)}
               </div>
             </div>
-            <div className="text-right font-medium text-foreground">
-              {formatCurrency(child.total || 0, currency)}
+          ))}
+        
+        {/* OPTIONS ROWS - Display options beautifully with images and proper styling */}
+        {item.children
+          .filter((child: any) => child.category === 'option' || child.category === 'options')
+          .map((option: any, index: number) => (
+            <div 
+              key={option.id || `option-${index}`} 
+              className="flex items-center justify-between p-3 bg-primary/5 border-t text-sm pl-8"
+            >
+              <div className="flex items-center space-x-3 flex-1">
+                {option.image_url && (
+                  <QuoteItemImage 
+                    src={option.image_url} 
+                    alt={option.name} 
+                    size={28}
+                    className="rounded border border-border"
+                  />
+                )}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs font-medium">
+                      {option.name}
+                    </Badge>
+                    {option.description && option.description !== '-' && (
+                      <span className="text-xs text-muted-foreground">{option.description}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                {option.unit_price > 0 && (
+                  <div className="text-xs text-muted-foreground mb-1">
+                    {formatCurrency(option.unit_price, currency)}
+                  </div>
+                )}
+                <div className="font-medium text-foreground">
+                  {formatCurrency(option.total || 0, currency)}
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
       </div>
     );
   }
