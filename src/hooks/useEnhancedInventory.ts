@@ -22,9 +22,20 @@ export interface EnhancedInventoryItem {
   margin_percentage?: number;
   supplier?: string;
   vendor_id?: string;
+  collection_id?: string;
   location?: string;
   reorder_point?: number;
   active?: boolean;
+  
+  // Joined data
+  vendor?: {
+    id: string;
+    name: string;
+  } | null;
+  collection?: {
+    id: string;
+    name: string;
+  } | null;
   
   // Fabric fields (exact database column names)
   fabric_width?: number;
@@ -90,7 +101,11 @@ export const useEnhancedInventory = () => {
 
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
-        .select("*")
+        .select(`
+          *,
+          vendor:vendors!vendor_id(id, name),
+          collection:collections!collection_id(id, name)
+        `)
         .eq("active", true)
         .order("created_at", { ascending: false });
 
@@ -111,7 +126,11 @@ export const useEnhancedInventoryByCategory = (category: string) => {
 
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
-        .select("*")
+        .select(`
+          *,
+          vendor:vendors!vendor_id(id, name),
+          collection:collections!collection_id(id, name)
+        `)
         .eq("category", category)
         .eq("active", true)
         .order("created_at", { ascending: false });
