@@ -9269,7 +9269,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "Owner" | "Admin" | "Manager" | "Staff" | "User"
+      app_role:
+        | "Owner"
+        | "Admin"
+        | "Manager"
+        | "Staff"
+        | "User"
+        | "System Owner"
       modifier_method: "add" | "multiply" | "override"
       option_input_type:
         | "select"
@@ -9413,7 +9419,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["Owner", "Admin", "Manager", "Staff", "User"],
+      app_role: ["Owner", "Admin", "Manager", "Staff", "User", "System Owner"],
       modifier_method: ["add", "multiply", "override"],
       option_input_type: ["select", "number", "boolean", "text", "multiselect"],
       price_list_status: ["draft", "ready", "live", "archived"],
