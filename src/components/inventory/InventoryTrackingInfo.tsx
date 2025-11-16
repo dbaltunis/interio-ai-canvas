@@ -21,11 +21,13 @@ export const InventoryTrackingInfo = ({ className }: InventoryTrackingInfoProps)
     reorder_threshold_percentage: 20,
     default_location: '',
     deduction_status_ids: [],
+    reversal_status_ids: [],
     ecommerce_sync_enabled: false,
   };
   
   const trackInventory = inventoryConfig.track_inventory ?? false;
   const deductionStatusIds = inventoryConfig.deduction_status_ids || [];
+  const reversalStatusIds = inventoryConfig.reversal_status_ids || [];
   const ecommerceEnabled = inventoryConfig.ecommerce_sync_enabled ?? false;
 
   // Fetch the actual status details using the IDs
@@ -45,6 +47,22 @@ export const InventoryTrackingInfo = ({ className }: InventoryTrackingInfoProps)
     enabled: trackInventory && deductionStatusIds.length > 0,
   });
 
+  const { data: reversalStatuses = [] } = useQuery({
+    queryKey: ['reversal-statuses', reversalStatusIds],
+    queryFn: async () => {
+      if (reversalStatusIds.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from('job_statuses')
+        .select('id, name, color')
+        .in('id', reversalStatusIds);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: trackInventory && reversalStatusIds.length > 0,
+  });
+
   if (!trackInventory) {
     return null;
   }
@@ -59,7 +77,7 @@ export const InventoryTrackingInfo = ({ className }: InventoryTrackingInfoProps)
         <AlertDescription className="text-green-800 dark:text-green-200 space-y-2">
           {configuredStatuses.length > 0 ? (
             <>
-              <p>Inventory will be automatically deducted when projects reach these statuses:</p>
+              <p>Inventory deduction triggers:</p>
               <div className="flex flex-wrap gap-2 mt-2">
                 {configuredStatuses.map(status => (
                   <Badge
@@ -83,6 +101,23 @@ export const InventoryTrackingInfo = ({ className }: InventoryTrackingInfoProps)
                 Configure now
               </Link>
             </div>
+          )}
+          
+          {reversalStatuses.length > 0 && (
+            <>
+              <p className="mt-3">Inventory reversal triggers:</p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {reversalStatuses.map(status => (
+                  <Badge
+                    key={status.id}
+                    style={{ backgroundColor: status.color }}
+                    className="text-white opacity-80"
+                  >
+                    {status.name}
+                  </Badge>
+                ))}
+              </div>
+            </>
           )}
         </AlertDescription>
       </Alert>

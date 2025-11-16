@@ -27,6 +27,7 @@ export const FeatureFlagsSettings = () => {
     reorder_threshold_percentage: 20,
     default_location: "main_warehouse",
     deduction_status_ids: [],
+    reversal_status_ids: [],
     ecommerce_sync_enabled: false,
   };
 
