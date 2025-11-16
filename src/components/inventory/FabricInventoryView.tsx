@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { JobsPagination } from "../jobs/JobsPagination";
 import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
 import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
+import { InventoryFilters } from "../library/InventoryFilters";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QRCodeDisplay } from "./QRCodeDisplay";
 import {
@@ -49,6 +50,8 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
   const [localSearch, setLocalSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pricingGrids, setPricingGrids] = useState<Array<{ id: string; grid_code: string | null; name: string }>>([]);
+  const [localVendor, setLocalVendor] = useState<string | undefined>(selectedVendor);
+  const [localCollection, setLocalCollection] = useState<string | undefined>(selectedCollection);
 
   const fabricItems = inventory?.filter(item => 
     item.category === 'fabric'
@@ -90,8 +93,8 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
     const matchesCategory = activeCategory === "all" || 
       item.subcategory === activeCategory;
 
-    const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
-    const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
+    const matchesVendor = !localVendor || item.vendor_id === localVendor;
+    const matchesCollection = !localCollection || item.collection_id === localCollection;
 
     return matchesGlobalSearch && matchesLocalSearch && matchesCategory && matchesVendor && matchesCollection;
   });
@@ -183,15 +186,6 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search fabrics..."
-              value={localSearch}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9 h-9"
-            />
-          </div>
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -217,6 +211,16 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
           />
         </div>
       </div>
+
+      {/* Filters */}
+      <InventoryFilters
+        selectedVendor={localVendor}
+        selectedCollection={localCollection}
+        searchTerm={localSearch}
+        onVendorChange={setLocalVendor}
+        onCollectionChange={setLocalCollection}
+        onSearchChange={setLocalSearch}
+      />
 
       {/* Category Tabs */}
       <Tabs value={activeCategory} onValueChange={handleCategoryChange}>

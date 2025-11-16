@@ -1,3 +1,4 @@
-name,sku,category,quantity,unit,cost_price,selling_price,unit_price,supplier,location,reorder_point,price_group,product_category
-"Sample Fabric","SF-001","fabric","50","meters","15","25","25","Fabric Co","Warehouse A","10","",""
-"Hardware Item","HW-001","hardware","20","pieces","30","50","50","Hardware Inc","Warehouse B","5","",""
+name,sku,category,quantity,unit,cost_price,selling_price,unit_price,supplier,vendor_name,collection_name,location,reorder_point,price_group,product_category
+"Sample Fabric","SF-001","fabric","50","meters","15","25","25","Fabric Co","Fabric Co","Spring Collection","Warehouse A","10","",""
+"Hardware Item","HW-001","hardware","20","pieces","30","50","50","Hardware Inc","","","Warehouse B","5","",""
+"Wallcovering Sample","WC-001","wallcovering","30","rolls","20","40","40","Wall Suppliers","Wall Suppliers","Contemporary","Storage A","10","",""
