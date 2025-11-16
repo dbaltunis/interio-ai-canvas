@@ -133,6 +133,9 @@ export const useUpdateProject = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<ProjectUpdate>) => {
+      let statusChanged = false;
+      let newStatusName = '';
+      
       // Check if status is changing and if we need to regenerate the number
       if (updates.status_id) {
         const { data: oldProject } = await supabase
@@ -149,7 +152,8 @@ export const useUpdateProject = () => {
         
         if (oldProject && newStatus) {
           const oldStatusName = (oldProject as any).job_statuses?.name || '';
-          const newStatusName = newStatus.name;
+          newStatusName = newStatus.name;
+          statusChanged = oldStatusName !== newStatusName;
           
           if (shouldRegenerateNumber(oldStatusName, newStatusName)) {
             const { data: { user } } = await supabase.auth.getUser();
@@ -172,10 +176,18 @@ export const useUpdateProject = () => {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      return { project: data, statusChanged, newStatusName };
     },
-    onSuccess: () => {
+    onSuccess: ({ project, statusChanged, newStatusName }) => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      
+      // Trigger inventory deduction event for external handling
+      if (statusChanged && newStatusName) {
+        window.dispatchEvent(new CustomEvent('project-status-changed', {
+          detail: { projectId: project.id, newStatus: newStatusName }
+        }));
+      }
     },
     onError: (error: any) => {
       toast({

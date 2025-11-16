@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
@@ -20,6 +19,7 @@ import { ThemeProvider } from "next-themes";
 import { ThemeDarkSync } from "./components/system/ThemeDarkSync";
 import { InteractionUnlockGuard } from "./components/system/InteractionUnlockGuard";
 import { LoadingState } from "./components/ui/loading-state";
+import { ProjectInventoryDeductionHandler } from "./components/projects/ProjectInventoryDeductionHandler";
 import "@/styles/theme.css";
 
 // Lazy load all route components for better code splitting
@@ -282,9 +282,10 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               </Suspense>
-                  </EmailRealtimeProvider>
-                  </AuthProvider>
-                </BrowserRouter>
+                   </EmailRealtimeProvider>
+                   <ProjectInventoryDeductionHandler />
+                   </AuthProvider>
+                 </BrowserRouter>
               </ThemeProvider>
             </TooltipProvider>
       </QueryClientProvider>
