@@ -6,32 +6,44 @@ export const useCollections = () => {
   return useQuery({
     queryKey: ["collections"],
     queryFn: async () => {
-      // For now, return mock data until the collections table is properly synced
-      return [
-        {
-          id: "1",
-          name: "Spring Collection 2024",
-          description: "Fresh spring fabrics and colors",
-          season: "Spring",
-          year: 2024,
-          vendor: { name: "Premium Textiles", email: "contact@premiumtextiles.com" },
-          tags: ["spring", "light", "natural"],
-          active: true,
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: "2", 
-          name: "Luxury Velvet Series",
-          description: "High-end velvet collection",
-          season: "All Season",
-          year: 2024,
-          vendor: { name: "Velvet Specialists", email: "info@velvetspec.com" },
-          tags: ["luxury", "velvet", "premium"],
-          active: true,
-          created_at: new Date().toISOString(),
-        }
-      ];
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("collections")
+        .select(`
+          *,
+          vendor:vendors(id, name, email, phone)
+        `)
+        .eq("active", true)
+        .order("name");
+
+      if (error) throw error;
+      return data || [];
     },
+  });
+};
+
+export const useCollectionsByVendor = (vendorId?: string) => {
+  return useQuery({
+    queryKey: ["collections", "by-vendor", vendorId],
+    queryFn: async () => {
+      if (!vendorId) return [];
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("collections")
+        .select("*")
+        .eq("vendor_id", vendorId)
+        .eq("active", true)
+        .order("name");
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!vendorId,
   });
 };
 
@@ -40,13 +52,17 @@ export const useCreateCollection = () => {
 
   return useMutation({
     mutationFn: async (collection: any) => {
-      // Mock implementation for now
-      const newCollection = {
-        id: Date.now().toString(),
-        ...collection,
-        created_at: new Date().toISOString(),
-      };
-      return newCollection;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("collections")
+        .insert([{ ...collection, user_id: user.id }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["collections"] });
@@ -59,8 +75,15 @@ export const useUpdateCollection = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...collection }: any) => {
-      // Mock implementation for now
-      return { id, ...collection };
+      const { data, error } = await supabase
+        .from("collections")
+        .update(collection)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["collections"] });
@@ -73,8 +96,12 @@ export const useDeleteCollection = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      // Mock implementation for now
-      console.log("Deleting collection:", id);
+      const { error } = await supabase
+        .from("collections")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["collections"] });
