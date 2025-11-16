@@ -41,6 +41,11 @@ export const useProjectInventoryDeduction = () => {
 
       if (!trackInventory) {
         console.log('Inventory tracking is disabled in settings');
+        toast({
+          title: "Inventory Not Tracked",
+          description: "Enable inventory tracking in Settings to automatically deduct materials",
+          importance: 'normal'
+        });
         return { deducted: false, reason: 'Inventory tracking is disabled' };
       }
 
@@ -64,6 +69,11 @@ export const useProjectInventoryDeduction = () => {
 
       if (existingDeductions && existingDeductions.length > 0) {
         console.log(`Inventory already deducted for project ${projectId}`);
+        toast({
+          title: "Already Processed",
+          description: "Inventory was already deducted for this project",
+          importance: 'normal'
+        });
         return { deducted: false, reason: 'Already deducted' };
       }
 
@@ -143,9 +153,11 @@ export const useProjectInventoryDeduction = () => {
         queryClient.invalidateQueries({ queryKey: ["enhanced_inventory"] });
         queryClient.invalidateQueries({ queryKey: ["inventory_transactions"] });
         
+        const materialNames = data.results.map(r => r.item_name || 'Unknown').join(', ');
         toast({
-          title: "Inventory Updated",
-          description: `${data.results.length} item(s) deducted from inventory for project`,
+          title: "Inventory Deducted",
+          description: `${data.results.length} material(s) deducted: ${materialNames}`,
+          importance: 'important'
         });
 
         if (data.errors && data.errors.length > 0) {
