@@ -2,12 +2,15 @@ import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Edit, Trash2, Package } from "lucide-react";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
+import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
 import { format } from "date-fns";
 import { useState } from "react";
 
@@ -35,6 +38,24 @@ export const RemnantsInventoryView = ({ searchQuery, viewMode }: RemnantsInvento
            item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
            item.location?.toLowerCase().includes(searchQuery.toLowerCase());
   });
+
+  const {
+    selectedItems,
+    selectItem,
+    selectAll,
+    clearSelection,
+    selectionStats,
+  } = useBulkInventorySelection(remnants);
+
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(selectedItems.map(id => deleteItem.mutateAsync(id)));
+      toast({ title: `${selectedItems.length} remnants deleted successfully` });
+      clearSelection();
+    } catch (error) {
+      toast({ title: "Failed to delete some remnants", variant: "destructive" });
+    }
+  };
 
   const handleDelete = async (id: string, name: string) => {
     if (confirm(`Delete ${name}? This remnant will be removed from inventory.`)) {
