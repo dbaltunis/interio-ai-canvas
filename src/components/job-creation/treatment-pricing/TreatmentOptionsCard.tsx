@@ -43,19 +43,23 @@ export const TreatmentOptionsCard = ({
 
   const currentTreatmentType = treatmentTypesData?.find(tt => tt.name === treatmentType);
   const treatmentOptions = currentTreatmentType?.specifications?.options || [];
-
-  console.log('TreatmentOptionsCard - Current Treatment Type:', currentTreatmentType);
-  console.log('TreatmentOptionsCard - Treatment Options:', treatmentOptions);
-
-  if (treatmentTypesLoading) {
+  
+  // Early return if no data available
+  if (!treatmentTypesData || treatmentTypesLoading) {
     return (
       <Card>
-        <CardContent className="p-4">
-          <div className="text-center py-4">Loading treatment options...</div>
+        <CardHeader>
+          <CardTitle>Treatment Options</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-muted-foreground">Loading options...</div>
         </CardContent>
       </Card>
     );
   }
+
+  console.log('TreatmentOptionsCard - Current Treatment Type:', currentTreatmentType);
+  console.log('TreatmentOptionsCard - Treatment Options:', treatmentOptions);
 
   if (treatmentOptions.length === 0) {
     return null;
