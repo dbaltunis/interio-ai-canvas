@@ -256,6 +256,11 @@ serve(async (req) => {
             type: 'text/html',
             value: emailHtml,
           }],
+          tracking_settings: {
+            click_tracking: {
+              enable: false,
+            },
+          },
         }),
       });
 
