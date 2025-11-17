@@ -40,6 +40,7 @@ export const InlineDiscountPanel = ({
   currency = 'USD',
   currentDiscount,
 }: InlineDiscountPanelProps) => {
+  
   const { applyDiscount, removeDiscount, calculateDiscountAmount, getItemPrice } = useQuoteDiscount(projectId);
 
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
@@ -64,6 +65,24 @@ export const InlineDiscountPanel = ({
     }
   }, [isOpen, currentDiscount]);
 
+  const [hasloaded, setHasloaded] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if(currentDiscount && currentDiscount.value != 0 && !hasloaded){
+      setDiscountType(currentDiscount.type);
+      setDiscountValue(currentDiscount.value);
+      setDiscountScope(currentDiscount.scope);
+      setSelectedItems(new Set(currentDiscount.selectedItems || []));
+      setHasloaded(true);
+    }
+  },[setHasloaded]);
+
+  React.useEffect(()=>{
+    if(hasloaded){
+      handleApply();
+    }
+  },[hasloaded]);
+
   const config: DiscountConfig = {
     type: discountType,
     value: discountValue,
@@ -71,35 +90,37 @@ export const InlineDiscountPanel = ({
     selectedItems: Array.from(selectedItems),
   };
 
+
   const discountAmount = calculateDiscountAmount(items, config, subtotal);
   const subtotalAfterDiscount = subtotal - discountAmount;
   const taxAmount = subtotalAfterDiscount * (taxRate / 100);
   const total = subtotalAfterDiscount + taxAmount;
 
   const handleApply = async () => {
-    try {
-      const result = await applyDiscount.mutateAsync({
-        quoteId,
-        config,
-        items,
-        subtotal,
-      });
-      
-      console.log('✅ Discount saved to database:', result);
-      console.log('💰 Saved discount data:', {
-        discount_type: result.discount_type,
-        discount_value: result.discount_value,
-        discount_amount: result.discount_amount,
-        discount_scope: result.discount_scope
-      });
-      
-      // Wait longer for queries to refetch completely, then close
-      setTimeout(() => {
-        onClose();
-      }, 1500);
-    } catch (error) {
-      console.error('❌ Error applying discount:', error);
-    }
+      try {
+        const result = await applyDiscount.mutateAsync({
+          quoteId,
+          config,
+          items,
+          subtotal,
+        });
+        
+        console.log('✅ Discount saved to database:', result);
+        console.log('💰 Saved discount data:', {
+          discount_type: result.discount_type,
+          discount_value: result.discount_value,
+          discount_amount: result.discount_amount,
+          discount_scope: result.discount_scope
+        });
+
+        
+        // Wait longer for queries to refetch completely, then close
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      } catch (error) {
+        console.error('❌ Error applying discount:', error);
+      }
   };
 
   const handleRemove = async () => {

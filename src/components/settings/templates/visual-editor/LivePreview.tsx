@@ -157,6 +157,19 @@ const LivePreviewBlock = ({
         };
         return symbols[curr] || '£';
       })(),
+      basetotal: (() => {
+        if (!projectData?.subtotal) return '£0.00';
+        const curr = projectData?.currency || 'GBP';
+        const symbols: Record<string, string> = {
+          'GBP': '£',
+          'EUR': '€',
+          'AUD': 'A$',
+          'NZD': 'NZ$',
+          'USD': '$',
+          'ZAR': 'R'
+        };
+        return `${symbols[curr] || '£'}${parseFloat(projectData.subtotal.toFixed(2)) + (!projectData?.discount?.amount ? parseFloat('0.00') : parseFloat(projectData.discount.amount.toFixed(2)))}`;
+      })(),
       subtotal: (() => {
         if (!projectData?.subtotal) return '£0.00';
         const curr = projectData?.currency || 'GBP';
@@ -1016,7 +1029,7 @@ const LivePreviewBlock = ({
                               backgroundColor: '#fff',
                               borderBottom: isPrintMode ? 'none' : (bidx === breakdown.length - 1 ? '1px solid #ddd' : '1px solid #e8e8e8')
                             }}>
-                              <td style={{ padding: '3px 6px 3px 20px', fontSize: '13px', color: '#000', fontWeight: '400', backgroundColor: '#ffffff' }}>
+                              <td style={{ padding: '3px 6px 3px 20px', fontSize: '12px', color: '#666', fontWeight: '400', backgroundColor: '#ffffff' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                   {showImages && breakdownItem.image_url && (
                                     <img 
@@ -1039,13 +1052,13 @@ const LivePreviewBlock = ({
                               <td style={{ padding: '3px 6px', fontSize: '12px', color: '#666', fontWeight: '400', wordWrap: 'break-word', overflowWrap: 'break-word', backgroundColor: '#ffffff' }}>
                                 {breakdownItem.description || '-'}
                               </td>
-                              <td style={{ padding: '3px 6px', fontSize: '13px', color: '#000', fontWeight: '400', textAlign: 'center', backgroundColor: '#ffffff' }}>
+                              <td style={{ padding: '3px 6px', fontSize: '12px', color: '#666', fontWeight: '400', textAlign: 'center', backgroundColor: '#ffffff' }}>
                                 {breakdownItem.quantity > 0 ? `${breakdownItem.quantity.toFixed(2)} ${breakdownItem.unit || ''}`.trim() : '-'}
                               </td>
-                              <td style={{ padding: '3px 6px', fontSize: '13px', fontWeight: '400', color: '#000', textAlign: 'right', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
+                              <td style={{ padding: '3px 6px', fontSize: '12px', fontWeight: '400', color: '#666', textAlign: 'right', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
                                 {breakdownItem.unit_price > 0 ? `${renderTokenValue('currency_symbol')}${breakdownItem.unit_price.toFixed(2)}` : '-'}
                               </td>
-                              <td style={{ padding: '3px 6px', fontSize: '13px', fontWeight: '400', color: '#000', textAlign: 'right', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
+                              <td style={{ padding: '3px 6px', fontSize: '12px', fontWeight: '400', color: '#666', textAlign: 'right', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
                                 {renderTokenValue('currency_symbol')}{(breakdownItem.total_cost || 0).toFixed(2)}
                               </td>
                             </tr>
@@ -1074,23 +1087,34 @@ const LivePreviewBlock = ({
                 color: '#000 !important'
               }}
             >
+
+
+              {/* Discount (if applicable) */}
+              {content.showDiscount !== false && projectData?.discount && projectData.discount.amount > 0 && (
+                <>
+                  <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
+                    <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
+                      <span style={{ fontSize: '14px', color: '#111827 !important' }}>
+                        Base Subtotal: {renderTokenValue('basetotal')}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
+                    <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
+                      <span style={{ fontSize: '14px', color: '#dc2626 !important' }}>
+                        Discount ({projectData.discount.type === 'percentage' ? `${projectData.discount.value}%` : 'Fixed'}): - {renderTokenValue('discount')}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
+              
               {/* Price excl. GST/Tax (Base Subtotal) */}
               {content.showSubtotal !== false && (
                 <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
                   <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
                     <span style={{ fontSize: '14px', color: '#111827 !important' }}>
                       Subtotal: {renderTokenValue('subtotal')}
-                    </span>
-                  </div>
-                </div>
-              )}
-              
-              {/* Discount (if applicable) */}
-              {content.showDiscount !== false && projectData?.discount && projectData.discount.amount > 0 && (
-                <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
-                  <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
-                    <span style={{ fontSize: '14px', color: '#dc2626 !important' }}>
-                      Discount ({projectData.discount.type === 'percentage' ? `${projectData.discount.value}%` : 'Fixed'}): -{renderTokenValue('discount')}
                     </span>
                   </div>
                 </div>
