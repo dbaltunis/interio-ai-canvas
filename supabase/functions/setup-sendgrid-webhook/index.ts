@@ -114,24 +114,31 @@ const handler = async (req: Request): Promise<Response> => {
       console.log("SendGrid webhook configured successfully");
     }
 
-    // Store the SendGrid integration settings
+    // Get account owner for proper integration storage
+    const { data: accountOwnerId } = await supabase.rpc('get_account_owner', {
+      user_id_param: user.id
+    });
+
+    // Store the SendGrid integration settings with both user_id and account_owner_id
     const { error: integrationError } = await supabase
       .from("integration_settings")
       .upsert({
         user_id: user.id,
+        account_owner_id: accountOwnerId || user.id,
         integration_type: "sendgrid",
         active: true,
         api_credentials: {
-          api_key: sendgrid_api_key // In production, you might want to encrypt this
+          api_key: sendgrid_api_key
         },
         configuration: {
+          api_key: sendgrid_api_key, // Also store in configuration for backward compatibility
           webhook_url: webhookUrl,
           webhook_configured: true,
           configured_at: new Date().toISOString()
         },
         last_sync: new Date().toISOString()
       }, {
-        onConflict: "user_id,integration_type"
+        onConflict: "account_owner_id,integration_type"
       });
 
     if (integrationError) {

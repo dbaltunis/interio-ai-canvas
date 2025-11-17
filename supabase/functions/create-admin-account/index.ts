@@ -201,7 +201,11 @@ serve(async (req) => {
         throw new Error('SendGrid integration not found');
       }
 
-      if (!sendGridIntegration?.configuration?.api_key) {
+      // Check both configuration and api_credentials for backward compatibility
+      const apiKey = (sendGridIntegration.configuration as any)?.api_key || 
+                     (sendGridIntegration.api_credentials as any)?.api_key;
+      
+      if (!apiKey) {
         throw new Error('SendGrid API key not configured');
       }
 
@@ -232,11 +236,11 @@ serve(async (req) => {
         <p>Best regards,<br>Your Team</p>
       `;
 
-      // Send email via SendGrid
+      // Send email via SendGrid using the apiKey we found earlier
       const sendGridResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${sendGridIntegration.configuration.api_key}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
