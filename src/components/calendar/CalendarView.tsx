@@ -570,6 +570,11 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
         onOpenChange={setShowTimezoneDialog}
       />
 
+      <AppointmentSchedulerSlider
+        isOpen={showSchedulerSlider}
+        onClose={() => setShowSchedulerSlider(false)}
+      />
+
       <OfflineIndicator />
     </div>
   );
