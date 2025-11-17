@@ -167,7 +167,7 @@ interface SystemTemplatesLibraryProps {
 }
 
 export const SystemTemplatesLibrary = ({ onTemplateCloned }: SystemTemplatesLibraryProps) => {
-  const { data: templates, isLoading } = useSystemTemplates();
+  const { data: templates, isLoading, error, refetch } = useSystemTemplates();
 
   const getCategoryBadgeColor = (category: string | null) => {
     const colors: Record<string, string> = {
@@ -207,7 +207,40 @@ export const SystemTemplatesLibrary = ({ onTemplateCloned }: SystemTemplatesLibr
   }, {} as Record<string, typeof templates>);
 
   if (isLoading) {
-    return <div className="text-center py-8">Loading system templates...</div>;
+    return <div className="flex items-center justify-center py-12">
+      <div className="text-muted-foreground">Loading system templates...</div>
+    </div>;
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <div className="text-center space-y-4">
+            <div className="text-destructive">Failed to load system templates</div>
+            <div className="text-sm text-muted-foreground">{(error as Error).message}</div>
+            <Button onClick={() => refetch()} variant="outline" size="sm">
+              Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!templates || templates.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <div className="text-center space-y-2">
+            <div className="text-muted-foreground">No system templates available</div>
+            <div className="text-sm text-muted-foreground">
+              Contact support if you believe this is an error.
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
