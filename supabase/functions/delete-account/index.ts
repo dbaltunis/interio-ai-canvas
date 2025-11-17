@@ -44,13 +44,11 @@ serve(async (req) => {
     }
 
     // Check if requesting user is System Owner
-    const { data: requestingProfile } = await supabaseAdmin
-      .from('user_profiles')
-      .select('role')
-      .eq('user_id', requestingUser.id)
-      .single();
+    const { data: userRole, error: roleCheckError } = await supabaseAdmin
+      .rpc('get_user_role', { _user_id: requestingUser.id });
 
-    if (requestingProfile?.role !== 'System Owner') {
+    if (roleCheckError || userRole !== 'System Owner') {
+      console.error('Not authorized - not a System Owner. Role:', userRole, 'Error:', roleCheckError);
       throw new Error('Only System Owners can delete accounts');
     }
 
