@@ -32,8 +32,12 @@ export const useIntegrationStatus = () => {
     },
   });
 
+  // Check if integration exists AND has a valid API key
+  const config = integrationStatus?.configuration as { api_key?: string } | null;
+  const hasValidApiKey = config?.api_key && config.api_key.trim().length > 0;
+
   return {
-    hasSendGridIntegration: !!integrationStatus,
+    hasSendGridIntegration: !!integrationStatus && !!hasValidApiKey,
     integrationData: integrationStatus,
     isLoading
   };
