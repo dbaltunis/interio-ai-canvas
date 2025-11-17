@@ -92,7 +92,9 @@ export const PricingRulesTab = () => {
 
   // Show loading state while permissions or data are being checked
   if (canManageSettings === undefined || isLoading || isLoadingBusiness) {
-    return <div>Loading pricing settings...</div>;
+    return <div className="flex items-center justify-center py-12">
+      <div className="text-muted-foreground">Loading pricing settings...</div>
+    </div>;
   }
 
   // Check permissions after loading is complete
@@ -108,7 +110,14 @@ export const PricingRulesTab = () => {
   }
 
   if (!formData) {
-    return <div>Loading pricing settings...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <div className="text-muted-foreground">No pricing settings found.</div>
+        <div className="text-sm text-muted-foreground">
+          Visit the <strong>Business Settings</strong> tab first to initialize your account settings.
+        </div>
+      </div>
+    );
   }
 
   return (
