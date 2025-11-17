@@ -79,23 +79,37 @@ export const StoreSettingsTab = ({ store, onBack }: StoreSettingsTabProps) => {
 
   const deleteStore = useMutation({
     mutationFn: async () => {
+      console.log('[StoreSettings] Deleting store:', store.id);
       const { error } = await supabase.rpc('delete_online_store', {
         store_id_param: store.id
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[StoreSettings] Delete error:', error);
+        throw error;
+      }
+      console.log('[StoreSettings] Store deleted successfully');
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      console.log('[StoreSettings] Invalidating queries and refreshing...');
+      
+      // Clear all store-related queries
       queryClient.invalidateQueries({ queryKey: ['online-store'] });
       queryClient.invalidateQueries({ queryKey: ['has-online-store'] });
       queryClient.invalidateQueries({ queryKey: ['has-online-store-nav'] });
+      
       toast({
         title: "Store deleted",
-        description: "Your store has been deleted successfully.",
+        description: "Your store has been deleted successfully. Refreshing...",
       });
-      onBack();
+      
+      // Navigate to home and force a page reload to ensure clean state
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
     },
     onError: (error: any) => {
+      console.error('[StoreSettings] Delete failed:', error);
       toast({
         title: "Failed to delete store",
         description: error.message,
