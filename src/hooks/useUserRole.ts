@@ -39,7 +39,7 @@ export const useUserRole = () => {
         .maybeSingle();
 
       // Determine if user can view vendor costs based on secure role
-      const isOwner = role === 'Owner';
+      const isOwner = role === 'Owner' || role === 'System Owner';
       const isManagerOrAdmin = role === 'Manager' || role === 'Admin';
       const isStaff = role === 'Staff' || role === 'User';
       
