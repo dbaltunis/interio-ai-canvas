@@ -100,15 +100,17 @@ export const StoreTemplateGallery = ({ onSelectTemplate }: StoreTemplateGalleryP
         {filteredTemplates?.map((template) => {
           const isSelected = selectedId === template.id;
           const isHovered = hoveredId === template.id;
+          const isWindowTreatmentPro = template.id === 'window-treatment-pro';
+          const isComingSoon = !isWindowTreatmentPro;
 
           return (
             <Card
               key={template.id}
-              className="group relative overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] cursor-pointer"
+              className={`group relative overflow-hidden border-2 transition-all duration-300 ${!isComingSoon ? 'hover:shadow-2xl hover:scale-[1.02] cursor-pointer' : 'opacity-60'}`}
               style={{
                 borderColor: isSelected ? 'hsl(var(--primary))' : undefined,
               }}
-              onMouseEnter={() => setHoveredId(template.id)}
+              onMouseEnter={() => !isComingSoon && setHoveredId(template.id)}
               onMouseLeave={() => setHoveredId(null)}
             >
               {/* Preview Image */}
@@ -117,13 +119,13 @@ export const StoreTemplateGallery = ({ onSelectTemplate }: StoreTemplateGalleryP
                   <img
                     src={template.preview_images[0]}
                     alt={template.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    className={`w-full h-full object-cover transition-transform duration-500 ${!isComingSoon && 'group-hover:scale-110'}`}
                   />
                 ) : template.preview_image_url ? (
                   <img
                     src={template.preview_image_url}
                     alt={template.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    className={`w-full h-full object-cover transition-transform duration-500 ${!isComingSoon && 'group-hover:scale-110'}`}
                   />
                 ) : (
                   <div
@@ -136,47 +138,61 @@ export const StoreTemplateGallery = ({ onSelectTemplate }: StoreTemplateGalleryP
                   </div>
                 )}
 
-                {/* Hover Overlay */}
-                <div
-                  className="absolute inset-0 bg-background/95 flex flex-col items-center justify-center gap-3 transition-opacity duration-300"
-                  style={{
-                    opacity: isHovered ? 1 : 0,
-                    pointerEvents: isHovered ? 'auto' : 'none',
-                  }}
-                >
-                  {template.demo_url && (
+                {/* Coming Soon Overlay */}
+                {isComingSoon && (
+                  <div className="absolute inset-0 bg-background/90 backdrop-blur-sm flex flex-col items-center justify-center">
+                    <Badge className="text-lg px-6 py-3 mb-3 bg-muted text-muted-foreground">
+                      Coming Soon
+                    </Badge>
+                    <p className="text-sm text-muted-foreground text-center px-4">
+                      This template will be available in a future update
+                    </p>
+                  </div>
+                )}
+
+                {/* Hover Overlay - Only for available templates */}
+                {!isComingSoon && (
+                  <div
+                    className="absolute inset-0 bg-background/95 flex flex-col items-center justify-center gap-3 transition-opacity duration-300"
+                    style={{
+                      opacity: isHovered ? 1 : 0,
+                      pointerEvents: isHovered ? 'auto' : 'none',
+                    }}
+                  >
+                    {template.demo_url && (
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="gap-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(template.demo_url, '_blank');
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                        View Live Demo
+                        <ExternalLink className="h-3 w-3" />
+                      </Button>
+                    )}
                     <Button
-                      variant="outline"
                       size="lg"
                       className="gap-2"
                       onClick={(e) => {
                         e.stopPropagation();
-                        window.open(template.demo_url, '_blank');
+                        setSelectedId(template.id);
                       }}
                     >
-                      <Eye className="h-4 w-4" />
-                      View Live Demo
-                      <ExternalLink className="h-3 w-3" />
+                      {isSelected ? (
+                        <>
+                          <Check className="h-4 w-4" />
+                          Selected
+                        </>
+                      ) : (
+                        'Select Template'
+                      )}
                     </Button>
-                  )}
-                  <Button
-                    size="lg"
-                    className="gap-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedId(template.id);
-                    }}
-                  >
-                    {isSelected ? (
-                      <>
-                        <Check className="h-4 w-4" />
-                        Selected
-                      </>
-                    ) : (
-                      'Select Template'
-                    )}
-                  </Button>
-                </div>
+                  </div>
+                )}
 
                 {/* Selected Badge */}
                 {isSelected && (
@@ -185,11 +201,11 @@ export const StoreTemplateGallery = ({ onSelectTemplate }: StoreTemplateGalleryP
                   </div>
                 )}
 
-                {/* Popular Badge */}
-                {template.is_default && (
-                  <Badge className="absolute top-4 left-4 bg-accent text-accent-foreground shadow-lg">
+                {/* Recommended Badge for Window Treatment Pro */}
+                {isWindowTreatmentPro && (
+                  <Badge className="absolute top-4 left-4 bg-gradient-to-r from-primary to-accent text-white shadow-lg animate-pulse">
                     <Sparkles className="h-3 w-3 mr-1" />
-                    Popular
+                    Recommended
                   </Badge>
                 )}
               </div>
