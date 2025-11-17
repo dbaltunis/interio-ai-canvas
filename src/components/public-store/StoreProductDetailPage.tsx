@@ -19,9 +19,14 @@ export const StoreProductDetailPage = ({ storeData }: StoreProductDetailPageProp
   const { productId } = useParams<{ productId: string }>();
   const { addItem, openCart } = useShoppingCart();
 
-  const { data: product, isLoading } = useQuery({
+  console.log('[StoreProductDetailPage] productId from URL:', productId);
+  console.log('[StoreProductDetailPage] storeData.id:', storeData.id);
+
+  const { data: product, isLoading, error: queryError } = useQuery({
     queryKey: ['public-product', productId, storeData.id],
     queryFn: async () => {
+      console.log('[StoreProductDetailPage] Querying for inventory_item_id:', productId);
+      
       const { data, error} = await supabase
         .from('store_product_visibility')
         .select(`
@@ -34,11 +39,15 @@ export const StoreProductDetailPage = ({ storeData }: StoreProductDetailPageProp
         .eq('is_visible', true)
         .single();
 
+      console.log('[StoreProductDetailPage] Query result:', { data, error });
+      
       if (error) throw error;
       return data;
     },
     enabled: !!productId && !!storeData.id,
   });
+
+  console.log('[StoreProductDetailPage] Product loaded:', !!product, 'Error:', queryError);
 
   const createInquiry = useMutation({
     mutationFn: async (inquiryData: any) => {

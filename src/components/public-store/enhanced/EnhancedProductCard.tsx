@@ -33,6 +33,9 @@ export const EnhancedProductCard = ({ product, storeSlug, onQuickAdd }: Enhanced
   const price = product.inventory_item?.unit_price;
   const category = product.inventory_item?.category || 'Window Treatment';
   const imageUrl = product.inventory_item?.image_url;
+  
+  const productLink = `/store/${storeSlug}/products/${product.inventory_item_id}`;
+  console.log('[EnhancedProductCard] Linking to:', productLink, 'for product:', product.inventory_item?.name);
 
   return (
     <motion.div
@@ -43,7 +46,7 @@ export const EnhancedProductCard = ({ product, storeSlug, onQuickAdd }: Enhanced
       onMouseLeave={() => setIsHovered(false)}
       className="group"
     >
-      <Link to={`/store/${storeSlug}/products/${product.inventory_item_id}`}>
+      <Link to={productLink}>
         <div className="bg-card rounded-xl overflow-hidden border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-2xl">
           {/* Image Container with Hover Effects */}
           <div className="relative aspect-[4/5] bg-muted overflow-hidden">
