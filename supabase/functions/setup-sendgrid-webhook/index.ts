@@ -119,7 +119,7 @@ const handler = async (req: Request): Promise<Response> => {
       user_id_param: user.id
     });
 
-    // Store the SendGrid integration settings with both user_id and account_owner_id
+    // Store the SendGrid integration settings
     const { error: integrationError } = await supabase
       .from("integration_settings")
       .upsert({
@@ -138,7 +138,7 @@ const handler = async (req: Request): Promise<Response> => {
         },
         last_sync: new Date().toISOString()
       }, {
-        onConflict: "account_owner_id,integration_type"
+        onConflict: "user_id,integration_type"
       });
 
     if (integrationError) {
