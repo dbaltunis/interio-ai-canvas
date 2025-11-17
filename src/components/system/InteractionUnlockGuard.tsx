@@ -55,6 +55,16 @@ export function InteractionUnlockGuard() {
           if (el.getAttribute("aria-hidden") === "true") el.removeAttribute("aria-hidden");
         }
 
+        // Clear pointer-events: none on all interactive elements that shouldn't have it blocked
+        const allInteractiveElements = document.querySelectorAll('button, a, input, select, textarea');
+        allInteractiveElements.forEach(el => {
+          const htmlEl = el as HTMLElement;
+          const style = window.getComputedStyle(htmlEl);
+          if (style.pointerEvents === 'none' && !htmlEl.hasAttribute('disabled')) {
+            htmlEl.style.pointerEvents = 'auto';
+          }
+        });
+
         // Debug: log once per unlock execution
         console.info("[InteractionUnlockGuard] unlock executed");
       } catch {}

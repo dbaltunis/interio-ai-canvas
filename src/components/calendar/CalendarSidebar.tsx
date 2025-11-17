@@ -222,7 +222,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
 
   return (
     <div className="w-[360px] min-w-[360px] max-w-[360px] border-r bg-background flex flex-col h-full flex-shrink-0 transition-all duration-300">
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 pointer-events-auto">
         <div className="flex flex-col space-y-4 px-3 py-4">
           {/* Header with Calendar title and Collapse Button */}
           <div className="flex items-center justify-between border-b pb-3">
@@ -356,18 +356,21 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
           </Card>
 
           {/* Appointment Scheduling */}
-          <Card className="flex-shrink-0">
-            <CardHeader className="pb-2 pt-4 px-4">
+          <Card className="flex-shrink-0 pointer-events-auto">
+            <CardHeader className="pb-2 pt-4 px-4 pointer-events-auto">
               <CardTitle className="text-sm">Appointment Scheduling</CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
                 Manage booking templates and view appointments
               </p>
             </CardHeader>
-            <CardContent className="space-y-3 px-3 pb-4">
+            <CardContent className="space-y-3 px-3 pb-4 pointer-events-auto">
               {/* Primary Action - Create New Scheduler */}
               <Button 
-                onClick={onBookingLinks}
-                className="w-full"
+                onClick={() => {
+                  console.log('[CalendarSidebar] New Booking Template clicked');
+                  onBookingLinks();
+                }}
+                className="w-full pointer-events-auto relative z-10"
                 size="sm"
               >
                 <UserPlus className="h-4 w-4 mr-2" />
@@ -378,8 +381,11 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
               <div className="space-y-2 pt-1">
                 <div className="grid grid-cols-1 gap-2">
                   <Button 
-                    onClick={() => setShowSchedulerManagement(true)}
-                    className="w-full justify-start"
+                    onClick={() => {
+                      console.log('[CalendarSidebar] Manage Templates clicked');
+                      setShowSchedulerManagement(true);
+                    }}
+                    className="w-full justify-start pointer-events-auto relative z-10"
                     variant="outline"
                     size="sm"
                   >
@@ -391,7 +397,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
                   
                   <Button 
                     onClick={() => setShowBookingManagement(true)}
-                    className="w-full justify-start"
+                    className="w-full justify-start pointer-events-auto relative z-10"
                     variant="outline"
                     size="sm"
                   >
@@ -403,7 +409,7 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
                   
                   <Button 
                     onClick={() => setShowAnalytics(true)}
-                    className="w-full justify-start"
+                    className="w-full justify-start pointer-events-auto relative z-10"
                     variant="outline"
                     size="sm"
                   >
