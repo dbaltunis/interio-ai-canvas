@@ -66,6 +66,27 @@ export const StoreDashboard = ({ store, onEditPages, onManageProducts, onViewSet
 
   return (
     <div className="space-y-6">
+      {/* Alert for unpublished store */}
+      {!store.is_published && (
+        <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950">
+          <AlertCircle className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-900 dark:text-blue-100">
+            Your Store is in Draft Mode
+          </AlertTitle>
+          <AlertDescription className="text-blue-800 dark:text-blue-200">
+            <div className="space-y-2">
+              <p>Your store is created but not yet visible to customers. To make it live:</p>
+              <ol className="list-decimal ml-5 space-y-1">
+                <li>Review your products below (products are auto-added from your inventory)</li>
+                <li>Click the <strong>"Publish Store"</strong> button below to make it live</li>
+                <li>Click <strong>"View Store"</strong> to see it in action</li>
+                <li>Share your store URL: <code className="text-xs bg-blue-100 dark:bg-blue-900 px-2 py-0.5 rounded">{storeUrl}</code></li>
+              </ol>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {/* Alert for new orders/leads */}
       {hasRecentOrders && (
         <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950">
