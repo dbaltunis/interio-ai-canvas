@@ -25,6 +25,7 @@ interface TreatmentPricingFormProps {
   surfaceType: string;
   windowCovering?: any;
   projectId?: string;
+  existingTreatmentData?: any;
 }
 
 export const TreatmentPricingForm = ({ 
@@ -34,9 +35,10 @@ export const TreatmentPricingForm = ({
   treatmentType = "Curtains", // Default fallback
   surfaceType = "window", // Default fallback
   windowCovering,
-  projectId
+  projectId,
+  existingTreatmentData
 }: TreatmentPricingFormProps) => {
-  const { formData, setFormData, handleInputChange, resetForm } = useTreatmentFormData(treatmentType, windowCovering);
+  const { formData, setFormData, handleInputChange, resetForm } = useTreatmentFormData(treatmentType, windowCovering, existingTreatmentData);
   const { options, hierarchicalOptions, isLoading: optionsLoading } = useWindowCoveringOptions(windowCovering?.id);
   const { data: treatmentTypesData, isLoading: treatmentTypesLoading } = useTreatmentTypes();
   const uploadFile = useUploadFile();

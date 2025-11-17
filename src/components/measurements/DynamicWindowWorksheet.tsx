@@ -103,6 +103,13 @@ export const DynamicWindowWorksheet = forwardRef<{
   // PHASE 4: Track user editing to prevent data reload during typing
   const isUserEditing = useRef(false);
 
+  // Reset the loaded flag when surfaceId changes (new window being edited)
+  useEffect(() => {
+    hasLoadedInitialData.current = false;
+    isUserEditing.current = false;
+    console.log('🔄 Surface changed, resetting load flag for surfaceId:', surfaceId);
+  }, [surfaceId]);
+
   // Hooks with loading states
   const {
     data: windowCoverings = [],
@@ -159,9 +166,12 @@ export const DynamicWindowWorksheet = forwardRef<{
         console.error("Error loading window summary:", error);
         return null;
       }
+      console.log('📊 Loaded existing window summary:', data);
       return data;
     },
-    enabled: !!surfaceId
+    enabled: !!surfaceId,
+    refetchOnMount: true, // Always refetch when component mounts to ensure fresh data
+    staleTime: 0 // Consider data immediately stale to ensure fresh data when editing
   });
 
   // Keep latestSummaryRef updated but don't trigger state resets

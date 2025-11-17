@@ -24,27 +24,28 @@ export interface TreatmentFormData {
   images: File[];
 }
 
-export const useTreatmentFormData = (treatmentType: string = "Curtains", windowCovering?: any) => {
+export const useTreatmentFormData = (treatmentType: string = "Curtains", windowCovering?: any, existingData?: any) => {
   const [formData, setFormData] = useState<TreatmentFormData>({
-    product_name: windowCovering?.name || treatmentType || "Curtains",
-    rail_width: "",
-    drop: "",
-    pooling: "0",
-    quantity: 1,
-    fabric_type: "",
-    fabric_code: "",
-    fabric_cost_per_yard: "",
-    fabric_width: "137",
-    roll_direction: "vertical", // Default to vertical for narrow fabrics
-    heading_fullness: "2.5",
-    header_hem: "15",
-    bottom_hem: "10",
-    side_hem: "5",
-    seam_hem: "3",
-    custom_labor_rate: "",
-    selected_options: [],
-    notes: "",
-    images: []
+    product_name: existingData?.product_name || windowCovering?.name || treatmentType || "Curtains",
+    rail_width: existingData?.measurements?.rail_width || "",
+    drop: existingData?.measurements?.drop || "",
+    pooling: existingData?.measurements?.pooling || "0",
+    quantity: existingData?.quantity || 1,
+    fabric_type: existingData?.fabric_details?.fabric_type || "",
+    fabric_code: existingData?.fabric_details?.fabric_code || "",
+    fabric_cost_per_yard: existingData?.fabric_details?.fabric_cost_per_yard || "",
+    fabric_width: existingData?.fabric_details?.fabric_width || "137",
+    roll_direction: existingData?.fabric_details?.roll_direction || "vertical",
+    heading_fullness: existingData?.fabric_details?.heading_fullness || "2.5",
+    selected_heading: existingData?.fabric_details?.selected_heading,
+    header_hem: existingData?.measurements?.header_hem || "15",
+    bottom_hem: existingData?.measurements?.bottom_hem || "10",
+    side_hem: existingData?.measurements?.side_hem || "5",
+    seam_hem: existingData?.measurements?.seam_hem || "3",
+    custom_labor_rate: existingData?.custom_labor_rate || "",
+    selected_options: existingData?.selected_options || [],
+    notes: existingData?.notes || "",
+    images: existingData?.images || []
   });
 
   // Auto-set roll direction based on fabric width
@@ -66,25 +67,26 @@ export const useTreatmentFormData = (treatmentType: string = "Curtains", windowC
 
   const resetForm = () => {
     setFormData({
-      product_name: windowCovering?.name || treatmentType || "Curtains",
-      rail_width: "",
-      drop: "",
-      pooling: "0",
-      quantity: 1,
-      fabric_type: "",
-      fabric_code: "",
-      fabric_cost_per_yard: "",
-      fabric_width: "137",
-      roll_direction: "vertical", // Default to vertical for narrow fabrics
-      heading_fullness: "2.5",
-      header_hem: "15",
-      bottom_hem: "10",
-      side_hem: "5",
-      seam_hem: "3",
-      custom_labor_rate: "",
-      selected_options: [],
-      notes: "",
-      images: []
+      product_name: existingData?.product_name || windowCovering?.name || treatmentType || "Curtains",
+      rail_width: existingData?.measurements?.rail_width || "",
+      drop: existingData?.measurements?.drop || "",
+      pooling: existingData?.measurements?.pooling || "0",
+      quantity: existingData?.quantity || 1,
+      fabric_type: existingData?.fabric_details?.fabric_type || "",
+      fabric_code: existingData?.fabric_details?.fabric_code || "",
+      fabric_cost_per_yard: existingData?.fabric_details?.fabric_cost_per_yard || "",
+      fabric_width: existingData?.fabric_details?.fabric_width || "137",
+      roll_direction: existingData?.fabric_details?.roll_direction || "vertical",
+      heading_fullness: existingData?.fabric_details?.heading_fullness || "2.5",
+      selected_heading: existingData?.fabric_details?.selected_heading,
+      header_hem: existingData?.measurements?.header_hem || "15",
+      bottom_hem: existingData?.measurements?.bottom_hem || "10",
+      side_hem: existingData?.measurements?.side_hem || "5",
+      seam_hem: existingData?.measurements?.seam_hem || "3",
+      custom_labor_rate: existingData?.custom_labor_rate || "",
+      selected_options: existingData?.selected_options || [],
+      notes: existingData?.notes || "",
+      images: existingData?.images || []
     });
   };
 
