@@ -79,34 +79,76 @@ export const StoreSettingsTab = ({ store, onBack }: StoreSettingsTabProps) => {
 
   const deleteStore = useMutation({
     mutationFn: async () => {
-      console.log('[StoreSettings] Deleting store:', store.id);
-      const { error } = await supabase.rpc('delete_online_store', {
-        store_id_param: store.id
-      });
-
-      if (error) {
-        console.error('[StoreSettings] Delete error:', error);
-        throw error;
+      console.log('[StoreSettings] Starting delete for store:', store.id);
+      
+      // Delete related data first
+      const { error: pagesError } = await supabase
+        .from('store_pages')
+        .delete()
+        .eq('store_id', store.id);
+      
+      if (pagesError) {
+        console.error('[StoreSettings] Error deleting pages:', pagesError);
+        throw new Error('Failed to delete store pages');
       }
+
+      const { error: visibilityError } = await supabase
+        .from('store_product_visibility')
+        .delete()
+        .eq('store_id', store.id);
+      
+      if (visibilityError) {
+        console.error('[StoreSettings] Error deleting visibility:', visibilityError);
+        throw new Error('Failed to delete product visibility');
+      }
+
+      const { error: inquiriesError } = await supabase
+        .from('store_inquiries')
+        .delete()
+        .eq('store_id', store.id);
+      
+      if (inquiriesError) {
+        console.error('[StoreSettings] Error deleting inquiries:', inquiriesError);
+        throw new Error('Failed to delete inquiries');
+      }
+
+      const { error: categoryError } = await supabase
+        .from('store_category_settings')
+        .delete()
+        .eq('store_id', store.id);
+      
+      if (categoryError) {
+        console.error('[StoreSettings] Error deleting categories:', categoryError);
+      }
+
+      // Finally delete the store
+      const { error: storeError } = await supabase
+        .from('online_stores')
+        .delete()
+        .eq('id', store.id);
+      
+      if (storeError) {
+        console.error('[StoreSettings] Error deleting store:', storeError);
+        throw new Error('Failed to delete store');
+      }
+
       console.log('[StoreSettings] Store deleted successfully');
     },
-    onSuccess: async () => {
-      console.log('[StoreSettings] Invalidating queries and refreshing...');
+    onSuccess: () => {
+      console.log('[StoreSettings] Delete successful, invalidating queries');
       
-      // Clear all store-related queries
       queryClient.invalidateQueries({ queryKey: ['online-store'] });
       queryClient.invalidateQueries({ queryKey: ['has-online-store'] });
       queryClient.invalidateQueries({ queryKey: ['has-online-store-nav'] });
       
       toast({
         title: "Store deleted",
-        description: "Your store has been deleted successfully. Refreshing...",
+        description: "Refreshing app...",
       });
       
-      // Navigate to home and force a page reload to ensure clean state
       setTimeout(() => {
         window.location.href = '/';
-      }, 1000);
+      }, 500);
     },
     onError: (error: any) => {
       console.error('[StoreSettings] Delete failed:', error);
