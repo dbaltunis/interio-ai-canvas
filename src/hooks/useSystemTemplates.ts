@@ -41,11 +41,9 @@ export const useCloneSystemTemplate = () => {
   
   return useMutation({
     mutationFn: async ({ 
-      systemTemplateId, 
-      customPricing 
+      systemTemplateId
     }: { 
-      systemTemplateId: string; 
-      customPricing?: number;
+      systemTemplateId: string;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
@@ -59,7 +57,7 @@ export const useCloneSystemTemplate = () => {
       
       if (fetchError) throw fetchError;
       
-      // Clone the template with user's custom pricing
+      // Clone the template with system pricing
       const { data: clonedTemplate, error } = await supabase
         .from('curtain_templates')
         .insert({
@@ -68,7 +66,7 @@ export const useCloneSystemTemplate = () => {
           user_id: user.id,
           is_system_default: false,
           name: `${template.name} (Custom)`,
-          unit_price: customPricing || template.unit_price,
+          unit_price: template.unit_price,
           created_at: undefined,
           updated_at: undefined,
         })

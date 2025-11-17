@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useSystemTemplates, useCloneSystemTemplate } from "@/hooks/useSystemTemplates";
-import { Copy, DollarSign, Info, Settings } from "lucide-react";
+import { Copy, Info, Settings } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+
 
 // Hook to get option count for a template's category
 const useTemplateOptionCount = (treatmentCategory: string) => {
@@ -39,13 +39,11 @@ const TemplateCard = ({ template, onTemplateCloned }: { template: any; onTemplat
   const { data: optionCount } = useTemplateOptionCount(template.treatment_category);
   const cloneTemplate = useCloneSystemTemplate();
   const [showDialog, setShowDialog] = useState(false);
-  const [customPrice, setCustomPrice] = useState<number>(template.unit_price || 0);
 
   const handleClone = async () => {
     try {
       const clonedTemplate = await cloneTemplate.mutateAsync({
         systemTemplateId: template.id,
-        customPricing: customPrice,
       });
       setShowDialog(false);
       
@@ -118,29 +116,11 @@ const TemplateCard = ({ template, onTemplateCloned }: { template: any; onTemplat
           <DialogHeader>
             <DialogTitle>Clone Template: {template.name}</DialogTitle>
             <DialogDescription>
-              Set your custom pricing for this template. All preset options will be included.
+              Clone this template with all preset options included. You can customize pricing later in your templates.
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="custom-price">Your Price ({template.pricing_type})</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="custom-price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={customPrice}
-                  onChange={(e) => setCustomPrice(parseFloat(e.target.value))}
-                  className="pl-9"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                System default: ${template.unit_price?.toFixed(2) || '0.00'}
-              </p>
-            </div>
             {optionCount !== undefined && optionCount > 0 && (
               <p className="text-sm text-muted-foreground">
                 ✓ {optionCount} preset options will be included
