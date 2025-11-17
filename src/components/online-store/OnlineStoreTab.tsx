@@ -28,13 +28,16 @@ export const OnlineStoreTab = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
+      // Get the most recent store for this user
       const { data, error } = await supabase
         .from('online_stores')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
       return data as OnlineStore | null;
     },
   });
