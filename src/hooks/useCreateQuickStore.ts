@@ -211,14 +211,17 @@ export const useCreateQuickStore = () => {
       queryClient.invalidateQueries({ queryKey: ['has-online-store'] });
       queryClient.invalidateQueries({ queryKey: ['has-online-store-nav'] });
       
+      // Force immediate refetch to update UI
+      queryClient.refetchQueries({ queryKey: ['online-store'] });
+      
       const storeUrl = store.custom_domain && store.domain_verified
         ? `https://${store.custom_domain}`
         : `${window.location.origin}/store/${store.store_slug}`;
 
       toast({
-        title: "Store Created!",
-        description: "Your store is ready to customize. Publish it when you're ready to go live.",
-        duration: 6000,
+        title: "🎉 Store Created Successfully!",
+        description: "Next: Review your products, then click 'Publish Store' to go live!",
+        duration: 8000,
       });
     },
     onError: (error: any) => {
