@@ -180,17 +180,11 @@ export const StoreTemplateGallery = ({ onSelectTemplate }: StoreTemplateGalleryP
                       className="gap-2"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedId(template.id);
+                        onSelectTemplate(template);
                       }}
                     >
-                      {isSelected ? (
-                        <>
-                          <Check className="h-4 w-4" />
-                          Selected
-                        </>
-                      ) : (
-                        'Select Template'
-                      )}
+                      <Check className="h-4 w-4" />
+                      Use This Template
                     </Button>
                   </div>
                 )}
@@ -263,22 +257,6 @@ export const StoreTemplateGallery = ({ onSelectTemplate }: StoreTemplateGalleryP
         </div>
       )}
 
-      {/* Continue Button */}
-      {selectedId && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4">
-          <Button
-            size="lg"
-            className="shadow-2xl gap-2 px-8"
-            onClick={() => {
-              const selected = templates?.find((t) => t.id === selectedId);
-              if (selected) onSelectTemplate(selected);
-            }}
-          >
-            <Check className="h-5 w-5" />
-            Continue with Selected Template
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
