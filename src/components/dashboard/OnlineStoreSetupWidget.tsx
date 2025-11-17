@@ -20,13 +20,18 @@ export const OnlineStoreSetupWidget = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('online_stores')
         .select('id')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .limit(1);
 
-      return !!data;
+      if (error) {
+        console.error('[OnlineStoreSetupWidget] Error fetching store:', error);
+        return false;
+      }
+
+      return data && data.length > 0;
     },
   });
 

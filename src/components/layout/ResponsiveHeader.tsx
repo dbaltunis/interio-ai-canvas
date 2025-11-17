@@ -73,11 +73,16 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
       if (!user) return false;
       
       // Check for InteriorApp store
-      const { data: store } = await supabase
+      const { data: store, error: storeError } = await supabase
         .from('online_stores')
         .select('id')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .limit(1);
+      
+      if (storeError) {
+        console.error('[ResponsiveHeader] Error fetching store:', storeError);
+        return false;
+      }
       
       // Check for Shopify connection
       const { data: shopify } = await supabase
@@ -87,7 +92,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
         .eq('is_connected', true)
         .maybeSingle();
       
-      const hasStore = !!store && !shopify?.is_connected;
+      const hasStore = store && store.length > 0 && !shopify?.is_connected;
       console.log('[ResponsiveHeader] Store nav check:', { hasStore: !!store, hasShopify: !!shopify, showNav: hasStore });
       return hasStore;
     },

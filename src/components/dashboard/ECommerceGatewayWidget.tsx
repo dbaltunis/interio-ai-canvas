@@ -21,13 +21,19 @@ export const ECommerceGatewayWidget = () => {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('online_stores')
         .select('id, is_published')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .limit(1);
+      
+      if (error) {
+        console.error('[ECommerceGatewayWidget] Error fetching store:', error);
+        return false;
+      }
+      
       console.log('[ECommerceGatewayWidget] Online store query result:', data);
-      return !!data;
+      return data && data.length > 0;
     },
     staleTime: 0, // Always fetch fresh data
     refetchOnMount: 'always', // Always refetch when component mounts

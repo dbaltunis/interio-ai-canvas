@@ -59,13 +59,19 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('online_stores')
         .select('id')
         .eq('user_id', user.id)
-        .maybeSingle();
-      console.log('[MobileBottomNav] Online store check:', { hasStore: !!data });
-      return !!data;
+        .limit(1);
+      
+      if (error) {
+        console.error('[MobileBottomNav] Error fetching store:', error);
+        return false;
+      }
+      
+      console.log('[MobileBottomNav] Online store check:', { hasStore: data && data.length > 0 });
+      return data && data.length > 0;
     },
     staleTime: 0, // Always fetch fresh data
     refetchOnMount: 'always', // Always refetch when component mounts
