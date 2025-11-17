@@ -171,21 +171,69 @@ export const CalendarSyncToolbar = ({
                 <span className="lg:hidden">Scheduling</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 pointer-events-auto z-50">
-              <DropdownMenuItem onSelect={onSchedulerClick} className="pointer-events-auto cursor-pointer">
+            <DropdownMenuContent 
+              align="end" 
+              className="w-56 pointer-events-auto !z-[99999] bg-popover"
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <DropdownMenuItem 
+                onSelect={(e) => {
+                  console.log('New Booking Template - onSelect triggered');
+                  e.preventDefault();
+                  onSchedulerClick?.();
+                }}
+                onClick={(e) => {
+                  console.log('New Booking Template - onClick triggered');
+                  e.stopPropagation();
+                  onSchedulerClick?.();
+                }}
+                className="pointer-events-auto cursor-pointer"
+              >
                 <UserPlus className="h-4 w-4 mr-2" />
                 New Booking Template
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={onManageTemplates} className="pointer-events-auto cursor-pointer">
+              <DropdownMenuItem 
+                onSelect={(e) => {
+                  console.log('Manage Templates - onSelect triggered');
+                  e.preventDefault();
+                  onManageTemplates?.();
+                }}
+                onClick={(e) => {
+                  console.log('Manage Templates - onClick triggered');
+                  e.stopPropagation();
+                  onManageTemplates?.();
+                }}
+                className="pointer-events-auto cursor-pointer"
+              >
                 <SettingsIcon className="h-4 w-4 mr-2" />
                 Manage Templates
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={onViewBookings} className="pointer-events-auto cursor-pointer">
+              <DropdownMenuItem 
+                onSelect={(e) => {
+                  e.preventDefault();
+                  onViewBookings?.();
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewBookings?.();
+                }}
+                className="pointer-events-auto cursor-pointer"
+              >
                 <CalendarIcon className="h-4 w-4 mr-2" />
                 View Bookings
               </DropdownMenuItem>
-              <DropdownMenuItem onSelect={onViewAnalytics} className="pointer-events-auto cursor-pointer">
+              <DropdownMenuItem 
+                onSelect={(e) => {
+                  e.preventDefault();
+                  onViewAnalytics?.();
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewAnalytics?.();
+                }}
+                className="pointer-events-auto cursor-pointer"
+              >
                 <BarChart3 className="h-4 w-4 mr-2" />
                 View Analytics
               </DropdownMenuItem>
