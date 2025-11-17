@@ -1,57 +1,28 @@
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { usePublicStoreProducts } from "@/hooks/usePublicStore";
-import { 
-  ArrowRight, Calculator, Clock, Shield, Star, Users, 
-  Phone, Calendar, Ruler, Sparkles, CheckCircle, Award,
-  TrendingUp, Heart, Zap, ChevronRight
-} from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EnhancedProductCard } from "../enhanced/EnhancedProductCard";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Shield, Star, Truck, HeadphonesIcon, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
+import { TrustIndicators } from "../shared/TrustIndicators";
+import { EnhancedProductCard } from "../enhanced/EnhancedProductCard";
+import { useStoreProductCatalog } from "@/hooks/useStoreProductCatalog";
 
 interface WindowTreatmentProProps {
   storeData: any;
 }
 
-const testimonials = [
-  {
-    name: "Sarah Mitchell",
-    role: "Homeowner",
-    content: "Absolutely stunning work! The team helped us choose perfect window treatments for our living room. The online calculator made getting a quote so easy.",
-    rating: 5,
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
-  },
-  {
-    name: "Michael Chen",
-    role: "Interior Designer",
-    content: "We recommend this company to all our clients. Premium quality, amazing service, and the custom measurements are always perfect.",
-    rating: 5,
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
-  },
-  {
-    name: "Jessica Rodriguez",
-    role: "Business Owner",
-    content: "Transformed our entire office with their commercial-grade blinds. Professional installation and the results exceeded expectations!",
-    rating: 5,
-    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop"
-  }
-];
-
 export const WindowTreatmentPro = ({ storeData }: WindowTreatmentProProps) => {
-  const { data: products, isLoading } = usePublicStoreProducts(storeData.id);
-  const featuredProducts = products?.filter((p: any) => p.is_featured).slice(0, 6) || [];
+  const { data: products = [] } = useStoreProductCatalog(storeData.id);
+  const featuredProducts = products?.filter(p => p.is_featured && p.is_visible).slice(0, 6) || [];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero Section with Animated Background */}
-      <section className="relative overflow-hidden">
-        {/* Animated gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-background" />
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+      {/* Cinematic Hero Section */}
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 animate-gradient bg-[length:200%_200%]" />
+        </div>
         
-        <div className="container max-w-7xl relative z-10 py-20 md:py-32">
+        <div className="relative z-10 container mx-auto px-4 text-center">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Left Column */}
             <motion.div 

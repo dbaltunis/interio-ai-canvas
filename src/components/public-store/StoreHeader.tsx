@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useShoppingCart } from "@/hooks/useShoppingCart";
 import { MegaMenu } from "./shared/MegaMenu";
+import { useState, useEffect } from "react";
 
 interface StoreHeaderProps {
   storeData: any;
@@ -12,15 +13,28 @@ interface StoreHeaderProps {
 export const StoreHeader = ({ storeData }: StoreHeaderProps) => {
   const { openCart, getTotalItems } = useShoppingCart();
   const itemCount = getTotalItems();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <>
       {/* Promotional Top Bar */}
-      <div className="w-full bg-primary text-primary-foreground py-2 text-center text-sm font-medium">
-        🎉 Free Measuring & Consultation • No Obligation Quote • Expert Installation
+      <div className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white py-2 text-center text-sm font-medium animate-gradient bg-[length:200%_200%]">
+        ✨ Free Measuring & Consultation • No Obligation Quote • Expert Installation
       </div>
 
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className={`sticky top-0 z-50 w-full transition-all duration-500 ${
+        isScrolled 
+          ? 'bg-white/95 backdrop-blur-xl shadow-lg border-b border-gray-200' 
+          : 'bg-transparent border-b border-white/20'
+      }`}>
         <div className="container flex h-16 items-center justify-between gap-4">
           {/* Logo */}
           <Link to={`/store/${storeData.store_slug}`} className="flex items-center space-x-2 flex-shrink-0">
