@@ -13,10 +13,12 @@ interface StoreProductCalculatorProps {
 
 export const StoreProductCalculator = ({ product, storeData, onSubmitQuote, onAddToCart }: StoreProductCalculatorProps) => {
   const category = product.inventory_item?.category?.toLowerCase() || '';
+  const subcategory = product.inventory_item?.subcategory?.toLowerCase() || '';
   
   console.log('🔍 Routing product:', {
     name: product.inventory_item?.name,
     category,
+    subcategory,
     hasTemplate: !!product.template?.id
   });
   
@@ -33,10 +35,14 @@ export const StoreProductCalculator = ({ product, storeData, onSubmitQuote, onAd
     );
   }
   
-  // WINDOW TREATMENT PRODUCTS (fabric, roller_fabric, heading, lining)
+  // WINDOW TREATMENT PRODUCTS (check subcategory first, then category)
+  const WINDOW_TREATMENT_SUBCATEGORIES = ['curtain_fabric', 'roller_fabric', 'heading', 'lining'];
   const WINDOW_TREATMENT_CATEGORIES = ['fabric', 'roller_fabric', 'heading', 'lining'];
   
-  if (WINDOW_TREATMENT_CATEGORIES.includes(category)) {
+  const isWindowTreatment = WINDOW_TREATMENT_SUBCATEGORIES.includes(subcategory) || 
+                            WINDOW_TREATMENT_CATEGORIES.includes(category);
+  
+  if (isWindowTreatment) {
     // Check if product has an assigned template
     if (product.template && product.template.id) {
       console.log('✅ Using advanced calculator (has template)');
