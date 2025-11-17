@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { z } from "zod";
 import { 
   ShoppingCart, 
   MessageSquare, 
@@ -14,6 +15,13 @@ import {
   Shield,
   Clock
 } from "lucide-react";
+
+const quoteFormSchema = z.object({
+  customer_name: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name must be less than 100 characters"),
+  customer_email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
+  customer_phone: z.string().trim().max(20, "Phone number must be less than 20 characters").optional().or(z.literal("")),
+  message: z.string().trim().max(1000, "Message must be less than 1000 characters").optional().or(z.literal(""))
+});
 
 interface SimpleProductDetailProps {
   product: any;
@@ -35,16 +43,36 @@ export const SimpleProductDetail = ({
     customer_phone: "",
     message: ""
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const handleQuoteSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormErrors({});
+
+    // Validate form data
+    const result = quoteFormSchema.safeParse(formData);
+    
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          errors[err.path[0] as string] = err.message;
+        }
+      });
+      setFormErrors(errors);
+      return;
+    }
+
+    // Submit validated data
     onSubmitQuote({
-      ...formData,
+      ...result.data,
       configuration_data: { product_name: product.inventory_item?.name },
       quote_data: { requested_via: "product_page" }
     });
+    
     setShowQuoteForm(false);
     setFormData({ customer_name: "", customer_email: "", customer_phone: "", message: "" });
+    setFormErrors({});
   };
 
   const handleQuickAddToCart = () => {
@@ -219,10 +247,18 @@ export const SimpleProductDetail = ({
                   <Input
                     id="name"
                     placeholder="John Doe"
-                    required
                     value={formData.customer_name}
-                    onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, customer_name: e.target.value });
+                      if (formErrors.customer_name) {
+                        setFormErrors({ ...formErrors, customer_name: "" });
+                      }
+                    }}
+                    className={formErrors.customer_name ? "border-destructive" : ""}
                   />
+                  {formErrors.customer_name && (
+                    <p className="text-sm text-destructive">{formErrors.customer_name}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email *</Label>
@@ -230,10 +266,18 @@ export const SimpleProductDetail = ({
                     id="email"
                     type="email"
                     placeholder="john@example.com"
-                    required
                     value={formData.customer_email}
-                    onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, customer_email: e.target.value });
+                      if (formErrors.customer_email) {
+                        setFormErrors({ ...formErrors, customer_email: "" });
+                      }
+                    }}
+                    className={formErrors.customer_email ? "border-destructive" : ""}
                   />
+                  {formErrors.customer_email && (
+                    <p className="text-sm text-destructive">{formErrors.customer_email}</p>
+                  )}
                 </div>
               </div>
               
@@ -244,8 +288,17 @@ export const SimpleProductDetail = ({
                   type="tel"
                   placeholder="+1 (555) 123-4567"
                   value={formData.customer_phone}
-                  onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, customer_phone: e.target.value });
+                    if (formErrors.customer_phone) {
+                      setFormErrors({ ...formErrors, customer_phone: "" });
+                    }
+                  }}
+                  className={formErrors.customer_phone ? "border-destructive" : ""}
                 />
+                {formErrors.customer_phone && (
+                  <p className="text-sm text-destructive">{formErrors.customer_phone}</p>
+                )}
               </div>
               
               <div className="space-y-2">
@@ -255,8 +308,17 @@ export const SimpleProductDetail = ({
                   placeholder="Tell us about your requirements, window dimensions, preferred colors, etc."
                   rows={4}
                   value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, message: e.target.value });
+                    if (formErrors.message) {
+                      setFormErrors({ ...formErrors, message: "" });
+                    }
+                  }}
+                  className={formErrors.message ? "border-destructive" : ""}
                 />
+                {formErrors.message && (
+                  <p className="text-sm text-destructive">{formErrors.message}</p>
+                )}
               </div>
 
               <div className="flex gap-3 pt-2">
