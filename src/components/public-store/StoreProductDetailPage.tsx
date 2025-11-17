@@ -8,7 +8,7 @@ import { ArrowLeft, Package, Star, Award, Clock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useShoppingCart } from "@/hooks/useShoppingCart";
 import { toast as sonnerToast } from "sonner";
-import { ProductDetailTabs } from "./enhanced/ProductDetailTabs";
+import { SimpleProductDetail } from "./enhanced/SimpleProductDetail";
 import { CustomPageRenderer } from "../online-store/page-builder/CustomPageRenderer";
 
 interface StoreProductDetailPageProps {
@@ -187,8 +187,8 @@ export const StoreProductDetailPage = ({ storeData }: StoreProductDetailPageProp
               )}
             </div>
 
-            {/* Interactive Calculator with Tabs */}
-            <ProductDetailTabs
+            {/* Simplified Product Detail */}
+            <SimpleProductDetail
               product={product}
               storeData={storeData}
               onSubmitQuote={(quoteData) => {
@@ -207,12 +207,8 @@ export const StoreProductDetailPage = ({ storeData }: StoreProductDetailPageProp
                   storeId: storeData.id,
                 };
                 addItem(cartItem);
-                sonnerToast.success("Added to cart!", {
-                  action: {
-                    label: "View Cart",
-                    onClick: () => openCart(),
-                  },
-                });
+                openCart();
+                sonnerToast.success("Added to cart!");
               }}
             />
           </div>
