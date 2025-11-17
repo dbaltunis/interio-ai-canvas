@@ -178,13 +178,7 @@ export const CalendarSyncToolbar = ({
             >
               <DropdownMenuItem 
                 onSelect={(e) => {
-                  console.log('New Booking Template - onSelect triggered');
                   e.preventDefault();
-                  onSchedulerClick?.();
-                }}
-                onClick={(e) => {
-                  console.log('New Booking Template - onClick triggered');
-                  e.stopPropagation();
                   onSchedulerClick?.();
                 }}
                 className="pointer-events-auto cursor-pointer"
@@ -195,13 +189,7 @@ export const CalendarSyncToolbar = ({
               <DropdownMenuSeparator />
               <DropdownMenuItem 
                 onSelect={(e) => {
-                  console.log('Manage Templates - onSelect triggered');
                   e.preventDefault();
-                  onManageTemplates?.();
-                }}
-                onClick={(e) => {
-                  console.log('Manage Templates - onClick triggered');
-                  e.stopPropagation();
                   onManageTemplates?.();
                 }}
                 className="pointer-events-auto cursor-pointer"
@@ -214,10 +202,6 @@ export const CalendarSyncToolbar = ({
                   e.preventDefault();
                   onViewBookings?.();
                 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewBookings?.();
-                }}
                 className="pointer-events-auto cursor-pointer"
               >
                 <CalendarIcon className="h-4 w-4 mr-2" />
@@ -226,10 +210,6 @@ export const CalendarSyncToolbar = ({
               <DropdownMenuItem 
                 onSelect={(e) => {
                   e.preventDefault();
-                  onViewAnalytics?.();
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
                   onViewAnalytics?.();
                 }}
                 className="pointer-events-auto cursor-pointer"
