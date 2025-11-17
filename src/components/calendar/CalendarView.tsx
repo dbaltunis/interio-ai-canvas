@@ -485,6 +485,15 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
       {/* Old New Event Dialog removed - using UnifiedAppointmentDialog */}
 
+      <Dialog open={showSchedulerManagement} onOpenChange={setShowSchedulerManagement}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Booking Templates</DialogTitle>
+          </DialogHeader>
+          <SchedulerManagement />
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showBookingManagement} onOpenChange={setShowBookingManagement}>
         <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
