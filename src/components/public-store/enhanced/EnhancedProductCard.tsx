@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Package, ShoppingCart, Eye, Star, Calculator, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Star, Sparkles } from "lucide-react";
+import { useState } from "react";
 
 interface EnhancedProductCardProps {
   product: any;
@@ -12,174 +12,174 @@ interface EnhancedProductCardProps {
 }
 
 const getCategoryDisplay = (category: string) => {
-  const map: Record<string, string> = {
-    'fabric': 'Curtain Fabric',
-    'roller_fabric': 'Roller Blind',
-    'wallcovering': 'Wallpaper',
-    'heading': 'Curtain Heading',
-    'lining': 'Lining Fabric'
+  const categoryMap: Record<string, string> = {
+    'roller-blinds': 'Roller Blinds',
+    'roman-blinds': 'Roman Blinds',
+    'venetian-blinds': 'Venetian Blinds',
+    'vertical-blinds': 'Vertical Blinds',
+    'curtains': 'Curtains & Drapes',
+    'shutters': 'Plantation Shutters',
   };
-  return map[category?.toLowerCase()] || 'Window Treatment';
+  return categoryMap[category] || category;
 };
 
 export const EnhancedProductCard = ({ product, storeSlug, onQuickAdd }: EnhancedProductCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  const productName = product.template?.name 
-    ? `${product.template.name} - ${product.inventory_item?.name}`
-    : product.inventory_item?.name || 'Product';
+  const inventory = product.inventory_item;
+  if (!inventory) return null;
 
-  const price = product.inventory_item?.unit_price;
-  const category = product.inventory_item?.category || 'Window Treatment';
-  const imageUrl = product.inventory_item?.image_url;
-  
-  const productLink = `/store/${storeSlug}/products/${product.inventory_item_id}`;
-  console.log('[EnhancedProductCard] Linking to:', productLink, 'for product:', product.inventory_item?.name);
+  const productName = product.custom_description || inventory.name;
+  const productPrice = inventory.sell_price;
+  const productCategory = inventory.category;
+  const imageUrl = product.custom_images?.[0] || inventory.image_url || "/placeholder.svg";
+  const productLink = `/store/${storeSlug}/product/${inventory.id}`;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="group"
+      whileHover={{ y: -8 }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      className="group relative bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
     >
-      <Link to={productLink}>
-        <div className="bg-card rounded-xl overflow-hidden border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-2xl">
-          {/* Image Container with Hover Effects */}
-          <div className="relative aspect-[4/5] bg-muted overflow-hidden">
-            {imageUrl ? (
-              <>
-                <img
-                  src={imageUrl}
-                  alt={productName}
-                  className={`w-full h-full object-cover transition-all duration-500 ${
-                    isHovered ? 'scale-110' : 'scale-100'
-                  } ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                  onLoad={() => setImageLoaded(true)}
-                />
-                {!imageLoaded && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Package className="h-16 w-16 text-muted-foreground animate-pulse" />
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <Package className="h-20 w-20 text-muted-foreground" />
-              </div>
-            )}
+      {/* Image Container with Overlay */}
+      <Link to={productLink} className="relative block aspect-[4/5] overflow-hidden bg-gray-100">
+        {!imageLoaded && (
+          <div className="absolute inset-0 skeleton" />
+        )}
+        <motion.img
+          src={imageUrl}
+          alt={productName}
+          onLoad={() => setImageLoaded(true)}
+          className={`w-full h-full object-cover transition-all duration-700 ${
+            isHovered ? 'scale-110' : 'scale-100'
+          } ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+        />
+        
+        {/* Gradient Overlay */}
+        <div className={`absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 transition-opacity duration-500 ${
+          isHovered ? 'opacity-100' : 'opacity-0'
+        }`} />
 
-            {/* Badges */}
-            <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
-              {product.is_featured && (
-                <Badge className="bg-accent text-accent-foreground shadow-lg">
-                  <Star className="h-3 w-3 mr-1 fill-current" />
-                  Featured
-                </Badge>
-              )}
-            </div>
-            
-            {/* Calculator Availability Badge */}
-            {product.template?.id ? (
-              <Badge className="absolute top-3 right-3 bg-green-500/90 text-white shadow-lg z-10">
-                <Calculator className="h-3 w-3 mr-1" />
-                Online Calculator
-              </Badge>
-            ) : (
-              <Badge className="absolute top-3 right-3 bg-blue-500/90 text-white shadow-lg z-10">
-                <MessageSquare className="h-3 w-3 mr-1" />
-                Quote Required
-              </Badge>
-            )}
-
-            {/* Hover Overlay with Actions */}
+        {/* Badges */}
+        <div className="absolute top-4 left-4 flex flex-col gap-2">
+          {product.is_featured && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: isHovered ? 1 : 0 }}
-              transition={{ duration: 0.2 }}
-              className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/50 to-transparent flex flex-col items-center justify-end p-6 gap-2"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
             >
-              <Button
-                size="lg"
-                className="w-full shadow-lg"
-                style={{ backgroundColor: 'var(--store-primary)' }}
-              >
-                <Eye className="mr-2 h-4 w-4" />
-                View Details
-              </Button>
-              {onQuickAdd && (
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  className="w-full"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onQuickAdd(product, e);
-                  }}
-                >
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  Quick Add
-                </Button>
-              )}
+              <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white border-0 px-3 py-1 shadow-lg backdrop-blur-sm">
+                <Sparkles className="w-3 h-3 mr-1" />
+                Featured
+              </Badge>
             </motion.div>
+          )}
+          {inventory.requires_calculator && (
+            <Badge variant="secondary" className="backdrop-blur-sm bg-white/90 text-slate-900 shadow-md">
+              Custom Quote
+            </Badge>
+          )}
+        </div>
 
-            {/* Price Tag */}
-            {price && (
-              <div className="absolute bottom-3 right-3 bg-background/95 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg">
-                <p className="text-xs text-muted-foreground">From</p>
-                <p className="text-lg font-bold" style={{ color: 'var(--store-primary)' }}>
-                  ${price.toFixed(2)}
-                </p>
+        {/* Hover Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: isHovered ? 1 : 0, y: isHovered ? 0 : 20 }}
+          transition={{ duration: 0.3 }}
+          className="absolute bottom-4 left-4 right-4 flex gap-2"
+        >
+          <Button
+            asChild
+            className="flex-1 bg-white text-slate-900 hover:bg-gray-100 rounded-full shadow-xl group/btn"
+          >
+            <Link to={productLink}>
+              View Details
+              <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+            </Link>
+          </Button>
+          {onQuickAdd && !inventory.requires_calculator && (
+            <Button
+              onClick={(e) => {
+                e.preventDefault();
+                onQuickAdd(product, e);
+              }}
+              size="icon"
+              className="bg-white text-slate-900 hover:bg-gray-100 rounded-full shadow-xl"
+            >
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          )}
+        </motion.div>
+      </Link>
+
+      {/* Product Info */}
+      <div className="p-6 space-y-3">
+        {/* Category */}
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <span>{getCategoryDisplay(productCategory)}</span>
+          <span className="flex items-center gap-1 ml-auto">
+            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+            <span className="font-medium text-slate-900">4.9</span>
+          </span>
+        </div>
+
+        {/* Product Name */}
+        <Link to={productLink}>
+          <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-tight">
+            {productName}
+          </h3>
+        </Link>
+
+        {/* Short Description */}
+        {inventory.description && (
+          <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+            {inventory.description}
+          </p>
+        )}
+
+        {/* Price & CTA */}
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+          <div>
+            {productPrice && !inventory.requires_calculator ? (
+              <div className="space-y-0.5">
+                <div className="text-sm text-gray-500">Starting at</div>
+                <div className="text-2xl font-bold text-slate-900">
+                  ${productPrice.toFixed(2)}
+                </div>
+              </div>
+            ) : (
+              <div className="text-lg font-semibold text-slate-900">
+                Get Quote
               </div>
             )}
           </div>
-
-          {/* Product Info */}
-          <div className="p-5 space-y-3">
-            <div>
-              <Badge variant="secondary" className="text-xs mb-2">
-                {getCategoryDisplay(category)}
-              </Badge>
-              <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors">
-                {productName}
-              </h3>
-            </div>
-
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {product.custom_description || 
-                (typeof product.inventory_item?.description === 'string' 
-                  ? product.inventory_item.description 
-                  : 'Custom made to your exact specifications')}
-            </p>
-
-            {/* Features/Trust Indicators */}
-            <div className="space-y-2 pt-2 border-t border-border">
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                  <span className="font-medium">4.9</span>
-                </div>
-                <span>•</span>
-                <span>Free Measuring</span>
-                <span>•</span>
-                <span>Expert Install</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                <Badge variant="secondary" className="text-xs py-0.5 px-2">
-                  5-Year Warranty
-                </Badge>
-                <Badge variant="secondary" className="text-xs py-0.5 px-2">
-                  Free Consultation
-                </Badge>
-              </div>
-            </div>
-          </div>
+          
+          <Button
+            asChild
+            size="icon"
+            variant="ghost"
+            className="rounded-full hover:bg-blue-50 hover:text-blue-600 transition-all duration-300 group/icon"
+          >
+            <Link to={productLink}>
+              <ArrowRight className="w-5 h-5 group-hover/icon:translate-x-1 transition-transform" />
+            </Link>
+          </Button>
         </div>
-      </Link>
+
+        {/* Trust Signals */}
+        <div className="flex items-center gap-4 text-xs text-gray-500 pt-2">
+          <span className="flex items-center gap-1">
+            ✓ Free Consultation
+          </span>
+          <span className="flex items-center gap-1">
+            ✓ Expert Install
+          </span>
+        </div>
+      </div>
     </motion.div>
   );
 };
