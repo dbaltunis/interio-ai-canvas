@@ -476,7 +476,11 @@ export const StoreSettingsTab = ({ store, onBack }: StoreSettingsTabProps) => {
           </Alert>
           <Button
             variant="destructive"
-            onClick={() => setShowDeleteDialog(true)}
+            onClick={(e) => {
+              e.preventDefault();
+              console.log('[StoreSettings] Opening delete dialog for store:', store.id);
+              setShowDeleteDialog(true);
+            }}
             className="gap-2"
           >
             <Trash2 className="h-4 w-4" />
@@ -496,9 +500,13 @@ export const StoreSettingsTab = ({ store, onBack }: StoreSettingsTabProps) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteStore.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deleteStore.mutate()}
+              onClick={(e) => {
+                e.preventDefault();
+                console.log('[StoreSettings] Delete button clicked, calling mutation');
+                deleteStore.mutate();
+              }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleteStore.isPending}
             >
