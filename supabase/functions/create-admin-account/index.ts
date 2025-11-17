@@ -180,15 +180,99 @@ serve(async (req) => {
 
     console.log('Account created successfully:', newUser.user.id);
 
-    // Step 6: Send welcome email (optional - implement later)
-    // TODO: Call email service to send welcome email with temporary password
+    // Step 6: Send welcome email with temporary password
+    try {
+      // Get admin's account owner to fetch integration settings
+      const { data: adminAccountOwnerId } = await supabaseAdmin.rpc('get_account_owner', {
+        user_id_param: user.id
+      });
+
+      // Get SendGrid integration settings
+      const { data: sendGridIntegration, error: integrationError } = await supabaseAdmin
+        .from('integration_settings')
+        .select('configuration')
+        .eq('account_owner_id', adminAccountOwnerId || user.id)
+        .eq('integration_type', 'sendgrid')
+        .eq('active', true)
+        .maybeSingle();
+
+      if (integrationError) {
+        console.error('Error fetching SendGrid integration:', integrationError);
+        throw new Error('SendGrid integration not found');
+      }
+
+      if (!sendGridIntegration?.configuration?.api_key) {
+        throw new Error('SendGrid API key not configured');
+      }
+
+      // Get email settings
+      const { data: emailSettings } = await supabaseAdmin
+        .from('email_settings')
+        .select('*')
+        .eq('account_owner_id', adminAccountOwnerId || user.id)
+        .maybeSingle();
+
+      if (!emailSettings?.from_email) {
+        throw new Error('Email settings not configured');
+      }
+
+      // Prepare email content
+      const emailSubject = 'Welcome to Your New Account';
+      const emailHtml = `
+        <h2>Welcome to Your New Account!</h2>
+        <p>Hello ${displayName},</p>
+        <p>Your account has been created successfully. Here are your login credentials:</p>
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Temporary Password:</strong> ${temporaryPassword}</p>
+        </div>
+        <p><strong>Important:</strong> Please change your password after your first login.</p>
+        <p>You can log in at: <a href="${Deno.env.get('SITE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co'}">${Deno.env.get('SITE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co'}</a></p>
+        <p>If you have any questions, please don't hesitate to contact us.</p>
+        <p>Best regards,<br>Your Team</p>
+      `;
+
+      // Send email via SendGrid
+      const sendGridResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sendGridIntegration.configuration.api_key}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          personalizations: [{
+            to: [{ email: email, name: displayName }],
+          }],
+          from: {
+            email: emailSettings.from_email,
+            name: emailSettings.from_name || 'Your Team',
+          },
+          subject: emailSubject,
+          content: [{
+            type: 'text/html',
+            value: emailHtml,
+          }],
+        }),
+      });
+
+      if (!sendGridResponse.ok) {
+        const errorText = await sendGridResponse.text();
+        console.error('SendGrid error:', errorText);
+        throw new Error(`Failed to send welcome email: ${errorText}`);
+      }
+
+      console.log('Welcome email sent successfully to:', email);
+    } catch (emailError) {
+      console.error('Error sending welcome email:', emailError);
+      // Don't fail the account creation if email fails
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         userId: newUser.user.id,
         email: email,
-        message: 'Account created successfully',
+        message: 'Account created successfully and welcome email sent',
       }),
       { 
         status: 200, 
