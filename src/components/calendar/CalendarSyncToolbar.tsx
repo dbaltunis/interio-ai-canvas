@@ -171,21 +171,21 @@ export const CalendarSyncToolbar = ({
                 <span className="lg:hidden">Scheduling</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={onSchedulerClick}>
+            <DropdownMenuContent align="end" className="w-56 pointer-events-auto z-50">
+              <DropdownMenuItem onClick={onSchedulerClick} className="pointer-events-auto cursor-pointer">
                 <UserPlus className="h-4 w-4 mr-2" />
                 New Booking Template
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onManageTemplates}>
+              <DropdownMenuItem onClick={onManageTemplates} className="pointer-events-auto cursor-pointer">
                 <SettingsIcon className="h-4 w-4 mr-2" />
                 Manage Templates
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onViewBookings}>
+              <DropdownMenuItem onClick={onViewBookings} className="pointer-events-auto cursor-pointer">
                 <CalendarIcon className="h-4 w-4 mr-2" />
                 View Bookings
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onViewAnalytics}>
+              <DropdownMenuItem onClick={onViewAnalytics} className="pointer-events-auto cursor-pointer">
                 <BarChart3 className="h-4 w-4 mr-2" />
                 View Analytics
               </DropdownMenuItem>
