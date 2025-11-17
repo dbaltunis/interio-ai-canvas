@@ -100,7 +100,8 @@ export const StoreTemplateGallery = ({ onSelectTemplate }: StoreTemplateGalleryP
         {filteredTemplates?.map((template) => {
           const isSelected = selectedId === template.id;
           const isHovered = hoveredId === template.id;
-          const isWindowTreatmentPro = template.id === 'window-treatment-pro';
+          // Only Window Treatment Pro template is available, others are coming soon
+          const isWindowTreatmentPro = template.name === 'Window Treatment Pro' || template.category === 'professional';
           const isComingSoon = !isWindowTreatmentPro;
 
           return (
