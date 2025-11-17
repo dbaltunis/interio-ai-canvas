@@ -8,11 +8,11 @@ export const useDeleteAccount = () => {
 
   return useMutation({
     mutationFn: async (userId: string) => {
-      // Get fresh session before calling function
-      const { data: { session } } = await supabase.auth.getSession();
+      // Force refresh the session to get a valid token
+      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
       
-      if (!session) {
-        throw new Error('You must be logged in to delete accounts');
+      if (sessionError || !session) {
+        throw new Error('Your session has expired. Please refresh the page and log in again.');
       }
 
       const { error } = await supabase.functions.invoke('delete-account', {
