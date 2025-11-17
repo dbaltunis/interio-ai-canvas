@@ -30,7 +30,7 @@ export const StoreProductDetailPage = ({ storeData }: StoreProductDetailPageProp
           template:curtain_templates(*)
         `)
         .eq('store_id', storeData.id)
-        .eq('id', productId)
+        .eq('inventory_item_id', productId)
         .eq('is_visible', true)
         .single();
 
