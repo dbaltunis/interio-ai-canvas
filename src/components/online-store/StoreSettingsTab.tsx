@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Save, Palette, Globe, CreditCard, Settings, Check, AlertCircle } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ArrowLeft, Save, Palette, Globe, CreditCard, Settings, Check, AlertCircle, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { OnlineStore } from "@/types/online-store";
@@ -24,6 +25,7 @@ export const StoreSettingsTab = ({ store, onBack }: StoreSettingsTabProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showDomainWizard, setShowDomainWizard] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [settings, setSettings] = useState({
     storeName: store.store_name,
     storeSlug: store.store_slug,
@@ -69,6 +71,33 @@ export const StoreSettingsTab = ({ store, onBack }: StoreSettingsTabProps) => {
     onError: (error: any) => {
       toast({
         title: "Failed to save settings",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteStore = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('delete_online_store', {
+        store_id_param: store.id
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['online-store'] });
+      queryClient.invalidateQueries({ queryKey: ['has-online-store'] });
+      queryClient.invalidateQueries({ queryKey: ['has-online-store-nav'] });
+      toast({
+        title: "Store deleted",
+        description: "Your store has been deleted successfully.",
+      });
+      onBack();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to delete store",
         description: error.message,
         variant: "destructive",
       });
@@ -414,6 +443,56 @@ export const StoreSettingsTab = ({ store, onBack }: StoreSettingsTabProps) => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Danger Zone */}
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <CardTitle className="text-destructive">Danger Zone</CardTitle>
+          <CardDescription>
+            Permanently delete your online store and all associated data
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              This action cannot be undone. This will permanently delete your store,
+              all pages, products, and inquiries.
+            </AlertDescription>
+          </Alert>
+          <Button
+            variant="destructive"
+            onClick={() => setShowDeleteDialog(true)}
+            className="gap-2"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete Store
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete your store "{store.store_name}" and all associated data.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteStore.mutate()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteStore.isPending}
+            >
+              {deleteStore.isPending ? "Deleting..." : "Delete Store"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
