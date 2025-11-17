@@ -8,6 +8,13 @@ export const useDeleteAccount = () => {
 
   return useMutation({
     mutationFn: async (userId: string) => {
+      // Get fresh session before calling function
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('You must be logged in to delete accounts');
+      }
+
       const { error } = await supabase.functions.invoke('delete-account', {
         body: { userId }
       });
