@@ -107,24 +107,60 @@ export const useCreateInvitation = () => {
 
       if (emailError) {
         console.error("Email sending failed:", emailError);
-        throw new Error("Invitation created but email could not be sent. Please resend the invitation or contact the user directly.");
+        // Don't throw error - invitation was created successfully
+        // We'll show a warning in the success handler instead
+        return { ...data, emailSent: false, emailError: emailError.message };
       }
 
-      return data;
+      return { ...data, emailSent: true };
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["user-invitations"] });
-      toast({
-        title: "✓ Invitation sent successfully",
-        description: "The team member will receive an email with instructions to join.",
-      });
+      
+      if (data?.emailSent === false) {
+        // Invitation created but email failed to send
+        const invitationLink = `${window.location.origin}/auth?invitation=${data.invitation_token}`;
+        
+        // Copy link to clipboard
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(invitationLink).catch(() => {
+            console.error('Failed to copy invitation link');
+          });
+        }
+        
+        toast({
+          title: "⚠️ Invitation created (Email not sent)",
+          description: "Invitation created but email couldn't be sent. The invitation link has been copied to your clipboard. Configure SendGrid in Settings → Integrations to enable email invitations.",
+          variant: "default",
+          duration: 10000,
+        });
+      } else {
+        // Email sent successfully
+        toast({
+          title: "✓ Invitation sent successfully",
+          description: "The team member will receive an email with instructions to join.",
+          importance: 'important',
+        });
+      }
     },
     onError: (error: any) => {
-      toast({
-        title: "Failed to send invitation",
-        description: error.message || "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
+      console.error("Failed to create invitation:", error);
+      
+      // Check if it's a SendGrid configuration error
+      if (error.message?.includes('SendGrid')) {
+        toast({
+          title: "❌ SendGrid not configured",
+          description: "To send invitation emails, please configure SendGrid in Settings → Integrations first.",
+          variant: "destructive",
+          duration: 8000,
+        });
+      } else {
+        toast({
+          title: "Failed to send invitation",
+          description: error.message || "An unexpected error occurred. Please try again.",
+          variant: "destructive",
+        });
+      }
     },
   });
 };
