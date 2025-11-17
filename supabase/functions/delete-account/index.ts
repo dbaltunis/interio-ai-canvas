@@ -39,8 +39,14 @@ serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     const { data: { user: requestingUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
-    if (authError || !requestingUser) {
-      throw new Error('Invalid authentication');
+    if (authError) {
+      console.error('Authentication error:', authError);
+      throw new Error(`Invalid authentication: ${authError.message}`);
+    }
+    
+    if (!requestingUser) {
+      console.error('No user found in token');
+      throw new Error('Invalid authentication: No user found');
     }
 
     // Check if requesting user is System Owner
