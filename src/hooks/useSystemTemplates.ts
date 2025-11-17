@@ -28,6 +28,10 @@ export const useSystemTemplates = () => {
       if (error) throw error;
       return data as SystemTemplate[];
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes - templates don't change often
+    gcTime: 30 * 60 * 1000, // 30 minutes cache
+    refetchOnMount: 'always', // Always refetch when component mounts
+    refetchOnWindowFocus: false, // Don't refetch on window focus to avoid unnecessary calls
   });
 };
 
