@@ -80,10 +80,13 @@ const LivePreviewBlock = ({
   
   // Trim and normalize block type to prevent matching issues
   const blockType = (block.type || '').toString().trim().toLowerCase();
-  console.log('LivePreviewBlock rendering:', { 
-    originalType: block.type, 
+  console.log('🔍 [LivePreview] Block Type Debug:', { 
+    originalType: block.type,
+    originalTypeOf: typeof block.type,
     normalizedType: blockType,
-    blockData: block 
+    isProductsMatch: blockType === 'products',
+    blockId: block.id,
+    hasContent: !!block.content
   });
 
 
@@ -1578,17 +1581,21 @@ const LivePreviewBlock = ({
       );
 
     default:
-      console.error('Unknown block type encountered:', {
+      console.error('❌ [LivePreview] UNKNOWN BLOCK TYPE:', {
         originalType: block.type,
+        originalTypeString: String(block.type),
         normalizedType: blockType,
+        allAvailableCases: ['document-header', 'client-info', 'products', 'totals', 'terms', 'signature', 'payment', 'footer'],
         blockData: block
       });
       return (
-        <div className="mb-6 p-4 border border-dashed border-gray-300 rounded-lg text-center text-gray-500">
-          <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p>Unknown block type: {block.type}</p>
-          <p className="text-xs mt-2">Normalized: {blockType}</p>
-          <p className="text-xs mt-2">Check console for details</p>
+        <div className="mb-6 p-4 border-2 border-dashed border-red-300 bg-red-50 rounded-lg text-center">
+          <FileText className="h-8 w-8 mx-auto mb-2 text-red-500" />
+          <p className="font-bold text-red-700">Unknown block type: "{block.type}"</p>
+          <p className="text-xs mt-2 text-red-600">Normalized: "{blockType}"</p>
+          <p className="text-xs mt-1 text-red-600">Type: {typeof block.type}</p>
+          <p className="text-xs mt-2 font-mono bg-white p-2 rounded">{JSON.stringify(block, null, 2).substring(0, 200)}...</p>
+          <p className="text-xs mt-2 text-gray-600">Check browser console for full details</p>
         </div>
       );
   }
