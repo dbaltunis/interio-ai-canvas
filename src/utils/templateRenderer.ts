@@ -1,5 +1,9 @@
 // Utility for rendering templates with dynamic data replacement
 
+// Import and re-export centralized currency formatter
+import { formatCurrency } from './formatCurrency';
+export { formatCurrency };
+
 export interface TemplateData {
   // Company data
   company_name: string;
@@ -61,19 +65,6 @@ export const replaceTokens = (content: string, data: Partial<TemplateData>): str
     
     return String(value);
   });
-};
-
-export const formatCurrency = (amount: number, currency: string = 'USD'): string => {
-  const currencySymbols: Record<string, string> = {
-    'NZD': 'NZ$',
-    'AUD': 'A$',
-    'USD': '$',
-    'GBP': '£',
-    'EUR': '€',
-    'ZAR': 'R'
-  };
-  
-  return `${currencySymbols[currency] || currency}${amount.toFixed(2)}`;
 };
 
 export const generateQuoteNumber = (): string => {
