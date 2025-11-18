@@ -17,12 +17,25 @@ export const useCreateTreatmentOption = () => {
       treatment_category: string;
       is_system_default?: boolean;
     }) => {
+      // Get current user's account_id
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+      
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('user_id, parent_account_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      const accountId = profile?.parent_account_id || user.id;
+      
       // Always create category-based options (NO template_id)
       const { data: option, error } = await supabase
         .from('treatment_options')
         .insert({
           ...data,
           template_id: null, // Force category-based options
+          account_id: accountId,
         })
         .select()
         .single();
@@ -57,9 +70,24 @@ export const useCreateOptionValue = () => {
       extra_data?: any;
       inventory_item_id?: string | null; // NEW: Link to inventory
     }) => {
+      // Get current user's account_id
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+      
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('user_id, parent_account_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      const accountId = profile?.parent_account_id || user.id;
+      
       const { data: value, error } = await supabase
         .from('option_values')
-        .insert(data)
+        .insert({
+          ...data,
+          account_id: accountId,
+        })
         .select()
         .single();
       
