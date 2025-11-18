@@ -678,6 +678,9 @@ const LivePreviewBlock = ({
       );
 
     case 'products':
+    case 'product':
+    case 'line-items':
+    case 'items':
       // Get real data
       const workshopItems = projectData?.workshopItems || [];
       const surfaces = projectData?.surfaces || [];
@@ -1075,6 +1078,10 @@ const LivePreviewBlock = ({
       );
 
     case 'totals':
+    case 'total':
+    case 'pricing-summary':
+    case 'pricing-totals':
+    case 'summary':
       return (
         <div style={{ marginBottom: '32px', backgroundColor: '#ffffff !important' }}>
           <div className="flex justify-end">
