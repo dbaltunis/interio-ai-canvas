@@ -1,4 +1,4 @@
-
+// Quote Template System v2.0.0 - Bug Fixes Applied
 import { BrandHeader } from "@/components/layout/BrandHeader";
 import { UserProfile } from "@/components/layout/UserProfile";
 import { SettingsView } from "@/components/settings/SettingsView";
