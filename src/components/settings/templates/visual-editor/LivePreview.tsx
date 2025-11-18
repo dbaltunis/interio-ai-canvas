@@ -80,13 +80,13 @@ const LivePreviewBlock = ({
   
   // Trim and normalize block type to prevent matching issues
   const blockType = (block.type || '').toString().trim().toLowerCase();
-  console.log('🔍 [LivePreview] Block Type Debug:', { 
-    originalType: block.type,
-    originalTypeOf: typeof block.type,
-    normalizedType: blockType,
-    isProductsMatch: blockType === 'products',
+  
+  // DEPLOYMENT TEST - Force cache bust v2.0
+  console.log('🚀 [LivePreview v2.0] DEPLOYED - Block rendering:', { 
     blockId: block.id,
-    hasContent: !!block.content
+    originalType: block.type,
+    normalizedType: blockType,
+    timestamp: new Date().toISOString()
   });
 
 
@@ -244,6 +244,7 @@ const LivePreviewBlock = ({
 
   switch (blockType) {
     case 'document-header':
+    case 'header':
       const headerLayout = content.layout || 'centered';
       return (
         <div 
@@ -617,6 +618,8 @@ const LivePreviewBlock = ({
       );
 
     case 'client-info':
+    case 'client':
+    case 'bill-to':
       const clientName = renderTokenValue('client_name');
       const clientCompany = renderTokenValue('client_company');
       const clientEmail = renderTokenValue('client_email');
@@ -1512,6 +1515,8 @@ const LivePreviewBlock = ({
       );
 
     case 'signature':
+    case 'sign':
+    case 'approval':
       return (
         <div style={{ marginTop: '32px', marginBottom: '24px', backgroundColor: '#ffffff !important', padding: '16px', color: '#000 !important' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '24px', color: '#000 !important', backgroundColor: 'transparent !important' }}>

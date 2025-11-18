@@ -1,0 +1,7 @@
+Build timestamp: 2025-11-18T15:33:00Z
+Version: 2.0.0
+Changes:
+- Fixed bug_reports RLS policy for admin access
+- Added comprehensive block type aliases for quote templates
+- Enhanced logging for debugging
+- Force cache invalidation
