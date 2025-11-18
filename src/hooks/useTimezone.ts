@@ -8,20 +8,30 @@ export interface TimezoneInfo {
   abbreviation: string;
 }
 
-// Common timezones - could be expanded based on user needs
+// Common timezones - expanded with AU/NZ support
 const COMMON_TIMEZONES: TimezoneInfo[] = [
   { value: "UTC", label: "UTC", offset: "+00:00", abbreviation: "UTC" },
-  { value: "America/New_York", label: "Eastern Time", offset: "-05:00", abbreviation: "ET" },
-  { value: "America/Chicago", label: "Central Time", offset: "-06:00", abbreviation: "CT" },
-  { value: "America/Denver", label: "Mountain Time", offset: "-07:00", abbreviation: "MT" },
-  { value: "America/Los_Angeles", label: "Pacific Time", offset: "-08:00", abbreviation: "PT" },
+  // Americas
+  { value: "America/New_York", label: "Eastern Time (US)", offset: "-05:00", abbreviation: "ET" },
+  { value: "America/Chicago", label: "Central Time (US)", offset: "-06:00", abbreviation: "CT" },
+  { value: "America/Denver", label: "Mountain Time (US)", offset: "-07:00", abbreviation: "MT" },
+  { value: "America/Los_Angeles", label: "Pacific Time (US)", offset: "-08:00", abbreviation: "PT" },
+  // Europe
   { value: "Europe/London", label: "London", offset: "+00:00", abbreviation: "GMT" },
   { value: "Europe/Paris", label: "Paris", offset: "+01:00", abbreviation: "CET" },
   { value: "Europe/Berlin", label: "Berlin", offset: "+01:00", abbreviation: "CET" },
+  // Asia
   { value: "Asia/Tokyo", label: "Tokyo", offset: "+09:00", abbreviation: "JST" },
   { value: "Asia/Shanghai", label: "Shanghai", offset: "+08:00", abbreviation: "CST" },
-  { value: "Australia/Sydney", label: "Sydney", offset: "+11:00", abbreviation: "AEDT" },
-  { value: "Australia/Melbourne", label: "Melbourne", offset: "+11:00", abbreviation: "AEDT" },
+  // Australia & New Zealand
+  { value: "Pacific/Auckland", label: "Auckland (NZ)", offset: "+13:00", abbreviation: "NZDT" },
+  { value: "Pacific/Chatham", label: "Chatham Islands (NZ)", offset: "+13:45", abbreviation: "CHADT" },
+  { value: "Australia/Sydney", label: "Sydney (AU)", offset: "+11:00", abbreviation: "AEDT" },
+  { value: "Australia/Melbourne", label: "Melbourne (AU)", offset: "+11:00", abbreviation: "AEDT" },
+  { value: "Australia/Brisbane", label: "Brisbane (AU)", offset: "+10:00", abbreviation: "AEST" },
+  { value: "Australia/Perth", label: "Perth (AU)", offset: "+08:00", abbreviation: "AWST" },
+  { value: "Australia/Adelaide", label: "Adelaide (AU)", offset: "+10:30", abbreviation: "ACDT" },
+  { value: "Australia/Darwin", label: "Darwin (AU)", offset: "+09:30", abbreviation: "ACST" },
 ];
 
 const STORAGE_KEY = 'user-timezone-preference';

@@ -63,6 +63,35 @@ export const SecurityPrivacyTab = () => {
       return;
     }
 
+    // Validate password requirements
+    const passwordRequirements = {
+      minLength: newPassword.length >= 8,
+      hasUppercase: /[A-Z]/.test(newPassword),
+      hasLowercase: /[a-z]/.test(newPassword),
+      hasNumber: /\d/.test(newPassword),
+    };
+
+    const unmetRequirements = Object.entries(passwordRequirements)
+      .filter(([_, met]) => !met)
+      .map(([req]) => {
+        switch(req) {
+          case 'minLength': return 'At least 8 characters';
+          case 'hasUppercase': return 'One uppercase letter';
+          case 'hasLowercase': return 'One lowercase letter';
+          case 'hasNumber': return 'One number';
+          default: return req;
+        }
+      });
+
+    if (unmetRequirements.length > 0) {
+      toast({
+        title: "Password requirements not met",
+        description: `Missing: ${unmetRequirements.join(', ')}`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (newPassword.length < 8) {
       toast({
         title: "Password too short",

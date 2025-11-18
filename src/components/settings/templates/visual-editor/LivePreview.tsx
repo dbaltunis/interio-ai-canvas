@@ -1514,6 +1514,128 @@ const LivePreviewBlock = ({
         </div>
       );
 
+    case 'products': // PRIMARY - products table rendering
+    case 'items': // ALIAS
+    case 'line-items': // ALIAS
+      console.log('📦 [LivePreview] Rendering products block');
+      const tableConfig = content.tableConfig || {};
+      const columns = tableConfig.columns || ['description', 'quantity', 'unit_price', 'total'];
+      
+      return (
+        <div style={{ marginTop: '24px', marginBottom: '24px', backgroundColor: '#ffffff !important', padding: '16px', color: '#000 !important' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#000 !important', backgroundColor: 'transparent !important' }}>
+            {tableConfig.title || 'Line Items'}
+          </h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#ffffff !important' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid #e5e7eb', backgroundColor: '#f9fafb !important' }}>
+                {columns.includes('description') && (
+                  <th style={{ padding: '12px 8px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#374151 !important', backgroundColor: 'transparent !important' }}>
+                    Item Description
+                  </th>
+                )}
+                {columns.includes('quantity') && (
+                  <th style={{ padding: '12px 8px', textAlign: 'center', fontSize: '14px', fontWeight: '600', color: '#374151 !important', backgroundColor: 'transparent !important', width: '100px' }}>
+                    Qty
+                  </th>
+                )}
+                {columns.includes('unit_price') && (
+                  <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#374151 !important', backgroundColor: 'transparent !important', width: '120px' }}>
+                    Unit Price
+                  </th>
+                )}
+                {columns.includes('total') && (
+                  <th style={{ padding: '12px 8px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#374151 !important', backgroundColor: 'transparent !important', width: '120px' }}>
+                    Total
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {projectData?.items && projectData.items.length > 0 ? (
+                projectData.items.map((item: any, index: number) => (
+                  <tr key={index} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    {columns.includes('description') && (
+                      <td style={{ padding: '12px 8px', fontSize: '14px', color: '#111827 !important', backgroundColor: 'transparent !important' }}>
+                        <div style={{ fontWeight: '500', marginBottom: '4px' }}>{item.name || item.description}</div>
+                        {item.room && <div style={{ fontSize: '12px', color: '#6b7280 !important' }}>Room: {item.room}</div>}
+                      </td>
+                    )}
+                    {columns.includes('quantity') && (
+                      <td style={{ padding: '12px 8px', textAlign: 'center', fontSize: '14px', color: '#111827 !important', backgroundColor: 'transparent !important' }}>
+                        {item.quantity || 1}
+                      </td>
+                    )}
+                    {columns.includes('unit_price') && (
+                      <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '14px', color: '#111827 !important', backgroundColor: 'transparent !important' }}>
+                        {renderTokenValue('currency_symbol')}{(item.unit_price || item.price || 0).toFixed(2)}
+                      </td>
+                    )}
+                    {columns.includes('total') && (
+                      <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#111827 !important', backgroundColor: 'transparent !important' }}>
+                        {renderTokenValue('currency_symbol')}{((item.quantity || 1) * (item.unit_price || item.price || 0)).toFixed(2)}
+                      </td>
+                    )}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={columns.length} style={{ padding: '24px', textAlign: 'center', color: '#6b7280 !important', fontStyle: 'italic', backgroundColor: '#ffffff !important' }}>
+                    Products will appear here
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      );
+
+    case 'totals': // PRIMARY - totals/summary block
+    case 'summary': // ALIAS
+    case 'total': // ALIAS
+      console.log('💰 [LivePreview] Rendering totals block');
+      const totalsLayout = content.layout || 'right';
+      const showSubtotal = content.showSubtotal !== false;
+      const showTax = content.showTax !== false;
+      const taxLabel = content.taxLabel || 'Tax';
+      
+      return (
+        <div style={{ 
+          marginTop: '24px', 
+          marginBottom: '24px', 
+          display: 'flex', 
+          justifyContent: totalsLayout === 'center' ? 'center' : 'flex-end',
+          backgroundColor: '#ffffff !important',
+          padding: '16px',
+          color: '#000 !important'
+        }}>
+          <div style={{ minWidth: '300px', maxWidth: '400px' }}>
+            {showSubtotal && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e5e7eb', backgroundColor: 'transparent !important' }}>
+                <span style={{ fontSize: '14px', color: '#6b7280 !important' }}>Subtotal:</span>
+                <span style={{ fontSize: '14px', fontWeight: '500', color: '#111827 !important' }}>
+                  {renderTokenValue('currency_symbol')}{renderTokenValue('subtotal')}
+                </span>
+              </div>
+            )}
+            {showTax && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e5e7eb', backgroundColor: 'transparent !important' }}>
+                <span style={{ fontSize: '14px', color: '#6b7280 !important' }}>{taxLabel}:</span>
+                <span style={{ fontSize: '14px', fontWeight: '500', color: '#111827 !important' }}>
+                  {renderTokenValue('currency_symbol')}{renderTokenValue('tax_amount')}
+                </span>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', backgroundColor: '#f9fafb !important', marginTop: '8px', paddingLeft: '12px', paddingRight: '12px', borderRadius: '4px' }}>
+              <span style={{ fontSize: '16px', fontWeight: '700', color: '#111827 !important' }}>Total:</span>
+              <span style={{ fontSize: '18px', fontWeight: '700', color: '#111827 !important' }}>
+                {renderTokenValue('currency_symbol')}{renderTokenValue('total')}
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+
     case 'signature':
     case 'sign':
     case 'approval':

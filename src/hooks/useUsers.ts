@@ -24,7 +24,7 @@ export const useUsers = () => {
         return [];
       }
       
-      // Get user profiles from the same account
+      // Get user profiles - query based on parent_account_id relationship
       const { data: profiles, error } = await supabase
         .from('user_profiles')
         .select(`
@@ -37,7 +37,7 @@ export const useUsers = () => {
           created_at,
           parent_account_id
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false});
 
       if (error) {
         console.error('Error fetching user profiles:', error);
@@ -59,18 +59,15 @@ export const useUsers = () => {
         arr.findIndex(p => p.user_id === profile.user_id) === index
       );
 
-      // Transform profiles to users more efficiently (no async operations needed)
+      // Transform profiles to users
       const users: User[] = uniqueProfiles.map((profile) => {
         let email = 'Protected Email';
         
-        // Only show the actual email for the current user for security
+        // Show actual email for current user, otherwise mask it
         if (profile.user_id === currentUser.id) {
           email = currentUser.email || 'Unknown Email';
-        } else {
-          // For other users, try to extract from display_name if it looks like an email
-          if (profile.display_name && profile.display_name.includes('@')) {
-            email = profile.display_name;
-          }
+        } else if (profile.display_name && profile.display_name.includes('@')) {
+          email = profile.display_name;
         }
         
         return {
