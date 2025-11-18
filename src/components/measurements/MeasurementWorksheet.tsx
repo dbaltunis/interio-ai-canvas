@@ -32,7 +32,8 @@ const WINDOW_TYPES = [
   { value: "french_doors", label: "French Doors" },
   { value: "sliding_doors", label: "Sliding Doors" },
   { value: "large_window", label: "Large Window" },
-  { value: "corner_window", label: "Corner Window" }
+  { value: "corner_window", label: "Corner Window" },
+  { value: "room_wall", label: "Room Wall" }
 ];
 
 export const MeasurementWorksheet = ({ 

@@ -4732,6 +4732,7 @@ export type Database = {
       }
       option_values: {
         Row: {
+          account_id: string
           code: string
           created_at: string | null
           extra_data: Json | null
@@ -4747,6 +4748,7 @@ export type Database = {
           pricing_method: string | null
         }
         Insert: {
+          account_id: string
           code: string
           created_at?: string | null
           extra_data?: Json | null
@@ -4762,6 +4764,7 @@ export type Database = {
           pricing_method?: string | null
         }
         Update: {
+          account_id?: string
           code?: string
           created_at?: string | null
           extra_data?: Json | null
@@ -7687,6 +7690,7 @@ export type Database = {
       }
       treatment_options: {
         Row: {
+          account_id: string
           base_price: number | null
           created_at: string | null
           id: string
@@ -7708,6 +7712,7 @@ export type Database = {
           visible: boolean | null
         }
         Insert: {
+          account_id: string
           base_price?: number | null
           created_at?: string | null
           id?: string
@@ -7729,6 +7734,7 @@ export type Database = {
           visible?: boolean | null
         }
         Update: {
+          account_id?: string
           base_price?: number | null
           created_at?: string | null
           id?: string
@@ -9175,6 +9181,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_user_account_id: { Args: { p_user_id: string }; Returns: string }
       get_user_effective_permissions: {
         Args: { user_id_param: string }
         Returns: string[]
