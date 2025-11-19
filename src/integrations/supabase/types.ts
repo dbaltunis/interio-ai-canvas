@@ -5720,6 +5720,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           due_date: string | null
+          fabric_pools: Json | null
           funnel_stage: string | null
           id: string
           job_number: string | null
@@ -5742,6 +5743,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           due_date?: string | null
+          fabric_pools?: Json | null
           funnel_stage?: string | null
           id?: string
           job_number?: string | null
@@ -5764,6 +5766,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           due_date?: string | null
+          fabric_pools?: Json | null
           funnel_stage?: string | null
           id?: string
           job_number?: string | null
