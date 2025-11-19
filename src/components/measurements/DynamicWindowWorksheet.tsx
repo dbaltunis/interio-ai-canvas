@@ -1473,16 +1473,6 @@ export const DynamicWindowWorksheet = forwardRef<{
                 readOnly={readOnly} 
               />
               
-              <div className="mt-auto space-y-3">
-                {selectedWindowType && (
-                  <div className="p-2 bg-primary/5 rounded-lg border border-primary/20 animate-fade-in">
-                    <h4 className="font-medium text-sm flex items-center gap-2">
-                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                      Selected: {selectedWindowType.name}
-                    </h4>
-                  </div>
-                )}
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
