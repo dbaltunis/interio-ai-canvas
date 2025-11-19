@@ -109,6 +109,8 @@ export interface FabricCalculation {
   curtainCount: number;
   curtainType: string;
   totalWidthWithAllowances: number;
+  horizontalPiecesNeeded?: number;
+  leftoverFromLastPiece?: number;
 }
 
 export interface MeasurementVisualProps {
