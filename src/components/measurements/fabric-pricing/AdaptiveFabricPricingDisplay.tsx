@@ -4,6 +4,7 @@ import { Ruler, Calculator } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
 import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
+import { convertLength } from "@/hooks/useBusinessSettings";
 
 interface AdaptiveFabricPricingDisplayProps {
   selectedFabricItem: any;
@@ -42,6 +43,12 @@ export const AdaptiveFabricPricingDisplay = ({
     };
     const symbol = currencySymbols[units.currency] || units.currency;
     return `${symbol}${price.toFixed(2)}`;
+  };
+
+  // Format measurement from cm (internal) to user's preferred unit
+  const formatMeasurement = (valueInCm: number) => {
+    const converted = convertLength(valueInCm, 'cm', units.length);
+    return `${converted.toFixed(1)}${getLengthUnitLabel()}`;
   };
 
   // Check if this treatment uses pricing grid
@@ -111,11 +118,11 @@ export const AdaptiveFabricPricingDisplay = ({
         <div className="text-xs space-y-1 text-muted-foreground">
           <div className="flex justify-between">
             <span>Width:</span>
-            <span className="font-medium text-foreground">{gridWidth}cm</span>
+            <span className="font-medium text-foreground">{formatMeasurement(gridWidth)}</span>
           </div>
           <div className="flex justify-between">
             <span>Drop:</span>
-            <span className="font-medium text-foreground">{gridDrop}cm</span>
+            <span className="font-medium text-foreground">{formatMeasurement(gridDrop)}</span>
           </div>
           <div className="flex justify-between border-t border-border pt-2 mt-2">
             <span className="font-medium">Grid Price:</span>
@@ -190,11 +197,11 @@ export const AdaptiveFabricPricingDisplay = ({
         <div className="text-xs space-y-1 text-muted-foreground">
           <div className="flex justify-between">
             <span>Blind Width:</span>
-            <span className="font-medium text-foreground">{measurements.rail_width || 0}cm</span>
+            <span className="font-medium text-foreground">{formatMeasurement(parseFloat(measurements.rail_width) || 0)}</span>
           </div>
           <div className="flex justify-between">
             <span>Blind Drop:</span>
-            <span className="font-medium text-foreground">{measurements.drop || 0}cm</span>
+            <span className="font-medium text-foreground">{formatMeasurement(parseFloat(measurements.drop) || 0)}</span>
           </div>
           {isFabricPerSqm ? (
             <>
@@ -345,7 +352,7 @@ export const AdaptiveFabricPricingDisplay = ({
           <div className="text-xs space-y-1 text-muted-foreground">
             <div className="flex justify-between">
               <span>Rail Width:</span>
-              <span className="font-medium text-foreground">{fabricCalculation.railWidth || 0}cm</span>
+              <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.railWidth || 0)}</span>
             </div>
             <div className="flex justify-between">
               <span>Fullness Ratio:</span>
@@ -353,16 +360,16 @@ export const AdaptiveFabricPricingDisplay = ({
             </div>
             <div className="flex justify-between">
               <span>Required Width:</span>
-              <span className="font-medium text-foreground">{((fabricCalculation.railWidth || 0) * (fabricCalculation.fullnessRatio || 0)).toFixed(1)}cm</span>
+              <span className="font-medium text-foreground">{formatMeasurement((fabricCalculation.railWidth || 0) * (fabricCalculation.fullnessRatio || 0))}</span>
             </div>
             <div className="flex justify-between">
               <span>Returns (L+R):</span>
-              <span className="font-medium text-foreground">{fabricCalculation.returns || 0}cm</span>
+              <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.returns || 0)}</span>
             </div>
             {(fabricCalculation.totalSideHems || 0) > 0 && (
               <div className="flex justify-between">
                 <span>Side Hems:</span>
-                <span className="font-medium text-foreground">{fabricCalculation.totalSideHems}cm</span>
+                <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalSideHems)}</span>
               </div>
             )}
             <div className="flex justify-between border-t border-border pt-1 mt-1">
@@ -378,36 +385,36 @@ export const AdaptiveFabricPricingDisplay = ({
           <div className="text-xs space-y-1 text-muted-foreground">
             <div className="flex justify-between">
               <span>Drop Height:</span>
-              <span className="font-medium text-foreground">{fabricCalculation.drop || 0}cm</span>
+              <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.drop || 0)}</span>
             </div>
             <div className="flex justify-between">
               <span>Header Hem:</span>
-              <span className="font-medium text-foreground">+{fabricCalculation.headerHem || 0}cm</span>
+              <span className="font-medium text-foreground">+{formatMeasurement(fabricCalculation.headerHem || 0)}</span>
             </div>
             <div className="flex justify-between">
               <span>Bottom Hem:</span>
-              <span className="font-medium text-foreground">+{fabricCalculation.bottomHem || 0}cm</span>
+              <span className="font-medium text-foreground">+{formatMeasurement(fabricCalculation.bottomHem || 0)}</span>
             </div>
             {(fabricCalculation.pooling || 0) > 0 && (
               <div className="flex justify-between">
                 <span>Pooling:</span>
-                <span className="font-medium text-foreground">+{fabricCalculation.pooling}cm</span>
+                <span className="font-medium text-foreground">+{formatMeasurement(fabricCalculation.pooling)}</span>
               </div>
             )}
             {(fabricCalculation.totalSeamAllowance || 0) > 0 && (
               <div className="flex justify-between">
                 <span>Seam Allowance:</span>
-                <span className="font-medium text-foreground">+{fabricCalculation.totalSeamAllowance.toFixed(1)}cm</span>
+                <span className="font-medium text-foreground">+{formatMeasurement(fabricCalculation.totalSeamAllowance || 0)}</span>
               </div>
             )}
             <div className="flex justify-between border-t border-border pt-1 mt-1">
               <span>Total Drop:</span>
-              <span className="font-medium text-foreground">{(fabricCalculation.totalDrop || 0).toFixed(1)}cm</span>
+              <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalDrop || 0)}</span>
             </div>
             {(fabricCalculation.wastePercent || 0) > 0 && (
               <div className="flex justify-between">
                 <span>Waste ({fabricCalculation.wastePercent}%):</span>
-                <span className="font-medium text-foreground">+{((fabricCalculation.totalDrop || 0) * (fabricCalculation.wastePercent || 0) / 100).toFixed(1)}cm</span>
+                <span className="font-medium text-foreground">+{formatMeasurement((fabricCalculation.totalDrop || 0) * (fabricCalculation.wastePercent || 0) / 100)}</span>
               </div>
             )}
           </div>
