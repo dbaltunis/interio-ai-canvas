@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Calculator, Ruler } from "lucide-react";
 import { AdaptiveFabricPricingDisplay } from "./fabric-pricing/AdaptiveFabricPricingDisplay";
+import { convertLength } from "@/hooks/useBusinessSettings";
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
   onMeasurementChange: (field: string, value: string) => void;
@@ -79,6 +80,7 @@ export const VisualMeasurementSheet = ({
   // Detect treatment type - use treatmentCategory prop if provided, otherwise detect from template
   const treatmentType = treatmentCategory || detectTreatmentType(selectedTemplate);
   const treatmentConfig = getTreatmentConfig(treatmentType);
+  
   console.log("🎯 VisualMeasurementSheet - Treatment Detection:", {
     treatmentCategory,
     detectedType: detectTreatmentType(selectedTemplate),
@@ -266,9 +268,15 @@ export const VisualMeasurementSheet = ({
       const result = calculateFabricUsage(enrichedMeasurements, [selectedTemplate], fabricItemWithHeadings);
 
       // Transform the result to match the expected format for display
-      const width = parseFloat(measurements.rail_width);
-      const height = parseFloat(measurements.drop);
-      const pooling = parseFloat(measurements.pooling_amount || "0");
+      // ✅ FIX: Convert measurements from user's unit to cm (internal calculation unit)
+      const widthInUserUnit = parseFloat(measurements.rail_width);
+      const heightInUserUnit = parseFloat(measurements.drop);
+      const poolingInUserUnit = parseFloat(measurements.pooling_amount || "0");
+      
+      const width = convertLength(widthInUserUnit, units.length, 'cm');
+      const height = convertLength(heightInUserUnit, units.length, 'cm');
+      const pooling = convertLength(poolingInUserUnit, units.length, 'cm');
+      
       const fabricWidthCm = selectedFabricItem.fabric_width || 137;
 
       // ✅ FIX: Read hems from measurements (which get initialized from template)
