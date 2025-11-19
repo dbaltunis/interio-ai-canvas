@@ -23,6 +23,14 @@ export const AdaptiveFabricPricingDisplay = ({
 }: AdaptiveFabricPricingDisplayProps) => {
   const { units, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
   
+  // Debug log to trace the conversion issue
+  console.log('🔍 AdaptiveFabricPricingDisplay Debug:', {
+    railWidthFromCalc: fabricCalculation?.railWidth,
+    railWidthFromMeasurements: measurements.rail_width,
+    userLengthUnit: units.length,
+    fabricCalculation
+  });
+  
   // Enrich fabric with pricing grid data if applicable
   const { enrichedFabric, isLoading: isEnrichingFabric, hasGrid: fabricHasGrid } = useFabricEnrichment({
     fabricItem: selectedFabricItem,
