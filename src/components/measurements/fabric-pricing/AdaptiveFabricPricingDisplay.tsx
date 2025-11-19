@@ -51,6 +51,12 @@ export const AdaptiveFabricPricingDisplay = ({
     return `${converted.toFixed(1)}${getLengthUnitLabel()}`;
   };
 
+  // Format fabric width from cm to user's preferred fabric unit
+  const formatFabricWidth = (widthInCm: number) => {
+    const converted = convertLength(widthInCm, 'cm', units.fabric);
+    return `${converted.toFixed(1)}${getFabricUnitLabel()}`;
+  };
+
   // Check if this treatment uses pricing grid
   const usesPricingGrid = template?.pricing_type === 'pricing_grid' && template?.pricing_grid_data;
   
@@ -95,7 +101,7 @@ export const AdaptiveFabricPricingDisplay = ({
           </div>
           <div className="flex justify-between">
             <span>Width:</span>
-            <span className="font-medium text-foreground">{fabricToUse.fabric_width || 300}cm</span>
+            <span className="font-medium text-foreground">{formatFabricWidth(fabricToUse.fabric_width || 300)}</span>
           </div>
           {fabricToUse.price_per_meter && (
             <div className="flex justify-between">
@@ -176,7 +182,7 @@ export const AdaptiveFabricPricingDisplay = ({
           </div>
           <div className="flex justify-between">
             <span>Width:</span>
-            <span className="font-medium text-foreground">{fabricToUse.fabric_width || 300}cm</span>
+            <span className="font-medium text-foreground">{formatFabricWidth(fabricToUse.fabric_width || 300)}</span>
           </div>
           <div className="flex justify-between">
             <span>Price/{isFabricPerSqm ? 'sqm' : 'meter'}:</span>
@@ -275,7 +281,7 @@ export const AdaptiveFabricPricingDisplay = ({
               </div>
               <div className="flex justify-between">
                 <span>Width:</span>
-                <span className="font-medium text-foreground">{selectedFabricItem?.fabric_width || 137}cm</span>
+                <span className="font-medium text-foreground">{formatFabricWidth(selectedFabricItem?.fabric_width || 137)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Price/sqm:</span>
@@ -337,7 +343,7 @@ export const AdaptiveFabricPricingDisplay = ({
             </div>
             <div className="flex justify-between">
               <span>Width:</span>
-              <span className="font-medium text-foreground">{selectedFabricItem?.fabric_width || 137}cm</span>
+              <span className="font-medium text-foreground">{formatFabricWidth(selectedFabricItem?.fabric_width || 137)}</span>
             </div>
             <div className="flex justify-between">
               <span>Price/meter:</span>
