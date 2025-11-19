@@ -5,6 +5,8 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
 import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
 import { convertLength } from "@/hooks/useBusinessSettings";
+import { PoolUsageDisplay } from "../PoolUsageDisplay";
+import { PoolUsage } from "@/hooks/useProjectFabricPool";
 
 interface AdaptiveFabricPricingDisplayProps {
   selectedFabricItem: any;
@@ -12,6 +14,7 @@ interface AdaptiveFabricPricingDisplayProps {
   template: any;
   measurements: Record<string, any>;
   treatmentCategory: string;
+  poolUsage?: PoolUsage | null;
 }
 
 export const AdaptiveFabricPricingDisplay = ({
@@ -19,7 +22,8 @@ export const AdaptiveFabricPricingDisplay = ({
   fabricCalculation,
   template,
   measurements,
-  treatmentCategory
+  treatmentCategory,
+  poolUsage
 }: AdaptiveFabricPricingDisplayProps) => {
   const { units, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
   
@@ -88,6 +92,15 @@ export const AdaptiveFabricPricingDisplay = ({
 
   const renderPricingGridDisplay = () => (
     <div className="space-y-4">
+      {/* Pool Usage Display - Show fabric source */}
+      {poolUsage && (
+        <PoolUsageDisplay
+          poolUsage={poolUsage}
+          fabricName={fabricToUse.name}
+          unit={getFabricUnitLabel()}
+        />
+      )}
+      
       {/* Selected Fabric */}
       <div className="container-level-3 rounded-md p-3 space-y-2">
         <h4 className="font-semibold text-sm flex items-center gap-2">
@@ -268,6 +281,15 @@ export const AdaptiveFabricPricingDisplay = ({
       
       return (
         <div className="space-y-4">
+          {/* Pool Usage Display - Show fabric source */}
+          {poolUsage && (
+            <PoolUsageDisplay
+              poolUsage={poolUsage}
+              fabricName={selectedFabricItem?.name || fabricToUse.name}
+              unit={getFabricUnitLabel()}
+            />
+          )}
+          
           {/* Fabric Information */}
           <div className="container-level-3 rounded-md p-3 space-y-2">
             <h4 className="font-semibold text-sm flex items-center gap-2">
@@ -330,6 +352,15 @@ export const AdaptiveFabricPricingDisplay = ({
     // Regular curtain display
     return (
       <div className="space-y-4">
+        {/* Pool Usage Display - Show fabric source */}
+        {poolUsage && (
+          <PoolUsageDisplay
+            poolUsage={poolUsage}
+            fabricName={selectedFabricItem?.name || fabricToUse.name}
+            unit={getFabricUnitLabel()}
+          />
+        )}
+        
         {/* Fabric Information */}
         <div className="container-level-3 rounded-md p-3 space-y-2">
           <h4 className="font-semibold text-sm flex items-center gap-2">
