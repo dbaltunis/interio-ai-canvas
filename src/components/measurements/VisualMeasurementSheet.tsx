@@ -264,11 +264,7 @@ export const VisualMeasurementSheet = ({
         }
       });
 
-      // Use the unified calculateFabricUsage function that handles both curtains AND blinds
-      const result = calculateFabricUsage(enrichedMeasurements, [selectedTemplate], fabricItemWithHeadings);
-
-      // Transform the result to match the expected format for display
-      // ✅ FIX: Convert measurements from user's unit to cm (internal calculation unit)
+      // ✅ FIX: Convert measurements from user's unit to cm BEFORE calculation
       const widthInUserUnit = parseFloat(measurements.rail_width);
       const heightInUserUnit = parseFloat(measurements.drop);
       const poolingInUserUnit = parseFloat(measurements.pooling_amount || "0");
@@ -276,7 +272,19 @@ export const VisualMeasurementSheet = ({
       const width = convertLength(widthInUserUnit, units.length, 'cm');
       const height = convertLength(heightInUserUnit, units.length, 'cm');
       const pooling = convertLength(poolingInUserUnit, units.length, 'cm');
-      
+
+      // ✅ Create enriched measurements with converted values
+      const enrichedMeasurementsWithConversion = {
+        ...enrichedMeasurements,
+        rail_width: width.toString(),
+        drop: height.toString(),
+        pooling_amount: pooling.toString()
+      };
+
+      // Use the unified calculateFabricUsage function that handles both curtains AND blinds
+      const result = calculateFabricUsage(enrichedMeasurementsWithConversion, [selectedTemplate], fabricItemWithHeadings);
+
+      // Transform the result to match the expected format for display
       const fabricWidthCm = selectedFabricItem.fabric_width || 137;
 
       // ✅ FIX: Read hems from measurements (which get initialized from template)
