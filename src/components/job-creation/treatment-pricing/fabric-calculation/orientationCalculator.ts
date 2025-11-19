@@ -38,9 +38,12 @@ export const calculateOrientation = (
   const totalSideHemAllowance = sideHem * numberOfSideHems; // Total cm needed for all side hems
   const totalWidthRaw = railWidth * fullness + returnLeft + returnRight; // cm (side hems handled separately per orientation)
 
+  let horizontalPiecesNeeded: number | undefined;
+  let leftoverFromLastPiece: number | undefined;
+
   if (orientation === 'horizontal') {
     // Railroaded/Wide fabric: fabric runs horizontally (sideways)
-    // - Drop (height) fits within the fabric WIDTH
+    // - Drop (height) must fit within or span multiple fabric WIDTH pieces
     // - Rail width determines fabric LENGTH needed
     effectiveFabricWidth = fabricWidth;
 
@@ -51,10 +54,29 @@ export const calculateOrientation = (
     const requiredWidthUnrounded = totalWidthRaw + totalSideHemAllowance;
     requiredWidth = hRepeat > 0 ? Math.ceil(requiredWidthUnrounded / hRepeat) * hRepeat : requiredWidthUnrounded;
     
-    // Check feasibility: drop (length cut) must fit within fabric width
+    // ✅ NEW: Handle multiple horizontal pieces when drop exceeds fabric width
     if (requiredLength > fabricWidth) {
-      warnings.push(`Curtain drop (${requiredLength.toFixed(0)}cm incl. repeats) exceeds fabric width (${fabricWidth}cm). Not feasible in horizontal/railroaded orientation.`);
-      feasible = false;
+      // Calculate how many horizontal pieces needed to cover the height
+      horizontalPiecesNeeded = Math.ceil(requiredLength / fabricWidth);
+      
+      // Calculate what's used from the last piece and leftover
+      const totalUsedHeight = requiredLength;
+      const lastPieceUsage = totalUsedHeight % fabricWidth;
+      leftoverFromLastPiece = lastPieceUsage > 0 ? fabricWidth - lastPieceUsage : 0;
+      
+      warnings.push(
+        `⚠️ Horizontal seaming required: Curtain height (${requiredLength.toFixed(0)}cm) exceeds fabric width (${fabricWidth}cm). ` +
+        `${horizontalPiecesNeeded} horizontal pieces needed with ${(horizontalPiecesNeeded - 1)} seam(s).`
+      );
+      
+      if (leftoverFromLastPiece > 0) {
+        warnings.push(
+          `📏 Leftover from last piece: ${leftoverFromLastPiece.toFixed(1)}cm (${((leftoverFromLastPiece / fabricWidth) * 100).toFixed(1)}% of fabric width)`
+        );
+      }
+      
+      // Still feasible, just needs multiple pieces
+      feasible = true;
     }
   } else {
     // Vertical/Standard fabric: fabric runs vertically (normal orientation)
@@ -87,7 +109,9 @@ export const calculateOrientation = (
   
   if (orientation === 'horizontal') {
     // Each panel needs its own length of fabric
-    widthsRequired = panelsNeeded;
+    // ✅ NEW: Multiply by horizontal pieces if multiple pieces needed per panel
+    const piecesPerPanel = horizontalPiecesNeeded || 1;
+    widthsRequired = panelsNeeded * piecesPerPanel;
     dropsPerWidth = 1;
   } else {
     // In vertical orientation, check if panel width fits within fabric width
@@ -141,6 +165,8 @@ export const calculateOrientation = (
     fabricCost,
     laborCost,
     totalCost,
+    horizontalPiecesNeeded,
+    leftoverFromLastPiece,
     details: {
       effectiveFabricWidth,
       requiredLength,

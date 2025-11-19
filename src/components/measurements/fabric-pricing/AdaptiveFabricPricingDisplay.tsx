@@ -382,6 +382,18 @@ export const AdaptiveFabricPricingDisplay = ({
               <span>Widths Required:</span>
               <span className="font-medium text-foreground">{fabricCalculation.widthsRequired || 0} width(s)</span>
             </div>
+            {fabricCalculation.horizontalPiecesNeeded && fabricCalculation.horizontalPiecesNeeded > 1 && (
+              <div className="flex justify-between bg-warning/10 p-2 rounded mt-2">
+                <span className="text-warning-foreground font-medium">⚠️ Horizontal Seaming:</span>
+                <span className="font-medium text-warning-foreground">{fabricCalculation.horizontalPiecesNeeded} pieces</span>
+              </div>
+            )}
+            {fabricCalculation.leftoverFromLastPiece && fabricCalculation.leftoverFromLastPiece > 0 && (
+              <div className="flex justify-between text-muted-foreground mt-1">
+                <span>Leftover (last piece):</span>
+                <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.leftoverFromLastPiece)}</span>
+              </div>
+            )}
           </div>
         </div>
 

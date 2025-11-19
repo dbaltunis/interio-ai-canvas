@@ -31,6 +31,8 @@ export interface OrientationResult {
   fabricCost: number;
   laborCost: number;
   totalCost: number;
+  horizontalPiecesNeeded?: number;
+  leftoverFromLastPiece?: number;
   details: {
     effectiveFabricWidth: number;
     requiredLength: number;
