@@ -35,10 +35,23 @@ export const useFabricCalculator = ({
         return null;
       }
 
+      console.log('🔧 useFabricCalculator - Input Debug:', {
+        widthInUserUnit,
+        heightInUserUnit,
+        userLengthUnit: units.length,
+        measurements: measurements
+      });
+
       // Convert all measurements to cm (internal calculation unit)
       const width = convertLength(widthInUserUnit, units.length, 'cm');
       const height = convertLength(heightInUserUnit, units.length, 'cm');
       const pooling = convertLength(poolingInUserUnit, units.length, 'cm');
+
+      console.log('🔧 useFabricCalculator - After Conversion to CM:', {
+        width,
+        height,
+        pooling
+      });
 
       // Fabric width is stored in cm, no conversion needed
       const fabricWidthCm = fabric.fabric_width || 137;

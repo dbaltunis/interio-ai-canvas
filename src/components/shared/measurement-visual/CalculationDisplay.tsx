@@ -27,6 +27,14 @@ export const CalculationDisplay = ({ calculation, compact = false }: Calculation
     // Convert from cm (internal calculation unit) to user's preferred unit
     const convertedValue = convertLength(value, 'cm', unit);
     
+    console.log('🎨 CalculationDisplay formatMeasurement:', {
+      inputValue: value,
+      fromUnit: 'cm',
+      toUnit: unit,
+      convertedValue,
+      userLengthUnit: units.length
+    });
+    
     const unitLabels: Record<string, string> = {
       'mm': 'mm',
       'cm': 'cm',
