@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { MeasurementData, TreatmentData, FabricCalculation } from "../types";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { convertLength } from "@/hooks/useBusinessSettings";
 
 interface UseFabricCalculatorProps {
   measurements: MeasurementData;
@@ -10,6 +12,7 @@ export const useFabricCalculator = ({
   measurements, 
   treatmentData 
 }: UseFabricCalculatorProps): FabricCalculation | null => {
+  const { units } = useMeasurementUnits();
   
   return useMemo(() => {
     // Check if we have minimum required data
@@ -23,16 +26,21 @@ export const useFabricCalculator = ({
     try {
       const { fabric, template } = treatmentData;
       
-      // Parse measurements
-      const width = parseFloat(measurements.rail_width);
-      const height = parseFloat(measurements.drop);
-      const pooling = parseFloat(measurements.pooling_amount || "0");
+      // Parse measurements - these are in the user's preferred unit
+      const widthInUserUnit = parseFloat(measurements.rail_width);
+      const heightInUserUnit = parseFloat(measurements.drop);
+      const poolingInUserUnit = parseFloat(measurements.pooling_amount || "0");
       
-      if (isNaN(width) || isNaN(height)) {
+      if (isNaN(widthInUserUnit) || isNaN(heightInUserUnit)) {
         return null;
       }
 
-      // Fabric and template properties
+      // Convert all measurements to cm (internal calculation unit)
+      const width = convertLength(widthInUserUnit, units.length, 'cm');
+      const height = convertLength(heightInUserUnit, units.length, 'cm');
+      const pooling = convertLength(poolingInUserUnit, units.length, 'cm');
+
+      // Fabric width is stored in cm, no conversion needed
       const fabricWidthCm = fabric.fabric_width || 137;
       const fullnessRatio = template.fullness_ratio || 2.0;
       
@@ -103,5 +111,5 @@ export const useFabricCalculator = ({
       console.error('Error calculating fabric usage:', error);
       return null;
     }
-  }, [measurements, treatmentData]);
+  }, [measurements, treatmentData, units.length]);
 };
