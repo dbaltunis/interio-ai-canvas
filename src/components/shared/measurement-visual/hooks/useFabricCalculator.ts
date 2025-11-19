@@ -77,17 +77,34 @@ export const useFabricCalculator = ({
       // Apply waste multiplier
       const wasteMultiplier = 1 + (wastePercent / 100);
       
-      // Calculate linear metres needed
+      // Calculate linear metres needed (actual fabric used)
       const linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier;
       
-      // Calculate total cost
-      const totalCost = linearMeters * fabric.price_per_meter;
+      // 🆕 Calculate ORDERED fabric (full widths must be purchased)
+      const dropPerWidthMeters = (totalDrop / 100) * wasteMultiplier;
+      const orderedLinearMeters = dropPerWidthMeters * widthsRequired;
+      
+      // 🆕 Calculate remnant (difference between ordered and used)
+      const remnantMeters = orderedLinearMeters - linearMeters;
+      
+      // 🆕 Calculate seaming labor (if multiple widths)
+      const seamsCount = widthsRequired > 1 ? widthsRequired - 1 : 0;
+      const seamLaborHours = seamsCount * 0.25; // 15 minutes per seam
+      
+      // Calculate total cost based on ORDERED fabric (not just used)
+      const fabricCost = orderedLinearMeters * fabric.price_per_meter;
+      const totalCost = fabricCost;
 
       return {
         linearMeters,
+        orderedLinearMeters,
+        remnantMeters,
         totalCost,
+        fabricCost,
         pricePerMeter: fabric.price_per_meter,
         widthsRequired,
+        seamsCount,
+        seamLaborHours,
         railWidth: width,
         fullnessRatio,
         drop: height,
@@ -105,7 +122,8 @@ export const useFabricCalculator = ({
         returnRight,
         curtainCount,
         curtainType: template.curtain_type,
-        totalWidthWithAllowances
+        totalWidthWithAllowances,
+        dropPerWidthMeters
       };
     } catch (error) {
       console.error('Error calculating fabric usage:', error);
