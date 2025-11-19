@@ -1,5 +1,6 @@
 import { FabricCalculation } from "./types";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { convertLength } from "@/hooks/useBusinessSettings";
 
 interface CalculationDisplayProps {
   calculation: FabricCalculation;
@@ -23,6 +24,9 @@ export const CalculationDisplay = ({ calculation, compact = false }: Calculation
   };
   
   const formatMeasurement = (value: number, unit: string = units.length) => {
+    // Convert from cm (internal calculation unit) to user's preferred unit
+    const convertedValue = convertLength(value, 'cm', unit);
+    
     const unitLabels: Record<string, string> = {
       'mm': 'mm',
       'cm': 'cm',
@@ -32,7 +36,7 @@ export const CalculationDisplay = ({ calculation, compact = false }: Calculation
       'yards': 'yd'
     };
     const label = unitLabels[unit] || unit;
-    return `${value.toFixed(2)}${label}`;
+    return `${convertedValue.toFixed(2)}${label}`;
   };
 
   if (compact) {
@@ -81,11 +85,11 @@ export const CalculationDisplay = ({ calculation, compact = false }: Calculation
           <div className="space-y-1">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Rail Width:</span>
-              <span>{formatMeasurement(calculation.railWidth, 'cm')}</span>
+              <span>{formatMeasurement(calculation.railWidth)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Drop Height:</span>
-              <span>{formatMeasurement(calculation.drop, 'cm')}</span>
+              <span>{formatMeasurement(calculation.drop)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Fullness Ratio:</span>
@@ -100,15 +104,15 @@ export const CalculationDisplay = ({ calculation, compact = false }: Calculation
           <div className="space-y-1">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Header Hem:</span>
-              <span>{formatMeasurement(calculation.headerHem, 'cm')}</span>
+              <span>{formatMeasurement(calculation.headerHem)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Bottom Hem:</span>
-              <span>{formatMeasurement(calculation.bottomHem, 'cm')}</span>
+              <span>{formatMeasurement(calculation.bottomHem)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Pooling:</span>
-              <span>{formatMeasurement(calculation.pooling, 'cm')}</span>
+              <span>{formatMeasurement(calculation.pooling)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Waste %:</span>
@@ -121,11 +125,11 @@ export const CalculationDisplay = ({ calculation, compact = false }: Calculation
         <div className="p-1.5 bg-muted rounded border-l-4 border-l-primary">
           <h5 className="font-medium text-sm mb-1">Manufacturing Allowances</h5>
           <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
-            <div>Side Hems: {formatMeasurement(calculation.sideHems, 'cm')}</div>
-            <div>Seam Hems: {formatMeasurement(calculation.seamHems, 'cm')}</div>
-            <div>Return Left: {formatMeasurement(calculation.returnLeft, 'cm')}</div>
-            <div>Return Right: {formatMeasurement(calculation.returnRight, 'cm')}</div>
-            <div>Total Drop: {formatMeasurement(calculation.totalDrop, 'cm')}</div>
+            <div>Side Hems: {formatMeasurement(calculation.sideHems)}</div>
+            <div>Seam Hems: {formatMeasurement(calculation.seamHems)}</div>
+            <div>Return Left: {formatMeasurement(calculation.returnLeft)}</div>
+            <div>Return Right: {formatMeasurement(calculation.returnRight)}</div>
+            <div>Total Drop: {formatMeasurement(calculation.totalDrop)}</div>
             <div>Curtain Count: {calculation.curtainCount}</div>
           </div>
         </div>
