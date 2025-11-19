@@ -694,14 +694,32 @@ export const AdaptiveFabricPricingDisplay = ({
                   calculationText = `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
                   calculationBreakdown = breakdown.join(' ');
                 } else {
-                  // Vertical/Standard: Show total fabric length
-                  quantity = fabricCalculation.linearMeters || 0;
+                  // Vertical/Standard: Show ORDERED fabric (full widths)
+                  const orderedMeters = fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters || 0;
+                  const usedMeters = fabricCalculation.linearMeters || 0;
+                  const remnantMeters = fabricCalculation.remnantMeters || 0;
+                  
+                  quantity = orderedMeters;
                   totalCost = quantity * pricePerUnit;
-                  unitLabel = 'Linear Meters Required';
+                  unitLabel = 'Linear Meters to Order';
                   unitSuffix = 'm';
                   calculationText = `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
-                  calculationBreakdown = `${fabricCalculation.widthsRequired || 0} width(s) × ${(fabricCalculation.totalDrop || 0).toFixed(0)}cm = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
+                  
+                  // Enhanced breakdown showing ordered vs used
+                  if (fabricCalculation.widthsRequired > 1 && remnantMeters > 0) {
+                    calculationBreakdown = `${fabricCalculation.widthsRequired} width(s) × ${(fabricCalculation.dropPerWidthMeters || 0).toFixed(2)}m/width = ${orderedMeters.toFixed(2)}m ordered (${usedMeters.toFixed(2)}m used + ${remnantMeters.toFixed(2)}m remnant) × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
+                  } else {
+                    calculationBreakdown = `${fabricCalculation.widthsRequired || 0} width(s) × ${(fabricCalculation.totalDrop || 0).toFixed(0)}cm = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
+                  }
                 }
+              }
+              
+              // 🆕 Calculate seaming labor cost
+              let seamingCost = 0;
+              if (fabricCalculation.seamsCount && fabricCalculation.seamsCount > 0) {
+                const laborRate = template?.labor_rate || 25; // Default $25/hour
+                seamingCost = (fabricCalculation.seamLaborHours || 0) * laborRate;
+                totalCost += seamingCost;
               }
               
               return (
@@ -739,8 +757,29 @@ export const AdaptiveFabricPricingDisplay = ({
                     </span>
                   </div>
                   
+                  {/* 🆕 Show remnant information if multiple widths */}
+                  {fabricCalculation.widthsRequired > 1 && fabricCalculation.remnantMeters > 0 && (
+                    <div className="bg-accent/10 border border-accent/20 rounded-md p-2 mt-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-accent-foreground">📦 Remnant to Save:</span>
+                        <span className="font-medium text-accent-foreground">{fabricCalculation.remnantMeters.toFixed(2)}m</span>
+                      </div>
+                      <div className="text-xs text-accent-foreground/70 mt-1">
+                        Will be added to project fabric pool for future use
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 🆕 Show seaming cost if applicable */}
+                  {seamingCost > 0 && (
+                    <div className="flex justify-between text-xs mt-2 pt-2 border-t border-border/50">
+                      <span className="text-muted-foreground">+ Seaming Labor ({fabricCalculation.seamsCount} seam(s), {(fabricCalculation.seamLaborHours || 0).toFixed(2)}hrs):</span>
+                      <span className="font-medium">{formatPrice(seamingCost)}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between font-semibold text-base pt-1">
-                    <span>Fabric Cost:</span>
+                    <span>{seamingCost > 0 ? 'Total (Fabric + Labor):' : 'Fabric Cost:'}</span>
                     <span className="text-foreground">{formatPrice(totalCost)}</span>
                   </div>
                   

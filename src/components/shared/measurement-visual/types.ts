@@ -88,9 +88,14 @@ export interface VisualConfig {
 
 export interface FabricCalculation {
   linearMeters: number;
+  orderedLinearMeters?: number; // 🆕 Full widths that must be ordered
+  remnantMeters?: number; // 🆕 Leftover fabric to save to pool
+  fabricCost?: number; // 🆕 Cost of fabric only
   totalCost: number;
   pricePerMeter: number;
   widthsRequired: number;
+  seamsCount?: number; // 🆕 Number of seams needed
+  seamLaborHours?: number; // 🆕 Labor hours for seaming
   railWidth: number;
   fullnessRatio: number;
   drop: number;
@@ -98,6 +103,7 @@ export interface FabricCalculation {
   bottomHem: number;
   pooling: number;
   totalDrop: number;
+  dropPerWidthMeters?: number; // 🆕 Drop length per width in meters
   returns: number;
   wastePercent: number;
   sideHems: number;
