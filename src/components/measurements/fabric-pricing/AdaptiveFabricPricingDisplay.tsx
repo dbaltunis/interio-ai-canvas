@@ -378,20 +378,103 @@ export const AdaptiveFabricPricingDisplay = ({
                 <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalSideHems)}</span>
               </div>
             )}
+            
+            {/* Fabric Orientation Notice */}
+            <div className="bg-primary/5 border border-primary/20 rounded-md p-2.5 mt-2 space-y-1.5">
+              <div className="flex items-start gap-2">
+                <div className="text-xs text-primary font-medium">
+                  {(() => {
+                    const fabricWidth = selectedFabricItem?.fabric_width || 137;
+                    const isWideWidth = fabricWidth > 200;
+                    const rollDirection = measurements.roll_direction || measurements.fabric_rotated;
+                    const isHorizontal = rollDirection === "horizontal" || rollDirection === true || rollDirection === "true";
+                    
+                    if (isHorizontal && isWideWidth) {
+                      return "📐 Wide Width Fabric - Railroaded (Horizontal)";
+                    } else if (isHorizontal && !isWideWidth) {
+                      return "📐 Fabric Rotated - Railroaded (Horizontal)";
+                    } else {
+                      return "📐 Standard Orientation - Vertical";
+                    }
+                  })()}
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground leading-relaxed">
+                {(() => {
+                  const fabricWidth = selectedFabricItem?.fabric_width || 137;
+                  const isWideWidth = fabricWidth > 200;
+                  const rollDirection = measurements.roll_direction || measurements.fabric_rotated;
+                  const isHorizontal = rollDirection === "horizontal" || rollDirection === true || rollDirection === "true";
+                  
+                  if (isHorizontal) {
+                    return (
+                      <>
+                        Fabric runs horizontally across the curtain width. The fabric width ({formatFabricWidth(fabricWidth)}) 
+                        is used for the curtain height, while the curtain width determines the length of fabric needed.
+                      </>
+                    );
+                  } else {
+                    return (
+                      <>
+                        Fabric runs vertically (standard). Multiple fabric widths are joined horizontally to achieve 
+                        the required curtain width with fullness.
+                      </>
+                    );
+                  }
+                })()}
+              </div>
+            </div>
+
             <div className="flex justify-between border-t border-border pt-1 mt-1">
               <span>Widths Required:</span>
               <span className="font-medium text-foreground">{fabricCalculation.widthsRequired || 0} width(s)</span>
             </div>
+            
+            {/* Width Calculation Explanation */}
+            <div className="text-xs text-muted-foreground italic mt-1 pl-1">
+              {(() => {
+                const rollDirection = measurements.roll_direction || measurements.fabric_rotated;
+                const isHorizontal = rollDirection === "horizontal" || rollDirection === true || rollDirection === "true";
+                const widths = fabricCalculation.widthsRequired || 0;
+                const fabricWidth = selectedFabricItem?.fabric_width || 137;
+                const totalWidth = (fabricCalculation.railWidth || 0) * (fabricCalculation.fullnessRatio || 0) + (fabricCalculation.returns || 0);
+                
+                if (isHorizontal) {
+                  if (fabricCalculation.horizontalPiecesNeeded && fabricCalculation.horizontalPiecesNeeded > 1) {
+                    return `${widths} fabric lengths needed (${fabricCalculation.curtainCount || 1} panel(s) × ${fabricCalculation.horizontalPiecesNeeded} horizontal pieces per panel)`;
+                  } else {
+                    return `${widths} fabric length(s) needed to cover ${fabricCalculation.curtainCount || 1} panel(s)`;
+                  }
+                } else {
+                  return `${widths} fabric width(s) of ${formatFabricWidth(fabricWidth)} joined to achieve ${formatMeasurement(totalWidth)} total width`;
+                }
+              })()}
+            </div>
+
             {fabricCalculation.horizontalPiecesNeeded && fabricCalculation.horizontalPiecesNeeded > 1 && (
-              <div className="flex justify-between bg-warning/10 p-2 rounded mt-2">
-                <span className="text-warning-foreground font-medium">⚠️ Horizontal Seaming:</span>
-                <span className="font-medium text-warning-foreground">{fabricCalculation.horizontalPiecesNeeded} pieces</span>
+              <div className="flex flex-col gap-1 bg-warning/10 border border-warning/20 rounded-md p-2.5 mt-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-warning-foreground font-medium text-xs">⚠️ Horizontal Seaming Required</span>
+                  <span className="font-medium text-warning-foreground text-xs">{fabricCalculation.horizontalPiecesNeeded} pieces</span>
+                </div>
+                <div className="text-xs text-warning-foreground/80 leading-relaxed">
+                  Curtain height ({formatMeasurement(fabricCalculation.totalDrop || 0)}) exceeds fabric width 
+                  ({formatFabricWidth(selectedFabricItem?.fabric_width || 137)}). 
+                  {fabricCalculation.horizontalPiecesNeeded - 1} horizontal seam(s) will be needed to join pieces.
+                </div>
               </div>
             )}
+            
             {fabricCalculation.leftoverFromLastPiece && fabricCalculation.leftoverFromLastPiece > 0 && (
-              <div className="flex justify-between text-muted-foreground mt-1">
-                <span>Leftover (last piece):</span>
-                <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.leftoverFromLastPiece)}</span>
+              <div className="flex flex-col gap-1 bg-accent/10 border border-accent/20 rounded-md p-2.5 mt-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-accent-foreground font-medium text-xs">📏 Material Leftover</span>
+                  <span className="font-medium text-accent-foreground text-xs">{formatMeasurement(fabricCalculation.leftoverFromLastPiece)}</span>
+                </div>
+                <div className="text-xs text-accent-foreground/80 leading-relaxed">
+                  Approximately {((fabricCalculation.leftoverFromLastPiece / (selectedFabricItem?.fabric_width || 137)) * 100).toFixed(1)}% 
+                  of the last fabric piece will remain unused after cutting. This can be utilized for cushions, samples, or future repairs.
+                </div>
               </div>
             )}
           </div>
