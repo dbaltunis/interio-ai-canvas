@@ -25,6 +25,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Calculator, Ruler } from "lucide-react";
 import { AdaptiveFabricPricingDisplay } from "./fabric-pricing/AdaptiveFabricPricingDisplay";
 import { convertLength } from "@/hooks/useBusinessSettings";
+import { useProjectFabricPools, calculateFabricNeeds, useUpdateProjectFabricPool, PoolUsage } from "@/hooks/useProjectFabricPool";
+import { PoolUsageDisplay } from "./PoolUsageDisplay";
+import { ProjectFabricPoolSummary } from "./ProjectFabricPoolSummary";
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
   onMeasurementChange: (field: string, value: string) => void;
