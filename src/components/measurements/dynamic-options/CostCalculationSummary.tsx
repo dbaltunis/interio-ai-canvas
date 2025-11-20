@@ -607,12 +607,9 @@ export const CostCalculationSummary = ({
             <div key={idx} className="flex justify-between py-1.5 border-b border-border/50">
               <div className="flex flex-col">
                 <span className="text-card-foreground font-medium">{option.name}</span>
-                {option.pricingMethod ? (
-                  <span className="text-xs text-muted-foreground">{option.pricingMethod}</span>
-                ) : (
-                  <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    No pricing method configured - Set up in Settings
+                {option.pricingMethod && (
+                  <span className="text-xs text-muted-foreground capitalize">
+                    {option.pricingMethod.replace(/-/g, ' ')}
                   </span>
                 )}
               </div>
