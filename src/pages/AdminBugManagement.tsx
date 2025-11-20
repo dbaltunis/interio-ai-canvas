@@ -82,6 +82,7 @@ export default function AdminBugManagement() {
   const queryClient = useQueryClient();
   const { data: teamMembers } = useTeamMembers();
 
+  // Query all bug reports - System Owners and Admins see ALL bugs across all accounts
   const { data: bugs, isLoading } = useQuery({
     queryKey: ["bug_reports", statusFilter, priorityFilter],
     queryFn: async () => {
