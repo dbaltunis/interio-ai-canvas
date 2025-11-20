@@ -1006,59 +1006,71 @@ export const EnhancedMeasurementWorksheet = forwardRef<
           optionsCost,
           totalCost,
           selectedOptionsCount: selectedOptions.length
-        });
-        
-        await saveWindowSummary.mutateAsync({
-          window_id: surfaceId,
-          linear_meters: linearMeters,
-          widths_required: widthsRequired,
-          price_per_meter: pricePerMeter,
-          fabric_cost: fabricCost,
-          lining_cost: liningCost,
-          manufacturing_cost: manufacturingCost,
-          heading_cost: headingCost, // CRITICAL: Save heading cost
-          total_cost: totalCost, // CRITICAL: Use totalCost from calculateTreatmentPricing
-          template_id: selectedCovering.id,
-          pricing_type: selectedCovering.pricing_type,
-          waste_percent: selectedCovering.waste_percent || 0,
-          manufacturing_type: selectedCovering.manufacturing_type,
-          currency: units.currency,
-          template_name: selectedCovering.name,
-          template_details: selectedCovering as any,
-          treatment_type: specificTreatmentType, // CRITICAL: Save specific type like 'venetian_blinds'
-          treatment_category: generalCategory, // Save general category like 'blinds'
-          // CRITICAL: Save options cost from calculateTreatmentPricing
-          options_cost: optionsCost,
-          selected_options: selectedOptions,
-          // CRITICAL FIX: Properly convert string values to numbers, handling empty/undefined
-          rail_width: (() => {
-            const val = (measurements as any).rail_width;
-            if (val === null || val === undefined || val === "" || val === "undefined") return null;
-            const num = parseFloat(String(val));
-            return isNaN(num) ? null : num;
-          })(),
-          drop: (() => {
-            const val = (measurements as any).drop;
-            if (val === null || val === undefined || val === "" || val === "undefined") return null;
-            const num = parseFloat(String(val));
-            return isNaN(num) ? null : num;
-          })(),
-          fabric_details: {
-            id: fabricItem.id, 
-            name: fabricItem.name, 
-            price_per_meter: pricePerMeter,
-            width: (fabricItem as any).fabric_width,
-            width_cm: (fabricItem as any).fabric_width,
-            fabric_width: (fabricItem as any).fabric_width,
-            pattern_repeat_vertical: (fabricItem as any).pattern_repeat_vertical,
-            pattern_repeat_horizontal: (fabricItem as any).pattern_repeat_horizontal,
-            category: (fabricItem as any).category, // Include fabric category for detection
-            image_url: (fabricItem as any).image_url // Include image for display
-          },
-          lining_details: liningDetails,
-          heading_details: { id: selectedHeading },
-          extras_details: [],
-          cost_breakdown: calculation_details.breakdown,
+         });
+         
+         // CRITICAL: Recalculate total from breakdown to ensure sync
+         const breakdownTotal = calculation_details.breakdown.reduce((sum: number, item: any) => 
+           sum + (Number(item.total_cost) || 0), 0
+         );
+         
+         console.log('💰 Total cost sync check:', {
+           totalCostFromCalculation: totalCost,
+           breakdownTotal,
+           difference: Math.abs(totalCost - breakdownTotal),
+           breakdown: calculation_details.breakdown.map((i: any) => ({ name: i.name, cost: i.total_cost }))
+         });
+         
+         await saveWindowSummary.mutateAsync({
+           window_id: surfaceId,
+           linear_meters: linearMeters,
+           widths_required: widthsRequired,
+           price_per_meter: pricePerMeter,
+           fabric_cost: fabricCost,
+           lining_cost: liningCost,
+           manufacturing_cost: manufacturingCost,
+           heading_cost: headingCost, // CRITICAL: Save heading cost
+           total_cost: breakdownTotal, // CRITICAL: Use breakdown sum as source of truth
+           template_id: selectedCovering.id,
+           pricing_type: selectedCovering.pricing_type,
+           waste_percent: selectedCovering.waste_percent || 0,
+           manufacturing_type: selectedCovering.manufacturing_type,
+           currency: units.currency,
+           template_name: selectedCovering.name,
+           template_details: selectedCovering as any,
+           treatment_type: specificTreatmentType, // CRITICAL: Save specific type like 'venetian_blinds'
+           treatment_category: generalCategory, // Save general category like 'blinds'
+           // CRITICAL: Save options cost from calculateTreatmentPricing
+           options_cost: optionsCost,
+           selected_options: selectedOptions,
+           // CRITICAL FIX: Properly convert string values to numbers, handling empty/undefined
+           rail_width: (() => {
+             const val = (measurements as any).rail_width;
+             if (val === null || val === undefined || val === "" || val === "undefined") return null;
+             const num = parseFloat(String(val));
+             return isNaN(num) ? null : num;
+           })(),
+           drop: (() => {
+             const val = (measurements as any).drop;
+             if (val === null || val === undefined || val === "" || val === "undefined") return null;
+             const num = parseFloat(String(val));
+             return isNaN(num) ? null : num;
+           })(),
+           fabric_details: {
+             id: fabricItem.id, 
+             name: fabricItem.name, 
+             price_per_meter: pricePerMeter,
+             width: (fabricItem as any).fabric_width,
+             width_cm: (fabricItem as any).fabric_width,
+             fabric_width: (fabricItem as any).fabric_width,
+             pattern_repeat_vertical: (fabricItem as any).pattern_repeat_vertical,
+             pattern_repeat_horizontal: (fabricItem as any).pattern_repeat_horizontal,
+             category: (fabricItem as any).category, // Include fabric category for detection
+             image_url: (fabricItem as any).image_url // Include image for display
+           },
+           lining_details: liningDetails,
+           heading_details: { id: selectedHeading },
+           extras_details: [],
+           cost_breakdown: calculation_details.breakdown,
           measurements_details: {
             ...measurements,
             // CRITICAL FIX: Also save rail_width and drop in JSONB, properly handling empty values
