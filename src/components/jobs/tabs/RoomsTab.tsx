@@ -5,7 +5,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms, useCreateRoom } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
-import { formatCurrency } from "@/utils/currency";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { useWorkroomSync } from "@/hooks/useWorkroomSync";
@@ -18,6 +18,7 @@ export const RoomsTab = ({
   projectId
 }: RoomsTabProps) => {
   const queryClient = useQueryClient();
+  const { formatCurrency } = useFormattedCurrency();
   const {
     data: projects
   } = useProjects();
