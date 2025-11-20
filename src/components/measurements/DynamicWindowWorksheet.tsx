@@ -371,6 +371,16 @@ export const DynamicWindowWorksheet = forwardRef<{
           });
           
           setMeasurements(restoredMeasurements);
+          
+          console.log('✅ Restored template-specific values:', {
+            header_hem: restoredMeasurements.header_hem,
+            bottom_hem: restoredMeasurements.bottom_hem,
+            side_hems: restoredMeasurements.side_hems,
+            seam_hems: restoredMeasurements.seam_hems,
+            return_left: restoredMeasurements.return_left,
+            return_right: restoredMeasurements.return_right,
+            waste_percent: restoredMeasurements.waste_percent
+          });
         }
         
         // PHASE 1: Mark as loaded to prevent future reloads
@@ -1073,6 +1083,16 @@ export const DynamicWindowWorksheet = forwardRef<{
               // CRITICAL: Store fabric calculation details for accurate display
               horizontal_pieces_needed: fabricCalculation?.horizontalPiecesNeeded || 1,
               fabric_orientation: fabricCalculation?.fabricOrientation || 'vertical',
+              
+              // CRITICAL: Store ALL template-specific values so they're not lost on reload
+              header_hem: measurements.header_hem || selectedTemplate?.header_allowance || selectedTemplate?.header_hem || 8,
+              bottom_hem: measurements.bottom_hem || selectedTemplate?.bottom_hem || selectedTemplate?.bottom_allowance || 15,
+              side_hems: measurements.side_hem || selectedTemplate?.side_hem || selectedTemplate?.side_hems || 7.5,
+              seam_hems: measurements.seam_hem || selectedTemplate?.seam_allowance || selectedTemplate?.seam_hems || 1.5,
+              return_left: measurements.return_left || selectedTemplate?.return_left || 0,
+              return_right: measurements.return_right || selectedTemplate?.return_right || 0,
+              waste_percent: measurements.waste_percent || selectedTemplate?.waste_percent || 5,
+              
               // PHASE 2: Convert to cm but save null instead of 0 for empty values
               rail_width: measurements.rail_width && parseFloat(measurements.rail_width) > 0 
                 ? convertLength(parseFloat(measurements.rail_width), units.length, 'cm') 
@@ -1412,25 +1432,25 @@ export const DynamicWindowWorksheet = forwardRef<{
     setSelectedTreatmentType(category === 'wallpaper' ? 'wallpaper' : category);
     setTreatmentCategory(category);
     
-    // ✅ FIX: Initialize measurements with template defaults (hem allowances, fullness, etc.)
-    setMeasurements(prev => ({
-      ...prev,
-      // Only set if not already set by user
-      header_hem: prev.header_hem || template.header_allowance || template.header_hem || 8,
-      bottom_hem: prev.bottom_hem || template.bottom_hem || template.bottom_allowance || 15,
-      side_hem: prev.side_hem || template.side_hem || template.side_hems || 7.5,
-      seam_hem: prev.seam_hem || template.seam_allowance || template.seam_hems || 1.5,
-      heading_fullness: prev.heading_fullness || template.default_fullness || template.fullness_ratio || 2.0,
-    }));
-    
-    console.log('🎯 Template selected - initialized defaults:', {
-      template: template.name,
-      header_hem: template.header_allowance || template.header_hem,
-      bottom_hem: template.bottom_hem || template.bottom_allowance,
-      side_hem: template.side_hem || template.side_hems,
-      seam_hem: template.seam_allowance || template.seam_hems,
-      fullness: template.default_fullness || template.fullness_ratio
+    // ✅ FIX: Initialize measurements with template defaults ONLY if not already set
+    // Don't overwrite existing saved values
+    setMeasurements(prev => {
+      const templateAny = template as any;
+      return {
+        ...prev,
+        // Only set template defaults if value doesn't exist in saved measurements
+        header_hem: prev.header_hem ?? (templateAny.header_allowance || templateAny.header_hem || 8),
+        bottom_hem: prev.bottom_hem ?? (templateAny.bottom_hem || templateAny.bottom_allowance || 15),
+        side_hems: prev.side_hems ?? prev.side_hem ?? (templateAny.side_hem || template.side_hems || 7.5),
+        seam_hems: prev.seam_hems ?? prev.seam_hem ?? (templateAny.seam_allowance || template.seam_hems || 1.5),
+        return_left: prev.return_left ?? (template.return_left || 0),
+        return_right: prev.return_right ?? (template.return_right || 0),
+        waste_percent: prev.waste_percent ?? (template.waste_percent || 5),
+        heading_fullness: prev.heading_fullness ?? (templateAny.default_fullness || template.fullness_ratio || 2.0),
+      };
     });
+    
+    console.log('🎯 Template selected - initialized defaults only for missing values');
   };
   const canProceedToMeasurements = selectedWindowType && (selectedTemplate || selectedTreatmentType);
   const canShowPreview = canProceedToMeasurements && Object.keys(measurements).length > 0;
