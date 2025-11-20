@@ -729,7 +729,7 @@ export const AdaptiveFabricPricingDisplay = ({
                     <span className="font-medium">Pricing Method:</span>
                     <span className="text-foreground text-right font-semibold">
                       {isBySqm ? 'Per Square Meter' : 
-                       isByDrop ? 'Per Drop' : 
+                       isByDrop ? 'Per Width' : 
                        isByPanel ? 'Per Panel' : 
                        'Per Linear Meter'}
                     </span>
