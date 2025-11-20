@@ -415,52 +415,6 @@ export const AdaptiveFabricPricingDisplay = ({
                 <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalSideHems)}</span>
               </div>
             )}
-            
-            {/* Fabric Orientation Notice */}
-            <div className="bg-primary/5 border border-primary/20 rounded-md p-2.5 mt-2 space-y-1.5">
-              <div className="flex items-start gap-2">
-                <div className="text-xs text-primary font-medium">
-                  {(() => {
-                    const fabricWidth = selectedFabricItem?.fabric_width || 137;
-                    const isWideWidth = fabricWidth > 200;
-                    const rollDirection = measurements.roll_direction || measurements.fabric_rotated;
-                    const isHorizontal = rollDirection === "horizontal" || rollDirection === true || rollDirection === "true";
-                    
-                    if (isHorizontal && isWideWidth) {
-                      return "📐 Wide Width Fabric - Railroaded (Horizontal)";
-                    } else if (isHorizontal && !isWideWidth) {
-                      return "📐 Fabric Rotated - Railroaded (Horizontal)";
-                    } else {
-                      return "📐 Standard Orientation - Vertical";
-                    }
-                  })()}
-                </div>
-              </div>
-              <div className="text-xs text-muted-foreground leading-relaxed">
-                {(() => {
-                  const fabricWidth = selectedFabricItem?.fabric_width || 137;
-                  const isWideWidth = fabricWidth > 200;
-                  const rollDirection = measurements.roll_direction || measurements.fabric_rotated;
-                  const isHorizontal = rollDirection === "horizontal" || rollDirection === true || rollDirection === "true";
-                  
-                  if (isHorizontal) {
-                    return (
-                      <>
-                        Fabric runs horizontally across the curtain width. The fabric width ({formatFabricWidth(fabricWidth)}) 
-                        is used for the curtain height, while the curtain width determines the length of fabric needed.
-                      </>
-                    );
-                  } else {
-                    return (
-                      <>
-                        Fabric runs vertically (standard). Multiple fabric widths are joined horizontally to achieve 
-                        the required curtain width with fullness.
-                      </>
-                    );
-                  }
-                })()}
-              </div>
-            </div>
 
             <div className="flex justify-between border-t border-border pt-1 mt-1">
               <span>Widths Required:</span>
