@@ -1685,7 +1685,18 @@ export const DynamicWindowWorksheet = forwardRef<{
                       manufacturingType,
                       pricePerUnit,
                       quantity: pricingType === 'per_panel' ? fabricCalculation.curtainCount : pricingType === 'per_drop' ? fabricCalculation.widthsRequired : fabricCalculation.linearMeters,
-                      manufacturingCost
+                      manufacturingCost,
+                      fabricCalculation: {
+                        curtainCount: fabricCalculation.curtainCount,
+                        widthsRequired: fabricCalculation.widthsRequired,
+                        linearMeters: fabricCalculation.linearMeters
+                      },
+                      selectedPricingMethod: {
+                        name: selectedPricingMethod?.name,
+                        pricing_type: selectedPricingMethod?.pricing_type,
+                        machine_price_per_metre: selectedPricingMethod?.machine_price_per_metre,
+                        hand_price_per_metre: selectedPricingMethod?.hand_price_per_metre
+                      }
                     });
 
                     // Calculate heading cost

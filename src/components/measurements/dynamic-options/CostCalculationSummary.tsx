@@ -429,6 +429,8 @@ export const CostCalculationSummary = ({
     manufacturingCost,
     headingCost,
     optionsCost,
+    selectedOptionsCount: selectedOptions?.length,
+    selectedOptionsDetails: selectedOptions?.map(opt => ({ name: opt.name, price: opt.price })),
     totalCost
   });
 
@@ -468,12 +470,23 @@ export const CostCalculationSummary = ({
           </div>
         )}
 
-        {optionsCost > 0 && (
-          <div className="flex justify-between py-1.5 border-b border-border/50">
-            <span className="text-card-foreground font-medium">Additional Options</span>
-            <span className="font-semibold text-card-foreground">{formatPrice(optionsCost)}</span>
-          </div>
-        )}
+        {/* Individual Options */}
+        {selectedOptions && selectedOptions.length > 0 && selectedOptions.map((option, idx) => {
+          const optionPrice = option.price || 0;
+          if (optionPrice <= 0) return null;
+          
+          return (
+            <div key={idx} className="flex justify-between py-1.5 border-b border-border/50">
+              <div className="flex flex-col">
+                <span className="text-card-foreground font-medium">{option.name}</span>
+                {option.pricingMethod && (
+                  <span className="text-xs text-muted-foreground">{option.pricingMethod}</span>
+                )}
+              </div>
+              <span className="font-semibold text-card-foreground">{formatPrice(optionPrice)}</span>
+            </div>
+          );
+        })}
       </div>
 
       <div className="border-t-2 border-primary/20 pt-2.5">
