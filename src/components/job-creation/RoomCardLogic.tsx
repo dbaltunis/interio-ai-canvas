@@ -149,9 +149,29 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
     // Add any additional services or extra costs for this room
     // TODO: Add logic for additional services, extras, etc. when that data structure is available
 
-    console.log(`=== FINAL ROOM TOTAL FOR ${room.name}: £${total.toFixed(2)} ===`);
+  console.log(`=== FINAL ROOM TOTAL FOR ${room.name}: £${total.toFixed(2)} ===`);
     return total;
   }, [projectSummaries, roomTreatments, clientMeasurements, projectId, room.id, room.name]);
+
+  // Calculate project-wide total (sum of all windows across all rooms)
+  const projectTotal = useMemo(() => {
+    if (!projectSummaries?.windows) return 0;
+    
+    return projectSummaries.windows.reduce((sum, w) => {
+      if (!w.summary) return sum;
+      
+      // Use cost_breakdown if available (most accurate)
+      if (Array.isArray(w.summary.cost_breakdown) && w.summary.cost_breakdown.length > 0) {
+        const breakdownTotal = w.summary.cost_breakdown.reduce((itemSum: number, item: any) => {
+          return itemSum + (Number(item.total_cost) || 0);
+        }, 0);
+        return sum + breakdownTotal;
+      }
+      
+      // Fallback to stored total_cost
+      return sum + Number(w.summary.total_cost || 0);
+    }, 0);
+  }, [projectSummaries]);
 
   // Remove surface creation logic from here - it will be handled by parent
 
@@ -187,6 +207,7 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
     roomSurfaces,
     roomTreatments,
     roomTotal,
+    projectTotal,
     pricingFormOpen,
     setPricingFormOpen,
     calculatorDialogOpen,

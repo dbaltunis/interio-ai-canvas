@@ -53,6 +53,7 @@ export const RoomCard = ({
     roomSurfaces,
     roomTreatments,
     roomTotal,
+    projectTotal,
     pricingFormOpen,
     setPricingFormOpen,
     calculatorDialogOpen,
@@ -115,6 +116,7 @@ export const RoomCard = ({
       <RoomHeader
         room={room}
         roomTotal={roomTotal}
+        projectTotal={projectTotal}
         editingRoomId={editingRoomId}
         editingRoomName={editingRoomName}
         setEditingRoomName={setEditingRoomName}
