@@ -415,12 +415,6 @@ export const AdaptiveFabricPricingDisplay = ({
                 <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalSideHems)}</span>
               </div>
             )}
-
-            <div className="flex justify-between border-t border-border pt-1 mt-1">
-              <span>Widths Required:</span>
-              <span className="font-medium text-foreground">{fabricCalculation.widthsRequired || 0} width(s)</span>
-            </div>
-            
             {/* Width Calculation Explanation */}
             <div className="text-xs text-muted-foreground italic mt-1 pl-1">
               {(() => {
