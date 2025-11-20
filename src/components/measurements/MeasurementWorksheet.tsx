@@ -270,6 +270,15 @@ export const MeasurementWorksheet = ({
             }
           });
 
+          // CRITICAL: Recalculate total from breakdown to ensure sync
+          const breakdownTotal = costBreakdown.reduce((sum, item) => sum + (Number(item.total_cost) || 0), 0);
+          
+          console.log('💰 Total cost sync check:', {
+            totalCostCalculated: totalCost,
+            breakdownTotal,
+            difference: Math.abs(totalCost - breakdownTotal)
+          });
+
           const summaryData = {
             window_id: surfaceId,
             linear_meters: Number(linearMeters.toFixed(2)),
@@ -280,7 +289,7 @@ export const MeasurementWorksheet = ({
             lining_cost: Number(liningCost.toFixed(2)),
             manufacturing_type: manufacturingType,
             manufacturing_cost: Number(manufacturingCost.toFixed(2)),
-            total_cost: Number(totalCost.toFixed(2)),
+            total_cost: breakdownTotal, // CRITICAL: Use breakdown sum as source of truth
             pricing_type: 'per_metre',
             waste_percent: wastePercent,
             currency: 'GBP',

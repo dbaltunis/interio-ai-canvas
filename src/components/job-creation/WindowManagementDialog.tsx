@@ -190,8 +190,19 @@ export const WindowManagementDialog = ({
         
         // CRITICAL: Build structured cost_breakdown for display
         const costBreakdown = buildClientBreakdown(summaryData);
+        
+        // CRITICAL FIX: Recalculate total_cost from breakdown to ensure sync
+        const breakdownTotal = costBreakdown.reduce((sum, item) => sum + (Number(item.total_cost) || 0), 0);
+        
+        console.log('💾 Total cost sync:', {
+          oldTotal: summaryData.total_cost,
+          breakdownTotal,
+          breakdownItems: costBreakdown.map(i => ({ name: i.name, cost: i.total_cost }))
+        });
+        
         const finalSummaryData = {
           ...summaryData,
+          total_cost: breakdownTotal, // Use breakdown sum as source of truth
           cost_breakdown: costBreakdown as any
         };
 
