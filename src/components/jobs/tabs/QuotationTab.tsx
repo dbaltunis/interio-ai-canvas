@@ -181,13 +181,18 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   // Get settings from template blocks safely - MUST be before early returns
   const templateSettings = useMemo(() => {
     const blocks = selectedTemplate?.blocks;
-    if (!blocks || typeof blocks === 'string') return { showImages: true, showDetailedBreakdown: false, groupByRoom: false };
+    if (!blocks || typeof blocks === 'string') return { showImages: true, showDetailedBreakdown: false, groupByRoom: false, layout: 'detailed' as 'simple' | 'detailed' };
     const blocksArray = Array.isArray(blocks) ? blocks : [];
     const productsBlock = blocksArray.find((b: any) => b?.type === 'products') as any;
+    
+    // Get layout from content, defaulting to 'detailed'
+    const layout = (productsBlock?.content?.layout || 'detailed') as 'simple' | 'detailed';
+    
     return {
       showImages: productsBlock?.content?.showImages ?? true,
       showDetailedBreakdown: productsBlock?.content?.showDetailedBreakdown ?? true,
-      groupByRoom: productsBlock?.content?.groupByRoom ?? false
+      groupByRoom: productsBlock?.content?.groupByRoom ?? false,
+      layout
     };
   }, [selectedTemplate]);
 
@@ -747,7 +752,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
           </Button>
         </div>
       ) : (
-        <section className="mt-2 sm:mt-4" key={`preview-${selectedTemplate?.id}-${templateSettings.showDetailedBreakdown}-${templateSettings.showImages}-${templateSettings.groupByRoom}-${projectSummaries?.projectTotal}`}>
+        <section className="mt-2 sm:mt-4" key={`preview-${selectedTemplate?.id}-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}-${projectSummaries?.projectTotal}`}>
           {/* A4 Background Container - Gray background to simulate paper on desk */}
           <div className="w-full flex justify-center items-start bg-gradient-to-br from-muted/30 to-muted/50 dark:from-background dark:to-card/20 px-4 py-2 rounded-lg border border-border/40">
             <div className="transform scale-[0.52] sm:scale-[0.72] md:scale-[0.85] lg:scale-[0.95] xl:scale-[1.0] origin-top shadow-2xl dark:shadow-xl mx-auto">
@@ -765,12 +770,13 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
                 }}
               >
                 <LivePreview
-                  key={`live-preview-${templateSettings.showDetailedBreakdown}-${templateSettings.showImages}-${templateSettings.groupByRoom}`}
+                  key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`}
                   blocks={templateBlocks}
                   projectData={projectData}
                   isEditable={false}
                   isPrintMode={true}
-                  showDetailedBreakdown={templateSettings.showDetailedBreakdown}
+                  layout={templateSettings.layout}
+                  showDetailedBreakdown={templateSettings.layout === 'detailed'}
                   showImages={templateSettings.showImages}
                   groupByRoom={templateSettings.groupByRoom}
                 />

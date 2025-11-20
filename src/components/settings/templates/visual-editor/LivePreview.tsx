@@ -47,6 +47,7 @@ interface LivePreviewBlockProps {
   showDetailedBreakdown?: boolean;
   showImages?: boolean;
   groupByRoom?: boolean;
+  layout?: 'simple' | 'detailed';
   onSettingsChange?: (settings: { showDetailedBreakdown?: boolean; showImages?: boolean; groupByRoom?: boolean }) => void;
 }
 
@@ -59,6 +60,7 @@ const LivePreviewBlock = ({
   showDetailedBreakdown: propsShowDetailed,
   showImages: propsShowImages,
   groupByRoom: propsGroupByRoom,
+  layout: propsLayout,
   onSettingsChange
 }: LivePreviewBlockProps) => {
   const content = block.content || {};
@@ -692,8 +694,8 @@ const LivePreviewBlock = ({
       const rooms = projectData?.rooms || [];
       const windowSummaries = projectData?.windowSummaries?.windows || [];
       
-      // Get layout mode from content - default to 'detailed'
-      const layoutMode = content.layout || 'detailed';
+      // Get layout mode - prioritize prop, then content, then default to 'detailed'
+      const layoutMode = propsLayout || content.layout || 'detailed';
       const isSimpleLayout = layoutMode === 'simple';
       
       // For simple layout, we don't show the detailed breakdown
@@ -1758,6 +1760,7 @@ interface LivePreviewProps {
   showDetailedBreakdown?: boolean;
   showImages?: boolean;
   groupByRoom?: boolean;
+  layout?: 'simple' | 'detailed';
   onSettingsChange?: (settings: { showDetailedBreakdown?: boolean; showImages?: boolean; groupByRoom?: boolean }) => void;
 }
 
@@ -1772,6 +1775,7 @@ export const LivePreview = ({
   showDetailedBreakdown,
   showImages,
   groupByRoom,
+  layout,
   onSettingsChange
 }: LivePreviewProps) => {
   const { data: businessSettings } = useBusinessSettings();
@@ -1828,6 +1832,7 @@ export const LivePreview = ({
             showDetailedBreakdown={showDetailedBreakdown}
             showImages={showImages}
             groupByRoom={groupByRoom}
+            layout={layout}
             onSettingsChange={onSettingsChange}
           />
         ))}
@@ -1896,6 +1901,7 @@ export const LivePreview = ({
                 showDetailedBreakdown={showDetailedBreakdown}
                 showImages={showImages}
                 groupByRoom={groupByRoom}
+                layout={layout}
                 onSettingsChange={onSettingsChange}
               />
             ))}
