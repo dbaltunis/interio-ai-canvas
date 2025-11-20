@@ -412,6 +412,12 @@ export const AdaptiveFabricPricingDisplay = ({
                   <span>Drops Used:</span>
                   <span className="font-medium text-foreground">{measurements.quantity || 1} drop(s)</span>
                 </div>
+                {fabricCalculation.seamsRequired > 0 && (
+                  <div className="flex justify-between pl-2">
+                    <span>Vertical Seams:</span>
+                    <span className="font-medium text-foreground">{fabricCalculation.seamsRequired} seam(s)</span>
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -423,6 +429,30 @@ export const AdaptiveFabricPricingDisplay = ({
                   <span>Drop Height:</span>
                   <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.drop || measurements.drop || 0)}</span>
                 </div>
+                {fabricCalculation.horizontalPiecesNeeded && fabricCalculation.horizontalPiecesNeeded > 1 && (
+                  <>
+                    <div className="flex justify-between pl-2">
+                      <span>Horizontal Pieces:</span>
+                      <span className="font-medium text-foreground">{fabricCalculation.horizontalPiecesNeeded} piece(s)</span>
+                    </div>
+                    <div className="flex justify-between pl-2">
+                      <span>Horizontal Seams:</span>
+                      <span className="font-medium text-foreground">{fabricCalculation.horizontalPiecesNeeded - 1} seam(s)</span>
+                    </div>
+                  </>
+                )}
+                {(fabricCalculation.totalSideHems || 0) > 0 && (
+                  <div className="flex justify-between pl-2">
+                    <span>Side Hems:</span>
+                    <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalSideHems)}</span>
+                  </div>
+                )}
+                {fabricCalculation.seamsRequired > 0 && (
+                  <div className="flex justify-between pl-2">
+                    <span>Seam Allowance:</span>
+                    <span className="font-medium text-foreground">{formatMeasurement((fabricCalculation.seamsRequired * (measurements.seam_hem || 1) * 2))}</span>
+                  </div>
+                )}
               </>
             )}
           </div>
