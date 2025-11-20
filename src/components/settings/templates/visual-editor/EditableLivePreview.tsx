@@ -989,6 +989,49 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
         </EditableContainer>
       );
 
+    case 'editable-text-field':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '0 0 24px 0',
+            backgroundColor: style.backgroundColor || '#f8fafc',
+            borderRadius: style.borderRadius || '8px'
+          }}
+          className="mb-6"
+        >
+          <div className="space-y-3">
+            <EditableText
+              value={content.label || 'Enter your label'}
+              onChange={(value) => updateBlockContent({ label: value })}
+              className="text-sm font-medium text-muted-foreground"
+              placeholder="Field label"
+            />
+            
+            <div className="flex items-center gap-2 mb-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={content.isBold ? "default" : "outline"}
+                onClick={() => updateBlockContent({ isBold: !content.isBold })}
+                className="gap-2"
+              >
+                <Type className="h-4 w-4" />
+                {content.isBold ? 'Bold' : 'Regular'}
+              </Button>
+            </div>
+
+            <Input
+              value={content.value || ''}
+              onChange={(e) => updateBlockContent({ value: e.target.value })}
+              placeholder="Enter text here..."
+              className={content.isBold ? 'font-bold' : 'font-normal'}
+            />
+          </div>
+        </EditableContainer>
+      );
+
     case 'line-items':
       return (
         <EditableContainer 
@@ -1733,6 +1776,7 @@ export const EditableLivePreview = ({
     { type: 'header', name: 'Company Header', icon: Building2, description: 'Company info & logo' },
     { type: 'client-info', name: 'Client Details', icon: User, description: 'Client information' },
     { type: 'text', name: 'Text Block', icon: Type, description: 'Add formatted text' },
+    { type: 'editable-text-field', name: 'Editable Text Field', icon: Edit3, description: 'User input with bold/regular options' },
     { type: 'image-uploader', name: 'Image Uploader', icon: Upload, description: 'Upload images for proposals' },
     { type: 'line-items', name: 'Line Items Table', icon: ShoppingCart, description: 'Professional itemized list' },
     { type: 'terms-conditions', name: 'Terms & Conditions', icon: FileText, description: 'Legal terms and policies' },
@@ -1869,6 +1913,12 @@ export const EditableLivePreview = ({
           caption: 'Add images to your proposal',
           images: [],
           maxImages: 5
+        };
+      case 'editable-text-field':
+        return {
+          label: 'Enter your label',
+          value: '',
+          isBold: false
         };
       case 'spacer':
         return {

@@ -1247,6 +1247,38 @@ const LivePreviewBlock = ({
         </div>
       );
 
+    case 'editable-text-field':
+      if (!content.value) {
+        return null; // Don't show empty fields in final quote
+      }
+      
+      return (
+        <div className="mb-6" style={{ 
+          padding: style.padding || '16px',
+          margin: style.margin || '0 0 24px 0',
+          backgroundColor: style.backgroundColor || '#f8fafc',
+          borderRadius: style.borderRadius || '8px'
+        }}>
+          {content.label && (
+            <div style={{ 
+              fontSize: '14px', 
+              fontWeight: '500', 
+              color: '#6b7280',
+              marginBottom: '8px'
+            }}>
+              {content.label}
+            </div>
+          )}
+          <div style={{ 
+            fontSize: '16px',
+            fontWeight: content.isBold ? '700' : '400',
+            color: '#000'
+          }}>
+            {content.value}
+          </div>
+        </div>
+      );
+
     case 'image':
       return (
         <div className="mb-6 text-center">
