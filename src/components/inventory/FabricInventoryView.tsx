@@ -16,6 +16,8 @@ import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
 import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QRCodeDisplay } from "./QRCodeDisplay";
+import { useInventoryLeftovers } from "@/hooks/useInventoryLeftovers";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface FabricInventoryViewProps {
   searchQuery: string;
@@ -42,6 +44,9 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pricingGrids, setPricingGrids] = useState<Array<{ id: string; grid_code: string | null; name: string }>>([]);
+  
+  // Get leftover fabric totals for inventory badges
+  const { data: leftovers = [] } = useInventoryLeftovers();
 
   const fabricItems = inventory?.filter(item => 
     item.category === 'fabric'
@@ -262,13 +267,36 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
                         </div>
                       )}
                       
-                      <div className="pt-2 border-t">
+                      <div className="pt-2 border-t space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">Stock:</span>
                           <Badge variant={item.quantity && item.quantity > 0 ? "default" : "secondary"}>
                             {item.quantity || 0}m
                           </Badge>
                         </div>
+                        {(() => {
+                          const leftover = leftovers.find(l => l.fabric_id === item.id);
+                          if (leftover && leftover.total_leftover_sqm > 0) {
+                            return (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex items-center justify-between cursor-help">
+                                      <span className="text-xs text-muted-foreground">Leftover:</span>
+                                      <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-100">
+                                        {leftover.total_leftover_sqm.toFixed(2)} sqm
+                                      </Badge>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{leftover.piece_count} leftover piece(s) available from previous projects</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     </CardContent>
                   </Card>
@@ -337,9 +365,34 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
                             {formatPrice(item.price_per_meter || item.selling_price || 0)}/m
                           </td>
                           <td className="px-4 py-3">
-                            <Badge variant={item.quantity && item.quantity > 0 ? "default" : "secondary"}>
-                              {item.quantity || 0}m
-                            </Badge>
+                            <div className="flex flex-col gap-1">
+                              <Badge variant={item.quantity && item.quantity > 0 ? "default" : "secondary"}>
+                                {item.quantity || 0}m
+                              </Badge>
+                              {(() => {
+                                const leftover = leftovers.find(l => l.fabric_id === item.id);
+                                if (leftover && leftover.total_leftover_sqm > 0) {
+                                  return (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Badge 
+                                            variant="outline" 
+                                            className="bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-100 cursor-help"
+                                          >
+                                            +{leftover.total_leftover_sqm.toFixed(2)} sqm
+                                          </Badge>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>{leftover.piece_count} leftover piece(s) from previous projects</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  );
+                                }
+                                return null;
+                              })()}
+                            </div>
                           </td>
                           <td className="px-4 py-3">
                             {item.tags && item.tags.length > 0 ? (
