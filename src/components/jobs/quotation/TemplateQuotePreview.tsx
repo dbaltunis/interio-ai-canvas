@@ -91,7 +91,7 @@ export const TemplateQuotePreview = ({
             <LivePreview 
               blocks={selectedTemplate.blocks} 
               projectData={projectData}
-              isEditable={false}
+              isEditable={true}
             />
           </div>
         </div>
@@ -114,7 +114,7 @@ export const TemplateQuotePreview = ({
           <LivePreview 
             blocks={selectedTemplate.blocks} 
             projectData={projectData}
-            isEditable={false}
+            isEditable={true}
           />
         </div>
       </div>
