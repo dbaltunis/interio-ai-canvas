@@ -563,11 +563,16 @@ export const AdaptiveFabricPricingDisplay = ({
               const isBySqm = pricingMethod === 'per_sqm' || template?.pricing_type === 'per_sqm';
               const isByMetre = pricingMethod === 'per_metre' || !pricingMethod;
               
+              // ✅ Detect horizontal/railroaded fabric early for use throughout
+              const isHorizontal = fabricCalculation.fabricRotated === true || 
+                                  fabricCalculation.fabricOrientation === 'horizontal';
+              
               console.log('💰 AdaptiveFabricPricingDisplay - Pricing method:', {
                 selectedPricingMethodId: measurements.selected_pricing_method,
                 selectedPricingMethod: selectedPricingMethod?.name,
                 pricingType: pricingMethod,
-                templateDefault: template?.makeup_pricing_method || template?.pricing_method
+                templateDefault: template?.makeup_pricing_method || template?.pricing_method,
+                isHorizontal
               });
               
               // Calculate appropriate quantity based on method
@@ -652,9 +657,6 @@ export const AdaptiveFabricPricingDisplay = ({
                 // For vertical, show total length needed
                 pricePerUnit = fabricCalculation.pricePerMeter || selectedFabricItem?.selling_price || 0;
                 
-                const isHorizontal = fabricCalculation.fabricRotated === true || 
-                                    fabricCalculation.fabricOrientation === 'horizontal';
-                
                 if (isHorizontal) {
                   // Horizontal/Railroaded: Calculate required WIDTH to order
                   const railWidthCm = fabricCalculation.railWidth || 0;
@@ -662,6 +664,8 @@ export const AdaptiveFabricPricingDisplay = ({
                   const sideHemsCm = fabricCalculation.totalSideHems || 0;
                   const returnsCm = fabricCalculation.returns || 0;
                   const wastePercent = fabricCalculation.wastePercent || 0;
+                  const fabricWidthCm = selectedFabricItem?.fabric_width || 137;
+                  const horizontalPiecesNeeded = fabricCalculation.horizontalPiecesNeeded || 1;
                   
                   // Required width = (rail width × fullness) + side hems + returns
                   const requiredWidthCm = (railWidthCm * fullness) + sideHemsCm + returnsCm;
@@ -669,9 +673,13 @@ export const AdaptiveFabricPricingDisplay = ({
                   const requiredWidthWithWasteCm = requiredWidthCm * (1 + wastePercent / 100);
                   const requiredWidthM = requiredWidthWithWasteCm / 100;
                   
-                  quantity = requiredWidthM;
+                  // ✅ CRITICAL FIX: Multiply by horizontal pieces needed
+                  // Each horizontal piece requires the full width length
+                  const totalLinearMetersToOrder = requiredWidthM * horizontalPiecesNeeded;
+                  
+                  quantity = totalLinearMetersToOrder;
                   totalCost = quantity * pricePerUnit;
-                  unitLabel = 'Linear Meters Required (Width)';
+                  unitLabel = 'Linear Meters to Order';
                   unitSuffix = 'm';
                   
                   const breakdown = [
@@ -679,10 +687,15 @@ export const AdaptiveFabricPricingDisplay = ({
                   ];
                   if (sideHemsCm > 0) breakdown.push(`+ ${sideHemsCm.toFixed(0)}cm side hems`);
                   if (returnsCm > 0) breakdown.push(`+ ${returnsCm.toFixed(0)}cm returns`);
-                  if (wastePercent > 0) breakdown.push(`+ ${wastePercent}% waste`);
-                  breakdown.push(`= ${requiredWidthWithWasteCm.toFixed(0)}cm (${quantity.toFixed(2)}m)`);
+                  breakdown.push(`= ${requiredWidthCm.toFixed(0)}cm (${requiredWidthM.toFixed(2)}m)`);
                   
-                  calculationText = `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
+                  if (horizontalPiecesNeeded > 1) {
+                    breakdown.push(`× ${horizontalPiecesNeeded} pieces = ${totalLinearMetersToOrder.toFixed(2)}m total`);
+                  }
+                  
+                  calculationText = horizontalPiecesNeeded > 1 
+                    ? `${requiredWidthM.toFixed(2)}m × ${horizontalPiecesNeeded} pieces = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`
+                    : `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
                   calculationBreakdown = breakdown.join(' ');
                 } else {
                   // Vertical/Standard: Show ORDERED fabric (full widths)
@@ -748,23 +761,42 @@ export const AdaptiveFabricPricingDisplay = ({
                     </span>
                   </div>
                   
-                  {/* Show leftover information when multiple horizontal pieces are needed */}
-                  {fabricCalculation.horizontalPiecesNeeded > 1 && fabricCalculation.leftoverFromLastPiece > 0 && (
-                    <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md p-3 mt-2 space-y-2">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-amber-900 dark:text-amber-100 font-semibold">📦 Extra Fabric Purchased</span>
-                        <span className="font-medium text-amber-900 dark:text-amber-100">{formatMeasurement(fabricCalculation.leftoverFromLastPiece)}</span>
-                      </div>
-                      <div className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
-                        <p className="mb-1.5">
-                          <strong>Why?</strong> The curtain height ({formatMeasurement(fabricCalculation.totalDrop || 0)}) requires {formatMeasurement((selectedFabricItem?.fabric_width || 137) * fabricCalculation.horizontalPiecesNeeded)} of fabric ({formatMeasurement(selectedFabricItem?.fabric_width || 137)} × {fabricCalculation.horizontalPiecesNeeded} pieces).
-                        </p>
-                        <p className="text-green-700 dark:text-green-300 font-medium">
-                          ✓ Charged once • Will be saved to fabric pool for reuse in other treatments
-                        </p>
-                      </div>
-                    </div>
-                  )}
+                  {/* Show leftover information for horizontal/railroaded fabric */}
+                  {isHorizontal && fabricCalculation.horizontalPiecesNeeded && (() => {
+                    const fabricWidthCm = selectedFabricItem?.fabric_width || 137;
+                    const totalDropCm = fabricCalculation.totalDrop || 0;
+                    const piecesNeeded = fabricCalculation.horizontalPiecesNeeded;
+                    const requiredWidthM = parseFloat(calculationText.split('×')[0]) / piecesNeeded || 0;
+                    
+                    // Calculate leftover
+                    const totalFabricOrderedHeightCm = fabricWidthCm * piecesNeeded;
+                    const leftoverHeightCm = totalFabricOrderedHeightCm - totalDropCm;
+                    const leftoverSqm = (requiredWidthM * 100 * leftoverHeightCm) / 10000;
+                    
+                    if (piecesNeeded > 1 || leftoverHeightCm > 10) {
+                      return (
+                        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md p-3 mt-2 space-y-2">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-amber-900 dark:text-amber-100 font-semibold">📦 Leftover Fabric</span>
+                            <span className="font-medium text-amber-900 dark:text-amber-100">
+                              {leftoverSqm.toFixed(2)} sqm ({formatMeasurement(leftoverHeightCm)} height × {requiredWidthM.toFixed(2)}m)
+                            </span>
+                          </div>
+                          <div className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
+                            <p className="mb-1.5">
+                              <strong>Why?</strong> Railroaded fabric comes {formatMeasurement(fabricWidthCm)} wide. 
+                              {piecesNeeded > 1 && ` Your curtain needs ${formatMeasurement(totalDropCm)} height, requiring ${piecesNeeded} horizontal pieces.`}
+                              {` You order ${(requiredWidthM * piecesNeeded).toFixed(2)}m of fabric (${requiredWidthM.toFixed(2)}m × ${piecesNeeded} pieces), creating ${formatMeasurement(leftoverHeightCm)} of unused width.`}
+                            </p>
+                            <p className="text-green-700 dark:text-green-300 font-medium">
+                              ✓ This leftover will be saved to fabric pool for reuse in other treatments
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                   
                   {/* Show remnant information if multiple widths */}
                   {fabricCalculation.widthsRequired > 1 && fabricCalculation.remnantMeters > 0 && (
