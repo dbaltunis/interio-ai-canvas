@@ -1052,7 +1052,11 @@ export const DynamicWindowWorksheet = forwardRef<{
               unit: units.length,
               surface_id: surfaceId,
               surface_name: surfaceData?.name,
-              curtain_type: selectedTemplate?.curtain_type || (treatmentCategory === 'wallpaper' ? 'wallpaper' : 'single'),
+              // FIX: Use user's selections from measurements instead of template defaults
+              curtain_type: measurements.curtain_type || selectedTemplate?.curtain_type || (treatmentCategory === 'wallpaper' ? 'wallpaper' : 'single'),
+              curtain_side: measurements.curtain_side || 'left',
+              pooling_option: measurements.pooling_option || 'above_floor',
+              pooling_amount: measurements.pooling_amount || '',
               fullness_ratio: selectedTemplate?.fullness_ratio || (treatmentCategory === 'wallpaper' ? 1 : 2),
               fabric_width_cm: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140,
               window_type: selectedWindowType?.name || 'Room Wall',
