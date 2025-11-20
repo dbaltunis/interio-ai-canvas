@@ -1248,6 +1248,8 @@ const LivePreviewBlock = ({
       );
 
     case 'editable-text-field':
+      const [fieldValue, setFieldValue] = React.useState(content.value || '');
+      
       return (
         <div className="mb-6" style={{ 
           padding: style.padding || '16px',
@@ -1265,13 +1267,27 @@ const LivePreviewBlock = ({
               {content.label}
             </div>
           )}
-          <div style={{ 
-            fontSize: '16px',
-            fontWeight: content.isBold ? '700' : '400',
-            color: content.value ? '#000' : '#9ca3af'
-          }}>
-            {content.value || 'No text entered yet'}
-          </div>
+          {isEditable || !isPrintMode ? (
+            <Textarea
+              value={fieldValue}
+              onChange={(e) => setFieldValue(e.target.value)}
+              placeholder="Enter text here..."
+              className="w-full"
+              style={{ 
+                fontSize: '16px',
+                fontWeight: content.isBold ? '700' : '400',
+                minHeight: '100px'
+              }}
+            />
+          ) : (
+            <div style={{ 
+              fontSize: '16px',
+              fontWeight: content.isBold ? '700' : '400',
+              color: fieldValue ? '#000' : '#9ca3af'
+            }}>
+              {fieldValue || 'No text entered yet'}
+            </div>
+          )}
         </div>
       );
 
@@ -1295,6 +1311,50 @@ const LivePreviewBlock = ({
       );
 
     case 'image-uploader':
+      const [galleryImages, setGalleryImages] = React.useState(content.images || []);
+      const [uploading, setUploading] = React.useState(false);
+      const fileInputRef = React.useRef<HTMLInputElement>(null);
+      
+      const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        const maxImages = content.maxImages || 5;
+        if (galleryImages.length >= maxImages) {
+          alert(`Maximum ${maxImages} images allowed`);
+          return;
+        }
+
+        setUploading(true);
+        try {
+          // Convert files to base64 data URLs for preview
+          const newImages = await Promise.all(
+            Array.from(files).slice(0, maxImages - galleryImages.length).map(async (file) => {
+              return new Promise<{url: string; caption: string}>((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  resolve({
+                    url: reader.result as string,
+                    caption: file.name
+                  });
+                };
+                reader.readAsDataURL(file);
+              });
+            })
+          );
+          
+          setGalleryImages([...galleryImages, ...newImages]);
+        } catch (error) {
+          console.error('Error uploading images:', error);
+        } finally {
+          setUploading(false);
+        }
+      };
+
+      const removeImage = (indexToRemove: number) => {
+        setGalleryImages(galleryImages.filter((_: any, i: number) => i !== indexToRemove));
+      };
+      
       return (
         <div style={{ marginTop: '24px', marginBottom: '24px', backgroundColor: '#ffffff !important', padding: '16px' }}>
           {content.title && (
@@ -1307,7 +1367,32 @@ const LivePreviewBlock = ({
               {content.caption}
             </p>
           )}
-          {(!content.images || content.images.length === 0) ? (
+          
+          {(isEditable || !isPrintMode) && (
+            <div style={{ marginBottom: '16px' }}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+                style={{ display: 'none' }}
+              />
+              <Button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading || galleryImages.length >= (content.maxImages || 5)}
+                style={{ marginBottom: '8px' }}
+              >
+                {uploading ? 'Uploading...' : 'Upload Images'}
+              </Button>
+              <p style={{ fontSize: '12px', color: '#9ca3af' }}>
+                {galleryImages.length}/{content.maxImages || 5} images
+              </p>
+            </div>
+          )}
+          
+          {galleryImages.length === 0 ? (
             <div style={{ 
               border: '2px dashed #d1d5db', 
               borderRadius: '8px', 
@@ -1315,6 +1400,7 @@ const LivePreviewBlock = ({
               backgroundColor: '#f9fafb',
               textAlign: 'center'
             }}>
+              <ImageIcon className="h-12 w-12 mx-auto mb-2" style={{ color: '#9ca3af' }} />
               <p style={{ color: '#9ca3af', fontSize: '14px' }}>No images uploaded yet</p>
             </div>
           ) : (
@@ -1323,8 +1409,28 @@ const LivePreviewBlock = ({
               gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
               gap: '16px'
             }}>
-              {content.images.map((image: any, index: number) => (
-                <div key={index} style={{ backgroundColor: '#f9fafb', borderRadius: '8px', overflow: 'hidden' }}>
+              {galleryImages.map((image: any, index: number) => (
+                <div key={index} style={{ backgroundColor: '#f9fafb', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
+                  {(isEditable || !isPrintMode) && (
+                    <button
+                      onClick={() => removeImage(index)}
+                      style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '4px 8px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        zIndex: 10
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
                   <img
                     src={image.url}
                     alt={image.caption || `Image ${index + 1}`}
