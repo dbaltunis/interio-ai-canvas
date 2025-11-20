@@ -411,7 +411,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
           }}
           className="mb-8"
         >
-          {/* Layout Selector */}
           <div className="absolute top-2 right-2 z-10">
             <Select value={headerLayout} onValueChange={(value) => updateBlockContent({ layout: value })}>
               <SelectTrigger className="w-40 text-xs">
@@ -427,7 +426,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
 
           {headerLayout === 'centered' && (
             <div className="text-center space-y-4">
-              {/* Logo */}
               {content.showLogo !== false && (
                 <div className="flex justify-center mb-4">
                   {projectData?.businessSettings?.company_logo_url ? (
@@ -454,7 +452,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                 </div>
               )}
               
-              {/* Logo Size Control */}
               <div className="flex items-center gap-2 justify-center text-xs text-muted-foreground">
                 <span>Logo size:</span>
                 <input
@@ -468,7 +465,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                 <span>{parseInt(content.logoSize) || 80}px</span>
               </div>
 
-              {/* Document Title */}
               <EditableText
                 value={content.documentTitle || "Your Quote"}
                 onChange={(value) => updateBlockContent({ documentTitle: value })}
@@ -476,7 +472,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                 placeholder="Document Title (e.g., Your Quote)"
               />
 
-              {/* Tagline/Positioning Statement */}
               <EditableText
                 value={content.tagline || ""}
                 onChange={(value) => updateBlockContent({ tagline: value })}
@@ -485,9 +480,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                 multiline
               />
 
-              {/* Metadata Row */}
               <div className="flex items-center justify-between pt-6 mt-6 border-t">
-                {/* Client Info - Left */}
                 <div className="text-left space-y-2">
                   <EditableText
                     value={content.clientLabel || "Sold to"}
@@ -496,14 +489,11 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                     placeholder="Client Label"
                   />
                   
-                  {/* Client Fields with Toggle */}
                   <div className="text-sm space-y-1">
-                    {/* Name - Always visible */}
                     <div className="font-medium group relative pr-6">
                       {renderTokenValue('client_name') || 'Client Name'}
                     </div>
                     
-                    {/* Company */}
                     {content.showClientCompany !== false && renderTokenValue('client_company') && (
                       <div className="text-muted-foreground group relative pr-6 hover:bg-red-50">
                         {renderTokenValue('client_company')}
@@ -522,7 +512,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                       </div>
                     )}
                     
-                    {/* ABN */}
                     {content.showClientABN !== false && renderTokenValue('client_abn') && (
                       <div className="text-muted-foreground group relative pr-6 hover:bg-red-50">
                         ABN: {renderTokenValue('client_abn')}
@@ -541,7 +530,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                       </div>
                     )}
                     
-                    {/* Business Email */}
                     {content.showClientBusinessEmail !== false && renderTokenValue('client_business_email') && (
                       <div className="text-muted-foreground group relative pr-6 hover:bg-red-50">
                         Business: {renderTokenValue('client_business_email')}
@@ -560,7 +548,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                       </div>
                     )}
                     
-                    {/* Business Phone */}
                     {content.showClientBusinessPhone !== false && renderTokenValue('client_business_phone') && (
                       <div className="text-muted-foreground group relative pr-6 hover:bg-red-50">
                         Business Phone: {renderTokenValue('client_business_phone')}
@@ -579,7 +566,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                       </div>
                     )}
                     
-                    {/* Contact Email */}
                     {content.showClientEmail !== false && renderTokenValue('client_email') && (
                       <div className="text-muted-foreground group relative pr-6 hover:bg-red-50">
                         Contact: {renderTokenValue('client_email')}
@@ -598,7 +584,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                       </div>
                     )}
                     
-                    {/* Contact Phone */}
                     {content.showClientPhone !== false && renderTokenValue('client_phone') && (
                       <div className="text-muted-foreground group relative pr-6 hover:bg-red-50">
                         Contact Phone: {renderTokenValue('client_phone')}
@@ -617,7 +602,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                       </div>
                     )}
                     
-                    {/* Address */}
                     {content.showClientAddress !== false && renderTokenValue('client_address') && (
                       <div className="text-muted-foreground group relative pr-6 hover:bg-red-50">
                         {renderTokenValue('client_address')}
@@ -638,7 +622,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                   </div>
                 </div>
 
-                {/* Quote Details - Right */}
                 <div className="text-right">
                   <div className="text-sm space-y-1">
                     <div>
@@ -658,6 +641,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                       <span className="text-muted-foreground">Valid Until: </span>
                       <span>{content.customValidUntil ? format(new Date(content.customValidUntil), 'M/d/yyyy') : renderTokenValue('valid_until')}</span>
                     </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -665,7 +649,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
 
           {headerLayout === 'left-right' && (
             <div className="flex items-start justify-between">
-              {/* Left: Logo & Company */}
               <div className="flex-1">
                 {content.showLogo !== false && (
                   <div className="mb-4">
@@ -705,7 +688,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                 </div>
               </div>
 
-              {/* Right: Document Info */}
               <div className="text-right">
                 <EditableText
                   value={content.documentTitle || "Quote"}
@@ -725,7 +707,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                     <span>: {renderTokenValue('quote_number')}</span>
                   </div>
                   <div className="flex items-center gap-2 justify-end">
-                    <Calendar className="h-3 w-3" />
+                    <CalendarIcon className="h-3 w-3" />
                     <EditableText
                       value={content.dateLabel || "Date"}
                       onChange={(value) => updateBlockContent({ dateLabel: value })}
@@ -776,7 +758,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
               </div>
               
               <div className="grid grid-cols-2 gap-8 pt-4 border-t">
-                {/* Company Info */}
                 <div>
                   <h4 className="font-semibold mb-2">From:</h4>
                   <div className="text-sm space-y-1 text-muted-foreground">
@@ -786,7 +767,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                   </div>
                 </div>
                 
-                {/* Client & Quote Info */}
                 <div>
                   <EditableText
                     value={content.clientLabel || "To:"}
@@ -892,7 +872,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                   <span>: {renderTokenValue('quote_number')}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-3 w-3" />
+                  <CalendarIcon className="h-3 w-3" />
                   <EditableText
                     value={content.dateLabel || "Date"}
                     onChange={(value) => updateBlockContent({ dateLabel: value })}
@@ -902,7 +882,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                   <span>: {renderTokenValue('date')}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-3 w-3" />
+                  <CalendarIcon className="h-3 w-3" />
                   <EditableText
                     value={content.validUntilLabel || "Valid Until"}
                     onChange={(value) => updateBlockContent({ validUntilLabel: value })}
