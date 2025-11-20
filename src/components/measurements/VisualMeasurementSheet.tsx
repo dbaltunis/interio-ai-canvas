@@ -359,16 +359,21 @@ export const VisualMeasurementSheet = ({
         fabricOrientation: result.fabricOrientation,
         fullResultObject: result
       });
-      // Calculate ordered meters and remnant
-      const dropPerWidthMeters = ((totalDrop / 100) * (1 + (selectedTemplate.waste_percent || 0) / 100));
-      const orderedLinearMeters = dropPerWidthMeters * (result.widthsRequired || 1);
-      const remnantMeters = orderedLinearMeters - result.meters;
+      
+      // ✅ CRITICAL FIX: Use actual calculated meters from orientationCalculator
+      // The orientation calculator already accounts for:
+      // - Vertical: widthsRequired × dropPerWidth  
+      // - Horizontal: widthsRequired × requiredWidth (curtain width, NOT drop)
+      // - Multiple horizontal pieces when drop > fabric width
+      // DO NOT recalculate - trust the calculator!
+      const orderedLinearMeters = result.meters; // Already includes waste
+      const remnantMeters = 0; // Remnant tracking should be done at fabric pool level, not here
       
       const fabricCalcResult = {
-        linearMeters: result.meters,
-        orderedLinearMeters: orderedLinearMeters, // Total meters to order (full widths)
-        remnantMeters: remnantMeters > 0 ? remnantMeters : 0, // Leftover fabric
-        dropPerWidthMeters: dropPerWidthMeters, // Meters per width
+        linearMeters: result.meters, // Actual fabric used in calculation
+        orderedLinearMeters: orderedLinearMeters, // = result.meters (trust the calculator)
+        remnantMeters: 0, // Remnant calculation belongs in fabric pool tracking
+        dropPerWidthMeters: result.meters / (result.widthsRequired || 1), // Meters per width
         totalCost: calculatedTotalCost,
         pricePerMeter: pricePerMeter,
         widthsRequired: result.widthsRequired || 1,

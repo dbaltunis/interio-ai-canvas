@@ -436,26 +436,93 @@ export const CostCalculationSummary = ({
         <h3 className="text-base font-semibold text-card-foreground">Cost Summary</h3>
       </div>
 
+      {/* Fabric calculation explanation */}
+      {fabricCalculation && fabricCalculation.fabricOrientation && (
+        <Alert className="py-2 px-3">
+          <Info className="h-4 w-4" />
+          <AlertDescription className="text-xs leading-relaxed">
+            {(() => {
+              const orientation = fabricCalculation.fabricOrientation;
+              const widthsReq = fabricCalculation.widthsRequired || 1;
+              const horizontalPieces = fabricCalculation.horizontalPiecesNeeded;
+              const meters = fabricCalculation.linearMeters || 0;
+              const pricePerM = fabricCalculation.pricePerMeter || 0;
+              
+              if (orientation === 'horizontal') {
+                if (horizontalPieces && horizontalPieces > 1) {
+                  return (
+                    <>
+                      <strong className="text-amber-600">Railroaded with Horizontal Seaming:</strong>
+                      <br />
+                      Curtain height exceeds fabric width, requiring {horizontalPieces} horizontal pieces per panel with {horizontalPieces - 1} seam(s).
+                      Total: {widthsReq} piece(s) × {meters.toFixed(2)}m = {formatPrice(meters * pricePerM)}
+                      {fabricCalculation.leftoverFromLastPiece && fabricCalculation.leftoverFromLastPiece > 0 && (
+                        <><br />Leftover: {fabricCalculation.leftoverFromLastPiece.toFixed(1)}cm tracked for future use</>
+                      )}
+                    </>
+                  );
+                }
+                return (
+                  <>
+                    <strong className="text-primary">Railroaded Fabric:</strong> Fabric rotated 90°. Using {widthsReq} piece(s) × {(meters/widthsReq).toFixed(2)}m each = {meters.toFixed(2)}m total
+                  </>
+                );
+              } else {
+                return (
+                  <>
+                    <strong className="text-primary">Standard Vertical:</strong> Using {widthsReq} fabric width(s) × {(meters/widthsReq).toFixed(2)}m per width = {meters.toFixed(2)}m total
+                  </>
+                );
+              }
+            })()}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="grid gap-2 text-sm">
         {fabricCost > 0 && (
-          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
-              <div className="flex flex-col min-w-0">
-                <span className="text-card-foreground font-medium">Fabric Material</span>
-                {fabricCalculation && (
-                  <span className="text-xs text-muted-foreground truncate">
-                    {/* Show what's actually being ordered, not just linearMeters */}
-                    {(() => {
-                      const metersToOrder = fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters || 0;
-                      const pricePerM = fabricCalculation.pricePerMeter || 0;
-                      return `${metersToOrder.toFixed(2)}m × ${formatPrice(pricePerM)}/m`;
-                    })()}
-                  </span>
-                )}
+          <div className="flex flex-col py-1.5 border-b border-border/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-card-foreground font-medium">Fabric Material</span>
+                  {fabricCalculation && (
+                    <>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {/* Show what's actually being ordered, not just linearMeters */}
+                        {(() => {
+                          const metersToOrder = fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters || 0;
+                          const pricePerM = fabricCalculation.pricePerMeter || 0;
+                          const widthsReq = fabricCalculation.widthsRequired || 1;
+                          const orientation = fabricCalculation.fabricOrientation || 'vertical';
+                          
+                          return `${metersToOrder.toFixed(2)}m × ${formatPrice(pricePerM)}/m`;
+                        })()}
+                      </span>
+                      {/* Add clear explanation */}
+                      <span className="text-xs text-muted-foreground/80 mt-0.5">
+                        {(() => {
+                          const orientation = fabricCalculation.fabricOrientation || 'vertical';
+                          const widthsReq = fabricCalculation.widthsRequired || 1;
+                          const horizontalPieces = fabricCalculation.horizontalPiecesNeeded;
+                          
+                          if (orientation === 'horizontal') {
+                            if (horizontalPieces && horizontalPieces > 1) {
+                              return `⚡ Railroaded: ${widthsReq} piece(s) × ${horizontalPieces} horizontal sections = ${widthsReq} total pieces`;
+                            }
+                            return `⚡ Railroaded orientation: ${widthsReq} piece(s) needed`;
+                          } else {
+                            return `📐 Standard vertical: ${widthsReq} width(s) needed`;
+                          }
+                        })()}
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
+              <span className="font-semibold text-card-foreground ml-2">{formatPrice(fabricCost)}</span>
             </div>
-            <span className="font-semibold text-card-foreground ml-2">{formatPrice(fabricCost)}</span>
           </div>
         )}
 
