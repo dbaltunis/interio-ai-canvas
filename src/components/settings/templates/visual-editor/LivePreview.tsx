@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useState, useRef } from 'react';
 import { format } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { formatCurrency } from "@/utils/formatCurrency";
@@ -40,6 +40,201 @@ import { formatJobNumber } from "@/lib/format-job-number";
 
 // Lazy load the editable version to avoid circular dependencies and reduce bundle size
 const EditableLivePreview = React.lazy(() => import('./EditableLivePreview'));
+
+// Interactive Image Gallery Component
+const ImageGalleryBlock = ({ content, style, isEditable, isPrintMode }: any) => {
+  const [galleryImages, setGalleryImages] = useState(content.images || []);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const maxImages = content.maxImages || 5;
+    if (galleryImages.length >= maxImages) {
+      alert(`Maximum ${maxImages} images allowed`);
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const newImages = await Promise.all(
+        Array.from(files).slice(0, maxImages - galleryImages.length).map(async (file) => {
+          return new Promise<{url: string; caption: string}>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              resolve({
+                url: reader.result as string,
+                caption: file.name
+              });
+            };
+            reader.readAsDataURL(file);
+          });
+        })
+      );
+      
+      setGalleryImages([...galleryImages, ...newImages]);
+    } catch (error) {
+      console.error('Error uploading images:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = (indexToRemove: number) => {
+    setGalleryImages(galleryImages.filter((_: any, i: number) => i !== indexToRemove));
+  };
+  
+  return (
+    <div style={{ marginTop: '24px', marginBottom: '24px', backgroundColor: '#ffffff !important', padding: '16px' }}>
+      {content.title && (
+        <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#000 !important' }}>
+          {content.title}
+        </h3>
+      )}
+      {content.caption && (
+        <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
+          {content.caption}
+        </p>
+      )}
+      
+      {(isEditable || !isPrintMode) && (
+        <div style={{ marginBottom: '16px' }}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleImageUpload}
+            style={{ display: 'none' }}
+          />
+          <Button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading || galleryImages.length >= (content.maxImages || 5)}
+            style={{ marginBottom: '8px' }}
+          >
+            {uploading ? 'Uploading...' : 'Upload Images'}
+          </Button>
+          <p style={{ fontSize: '12px', color: '#9ca3af' }}>
+            {galleryImages.length}/{content.maxImages || 5} images
+          </p>
+        </div>
+      )}
+      
+      {galleryImages.length === 0 ? (
+        <div style={{ 
+          border: '2px dashed #d1d5db', 
+          borderRadius: '8px', 
+          padding: '32px', 
+          backgroundColor: '#f9fafb',
+          textAlign: 'center'
+        }}>
+          <ImageIcon className="h-12 w-12 mx-auto mb-2" style={{ color: '#9ca3af' }} />
+          <p style={{ color: '#9ca3af', fontSize: '14px' }}>No images uploaded yet</p>
+        </div>
+      ) : (
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
+          gap: '16px'
+        }}>
+          {galleryImages.map((image: any, index: number) => (
+            <div key={index} style={{ backgroundColor: '#f9fafb', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
+              {(isEditable || !isPrintMode) && (
+                <button
+                  onClick={() => removeImage(index)}
+                  style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    padding: '4px 8px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    zIndex: 10
+                  }}
+                >
+                  ×
+                </button>
+              )}
+              <img
+                src={image.url}
+                alt={image.caption || `Image ${index + 1}`}
+                style={{ 
+                  width: '100%', 
+                  height: '200px', 
+                  objectFit: 'cover',
+                  display: 'block'
+                }}
+              />
+              {image.caption && (
+                <p style={{ 
+                  padding: '8px', 
+                  fontSize: '12px', 
+                  color: '#6b7280',
+                  textAlign: 'center'
+                }}>
+                  {image.caption}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Interactive Editable Text Field Component
+const EditableTextField = ({ content, style, isEditable, isPrintMode }: any) => {
+  const [fieldValue, setFieldValue] = useState(content.value || '');
+  
+  return (
+    <div className="mb-6" style={{ 
+      padding: style.padding || '16px',
+      margin: style.margin || '0 0 24px 0',
+      backgroundColor: style.backgroundColor || '#f8fafc',
+      borderRadius: style.borderRadius || '8px'
+    }}>
+      {content.label && (
+        <div style={{ 
+          fontSize: '14px', 
+          fontWeight: '500', 
+          color: '#6b7280',
+          marginBottom: '8px'
+        }}>
+          {content.label}
+        </div>
+      )}
+      {isEditable || !isPrintMode ? (
+        <Textarea
+          value={fieldValue}
+          onChange={(e) => setFieldValue(e.target.value)}
+          placeholder="Enter text here..."
+          className="w-full"
+          style={{ 
+            fontSize: '16px',
+            fontWeight: content.isBold ? '700' : '400',
+            minHeight: '100px'
+          }}
+        />
+      ) : (
+        <div style={{ 
+          fontSize: '16px',
+          fontWeight: content.isBold ? '700' : '400',
+          color: fieldValue ? '#000' : '#9ca3af'
+        }}>
+          {fieldValue || 'No text entered yet'}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface LivePreviewBlockProps {
   block: any;
@@ -1248,48 +1443,7 @@ const LivePreviewBlock = ({
       );
 
     case 'editable-text-field':
-      const [fieldValue, setFieldValue] = React.useState(content.value || '');
-      
-      return (
-        <div className="mb-6" style={{ 
-          padding: style.padding || '16px',
-          margin: style.margin || '0 0 24px 0',
-          backgroundColor: style.backgroundColor || '#f8fafc',
-          borderRadius: style.borderRadius || '8px'
-        }}>
-          {content.label && (
-            <div style={{ 
-              fontSize: '14px', 
-              fontWeight: '500', 
-              color: '#6b7280',
-              marginBottom: '8px'
-            }}>
-              {content.label}
-            </div>
-          )}
-          {isEditable || !isPrintMode ? (
-            <Textarea
-              value={fieldValue}
-              onChange={(e) => setFieldValue(e.target.value)}
-              placeholder="Enter text here..."
-              className="w-full"
-              style={{ 
-                fontSize: '16px',
-                fontWeight: content.isBold ? '700' : '400',
-                minHeight: '100px'
-              }}
-            />
-          ) : (
-            <div style={{ 
-              fontSize: '16px',
-              fontWeight: content.isBold ? '700' : '400',
-              color: fieldValue ? '#000' : '#9ca3af'
-            }}>
-              {fieldValue || 'No text entered yet'}
-            </div>
-          )}
-        </div>
-      );
+      return <EditableTextField content={content} style={style} isEditable={isEditable} isPrintMode={isPrintMode} />;
 
     case 'image':
       return (
@@ -1311,152 +1465,7 @@ const LivePreviewBlock = ({
       );
 
     case 'image-uploader':
-      const [galleryImages, setGalleryImages] = React.useState(content.images || []);
-      const [uploading, setUploading] = React.useState(false);
-      const fileInputRef = React.useRef<HTMLInputElement>(null);
-      
-      const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
-        if (!files || files.length === 0) return;
-
-        const maxImages = content.maxImages || 5;
-        if (galleryImages.length >= maxImages) {
-          alert(`Maximum ${maxImages} images allowed`);
-          return;
-        }
-
-        setUploading(true);
-        try {
-          // Convert files to base64 data URLs for preview
-          const newImages = await Promise.all(
-            Array.from(files).slice(0, maxImages - galleryImages.length).map(async (file) => {
-              return new Promise<{url: string; caption: string}>((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                  resolve({
-                    url: reader.result as string,
-                    caption: file.name
-                  });
-                };
-                reader.readAsDataURL(file);
-              });
-            })
-          );
-          
-          setGalleryImages([...galleryImages, ...newImages]);
-        } catch (error) {
-          console.error('Error uploading images:', error);
-        } finally {
-          setUploading(false);
-        }
-      };
-
-      const removeImage = (indexToRemove: number) => {
-        setGalleryImages(galleryImages.filter((_: any, i: number) => i !== indexToRemove));
-      };
-      
-      return (
-        <div style={{ marginTop: '24px', marginBottom: '24px', backgroundColor: '#ffffff !important', padding: '16px' }}>
-          {content.title && (
-            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#000 !important' }}>
-              {content.title}
-            </h3>
-          )}
-          {content.caption && (
-            <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
-              {content.caption}
-            </p>
-          )}
-          
-          {(isEditable || !isPrintMode) && (
-            <div style={{ marginBottom: '16px' }}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-                style={{ display: 'none' }}
-              />
-              <Button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading || galleryImages.length >= (content.maxImages || 5)}
-                style={{ marginBottom: '8px' }}
-              >
-                {uploading ? 'Uploading...' : 'Upload Images'}
-              </Button>
-              <p style={{ fontSize: '12px', color: '#9ca3af' }}>
-                {galleryImages.length}/{content.maxImages || 5} images
-              </p>
-            </div>
-          )}
-          
-          {galleryImages.length === 0 ? (
-            <div style={{ 
-              border: '2px dashed #d1d5db', 
-              borderRadius: '8px', 
-              padding: '32px', 
-              backgroundColor: '#f9fafb',
-              textAlign: 'center'
-            }}>
-              <ImageIcon className="h-12 w-12 mx-auto mb-2" style={{ color: '#9ca3af' }} />
-              <p style={{ color: '#9ca3af', fontSize: '14px' }}>No images uploaded yet</p>
-            </div>
-          ) : (
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
-              gap: '16px'
-            }}>
-              {galleryImages.map((image: any, index: number) => (
-                <div key={index} style={{ backgroundColor: '#f9fafb', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
-                  {(isEditable || !isPrintMode) && (
-                    <button
-                      onClick={() => removeImage(index)}
-                      style={{
-                        position: 'absolute',
-                        top: '8px',
-                        right: '8px',
-                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        padding: '4px 8px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        zIndex: 10
-                      }}
-                    >
-                      ×
-                    </button>
-                  )}
-                  <img
-                    src={image.url}
-                    alt={image.caption || `Image ${index + 1}`}
-                    style={{ 
-                      width: '100%', 
-                      height: '200px', 
-                      objectFit: 'cover',
-                      display: 'block'
-                    }}
-                  />
-                  {image.caption && (
-                    <p style={{ 
-                      padding: '8px', 
-                      fontSize: '12px', 
-                      color: '#6b7280',
-                      textAlign: 'center'
-                    }}>
-                      {image.caption}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
+      return <ImageGalleryBlock content={content} style={style} isEditable={isEditable} isPrintMode={isPrintMode} />;
 
     case 'spacer':
       return (
