@@ -450,15 +450,21 @@ export const useDeleteTreatment = () => {
     },
     onSuccess: () => {
       console.log("Delete treatment success, invalidating queries");
-      // Invalidate all treatment queries to ensure fresh data
+      // Force immediate cache invalidation and refresh
       queryClient.invalidateQueries({ queryKey: ["treatments"] });
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
       queryClient.invalidateQueries({ queryKey: ["quote-items"] });
       queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
       queryClient.invalidateQueries({ queryKey: ["material-queue-v2"] });
       queryClient.invalidateQueries({ queryKey: ["material-queue-stats"] });
+      
+      // Force refetch with updated data
       queryClient.refetchQueries({ queryKey: ["treatments"] });
       queryClient.refetchQueries({ queryKey: ["quotes"] });
+      
+      // Reset query cache to force fresh data
+      queryClient.resetQueries({ queryKey: ["quotes"] });
+      
       toast({
         title: "Success",
         description: "Treatment deleted successfully",
