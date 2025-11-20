@@ -448,9 +448,14 @@ export const CostCalculationSummary = ({
               <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
               <div className="flex flex-col min-w-0">
                 <span className="text-card-foreground font-medium">Fabric Material</span>
-                {fabricCalculation?.linearMeters && (
+                {fabricCalculation && (
                   <span className="text-xs text-muted-foreground truncate">
-                    {fabricCalculation.linearMeters.toFixed(2)}m × {formatPrice(fabricCalculation.pricePerMeter || 0)}/m
+                    {/* Show what's actually being ordered, not just linearMeters */}
+                    {(() => {
+                      const metersToOrder = fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters || 0;
+                      const pricePerM = fabricCalculation.pricePerMeter || 0;
+                      return `${metersToOrder.toFixed(2)}m × ${formatPrice(pricePerM)}/m`;
+                    })()}
                   </span>
                 )}
               </div>

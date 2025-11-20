@@ -51,6 +51,9 @@ export interface OrientationResult {
 export interface FabricUsageResult {
   yards: number;
   meters: number;
+  orderedLinearMeters?: number; // Total meters to order (full widths)
+  remnantMeters?: number; // Leftover fabric
+  dropPerWidthMeters?: number; // Meters per width
   details: any;
   fabricOrientation: string;
   costComparison: any;
