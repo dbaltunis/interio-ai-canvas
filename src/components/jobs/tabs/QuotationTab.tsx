@@ -774,12 +774,13 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
                   key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`}
                   blocks={templateBlocks}
                   projectData={projectData}
-                  isEditable={false}
-                  isPrintMode={true}
+                  isEditable={true}
+                  isPrintMode={false}
                   layout={templateSettings.layout}
                   showDetailedBreakdown={templateSettings.layout === 'detailed'}
                   showImages={templateSettings.showImages}
                   groupByRoom={templateSettings.groupByRoom}
+                  quoteId={quoteId || quoteVersions?.[0]?.id}
                 />
               </div>
             </div>
