@@ -353,6 +353,8 @@ export const calculateFabricUsage = (
     warnings: [...(selectedCalc.warnings || []), ...fabricWarnings],
     seamsRequired: selectedCalc.seamsRequired,
     seamLaborHours: selectedCalc.seamLaborHours,
-    widthsRequired: selectedCalc.widthsRequired
+    widthsRequired: selectedCalc.widthsRequired,
+    horizontalPiecesNeeded: selectedCalc.horizontalPiecesNeeded,
+    leftoverFromLastPiece: selectedCalc.leftoverFromLastPiece
   };
 };
