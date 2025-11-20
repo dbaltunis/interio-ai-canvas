@@ -598,10 +598,9 @@ export const CostCalculationSummary = ({
           </div>
         )}
 
-        {/* Individual Options */}
+        {/* Individual Options - Show ALL options regardless of price */}
         {selectedOptions && selectedOptions.length > 0 && selectedOptions.map((option, idx) => {
           const optionPrice = option.price || 0;
-          if (optionPrice <= 0) return null;
           
           return (
             <div key={idx} className="flex justify-between py-1.5 border-b border-border/50">
@@ -613,7 +612,9 @@ export const CostCalculationSummary = ({
                   </span>
                 )}
               </div>
-              <span className="font-semibold text-card-foreground">{formatPrice(optionPrice)}</span>
+              <span className="font-semibold text-card-foreground">
+                {optionPrice > 0 ? formatPrice(optionPrice) : <span className="text-muted-foreground text-sm">Included</span>}
+              </span>
             </div>
           );
         })}
