@@ -1682,6 +1682,106 @@ export type Database = {
           },
         ]
       }
+      client_fabric_pool: {
+        Row: {
+          client_id: string
+          created_at: string
+          fabric_id: string
+          fabric_width_cm: number
+          id: string
+          is_available: boolean
+          leftover_length_cm: number
+          notes: string | null
+          orientation: string
+          project_id: string | null
+          treatment_name: string | null
+          updated_at: string
+          used_at: string | null
+          used_in_treatment_name: string | null
+          used_in_window_id: string | null
+          window_id: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          fabric_id: string
+          fabric_width_cm: number
+          id?: string
+          is_available?: boolean
+          leftover_length_cm: number
+          notes?: string | null
+          orientation: string
+          project_id?: string | null
+          treatment_name?: string | null
+          updated_at?: string
+          used_at?: string | null
+          used_in_treatment_name?: string | null
+          used_in_window_id?: string | null
+          window_id?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          fabric_id?: string
+          fabric_width_cm?: number
+          id?: string
+          is_available?: boolean
+          leftover_length_cm?: number
+          notes?: string | null
+          orientation?: string
+          project_id?: string | null
+          treatment_name?: string | null
+          updated_at?: string
+          used_at?: string | null
+          used_in_treatment_name?: string | null
+          used_in_window_id?: string | null
+          window_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_fabric_pool_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_fabric_pool_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_fabric_pool_fabric_id_fkey"
+            columns: ["fabric_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_fabric_pool_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_fabric_pool_used_in_window_id_fkey"
+            columns: ["used_in_window_id"]
+            isOneToOne: false
+            referencedRelation: "windows_summary"
+            referencedColumns: ["window_id"]
+          },
+          {
+            foreignKeyName: "client_fabric_pool_window_id_fkey"
+            columns: ["window_id"]
+            isOneToOne: false
+            referencedRelation: "windows_summary"
+            referencedColumns: ["window_id"]
+          },
+        ]
+      }
       client_interactions: {
         Row: {
           client_id: string

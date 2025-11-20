@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import { Ruler, Calculator } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
@@ -15,6 +16,9 @@ interface AdaptiveFabricPricingDisplayProps {
   measurements: Record<string, any>;
   treatmentCategory: string;
   poolUsage?: PoolUsage | null;
+  // Leftover fabric tracking
+  leftoverFabricIds?: string[]; // IDs of leftover pieces being used
+  usedLeftoverCount?: number; // How many widths come from leftover
 }
 
 export const AdaptiveFabricPricingDisplay = ({
@@ -23,7 +27,9 @@ export const AdaptiveFabricPricingDisplay = ({
   template,
   measurements,
   treatmentCategory,
-  poolUsage
+  poolUsage,
+  leftoverFabricIds = [],
+  usedLeftoverCount = 0
 }: AdaptiveFabricPricingDisplayProps) => {
   const { units, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
   
@@ -793,7 +799,38 @@ export const AdaptiveFabricPricingDisplay = ({
                   
                   <div className="text-xs text-muted-foreground mt-1 bg-background/30 p-2 rounded">
                     <div className="font-medium mb-0.5">Formula:</div>
-                    {calculationText}
+                    {/* Detailed width breakdown */}
+                    {fabricCalculation.widthsRequired > 1 ? (
+                      <div className="space-y-1">
+                        {Array.from({ length: fabricCalculation.widthsRequired }).map((_, idx) => {
+                          const isFromLeftover = idx < usedLeftoverCount;
+                          const widthCost = isFromLeftover ? 0 : pricePerUnit;
+                          const widthLabel = `Width ${idx + 1}`;
+                          
+                          return (
+                            <div key={idx} className="flex items-center gap-2 text-xs">
+                              <span className={isFromLeftover ? "text-green-600 dark:text-green-400 font-medium" : ""}>
+                                {widthLabel}: {quantity.toFixed(2)}{unitSuffix}
+                              </span>
+                              {isFromLeftover ? (
+                                <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
+                                  from leftover (£0 fabric)
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground">
+                                  × {formatPrice(pricePerUnit)}/unit = {formatPrice(widthCost)}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                        <div className="pt-1 mt-1 border-t border-border/30 font-medium">
+                          Total: {fabricCalculation.widthsRequired} widths × {(usedLeftoverCount > 0 ? `${fabricCalculation.widthsRequired - usedLeftoverCount} new` : 'all new')} = {formatPrice(totalCost - seamingCost)}
+                        </div>
+                      </div>
+                    ) : (
+                      calculationText
+                    )}
                   </div>
                 </>
               );
