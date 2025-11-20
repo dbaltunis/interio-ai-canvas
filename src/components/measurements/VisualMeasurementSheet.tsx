@@ -1055,9 +1055,18 @@ export const VisualMeasurementSheet = ({
 
               {/* CURTAIN-SPECIFIC FIELDS - Dynamic Options from Template */}
               {treatmentType === 'curtains' && <div className="space-y-3 px-3">
-                  <DynamicCurtainOptions measurements={measurements} onChange={onMeasurementChange} template={selectedTemplate} selectedEyeletRing={measurements.selected_eyelet_ring} onEyeletRingChange={ringId => onMeasurementChange('selected_eyelet_ring', ringId)} onOptionPriceChange={(optionType, price, name) => {
-                console.log(`Option ${optionType} changed: ${name} - ${price}`);
-              }} />
+                  <DynamicCurtainOptions 
+                    measurements={measurements} 
+                    onChange={onMeasurementChange} 
+                    template={selectedTemplate} 
+                    selectedEyeletRing={measurements.selected_eyelet_ring} 
+                    onEyeletRingChange={ringId => onMeasurementChange('selected_eyelet_ring', ringId)} 
+                    onOptionPriceChange={(optionType, price, name) => {
+                      console.log(`Option ${optionType} changed: ${name} - ${price}`);
+                    }}
+                    selectedOptions={selectedOptions}
+                    onSelectedOptionsChange={onSelectedOptionsChange}
+                  />
                 </div>}
 
               {/* BLIND-SPECIFIC FIELDS - Dynamic Options */}

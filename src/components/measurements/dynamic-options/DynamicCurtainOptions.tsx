@@ -22,6 +22,7 @@ interface DynamicCurtainOptionsProps {
   readOnly?: boolean;
   onOptionPriceChange?: (optionKey: string, price: number, label: string) => void;
   selectedOptions?: Array<{ name: string; price: number }>;
+  onSelectedOptionsChange?: (options: Array<{ name: string; price: number }>) => void;
   selectedEyeletRing?: string;
   onEyeletRingChange?: (ringId: string) => void;
   selectedHeading?: string;
@@ -37,6 +38,7 @@ export const DynamicCurtainOptions = ({
   readOnly = false,
   onOptionPriceChange,
   selectedOptions = [],
+  onSelectedOptionsChange,
   selectedEyeletRing,
   onEyeletRingChange,
   onHeadingChange,
@@ -49,15 +51,27 @@ export const DynamicCurtainOptions = ({
   useEffect(() => {
     const initialSelections: Record<string, string> = {};
     Object.keys(measurements).forEach(key => {
+      // Look for both direct keys (e.g., 'hardware') and prefixed keys (e.g., 'treatment_option_hardware')
       if (key.startsWith('treatment_option_')) {
         const optionKey = key.replace('treatment_option_', '');
         initialSelections[optionKey] = measurements[key];
+      } else if (!key.startsWith('selected_') && 
+                 !['rail_width', 'drop', 'header_hem', 'bottom_hem', 'side_hems', 'seam_hems', 
+                   'return_left', 'return_right', 'waste_percent', 'pooling_amount', 
+                   'manufacturing_type', 'heading_fullness', 'curtain_type', 'curtain_side',
+                   'pooling_option', 'fabric_rotated', 'surface_id', 'surface_name', 
+                   'window_type', 'unit', 'fabric_width_cm', 'wall_width_cm', 'wall_height_cm',
+                   'fullness_ratio', 'horizontal_pieces_needed', 'fabric_orientation'].includes(key)) {
+        // This might be a treatment option stored without prefix
+        initialSelections[key] = measurements[key];
       }
     });
+    
     if (Object.keys(initialSelections).length > 0) {
+      console.log('🎨 Restoring treatment option selections:', initialSelections);
       setTreatmentOptionSelections(initialSelections);
     }
-  }, [template?.id]); // Re-initialize when template changes
+  }, [template?.id, measurements]); // Re-initialize when template or measurements change
   
   // Early returns MUST come before hooks to prevent violations
   if (!template) {
@@ -196,9 +210,26 @@ export const DynamicCurtainOptions = ({
     const option = treatmentOptions.find(opt => opt.key === optionKey);
     if (option && option.option_values) {
       const selectedValue = option.option_values.find(val => val.id === valueId);
-      if (selectedValue && onOptionPriceChange) {
+      if (selectedValue) {
         const price = getOptionPrice(selectedValue);
-        onOptionPriceChange(optionKey, price, selectedValue.label);
+        
+        // Update parent's price tracking
+        if (onOptionPriceChange) {
+          onOptionPriceChange(optionKey, price, selectedValue.label);
+        }
+        
+        // CRITICAL: Also update selectedOptions array for cost summary display
+        if (onSelectedOptionsChange) {
+          const updatedOptions = selectedOptions.filter(opt => !opt.name.includes(option.label));
+          if (price > 0) {
+            updatedOptions.push({ 
+              name: `${option.label}: ${selectedValue.label}`, 
+              price 
+            });
+          }
+          onSelectedOptionsChange(updatedOptions);
+          console.log('🎨 Updated selectedOptions for cost summary:', updatedOptions);
+        }
       }
     }
     
