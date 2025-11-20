@@ -1099,6 +1099,56 @@ export const DynamicWindowWorksheet = forwardRef<{
               : null,
             
             total_cost: finalTotalCost,
+            // CRITICAL: Save structured cost_breakdown for accurate room/project totals
+            cost_breakdown: [
+              // Fabric
+              ...(fabricCost > 0 ? [{
+                id: 'fabric',
+                name: 'Fabric Material',
+                total_cost: fabricCost,
+                category: 'fabric',
+                quantity: linearMeters,
+                unit: 'm',
+                unit_price: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0
+              }] : []),
+              // Lining
+              ...(finalLiningCost > 0 ? [{
+                id: 'lining',
+                name: `Lining: ${selectedLining}`,
+                total_cost: finalLiningCost,
+                category: 'lining',
+                quantity: linearMeters,
+                unit: 'm'
+              }] : []),
+              // Heading
+              ...(finalHeadingCost > 0 ? [{
+                id: 'heading',
+                name: 'Heading',
+                total_cost: finalHeadingCost,
+                category: 'heading'
+              }] : []),
+              // Manufacturing
+              ...(manufacturingCost > 0 ? [{
+                id: 'manufacturing',
+                name: 'Manufacturing',
+                total_cost: manufacturingCost,
+                category: 'manufacturing'
+              }] : []),
+              // Hardware
+              ...(hardwareCost > 0 ? [{
+                id: 'hardware',
+                name: 'Hardware',
+                total_cost: hardwareCost,
+                category: 'hardware'
+              }] : []),
+              // All selected options (already includes heading, manufacturing from selected_options)
+              ...selectedOptions.filter(opt => opt.price > 0).map((opt, idx) => ({
+                id: opt.name || `option-${idx}`,
+                name: opt.name || 'Option',
+                total_cost: opt.price || 0,
+                category: 'option'
+              }))
+            ],
             template_id: selectedTemplate?.id,
             pricing_type: selectedTemplate?.pricing_type || 'per_metre',
             waste_percent: selectedTemplate?.waste_percent || 5,
