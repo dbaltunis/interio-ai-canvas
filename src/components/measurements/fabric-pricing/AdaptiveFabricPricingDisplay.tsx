@@ -669,45 +669,26 @@ export const AdaptiveFabricPricingDisplay = ({
                 pricePerUnit = fabricCalculation.pricePerMeter || selectedFabricItem?.selling_price || 0;
                 
                 if (isHorizontal) {
-                  // Horizontal/Railroaded: Calculate required WIDTH to order
-                  const railWidthCm = fabricCalculation.railWidth || 0;
-                  const fullness = fabricCalculation.fullnessRatio || 0;
-                  const sideHemsCm = fabricCalculation.totalSideHems || 0;
-                  const returnsCm = fabricCalculation.returns || 0;
-                  const wastePercent = fabricCalculation.wastePercent || 0;
-                  const fabricWidthCm = selectedFabricItem?.fabric_width || 137;
+                  // ✅ USE fabricCalculation.linearMeters DIRECTLY - SINGLE SOURCE OF TRUTH
+                  // orientationCalculator already includes ALL allowances: side hems, returns, AND seam allowances
+                  const linearMeters = fabricCalculation.linearMeters || 0;
                   const horizontalPiecesNeeded = fabricCalculation.horizontalPiecesNeeded || 1;
                   
-                  // Required width = (rail width × fullness) + side hems + returns
-                  const requiredWidthCm = (railWidthCm * fullness) + sideHemsCm + returnsCm;
-                  // Add waste
-                  const requiredWidthWithWasteCm = requiredWidthCm * (1 + wastePercent / 100);
-                  const requiredWidthM = requiredWidthWithWasteCm / 100;
-                  
-                  // ✅ CRITICAL FIX: Multiply by horizontal pieces needed
-                  // Each horizontal piece requires the full width length
-                  const totalLinearMetersToOrder = requiredWidthM * horizontalPiecesNeeded;
+                  // ✅ CRITICAL: Multiply by horizontal pieces for total meters to order
+                  const totalLinearMetersToOrder = linearMeters * horizontalPiecesNeeded;
                   
                   quantity = totalLinearMetersToOrder;
                   totalCost = quantity * pricePerUnit;
                   unitLabel = 'Linear Meters to Order';
                   unitSuffix = 'm';
                   
-                  const breakdown = [
-                    `${railWidthCm.toFixed(0)}cm × ${fullness} = ${(railWidthCm * fullness).toFixed(0)}cm`
-                  ];
-                  if (sideHemsCm > 0) breakdown.push(`+ ${sideHemsCm.toFixed(0)}cm side hems`);
-                  if (returnsCm > 0) breakdown.push(`+ ${returnsCm.toFixed(0)}cm returns`);
-                  breakdown.push(`= ${requiredWidthCm.toFixed(0)}cm (${requiredWidthM.toFixed(2)}m)`);
-                  
                   if (horizontalPiecesNeeded > 1) {
-                    breakdown.push(`× ${horizontalPiecesNeeded} pieces = ${totalLinearMetersToOrder.toFixed(2)}m total`);
+                    calculationText = `${linearMeters.toFixed(2)}m × ${horizontalPiecesNeeded} pieces = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
+                    calculationBreakdown = `Railroaded fabric requiring ${horizontalPiecesNeeded} horizontal pieces. ${linearMeters.toFixed(2)}m per piece × ${horizontalPiecesNeeded} = ${totalLinearMetersToOrder.toFixed(2)}m total × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
+                  } else {
+                    calculationText = `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
+                    calculationBreakdown = `${linearMeters.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
                   }
-                  
-                  calculationText = horizontalPiecesNeeded > 1 
-                    ? `${requiredWidthM.toFixed(2)}m × ${horizontalPiecesNeeded} pieces = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`
-                    : `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
-                  calculationBreakdown = breakdown.join(' ');
                 } else {
                   // Vertical/Standard: Show ORDERED fabric (full widths)
                   const orderedMeters = fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters || 0;

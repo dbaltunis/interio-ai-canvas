@@ -1347,7 +1347,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                         </TooltipContent>
                       </Tooltip>
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-4 gap-4">
                       <div>
                         <Label htmlFor="header_allowance">Header Allowance (cm)</Label>
                         <Input
@@ -1380,6 +1380,20 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           onChange={(e) => handleInputChange("side_hems", e.target.value)}
                           placeholder="7.5"
                         />
+                      </div>
+                      <div>
+                        <Label htmlFor="seam_hems">Seam Allowance (cm)</Label>
+                        <Input
+                          id="seam_hems"
+                          type="number"
+                          step="0.5"
+                          value={formData.seam_hems}
+                          onChange={(e) => handleInputChange("seam_hems", e.target.value)}
+                          placeholder="1.5"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Fabric added for joining widths/pieces
+                        </p>
                       </div>
                     </div>
                   </div>

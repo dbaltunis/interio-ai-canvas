@@ -58,6 +58,13 @@ interface CostCalculationSummaryProps {
   calculatedHeadingCost?: number;
   calculatedOptionsCost?: number;
   calculatedTotalCost?: number;
+  fabricDisplayData?: {
+    linearMeters: number;
+    totalMeters: number;
+    pricePerMeter: number;
+    horizontalPieces: number;
+    orientation: 'horizontal' | 'vertical';
+  };
 }
 
 export const CostCalculationSummary = ({
@@ -74,7 +81,8 @@ export const CostCalculationSummary = ({
   calculatedManufacturingCost,
   calculatedHeadingCost,
   calculatedOptionsCost,
-  calculatedTotalCost
+  calculatedTotalCost,
+  fabricDisplayData
 }: CostCalculationSummaryProps) => {
   const { units } = useMeasurementUnits();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
@@ -490,10 +498,26 @@ export const CostCalculationSummary = ({
                 <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
                 <div className="flex flex-col min-w-0">
                   <span className="text-card-foreground font-medium">Fabric Material</span>
-                  {fabricCalculation && (
+                  {fabricDisplayData ? (
                     <>
                       <span className="text-xs text-muted-foreground truncate">
-                        {/* ✅ SHOW EXACTLY WHAT'S CALCULATED - NO RECALCULATION */}
+                        {/* ✅ USE PRE-CALCULATED VALUES - SINGLE SOURCE OF TRUTH */}
+                        {fabricDisplayData.orientation === 'horizontal' && fabricDisplayData.horizontalPieces > 1
+                          ? `${fabricDisplayData.linearMeters.toFixed(2)}m × ${fabricDisplayData.horizontalPieces} pieces = ${fabricDisplayData.totalMeters.toFixed(2)}m × ${formatPrice(fabricDisplayData.pricePerMeter)}/m`
+                          : `${fabricDisplayData.linearMeters.toFixed(2)}m × ${formatPrice(fabricDisplayData.pricePerMeter)}/m`
+                        }
+                      </span>
+                      <span className="text-xs text-muted-foreground/80 mt-0.5">
+                        {fabricDisplayData.orientation === 'horizontal'
+                          ? `⚡ Railroaded orientation: ${fabricDisplayData.horizontalPieces} piece(s) needed`
+                          : `📏 Standard vertical: ${fabricDisplayData.horizontalPieces} width(s)`
+                        }
+                      </span>
+                    </>
+                  ) : fabricCalculation && (
+                    <>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {/* FALLBACK: Use fabricCalculation if fabricDisplayData not provided */}
                         {(() => {
                           const orientation = fabricCalculation.fabricOrientation || 'vertical';
                           const horizontalPieces = fabricCalculation.horizontalPiecesNeeded || 1;
@@ -503,9 +527,8 @@ export const CostCalculationSummary = ({
                           if (orientation === 'horizontal' && horizontalPieces > 1) {
                             const totalMeters = linearMeters * horizontalPieces;
                             return `${linearMeters.toFixed(2)}m × ${horizontalPieces} pieces = ${totalMeters.toFixed(2)}m × ${formatPrice(pricePerM)}/m`;
-                          } else {
-                            return `${linearMeters.toFixed(2)}m × ${formatPrice(pricePerM)}/m`;
                           }
+                          return `${linearMeters.toFixed(2)}m × ${formatPrice(pricePerM)}/m`;
                         })()}
                       </span>
                       {/* Orientation indicator */}

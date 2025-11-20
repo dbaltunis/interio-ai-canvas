@@ -82,6 +82,25 @@ export const DynamicWindowWorksheet = forwardRef<{
   const [selectedLining, setSelectedLining] = useState("none");
   const [selectedOptions, setSelectedOptions] = useState<Array<{ name: string; price: number }>>([]);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // ✅ SINGLE SOURCE OF TRUTH: Calculated costs stored once, used everywhere
+  const [calculatedCosts, setCalculatedCosts] = useState({
+    fabricLinearMeters: 0,
+    fabricTotalMeters: 0,
+    fabricCostPerMeter: 0,
+    fabricTotalCost: 0,
+    liningCost: 0,
+    manufacturingCost: 0,
+    headingCost: 0,
+    optionsCost: 0,
+    totalCost: 0,
+    // Metadata for display
+    horizontalPiecesNeeded: 1,
+    fabricOrientation: 'vertical' as 'horizontal' | 'vertical',
+    seamsRequired: 0,
+    widthsRequired: 0
+  });
+  
   const [layeredTreatments, setLayeredTreatments] = useState<Array<{
     id: string;
     type: string;
@@ -1597,23 +1616,12 @@ export const DynamicWindowWorksheet = forwardRef<{
                       );
                     }
 
-                    // Calculate fabric cost - MUST account for horizontalPiecesNeeded
+                    // ✅ SINGLE CALCULATION POINT: Calculate once, save to state
                     const linearMeters = fabricCalculation.linearMeters || 0;
                     const horizontalPiecesNeeded = fabricCalculation.horizontalPiecesNeeded || 1;
                     const pricePerMeter = fabricCalculation.pricePerMeter || 0;
-                    
-                    // ✅ CRITICAL: For railroaded fabric with multiple pieces, multiply by pieces
                     const totalMetersToOrder = linearMeters * horizontalPiecesNeeded;
                     const fabricCost = totalMetersToOrder * pricePerMeter;
-                    
-                    console.log('💰 [UI] Fabric cost calculation:', {
-                      linearMeters,
-                      horizontalPiecesNeeded,
-                      totalMetersToOrder,
-                      pricePerMeter,
-                      calculatedFabricCost: fabricCost,
-                      fabricOrientation: fabricCalculation.fabricOrientation
-                    });
 
                     // Calculate lining cost
                     let liningCost = 0;
@@ -1622,30 +1630,16 @@ export const DynamicWindowWorksheet = forwardRef<{
                       liningCost = (fabricCalculation.linearMeters || 0) * liningPrice;
                     }
 
-                    // ✅ FIX: Get the selected pricing method (from user's dropdown selection)
+                    // Get the selected pricing method
                     const selectedPricingMethod = measurements.selected_pricing_method 
                       ? selectedTemplate.pricing_methods?.find((m: any) => m.id === measurements.selected_pricing_method)
-                      : selectedTemplate.pricing_methods?.[0]; // Default to first method
-                    
-                    console.log('💰 Manufacturing cost calculation using:', {
-                      selectedPricingMethodId: measurements.selected_pricing_method,
-                      selectedMethod: selectedPricingMethod?.name,
-                      manufacturing_type: measurements.manufacturing_type || 'machine',
-                      pricing_type: selectedTemplate.pricing_type,
-                      methodPrices: selectedPricingMethod,
-                      templatePrices: {
-                        machine_price_per_metre: selectedTemplate.machine_price_per_metre,
-                        machine_price_per_panel: selectedTemplate.machine_price_per_panel,
-                      }
-                    });
+                      : selectedTemplate.pricing_methods?.[0];
 
-                    // ✅ FIX: Calculate manufacturing/labor cost using selected pricing method prices
+                    // Calculate manufacturing/labor cost
                     let manufacturingCost = 0;
-                    const manufacturingType = measurements.manufacturing_type || 'machine'; // 'machine' or 'hand'
-                    // ✅ FIX: Get pricing type from selected pricing method, not template
+                    const manufacturingType = measurements.manufacturing_type || 'machine';
                     const pricingType = selectedPricingMethod?.pricing_type || selectedTemplate.pricing_type || selectedTemplate.makeup_pricing_method || selectedTemplate.pricing_method || 'per_metre';
                     
-                    // Determine which price to use based on manufacturing type and pricing method
                     let pricePerUnit = 0;
                     if (pricingType === 'per_panel') {
                       pricePerUnit = manufacturingType === 'hand' 
@@ -1657,26 +1651,14 @@ export const DynamicWindowWorksheet = forwardRef<{
                         ? (selectedPricingMethod?.hand_price_per_drop ?? selectedTemplate.hand_price_per_drop ?? 0)
                         : (selectedPricingMethod?.machine_price_per_drop ?? selectedTemplate.machine_price_per_drop ?? 0);
                       manufacturingCost = pricePerUnit * (fabricCalculation.widthsRequired || 1);
-                      } else if (pricingType === 'per_metre') {
-                        // ✅ FIX: For per_metre, calculate width after fullness + side hems + returns + waste
-                        const railWidthCm = parseFloat(measurements.rail_width || '0');
-                        const fullness = fabricCalculation.fullnessRatio || 0;
-                        const sideHemsCm = fabricCalculation.totalSideHems || 0;
-                        const returnsCm = fabricCalculation.returns || 0;
-                        const wastePercent = fabricCalculation.wastePercent || selectedTemplate.waste_percent || 0;
-                        
-                        const baseWidthCm = railWidthCm * fullness;
-                        const widthWithAllowancesCm = baseWidthCm + sideHemsCm + returnsCm;
-                        const finalWidthCm = widthWithAllowancesCm * (1 + wastePercent / 100);
-                        const finalWidthM = finalWidthCm / 100;
-                        
-                        pricePerUnit = manufacturingType === 'hand'
-                          ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
-                          : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
-                        
-                        manufacturingCost = pricePerUnit * finalWidthM;
-                      } else if (pricingType === 'height_based' && selectedPricingMethod?.height_price_ranges) {
-                      // Height-based pricing from pricing method
+                    } else {
+                      pricePerUnit = manufacturingType === 'hand'
+                        ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
+                        : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
+                      manufacturingCost = pricePerUnit * (fabricCalculation.linearMeters || 0);
+                    }
+
+                    if (pricingType === 'height_range' && selectedPricingMethod?.height_price_ranges) {
                       const height = parseFloat(measurements.drop || '0');
                       const range = selectedPricingMethod.height_price_ranges.find((r: any) => 
                         height >= r.min_height && height <= r.max_height
@@ -1687,32 +1669,13 @@ export const DynamicWindowWorksheet = forwardRef<{
                       }
                     }
 
-                    console.log('💰 Manufacturing cost calculated:', {
-                      pricingType,
-                      manufacturingType,
-                      pricePerUnit,
-                      quantity: pricingType === 'per_panel' ? fabricCalculation.curtainCount : pricingType === 'per_drop' ? fabricCalculation.widthsRequired : fabricCalculation.linearMeters,
-                      manufacturingCost,
-                      fabricCalculation: {
-                        curtainCount: fabricCalculation.curtainCount,
-                        widthsRequired: fabricCalculation.widthsRequired,
-                        linearMeters: fabricCalculation.linearMeters
-                      },
-                      selectedPricingMethod: {
-                        name: selectedPricingMethod?.name,
-                        pricing_type: selectedPricingMethod?.pricing_type,
-                        machine_price_per_metre: selectedPricingMethod?.machine_price_per_metre,
-                        hand_price_per_metre: selectedPricingMethod?.hand_price_per_metre
-                      }
-                    });
-
                     // Calculate heading cost
                     let headingCost = 0;
                     if (selectedHeading && selectedHeading !== 'none') {
                       const heading = headingOptionsFromSettings.find(h => h.id === selectedHeading || h.name === selectedHeading);
                       if (heading?.price) {
                         const railWidth = parseFloat(measurements.rail_width || '0');
-                        headingCost = heading.price * (railWidth / 100); // price per meter
+                        headingCost = heading.price * (railWidth / 100);
                       }
                     }
 
@@ -1720,6 +1683,28 @@ export const DynamicWindowWorksheet = forwardRef<{
                     const optionsCost = selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0);
 
                     const totalCost = fabricCost + liningCost + manufacturingCost + headingCost + optionsCost;
+
+                    // ✅ SAVE TO STATE: Single source of truth for all displays
+                    const newCalculatedCosts = {
+                      fabricLinearMeters: linearMeters,
+                      fabricTotalMeters: totalMetersToOrder,
+                      fabricCostPerMeter: pricePerMeter,
+                      fabricTotalCost: fabricCost,
+                      liningCost,
+                      manufacturingCost,
+                      headingCost,
+                      optionsCost,
+                      totalCost,
+                      horizontalPiecesNeeded,
+                      fabricOrientation: (fabricCalculation.fabricOrientation || 'vertical') as 'horizontal' | 'vertical',
+                      seamsRequired: fabricCalculation.seamsRequired || 0,
+                      widthsRequired: fabricCalculation.widthsRequired || 0
+                    };
+                    
+                    // Only update if values changed to prevent infinite loops
+                    if (JSON.stringify(calculatedCosts) !== JSON.stringify(newCalculatedCosts)) {
+                      setCalculatedCosts(newCalculatedCosts);
+                    }
 
                     return (
                       <CostCalculationSummary
@@ -1731,12 +1716,19 @@ export const DynamicWindowWorksheet = forwardRef<{
                         inventory={[]} 
                         fabricCalculation={fabricCalculation}
                         selectedOptions={selectedOptions}
-                        calculatedFabricCost={fabricCost}
-                        calculatedLiningCost={liningCost}
-                        calculatedManufacturingCost={manufacturingCost}
-                        calculatedHeadingCost={headingCost}
-                        calculatedOptionsCost={optionsCost}
-                        calculatedTotalCost={totalCost}
+                        calculatedFabricCost={calculatedCosts.fabricTotalCost}
+                        calculatedLiningCost={calculatedCosts.liningCost}
+                        calculatedManufacturingCost={calculatedCosts.manufacturingCost}
+                        calculatedHeadingCost={calculatedCosts.headingCost}
+                        calculatedOptionsCost={calculatedCosts.optionsCost}
+                        calculatedTotalCost={calculatedCosts.totalCost}
+                        fabricDisplayData={{
+                          linearMeters: calculatedCosts.fabricLinearMeters,
+                          totalMeters: calculatedCosts.fabricTotalMeters,
+                          pricePerMeter: calculatedCosts.fabricCostPerMeter,
+                          horizontalPieces: calculatedCosts.horizontalPiecesNeeded,
+                          orientation: calculatedCosts.fabricOrientation
+                        }}
                       />
                     );
                   })()}
