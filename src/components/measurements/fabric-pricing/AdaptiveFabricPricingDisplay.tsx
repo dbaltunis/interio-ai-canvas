@@ -421,14 +421,6 @@ export const AdaptiveFabricPricingDisplay = ({
               <span className="font-medium text-foreground">{fabricCalculation.widthsRequired || 0} width(s)</span>
             </div>
             
-            {/* Leftover Fabric Display */}
-            {fabricCalculation.leftoverFromLastPiece && fabricCalculation.leftoverFromLastPiece > 0 && (
-              <div className="flex justify-between bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded p-2 mt-1">
-                <span className="text-amber-800 dark:text-amber-200 text-xs font-medium">Leftover from last piece:</span>
-                <span className="text-amber-900 dark:text-amber-100 text-xs font-semibold">{formatMeasurement(fabricCalculation.leftoverFromLastPiece)}</span>
-              </div>
-            )}
-            
             {/* Width Calculation Explanation */}
             <div className="text-xs text-muted-foreground italic mt-1 pl-1">
               {(() => {
