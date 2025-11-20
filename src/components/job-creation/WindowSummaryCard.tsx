@@ -358,25 +358,23 @@ export function WindowSummaryCard({
   const displayTotal = useMemo(() => {
     if (!summary) return 0;
     
-    const savedTotal = Number(summary.total_cost) || 0;
-    const savedFabricCost = Number(summary.fabric_cost) || 0;
+    // CRITICAL: Calculate total as sum of all breakdown items (not from saved total_cost)
+    // This ensures the displayed total matches the detailed costs shown below
+    const calculatedTotal = enrichedBreakdown.reduce((sum, item) => {
+      return sum + (Number(item.total_cost) || 0);
+    }, 0);
     
-    // Check if we recalculated fabric cost in enrichedBreakdown
-    const fabricItem = enrichedBreakdown.find(item => item.id === 'fabric');
-    if (fabricItem && Math.abs(fabricItem.total_cost - savedFabricCost) > 1) {
-      // Fabric cost was recalculated, adjust total
-      const difference = fabricItem.total_cost - savedFabricCost;
-      console.log('💰 Adjusting total for recalculated fabric cost:', {
-        savedTotal,
-        savedFabricCost,
-        newFabricCost: fabricItem.total_cost,
-        difference,
-        newTotal: savedTotal + difference
-      });
-      return savedTotal + difference;
-    }
+    console.log('💰 DisplayTotal calculation:', {
+      breakdownItems: enrichedBreakdown.length,
+      calculatedTotal,
+      savedTotal: summary.total_cost,
+      breakdown: enrichedBreakdown.map(i => ({ 
+        name: i.name, 
+        cost: i.total_cost 
+      }))
+    });
     
-    return savedTotal;
+    return calculatedTotal;
   }, [summary, enrichedBreakdown]);
 
   const displayName = treatmentLabel || surface.name;
@@ -732,12 +730,12 @@ export function WindowSummaryCard({
                       })}
                     </div>
 
-                    {/* Total */}
+                    {/* Total - Use displayTotal to match the sum of breakdown items */}
                     <div className="border-t-2 border-primary/20 pt-3 mt-4">
                       <div className="flex items-center justify-between">
                         <span className="text-base font-bold text-foreground">Total Cost</span>
                         <span className="text-xl font-bold text-primary">
-                          {formatCurrency(summary?.total_cost || 0, userCurrency)}
+                          {formatCurrency(displayTotal, userCurrency)}
                         </span>
                       </div>
                     </div>
