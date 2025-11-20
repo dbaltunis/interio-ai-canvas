@@ -6,8 +6,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
 import { getOptionPrice } from "@/utils/optionDataAdapter";
@@ -87,12 +88,16 @@ export const DynamicCurtainOptions = ({
   const { data: inventory = [], isLoading: headingsLoading } = useEnhancedInventory();
   const { data: treatmentOptions = [], isLoading: treatmentOptionsLoading } = useTreatmentOptions('curtains', 'category');
   
-  // Filter for heading items from inventory
-  const headingOptions = inventory.filter(item => 
-    item.category?.toLowerCase().includes('heading') || 
-    item.category?.toLowerCase().includes('hardware') ||
-    item.category?.toLowerCase().includes('pleat')
-  );
+  // Filter for heading items from inventory - ONLY heading/pleat types, NOT hardware/tracks
+  const headingOptions = inventory.filter(item => {
+    const category = item.category?.toLowerCase() || '';
+    // Only include items specifically categorized as headings or pleats
+    // Exclude general hardware, tracks, rods, etc.
+    return (category.includes('heading') || category.includes('pleat')) 
+           && !category.includes('track') 
+           && !category.includes('rod')
+           && !category.includes('hardware');
+  });
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -102,7 +107,11 @@ export const DynamicCurtainOptions = ({
   };
 
   const handleHeadingChange = (headingId: string) => {
-    console.log('🔥🔥🔥 DROPDOWN FIRED: handleHeadingChange', { headingId });
+    console.log('🔥🔥🔥 DROPDOWN FIRED: handleHeadingChange', { 
+      headingId,
+      currentValue: measurements.selected_heading,
+      availableHeadings: availableHeadings.length
+    });
     
     const heading = headingOptions.find(h => h.id === headingId);
     console.log('🔥🔥🔥 Found heading:', heading);
@@ -113,10 +122,13 @@ export const DynamicCurtainOptions = ({
       // Don't default to 'fixed' - let it be undefined if not configured
       onOptionPriceChange('heading', headingPrice, heading.name, undefined);
     }
+    
+    // CRITICAL: Update measurements object first
     onChange('selected_heading', headingId);
     
-    // CRITICAL: Also update parent state so it gets saved
+    // CRITICAL: Then update parent state so it gets saved
     if (onHeadingChange) {
+      console.log('🔥 Calling onHeadingChange with:', headingId);
       onHeadingChange(headingId);
     }
     
@@ -292,9 +304,13 @@ export const DynamicCurtainOptions = ({
   const handPricePerPanel = selectedPricingMethod?.hand_price_per_panel ?? template.hand_price_per_panel;
 
   // Filter headings based on template's selected_heading_ids
+  // CRITICAL: Only show headings configured in the template settings
   const availableHeadings = template.selected_heading_ids && template.selected_heading_ids.length > 0
     ? headingOptions.filter(h => template.selected_heading_ids.includes(h.id))
-    : headingOptions;
+    : [];
+  
+  // Show warning if no headings configured
+  const noHeadingsConfigured = availableHeadings.length === 0 && headingOptions.length > 0;
 
   return (
     <div className="space-y-3 px-3">
@@ -307,6 +323,15 @@ export const DynamicCurtainOptions = ({
       )}
 
       {/* Heading Type - Top Level Category */}
+      {noHeadingsConfigured && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            No heading types configured for this template. Please configure heading options in Template Settings.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {availableHeadings.length > 0 && (
         <div className="space-y-3">
           <h4 className="font-medium text-foreground">Heading Type</h4>
@@ -327,16 +352,19 @@ export const DynamicCurtainOptions = ({
                   sideOffset={5}
                   align="end"
                 >
-                  {availableHeadings.map(heading => (
-                    <SelectItem key={heading.id} value={heading.id}>
-                      <div className="flex items-center justify-between w-full gap-4">
-                        <span>{heading.name}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {formatCurrency(heading.price_per_meter || heading.selling_price || 0)}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {availableHeadings.map(heading => {
+                    console.log('🎯 Rendering heading option:', { id: heading.id, name: heading.name });
+                    return (
+                      <SelectItem key={heading.id} value={heading.id}>
+                        <div className="flex items-center justify-between w-full gap-4">
+                          <span>{heading.name}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {formatCurrency(heading.price_per_meter || heading.selling_price || 0)}
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
