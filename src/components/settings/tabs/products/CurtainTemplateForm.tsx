@@ -796,10 +796,22 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         manufacturing_type: "machine" as 'machine' | 'hand', // Default to machine
         hand_finished_upcharge_fixed: undefined,
         hand_finished_upcharge_percentage: undefined,
-        return_left: parseFloat(formData.return_left.toString()) || 7.5,
-        return_right: parseFloat(formData.return_right.toString()) || 7.5,
-        overlap: parseFloat(formData.overlap.toString()) || 10,
-        header_allowance: parseFloat(formData.header_allowance.toString()) || 8,
+        return_left: (() => {
+          const val = parseFloat(formData.return_left.toString());
+          return isNaN(val) ? 7.5 : val;
+        })(),
+        return_right: (() => {
+          const val = parseFloat(formData.return_right.toString());
+          return isNaN(val) ? 7.5 : val;
+        })(),
+        overlap: (() => {
+          const val = parseFloat(formData.overlap.toString());
+          return isNaN(val) ? 10 : val;
+        })(),
+        header_allowance: (() => {
+          const val = parseFloat(formData.header_allowance.toString());
+          return isNaN(val) ? 8 : val;
+        })(),
         waste_percent: formData.waste_percent !== '' && formData.waste_percent !== null && formData.waste_percent !== undefined 
           ? parseFloat(formData.waste_percent.toString()) 
           : 5,
