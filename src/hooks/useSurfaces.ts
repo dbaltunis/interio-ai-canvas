@@ -130,7 +130,7 @@ export const useDeleteSurface = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      console.log("=== DELETING SURFACE AND RELATED MATERIALS ===");
+      console.log("=== DELETING SURFACE, MATERIALS, AND QUOTE ITEMS ===");
       console.log("Surface ID:", id);
 
       // First, get the surface to find its project_id
@@ -148,8 +148,8 @@ export const useDeleteSurface = () => {
 
       if (surfaceError) throw surfaceError;
 
-      // Delete related materials from queue (only pending/in_batch status)
       if (surface?.project_id) {
+        // Delete related materials from queue (only pending/in_batch status)
         const { error: materialsError } = await supabase
           .from("material_order_queue")
           .delete()
@@ -158,9 +158,30 @@ export const useDeleteSurface = () => {
 
         if (materialsError) {
           console.error("Error deleting materials:", materialsError);
-          // Don't throw - surface is already deleted
         } else {
           console.log("Deleted related materials from queue");
+        }
+
+        // Delete orphaned quote items (those with empty breakdown or no treatments)
+        const { data: projectQuote } = await supabase
+          .from("quotes")
+          .select("id")
+          .eq("project_id", surface.project_id)
+          .maybeSingle();
+
+        if (projectQuote) {
+          // Delete quote items with empty breakdown
+          const { error: quoteItemsError } = await supabase
+            .from("quote_items")
+            .delete()
+            .eq("quote_id", projectQuote.id)
+            .or("breakdown.eq.{},breakdown.is.null");
+
+          if (quoteItemsError) {
+            console.error("Error deleting orphaned quote items:", quoteItemsError);
+          } else {
+            console.log("Deleted orphaned quote items");
+          }
         }
       }
 
@@ -170,9 +191,11 @@ export const useDeleteSurface = () => {
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });
       queryClient.invalidateQueries({ queryKey: ["treatments"] });
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["quote-items"] });
       queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
       queryClient.invalidateQueries({ queryKey: ["material-queue-v2"] });
       queryClient.invalidateQueries({ queryKey: ["material-queue-stats"] });
+      queryClient.refetchQueries({ queryKey: ["quotes"] });
       
       toast({
         title: "Success",
