@@ -1,4 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +23,7 @@ import {
   PenTool,
   Type,
   Image as ImageIcon,
+  Upload,
   Palette,
   Move,
   Edit3,
@@ -33,7 +36,8 @@ import {
   Layout,
   X,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Loader2
 } from "lucide-react";
 import { SignatureCanvas } from './SignatureCanvas';
 import { cn } from "@/lib/utils";
@@ -1377,6 +1381,213 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
         </EditableContainer>
       );
 
+    case 'image-uploader':
+      const [uploading, setUploading] = useState(false);
+      const fileInputRef = useRef<HTMLInputElement>(null);
+      
+      const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        const currentImages = content.images || [];
+        const maxImages = content.maxImages || 5;
+        
+        if (currentImages.length >= maxImages) {
+          toast.error(`Maximum ${maxImages} images allowed`);
+          return;
+        }
+
+        setUploading(true);
+        const newImages = [];
+
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error('Not authenticated');
+
+          for (let i = 0; i < Math.min(files.length, maxImages - currentImages.length); i++) {
+            const file = files[i];
+            
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+              toast.error(`${file.name} is not an image file`);
+              continue;
+            }
+
+            // Validate file size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+              toast.error(`${file.name} is too large (max 5MB)`);
+              continue;
+            }
+
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+            const filePath = `${user.id}/${fileName}`;
+
+            const { error: uploadError, data } = await supabase.storage
+              .from('quote-images')
+              .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+              .from('quote-images')
+              .getPublicUrl(filePath);
+
+            newImages.push({
+              url: publicUrl,
+              path: filePath,
+              name: file.name,
+              caption: ''
+            });
+          }
+
+          updateBlockContent({
+            images: [...currentImages, ...newImages]
+          });
+          
+          toast.success(`${newImages.length} image(s) uploaded successfully`);
+        } catch (error: any) {
+          console.error('Upload error:', error);
+          toast.error(error.message || 'Failed to upload images');
+        } finally {
+          setUploading(false);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+        }
+      };
+
+      const handleImageDelete = async (index: number) => {
+        const imageToDelete = (content.images || [])[index];
+        if (!imageToDelete) return;
+
+        try {
+          // Delete from storage
+          const { error } = await supabase.storage
+            .from('quote-images')
+            .remove([imageToDelete.path]);
+
+          if (error) throw error;
+
+          const newImages = [...(content.images || [])];
+          newImages.splice(index, 1);
+          updateBlockContent({ images: newImages });
+          
+          toast.success('Image deleted');
+        } catch (error: any) {
+          console.error('Delete error:', error);
+          toast.error('Failed to delete image');
+        }
+      };
+
+      const handleCaptionChange = (index: number, caption: string) => {
+        const newImages = [...(content.images || [])];
+        newImages[index] = { ...newImages[index], caption };
+        updateBlockContent({ images: newImages });
+      };
+
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '24px',
+            margin: style.margin || '24px 0',
+            backgroundColor: style.backgroundColor || '#f8fafc',
+            borderRadius: style.borderRadius || '8px'
+          }}
+        >
+          <div className="space-y-4">
+            <EditableText
+              value={content.title || 'Image Gallery'}
+              onChange={(value) => updateBlockContent({ title: value })}
+              className="text-xl font-semibold"
+              placeholder="Section Title"
+            />
+            
+            <EditableText
+              value={content.caption || ''}
+              onChange={(value) => updateBlockContent({ caption: value })}
+              className="text-sm text-muted-foreground"
+              placeholder="Add a description (optional)"
+            />
+
+            {/* Upload Button */}
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading || (content.images || []).length >= (content.maxImages || 5)}
+                className="gap-2"
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4" />
+                    Upload Images ({(content.images || []).length}/{content.maxImages || 5})
+                  </>
+                )}
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                Max 5MB per image, JPG/PNG/WebP/GIF
+              </span>
+            </div>
+
+            {/* Image Grid */}
+            {(content.images || []).length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                {(content.images || []).map((image: any, index: number) => (
+                  <div key={index} className="relative group">
+                    <div className="aspect-square rounded-lg overflow-hidden bg-muted">
+                      <img
+                        src={image.url}
+                        alt={image.caption || `Image ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="absolute top-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => handleImageDelete(index)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                    <Input
+                      value={image.caption || ''}
+                      onChange={(e) => handleCaptionChange(index, e.target.value)}
+                      placeholder="Add caption (optional)"
+                      className="mt-2 text-xs"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {(content.images || []).length === 0 && (
+              <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground">
+                <Upload className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No images uploaded yet</p>
+                <p className="text-xs mt-1">Click "Upload Images" to add photos to your proposal</p>
+              </div>
+            )}
+          </div>
+        </EditableContainer>
+      );
+
     case 'spacer':
       return (
         <EditableContainer 
@@ -1522,6 +1733,7 @@ export const EditableLivePreview = ({
     { type: 'header', name: 'Company Header', icon: Building2, description: 'Company info & logo' },
     { type: 'client-info', name: 'Client Details', icon: User, description: 'Client information' },
     { type: 'text', name: 'Text Block', icon: Type, description: 'Add formatted text' },
+    { type: 'image-uploader', name: 'Image Uploader', icon: Upload, description: 'Upload images for proposals' },
     { type: 'line-items', name: 'Line Items Table', icon: ShoppingCart, description: 'Professional itemized list' },
     { type: 'terms-conditions', name: 'Terms & Conditions', icon: FileText, description: 'Legal terms and policies' },
     { type: 'payment-info', name: 'Payment Information', icon: DollarSign, description: 'Payment methods and schedule' },
@@ -1650,6 +1862,13 @@ export const EditableLivePreview = ({
       case 'signature':
         return {
           title: 'Authorization'
+        };
+      case 'image-uploader':
+        return {
+          title: 'Image Gallery',
+          caption: 'Add images to your proposal',
+          images: [],
+          maxImages: 5
         };
       case 'spacer':
         return {

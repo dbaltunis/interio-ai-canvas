@@ -6034,6 +6034,56 @@ export type Database = {
           },
         ]
       }
+      quote_images: {
+        Row: {
+          caption: string | null
+          created_at: string | null
+          file_name: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          quote_id: string | null
+          sort_order: number | null
+          storage_path: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string | null
+          file_name: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          quote_id?: string | null
+          sort_order?: number | null
+          storage_path: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string | null
+          file_name?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          quote_id?: string | null
+          sort_order?: number | null
+          storage_path?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_images_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_items: {
         Row: {
           breakdown: Json | null

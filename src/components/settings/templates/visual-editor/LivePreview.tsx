@@ -1266,6 +1266,56 @@ const LivePreviewBlock = ({
         </div>
       );
 
+    case 'image-uploader':
+      if (!content.images || content.images.length === 0) {
+        return null; // Don't show empty image blocks in final quote
+      }
+      
+      return (
+        <div style={{ marginTop: '24px', marginBottom: '24px', backgroundColor: '#ffffff !important', padding: '16px' }}>
+          {content.title && (
+            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#000 !important' }}>
+              {content.title}
+            </h3>
+          )}
+          {content.caption && (
+            <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
+              {content.caption}
+            </p>
+          )}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
+            gap: '16px'
+          }}>
+            {content.images.map((image: any, index: number) => (
+              <div key={index} style={{ backgroundColor: '#f9fafb', borderRadius: '8px', overflow: 'hidden' }}>
+                <img
+                  src={image.url}
+                  alt={image.caption || `Image ${index + 1}`}
+                  style={{ 
+                    width: '100%', 
+                    height: '200px', 
+                    objectFit: 'cover',
+                    display: 'block'
+                  }}
+                />
+                {image.caption && (
+                  <p style={{ 
+                    padding: '8px', 
+                    fontSize: '12px', 
+                    color: '#6b7280',
+                    textAlign: 'center'
+                  }}>
+                    {image.caption}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
     case 'spacer':
       return (
         <div 
