@@ -58,4 +58,6 @@ export interface FabricUsageResult {
   seamsRequired: number;
   seamLaborHours: number;
   widthsRequired: number;
+  horizontalPiecesNeeded?: number;
+  leftoverFromLastPiece?: number;
 }
