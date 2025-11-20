@@ -354,6 +354,24 @@ export const DynamicWindowWorksheet = forwardRef<{
             restoredMeasurements.selected_lining = existingWindowSummary.selected_lining_type;
           }
           
+          // CRITICAL: Restore ALL treatment option keys (hardware, track_types, mounting_type, etc.)
+          // These are stored with keys like 'hardware', 'track_types', etc. in measurements_details
+          // but DynamicCurtainOptions looks for them with 'treatment_option_' prefix
+          Object.keys(measurementsDetails).forEach(key => {
+            // If it looks like a treatment option but doesn't have the prefix, ensure it's accessible both ways
+            if (!key.startsWith('treatment_option_') && 
+                !key.startsWith('selected_') && 
+                !['rail_width', 'drop', 'header_hem', 'bottom_hem', 'side_hems', 'seam_hems', 
+                  'return_left', 'return_right', 'waste_percent', 'pooling_amount', 
+                  'manufacturing_type', 'heading_fullness', 'curtain_type', 'curtain_side',
+                  'pooling_option', 'fabric_rotated', 'surface_id', 'surface_name', 
+                  'window_type', 'unit', 'fabric_width_cm', 'wall_width_cm', 'wall_height_cm',
+                  'fullness_ratio', 'horizontal_pieces_needed', 'fabric_orientation'].includes(key)) {
+              // Also store with treatment_option_ prefix for DynamicCurtainOptions to find
+              restoredMeasurements[`treatment_option_${key}`] = measurementsDetails[key];
+            }
+          });
+          
           // PHASE 2: Better zero/null handling - show empty strings instead of "0"
           // Try measurements_details first, then fall back to top-level columns
           const storedRailWidth = measurementsDetails.rail_width || existingWindowSummary.rail_width;
