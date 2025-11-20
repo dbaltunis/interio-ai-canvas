@@ -6204,6 +6204,7 @@ export type Database = {
           subtotal: number | null
           tax_amount: number | null
           tax_rate: number | null
+          template_custom_data: Json | null
           total_amount: number | null
           updated_at: string
           user_id: string
@@ -6233,6 +6234,7 @@ export type Database = {
           subtotal?: number | null
           tax_amount?: number | null
           tax_rate?: number | null
+          template_custom_data?: Json | null
           total_amount?: number | null
           updated_at?: string
           user_id: string
@@ -6262,6 +6264,7 @@ export type Database = {
           subtotal?: number | null
           tax_amount?: number | null
           tax_rate?: number | null
+          template_custom_data?: Json | null
           total_amount?: number | null
           updated_at?: string
           user_id?: string
