@@ -99,7 +99,7 @@ const ImageGalleryBlock = ({ content, style, isEditable, isPrintMode }: any) => 
         </p>
       )}
       
-      {(isEditable || !isPrintMode) && (
+      {!isPrintMode && (
         <div style={{ marginBottom: '16px' }}>
           <input
             ref={fileInputRef}
@@ -142,7 +142,7 @@ const ImageGalleryBlock = ({ content, style, isEditable, isPrintMode }: any) => 
         }}>
           {galleryImages.map((image: any, index: number) => (
             <div key={index} style={{ backgroundColor: '#f9fafb', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
-              {(isEditable || !isPrintMode) && (
+              {!isPrintMode && (
                 <button
                   onClick={() => removeImage(index)}
                   style={{
@@ -211,7 +211,7 @@ const EditableTextField = ({ content, style, isEditable, isPrintMode }: any) => 
           {content.label}
         </div>
       )}
-      {isEditable || !isPrintMode ? (
+      {!isPrintMode ? (
         <Textarea
           value={fieldValue}
           onChange={(e) => setFieldValue(e.target.value)}
