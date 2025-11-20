@@ -45,15 +45,26 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
     const summaryRoomTotal = windowSummariesForRoom.reduce((sum, w) => {
       if (!w.summary) return sum;
       
+      console.log(`🔍 Window ${w.window_id}:`, {
+        has_breakdown: Array.isArray(w.summary.cost_breakdown),
+        breakdown_length: w.summary.cost_breakdown?.length,
+        stored_total_cost: w.summary.total_cost,
+        breakdown_items: w.summary.cost_breakdown
+      });
+      
       // If cost_breakdown exists, sum all breakdown items (same as displayTotal)
       if (Array.isArray(w.summary.cost_breakdown) && w.summary.cost_breakdown.length > 0) {
         const breakdownTotal = w.summary.cost_breakdown.reduce((itemSum: number, item: any) => {
-          return itemSum + (Number(item.total_cost) || 0);
+          const cost = Number(item.total_cost) || 0;
+          console.log(`  - ${item.name}: ${cost}`);
+          return itemSum + cost;
         }, 0);
+        console.log(`  ✅ Using breakdown total: ${breakdownTotal}`);
         return sum + breakdownTotal;
       }
       
       // Fallback to stored total_cost if no breakdown
+      console.log(`  ⚠️ No breakdown, using stored total_cost: ${w.summary.total_cost}`);
       return sum + Number(w.summary.total_cost || 0);
     }, 0);
 
