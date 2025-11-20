@@ -824,7 +824,7 @@ export const VisualMeasurementSheet = ({
                         Rotate Fabric 90° (Manual)
                       </Label>
                       <div className="text-xs text-muted-foreground mt-1 space-y-1">
-                        {(() => {
+                      {(() => {
                       const fabricWidthCm = selectedFabricItem.fabric_width || 137;
                       const drop = parseFloat(measurements.drop) || 0;
                       const headerHem = parseFloat(measurements.header_allowance_cm) || 8;
@@ -832,24 +832,24 @@ export const VisualMeasurementSheet = ({
                       const pooling = parseFloat(measurements.pooling_amount_cm) || 0;
                       const totalDrop = drop + headerHem + bottomHem + pooling;
 
-                      // Use consistent thresholds with calculation logic
-                      const isNarrowFabric = fabricWidthCm < 250;
-                      const isWideFabric = fabricWidthCm >= 250;
-                      const canRailroad = totalDrop <= fabricWidthCm;
                       const fabricRotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
+                      const willNeedMultiplePieces = totalDrop > fabricWidthCm;
                       
                       // Show current status - default is always vertical unless user toggles
                       if (fabricRotated) {
                         // User has toggled ON - railroaded/horizontal orientation
-                        if (canRailroad) {
+                        if (willNeedMultiplePieces) {
+                          const piecesNeeded = Math.ceil(totalDrop / fabricWidthCm);
+                          const leftover = (piecesNeeded * fabricWidthCm) - totalDrop;
                           return <>
-                                  <p>✓ Fabric rotated - railroaded orientation</p>
-                                  <p className="text-primary">Fabric width used for drop, buying length for curtain width</p>
+                                  <p>✓ Fabric rotated - railroaded with horizontal seaming</p>
+                                  <p className="text-amber-600">Drop ({totalDrop.toFixed(0)}cm) exceeds fabric width ({fabricWidthCm}cm)</p>
+                                  <p className="text-muted-foreground">Requires {piecesNeeded} horizontal pieces with {(piecesNeeded - 1)} seam(s). Leftover: {leftover.toFixed(1)}cm tracked.</p>
                                 </>;
                         } else {
                           return <>
-                                  <p>⚠ Cannot railroad - drop too long</p>
-                                  <p className="text-amber-600">Drop ({totalDrop.toFixed(0)}cm) exceeds fabric width ({fabricWidthCm}cm). Turn off rotation or consider adding a border.</p>
+                                  <p>✓ Fabric rotated - railroaded orientation</p>
+                                  <p className="text-primary">Fabric width used for drop, buying length for curtain width</p>
                                 </>;
                         }
                       } else {
@@ -871,24 +871,8 @@ export const VisualMeasurementSheet = ({
                           willChangeTo: checked.toString()
                         });
                         handleInputChange("fabric_rotated", checked.toString());
-                        
-                        // Force immediate re-calculation
-                        setTimeout(() => {
-                          console.log("🔄 After rotation change - measurements.fabric_rotated:", measurements.fabric_rotated);
-                        }, 100);
                       }} 
-                      disabled={readOnly || !selectedFabricItem || (() => {
-                        const fabricWidthCm = selectedFabricItem.fabric_width || 137;
-                        const drop = parseFloat(measurements.drop) || 0;
-                        const disabled = drop >= fabricWidthCm;
-                        if (disabled) {
-                          console.log("⚠️ Rotation toggle disabled - drop exceeds fabric width:", {
-                            drop,
-                            fabricWidth: fabricWidthCm
-                          });
-                        }
-                        return disabled;
-                      })()}
+                      disabled={readOnly || !selectedFabricItem}
                     />
                   </div>
                 </div>}
