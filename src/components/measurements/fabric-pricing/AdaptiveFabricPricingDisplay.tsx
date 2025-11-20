@@ -771,7 +771,20 @@ export const AdaptiveFabricPricingDisplay = ({
                     </span>
                   </div>
                   
-                  {/* 🆕 Show remnant information if multiple widths */}
+                  {/* Show leftover information when multiple horizontal pieces are needed */}
+                  {fabricCalculation.horizontalPiecesNeeded > 1 && fabricCalculation.leftoverFromLastPiece > 0 && (
+                    <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md p-2 mt-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-amber-900 dark:text-amber-100">📦 Leftover from Piece 2:</span>
+                        <span className="font-medium text-amber-900 dark:text-amber-100">{formatMeasurement(fabricCalculation.leftoverFromLastPiece)}</span>
+                      </div>
+                      <div className="text-xs text-amber-800 dark:text-amber-200 mt-1">
+                        Will be tracked in client's fabric pool for future reuse
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Show remnant information if multiple widths */}
                   {fabricCalculation.widthsRequired > 1 && fabricCalculation.remnantMeters > 0 && (
                     <div className="bg-accent/10 border border-accent/20 rounded-md p-2 mt-2">
                       <div className="flex justify-between text-xs">
@@ -799,8 +812,8 @@ export const AdaptiveFabricPricingDisplay = ({
                   
                   <div className="text-xs text-muted-foreground mt-1 bg-background/30 p-2 rounded">
                     <div className="font-medium mb-0.5">Formula:</div>
-                    {/* Detailed width breakdown */}
-                    {fabricCalculation.widthsRequired > 1 ? (
+                    {/* Show width breakdown only if actively using leftover */}
+                    {usedLeftoverCount > 0 && fabricCalculation.widthsRequired > 1 ? (
                       <div className="space-y-1">
                         {Array.from({ length: fabricCalculation.widthsRequired }).map((_, idx) => {
                           const isFromLeftover = idx < usedLeftoverCount;
@@ -814,7 +827,7 @@ export const AdaptiveFabricPricingDisplay = ({
                               </span>
                               {isFromLeftover ? (
                                 <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
-                                  from leftover (£0 fabric)
+                                  from leftover ({formatPrice(0)} fabric)
                                 </Badge>
                               ) : (
                                 <span className="text-muted-foreground">
@@ -825,7 +838,7 @@ export const AdaptiveFabricPricingDisplay = ({
                           );
                         })}
                         <div className="pt-1 mt-1 border-t border-border/30 font-medium">
-                          Total: {fabricCalculation.widthsRequired} widths × {(usedLeftoverCount > 0 ? `${fabricCalculation.widthsRequired - usedLeftoverCount} new` : 'all new')} = {formatPrice(totalCost - seamingCost)}
+                          Total: {fabricCalculation.widthsRequired} widths × {`${fabricCalculation.widthsRequired - usedLeftoverCount} new`} = {formatPrice(totalCost - seamingCost)}
                         </div>
                       </div>
                     ) : (
