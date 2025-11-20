@@ -346,15 +346,24 @@ export const DynamicWindowWorksheet = forwardRef<{
           const restoredMeasurements = { ...measurementsDetails };
           
           // CRITICAL: Explicitly restore heading and lining selections into measurements object
-          // The Select components read from measurements.selected_heading and measurements.selected_lining
+          // Priority: measurements_details > summary columns
           restoredMeasurements.selected_heading = measurementsDetails.selected_heading || existingWindowSummary.selected_heading_id || '';
           restoredMeasurements.selected_lining = measurementsDetails.selected_lining || existingWindowSummary.selected_lining_type || 'none';
+          
+          // CRITICAL: Also update parent state immediately for dropdowns
+          if (restoredMeasurements.selected_heading) {
+            setSelectedHeading(restoredMeasurements.selected_heading);
+          }
+          if (restoredMeasurements.selected_lining && restoredMeasurements.selected_lining !== 'none') {
+            setSelectedLining(restoredMeasurements.selected_lining);
+          }
           
           console.log('🔄 Restoring dropdown values:', {
             selected_heading: restoredMeasurements.selected_heading,
             selected_lining: restoredMeasurements.selected_lining,
             from_measurements: !!measurementsDetails.selected_heading,
-            from_summary: !!existingWindowSummary.selected_heading_id
+            from_summary: !!existingWindowSummary.selected_heading_id,
+            updated_parent_state: true
           });
           
           // CRITICAL: Restore ALL treatment option keys (hardware, track_types, mounting_type, etc.)
