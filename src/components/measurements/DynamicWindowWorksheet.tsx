@@ -332,9 +332,27 @@ export const DynamicWindowWorksheet = forwardRef<{
           setSelectedLining(existingWindowSummary.selected_lining_type);
         }
         
+        // CRITICAL: Restore selected options for blinds/shutters/etc
+        if (measurementsDetails?.selected_options || existingWindowSummary.selected_options) {
+          const savedOptions = measurementsDetails?.selected_options || existingWindowSummary.selected_options;
+          if (Array.isArray(savedOptions) && savedOptions.length > 0) {
+            setSelectedOptions(savedOptions);
+            console.log('✅ Restored selected options:', savedOptions);
+          }
+        }
+        
           // STEP 4: Restore Measurements - Convert from stored cm to display units
         if (measurementsDetails) {
           const restoredMeasurements = { ...measurementsDetails };
+          
+          // CRITICAL: Explicitly restore heading and lining selections into measurements object
+          // The Select components read from measurements.selected_heading and measurements.selected_lining
+          if (!restoredMeasurements.selected_heading && existingWindowSummary.selected_heading_id) {
+            restoredMeasurements.selected_heading = existingWindowSummary.selected_heading_id;
+          }
+          if (!restoredMeasurements.selected_lining && existingWindowSummary.selected_lining_type) {
+            restoredMeasurements.selected_lining = existingWindowSummary.selected_lining_type;
+          }
           
           // PHASE 2: Better zero/null handling - show empty strings instead of "0"
           // Try measurements_details first, then fall back to top-level columns
@@ -362,25 +380,27 @@ export const DynamicWindowWorksheet = forwardRef<{
             restoredMeasurements.drop = ""; // Empty string for null/zero
           }
           
-          console.log('✅ DynamicWorksheet: Converted measurements from cm to', units.length, {
+          // CRITICAL: Ensure all hem/return/seam values are preserved from saved data
+          // These should NOT be overwritten by template defaults later
+          console.log('✅ DynamicWorksheet: Restoring ALL saved measurement values:', {
             stored_rail_width_cm: storedRailWidth,
             displayed_rail_width: restoredMeasurements.rail_width || '(empty)',
             stored_drop_cm: storedDrop,
             displayed_drop: restoredMeasurements.drop || '(empty)',
-            source: measurementsDetails.rail_width ? 'measurements_details' : 'top-level columns'
+            selected_heading: restoredMeasurements.selected_heading,
+            selected_lining: restoredMeasurements.selected_lining,
+            header_hem: restoredMeasurements.header_hem,
+            bottom_hem: restoredMeasurements.bottom_hem,
+            side_hems: restoredMeasurements.side_hems || restoredMeasurements.side_hem,
+            seam_hems: restoredMeasurements.seam_hems || restoredMeasurements.seam_hem,
+            return_left: restoredMeasurements.return_left,
+            return_right: restoredMeasurements.return_right,
+            waste_percent: restoredMeasurements.waste_percent,
+            manufacturing_type: restoredMeasurements.manufacturing_type,
+            selected_pricing_method: restoredMeasurements.selected_pricing_method
           });
           
           setMeasurements(restoredMeasurements);
-          
-          console.log('✅ Restored template-specific values:', {
-            header_hem: restoredMeasurements.header_hem,
-            bottom_hem: restoredMeasurements.bottom_hem,
-            side_hems: restoredMeasurements.side_hems,
-            seam_hems: restoredMeasurements.seam_hems,
-            return_left: restoredMeasurements.return_left,
-            return_right: restoredMeasurements.return_right,
-            waste_percent: restoredMeasurements.waste_percent
-          });
         }
         
         // PHASE 1: Mark as loaded to prevent future reloads
