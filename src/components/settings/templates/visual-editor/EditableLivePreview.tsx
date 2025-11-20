@@ -658,8 +658,8 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                       <span className="text-muted-foreground">Valid Until: </span>
                       <span>{content.customValidUntil ? format(new Date(content.customValidUntil), 'M/d/yyyy') : renderTokenValue('valid_until')}</span>
                     </div>
+                  </div>
                 </div>
-              </div>
             </div>
           )}
 
