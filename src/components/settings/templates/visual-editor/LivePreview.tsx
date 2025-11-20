@@ -37,14 +37,16 @@ import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { QuoteItemImage } from "@/components/quotes/QuoteItemImage";
 import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import { formatJobNumber } from "@/lib/format-job-number";
+import { useQuoteCustomData } from "@/hooks/useQuoteCustomData";
 
 // Lazy load the editable version to avoid circular dependencies and reduce bundle size
 const EditableLivePreview = React.lazy(() => import('./EditableLivePreview'));
 
 // Interactive Image Gallery Component
-const ImageGalleryBlock = ({ content, style, isEditable, isPrintMode }: any) => {
+const ImageGalleryBlock = ({ content, style, isEditable, isPrintMode, quoteId, blockId, onDataChange }: any) => {
   const [galleryImages, setGalleryImages] = useState(content.images || []);
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,6 +63,11 @@ const ImageGalleryBlock = ({ content, style, isEditable, isPrintMode }: any) => 
     try {
       const newImages = await Promise.all(
         Array.from(files).slice(0, maxImages - galleryImages.length).map(async (file) => {
+          // If quoteId and blockId provided, upload to Supabase
+          if (quoteId && blockId && onDataChange) {
+            return await onDataChange.uploadImage({ file, blockId });
+          }
+          // Fallback to base64 for preview mode
           return new Promise<{url: string; caption: string}>((resolve) => {
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -74,7 +81,15 @@ const ImageGalleryBlock = ({ content, style, isEditable, isPrintMode }: any) => 
         })
       );
       
-      setGalleryImages([...galleryImages, ...newImages]);
+      const updatedImages = [...galleryImages, ...newImages];
+      setGalleryImages(updatedImages);
+      
+      // Save to database if in quote mode
+      if (quoteId && blockId && onDataChange) {
+        setSaving(true);
+        onDataChange.saveBlockData({ blockId, data: { images: updatedImages } });
+        setSaving(false);
+      }
     } catch (error) {
       console.error('Error uploading images:', error);
     } finally {
@@ -82,9 +97,38 @@ const ImageGalleryBlock = ({ content, style, isEditable, isPrintMode }: any) => 
     }
   };
 
-  const removeImage = (indexToRemove: number) => {
-    setGalleryImages(galleryImages.filter((_: any, i: number) => i !== indexToRemove));
+  const removeImage = async (indexToRemove: number) => {
+    const imageToRemove = galleryImages[indexToRemove];
+    
+    // Delete from storage if URL is from Supabase
+    if (quoteId && blockId && onDataChange && imageToRemove.url.includes('supabase')) {
+      try {
+        await onDataChange.deleteImage(imageToRemove.url);
+      } catch (error) {
+        console.error('Error deleting image:', error);
+      }
+    }
+    
+    const updatedImages = galleryImages.filter((_: any, i: number) => i !== indexToRemove);
+    setGalleryImages(updatedImages);
+    
+    // Save to database if in quote mode
+    if (quoteId && blockId && onDataChange) {
+      setSaving(true);
+      onDataChange.saveBlockData({ blockId, data: { images: updatedImages } });
+      setSaving(false);
+    }
   };
+  
+  // Load saved data on mount
+  React.useEffect(() => {
+    if (quoteId && blockId && onDataChange?.customData) {
+      const savedData = onDataChange.customData[blockId];
+      if (savedData?.images) {
+        setGalleryImages(savedData.images);
+      }
+    }
+  }, [quoteId, blockId, onDataChange?.customData]);
   
   return (
     <div style={{ marginTop: '24px', marginBottom: '24px', backgroundColor: '#ffffff !important', padding: '16px' }}>
@@ -99,7 +143,7 @@ const ImageGalleryBlock = ({ content, style, isEditable, isPrintMode }: any) => 
         </p>
       )}
       
-      {!isPrintMode && (
+      {!isPrintMode && isEditable && (
         <div style={{ marginBottom: '16px' }}>
           <input
             ref={fileInputRef}
@@ -112,13 +156,14 @@ const ImageGalleryBlock = ({ content, style, isEditable, isPrintMode }: any) => 
           <Button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploading || galleryImages.length >= (content.maxImages || 5)}
+            disabled={uploading || saving || galleryImages.length >= (content.maxImages || 5)}
             style={{ marginBottom: '8px' }}
           >
-            {uploading ? 'Uploading...' : 'Upload Images'}
+            {uploading ? 'Uploading...' : saving ? 'Saving...' : 'Upload Images'}
           </Button>
           <p style={{ fontSize: '12px', color: '#9ca3af' }}>
             {galleryImages.length}/{content.maxImages || 5} images
+            {saving && <span className="ml-2 text-blue-600">• Auto-saving...</span>}
           </p>
         </div>
       )}
@@ -191,8 +236,50 @@ const ImageGalleryBlock = ({ content, style, isEditable, isPrintMode }: any) => 
 };
 
 // Interactive Editable Text Field Component
-const EditableTextField = ({ content, style, isEditable, isPrintMode }: any) => {
+const EditableTextField = ({ content, style, isEditable, isPrintMode, quoteId, blockId, onDataChange }: any) => {
   const [fieldValue, setFieldValue] = useState(content.value || '');
+  const [saving, setSaving] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  // Load saved data on mount
+  React.useEffect(() => {
+    if (quoteId && blockId && onDataChange?.customData) {
+      const savedData = onDataChange.customData[blockId];
+      if (savedData?.text !== undefined) {
+        setFieldValue(savedData.text);
+      }
+    }
+  }, [quoteId, blockId, onDataChange?.customData]);
+  
+  // Auto-save with debounce
+  const handleTextChange = (newValue: string) => {
+    setFieldValue(newValue);
+    
+    if (quoteId && blockId && onDataChange) {
+      // Clear previous timeout
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      
+      // Set saving indicator
+      setSaving(true);
+      
+      // Debounce save for 1 second
+      saveTimeoutRef.current = setTimeout(() => {
+        onDataChange.saveBlockData({ blockId, data: { text: newValue } });
+        setSaving(false);
+      }, 1000);
+    }
+  };
+  
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
   
   return (
     <div className="mb-6" style={{ 
@@ -206,15 +293,19 @@ const EditableTextField = ({ content, style, isEditable, isPrintMode }: any) => 
           fontSize: '14px', 
           fontWeight: '500', 
           color: '#6b7280',
-          marginBottom: '8px'
+          marginBottom: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
         }}>
           {content.label}
+          {saving && <span style={{ fontSize: '12px', color: '#3b82f6' }}>Auto-saving...</span>}
         </div>
       )}
-      {!isPrintMode ? (
+      {!isPrintMode && isEditable ? (
         <Textarea
           value={fieldValue}
-          onChange={(e) => setFieldValue(e.target.value)}
+          onChange={(e) => handleTextChange(e.target.value)}
           placeholder="Enter text here..."
           className="w-full"
           style={{ 
@@ -247,6 +338,8 @@ interface LivePreviewBlockProps {
   groupByRoom?: boolean;
   layout?: 'simple' | 'detailed';
   onSettingsChange?: (settings: { showDetailedBreakdown?: boolean; showImages?: boolean; groupByRoom?: boolean }) => void;
+  quoteId?: string;
+  onDataChange?: any;
 }
 
 const LivePreviewBlock = ({ 
@@ -259,7 +352,9 @@ const LivePreviewBlock = ({
   showImages: propsShowImages,
   groupByRoom: propsGroupByRoom,
   layout: propsLayout,
-  onSettingsChange
+  onSettingsChange,
+  quoteId,
+  onDataChange
 }: LivePreviewBlockProps) => {
   const content = block.content || {};
   const style = content.style || {};
@@ -1443,7 +1538,7 @@ const LivePreviewBlock = ({
       );
 
     case 'editable-text-field':
-      return <EditableTextField content={content} style={style} isEditable={isEditable} isPrintMode={isPrintMode} />;
+      return <EditableTextField content={content} style={style} isEditable={isEditable} isPrintMode={isPrintMode} quoteId={quoteId} blockId={block.id} onDataChange={onDataChange} />;
 
     case 'image':
       return (
@@ -1465,7 +1560,7 @@ const LivePreviewBlock = ({
       );
 
     case 'image-uploader':
-      return <ImageGalleryBlock content={content} style={style} isEditable={isEditable} isPrintMode={isPrintMode} />;
+      return <ImageGalleryBlock content={content} style={style} isEditable={isEditable} isPrintMode={isPrintMode} quoteId={quoteId} blockId={block.id} onDataChange={onDataChange} />;
 
     case 'spacer':
       return (
@@ -1966,6 +2061,7 @@ interface LivePreviewProps {
   groupByRoom?: boolean;
   layout?: 'simple' | 'detailed';
   onSettingsChange?: (settings: { showDetailedBreakdown?: boolean; showImages?: boolean; groupByRoom?: boolean }) => void;
+  quoteId?: string;
 }
 
 export const LivePreview = ({ 
@@ -1980,9 +2076,11 @@ export const LivePreview = ({
   showImages,
   groupByRoom,
   layout,
-  onSettingsChange
+  onSettingsChange,
+  quoteId
 }: LivePreviewProps) => {
   const { data: businessSettings } = useBusinessSettings();
+  const quoteCustomData = quoteId ? useQuoteCustomData(quoteId) : null;
   console.log('LivePreview rendering with blocks:', blocks?.length || 0);
 
   // If editable and we have update functions, use the editable version
@@ -2037,6 +2135,8 @@ export const LivePreview = ({
             groupByRoom={groupByRoom}
             layout={layout}
             onSettingsChange={onSettingsChange}
+            quoteId={quoteId}
+            onDataChange={quoteCustomData}
           />
         ))}
       </div>
@@ -2106,6 +2206,8 @@ export const LivePreview = ({
                 groupByRoom={groupByRoom}
                 layout={layout}
                 onSettingsChange={onSettingsChange}
+                quoteId={quoteId}
+                onDataChange={quoteCustomData}
               />
             ))}
             
