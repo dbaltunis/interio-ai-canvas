@@ -400,13 +400,16 @@ export const CostCalculationSummary = ({
   // fabricCalculation.totalCost is ONLY the fabric cost, not the total treatment cost
   const fabricCost = safeParseFloat(calculatedFabricCost, 0);
   
-  console.log('🔍 CostCalculationSummary - Fabric Cost Debug:', {
+  console.log('💰 CostSummary - Fabric Pricing:', {
     calculatedFabricCostProp: calculatedFabricCost,
     finalFabricCost: fabricCost,
-    fabricCalculationLinearMeters: fabricCalculation?.linearMeters,
-    fabricCalculationOrderedMeters: fabricCalculation?.orderedLinearMeters,
-    fabricCalculationPricePerMeter: fabricCalculation?.pricePerMeter,
-    formula: fabricCalculation && calculatedFabricCost ? `${(fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters)} × ${fabricCalculation.pricePerMeter} = ${calculatedFabricCost}` : 'N/A'
+    fabricOrientation: fabricCalculation?.fabricOrientation,
+    linearMeters: fabricCalculation?.linearMeters,
+    orderedLinearMeters: fabricCalculation?.orderedLinearMeters,
+    pricePerMeter: fabricCalculation?.pricePerMeter,
+    metersUsedForCost: (fabricCalculation?.orderedLinearMeters || fabricCalculation?.linearMeters),
+    formula: fabricCalculation && calculatedFabricCost ? 
+      `${(fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters).toFixed(2)}m × ${fabricCalculation.pricePerMeter?.toFixed(2)}/m = ${calculatedFabricCost}` : 'N/A'
   });
   
   const liningCost = safeParseFloat(calculatedLiningCost, 0);
