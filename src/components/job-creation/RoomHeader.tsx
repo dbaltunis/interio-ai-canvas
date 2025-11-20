@@ -11,6 +11,7 @@ import { Edit2 } from "lucide-react";
 interface RoomHeaderProps {
   room: any;
   roomTotal: number;
+  projectTotal: number;
   editingRoomId: string | null;
   editingRoomName: string;
   setEditingRoomName: (name: string) => void;
@@ -25,6 +26,7 @@ interface RoomHeaderProps {
 export const RoomHeader = ({
   room,
   roomTotal,
+  projectTotal,
   editingRoomId,
   editingRoomName,
   setEditingRoomName,
@@ -67,7 +69,7 @@ export const RoomHeader = ({
               </Button>
             </div>
           )}
-          <p className="text-xl font-bold text-primary mt-1">{formatCurrency(roomTotal)}</p>
+          <p className="text-xl font-bold text-primary mt-1">{formatCurrency(projectTotal)}</p>
         </div>
         <div className="flex items-center gap-2">
           <RoomActionsMenu
