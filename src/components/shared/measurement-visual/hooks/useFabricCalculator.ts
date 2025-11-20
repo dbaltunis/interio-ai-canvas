@@ -44,14 +44,17 @@ export const useFabricCalculator = ({
       const fabricWidthCm = fabric.fabric_width || 137;
       const fullnessRatio = template.fullness_ratio || 2.0;
       
-      // Manufacturing allowances from template
-      const headerHem = template.header_allowance || 8;
-      const bottomHem = template.bottom_hem || 8;
-      const sideHems = template.side_hems || 0;
-      const seamHems = template.seam_hems || 0;
-      const returnLeft = template.return_left || 0;
-      const returnRight = template.return_right || 0;
-      const wastePercent = template.waste_percent || 0;
+      // Manufacturing allowances - prioritize measurements, fallback to template
+      // Use type assertion since templates can have various field names
+      const templateAny = template as any;
+      const measurementsAny = measurements as any;
+      const headerHem = measurementsAny.header_hem || templateAny.header_allowance || templateAny.header_hem || 8;
+      const bottomHem = measurementsAny.bottom_hem || templateAny.bottom_hem || templateAny.bottom_allowance || 15;
+      const sideHems = measurementsAny.side_hems || measurementsAny.side_hem || templateAny.side_hem || template.side_hems || 7.5;
+      const seamHems = measurementsAny.seam_hems || measurementsAny.seam_hem || templateAny.seam_allowance || template.seam_hems || 1.5;
+      const returnLeft = measurementsAny.return_left || template.return_left || 0;
+      const returnRight = measurementsAny.return_right || template.return_right || 0;
+      const wastePercent = measurementsAny.waste_percent || template.waste_percent || 5;
       
       // Calculate required width with fullness
       const requiredWidth = width * fullnessRatio;
