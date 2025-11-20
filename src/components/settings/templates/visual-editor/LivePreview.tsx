@@ -1274,7 +1274,7 @@ const LivePreviewBlock = ({
       return (
         <div style={{ marginTop: '24px', marginBottom: '24px', backgroundColor: '#ffffff !important', padding: '16px' }}>
           {content.title && (
-            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px', color: '#000 !important' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px', color: '#000 !important' }}>
               {content.title}
             </h3>
           )}

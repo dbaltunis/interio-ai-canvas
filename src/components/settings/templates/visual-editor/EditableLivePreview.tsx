@@ -1500,7 +1500,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
             <EditableText
               value={content.title || 'Image Gallery'}
               onChange={(value) => updateBlockContent({ title: value })}
-              className="text-xl font-semibold"
+              className="text-xl font-bold"
               placeholder="Section Title"
             />
             
