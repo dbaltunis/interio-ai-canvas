@@ -186,18 +186,10 @@ export const VisualMeasurementSheet = ({
     }
   }, []);
 
-  // ✅ Initialize fabric_rotated to false (vertical orientation) when fabric is first selected
-  // This ensures manual control and prevents cached rotation values
-  useEffect(() => {
-    if (selectedFabric && measurements.fabric_rotated === undefined) {
-      console.log('🔄 Initializing fabric_rotated to false (vertical/standard orientation)');
-      handleInputChange("fabric_rotated", "false");
-    }
-  }, [selectedFabric]);
-
   // ✅ Fabric rotation is now MANUAL ONLY - no auto-rotation
   // Users must manually toggle rotation if they want to railroad the fabric
   // This allows for alternative solutions like adding borders or using fewer widths
+  // NO automatic initialization - preserves user's existing rotation settings
 
   // Calculate fabric usage when measurements and fabric change
   const fabricCalculation = useMemo(() => {
@@ -211,7 +203,10 @@ export const VisualMeasurementSheet = ({
       manufacturing_type: measurements.manufacturing_type,
       selected_heading: measurements.selected_heading,
       heading_fullness: measurements.heading_fullness,
-      selected_lining: measurements.selected_lining
+      selected_lining: measurements.selected_lining,
+      pooling_amount: measurements.pooling_amount,
+      units_length: units.length,
+      timestamp: new Date().toISOString()
     });
     if (!selectedFabric || !measurements.rail_width || !measurements.drop || !selectedTemplate) {
       console.log('⚠️ LEVEL 3: Missing required data for fabric calculation');
@@ -384,19 +379,26 @@ export const VisualMeasurementSheet = ({
       console.error('Error calculating fabric usage:', error);
     }
     return null;
-  }, [selectedFabric, measurements.rail_width, measurements.drop, measurements.curtain_type, measurements.fabric_rotated, measurements.selected_pricing_method,
-  // ✅ ADD: Triggers recalc when pricing method changes
-  measurements.manufacturing_type,
-  // ✅ ADD: Triggers recalc when manufacturing type changes
-  measurements.selected_heading,
-  // ✅ ADD: Triggers recalc when heading changes
-  measurements.heading_fullness,
-  // ✅ ADD: Triggers recalc when fullness changes
-  measurements.selected_lining,
-  // ✅ ADD: Triggers recalc when lining changes
-  measurements.header_hem,
-  // ✅ ADD: Triggers recalc when hems change
-  measurements.bottom_hem, measurements.side_hem, measurements.seam_hem, selectedTemplate, inventory]);
+  }, [
+    selectedFabric, 
+    measurements.rail_width, 
+    measurements.drop, 
+    measurements.curtain_type, 
+    measurements.fabric_rotated, 
+    measurements.selected_pricing_method,
+    measurements.manufacturing_type,
+    measurements.selected_heading,
+    measurements.heading_fullness,
+    measurements.selected_lining,
+    measurements.header_hem,
+    measurements.bottom_hem, 
+    measurements.side_hem, 
+    measurements.seam_hem,
+    measurements.pooling_amount,
+    selectedTemplate, 
+    inventory,
+    units.length // ✅ FIX: Re-calculate when measurement units change
+  ]);
 
   // Notify parent when fabric calculation changes
   useEffect(() => {
