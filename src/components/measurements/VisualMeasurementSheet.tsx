@@ -331,8 +331,16 @@ export const VisualMeasurementSheet = ({
         fabricOrientation: result.fabricOrientation,
         fullResultObject: result
       });
+      // Calculate ordered meters and remnant
+      const dropPerWidthMeters = ((totalDrop / 100) * (1 + (selectedTemplate.waste_percent || 0) / 100));
+      const orderedLinearMeters = dropPerWidthMeters * (result.widthsRequired || 1);
+      const remnantMeters = orderedLinearMeters - result.meters;
+      
       const fabricCalcResult = {
         linearMeters: result.meters,
+        orderedLinearMeters: orderedLinearMeters, // Total meters to order (full widths)
+        remnantMeters: remnantMeters > 0 ? remnantMeters : 0, // Leftover fabric
+        dropPerWidthMeters: dropPerWidthMeters, // Meters per width
         totalCost: calculatedTotalCost,
         pricePerMeter: pricePerMeter,
         widthsRequired: result.widthsRequired || 1,
