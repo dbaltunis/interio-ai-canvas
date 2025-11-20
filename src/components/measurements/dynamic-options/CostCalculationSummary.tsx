@@ -566,7 +566,27 @@ export const CostCalculationSummary = ({
 
         {liningCost > 0 && (
           <div className="flex justify-between py-1.5 border-b border-border/50">
-            <span className="text-card-foreground font-medium">Lining</span>
+            <div className="flex flex-col">
+              <span className="text-card-foreground font-medium">Lining</span>
+              {selectedLining && selectedLining !== 'none' && template?.lining_types && (
+                <span className="text-xs text-muted-foreground">
+                  {(() => {
+                    const liningConfig = template.lining_types.find((l: any) => l.type === selectedLining);
+                    if (liningConfig) {
+                      const parts = [];
+                      if (liningConfig.price_per_metre > 0) {
+                        parts.push(`${formatPrice(liningConfig.price_per_metre)}/m`);
+                      }
+                      if (liningConfig.labour_per_curtain > 0) {
+                        parts.push(`${formatPrice(liningConfig.labour_per_curtain)}/curtain labour`);
+                      }
+                      return parts.join(' + ');
+                    }
+                    return '';
+                  })()}
+                </span>
+              )}
+            </div>
             <span className="font-semibold text-card-foreground">{formatPrice(liningCost)}</span>
           </div>
         )}
