@@ -684,7 +684,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                             <CalendarIcon className="h-3 w-3" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="end">
+                        <PopoverContent className="w-auto p-0 pointer-events-auto z-[200]" align="end">
                           <Calendar
                             mode="single"
                             selected={content.customValidUntil ? new Date(content.customValidUntil) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)}
@@ -694,7 +694,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                               }
                             }}
                             initialFocus
-                            className="p-3 pointer-events-auto"
                           />
                         </PopoverContent>
                       </Popover>
