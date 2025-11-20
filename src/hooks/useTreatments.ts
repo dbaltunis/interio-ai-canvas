@@ -387,13 +387,13 @@ export const useDeleteTreatment = () => {
 
   return useMutation({
     mutationFn: async (treatmentId: string) => {
-      console.log("=== DELETING TREATMENT AND RELATED MATERIALS ===");
+      console.log("=== DELETING TREATMENT, MATERIALS, AND QUOTE ITEMS ===");
       console.log("Treatment ID:", treatmentId);
       
-      // First, get the treatment to find its project_id and window_id
+      // First, get the treatment to find its project_id and quote_id
       const { data: treatment } = await supabase
         .from("treatments")
-        .select("project_id, window_id")
+        .select("project_id, window_id, quote_id")
         .eq("id", treatmentId)
         .single();
 
@@ -408,8 +408,8 @@ export const useDeleteTreatment = () => {
         throw treatmentError;
       }
 
-      // Delete related materials from queue (only pending/in_batch status)
       if (treatment?.project_id) {
+        // Delete related materials from queue (only pending/in_batch status)
         const { error: materialsError } = await supabase
           .from("material_order_queue")
           .delete()
@@ -418,9 +418,30 @@ export const useDeleteTreatment = () => {
 
         if (materialsError) {
           console.error("Error deleting materials:", materialsError);
-          // Don't throw - treatment is already deleted
         } else {
           console.log("Deleted related materials from queue");
+        }
+
+        // Delete orphaned quote items (those with empty breakdown or no treatments)
+        const quoteId = treatment.quote_id || (await supabase
+          .from("quotes")
+          .select("id")
+          .eq("project_id", treatment.project_id)
+          .maybeSingle()).data?.id;
+
+        if (quoteId) {
+          // Delete quote items with empty breakdown
+          const { error: quoteItemsError } = await supabase
+            .from("quote_items")
+            .delete()
+            .eq("quote_id", quoteId)
+            .or("breakdown.eq.{},breakdown.is.null");
+
+          if (quoteItemsError) {
+            console.error("Error deleting orphaned quote items:", quoteItemsError);
+          } else {
+            console.log("Deleted orphaned quote items");
+          }
         }
       }
       
@@ -432,10 +453,12 @@ export const useDeleteTreatment = () => {
       // Invalidate all treatment queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["treatments"] });
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["quote-items"] });
       queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
       queryClient.invalidateQueries({ queryKey: ["material-queue-v2"] });
       queryClient.invalidateQueries({ queryKey: ["material-queue-stats"] });
       queryClient.refetchQueries({ queryKey: ["treatments"] });
+      queryClient.refetchQueries({ queryKey: ["quotes"] });
       toast({
         title: "Success",
         description: "Treatment deleted successfully",
