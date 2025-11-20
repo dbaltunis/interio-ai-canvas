@@ -412,6 +412,14 @@ export const AdaptiveFabricPricingDisplay = ({
                   <span>Drops Used:</span>
                   <span className="font-medium text-foreground">{measurements.quantity || 1} drop(s)</span>
                 </div>
+                <div className="flex justify-between pl-2">
+                  <span>Side Hems:</span>
+                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalSideHems || 0)}</span>
+                </div>
+                <div className="flex justify-between pl-2">
+                  <span>Returns (L+R):</span>
+                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.returns || 0)}</span>
+                </div>
                 {fabricCalculation.seamsRequired > 0 && (
                   <div className="flex justify-between pl-2">
                     <span>Vertical Seams:</span>
@@ -441,12 +449,14 @@ export const AdaptiveFabricPricingDisplay = ({
                     </div>
                   </>
                 )}
-                {(fabricCalculation.totalSideHems || 0) > 0 && (
-                  <div className="flex justify-between pl-2">
-                    <span>Side Hems:</span>
-                    <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalSideHems)}</span>
-                  </div>
-                )}
+                <div className="flex justify-between pl-2">
+                  <span>Side Hems:</span>
+                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalSideHems || 0)}</span>
+                </div>
+                <div className="flex justify-between pl-2">
+                  <span>Returns (L+R):</span>
+                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.returns || 0)}</span>
+                </div>
                 {fabricCalculation.seamsRequired > 0 && (
                   <div className="flex justify-between pl-2">
                     <span>Seam Allowance:</span>
