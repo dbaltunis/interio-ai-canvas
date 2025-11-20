@@ -450,6 +450,16 @@ export const AdaptiveFabricPricingDisplay = ({
                   <span>Side Hems:</span>
                   <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalSideHems || 0)}</span>
                 </div>
+                <div className="flex justify-between border-t border-border/30 pt-2 mt-2">
+                  <span className="font-medium">Total Width:</span>
+                  <span className="font-medium text-foreground">
+                    {formatMeasurement(
+                      ((fabricCalculation.railWidth || measurements.rail_width || 0) * (fabricCalculation.fullnessRatio || measurements.heading_fullness || 1)) +
+                      (fabricCalculation.returns || 0) +
+                      (fabricCalculation.totalSideHems || 0)
+                    )}
+                  </span>
+                </div>
                 
                 {/* Height Total - how we cover the drop */}
                 <div className="flex justify-between pt-2 mt-2 border-t border-border/30">
@@ -476,6 +486,15 @@ export const AdaptiveFabricPricingDisplay = ({
                   <div className="flex justify-between pl-2">
                     <span>Seam Allowance:</span>
                     <span className="font-medium text-foreground">{formatMeasurement((fabricCalculation.seamsRequired * (measurements.seam_hem || 1) * 2))}</span>
+                  </div>
+                )}
+                
+                {/* Warning when second width is needed for railroaded fabric */}
+                {fabricCalculation.horizontalPiecesNeeded && fabricCalculation.horizontalPiecesNeeded > 1 && (
+                  <div className="mt-3 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded text-xs">
+                    <p className="text-amber-800 dark:text-amber-200 font-medium">
+                      ⚠️ Second width required: Drop height exceeds fabric width
+                    </p>
                   </div>
                 )}
               </>
