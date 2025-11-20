@@ -79,11 +79,14 @@ export const useFabricPricing = (params: FabricPricingParams): FabricPricingResu
       ? fabricUsageResult.yards 
       : fabricUsageResult.meters;
     
-    const fabricCost = fabricAmount * fabricCostPerYard;
+    // CRITICAL FIX: Multiply by horizontal pieces for railroaded fabric
+    const horizontalPieces = fabricUsageResult.horizontalPiecesNeeded || 1;
+    const totalFabricToOrder = fabricAmount * horizontalPieces;
+    const fabricCost = totalFabricToOrder * fabricCostPerYard;
 
     return {
       fabricCost,
-      fabricUsage: fabricAmount,
+      fabricUsage: fabricAmount,  // Linear meters per piece
       fabricUsageUnit: units.fabric as 'yards' | 'meters',
       fabricUsageResult,
       costPerUnit: fabricCostPerYard
