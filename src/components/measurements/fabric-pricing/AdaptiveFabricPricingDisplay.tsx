@@ -416,26 +416,6 @@ export const AdaptiveFabricPricingDisplay = ({
               </div>
             )}
             {/* Width Calculation Explanation */}
-            <div className="text-xs text-muted-foreground italic mt-1 pl-1">
-              {(() => {
-                const rollDirection = measurements.roll_direction || measurements.fabric_rotated;
-                const isHorizontal = rollDirection === "horizontal" || rollDirection === true || rollDirection === "true";
-                const widths = fabricCalculation.widthsRequired || 0;
-                const fabricWidth = selectedFabricItem?.fabric_width || 137;
-                const totalWidth = (fabricCalculation.railWidth || 0) * (fabricCalculation.fullnessRatio || 0) + (fabricCalculation.returns || 0);
-                
-                if (isHorizontal) {
-                  if (fabricCalculation.horizontalPiecesNeeded && fabricCalculation.horizontalPiecesNeeded > 1) {
-                    return `${widths} fabric lengths needed (${fabricCalculation.curtainCount || 1} panel(s) × ${fabricCalculation.horizontalPiecesNeeded} horizontal pieces per panel)`;
-                  } else {
-                    return `${widths} fabric length(s) needed to cover ${fabricCalculation.curtainCount || 1} panel(s)`;
-                  }
-                } else {
-                  return `${widths} fabric width(s) of ${formatFabricWidth(fabricWidth)} joined to achieve ${formatMeasurement(totalWidth)} total width`;
-                }
-              })()}
-            </div>
-
             {fabricCalculation.horizontalPiecesNeeded && fabricCalculation.horizontalPiecesNeeded > 1 && (
               <div className="flex flex-col gap-1 bg-warning/10 border border-warning/20 rounded-md p-2.5 mt-2">
                 <div className="flex justify-between items-center">
