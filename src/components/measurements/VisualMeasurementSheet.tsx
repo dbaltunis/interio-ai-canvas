@@ -102,9 +102,13 @@ export const VisualMeasurementSheet = ({
     if (!readOnly) {
       console.log(`🔥🔥🔥 LEVEL 0: VisualMeasurementSheet handleInputChange:`, {
         field,
-        value
+        value,
+        currentValue: measurements[field as keyof typeof measurements]
       });
       onMeasurementChange(field, value);
+      
+      // CRITICAL FIX: Force re-render by logging measurements state
+      console.log(`🔄 After handleInputChange - measurements.${field}:`, measurements[field as keyof typeof measurements]);
     } else {
       console.log(`⚠️ VisualMeasurementSheet: Ignored change (readOnly):`, {
         field,
@@ -192,6 +196,7 @@ export const VisualMeasurementSheet = ({
   // NO automatic initialization - preserves user's existing rotation settings
 
   // Calculate fabric usage when measurements and fabric change
+  // CRITICAL FIX: Add measurements object itself as dependency to catch ALL changes
   const fabricCalculation = useMemo(() => {
     console.log('🔥🔥🔥 LEVEL 3: fabricCalculation useMemo TRIGGERED', {
       selectedFabric,
@@ -199,6 +204,7 @@ export const VisualMeasurementSheet = ({
       drop: measurements.drop,
       curtain_type: measurements.curtain_type,
       fabric_rotated: measurements.fabric_rotated,
+      fabric_rotated_type: typeof measurements.fabric_rotated,
       selected_pricing_method: measurements.selected_pricing_method,
       manufacturing_type: measurements.manufacturing_type,
       selected_heading: measurements.selected_heading,
@@ -206,7 +212,8 @@ export const VisualMeasurementSheet = ({
       selected_lining: measurements.selected_lining,
       pooling_amount: measurements.pooling_amount,
       units_length: units.length,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      measurementsHash: JSON.stringify(measurements).substring(0, 100)
     });
     if (!selectedFabric || !measurements.rail_width || !measurements.drop || !selectedTemplate) {
       console.log('⚠️ LEVEL 3: Missing required data for fabric calculation');
@@ -380,24 +387,12 @@ export const VisualMeasurementSheet = ({
     }
     return null;
   }, [
+    // CRITICAL FIX: Add measurements object reference to catch ALL changes
+    measurements,
     selectedFabric, 
-    measurements.rail_width, 
-    measurements.drop, 
-    measurements.curtain_type, 
-    measurements.fabric_rotated, 
-    measurements.selected_pricing_method,
-    measurements.manufacturing_type,
-    measurements.selected_heading,
-    measurements.heading_fullness,
-    measurements.selected_lining,
-    measurements.header_hem,
-    measurements.bottom_hem, 
-    measurements.side_hem, 
-    measurements.seam_hem,
-    measurements.pooling_amount,
     selectedTemplate, 
     inventory,
-    units.length // ✅ FIX: Re-calculate when measurement units change
+    units.length
   ]);
 
   // Notify parent when fabric calculation changes
@@ -845,14 +840,34 @@ export const VisualMeasurementSheet = ({
                     })()}
                       </div>
                     </div>
-                    <Switch checked={measurements.fabric_rotated === true || measurements.fabric_rotated === 'true'} onCheckedChange={checked => {
-                  console.log("Fabric rotation changed to:", checked);
-                  handleInputChange("fabric_rotated", checked.toString());
-                }} disabled={readOnly || !selectedFabricItem || (() => {
-                  const fabricWidthCm = selectedFabricItem.fabric_width || 137;
-                  const drop = parseFloat(measurements.drop) || 0;
-                  return drop >= fabricWidthCm;
-                })()} />
+                    <Switch 
+                      checked={measurements.fabric_rotated === true || measurements.fabric_rotated === 'true'} 
+                      onCheckedChange={(checked) => {
+                        console.log("🔄 Fabric rotation toggle clicked:", {
+                          checked,
+                          currentValue: measurements.fabric_rotated,
+                          willChangeTo: checked.toString()
+                        });
+                        handleInputChange("fabric_rotated", checked.toString());
+                        
+                        // Force immediate re-calculation
+                        setTimeout(() => {
+                          console.log("🔄 After rotation change - measurements.fabric_rotated:", measurements.fabric_rotated);
+                        }, 100);
+                      }} 
+                      disabled={readOnly || !selectedFabricItem || (() => {
+                        const fabricWidthCm = selectedFabricItem.fabric_width || 137;
+                        const drop = parseFloat(measurements.drop) || 0;
+                        const disabled = drop >= fabricWidthCm;
+                        if (disabled) {
+                          console.log("⚠️ Rotation toggle disabled - drop exceeds fabric width:", {
+                            drop,
+                            fabricWidth: fabricWidthCm
+                          });
+                        }
+                        return disabled;
+                      })()}
+                    />
                   </div>
                 </div>}
             </div>
