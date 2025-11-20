@@ -286,29 +286,15 @@ export const calculateFabricUsage = (
   const horizontalCalc = calculateOrientation('horizontal', params, fabricCostPerYard, laborRate);
   const verticalCalc = calculateOrientation('vertical', params, fabricCostPerYard, laborRate);
 
-  // Smart roll direction selection based on user selection or auto-detect
-  let rollDirection = formData.roll_direction || formData.fabric_rotated || 'auto';
+  // ✅ Manual fabric rotation ONLY - default to vertical (no rotation) unless user explicitly toggles
+  // This allows users to choose alternative solutions like borders or using fewer widths
+  let rollDirection = formData.roll_direction || 'vertical';
   
   // ✅ FIX: Handle fabric_rotated boolean/string properly
   if (formData.fabric_rotated === true || formData.fabric_rotated === 'true') {
     rollDirection = 'horizontal';
-  } else if (formData.fabric_rotated === false || formData.fabric_rotated === 'false') {
-    rollDirection = 'vertical';
-  }
-  
-  if (rollDirection === 'auto') {
-    // Auto-suggest based on fabric properties
-    const isNarrowFabric = fabricWidth <= 200;
-    const canBenefitFromRotation = isPlainFabric && isNarrowFabric && 
-                                  drop < fabricWidth && railWidth > fabricWidth;
-    
-    if (canBenefitFromRotation) {
-      rollDirection = 'horizontal'; // Rotate for savings
-    } else if (requiresPatternMatching || isNarrowFabric) {
-      rollDirection = 'vertical'; // Standard for narrow/patterned
-    } else {
-      rollDirection = 'horizontal'; // Standard for wide fabrics
-    }
+  } else if (formData.fabric_rotated === false || formData.fabric_rotated === 'false' || formData.fabric_rotated === undefined) {
+    rollDirection = 'vertical'; // Default to vertical (standard orientation)
   }
   
   console.log('🎯 Fabric rotation/roll direction:', {
@@ -316,7 +302,8 @@ export const calculateFabricUsage = (
     formDataRollDirection: formData.roll_direction,
     finalRollDirection: rollDirection,
     fabricWidth,
-    drop
+    drop,
+    note: 'Manual rotation only - defaults to vertical'
   });
   
   // Use the determined or selected orientation
