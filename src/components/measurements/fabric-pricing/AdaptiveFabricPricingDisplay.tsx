@@ -416,19 +416,6 @@ export const AdaptiveFabricPricingDisplay = ({
               </div>
             )}
             {/* Width Calculation Explanation */}
-            
-            {fabricCalculation.leftoverFromLastPiece && fabricCalculation.leftoverFromLastPiece > 0 && (
-              <div className="flex flex-col gap-1 bg-accent/10 border border-accent/20 rounded-md p-2.5 mt-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-accent-foreground font-medium text-xs">📏 Material Leftover</span>
-                  <span className="font-medium text-accent-foreground text-xs">{formatMeasurement(fabricCalculation.leftoverFromLastPiece)}</span>
-                </div>
-                <div className="text-xs text-accent-foreground/80 leading-relaxed">
-                  Approximately {((fabricCalculation.leftoverFromLastPiece / (selectedFabricItem?.fabric_width || 137)) * 100).toFixed(1)}% 
-                  of the last fabric piece will remain unused after cutting. This can be utilized for cushions, samples, or future repairs.
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
