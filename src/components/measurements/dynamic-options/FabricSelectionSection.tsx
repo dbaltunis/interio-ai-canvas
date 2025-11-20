@@ -196,8 +196,8 @@ export const FabricSelectionSection = ({
                 <div className="font-medium text-muted-foreground mb-1">Calculation breakdown:</div>
                 <div>• Fabric width: {selectedFabricItem.fabric_width || 137}cm</div>
                 <div>• Rail width: {fabricCalculation.railWidth || 'Not set'}cm</div>
-                <div>• Fullness multiplier: {fabricCalculation.fullnessRatio || 2.0}x</div>
-                <div>• Required width: {fabricCalculation.railWidth ? Math.round((fabricCalculation.railWidth || 0) * (fabricCalculation.fullnessRatio || 2.0)) : 'Calculating...'}cm</div>
+                <div>• Fullness multiplier: {fabricCalculation.fullnessRatio || 0}x</div>
+                <div>• Required width: {fabricCalculation.railWidth ? Math.round((fabricCalculation.railWidth || 0) * (fabricCalculation.fullnessRatio || 0)) : 'Calculating...'}cm</div>
                 {fabricCalculation.totalSideHems && fabricCalculation.totalSideHems > 0 && (
                   <div>• Side hems: {fabricCalculation.sideHems}cm × 2 sides × {fabricCalculation.curtainCount} curtain(s) = {fabricCalculation.totalSideHems}cm total</div>
                 )}

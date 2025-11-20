@@ -329,8 +329,8 @@ export const VisualMeasurementSheet = ({
         pricePerMeter: pricePerMeter,
         widthsRequired: result.widthsRequired || 1,
         railWidth: width,
-        // ✅ FIX: Use dynamic heading_fullness from measurements instead of static template value
-        fullnessRatio: parseFloat(enrichedMeasurements.heading_fullness as any) || selectedTemplate.fullness_ratio || 0,
+        // ✅ FIX: Use dynamic heading_fullness from measurements, NO hardcoded fallbacks
+        fullnessRatio: parseFloat(enrichedMeasurements.heading_fullness as any) || 0,
         drop: height,
         headerHem: headerHem,
         bottomHem: bottomHem,
