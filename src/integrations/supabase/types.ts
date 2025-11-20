@@ -9430,6 +9430,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_owns_email: {
+        Args: { check_email: string; check_user_id: string }
+        Returns: boolean
+      }
       validate_permission_dependencies: {
         Args: { permissions_param: string[]; user_id_param: string }
         Returns: Json
