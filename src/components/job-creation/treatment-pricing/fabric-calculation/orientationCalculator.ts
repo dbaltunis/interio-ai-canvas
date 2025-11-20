@@ -108,10 +108,9 @@ export const calculateOrientation = (
   let widthsRequired, dropsPerWidth;
   
   if (orientation === 'horizontal') {
-    // Each panel needs its own length of fabric
-    // ✅ NEW: Multiply by horizontal pieces if multiple pieces needed per panel
-    const piecesPerPanel = horizontalPiecesNeeded || 1;
-    widthsRequired = panelsNeeded * piecesPerPanel;
+    // For horizontal orientation: widthsRequired is just the number of PANELS
+    // The horizontal pieces are sections of the SAME fabric run, not separate runs
+    widthsRequired = panelsNeeded;
     dropsPerWidth = 1;
   } else {
     // In vertical orientation, check if panel width fits within fabric width
@@ -129,9 +128,11 @@ export const calculateOrientation = (
     }
   }
 
-  // Calculate seams needed
-  const seamsRequired = Math.max(0, widthsRequired - 1);
-  const totalSeamAllowance = seamsRequired * seamHem * 2;
+  // Calculate seams needed - BOTH vertical and horizontal
+  const verticalSeamsRequired = Math.max(0, widthsRequired - 1);
+  const horizontalSeamsRequired = horizontalPiecesNeeded ? Math.max(0, horizontalPiecesNeeded - 1) : 0;
+  const seamsRequired = verticalSeamsRequired + horizontalSeamsRequired;
+  const totalSeamAllowance = (verticalSeamsRequired * seamHem * 2) + (horizontalSeamsRequired * seamHem * 2);
   
   // Total fabric length needed in cm - USE CORRECT DIMENSION BASED ON ORIENTATION
   let totalLengthCm;
