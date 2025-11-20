@@ -667,7 +667,7 @@ export const AdaptiveFabricPricingDisplay = ({
                 if (isHorizontal) {
                   // Horizontal/Railroaded: Calculate required WIDTH to order
                   const railWidthCm = fabricCalculation.railWidth || 0;
-                  const fullness = fabricCalculation.fullnessRatio || 2.5;
+                  const fullness = fabricCalculation.fullnessRatio || 0;
                   const sideHemsCm = fabricCalculation.totalSideHems || 0;
                   const returnsCm = fabricCalculation.returns || 0;
                   const wastePercent = fabricCalculation.wastePercent || 0;

@@ -47,7 +47,7 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
 
   // Extract fullness ratio from selected options
   const getActiveFullnessRatio = () => {
-    let fullnessRatio = parseFloat(formData.heading_fullness) || 2.5;
+    let fullnessRatio = parseFloat(formData.heading_fullness) || 0;
     
     // First check if a specific heading option is selected
     if (formData.selected_heading && formData.selected_heading !== "no-heading") {
@@ -269,7 +269,7 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     
     const railWidth = parseFloat(formData.rail_width) || 0;
     const drop = parseFloat(formData.drop) || 0;
-    const fullness = parseFloat(formData.heading_fullness) || 2.5;
+    const fullness = parseFloat(formData.heading_fullness) || 0;
     
     const baseHours = 2;
     const sewingComplexity = (railWidth * drop * fullness) / 25000;

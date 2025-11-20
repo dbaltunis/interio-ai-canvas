@@ -330,7 +330,7 @@ export const VisualMeasurementSheet = ({
         widthsRequired: result.widthsRequired || 1,
         railWidth: width,
         // ✅ FIX: Use dynamic heading_fullness from measurements instead of static template value
-        fullnessRatio: parseFloat(enrichedMeasurements.heading_fullness as any) || selectedTemplate.fullness_ratio || 2.0,
+        fullnessRatio: parseFloat(enrichedMeasurements.heading_fullness as any) || selectedTemplate.fullness_ratio || 0,
         drop: height,
         headerHem: headerHem,
         bottomHem: bottomHem,

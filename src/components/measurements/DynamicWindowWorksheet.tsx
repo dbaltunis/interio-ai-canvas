@@ -885,7 +885,7 @@ export const DynamicWindowWorksheet = forwardRef<{
               heading_name: headingName,
               id: selectedHeading,
               cost: finalHeadingCost,
-              fullness_ratio: parseFloat(measurements.heading_fullness) || 2.5,
+              fullness_ratio: parseFloat(measurements.heading_fullness) || 0,
               extra_fabric: headingMetadata?.extra_fabric || 0,
               heading_type: headingMetadata?.heading_type,
               spacing: headingMetadata?.spacing,
@@ -906,7 +906,7 @@ export const DynamicWindowWorksheet = forwardRef<{
               heading_name: 'Standard',
               id: 'standard',
               cost: 0,
-              fullness_ratio: parseFloat(measurements.heading_fullness) || 2.5
+              fullness_ratio: parseFloat(measurements.heading_fullness) || 0
             };
           }
           console.log("🎯 Final heading details for save:", headingDetails);
@@ -1057,7 +1057,7 @@ export const DynamicWindowWorksheet = forwardRef<{
               curtain_side: measurements.curtain_side || 'left',
               pooling_option: measurements.pooling_option || 'above_floor',
               pooling_amount: measurements.pooling_amount || '',
-              fullness_ratio: selectedTemplate?.fullness_ratio || (treatmentCategory === 'wallpaper' ? 1 : 2),
+              fullness_ratio: selectedTemplate?.fullness_ratio || (treatmentCategory === 'wallpaper' ? 1 : 0),
               fabric_width_cm: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140,
               window_type: selectedWindowType?.name || 'Room Wall',
               selected_heading: selectedHeading,
