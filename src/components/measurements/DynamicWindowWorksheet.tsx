@@ -1597,18 +1597,22 @@ export const DynamicWindowWorksheet = forwardRef<{
                       );
                     }
 
-                    // Calculate fabric cost using ordered meters (total fabric to order)
-                    const metersToOrder = fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters || 0;
+                    // Calculate fabric cost - MUST account for horizontalPiecesNeeded
+                    const linearMeters = fabricCalculation.linearMeters || 0;
+                    const horizontalPiecesNeeded = fabricCalculation.horizontalPiecesNeeded || 1;
                     const pricePerMeter = fabricCalculation.pricePerMeter || 0;
-                    const fabricCost = metersToOrder * pricePerMeter;
+                    
+                    // ✅ CRITICAL: For railroaded fabric with multiple pieces, multiply by pieces
+                    const totalMetersToOrder = linearMeters * horizontalPiecesNeeded;
+                    const fabricCost = totalMetersToOrder * pricePerMeter;
                     
                     console.log('💰 [UI] Fabric cost calculation:', {
-                      orderedLinearMeters: fabricCalculation.orderedLinearMeters,
-                      linearMeters: fabricCalculation.linearMeters,
-                      metersToOrder,
+                      linearMeters,
+                      horizontalPiecesNeeded,
+                      totalMetersToOrder,
                       pricePerMeter,
                       calculatedFabricCost: fabricCost,
-                      oldTotalCost: fabricCalculation.totalCost
+                      fabricOrientation: fabricCalculation.fabricOrientation
                     });
 
                     // Calculate lining cost
