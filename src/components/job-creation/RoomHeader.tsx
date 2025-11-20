@@ -3,7 +3,7 @@ import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RoomActionsMenu } from "./RoomActionsMenu";
-import { formatCurrency } from "@/utils/currency";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useCompactMode } from "@/hooks/useCompactMode";
 import { Edit2 } from "lucide-react";
 
@@ -36,6 +36,7 @@ export const RoomHeader = ({
   onChangeRoomType
 }: RoomHeaderProps) => {
   const { compact } = useCompactMode();
+  const { formatCurrency } = useFormattedCurrency();
   return (
     <CardHeader className={`relative bg-muted/30 border-b border-border p-[14px] ${compact ? 'py-3 px-4' : 'py-4 px-6'}`}>
       {/* Simplified background */}
