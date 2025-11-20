@@ -59,7 +59,7 @@ export const useWorkroomSync = ({
             manufacturing_details: {
               type: window.summary.manufacturing_type || 'machine',
               cost: window.summary.manufacturing_cost,
-              heading_type: window.summary.heading_details?.heading_name,
+              heading_type: window.summary.selected_heading_id || window.summary.heading_details?.heading_name || 'Standard',
               lining_type: window.summary.lining_type,
               hand_finished: window.summary.template_details?.manufacturing_type === 'hand'
             },
