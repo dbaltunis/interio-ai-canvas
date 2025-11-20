@@ -846,6 +846,13 @@ export const DynamicWindowWorksheet = forwardRef<{
             });
           }
 
+          // Calculate options cost for curtains (if any selected)
+          let curtainOptionsCost = 0;
+          if (displayCategory === 'curtains' && selectedOptions && selectedOptions.length > 0) {
+            curtainOptionsCost = selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0);
+            console.log('💰 [SAVE] Curtain options cost:', curtainOptionsCost, 'from', selectedOptions.length, 'options');
+          }
+
           // Calculate total cost 
           if (treatmentCategory === 'wallpaper') {
             totalCost = fabricCost; // Already calculated above for wallpaper
@@ -853,8 +860,8 @@ export const DynamicWindowWorksheet = forwardRef<{
             // Blinds/shutters totalCost already calculated and includes options
             // DO NOT RECALCULATE - use blindCalc.totalCost which includes all components
           } else {
-            // Curtains - recalculate with all components
-            totalCost = fabricCost + liningCost + headingCost + manufacturingCost;
+            // Curtains - recalculate with all components including options
+            totalCost = fabricCost + liningCost + headingCost + manufacturingCost + curtainOptionsCost;
           }
 
           // Create comprehensive calculation object for display consistency
@@ -931,10 +938,10 @@ export const DynamicWindowWorksheet = forwardRef<{
           console.log("🎯 Final heading details for save:", headingDetails);
 
           // Recalculate total cost with proper lining and heading costs
-          // CRITICAL: For blinds/shutters, use the already-calculated totalCost (includes options)
+          // CRITICAL: Include options cost for ALL treatment types
           const finalTotalCost = (displayCategory === 'blinds' || displayCategory === 'shutters') 
             ? totalCost // Already includes all components including options
-            : fabricCost + finalLiningCost + finalHeadingCost + manufacturingCost;
+            : fabricCost + finalLiningCost + finalHeadingCost + manufacturingCost + curtainOptionsCost;
 
           // Create summary data for windows_summary table - Save ALL 4 steps
           console.log('💾 DynamicWorksheet treatment data for save:', {
@@ -965,7 +972,7 @@ export const DynamicWindowWorksheet = forwardRef<{
             manufacturing_type: selectedTemplate?.manufacturing_type || 'machine',
             manufacturing_cost: manufacturingCost,
             hardware_cost: hardwareCost || 0,
-            options_cost: blindOptionsCost || 0,
+            options_cost: (displayCategory === 'blinds' || displayCategory === 'shutters') ? blindOptionsCost : curtainOptionsCost,
             heading_cost: finalHeadingCost || 0,
             selected_options: selectedOptions || [],
             
