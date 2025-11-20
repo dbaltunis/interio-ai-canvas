@@ -188,6 +188,7 @@ export const useDeleteSurface = () => {
       return id;
     },
     onSuccess: (deletedId) => {
+      // Force immediate cache invalidation
       queryClient.invalidateQueries({ queryKey: ["surfaces"] });
       queryClient.invalidateQueries({ queryKey: ["treatments"] });
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
@@ -195,7 +196,14 @@ export const useDeleteSurface = () => {
       queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
       queryClient.invalidateQueries({ queryKey: ["material-queue-v2"] });
       queryClient.invalidateQueries({ queryKey: ["material-queue-stats"] });
+      
+      // Force refetch with updated data
       queryClient.refetchQueries({ queryKey: ["quotes"] });
+      queryClient.refetchQueries({ queryKey: ["surfaces"] });
+      queryClient.refetchQueries({ queryKey: ["treatments"] });
+      
+      // Reset query cache to force fresh data
+      queryClient.resetQueries({ queryKey: ["quotes"] });
       
       toast({
         title: "Success",
