@@ -45,16 +45,36 @@ export const useFabricCalculator = ({
       const fullnessRatio = template.fullness_ratio || 2.0;
       
       // Manufacturing allowances - prioritize measurements, fallback to template
-      // Use type assertion since templates can have various field names
+      // Use nullish coalescing (??) to ONLY apply defaults when value is null/undefined, NOT when it's 0
       const templateAny = template as any;
       const measurementsAny = measurements as any;
-      const headerHem = measurementsAny.header_hem || templateAny.header_allowance || templateAny.header_hem || 8;
-      const bottomHem = measurementsAny.bottom_hem || templateAny.bottom_hem || templateAny.bottom_allowance || 15;
-      const sideHems = measurementsAny.side_hems || measurementsAny.side_hem || templateAny.side_hem || template.side_hems || 7.5;
-      const seamHems = measurementsAny.seam_hems || measurementsAny.seam_hem || templateAny.seam_allowance || template.seam_hems || 1.5;
-      const returnLeft = measurementsAny.return_left || template.return_left || 0;
-      const returnRight = measurementsAny.return_right || template.return_right || 0;
-      const wastePercent = measurementsAny.waste_percent || template.waste_percent || 5;
+      const headerHem = measurementsAny.header_hem ?? measurementsAny.header_allowance ?? templateAny.header_allowance ?? templateAny.header_hem ?? 8;
+      const bottomHem = measurementsAny.bottom_hem ?? measurementsAny.bottom_allowance ?? templateAny.bottom_hem ?? templateAny.bottom_allowance ?? 15;
+      const sideHems = measurementsAny.side_hems ?? measurementsAny.side_hem ?? templateAny.side_hem ?? template.side_hems ?? 7.5;
+      const seamHems = measurementsAny.seam_hems ?? measurementsAny.seam_hem ?? templateAny.seam_allowance ?? template.seam_hems ?? 1.5;
+      const returnLeft = measurementsAny.return_left ?? template.return_left ?? 0;
+      const returnRight = measurementsAny.return_right ?? template.return_right ?? 0;
+      const wastePercent = measurementsAny.waste_percent ?? template.waste_percent ?? 5;
+      
+      console.log('📏 Fabric calculator using values:', {
+        headerHem, bottomHem, sideHems, seamHems, returnLeft, returnRight, wastePercent,
+        fromMeasurements: {
+          header_hem: measurementsAny.header_hem,
+          bottom_hem: measurementsAny.bottom_hem,
+          side_hems: measurementsAny.side_hems,
+          seam_hems: measurementsAny.seam_hems,
+          return_left: measurementsAny.return_left,
+          return_right: measurementsAny.return_right
+        },
+        fromTemplate: {
+          header_hem: templateAny.header_hem,
+          bottom_hem: templateAny.bottom_hem,
+          side_hems: template.side_hems,
+          seam_hems: template.seam_hems,
+          return_left: template.return_left,
+          return_right: template.return_right
+        }
+      });
       
       // Calculate required width with fullness
       const requiredWidth = width * fullnessRatio;

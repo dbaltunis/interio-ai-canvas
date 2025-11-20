@@ -341,18 +341,21 @@ export const DynamicWindowWorksheet = forwardRef<{
           }
         }
         
-          // STEP 4: Restore Measurements - Convert from stored cm to display units
+        // STEP 4: Restore Measurements - Convert from stored cm to display units
         if (measurementsDetails) {
           const restoredMeasurements = { ...measurementsDetails };
           
           // CRITICAL: Explicitly restore heading and lining selections into measurements object
           // The Select components read from measurements.selected_heading and measurements.selected_lining
-          if (!restoredMeasurements.selected_heading && existingWindowSummary.selected_heading_id) {
-            restoredMeasurements.selected_heading = existingWindowSummary.selected_heading_id;
-          }
-          if (!restoredMeasurements.selected_lining && existingWindowSummary.selected_lining_type) {
-            restoredMeasurements.selected_lining = existingWindowSummary.selected_lining_type;
-          }
+          restoredMeasurements.selected_heading = measurementsDetails.selected_heading || existingWindowSummary.selected_heading_id || '';
+          restoredMeasurements.selected_lining = measurementsDetails.selected_lining || existingWindowSummary.selected_lining_type || 'none';
+          
+          console.log('🔄 Restoring dropdown values:', {
+            selected_heading: restoredMeasurements.selected_heading,
+            selected_lining: restoredMeasurements.selected_lining,
+            from_measurements: !!measurementsDetails.selected_heading,
+            from_summary: !!existingWindowSummary.selected_heading_id
+          });
           
           // CRITICAL: Restore ALL treatment option keys (hardware, track_types, mounting_type, etc.)
           // These are stored with keys like 'hardware', 'track_types', etc. in measurements_details
@@ -398,6 +401,19 @@ export const DynamicWindowWorksheet = forwardRef<{
             restoredMeasurements.drop = ""; // Empty string for null/zero
           }
           
+          // Apply template defaults for missing hem/return/seam values (NOT for saved values)
+          const templateToUse = existingWindowSummary.template_details || selectedTemplate;
+          if (templateToUse) {
+            // Only apply defaults if values don't exist
+            restoredMeasurements.header_hem = restoredMeasurements.header_hem ?? restoredMeasurements.header_allowance ?? templateToUse.header_hem ?? templateToUse.header_allowance ?? 8;
+            restoredMeasurements.bottom_hem = restoredMeasurements.bottom_hem ?? restoredMeasurements.bottom_allowance ?? templateToUse.bottom_hem ?? templateToUse.bottom_allowance ?? 15;
+            restoredMeasurements.side_hems = restoredMeasurements.side_hems ?? restoredMeasurements.side_hem ?? templateToUse.side_hems ?? templateToUse.side_hem ?? 7.5;
+            restoredMeasurements.seam_hems = restoredMeasurements.seam_hems ?? restoredMeasurements.seam_hem ?? templateToUse.seam_hems ?? templateToUse.seam_allowance ?? 1.5;
+            restoredMeasurements.return_left = restoredMeasurements.return_left ?? templateToUse.return_left ?? 0;
+            restoredMeasurements.return_right = restoredMeasurements.return_right ?? templateToUse.return_right ?? 0;
+            restoredMeasurements.waste_percent = restoredMeasurements.waste_percent ?? templateToUse.waste_percent ?? 5;
+          }
+          
           // CRITICAL: Ensure all hem/return/seam values are preserved from saved data
           // These should NOT be overwritten by template defaults later
           console.log('✅ DynamicWorksheet: Restoring ALL saved measurement values:', {
@@ -409,8 +425,8 @@ export const DynamicWindowWorksheet = forwardRef<{
             selected_lining: restoredMeasurements.selected_lining,
             header_hem: restoredMeasurements.header_hem,
             bottom_hem: restoredMeasurements.bottom_hem,
-            side_hems: restoredMeasurements.side_hems || restoredMeasurements.side_hem,
-            seam_hems: restoredMeasurements.seam_hems || restoredMeasurements.seam_hem,
+            side_hems: restoredMeasurements.side_hems,
+            seam_hems: restoredMeasurements.seam_hems,
             return_left: restoredMeasurements.return_left,
             return_right: restoredMeasurements.return_right,
             waste_percent: restoredMeasurements.waste_percent,
