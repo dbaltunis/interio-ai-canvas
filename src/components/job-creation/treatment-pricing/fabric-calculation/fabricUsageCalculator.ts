@@ -64,7 +64,7 @@ export const calculateFabricUsage = (
   );
   
   // ✅ FIX: Get fullness from selected heading or template, NOT hardcoded
-  let fullness = 2.5; // Default fallback only
+  let fullness = 0; // Default to 0 when nothing is selected
   
   // Get extra fabric from selected heading metadata
   let extraFabric = 0;
@@ -89,12 +89,12 @@ export const calculateFabricUsage = (
   }
   
   // Priority 2: Use form data if provided
-  if (formData.heading_fullness && parseFloat(formData.heading_fullness) !== 2.5) {
+  if (formData.heading_fullness && parseFloat(formData.heading_fullness) > 0) {
     fullness = parseFloat(formData.heading_fullness);
   }
   
   // Priority 3: Use template's default fullness or fullness_ratio
-  if (selectedTemplate && fullness === 2.5) {
+  if (selectedTemplate && fullness === 0) {
     const templateFullness = selectedTemplate.default_fullness || selectedTemplate.fullness_ratio;
     if (templateFullness) {
       fullness = parseFloat(templateFullness);
