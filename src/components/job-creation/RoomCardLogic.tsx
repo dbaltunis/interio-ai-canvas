@@ -41,8 +41,21 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
     const windowSummariesForRoom = (projectSummaries?.windows || [])
       .filter((w) => w.room_id === room.id);
     
-    const summaryRoomTotal = windowSummariesForRoom
-      .reduce((sum, w) => sum + Number(w.summary?.total_cost || 0), 0);
+    // CRITICAL: Calculate from cost_breakdown items (matching WindowSummaryCard displayTotal logic)
+    const summaryRoomTotal = windowSummariesForRoom.reduce((sum, w) => {
+      if (!w.summary) return sum;
+      
+      // If cost_breakdown exists, sum all breakdown items (same as displayTotal)
+      if (Array.isArray(w.summary.cost_breakdown) && w.summary.cost_breakdown.length > 0) {
+        const breakdownTotal = w.summary.cost_breakdown.reduce((itemSum: number, item: any) => {
+          return itemSum + (Number(item.total_cost) || 0);
+        }, 0);
+        return sum + breakdownTotal;
+      }
+      
+      // Fallback to stored total_cost if no breakdown
+      return sum + Number(w.summary.total_cost || 0);
+    }, 0);
 
     if (summaryRoomTotal > 0) {
       console.log(`Found ${windowSummariesForRoom.length} window summaries with costs`);
