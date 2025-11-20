@@ -314,13 +314,10 @@ export const DynamicCurtainOptions = ({
   const handPricePerPanel = selectedPricingMethod?.hand_price_per_panel ?? template.hand_price_per_panel;
 
   // Filter headings based on template's selected_heading_ids
-  // CRITICAL: Only show headings configured in the template settings
+  // If template doesn't specify selected_heading_ids, show all available headings
   const availableHeadings = template.selected_heading_ids && template.selected_heading_ids.length > 0
     ? headingOptions.filter(h => template.selected_heading_ids.includes(h.id))
-    : [];
-  
-  // Show warning if no headings configured
-  const noHeadingsConfigured = availableHeadings.length === 0 && headingOptions.length > 0;
+    : headingOptions; // ✅ FIXED: Show all headings if template doesn't filter them
 
   return (
     <div className="space-y-3 px-3">
@@ -332,15 +329,7 @@ export const DynamicCurtainOptions = ({
         />
       )}
 
-      {/* Heading Type - Top Level Category */}
-      {noHeadingsConfigured && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            No heading types configured for this template. Please configure heading options in Template Settings.
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* Heading Type - Removed misleading alert */}
       
       {availableHeadings.length > 0 && (
         <div className="space-y-3">
