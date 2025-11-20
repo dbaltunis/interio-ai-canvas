@@ -12,6 +12,7 @@ import { calculateFabricUsage } from "@/components/job-creation/treatment-pricin
 import { useCreateTreatment, useUpdateTreatment, useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
 import { useWindowCoverings } from "@/hooks/useWindowCoverings";
+import { useProductTemplates } from "@/hooks/useProductTemplates";
 import { VisualMeasurementSheet } from "./VisualMeasurementSheet";
 import { MeasurementSummary } from "./MeasurementSummary";
 import { cmToM } from "@/utils/unitConversion";
@@ -74,6 +75,7 @@ export const MeasurementWorksheet = ({
   const { data: existingTreatments = [] } = useTreatments(projectId);
   const { data: rooms = [] } = useRooms(projectId);
   const { data: windowCoverings = [] } = useWindowCoverings();
+  const { data: templates = [] } = useProductTemplates();
 
   // Define which fields are string-based (not numeric)
   const stringFields = ['curtain_type', 'curtain_side', 'hardware_type', 'pooling_option'];
@@ -174,16 +176,19 @@ export const MeasurementWorksheet = ({
           const fabricWidthCm = measurements.fabric_width ?? fabricItem?.fabric_width ?? 140;
           const fabricWidthM = cmToM(fabricWidthCm);
           
-          // Calculate fabric requirements using the same logic as VisualMeasurementSheet
-          const fullnessRatio = measurements.fullness ?? 2.0;
-          const returnLeft = cmToM(measurements.return_left ?? 7.5);
-          const returnRight = cmToM(measurements.return_right ?? 7.5);
-          const overlap = cmToM(measurements.overlap ?? 10);
-          const bottomHem = cmToM(measurements.bottom_hem ?? 15);
-          const headerHem = cmToM(measurements.header_allowance ?? 8);
-          const sideHems = cmToM(measurements.side_hems ?? 7.5);
-          const seamHems = cmToM(measurements.seam_hems ?? 1.5);
-          const wastePercent = measurements.waste_percent ?? 5;
+          // Get template to use its configured defaults
+          const template = templates.find(t => t.id === templateId) as any;
+          
+          // Calculate fabric requirements using template defaults when measurements don't have values
+          const fullnessRatio = measurements.fullness ?? template?.fullness_ratio ?? 2.0;
+          const returnLeft = cmToM(measurements.return_left ?? template?.return_left ?? 7.5);
+          const returnRight = cmToM(measurements.return_right ?? template?.return_right ?? 7.5);
+          const overlap = cmToM(measurements.overlap ?? template?.overlap ?? 10);
+          const bottomHem = cmToM(measurements.bottom_hem ?? template?.bottom_hem ?? 15);
+          const headerHem = cmToM(measurements.header_allowance ?? template?.header_allowance ?? 8);
+          const sideHems = cmToM(measurements.side_hems ?? template?.side_hems ?? 7.5);
+          const seamHems = cmToM(measurements.seam_hems ?? template?.seam_hems ?? 1.5);
+          const wastePercent = measurements.waste_percent ?? template?.waste_percent ?? 5;
           
           // Required width calculation
           const requiredWidthM = railWidthM * fullnessRatio + returnLeft + returnRight + overlap;
