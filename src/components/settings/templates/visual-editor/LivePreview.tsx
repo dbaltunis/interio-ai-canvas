@@ -38,6 +38,13 @@ import { QuoteItemImage } from "@/components/quotes/QuoteItemImage";
 import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import { formatJobNumber } from "@/lib/format-job-number";
 
+// Lazy load the editable version to avoid circular dependencies and reduce bundle size
+const EditableLivePreview = React.lazy(() => 
+  import('./EditableLivePreview').then(module => ({ 
+    default: module.EditableLivePreview 
+  }))
+);
+
 interface LivePreviewBlockProps {
   block: any;
   projectData?: any;
@@ -1783,7 +1790,6 @@ export const LivePreview = ({
 
   // If editable and we have update functions, use the editable version
   if (isEditable && onBlocksChange) {
-    const EditableLivePreview = React.lazy(() => import('./EditableLivePreview').then(module => ({ default: module.EditableLivePreview })));
     return (
       <Suspense fallback={<div className="p-8 text-center">Loading editor...</div>}>
         <EditableLivePreview
