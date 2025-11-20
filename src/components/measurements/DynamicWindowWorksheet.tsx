@@ -798,15 +798,16 @@ export const DynamicWindowWorksheet = forwardRef<{
             });
           } else {
             // Original curtain calculations
-            // CRITICAL FIX: Use calculatedCosts.fabricTotalCost (most up-to-date), not fabricCalculation
-            fabricCost = calculatedCosts.fabricTotalCost || fabricCalculation?.fabricCost || 0;
-            linearMeters = calculatedCosts.fabricLinearMeters || fabricCalculation?.linearMeters || 0;
+            // CRITICAL FIX: Use fabricCalculation.totalCost (fabric cost) NOT fabricCost property
+            fabricCost = fabricCalculation?.totalCost || 0;
+            linearMeters = fabricCalculation?.linearMeters || 0;
             
-            console.log('💰 [SAVE] Using calculated costs:', {
+            console.log('💰 [SAVE] Using fabric calculation:', {
               fabricCost,
               linearMeters,
-              fromCalculatedCosts: !!calculatedCosts.fabricTotalCost,
-              fromFabricCalculation: !!fabricCalculation?.fabricCost
+              totalCost: fabricCalculation?.totalCost,
+              pricePerMeter: fabricCalculation?.pricePerMeter,
+              widthsRequired: fabricCalculation?.widthsRequired
             });
           }
 
