@@ -416,19 +416,6 @@ export const AdaptiveFabricPricingDisplay = ({
               </div>
             )}
             {/* Width Calculation Explanation */}
-            {fabricCalculation.horizontalPiecesNeeded && fabricCalculation.horizontalPiecesNeeded > 1 && (
-              <div className="flex flex-col gap-1 bg-warning/10 border border-warning/20 rounded-md p-2.5 mt-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-warning-foreground font-medium text-xs">⚠️ Horizontal Seaming Required</span>
-                  <span className="font-medium text-warning-foreground text-xs">{fabricCalculation.horizontalPiecesNeeded} pieces</span>
-                </div>
-                <div className="text-xs text-warning-foreground/80 leading-relaxed">
-                  Curtain height ({formatMeasurement(fabricCalculation.totalDrop || 0)}) exceeds fabric width 
-                  ({formatFabricWidth(selectedFabricItem?.fabric_width || 137)}). 
-                  {fabricCalculation.horizontalPiecesNeeded - 1} horizontal seam(s) will be needed to join pieces.
-                </div>
-              </div>
-            )}
             
             {fabricCalculation.leftoverFromLastPiece && fabricCalculation.leftoverFromLastPiece > 0 && (
               <div className="flex flex-col gap-1 bg-accent/10 border border-accent/20 rounded-md p-2.5 mt-2">
