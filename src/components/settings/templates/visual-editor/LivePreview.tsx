@@ -1003,8 +1003,18 @@ const LivePreviewBlock = ({
                             </td>
                             <td style={{ padding: '5px 6px', fontSize: '13px', color: '#000', fontWeight: '400', verticalAlign: 'top', wordWrap: 'break-word', overflowWrap: 'break-word', backgroundColor: '#ffffff' }}>
                               {isSimpleLayout ? (
-                                // Simple layout: Just show description without options breakdown
-                                item.description || item.notes || '-'
+                                // Simple layout: Just show basic description without options/fabric names
+                                (() => {
+                                  let desc = item.description || item.notes || '-';
+                                  // Remove fabric names and option details in simple mode
+                                  if (desc.includes('Fabric:')) {
+                                    desc = desc.split('Fabric:')[0].trim();
+                                  }
+                                  if (desc.includes('Options:')) {
+                                    desc = desc.split('Options:')[0].trim();
+                                  }
+                                  return desc || item.notes || '-';
+                                })()
                               ) : options.length > 0 ? (
                                 // Detailed layout: Show options breakdown
                                 <div>
