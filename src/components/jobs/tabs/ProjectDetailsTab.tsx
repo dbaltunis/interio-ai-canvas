@@ -25,7 +25,7 @@ import { useSurfaces } from "@/hooks/useSurfaces";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { formatCurrency } from "@/utils/currency";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 
 interface ProjectDetailsTabProps {
   project: any;
@@ -46,6 +46,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     due_date: project.due_date || "",
   });
 
+  const { formatCurrency } = useFormattedCurrency();
   const { data: clients, refetch: refetchClients } = useClients();
   const { data: jobStatuses = [] } = useJobStatuses();
   const { data: quotes = [] } = useQuotes(project.id);
