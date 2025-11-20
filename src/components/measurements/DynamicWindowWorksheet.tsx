@@ -495,13 +495,21 @@ export const DynamicWindowWorksheet = forwardRef<{
         hasLoadedInitialData.current = true;
         console.log('✅ Initial data load complete - will not reload again');
         
-        // Set fabric calculation if available
+        // Set fabric calculation if available - CRITICAL: Include hems and returns
         if (existingWindowSummary.linear_meters && existingWindowSummary.fabric_cost) {
+          const md = existingWindowSummary.measurements_details as any || {};
           setFabricCalculation({
             linearMeters: existingWindowSummary.linear_meters,
             totalCost: existingWindowSummary.fabric_cost,
             pricePerMeter: existingWindowSummary.price_per_meter,
-            widthsRequired: existingWindowSummary.widths_required
+            widthsRequired: existingWindowSummary.widths_required,
+            // CRITICAL: Restore hems and returns from measurements_details
+            returns: (md.return_left || 0) + (md.return_right || 0),
+            totalSideHems: (md.side_hems || 0) * 2 * ((md.curtain_type === 'pair') ? 2 : 1),
+            returnLeft: md.return_left || 0,
+            returnRight: md.return_right || 0,
+            sideHems: md.side_hems || 0,
+            fullnessRatio: md.heading_fullness || md.fullness_ratio || 0
           });
         }
         return;
@@ -1203,11 +1211,11 @@ export const DynamicWindowWorksheet = forwardRef<{
                 total_cost: finalHeadingCost || 0,
                 category: 'heading'
               }] : []),
-              // Manufacturing - ALWAYS include even if 0
-              ...(measurements.manufacturing_type ? [{
+              // Manufacturing - CRITICAL: Always include manufacturing cost in breakdown
+              ...(manufacturingCost > 0 ? [{
                 id: 'manufacturing',
                 name: `Manufacturing: ${measurements.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished'}`,
-                total_cost: manufacturingCost || 0,
+                total_cost: manufacturingCost,
                 category: 'manufacturing'
               }] : []),
               // Hardware
