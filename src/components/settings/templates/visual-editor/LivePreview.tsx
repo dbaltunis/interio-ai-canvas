@@ -1248,10 +1248,6 @@ const LivePreviewBlock = ({
       );
 
     case 'editable-text-field':
-      if (!content.value) {
-        return null; // Don't show empty fields in final quote
-      }
-      
       return (
         <div className="mb-6" style={{ 
           padding: style.padding || '16px',
@@ -1272,9 +1268,9 @@ const LivePreviewBlock = ({
           <div style={{ 
             fontSize: '16px',
             fontWeight: content.isBold ? '700' : '400',
-            color: '#000'
+            color: content.value ? '#000' : '#9ca3af'
           }}>
-            {content.value}
+            {content.value || 'No text entered yet'}
           </div>
         </div>
       );
@@ -1299,10 +1295,6 @@ const LivePreviewBlock = ({
       );
 
     case 'image-uploader':
-      if (!content.images || content.images.length === 0) {
-        return null; // Don't show empty image blocks in final quote
-      }
-      
       return (
         <div style={{ marginTop: '24px', marginBottom: '24px', backgroundColor: '#ffffff !important', padding: '16px' }}>
           {content.title && (
@@ -1315,36 +1307,48 @@ const LivePreviewBlock = ({
               {content.caption}
             </p>
           )}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
-            gap: '16px'
-          }}>
-            {content.images.map((image: any, index: number) => (
-              <div key={index} style={{ backgroundColor: '#f9fafb', borderRadius: '8px', overflow: 'hidden' }}>
-                <img
-                  src={image.url}
-                  alt={image.caption || `Image ${index + 1}`}
-                  style={{ 
-                    width: '100%', 
-                    height: '200px', 
-                    objectFit: 'cover',
-                    display: 'block'
-                  }}
-                />
-                {image.caption && (
-                  <p style={{ 
-                    padding: '8px', 
-                    fontSize: '12px', 
-                    color: '#6b7280',
-                    textAlign: 'center'
-                  }}>
-                    {image.caption}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
+          {(!content.images || content.images.length === 0) ? (
+            <div style={{ 
+              border: '2px dashed #d1d5db', 
+              borderRadius: '8px', 
+              padding: '32px', 
+              backgroundColor: '#f9fafb',
+              textAlign: 'center'
+            }}>
+              <p style={{ color: '#9ca3af', fontSize: '14px' }}>No images uploaded yet</p>
+            </div>
+          ) : (
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
+              gap: '16px'
+            }}>
+              {content.images.map((image: any, index: number) => (
+                <div key={index} style={{ backgroundColor: '#f9fafb', borderRadius: '8px', overflow: 'hidden' }}>
+                  <img
+                    src={image.url}
+                    alt={image.caption || `Image ${index + 1}`}
+                    style={{ 
+                      width: '100%', 
+                      height: '200px', 
+                      objectFit: 'cover',
+                      display: 'block'
+                    }}
+                  />
+                  {image.caption && (
+                    <p style={{ 
+                      padding: '8px', 
+                      fontSize: '12px', 
+                      color: '#6b7280',
+                      textAlign: 'center'
+                    }}>
+                      {image.caption}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       );
 
