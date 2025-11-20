@@ -568,17 +568,22 @@ export const CostCalculationSummary = ({
           <div className="flex justify-between py-1.5 border-b border-border/50">
             <div className="flex flex-col">
               <span className="text-card-foreground font-medium">Lining</span>
-              {selectedLining && selectedLining !== 'none' && template?.lining_types && (
+              {selectedLining && selectedLining !== 'none' && template?.lining_types && fabricCalculation && (
                 <span className="text-xs text-muted-foreground">
                   {(() => {
                     const liningConfig = template.lining_types.find((l: any) => l.type === selectedLining);
                     if (liningConfig) {
+                      const linearMeters = fabricCalculation.linearMeters || 0;
+                      const pricePerMetre = liningConfig.price_per_metre || 0;
+                      const labourPerCurtain = liningConfig.labour_per_curtain || 0;
+                      const curtainCount = fabricCalculation.curtainCount || 1;
+                      
                       const parts = [];
-                      if (liningConfig.price_per_metre > 0) {
-                        parts.push(`${formatPrice(liningConfig.price_per_metre)}/m`);
+                      if (pricePerMetre > 0 && linearMeters > 0) {
+                        parts.push(`${formatPrice(pricePerMetre)}/m × ${linearMeters.toFixed(2)}m = ${formatPrice(pricePerMetre * linearMeters)}`);
                       }
-                      if (liningConfig.labour_per_curtain > 0) {
-                        parts.push(`${formatPrice(liningConfig.labour_per_curtain)}/curtain labour`);
+                      if (labourPerCurtain > 0) {
+                        parts.push(`${formatPrice(labourPerCurtain)}/curtain × ${curtainCount} = ${formatPrice(labourPerCurtain * curtainCount)}`);
                       }
                       return parts.join(' + ');
                     }

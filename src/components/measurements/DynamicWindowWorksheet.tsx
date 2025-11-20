@@ -765,7 +765,10 @@ export const DynamicWindowWorksheet = forwardRef<{
             if (liningOption) {
               const liningPricePerMeter = liningOption.price_per_metre || 0;
               const liningLaborPerCurtain = liningOption.labour_per_curtain || 0;
-              liningCost = liningPricePerMeter * fabricCalculation.linearMeters + liningLaborPerCurtain;
+              const curtainCount = fabricCalculation.curtainCount || 1;
+              // Material cost: price per meter × linear meters used
+              // Labor cost: price per curtain × number of curtains
+              liningCost = (liningPricePerMeter * fabricCalculation.linearMeters) + (liningLaborPerCurtain * curtainCount);
             }
           }
 
