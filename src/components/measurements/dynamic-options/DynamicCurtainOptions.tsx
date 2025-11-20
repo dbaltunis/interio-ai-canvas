@@ -20,7 +20,7 @@ interface DynamicCurtainOptionsProps {
   onChange: (field: string, value: any) => void;
   template?: any; // The selected curtain template
   readOnly?: boolean;
-  onOptionPriceChange?: (optionKey: string, price: number, label: string) => void;
+  onOptionPriceChange?: (optionKey: string, price: number, label: string, pricingMethod?: string, pricingGridData?: any) => void;
   selectedOptions?: Array<{ name: string; price: number }>;
   onSelectedOptionsChange?: (options: Array<{ name: string; price: number }>) => void;
   selectedEyeletRing?: string;
@@ -110,7 +110,8 @@ export const DynamicCurtainOptions = ({
     if (heading && onOptionPriceChange) {
       // Headings are stored in enhanced_inventory_items - use correct pricing fields
       const headingPrice = heading.price_per_meter || heading.selling_price || 0;
-      onOptionPriceChange('heading', headingPrice, heading.name);
+      // Don't default to 'fixed' - let it be undefined if not configured
+      onOptionPriceChange('heading', headingPrice, heading.name, undefined);
     }
     onChange('selected_heading', headingId);
     
@@ -168,7 +169,8 @@ export const DynamicCurtainOptions = ({
     
     if (lining && onOptionPriceChange) {
       const totalPrice = (lining.price_per_metre || 0) + (lining.labour_per_curtain || 0);
-      onOptionPriceChange('lining', totalPrice, lining.type);
+      // Don't default to 'fixed' - let it be undefined if not configured
+      onOptionPriceChange('lining', totalPrice, lining.type, undefined);
     }
     
     // CRITICAL: Update both measurements object AND parent state
@@ -215,7 +217,8 @@ export const DynamicCurtainOptions = ({
         
         // Update parent's price tracking
         if (onOptionPriceChange) {
-          onOptionPriceChange(optionKey, price, selectedValue.label);
+          // Don't default to 'fixed' - let it be undefined if not configured
+          onOptionPriceChange(optionKey, price, selectedValue.label, undefined);
         }
         
         // CRITICAL: Also update selectedOptions array for cost summary display
