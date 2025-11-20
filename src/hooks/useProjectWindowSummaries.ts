@@ -67,9 +67,11 @@ export const useProjectWindowSummaries = (projectId?: string) => {
                 : 0;
               return sum + itemCost;
             }, 0);
+            console.log(`📊 [ProjectWindowSummaries] Window ${w.window_id}: Using breakdown total = ${amount}`, breakdown);
           } else {
             // Fallback to stored total_cost if no breakdown
             amount = Number((w.summary as any).total_cost || 0);
+            console.log(`📊 [ProjectWindowSummaries] Window ${w.window_id}: No breakdown, using stored total_cost = ${amount}`);
           }
         }
         
