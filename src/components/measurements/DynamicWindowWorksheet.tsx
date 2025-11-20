@@ -846,6 +846,12 @@ export const DynamicWindowWorksheet = forwardRef<{
             });
           }
 
+          // Calculate total meters including horizontal pieces for railroaded fabric
+          const horizontalPiecesNeeded = fabricCalculation?.horizontalPiecesNeeded || 1;
+          const totalMetersOrdered = horizontalPiecesNeeded > 1 
+            ? linearMeters * horizontalPiecesNeeded  // Horizontal: multiply by pieces
+            : (fabricCalculation?.orderedLinearMeters || linearMeters); // Vertical: use ordered or actual
+
           // Calculate options cost for curtains (if any selected)
           let curtainOptionsCost = 0;
           if (displayCategory === 'curtains' && selectedOptions && selectedOptions.length > 0) {
@@ -958,7 +964,7 @@ export const DynamicWindowWorksheet = forwardRef<{
           
           const summaryData = {
             window_id: surfaceId,
-            // CRITICAL: Save ORDERED fabric (what gets charged) not USED fabric
+            // CRITICAL: Save per-piece meters for proper breakdown display
             linear_meters: fabricCalculation?.orderedLinearMeters || linearMeters,
             // For blinds/shutters, widths_required doesn't apply - use 1
             widths_required: (displayCategory === 'blinds' || displayCategory === 'shutters') ? 1 : (fabricCalculation?.widthsRequired || 0),
@@ -966,7 +972,7 @@ export const DynamicWindowWorksheet = forwardRef<{
             price_per_meter: (displayCategory === 'blinds' || displayCategory === 'shutters') 
               ? (selectedItems.material?.selling_price || selectedItems.material?.unit_price || selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || 0)
               : (fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || 0),
-            fabric_cost: fabricCost,
+            fabric_cost: totalMetersOrdered * (fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || 0),
             lining_type: selectedLining || 'none',
             lining_cost: finalLiningCost,
             lining_details: liningDetails,
@@ -1064,6 +1070,9 @@ export const DynamicWindowWorksheet = forwardRef<{
               ...measurements,
               // CRITICAL: Store selected options for blinds/shutters inside measurements_details
               selected_options: selectedOptions,
+              // CRITICAL: Store fabric calculation details for accurate display
+              horizontal_pieces_needed: fabricCalculation?.horizontalPiecesNeeded || 1,
+              fabric_orientation: fabricCalculation?.fabricOrientation || 'vertical',
               // PHASE 2: Convert to cm but save null instead of 0 for empty values
               rail_width: measurements.rail_width && parseFloat(measurements.rail_width) > 0 
                 ? convertLength(parseFloat(measurements.rail_width), units.length, 'cm') 

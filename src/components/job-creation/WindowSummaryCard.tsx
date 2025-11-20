@@ -176,6 +176,10 @@ export function WindowSummaryCard({
     let fabricUnit = 'm';
     let fabricUnitPrice = Number(summary.price_per_meter) || 0;
     
+    // CRITICAL: Get horizontal pieces info from measurements_details
+    const horizontalPieces = (summary.measurements_details as any)?.horizontal_pieces_needed || 1;
+    const fabricOrientation = (summary.measurements_details as any)?.fabric_orientation || 'vertical';
+    
     if (treatmentType === 'wallpaper') {
       // For wallpaper: check if sold per roll or per meter
       const wallpaperDetails = summary.fabric_details || summary.material_details || {};
@@ -200,21 +204,30 @@ export function WindowSummaryCard({
       fabricDescription = `${sqm.toFixed(2)} sqm × ${fabricUnitPrice.toFixed(2)}/sqm`;
     } else {
       // For curtains/blinds: show linear meters and widths
-      fabricDescription = `${fabricQuantity.toFixed(2)}m • ${summary.widths_required || 1} width(s)`;
+      // CRITICAL: For horizontal/railroaded, multiply by pieces and show total
+      if (fabricOrientation === 'horizontal' && horizontalPieces > 1) {
+        const totalMeters = fabricQuantity * horizontalPieces;
+        fabricDescription = `${fabricQuantity.toFixed(2)}m × ${horizontalPieces} pieces = ${totalMeters.toFixed(2)}m`;
+        fabricQuantity = totalMeters; // Update quantity for total cost calculation
+      } else {
+        fabricDescription = `${fabricQuantity.toFixed(2)}m • ${summary.widths_required || 1} width(s)`;
+      }
     }
     
     items.push({
       id: 'fabric',
       name: fabricName,
       description: fabricDescription,
-      quantity: fabricQuantity,
+      quantity: fabricQuantity,  // This is now the total including horizontal pieces
       unit: fabricUnit,
       unit_price: fabricUnitPrice,
-      total_cost: displayFabricCost,
+      total_cost: displayFabricCost,  // Use the fabric_cost from summary (already includes pieces)
       category: 'fabric',
       details: {
         widths_required: summary.widths_required,
         linear_meters: summary.linear_meters,
+        horizontal_pieces: horizontalPieces,
+        fabric_orientation: fabricOrientation,
         price_per_meter: summary.price_per_meter,
         fabric_name: fabricName,
         sold_by: treatmentType === 'wallpaper' ? (summary.fabric_details?.sold_by || 'meter') : undefined,
