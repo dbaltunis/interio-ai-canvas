@@ -429,6 +429,29 @@ export const AdaptiveFabricPricingDisplay = ({
               </>
             ) : (
               <>
+                {/* Width Total - determines linear meters needed */}
+                <div className="flex justify-between pt-2 mt-2 border-t border-border/30">
+                  <span className="font-medium">Width Total:</span>
+                  <span className="font-medium text-foreground"></span>
+                </div>
+                <div className="flex justify-between pl-2">
+                  <span>Rail Width:</span>
+                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.railWidth || measurements.rail_width || 0)}</span>
+                </div>
+                <div className="flex justify-between pl-2">
+                  <span>Fullness:</span>
+                  <span className="font-medium text-foreground">{fabricCalculation.fullnessRatio || measurements.heading_fullness || 1}x</span>
+                </div>
+                <div className="flex justify-between pl-2">
+                  <span>Returns (L+R):</span>
+                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.returns || 0)}</span>
+                </div>
+                <div className="flex justify-between pl-2">
+                  <span>Side Hems:</span>
+                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalSideHems || 0)}</span>
+                </div>
+                
+                {/* Height Total - how we cover the drop */}
                 <div className="flex justify-between pt-2 mt-2 border-t border-border/30">
                   <span className="font-medium">Height Total:</span>
                   <span className="font-medium text-foreground"></span>
@@ -449,14 +472,6 @@ export const AdaptiveFabricPricingDisplay = ({
                     </div>
                   </>
                 )}
-                <div className="flex justify-between pl-2">
-                  <span>Side Hems:</span>
-                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalSideHems || 0)}</span>
-                </div>
-                <div className="flex justify-between pl-2">
-                  <span>Returns (L+R):</span>
-                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.returns || 0)}</span>
-                </div>
                 {fabricCalculation.seamsRequired > 0 && (
                   <div className="flex justify-between pl-2">
                     <span>Seam Allowance:</span>
