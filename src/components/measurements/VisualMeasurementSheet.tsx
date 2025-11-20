@@ -186,6 +186,15 @@ export const VisualMeasurementSheet = ({
     }
   }, []);
 
+  // ✅ Initialize fabric_rotated to false (vertical orientation) when fabric is first selected
+  // This ensures manual control and prevents cached rotation values
+  useEffect(() => {
+    if (selectedFabric && measurements.fabric_rotated === undefined) {
+      console.log('🔄 Initializing fabric_rotated to false (vertical/standard orientation)');
+      handleInputChange("fabric_rotated", "false");
+    }
+  }, [selectedFabric]);
+
   // ✅ Fabric rotation is now MANUAL ONLY - no auto-rotation
   // Users must manually toggle rotation if they want to railroad the fabric
   // This allows for alternative solutions like adding borders or using fewer widths
