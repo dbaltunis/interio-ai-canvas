@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { Resend } from 'npm:resend@2.0.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -182,98 +183,137 @@ serve(async (req) => {
 
     // Step 6: Send welcome email with temporary password
     try {
-      // Get admin's account owner to fetch integration settings
+      const siteUrl = Deno.env.get('SITE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co';
+      const brandName = Deno.env.get('BRAND_NAME') || 'InterioApp';
+      
+      // Get admin's account owner to fetch integration settings (optional custom SendGrid)
       const { data: adminAccountOwnerId } = await supabaseAdmin.rpc('get_account_owner', {
         user_id_param: user.id
       });
 
-      // Get SendGrid integration settings
-      const { data: sendGridIntegration, error: integrationError } = await supabaseAdmin
+      // Check for optional custom SendGrid
+      const { data: sendGridIntegration } = await supabaseAdmin
         .from('integration_settings')
-        .select('configuration')
+        .select('api_credentials')
         .eq('account_owner_id', adminAccountOwnerId || user.id)
         .eq('integration_type', 'sendgrid')
         .eq('active', true)
         .maybeSingle();
 
-      if (integrationError) {
-        console.error('Error fetching SendGrid integration:', integrationError);
-        throw new Error('SendGrid integration not found');
-      }
-
-      // Check both configuration and api_credentials for backward compatibility
-      const apiKey = (sendGridIntegration.configuration as any)?.api_key || 
-                     (sendGridIntegration.api_credentials as any)?.api_key;
-      
-      if (!apiKey) {
-        throw new Error('SendGrid API key not configured');
-      }
-
-      // Get email settings
-      const { data: emailSettings } = await supabaseAdmin
-        .from('email_settings')
-        .select('*')
-        .eq('account_owner_id', adminAccountOwnerId || user.id)
-        .maybeSingle();
-
-      if (!emailSettings?.from_email) {
-        throw new Error('Email settings not configured');
-      }
+      const useCustomSendGrid = !!sendGridIntegration?.api_credentials?.api_key;
+      console.log('Email provider:', useCustomSendGrid ? 'Custom SendGrid' : 'Shared Resend');
 
       // Prepare email content
-      const emailSubject = 'Welcome to Your New Account';
+      const emailSubject = `Welcome to ${brandName}!`;
       const emailHtml = `
-        <h2>Welcome to Your New Account!</h2>
-        <p>Hello ${displayName},</p>
-        <p>Your account has been created successfully. Here are your login credentials:</p>
-        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Temporary Password:</strong> ${temporaryPassword}</p>
-        </div>
-        <p><strong>Important:</strong> Please change your password after your first login.</p>
-        <p>You can log in at: <a href="${Deno.env.get('SITE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co'}">${Deno.env.get('SITE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co'}</a></p>
-        <p>If you have any questions, please don't hesitate to contact us.</p>
-        <p>Best regards,<br>Your Team</p>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin:0; padding:0; background:#f8f9fa; font-family: Arial, sans-serif;">
+          <table width="100%" cellspacing="0" cellpadding="0" style="background:#f8f9fa; padding:20px 0;">
+            <tr>
+              <td align="center">
+                <table width="600" cellspacing="0" cellpadding="0" style="max-width:600px; background:#ffffff; border-radius:8px;">
+                  <tr>
+                    <td style="padding:40px 28px;">
+                      <h2 style="margin:0 0 20px; color:#333;">Welcome to ${brandName}!</h2>
+                      <p style="margin:0 0 20px; font-size:16px;">Hello ${displayName},</p>
+                      <p style="margin:0 0 24px; font-size:16px;">Your account has been created successfully. Here are your login credentials:</p>
+                      <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <p style="margin:0 0 12px;"><strong>Email:</strong> ${email}</p>
+                        <p style="margin:0;"><strong>Temporary Password:</strong> <code style="background:#fff; padding:4px 8px; border-radius:4px;">${temporaryPassword}</code></p>
+                      </div>
+                      <p style="margin:0 0 24px; font-size:16px;"><strong>Important:</strong> Please change your password after your first login.</p>
+                      <table width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 32px;">
+                        <tr>
+                          <td align="center">
+                            <a href="${siteUrl}" style="display:inline-block; padding:16px 32px; background:#415e6b; color:#ffffff; text-decoration:none; border-radius:8px; font-weight:600; font-size:16px;">Login Now</a>
+                          </td>
+                        </tr>
+                      </table>
+                      <p style="margin:0; font-size:14px; color:#666;">If you have any questions, please don't hesitate to contact us.</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:24px 28px; background:#f8f9fa; border-top:1px solid #e8ecef; border-radius:0 0 8px 8px;">
+                      <p style="margin:0; font-size:12px; color:#95a5a6; text-align:center;">© ${new Date().getFullYear()} ${brandName}. All rights reserved.</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
       `;
 
-      // Send email via SendGrid using the apiKey we found earlier
-      const sendGridResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          personalizations: [{
-            to: [{ email: email, name: displayName }],
-          }],
-          from: {
-            email: emailSettings.from_email,
-            name: emailSettings.from_name || 'Your Team',
+      if (useCustomSendGrid) {
+        // Use custom SendGrid for branding
+        const apiKey = sendGridIntegration.api_credentials.api_key;
+        
+        // Get email settings for custom from address
+        const { data: emailSettings } = await supabaseAdmin
+          .from('email_settings')
+          .select('*')
+          .eq('account_owner_id', adminAccountOwnerId || user.id)
+          .maybeSingle();
+
+        const sendGridResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
           },
-          subject: emailSubject,
-          content: [{
-            type: 'text/html',
-            value: emailHtml,
-          }],
-          tracking_settings: {
-            click_tracking: {
-              enable: false,
+          body: JSON.stringify({
+            personalizations: [{
+              to: [{ email: email, name: displayName }],
+            }],
+            from: {
+              email: emailSettings?.from_email || 'noreply@example.com',
+              name: emailSettings?.from_name || brandName,
             },
-          },
-        }),
-      });
+            subject: emailSubject,
+            content: [{
+              type: 'text/html',
+              value: emailHtml,
+            }],
+          }),
+        });
 
-      if (!sendGridResponse.ok) {
-        const errorText = await sendGridResponse.text();
-        console.error('SendGrid error:', errorText);
-        throw new Error(`Failed to send welcome email: ${errorText}`);
+        if (!sendGridResponse.ok) {
+          const errorText = await sendGridResponse.text();
+          console.error('SendGrid error:', errorText);
+          throw new Error(`SendGrid error: ${sendGridResponse.status}`);
+        }
+        console.log('Welcome email sent via custom SendGrid to:', email);
+      } else {
+        // Use shared Resend (default - works for all accounts)
+        const resendApiKey = Deno.env.get('RESEND_API_KEY');
+        if (!resendApiKey) {
+          throw new Error('RESEND_API_KEY not configured');
+        }
+
+        const resend = new Resend(resendApiKey);
+        const { error: resendError } = await resend.emails.send({
+          from: `${brandName} <onboarding@resend.dev>`,
+          to: [email],
+          subject: emailSubject,
+          html: emailHtml,
+        });
+
+        if (resendError) {
+          console.error('Resend error:', resendError);
+          throw new Error(`Failed to send welcome email: ${resendError.message}`);
+        }
+        console.log('Welcome email sent via shared Resend to:', email);
       }
-
-      console.log('Welcome email sent successfully to:', email);
     } catch (emailError) {
       console.error('Error sending welcome email:', emailError);
-      // Don't fail the account creation if email fails
+      // Don't fail the account creation if email fails - but log it
+      console.warn('Account created but welcome email not sent for:', email);
     }
 
     return new Response(
