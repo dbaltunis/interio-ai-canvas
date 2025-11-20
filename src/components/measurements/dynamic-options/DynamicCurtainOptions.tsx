@@ -24,6 +24,10 @@ interface DynamicCurtainOptionsProps {
   selectedOptions?: Array<{ name: string; price: number }>;
   selectedEyeletRing?: string;
   onEyeletRingChange?: (ringId: string) => void;
+  selectedHeading?: string;
+  onHeadingChange?: (headingId: string) => void;
+  selectedLining?: string;
+  onLiningChange?: (liningType: string) => void;
 }
 
 export const DynamicCurtainOptions = ({
@@ -34,7 +38,9 @@ export const DynamicCurtainOptions = ({
   onOptionPriceChange,
   selectedOptions = [],
   selectedEyeletRing,
-  onEyeletRingChange
+  onEyeletRingChange,
+  onHeadingChange,
+  onLiningChange
 }: DynamicCurtainOptionsProps) => {
   const [availableRings, setAvailableRings] = useState<EyeletRing[]>([]);
   const [treatmentOptionSelections, setTreatmentOptionSelections] = useState<Record<string, string>>({});
@@ -94,6 +100,11 @@ export const DynamicCurtainOptions = ({
     }
     onChange('selected_heading', headingId);
     
+    // CRITICAL: Also update parent state so it gets saved
+    if (onHeadingChange) {
+      onHeadingChange(headingId);
+    }
+    
     // ✅ FIX: Update heading fullness ratio when heading is selected
     if (heading && heading.metadata) {
       const metadata = heading.metadata as any;
@@ -136,16 +147,21 @@ export const DynamicCurtainOptions = ({
   };
 
   const handleLiningChange = (liningType: string) => {
-    console.log('🔥🔥🔥 DROPDOWN FIRED: handleLiningChange', { liningType });
+    console.log('🔥 DROPDOWN FIRED: handleLiningChange', { liningType });
     
     const lining = template?.lining_types?.find((l: any) => l.type === liningType);
-    console.log('🔥🔥🔥 Found lining:', lining);
+    console.log('🔥 Found lining:', lining);
     
     if (lining && onOptionPriceChange) {
       const totalPrice = (lining.price_per_metre || 0) + (lining.labour_per_curtain || 0);
       onOptionPriceChange('lining', totalPrice, lining.type);
     }
+    
+    // CRITICAL: Update both measurements object AND parent state
     onChange('selected_lining', liningType);
+    if (onLiningChange) {
+      onLiningChange(liningType);
+    }
     
     console.log('🧵 Lining changed:', {
       type: liningType,
