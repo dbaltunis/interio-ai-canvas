@@ -1049,7 +1049,7 @@ export const DynamicWindowWorksheet = forwardRef<{
             price_per_meter: (displayCategory === 'blinds' || displayCategory === 'shutters') 
               ? (selectedItems.material?.selling_price || selectedItems.material?.unit_price || selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || 0)
               : (fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || 0),
-            fabric_cost: totalMetersOrdered * (fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || selectedItems.fabric?.unit_price || 0),
+            fabric_cost: fabricCost, // Use the already calculated fabricCost, not recalculate
             lining_type: selectedLining || 'none',
             lining_cost: finalLiningCost,
             lining_details: liningDetails,
@@ -1060,6 +1060,23 @@ export const DynamicWindowWorksheet = forwardRef<{
             heading_cost: finalHeadingCost || 0,
             // CRITICAL: Save comprehensive options list including ALL selections
             selected_options: [
+              // Fabric (base item)
+              ...(selectedItems.fabric ? [{
+                name: `Fabric: ${selectedItems.fabric.name}`,
+                price: fabricCost,
+                pricingMethod: 'per-meter',
+                quantity: linearMeters,
+                unit: 'm',
+                unit_price: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0
+              }] : []),
+              // Lining (base item)
+              ...(selectedLining && selectedLining !== 'none' ? [{
+                name: `Lining: ${selectedLining}`,
+                price: finalLiningCost,
+                pricingMethod: 'per-meter',
+                quantity: linearMeters,
+                unit: 'm'
+              }] : []),
               // Dynamic options from treatment_options
               ...selectedOptions,
               // Add heading if selected
@@ -1121,18 +1138,21 @@ export const DynamicWindowWorksheet = forwardRef<{
                 quantity: linearMeters,
                 unit: 'm'
               }] : []),
-              // Heading
-              ...(finalHeadingCost > 0 ? [{
+              // Heading - ALWAYS include even if 0
+              ...(selectedHeading && selectedHeading !== 'standard' && selectedHeading !== 'none' ? [{
                 id: 'heading',
-                name: 'Heading',
-                total_cost: finalHeadingCost,
+                name: (() => {
+                  const headingOpt = headingOptionsFromSettings.find((h: any) => h.id === selectedHeading);
+                  return `Heading: ${headingOpt?.name || selectedHeading}`;
+                })(),
+                total_cost: finalHeadingCost || 0,
                 category: 'heading'
               }] : []),
-              // Manufacturing
-              ...(manufacturingCost > 0 ? [{
+              // Manufacturing - ALWAYS include even if 0
+              ...(measurements.manufacturing_type ? [{
                 id: 'manufacturing',
-                name: 'Manufacturing',
-                total_cost: manufacturingCost,
+                name: `Manufacturing: ${measurements.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished'}`,
+                total_cost: manufacturingCost || 0,
                 category: 'manufacturing'
               }] : []),
               // Hardware
@@ -1142,12 +1162,13 @@ export const DynamicWindowWorksheet = forwardRef<{
                 total_cost: hardwareCost,
                 category: 'hardware'
               }] : []),
-              // All selected options (already includes heading, manufacturing from selected_options)
-              ...selectedOptions.filter(opt => opt.price > 0).map((opt, idx) => ({
+              // All selected options - INCLUDE ALL (even price:0 "included" items)
+              ...selectedOptions.map((opt, idx) => ({
                 id: opt.name || `option-${idx}`,
                 name: opt.name || 'Option',
                 total_cost: opt.price || 0,
-                category: 'option'
+                category: 'option',
+                description: opt.pricingMethod === 'included' ? 'Included' : undefined
               }))
             ],
             template_id: selectedTemplate?.id,
