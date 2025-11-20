@@ -29,7 +29,14 @@ export const HeadingSelector = ({ selectedHeading, onHeadingChange }: HeadingSel
       <Label htmlFor="heading">Heading Type</Label>
       <Select value={selectedHeading} onValueChange={onHeadingChange}>
         <SelectTrigger className="transition-all duration-200 hover:border-primary/50">
-          <SelectValue placeholder="Select heading type" />
+          <SelectValue placeholder="Select heading type">
+            {selectedHeading && selectedHeading !== "no-heading" ? (
+              (() => {
+                const selectedOption = headingOptions.find(h => h.id === selectedHeading);
+                return selectedOption ? selectedOption.name : selectedHeading;
+              })()
+            ) : selectedHeading === "no-heading" ? "No heading" : null}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent className="max-h-[300px]">
           <SelectItem value="no-heading" className="hover:bg-accent/50 transition-colors">No heading</SelectItem>

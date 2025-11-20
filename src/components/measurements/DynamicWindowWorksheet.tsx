@@ -798,9 +798,16 @@ export const DynamicWindowWorksheet = forwardRef<{
             });
           } else {
             // Original curtain calculations
-            // CRITICAL FIX: Use fabricCost, not totalCost (which includes labor)
-            fabricCost = fabricCalculation?.fabricCost || 0;
-            linearMeters = fabricCalculation?.linearMeters || 0;
+            // CRITICAL FIX: Use calculatedCosts.fabricTotalCost (most up-to-date), not fabricCalculation
+            fabricCost = calculatedCosts.fabricTotalCost || fabricCalculation?.fabricCost || 0;
+            linearMeters = calculatedCosts.fabricLinearMeters || fabricCalculation?.linearMeters || 0;
+            
+            console.log('💰 [SAVE] Using calculated costs:', {
+              fabricCost,
+              linearMeters,
+              fromCalculatedCosts: !!calculatedCosts.fabricTotalCost,
+              fromFabricCalculation: !!fabricCalculation?.fabricCost
+            });
           }
 
           // Calculate lining cost (for curtains only)
