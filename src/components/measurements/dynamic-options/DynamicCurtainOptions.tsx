@@ -22,8 +22,8 @@ interface DynamicCurtainOptionsProps {
   template?: any; // The selected curtain template
   readOnly?: boolean;
   onOptionPriceChange?: (optionKey: string, price: number, label: string, pricingMethod?: string, pricingGridData?: any) => void;
-  selectedOptions?: Array<{ name: string; price: number }>;
-  onSelectedOptionsChange?: (options: Array<{ name: string; price: number }>) => void;
+  selectedOptions?: Array<{ name: string; price: number; pricingMethod?: string; pricingGridData?: any }>;
+  onSelectedOptionsChange?: (options: Array<{ name: string; price: number; pricingMethod?: string; pricingGridData?: any }>) => void;
   selectedEyeletRing?: string;
   onEyeletRingChange?: (ringId: string) => void;
   selectedHeading?: string;
@@ -119,8 +119,10 @@ export const DynamicCurtainOptions = ({
     if (heading && onOptionPriceChange) {
       // Headings are stored in enhanced_inventory_items - use correct pricing fields
       const headingPrice = heading.price_per_meter || heading.selling_price || 0;
-      // Don't default to 'fixed' - let it be undefined if not configured
-      onOptionPriceChange('heading', headingPrice, heading.name, undefined);
+      // Default to 'per-meter' for headings from settings
+      const metadata = heading.metadata as any;
+      const pricingMethod = metadata?.pricing_method || 'per-meter';
+      onOptionPriceChange('heading', headingPrice, heading.name, pricingMethod);
     }
     
     // CRITICAL: Update measurements object first
@@ -232,17 +234,24 @@ export const DynamicCurtainOptions = ({
         
         // Update parent's price tracking
         if (onOptionPriceChange) {
-          // Don't default to 'fixed' - let it be undefined if not configured
-          onOptionPriceChange(optionKey, price, selectedValue.label, undefined);
+          // Get pricing method from extra_data or default to 'per-meter' from settings
+          const pricingMethod = selectedValue.extra_data?.pricing_method || 'per-meter';
+          onOptionPriceChange(optionKey, price, selectedValue.label, pricingMethod);
         }
         
         // CRITICAL: Also update selectedOptions array for cost summary display
         if (onSelectedOptionsChange) {
           const updatedOptions = selectedOptions.filter(opt => !opt.name.includes(option.label));
           if (price > 0) {
+            // Extract pricing method from extra_data or default to 'per-meter' from settings
+            const pricingMethod = selectedValue.extra_data?.pricing_method || 'per-meter';
+            const pricingGridData = selectedValue.extra_data?.pricing_grid_data;
+            
             updatedOptions.push({ 
               name: `${option.label}: ${selectedValue.label}`, 
-              price 
+              price,
+              pricingMethod,
+              pricingGridData
             });
           }
           onSelectedOptionsChange(updatedOptions);
@@ -694,7 +703,8 @@ export const DynamicCurtainOptions = ({
                             const choice = subOption.choices?.find((c: any) => c.value === choiceValue);
                             if (choice) {
                               const displayLabel = `${option.label} - ${subOption.label}: ${choice.label}`;
-                              onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel);
+                              const pricingMethod = choice.pricing_method || subOption.pricing_method || 'per-meter';
+                              onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel, pricingMethod);
                             }
                           }
                         }}
