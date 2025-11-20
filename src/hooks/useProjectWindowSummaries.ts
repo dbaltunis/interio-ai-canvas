@@ -51,8 +51,28 @@ export const useProjectWindowSummaries = (projectId?: string) => {
       const totalsByRoom: Record<string, number> = {};
       let projectTotal = 0;
 
+      // CRITICAL: Calculate from cost_breakdown items (matching WindowSummaryCard displayTotal logic)
       windows.forEach((w) => {
-        const amount = Number(w.summary?.total_cost || 0);
+        let amount = 0;
+        
+        if (!w.summary) {
+          amount = 0;
+        } else {
+          // If cost_breakdown exists, sum all breakdown items (same as displayTotal)
+          const breakdown = w.summary.cost_breakdown as any;
+          if (Array.isArray(breakdown) && breakdown.length > 0) {
+            amount = breakdown.reduce((sum: number, item: any) => {
+              const itemCost = typeof item === 'object' && item !== null && 'total_cost' in item
+                ? Number(item.total_cost) || 0
+                : 0;
+              return sum + itemCost;
+            }, 0);
+          } else {
+            // Fallback to stored total_cost if no breakdown
+            amount = Number((w.summary as any).total_cost || 0);
+          }
+        }
+        
         projectTotal += amount;
         const roomId = w.room_id || "unknown";
         totalsByRoom[roomId] = (totalsByRoom[roomId] || 0) + amount;
