@@ -1863,9 +1863,8 @@ export const DynamicWindowWorksheet = forwardRef<{
                     // CRITICAL FIX: For horizontal orientation, linearMeters is the WIDTH to order
                     // horizontalPiecesNeeded tells us how many pieces are needed to cover the HEIGHT
                     // The TOTAL fabric to order is linearMeters × horizontalPiecesNeeded
-                    // BUT fabricCalculation.fabricCost ALREADY includes this multiplication!
-                    // So we should use fabricCalculation.fabricCost directly, NOT recalculate it
-                    const fabricCost = fabricCalculation.fabricCost || (linearMeters * pricePerMeter);
+                    // fabricCalculation.fabricCost SHOULD include this, but if not available, calculate it
+                    const fabricCost = fabricCalculation.fabricCost || ((linearMeters * horizontalPiecesNeeded) * pricePerMeter);
 
                     // Calculate lining cost - DYNAMIC based on template configuration
                     let liningCost = 0;
