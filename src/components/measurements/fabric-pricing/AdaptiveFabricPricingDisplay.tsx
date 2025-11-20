@@ -767,22 +767,28 @@ export const AdaptiveFabricPricingDisplay = ({
                     
                     if (piecesNeeded > 1 || leftoverHeightCm > 10) {
                       return (
-                        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md p-3 mt-2 space-y-2">
-                          <div className="flex justify-between text-xs">
-                            <span className="text-amber-900 dark:text-amber-100 font-semibold">📦 Leftover Fabric</span>
-                            <span className="font-medium text-amber-900 dark:text-amber-100">
-                              {leftoverSqm.toFixed(2)} sqm ({formatMeasurement(leftoverHeightCm)} height × {requiredWidthM.toFixed(2)}m)
-                            </span>
-                          </div>
-                          <div className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
-                            <p className="mb-1.5">
-                              <strong>Why?</strong> Railroaded fabric comes {formatMeasurement(fabricWidthCm)} wide. 
-                              {piecesNeeded > 1 && ` Your curtain needs ${formatMeasurement(totalDropCm)} height, requiring ${piecesNeeded} horizontal pieces.`}
-                              {` You order ${(requiredWidthM * piecesNeeded).toFixed(2)}m of fabric (${requiredWidthM.toFixed(2)}m × ${piecesNeeded} pieces), creating ${formatMeasurement(leftoverHeightCm)} of unused width.`}
-                            </p>
-                            <p className="text-green-700 dark:text-green-300 font-medium">
-                              ✓ This leftover will be saved to fabric pool for reuse in other treatments
-                            </p>
+                        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md p-3 mt-2">
+                          <div className="flex items-start gap-2">
+                            <span className="text-2xl">💡</span>
+                            <div className="flex-1 space-y-1.5">
+                              <div className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                                Leftover Fabric: {leftoverSqm.toFixed(2)} sqm
+                              </div>
+                              <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">
+                                This project will generate <strong>{leftoverSqm.toFixed(2)} sqm</strong> of leftover fabric ({formatMeasurement(leftoverHeightCm)} × {requiredWidthM.toFixed(2)}m).
+                              </p>
+                              <div className="pt-1 space-y-1">
+                                <p className="text-xs text-blue-700 dark:text-blue-300">
+                                  ✓ <strong>Charged to this project</strong> - You're paying for this fabric now
+                                </p>
+                                <p className="text-xs text-green-700 dark:text-green-300 font-medium">
+                                  ✓ <strong>Free for future use</strong> - When used in other treatments, this leftover won't be charged again
+                                </p>
+                                <p className="text-xs text-blue-700 dark:text-blue-300">
+                                  ✓ <strong>Visible in inventory</strong> - Shows as available leftover with yellow badge
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       );
@@ -790,15 +796,30 @@ export const AdaptiveFabricPricingDisplay = ({
                     return null;
                   })()}
                   
-                  {/* Show remnant information if multiple widths */}
+                  {/* Show remnant information if multiple widths - vertical orientation */}
                   {fabricCalculation.widthsRequired > 1 && fabricCalculation.remnantMeters > 0 && (
-                    <div className="bg-accent/10 border border-accent/20 rounded-md p-2 mt-2">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-accent-foreground">📦 Remnant to Save:</span>
-                        <span className="font-medium text-accent-foreground">{fabricCalculation.remnantMeters.toFixed(2)}m</span>
-                      </div>
-                      <div className="text-xs text-accent-foreground/70 mt-1">
-                        Will be added to project fabric pool for future use
+                    <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md p-3 mt-2">
+                      <div className="flex items-start gap-2">
+                        <span className="text-2xl">💡</span>
+                        <div className="flex-1 space-y-1.5">
+                          <div className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                            Leftover Fabric: {fabricCalculation.remnantMeters.toFixed(2)}m
+                          </div>
+                          <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">
+                            This project will generate <strong>{fabricCalculation.remnantMeters.toFixed(2)}m</strong> of leftover fabric from cutting {fabricCalculation.widthsRequired} widths.
+                          </p>
+                          <div className="pt-1 space-y-1">
+                            <p className="text-xs text-blue-700 dark:text-blue-300">
+                              ✓ <strong>Charged to this project</strong> - You're paying for this fabric now
+                            </p>
+                            <p className="text-xs text-green-700 dark:text-green-300 font-medium">
+                              ✓ <strong>Free for future use</strong> - When used in other treatments, this leftover won't be charged again
+                            </p>
+                            <p className="text-xs text-blue-700 dark:text-blue-300">
+                              ✓ <strong>Visible in inventory</strong> - Shows as available leftover with yellow badge
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
