@@ -763,7 +763,7 @@ export const DynamicWindowWorksheet = forwardRef<{
               // ✅ FIX: For per_metre, calculate width after fullness + side hems + returns + waste
               // This is the MANUFACTURING width to sew, not fabric usage
               const railWidthCm = parseFloat(measurements.rail_width || '0');
-              const fullness = fabricCalculation.fullnessRatio || selectedTemplate.fullness_ratio || 2.5;
+              const fullness = fabricCalculation.fullnessRatio || 0;
               const sideHemsCm = fabricCalculation.totalSideHems || 0;
               const returnsCm = fabricCalculation.returns || 0;
               const wastePercent = fabricCalculation.wastePercent || selectedTemplate.waste_percent || 0;
@@ -814,7 +814,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                        pricingType === 'per_drop' ? fabricCalculation.widthsRequired : 
                        pricingType === 'per_metre' ? (() => {
                          const railWidthCm = parseFloat(measurements.rail_width || '0');
-                         const fullness = fabricCalculation.fullnessRatio || 2.5;
+                         const fullness = fabricCalculation.fullnessRatio || 0;
                          const sideHemsCm = fabricCalculation.totalSideHems || 0;
                          const returnsCm = fabricCalculation.returns || 0;
                          const wastePercent = fabricCalculation.wastePercent || 0;
@@ -1653,7 +1653,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                       } else if (pricingType === 'per_metre') {
                         // ✅ FIX: For per_metre, calculate width after fullness + side hems + returns + waste
                         const railWidthCm = parseFloat(measurements.rail_width || '0');
-                        const fullness = fabricCalculation.fullnessRatio || selectedTemplate.fullness_ratio || 2.5;
+                        const fullness = fabricCalculation.fullnessRatio || 0;
                         const sideHemsCm = fabricCalculation.totalSideHems || 0;
                         const returnsCm = fabricCalculation.returns || 0;
                         const wastePercent = fabricCalculation.wastePercent || selectedTemplate.waste_percent || 0;
