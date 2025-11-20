@@ -1164,13 +1164,15 @@ export const DynamicWindowWorksheet = forwardRef<{
             total_cost: finalTotalCost,
             // CRITICAL: Save structured cost_breakdown for accurate room/project totals
             cost_breakdown: [
-              // Fabric
+              // Fabric - CRITICAL: Use the calculated fabricCost (already includes horizontal pieces)
               ...(fabricCost > 0 ? [{
                 id: 'fabric',
                 name: 'Fabric Material',
-                total_cost: fabricCost,
+                total_cost: fabricCost,  // CRITICAL: Use fabricCost NOT linearMeters
                 category: 'fabric',
-                quantity: linearMeters,
+                quantity: fabricCalculation?.horizontalPiecesNeeded 
+                  ? linearMeters * (fabricCalculation.horizontalPiecesNeeded || 1) 
+                  : linearMeters,
                 unit: 'm',
                 unit_price: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0
               }] : []),
