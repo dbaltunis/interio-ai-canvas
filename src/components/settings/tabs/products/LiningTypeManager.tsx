@@ -12,6 +12,7 @@ interface LiningType {
   price_per_metre: number;
   labour_per_curtain: number;
   description?: string;
+  pricing_method?: string; // Default: 'per-meter'
 }
 
 interface LiningTypeManagerProps {
@@ -54,7 +55,8 @@ export const LiningTypeManager = ({ liningTypes, onLiningTypesChange }: LiningTy
       type: formData.type,
       price_per_metre: formData.price_per_metre,
       labour_per_curtain: formData.labour_per_curtain,
-      description: formData.description
+      description: formData.description,
+      pricing_method: 'per-meter' // Lining always uses per-meter pricing
     };
 
     onLiningTypesChange([...liningTypes, newLiningType]);

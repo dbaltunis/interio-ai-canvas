@@ -180,9 +180,10 @@ export const DynamicCurtainOptions = ({
     console.log('🔥 Found lining:', lining);
     
     if (lining && onOptionPriceChange) {
-      const totalPrice = (lining.price_per_metre || 0) + (lining.labour_per_curtain || 0);
-      // Don't default to 'fixed' - let it be undefined if not configured
-      onOptionPriceChange('lining', totalPrice, lining.type, undefined);
+      // Pass price_per_metre as the base price (per-meter calculation will be done in pricing engine)
+      const pricePerMetre = lining.price_per_metre || 0;
+      const pricingMethod = lining.pricing_method || 'per-meter'; // Default to per-meter
+      onOptionPriceChange('lining', pricePerMetre, lining.type, pricingMethod);
     }
     
     // CRITICAL: Update both measurements object AND parent state
@@ -194,7 +195,9 @@ export const DynamicCurtainOptions = ({
     console.log('🧵 Lining changed:', {
       type: liningType,
       found: !!lining,
-      price: lining ? (lining.price_per_metre || 0) + (lining.labour_per_curtain || 0) : 0
+      pricePerMetre: lining?.price_per_metre || 0,
+      labourPerCurtain: lining?.labour_per_curtain || 0,
+      pricingMethod: lining?.pricing_method || 'per-meter'
     });
   };
 
@@ -485,7 +488,7 @@ export const DynamicCurtainOptions = ({
                       <div className="flex items-center justify-between w-full gap-4">
                         <span>{lining.type}</span>
                         <Badge variant="outline" className="text-xs">
-                          {formatCurrency((lining.price_per_metre || 0) + (lining.labour_per_curtain || 0))}
+                          {formatCurrency(lining.price_per_metre || 0)}/m
                         </Badge>
                       </div>
                     </SelectItem>

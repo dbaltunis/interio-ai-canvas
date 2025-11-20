@@ -370,10 +370,10 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     
     // Lining Selection - Pre-created with pricing (for curtains)
     lining_types: template?.lining_types || [
-      { type: "Standard", price_per_metre: 15, labour_per_curtain: 25 },
-      { type: "Blackout", price_per_metre: 22, labour_per_curtain: 35 },
-      { type: "Thermal", price_per_metre: 28, labour_per_curtain: 40 },
-      { type: "Interlining", price_per_metre: 18, labour_per_curtain: 45 }
+      { type: "Standard", price_per_metre: 15, labour_per_curtain: 25, pricing_method: 'per-meter' },
+      { type: "Blackout", price_per_metre: 22, labour_per_curtain: 35, pricing_method: 'per-meter' },
+      { type: "Thermal", price_per_metre: 28, labour_per_curtain: 40, pricing_method: 'per-meter' },
+      { type: "Interlining", price_per_metre: 18, labour_per_curtain: 45, pricing_method: 'per-meter' }
     ],
     
     // Hardware - From inventory
