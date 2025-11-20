@@ -27,7 +27,12 @@ export interface TreatmentPricingResult {
     linear_meters: number;
     total_drop_cm: number;
     price_per_meter: number;
-    breakdown: { label: string; amount: number }[];
+    breakdown: Array<{
+      id: string;
+      name: string;
+      total_cost: number;
+      category: string;
+    }>;
   };
 }
 
@@ -238,11 +243,36 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
     leftover_width_total_cm: leftoverWidthTotal,
     leftover_per_panel_cm: leftoverPerPanel,
     breakdown: [
-      { label: 'Fabric', amount: fabricCost },
-      { label: 'Lining', amount: liningCost },
-      { label: 'Manufacturing', amount: manufacturingCost },
-      { label: 'Options', amount: optionsCost },
-      { label: 'Heading', amount: headingCost },
+      { 
+        id: 'fabric',
+        name: 'Fabric', 
+        total_cost: fabricCost,
+        category: 'fabric'
+      },
+      { 
+        id: 'lining',
+        name: 'Lining', 
+        total_cost: liningCost,
+        category: 'lining'
+      },
+      { 
+        id: 'manufacturing',
+        name: 'Manufacturing', 
+        total_cost: manufacturingCost,
+        category: 'manufacturing'
+      },
+      { 
+        id: 'options',
+        name: 'Options', 
+        total_cost: optionsCost,
+        category: 'option'
+      },
+      { 
+        id: 'heading',
+        name: 'Heading', 
+        total_cost: headingCost,
+        category: 'heading'
+      },
     ],
   };
 
