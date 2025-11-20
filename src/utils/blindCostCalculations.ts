@@ -10,6 +10,7 @@ export interface BlindCostResult {
   manufacturingCost: number;
   hardwareCost: number;
   optionsCost: number;
+  headingCost: number; // CRITICAL: Add heading cost
   totalCost: number;
   squareMeters: number;
   linearMeters: number;
@@ -189,6 +190,7 @@ export const calculateBlindCost = (
     manufacturingCost,
     hardwareCost,
     optionsCost,
+    headingCost: 0, // Blinds don't have heading costs
     totalCost,
     squareMeters,
     linearMeters
@@ -230,6 +232,7 @@ export const calculateShutterCost = (
     manufacturingCost,
     hardwareCost: 0,
     optionsCost,
+    headingCost: 0, // Shutters don't have heading costs
     totalCost,
     squareMeters,
     linearMeters: height / 100

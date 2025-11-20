@@ -261,6 +261,20 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
       });
     }
 
+    // CRITICAL: Calculate heading cost
+    let headingCost = 0;
+    if (formData.selected_heading && formData.selected_heading !== 'none' && formData.selected_heading !== 'no-heading') {
+      const headingItem = headingOptions.find(h => h.id === formData.selected_heading);
+      if (headingItem) {
+        const railWidth = parseFloat(formData.rail_width) || 0;
+        const headingPrice = headingItem.price || 0; // HeadingOption uses 'price' field
+        if (headingPrice > 0) {
+          headingCost = headingPrice * (railWidth / 100); // Convert cm to m
+          console.log(`💰 Heading cost: ${headingPrice}/m × ${(railWidth / 100).toFixed(2)}m = ${headingCost.toFixed(2)}`);
+        }
+      }
+    }
+
     // Enhanced labor cost calculation including seam work
     const currentTreatmentType = treatmentTypesData?.find(tt => tt.name === treatmentType);
     const defaultLaborRate = currentTreatmentType?.labor_rate || 25;
@@ -277,7 +291,7 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     const totalHours = Math.max(3, baseHours + sewingComplexity + seamHours);
     
     const laborCost = laborRate * totalHours;
-    const totalCost = fabricCost + optionsCost + laborCost;
+    const totalCost = fabricCost + optionsCost + headingCost + laborCost; // CRITICAL: Include heading cost
 
     // Return fabric usage in the correct unit format
     const displayFabricUsage = units.fabric === 'yards' ? fabricUsage.yards : fabricUsage.meters;
@@ -285,6 +299,7 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     return {
       fabricCost: fabricCost.toFixed(2),
       optionsCost: optionsCost.toFixed(2),
+      headingCost: headingCost.toFixed(2), // CRITICAL: Include heading cost in return
       laborCost: laborCost.toFixed(2),
       totalCost: totalCost.toFixed(2),
       fabricUsage: displayFabricUsage.toFixed(1),
@@ -302,6 +317,7 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
       return {
         fabricCost: "0.00",
         optionsCost: "0.00",
+        headingCost: "0.00", // CRITICAL: Include in error fallback
         laborCost: "0.00",
         totalCost: "0.00",
         fabricUsage: "0.0",
@@ -338,7 +354,8 @@ export const useFabricCalculation = (formData: any, options: any[], treatmentTyp
     calculateFabricUsage: () => fabricUsageCalculation,
     calculateCosts: () => integratedCosts || {
       fabricCost: "0.00",
-      optionsCost: "0.00", 
+      optionsCost: "0.00",
+      headingCost: "0.00", // CRITICAL: Include in default return
       laborCost: "0.00",
       totalCost: "0.00",
       fabricUsage: "0.0",
