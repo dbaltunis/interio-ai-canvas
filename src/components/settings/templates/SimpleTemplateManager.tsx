@@ -272,10 +272,13 @@ export const SimpleTemplateManager: React.FC = () => {
     loadTemplates();
   }, []);
 
-  const initializeDefaultTemplates = async () => {
+  const restoreDefaultTemplates = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        toast.error('You must be logged in to restore default templates');
+        return;
+      }
 
       // Check if default templates already exist for this user
       const { data: existingTemplates } = await supabase
@@ -284,6 +287,7 @@ export const SimpleTemplateManager: React.FC = () => {
         .eq('user_id', user.id);
 
       const existingNames = existingTemplates?.map(t => t.name) || [];
+      let addedCount = 0;
 
       // Insert missing default templates with active=true
       for (const defaultTemplate of defaultTemplates) {
@@ -295,43 +299,29 @@ export const SimpleTemplateManager: React.FC = () => {
               description: defaultTemplate.description,
               blocks: defaultTemplate.blocks,
               template_style: defaultTemplate.category,
-              active: true, // Set active by default
-              user_id: user.id
+              user_id: user.id,
+              active: false // Don't auto-activate
             });
+          addedCount++;
         }
       }
-      
-      // If there are no active templates for each category, activate the first one
-      const quoteTemplates = existingTemplates?.filter(t => t.template_style === 'quote') || [];
-      if (quoteTemplates.length > 0) {
-        const { data: activeQuotes } = await supabase
-          .from('quote_templates')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('template_style', 'quote')
-          .eq('active', true)
-          .limit(1);
-        
-        if (!activeQuotes || activeQuotes.length === 0) {
-          // Activate the first quote template
-          await supabase
-            .from('quote_templates')
-            .update({ active: true })
-            .eq('id', quoteTemplates[0].id);
-        }
+
+      if (addedCount > 0) {
+        toast.success(`Restored ${addedCount} default template${addedCount > 1 ? 's' : ''}`);
+        await loadTemplates();
+      } else {
+        toast.info('All default templates already exist');
       }
     } catch (error) {
-      console.error('Error initializing default templates:', error);
+      console.error('Error restoring default templates:', error);
+      toast.error('Failed to restore default templates');
     }
   };
 
   const loadTemplates = async () => {
     setLoading(true);
     try {
-      // First, ensure default templates exist in database
-      await initializeDefaultTemplates();
-
-      // Then load all templates from database
+      // Load all templates from database
       const { data, error } = await supabase
         .from('quote_templates')
         .select('*')
@@ -339,38 +329,22 @@ export const SimpleTemplateManager: React.FC = () => {
 
       if (error) throw error;
 
-      const userTemplates = data?.map(template => ({
-        id: template.id,
-        name: template.name,
-        description: template.description,
-        blocks: Array.isArray(template.blocks) ? template.blocks : [],
-        category: template.template_style || 'quote',
-        active: template.active ?? false,
-        created_at: template.created_at,
-        is_default: false // All templates from database are user-editable/deletable
-      })) || [];
-
-      // Auto-activate if no active templates exist for each category
-      const quoteTemplates = userTemplates.filter(t => t.category === 'quote');
-      const activeQuotes = quoteTemplates.filter(t => t.active);
-      
-      if (quoteTemplates.length > 0 && activeQuotes.length === 0) {
-        // Activate the first quote template automatically
-        const firstQuote = quoteTemplates[0];
-        await supabase
-          .from('quote_templates')
-          .update({ active: true })
-          .eq('id', firstQuote.id);
-        
-        firstQuote.active = true;
-        toast.success(`Activated "${firstQuote.name}" template for quotes`);
-      }
+      const userTemplates: Template[] = (data || []).map(t => ({
+        id: t.id,
+        name: t.name,
+        description: t.description || '',
+        blocks: t.blocks as any[],
+        category: t.template_style || 'quote',
+        is_default: false,
+        active: t.active || false,
+        created_at: t.created_at
+      }));
 
       setTemplates(userTemplates);
     } catch (error) {
       console.error('Error loading templates:', error);
-      setTemplates(defaultTemplates);
-      toast.error('Failed to load saved templates');
+      setTemplates([]);
+      toast.error('Failed to load templates');
     } finally {
       setLoading(false);
     }
@@ -591,10 +565,20 @@ export const SimpleTemplateManager: React.FC = () => {
           <h2 className="text-2xl font-bold">Document Templates</h2>
           <p className="text-muted-foreground">Create and manage fully dynamic quote and invoice templates</p>
         </div>
-        <Button onClick={() => setIsCreating(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          New Template
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={restoreDefaultTemplates} 
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Restore Defaults
+          </Button>
+          <Button onClick={() => setIsCreating(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            New Template
+          </Button>
+        </div>
       </div>
 
       {/* Project Data Selector */}
@@ -649,8 +633,26 @@ export const SimpleTemplateManager: React.FC = () => {
             Loading templates...
           </div>
         ) : filteredTemplates.length === 0 ? (
-          <div className="col-span-full text-center py-8 text-muted-foreground">
-            No templates found
+          <div className="col-span-full text-center py-12">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <h3 className="text-lg font-medium mb-2">No templates found</h3>
+            <p className="text-muted-foreground mb-4">
+              {searchTerm || selectedCategory !== 'all' 
+                ? 'Try adjusting your search or filters' 
+                : 'Get started by restoring default templates or creating a new one'}
+            </p>
+            {!searchTerm && selectedCategory === 'all' && (
+              <div className="flex items-center gap-2 justify-center">
+                <Button onClick={restoreDefaultTemplates} variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Restore Default Templates
+                </Button>
+                <Button onClick={() => setIsCreating(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Template
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           filteredTemplates.map((template) => (
