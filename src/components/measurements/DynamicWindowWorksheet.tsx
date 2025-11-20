@@ -1958,7 +1958,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                       ? selectedTemplate.pricing_methods?.find((m: any) => m.id === measurements.selected_pricing_method)
                       : selectedTemplate.pricing_methods?.[0];
 
-                    // Calculate manufacturing/labor cost
+                    // Calculate manufacturing/labor cost - CRITICAL: Must match save calculation
                     let manufacturingCost = 0;
                     const manufacturingType = measurements.manufacturing_type || 'machine';
                     const pricingType = selectedPricingMethod?.pricing_type || selectedTemplate.pricing_type || selectedTemplate.makeup_pricing_method || selectedTemplate.pricing_method || 'per_metre';
@@ -1974,6 +1974,24 @@ export const DynamicWindowWorksheet = forwardRef<{
                         ? (selectedPricingMethod?.hand_price_per_drop ?? selectedTemplate.hand_price_per_drop ?? 0)
                         : (selectedPricingMethod?.machine_price_per_drop ?? selectedTemplate.machine_price_per_drop ?? 0);
                       manufacturingCost = pricePerUnit * (fabricCalculation.widthsRequired || 1);
+                    } else if (pricingType === 'per_metre') {
+                      // ✅ CRITICAL FIX: Match save calculation exactly - use width after fullness + hems + returns + waste
+                      pricePerUnit = manufacturingType === 'hand'
+                        ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
+                        : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
+                      
+                      const railWidthCm = parseFloat(measurements.rail_width || '0');
+                      const fullness = fabricCalculation.fullnessRatio || 0;
+                      const sideHemsCm = fabricCalculation.totalSideHems || 0;
+                      const returnsCm = fabricCalculation.returns || 0;
+                      const wastePercent = fabricCalculation.wastePercent || selectedTemplate.waste_percent || 0;
+                      
+                      const baseWidthCm = railWidthCm * fullness;
+                      const widthWithAllowancesCm = baseWidthCm + sideHemsCm + returnsCm;
+                      const finalWidthCm = widthWithAllowancesCm * (1 + wastePercent / 100);
+                      const finalWidthM = finalWidthCm / 100;
+                      
+                      manufacturingCost = pricePerUnit * finalWidthM;
                     } else {
                       pricePerUnit = manufacturingType === 'hand'
                         ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
@@ -1992,13 +2010,20 @@ export const DynamicWindowWorksheet = forwardRef<{
                       }
                     }
 
-                    // Calculate heading cost
+                    // Calculate heading cost - CRITICAL: Must match save calculation
                     let headingCost = 0;
-                    if (selectedHeading && selectedHeading !== 'none') {
+                    if (selectedHeading && selectedHeading !== 'none' && selectedHeading !== 'standard') {
+                      // Start with template upcharges
+                      const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
+                      const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
+                      headingCost = headingUpchargePerCurtain + headingUpchargePerMetre * fabricCalculation.linearMeters;
+                      
+                      // Add heading inventory/settings price - match save calculation exactly
                       const heading = headingOptionsFromSettings.find(h => h.id === selectedHeading || h.name === selectedHeading);
-                      if (heading?.price) {
+                      if (heading) {
                         const railWidth = parseFloat(measurements.rail_width || '0');
-                        headingCost = heading.price * (railWidth / 100);
+                        const additionalCost = (heading as any).price * (railWidth / 100);
+                        headingCost += additionalCost;
                       }
                     }
 
