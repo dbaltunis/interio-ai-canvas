@@ -493,17 +493,22 @@ export const CostCalculationSummary = ({
                   {fabricCalculation && (
                     <>
                       <span className="text-xs text-muted-foreground truncate">
-                        {/* Show what's actually being ordered, not just linearMeters */}
+                        {/* ✅ SHOW EXACTLY WHAT'S CALCULATED - NO RECALCULATION */}
                         {(() => {
-                          const metersToOrder = fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters || 0;
-                          const pricePerM = fabricCalculation.pricePerMeter || 0;
-                          const widthsReq = fabricCalculation.widthsRequired || 1;
                           const orientation = fabricCalculation.fabricOrientation || 'vertical';
+                          const horizontalPieces = fabricCalculation.horizontalPiecesNeeded || 1;
+                          const linearMeters = fabricCalculation.linearMeters || 0;
+                          const pricePerM = fabricCalculation.pricePerMeter || 0;
                           
-                          return `${metersToOrder.toFixed(2)}m × ${formatPrice(pricePerM)}/m`;
+                          if (orientation === 'horizontal' && horizontalPieces > 1) {
+                            const totalMeters = linearMeters * horizontalPieces;
+                            return `${linearMeters.toFixed(2)}m × ${horizontalPieces} pieces = ${totalMeters.toFixed(2)}m × ${formatPrice(pricePerM)}/m`;
+                          } else {
+                            return `${linearMeters.toFixed(2)}m × ${formatPrice(pricePerM)}/m`;
+                          }
                         })()}
                       </span>
-                      {/* Add clear explanation */}
+                      {/* Orientation indicator */}
                       <span className="text-xs text-muted-foreground/80 mt-0.5">
                         {(() => {
                           const orientation = fabricCalculation.fabricOrientation || 'vertical';
@@ -512,7 +517,7 @@ export const CostCalculationSummary = ({
                           
                           if (orientation === 'horizontal') {
                             if (horizontalPieces && horizontalPieces > 1) {
-                              return `⚡ Railroaded: ${widthsReq} piece(s) × ${horizontalPieces} horizontal sections = ${widthsReq} total pieces`;
+                              return `⚡ Railroaded orientation: ${horizontalPieces} piece(s) needed`;
                             }
                             return `⚡ Railroaded orientation: ${widthsReq} piece(s) needed`;
                           } else {
