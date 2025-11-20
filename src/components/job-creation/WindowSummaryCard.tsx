@@ -137,6 +137,30 @@ export function WindowSummaryCard({
     
     let actualFabricCost = Number(summary.fabric_cost) || 0;
     
+    // CRITICAL: For railroaded fabric, check if cost needs to be multiplied by pieces
+    const measurementDetails = (summary.measurements_details as any) || {};
+    const isRailroaded = measurementDetails.fabric_rotated || measurementDetails.fabric_orientation === 'horizontal';
+    const horizontalPiecesForCalc = measurementDetails.horizontal_pieces_needed || (isRailroaded ? 2 : 1);
+    
+    // If fabric_cost seems wrong for railroaded (doesn't account for pieces), recalculate
+    if (isRailroaded && horizontalPiecesForCalc > 1) {
+      const linearMeters = Number(summary.linear_meters) || 0;
+      const pricePerMeter = Number(summary.price_per_meter) || 0;
+      const expectedTotal = linearMeters * horizontalPiecesForCalc * pricePerMeter;
+      
+      // If saved cost doesn't match expected (tolerance of $1), use recalculated
+      if (Math.abs(actualFabricCost - expectedTotal) > 1) {
+        console.log('🔧 Recalculating fabric cost for railroaded:', {
+          saved: actualFabricCost,
+          expected: expectedTotal,
+          linearMeters,
+          pieces: horizontalPiecesForCalc,
+          pricePerMeter
+        });
+        actualFabricCost = expectedTotal;
+      }
+    }
+    
     // If fabric_cost is 0 for blinds/shutters, derive it from total minus other costs
     if (actualFabricCost === 0 && isBlindsOrShutters && Number(summary.total_cost) > 0) {
       const manufacturingCost = Number(summary.manufacturing_cost) || 0;
@@ -176,9 +200,9 @@ export function WindowSummaryCard({
     let fabricUnit = 'm';
     let fabricUnitPrice = Number(summary.price_per_meter) || 0;
     
-    // CRITICAL: Get horizontal pieces info from measurements_details
-    const horizontalPieces = (summary.measurements_details as any)?.horizontal_pieces_needed || 1;
-    const fabricOrientation = (summary.measurements_details as any)?.fabric_orientation || 'vertical';
+    // Use the measurementDetails already declared above (lines 141-143)
+    const horizontalPieces = horizontalPiecesForCalc;
+    const fabricOrientation = isRailroaded ? 'horizontal' : 'vertical';
     
     if (treatmentType === 'wallpaper') {
       // For wallpaper: check if sold per roll or per meter
@@ -329,6 +353,31 @@ export function WindowSummaryCard({
 
     return items;
   }, [summary]);
+
+  // Calculate corrected total if fabric cost was recalculated for railroaded
+  const displayTotal = useMemo(() => {
+    if (!summary) return 0;
+    
+    const savedTotal = Number(summary.total_cost) || 0;
+    const savedFabricCost = Number(summary.fabric_cost) || 0;
+    
+    // Check if we recalculated fabric cost in enrichedBreakdown
+    const fabricItem = enrichedBreakdown.find(item => item.id === 'fabric');
+    if (fabricItem && Math.abs(fabricItem.total_cost - savedFabricCost) > 1) {
+      // Fabric cost was recalculated, adjust total
+      const difference = fabricItem.total_cost - savedFabricCost;
+      console.log('💰 Adjusting total for recalculated fabric cost:', {
+        savedTotal,
+        savedFabricCost,
+        newFabricCost: fabricItem.total_cost,
+        difference,
+        newTotal: savedTotal + difference
+      });
+      return savedTotal + difference;
+    }
+    
+    return savedTotal;
+  }, [summary, enrichedBreakdown]);
 
   const displayName = treatmentLabel || surface.name;
 
@@ -585,7 +634,7 @@ export function WindowSummaryCard({
                     <div className="col-span-2 space-y-0.5 pt-2 border-t border-border">
                       <div className="text-xs text-muted-foreground">Total</div>
                       <div className="font-bold text-lg text-primary">
-                        {formatCurrency(summary.total_cost || 0, userCurrency)}
+                        {formatCurrency(displayTotal, userCurrency)}
                       </div>
                     </div>
                   </div>
