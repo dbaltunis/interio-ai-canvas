@@ -1597,15 +1597,18 @@ export const DynamicWindowWorksheet = forwardRef<{
                       );
                     }
 
-                    // Calculate fabric cost
-                    const fabricCost = fabricCalculation.totalCost || 0;
+                    // Calculate fabric cost using ordered meters (total fabric to order)
+                    const metersToOrder = fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters || 0;
+                    const pricePerMeter = fabricCalculation.pricePerMeter || 0;
+                    const fabricCost = metersToOrder * pricePerMeter;
                     
-                    console.log('💰 [UI] Fabric cost from fabricCalculation:', {
-                      fabricCalculationTotalCost: fabricCalculation.totalCost,
-                      fabricCalculationLinearMeters: fabricCalculation.linearMeters,
-                      fabricCalculationPricePerMeter: fabricCalculation.pricePerMeter,
+                    console.log('💰 [UI] Fabric cost calculation:', {
+                      orderedLinearMeters: fabricCalculation.orderedLinearMeters,
+                      linearMeters: fabricCalculation.linearMeters,
+                      metersToOrder,
+                      pricePerMeter,
                       calculatedFabricCost: fabricCost,
-                      fullFabricCalculation: fabricCalculation
+                      oldTotalCost: fabricCalculation.totalCost
                     });
 
                     // Calculate lining cost
