@@ -1698,11 +1698,28 @@ export const DynamicWindowWorksheet = forwardRef<{
                     const totalMetersToOrder = linearMeters * horizontalPiecesNeeded;
                     const fabricCost = totalMetersToOrder * pricePerMeter;
 
-                    // Calculate lining cost
+                    // Calculate lining cost - DYNAMIC based on template configuration
                     let liningCost = 0;
-                    if (selectedLining && selectedLining !== 'none') {
-                      const liningPrice = selectedLining === 'standard' ? 10 : selectedLining === 'blackout' ? 15 : selectedLining === 'interlining' ? 20 : 0;
-                      liningCost = (fabricCalculation.linearMeters || 0) * liningPrice;
+                    if (selectedLining && selectedLining !== 'none' && selectedTemplate?.lining_types) {
+                      const liningConfig = selectedTemplate.lining_types.find((l: any) => l.type === selectedLining);
+                      if (liningConfig) {
+                        // Calculate based on pricing method: price_per_metre * meters + labour_per_curtain * curtains
+                        const pricePerMetre = liningConfig.price_per_metre || 0;
+                        const labourPerCurtain = liningConfig.labour_per_curtain || 0;
+                        const curtainCount = fabricCalculation.curtainCount || 1;
+                        
+                        liningCost = (pricePerMetre * (fabricCalculation.linearMeters || 0)) + (labourPerCurtain * curtainCount);
+                        
+                        console.log('💰 Lining cost calculation:', {
+                          type: selectedLining,
+                          pricePerMetre,
+                          labourPerCurtain,
+                          linearMeters: fabricCalculation.linearMeters,
+                          curtainCount,
+                          totalCost: liningCost,
+                          formula: `(${pricePerMetre}/m × ${fabricCalculation.linearMeters}m) + (${labourPerCurtain} × ${curtainCount} curtains) = ${liningCost}`
+                        });
+                      }
                     }
 
                     // Get the selected pricing method
