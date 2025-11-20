@@ -5583,6 +5583,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           org_id: string
+          overlap: number | null
           treatment_key: string
           updated_at: string | null
           visual_key: string
@@ -5594,6 +5595,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           org_id: string
+          overlap?: number | null
           treatment_key: string
           updated_at?: string | null
           visual_key: string
@@ -5605,6 +5607,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           org_id?: string
+          overlap?: number | null
           treatment_key?: string
           updated_at?: string | null
           visual_key?: string
