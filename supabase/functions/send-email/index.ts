@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+import { Resend } from 'npm:resend@2.0.0';
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -330,6 +331,8 @@ const handler = async (req: Request): Promise<Response> => {
     let fromEmail = "darius@curtainscalculator.com";
     let fromName = "Darius from Curtains Calculator";
     let emailSettings = null;
+    let useCustomSendGrid = false;
+    let sendGridApiKey = null;
     
     if (user_id) {
       const { data: settings } = await supabase
@@ -345,13 +348,26 @@ const handler = async (req: Request): Promise<Response> => {
         emailSettings = settings;
         console.log("Using user email settings:", { fromEmail, fromName, hasSignature: !!settings.signature });
       }
+
+      // Check for optional custom SendGrid integration
+      const { data: accountOwner } = await supabase.rpc('get_account_owner', { 
+        user_id_param: user_id 
+      });
+      const ownerId = accountOwner || user_id;
+
+      const { data: integrationSettings } = await supabase
+        .from('integration_settings')
+        .select('*')
+        .eq('account_owner_id', ownerId)
+        .eq('integration_type', 'sendgrid')
+        .eq('active', true)
+        .maybeSingle();
+
+      sendGridApiKey = integrationSettings?.api_credentials?.api_key;
+      useCustomSendGrid = !!sendGridApiKey;
     }
 
-    // Get SendGrid API key
-    const sendGridApiKey = Deno.env.get("SENDGRID_API_KEY");
-    if (!sendGridApiKey) {
-      throw new Error("SENDGRID_API_KEY is not configured");
-    }
+    console.log('Email provider:', useCustomSendGrid ? 'Custom SendGrid' : 'Shared Resend');
 
     // Process attachments if any
     let attachments: any[] = [];
@@ -449,99 +465,114 @@ const handler = async (req: Request): Promise<Response> => {
       size: Math.round(att.content.length * 0.75) // Approximate original size from base64
     }));
 
-    // Build SendGrid payload with proper email authentication for deliverability
-    const personalization: any = {
-      to: [{ email: to }],
-      subject: subject
-    };
-    
-    // Only include custom_args if we have emailData to avoid SendGrid errors
-    if (emailData) {
-      personalization.custom_args = {
-        email_id: emailData.id,
-        user_id: user_id || 'unknown'
-      };
-    }
-    
-    const sendGridPayload = {
-      personalizations: [personalization],
-      from: {
-        email: fromEmail,
-        name: fromName,
-      },
-      reply_to: {
-        email: fromEmail,
-        name: fromName
-      },
-      content: [
-        {
-          type: "text/html",
-          value: contentWithSignature,
-        },
-      ],
-      // CRITICAL: Always include attachments array (empty or populated)
-      attachments: attachments.length > 0 ? attachments : undefined,
-      // Enhanced tracking and deliverability settings
-      tracking_settings: {
-        click_tracking: {
-          enable: true,
-          enable_text: false
-        },
-        open_tracking: {
-          enable: true,
-          substitution_tag: "%open-track%"
-        },
-        subscription_tracking: {
-          enable: true,
-          text: "If you'd like to unsubscribe and stop receiving these emails",
-          html: "<p>If you'd like to unsubscribe and stop receiving these emails <a href=\"%unsubscribe%\">click here</a>.</p>"
-        }
-      },
-      // Email authentication for better deliverability
-      mail_settings: {
-        spam_check: {
-          enable: false  // Disable spam check to avoid post_to_url requirement
-        },
-        sandbox_mode: {
-          enable: false
-        }
-      },
-      // Add categories for better organization
-      categories: ["business-email", "quotes"]
-    };
-
-    // Send email using SendGrid API
-    const sendGridResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${sendGridApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(sendGridPayload),
-    });
-
-    console.log("SendGrid response status:", sendGridResponse.status);
-
-    if (!sendGridResponse.ok) {
-      const errorText = await sendGridResponse.text();
-      console.error("SendGrid error response:", errorText);
+    // Send email via appropriate provider
+    if (useCustomSendGrid) {
+      console.log("Sending via custom SendGrid...");
       
-      // Update email status to failed (only if we have emailData)
+      // Build SendGrid payload
+      const personalization: any = {
+        to: [{ email: to }],
+        subject: subject
+      };
+      
       if (emailData) {
-        await supabase
-          .from("emails")
-          .update({
-            status: 'failed',
-            bounce_reason: errorText,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", emailData.id);
+        personalization.custom_args = {
+          email_id: emailData.id,
+          user_id: user_id || 'unknown'
+        };
+      }
+      
+      const sendGridPayload = {
+        personalizations: [personalization],
+        from: {
+          email: fromEmail,
+          name: fromName,
+        },
+        reply_to: {
+          email: fromEmail,
+          name: fromName
+        },
+        content: [
+          {
+            type: "text/html",
+            value: contentWithSignature,
+          },
+        ],
+        attachments: attachments.length > 0 ? attachments : undefined,
+        tracking_settings: {
+          click_tracking: { enable: true, enable_text: false },
+          open_tracking: { enable: true, substitution_tag: "%open-track%" },
+          subscription_tracking: {
+            enable: true,
+            text: "If you'd like to unsubscribe and stop receiving these emails",
+            html: "<p>If you'd like to unsubscribe and stop receiving these emails <a href=\"%unsubscribe%\">click here</a>.</p>"
+          }
+        },
+        mail_settings: {
+          spam_check: { enable: false },
+          sandbox_mode: { enable: false }
+        },
+        categories: ["business-email", "quotes"]
+      };
+
+      const sendGridResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${sendGridApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(sendGridPayload),
+      });
+
+      if (!sendGridResponse.ok) {
+        const errorText = await sendGridResponse.text();
+        console.error("SendGrid error:", errorText);
+        
+        if (emailData) {
+          await supabase.from("emails").update({ status: 'failed', error_message: errorText }).eq("id", emailData.id);
+        }
+        
+        throw new Error(`SendGrid error: ${sendGridResponse.status} - ${errorText}`);
+      }
+      
+      console.log("Email sent via SendGrid successfully");
+    } else {
+      console.log("Sending via shared Resend...");
+      
+      // Use shared Resend account
+      const resendApiKey = Deno.env.get('RESEND_API_KEY');
+      if (!resendApiKey) {
+        throw new Error('RESEND_API_KEY not configured');
       }
 
-      throw new Error(`SendGrid API error: ${sendGridResponse.status} - ${errorText}`);
-    }
+      const resend = new Resend(resendApiKey);
+      
+      // Prepare Resend attachments (if any)
+      const resendAttachments = attachments.map(att => ({
+        filename: att.filename,
+        content: att.content // Resend accepts base64 directly
+      }));
 
-    console.log("Email sent successfully via SendGrid");
+      const { error: resendError } = await resend.emails.send({
+        from: `${fromName} <onboarding@resend.dev>`,
+        to: [to],
+        subject: subject,
+        html: contentWithSignature,
+        attachments: resendAttachments.length > 0 ? resendAttachments : undefined
+      });
+
+      if (resendError) {
+        console.error('Resend error:', resendError);
+        
+        if (emailData) {
+          await supabase.from("emails").update({ status: 'failed', error_message: resendError.message }).eq("id", emailData.id);
+        }
+        
+        throw new Error(`Resend error: ${resendError.message}`);
+      }
+      
+      console.log("Email sent via Resend successfully");
+    }
 
     // Update email status to sent with attachment info (only if we have emailData)
     if (emailData) {
