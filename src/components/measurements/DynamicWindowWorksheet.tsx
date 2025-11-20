@@ -411,16 +411,61 @@ export const DynamicWindowWorksheet = forwardRef<{
           }
           
           // Apply template defaults for missing hem/return/seam values (NOT for saved values)
+          // CRITICAL FIX: Also apply defaults when values are explicitly 0
           const templateToUse = existingWindowSummary.template_details || selectedTemplate;
           if (templateToUse) {
-            // Only apply defaults if values don't exist
-            restoredMeasurements.header_hem = restoredMeasurements.header_hem ?? restoredMeasurements.header_allowance ?? templateToUse.header_hem ?? templateToUse.header_allowance ?? 8;
-            restoredMeasurements.bottom_hem = restoredMeasurements.bottom_hem ?? restoredMeasurements.bottom_allowance ?? templateToUse.bottom_hem ?? templateToUse.bottom_allowance ?? 15;
-            restoredMeasurements.side_hems = restoredMeasurements.side_hems ?? restoredMeasurements.side_hem ?? templateToUse.side_hems ?? templateToUse.side_hem ?? 7.5;
-            restoredMeasurements.seam_hems = restoredMeasurements.seam_hems ?? restoredMeasurements.seam_hem ?? templateToUse.seam_hems ?? templateToUse.seam_allowance ?? 1.5;
-            restoredMeasurements.return_left = restoredMeasurements.return_left ?? templateToUse.return_left ?? 0;
-            restoredMeasurements.return_right = restoredMeasurements.return_right ?? templateToUse.return_right ?? 0;
-            restoredMeasurements.waste_percent = restoredMeasurements.waste_percent ?? templateToUse.waste_percent ?? 5;
+            // Apply defaults if values don't exist OR are 0
+            const safeValue = (saved: any, ...fallbacks: any[]) => {
+              if (saved !== null && saved !== undefined && saved !== 0 && saved !== '0') return saved;
+              for (const fb of fallbacks) {
+                if (fb !== null && fb !== undefined && fb !== 0 && fb !== '0') return fb;
+              }
+              return fallbacks[fallbacks.length - 1];
+            };
+            
+            restoredMeasurements.header_hem = safeValue(
+              restoredMeasurements.header_hem,
+              restoredMeasurements.header_allowance,
+              templateToUse.header_hem,
+              templateToUse.header_allowance,
+              8
+            );
+            restoredMeasurements.bottom_hem = safeValue(
+              restoredMeasurements.bottom_hem,
+              restoredMeasurements.bottom_allowance,
+              templateToUse.bottom_hem,
+              templateToUse.bottom_allowance,
+              15
+            );
+            restoredMeasurements.side_hems = safeValue(
+              restoredMeasurements.side_hems,
+              restoredMeasurements.side_hem,
+              templateToUse.side_hems,
+              templateToUse.side_hem,
+              7.5
+            );
+            restoredMeasurements.seam_hems = safeValue(
+              restoredMeasurements.seam_hems,
+              restoredMeasurements.seam_hem,
+              templateToUse.seam_hems,
+              templateToUse.seam_allowance,
+              1.5
+            );
+            restoredMeasurements.return_left = safeValue(
+              restoredMeasurements.return_left,
+              templateToUse.return_left,
+              0
+            );
+            restoredMeasurements.return_right = safeValue(
+              restoredMeasurements.return_right,
+              templateToUse.return_right,
+              0
+            );
+            restoredMeasurements.waste_percent = safeValue(
+              restoredMeasurements.waste_percent,
+              templateToUse.waste_percent,
+              5
+            );
           }
           
           // CRITICAL: Ensure all hem/return/seam values are preserved from saved data
@@ -1863,8 +1908,8 @@ export const DynamicWindowWorksheet = forwardRef<{
                     // CRITICAL FIX: For horizontal orientation, linearMeters is the WIDTH to order
                     // horizontalPiecesNeeded tells us how many pieces are needed to cover the HEIGHT
                     // The TOTAL fabric to order is linearMeters × horizontalPiecesNeeded
-                    // fabricCalculation.fabricCost SHOULD include this, but if not available, calculate it
-                    const fabricCost = fabricCalculation.fabricCost || ((linearMeters * horizontalPiecesNeeded) * pricePerMeter);
+                    // ALWAYS calculate correctly regardless of fabricCalculation.fabricCost
+                    const fabricCost = (linearMeters * horizontalPiecesNeeded) * pricePerMeter;
 
                     // Calculate lining cost - DYNAMIC based on template configuration
                     let liningCost = 0;

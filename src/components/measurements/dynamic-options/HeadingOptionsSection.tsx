@@ -162,12 +162,23 @@ export const HeadingOptionsSection = ({
       <div>
         <Label className="text-sm font-medium mb-2 block text-card-foreground">Heading Style</Label>
         <Select 
-          value={selectedHeading} 
+          value={selectedHeading || "standard"} 
           onValueChange={onHeadingChange}
           disabled={readOnly}
         >
           <SelectTrigger className="h-10 text-sm container-level-2 border-border">
-            <SelectValue placeholder="Choose heading style" />
+            <SelectValue placeholder="Choose heading style">
+              {selectedHeading === 'standard' && `Standard ${template.heading_name}`}
+              {selectedHeading && selectedHeading !== 'standard' && (
+                (() => {
+                  const fromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
+                  if (fromSettings) return fromSettings.name;
+                  const fromInventory = inventoryHeadingOptions.find(h => h.id === selectedHeading);
+                  if (fromInventory) return fromInventory.name;
+                  return 'Selected Heading';
+                })()
+              )}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent className="container-level-1 border-2 border-border z-50">
             {isLoading ? (
