@@ -39,6 +39,20 @@ export const DynamicCurtainOptions = ({
   const [availableRings, setAvailableRings] = useState<EyeletRing[]>([]);
   const [treatmentOptionSelections, setTreatmentOptionSelections] = useState<Record<string, string>>({});
   
+  // Initialize treatmentOptionSelections from saved measurements
+  useEffect(() => {
+    const initialSelections: Record<string, string> = {};
+    Object.keys(measurements).forEach(key => {
+      if (key.startsWith('treatment_option_')) {
+        const optionKey = key.replace('treatment_option_', '');
+        initialSelections[optionKey] = measurements[key];
+      }
+    });
+    if (Object.keys(initialSelections).length > 0) {
+      setTreatmentOptionSelections(initialSelections);
+    }
+  }, [template?.id]); // Re-initialize when template changes
+  
   // Early returns MUST come before hooks to prevent violations
   if (!template) {
     return (
