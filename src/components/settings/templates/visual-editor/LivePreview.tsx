@@ -39,11 +39,7 @@ import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import { formatJobNumber } from "@/lib/format-job-number";
 
 // Lazy load the editable version to avoid circular dependencies and reduce bundle size
-const EditableLivePreview = React.lazy(() => 
-  import('./EditableLivePreview').then(module => ({ 
-    default: module.EditableLivePreview 
-  }))
-);
+const EditableLivePreview = React.lazy(() => import('./EditableLivePreview'));
 
 interface LivePreviewBlockProps {
   block: any;
