@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { Resend } from 'npm:resend@2.0.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,14 +32,14 @@ serve(async (req) => {
       throw new Error('Invalid authorization');
     }
 
-    // Get the account owner for shared settings
+    // Get account owner for shared settings
     const { data: accountOwner } = await supabase.rpc('get_account_owner', { 
       user_id_param: user.id 
     });
     
     const ownerId = accountOwner || user.id;
 
-    // Get account owner's SendGrid integration
+    // Check for optional custom SendGrid (for branding)
     const { data: integrationSettings } = await supabase
       .from('integration_settings')
       .select('*')
@@ -47,16 +48,8 @@ serve(async (req) => {
       .eq('active', true)
       .maybeSingle();
 
-    console.log('Integration settings:', integrationSettings ? 'Found' : 'Not found');
-
-    // Use SendGrid API key from integration settings
-    const sendgridApiKey = integrationSettings?.api_credentials?.api_key;
-    if (!sendgridApiKey) {
-      console.error('SendGrid API key not found in integration_settings');
-      throw new Error('SendGrid API key not configured. Please configure SendGrid in your integration settings.');
-    }
-
-    console.log('SendGrid API key found, preparing email...');
+    const useCustomSendGrid = !!integrationSettings?.api_credentials?.api_key;
+    console.log('Email provider:', useCustomSendGrid ? 'Custom SendGrid' : 'Shared Resend');
 
     const siteUrl = Deno.env.get('SITE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co'
     const invitationLink = `${siteUrl}/auth?invitation=${invitationToken}`
@@ -112,38 +105,60 @@ serve(async (req) => {
 </body>
 </html>`;
 
-    console.log('Sending email via SendGrid...');
+    console.log('Sending invitation email...');
 
-    // Send via SendGrid API
-    const emailResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${sendgridApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        personalizations: [{
-          to: [{ email: invitedEmail, name: invitedName }],
-          subject: `You've been invited to join ${brandName}!`,
-        }],
-        from: {
-          email: inviterEmail,
-          name: brandName,
+    if (useCustomSendGrid) {
+      // Use custom SendGrid for branding
+      const sendgridApiKey = integrationSettings.api_credentials.api_key;
+      const emailResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sendgridApiKey}`,
+          'Content-Type': 'application/json',
         },
-        content: [{
-          type: 'text/html',
-          value: emailHtml,
-        }],
-      }),
-    });
+        body: JSON.stringify({
+          personalizations: [{
+            to: [{ email: invitedEmail, name: invitedName }],
+            subject: `You've been invited to join ${brandName}!`,
+          }],
+          from: {
+            email: inviterEmail,
+            name: brandName,
+          },
+          content: [{
+            type: 'text/html',
+            value: emailHtml,
+          }],
+        }),
+      });
 
-    if (!emailResponse.ok) {
-      const errorText = await emailResponse.text();
-      console.error('SendGrid API error:', emailResponse.status, errorText);
-      throw new Error(`SendGrid error: ${emailResponse.status} - ${errorText}`);
+      if (!emailResponse.ok) {
+        const errorText = await emailResponse.text();
+        console.error('SendGrid API error:', emailResponse.status, errorText);
+        throw new Error(`SendGrid error: ${emailResponse.status} - ${errorText}`);
+      }
+      console.log('Email sent via custom SendGrid');
+    } else {
+      // Use shared Resend (default - works for all accounts)
+      const resendApiKey = Deno.env.get('RESEND_API_KEY');
+      if (!resendApiKey) {
+        throw new Error('RESEND_API_KEY not configured');
+      }
+
+      const resend = new Resend(resendApiKey);
+      const { error: resendError } = await resend.emails.send({
+        from: `${brandName} <onboarding@resend.dev>`,
+        to: [invitedEmail],
+        subject: `You've been invited to join ${brandName}!`,
+        html: emailHtml,
+      });
+
+      if (resendError) {
+        console.error('Resend error:', resendError);
+        throw new Error(`Failed to send email: ${resendError.message}`);
+      }
+      console.log('Email sent via shared Resend');
     }
-
-    console.log('Email sent successfully via SendGrid');
 
     return new Response(
       JSON.stringify({ success: true, message: 'Invitation email sent' }),
