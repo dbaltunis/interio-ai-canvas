@@ -356,9 +356,13 @@ export const VisualMeasurementSheet = ({
         curtainType: panelConfig,
         fabricRotated: fabricRotated,
         fabricOrientation: result.fabricOrientation || 'vertical',
-        // Add horizontal pieces info for leftover tracking
-        horizontalPiecesNeeded: result.horizontalPiecesNeeded,
-        leftoverFromLastPiece: result.leftoverFromLastPiece,
+        // Add horizontal pieces info for leftover tracking (only when applicable)
+        ...(result.horizontalPiecesNeeded && result.horizontalPiecesNeeded > 1 && { 
+          horizontalPiecesNeeded: result.horizontalPiecesNeeded 
+        }),
+        ...(result.leftoverFromLastPiece && result.leftoverFromLastPiece > 0 && { 
+          leftoverFromLastPiece: result.leftoverFromLastPiece 
+        }),
         // Add blind-specific data if available
         sqm: result.details?.sqm,
         widthCalcNote: result.details?.widthCalcNote,
