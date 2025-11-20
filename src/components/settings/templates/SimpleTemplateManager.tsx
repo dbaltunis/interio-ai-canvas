@@ -36,128 +36,9 @@ interface Template {
   created_at?: string;
 }
 
-const defaultTemplates: Template[] = [
-  {
-    id: 'modern-quote',
-    name: 'Modern Quote',
-    description: 'Clean, professional quote template with dynamic data support',
-    category: 'quote',
-    is_default: false, // Make it editable
-    blocks: [
-      {
-        id: 'header-1',
-        type: 'header',
-        content: {
-          showLogo: true,
-          logoPosition: 'left',
-          style: {
-            backgroundColor: '#f8fafc',
-            textColor: '#1e293b',
-            padding: '24px',
-            borderRadius: '8px'
-          }
-        }
-      },
-      {
-        id: 'client-1',
-        type: 'client-info',
-        content: {
-          title: 'Bill To:',
-          showCompany: true,
-          showClientEmail: true,
-          showClientPhone: true,
-          showClientAddress: true
-        }
-      },
-      {
-        id: 'products-1',
-        type: 'products',
-        content: {
-          title: 'Quote Items',
-          showDescription: true,
-          showQuantity: true,
-          showUnitPrice: true,
-          showTotal: true
-        }
-      },
-      {
-        id: 'totals-1',
-        type: 'totals',
-        content: {
-          showSubtotal: true,
-          showDiscount: true,
-          showTax: true,
-          style: {
-            backgroundColor: '#f8fafc',
-            borderColor: '#e2e8f0'
-          }
-        }
-      },
-      {
-        id: 'signature-1',
-        type: 'signature',
-        content: {
-          enableDigitalSignature: false,
-          signatureLabel: 'Authorized Signature',
-          dateLabel: 'Date'
-        }
-      }
-    ]
-  },
-  {
-    id: 'simple-invoice',
-    name: 'Simple Invoice',
-    description: 'Basic invoice template',
-    category: 'invoice',
-    is_default: true,
-    blocks: [
-      {
-        id: 'header-2',
-        type: 'header',
-        content: {
-          showLogo: true,
-          documentTitle: 'Invoice',
-          style: {
-            backgroundColor: '#1e40af',
-            textColor: '#ffffff',
-            padding: '32px'
-          }
-        }
-      },
-      {
-        id: 'client-2',
-        type: 'client-info',
-        content: {
-          title: 'Invoice To:',
-          showCompany: true,
-          showClientEmail: false,
-          showClientPhone: false,
-          showClientAddress: true
-        }
-      },
-      {
-        id: 'products-2',
-        type: 'products',
-        content: {
-          title: 'Services',
-          showDescription: true,
-          showQuantity: true,
-          showUnitPrice: true,
-          showTotal: true
-        }
-      },
-      {
-        id: 'totals-2',
-        type: 'totals',
-        content: {
-          showSubtotal: true,
-          showDiscount: true,
-          showTax: true
-        }
-      }
-    ]
-  }
-];
+// Default templates have been removed to prevent automatic template creation
+// Users must manually create templates through the UI
+const defaultTemplates: Template[] = [];
 
 export const SimpleTemplateManager: React.FC = () => {
   const queryClient = useQueryClient();
@@ -272,50 +153,9 @@ export const SimpleTemplateManager: React.FC = () => {
     loadTemplates();
   }, []);
 
+  // Function removed - no automatic template restoration
   const restoreDefaultTemplates = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('You must be logged in to restore default templates');
-        return;
-      }
-
-      // Check if default templates already exist for this user
-      const { data: existingTemplates } = await supabase
-        .from('quote_templates')
-        .select('id, name, template_style')
-        .eq('user_id', user.id);
-
-      const existingNames = existingTemplates?.map(t => t.name) || [];
-      let addedCount = 0;
-
-      // Insert missing default templates with active=true
-      for (const defaultTemplate of defaultTemplates) {
-        if (!existingNames.includes(defaultTemplate.name)) {
-          await supabase
-            .from('quote_templates')
-            .insert({
-              name: defaultTemplate.name,
-              description: defaultTemplate.description,
-              blocks: defaultTemplate.blocks,
-              template_style: defaultTemplate.category,
-              user_id: user.id,
-              active: false // Don't auto-activate
-            });
-          addedCount++;
-        }
-      }
-
-      if (addedCount > 0) {
-        toast.success(`Restored ${addedCount} default template${addedCount > 1 ? 's' : ''}`);
-        await loadTemplates();
-      } else {
-        toast.info('All default templates already exist');
-      }
-    } catch (error) {
-      console.error('Error restoring default templates:', error);
-      toast.error('Failed to restore default templates');
-    }
+    toast.info('This feature has been disabled. Please create templates manually.');
   };
 
   const loadTemplates = async () => {
@@ -566,14 +406,7 @@ export const SimpleTemplateManager: React.FC = () => {
           <p className="text-muted-foreground">Create and manage fully dynamic quote and invoice templates</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button 
-            onClick={restoreDefaultTemplates} 
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Restore Defaults
-          </Button>
+          {/* Restore Defaults button removed */}
           <Button onClick={() => setIsCreating(true)} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             New Template
@@ -642,16 +475,10 @@ export const SimpleTemplateManager: React.FC = () => {
                 : 'Get started by restoring default templates or creating a new one'}
             </p>
             {!searchTerm && selectedCategory === 'all' && (
-              <div className="flex items-center gap-2 justify-center">
-                <Button onClick={restoreDefaultTemplates} variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Restore Default Templates
-                </Button>
-                <Button onClick={() => setIsCreating(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create New Template
-                </Button>
-              </div>
+              <Button onClick={() => setIsCreating(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Template
+              </Button>
             )}
           </div>
         ) : (
