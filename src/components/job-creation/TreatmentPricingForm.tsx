@@ -106,6 +106,7 @@ export const TreatmentPricingForm = ({
         fabricCost: result.fabricCost.toFixed(2),
         laborCost: result.manufacturingCost.toFixed(2),
         optionsCost: result.optionsCost.toFixed(2),
+        headingCost: result.headingCost.toFixed(2), // CRITICAL: Include heading cost (always 0 for blinds)
         totalCost: result.totalCost.toFixed(2),
         fabricUsage: `${width}cm × ${height}cm`,
         fabricOrientation: 'standard',
@@ -250,9 +251,12 @@ export const TreatmentPricingForm = ({
       cost_summary: {
         fabric_cost: costs.fabricCost,
         options_cost: costs.optionsCost,
+        heading_cost: costs.headingCost, // CRITICAL: Include heading cost
         labor_cost: costs.laborCost,
+        manufacturing_cost: costs.laborCost, // Alias for compatibility
         total_cost: costs.totalCost,
         fabric_usage: costs.fabricUsage,
+        linear_meters: costs.fabricUsage, // Alias for compatibility
         fabric_orientation: costs.fabricOrientation,
         seams_required: costs.seamsRequired,
         seam_labor_hours: costs.seamLaborHours,
