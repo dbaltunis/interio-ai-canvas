@@ -396,20 +396,17 @@ export const CostCalculationSummary = ({
     }
   }
 
-  // CURTAINS: Always prioritize fabricCalculation.totalCost over passed props
-  // This ensures the Cost Summary matches the Fabric & Pricing Calculations display
-  const fabricCost = fabricCalculation?.totalCost 
-    ? safeParseFloat(fabricCalculation.totalCost, 0)
-    : safeParseFloat(calculatedFabricCost, 0);
+  // CURTAINS: Use fabricCalculation for display details but NOT to override calculated costs
+  // fabricCalculation.totalCost is ONLY the fabric cost, not the total treatment cost
+  const fabricCost = safeParseFloat(calculatedFabricCost, 0);
   
   console.log('🔍 CostCalculationSummary - Fabric Cost Debug:', {
-    fabricCalculationTotalCost: fabricCalculation?.totalCost,
     calculatedFabricCostProp: calculatedFabricCost,
     finalFabricCost: fabricCost,
-    usingFabricCalculation: !!fabricCalculation?.totalCost,
     fabricCalculationLinearMeters: fabricCalculation?.linearMeters,
+    fabricCalculationOrderedMeters: fabricCalculation?.orderedLinearMeters,
     fabricCalculationPricePerMeter: fabricCalculation?.pricePerMeter,
-    formula: fabricCalculation ? `${fabricCalculation.linearMeters} × ${fabricCalculation.pricePerMeter} = ${fabricCalculation.linearMeters * fabricCalculation.pricePerMeter}` : 'N/A'
+    formula: fabricCalculation && calculatedFabricCost ? `${(fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters)} × ${fabricCalculation.pricePerMeter} = ${calculatedFabricCost}` : 'N/A'
   });
   
   const liningCost = safeParseFloat(calculatedLiningCost, 0);
@@ -422,16 +419,14 @@ export const CostCalculationSummary = ({
 
   console.log('📊 Curtain costs:', {
     fabricCost,
-    fabricCalculationTotal: fabricCalculation?.totalCost,
-    calculatedFabricCostProp: calculatedFabricCost,
-    usingFabricCalculation: !!fabricCalculation?.totalCost,
     liningCost,
     manufacturingCost,
     headingCost,
     optionsCost,
     selectedOptionsCount: selectedOptions?.length,
     selectedOptionsDetails: selectedOptions?.map(opt => ({ name: opt.name, price: opt.price })),
-    totalCost
+    totalCost,
+    calculatedTotalCostProp: calculatedTotalCost
   });
 
   return (
