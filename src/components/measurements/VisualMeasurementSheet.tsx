@@ -7,7 +7,7 @@ import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { Switch } from "@/components/ui/switch";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection";
 import { LiningOptionsSection } from "./dynamic-options/LiningOptionsSection";
 import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
@@ -195,10 +195,35 @@ export const VisualMeasurementSheet = ({
   // This allows for alternative solutions like adding borders or using fewer widths
   // NO automatic initialization - preserves user's existing rotation settings
 
+  // CRITICAL FIX: Use a recalc trigger to force useMemo to re-run on changes
+  const [recalcTrigger, setRecalcTrigger] = useState(0);
+  
+  // Watch for changes to critical fields and force recalculation
+  useEffect(() => {
+    console.log('🔄 CRITICAL MEASUREMENT CHANGED - forcing fabric recalculation:', {
+      rail_width: measurements.rail_width,
+      drop: measurements.drop,
+      fabric_rotated: measurements.fabric_rotated,
+      pooling_amount: measurements.pooling_amount
+    });
+    setRecalcTrigger(prev => prev + 1);
+  }, [
+    measurements.rail_width, 
+    measurements.drop, 
+    measurements.fabric_rotated,
+    measurements.curtain_type,
+    measurements.selected_heading,
+    measurements.heading_fullness,
+    measurements.pooling_amount,
+    measurements.selected_lining,
+    selectedFabric,
+    units.length
+  ]);
+
   // Calculate fabric usage when measurements and fabric change
-  // CRITICAL FIX: Add measurements object itself as dependency to catch ALL changes
   const fabricCalculation = useMemo(() => {
     console.log('🔥🔥🔥 LEVEL 3: fabricCalculation useMemo TRIGGERED', {
+      recalcTrigger,
       selectedFabric,
       rail_width: measurements.rail_width,
       drop: measurements.drop,
@@ -212,8 +237,7 @@ export const VisualMeasurementSheet = ({
       selected_lining: measurements.selected_lining,
       pooling_amount: measurements.pooling_amount,
       units_length: units.length,
-      timestamp: new Date().toISOString(),
-      measurementsHash: JSON.stringify(measurements).substring(0, 100)
+      timestamp: new Date().toISOString()
     });
     if (!selectedFabric || !measurements.rail_width || !measurements.drop || !selectedTemplate) {
       console.log('⚠️ LEVEL 3: Missing required data for fabric calculation');
@@ -387,12 +411,10 @@ export const VisualMeasurementSheet = ({
     }
     return null;
   }, [
-    // CRITICAL FIX: Add measurements object reference to catch ALL changes
-    measurements,
+    recalcTrigger, // CRITICAL: Force recalc when trigger changes
     selectedFabric, 
     selectedTemplate, 
-    inventory,
-    units.length
+    inventory
   ]);
 
   // Notify parent when fabric calculation changes
