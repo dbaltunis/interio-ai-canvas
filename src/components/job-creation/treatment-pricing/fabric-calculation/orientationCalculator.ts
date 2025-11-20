@@ -133,8 +133,35 @@ export const calculateOrientation = (
   const seamsRequired = Math.max(0, widthsRequired - 1);
   const totalSeamAllowance = seamsRequired * seamHem * 2;
   
-  // Total fabric length needed in cm
-  const totalLengthCm = (widthsRequired * requiredLength) + totalSeamAllowance;
+  // Total fabric length needed in cm - USE CORRECT DIMENSION BASED ON ORIENTATION
+  let totalLengthCm;
+  if (orientation === 'horizontal') {
+    // ✅ CRITICAL FIX: For railroaded fabric, order length is based on CURTAIN WIDTH (not drop!)
+    // The fabric runs sideways, so we need the curtain width × fullness + allowances in LENGTH
+    totalLengthCm = (widthsRequired * requiredWidth) + totalSeamAllowance;
+    
+    console.log('🧮 orientationCalculator [HORIZONTAL]:', {
+      widthsRequired,
+      requiredWidth: `${requiredWidth.toFixed(0)}cm (CURTAIN WIDTH - used for ordering)`,
+      requiredLength: `${requiredLength.toFixed(0)}cm (DROP HEIGHT - NOT used for ordering)`,
+      totalSeamAllowance: `${totalSeamAllowance.toFixed(0)}cm`,
+      totalLengthCm: `${totalLengthCm.toFixed(0)}cm`,
+      totalMeters: `${(totalLengthCm / 100).toFixed(2)}m`,
+      horizontalPiecesNeeded
+    });
+  } else {
+    // For vertical fabric, order length is based on DROP
+    totalLengthCm = (widthsRequired * requiredLength) + totalSeamAllowance;
+    
+    console.log('🧮 orientationCalculator [VERTICAL]:', {
+      widthsRequired,
+      requiredLength: `${requiredLength.toFixed(0)}cm (DROP - used for ordering)`,
+      requiredWidth: `${requiredWidth.toFixed(0)}cm (PANEL WIDTH - NOT used for ordering)`,
+      totalSeamAllowance: `${totalSeamAllowance.toFixed(0)}cm`,
+      totalLengthCm: `${totalLengthCm.toFixed(0)}cm`,
+      totalMeters: `${(totalLengthCm / 100).toFixed(2)}m`
+    });
+  }
   
   // Convert to different units
   const totalYards = totalLengthCm / 91.44; // 1 yard = 91.44 cm
