@@ -80,6 +80,20 @@ const LivePreviewBlock = ({
   const groupByRoom = propsGroupByRoom !== undefined ? propsGroupByRoom : internalGroupByRoom;
   const showImages = propsShowImages !== undefined ? propsShowImages : internalShowImages;
   
+  // Helper to get default currency from business settings
+  const getDefaultCurrency = () => {
+    try {
+      const measurementUnits = userBusinessSettings?.measurement_units 
+        ? (typeof userBusinessSettings.measurement_units === 'string' 
+            ? JSON.parse(userBusinessSettings.measurement_units)
+            : userBusinessSettings.measurement_units)
+        : null;
+      return measurementUnits?.currency || 'EUR';
+    } catch {
+      return 'EUR';
+    }
+  };
+  
   // Trim and normalize block type to prevent matching issues
   const blockType = (block.type || '').toString().trim().toLowerCase();
   
@@ -162,10 +176,10 @@ const LivePreviewBlock = ({
           : formatInTimeZone(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), businessSettings?.timezone || 'Australia/Sydney', 'M/d/yyyy')),
       
       // Financial information with currency support
-      currency: projectData?.currency || 'GBP',
-      currency_code: projectData?.currency || 'GBP',
+      currency: projectData?.currency || getDefaultCurrency(),
+      currency_code: projectData?.currency || getDefaultCurrency(),
       currency_symbol: (() => {
-        const curr = projectData?.currency || 'GBP';
+        const curr = projectData?.currency || getDefaultCurrency();
         const symbols: Record<string, string> = {
           'GBP': '£',
           'EUR': '€',
@@ -174,33 +188,33 @@ const LivePreviewBlock = ({
           'USD': '$',
           'ZAR': 'R'
         };
-        return symbols[curr] || '£';
+        return symbols[curr] || '€';
       })(),
       basetotal: (() => {
-        if (!projectData?.subtotal) return '£0.00';
-        const curr = projectData?.currency || 'GBP';
+        const curr = projectData?.currency || getDefaultCurrency();
+        if (!projectData?.subtotal) return formatCurrency(0, curr);
         const baseAmount = parseFloat(projectData.subtotal) + (!projectData?.discount?.amount ? 0 : parseFloat(projectData.discount.amount));
         return formatCurrency(baseAmount, curr);
       })(),
       subtotal: (() => {
-        if (!projectData?.subtotal) return '£0.00';
-        const curr = projectData?.currency || 'GBP';
+        const curr = projectData?.currency || getDefaultCurrency();
+        if (!projectData?.subtotal) return formatCurrency(0, curr);
         return formatCurrency(projectData.subtotal, curr);
       })(),
       discount: (() => {
-        if (!projectData?.discount?.amount) return '£0.00';
-        const curr = projectData?.currency || 'GBP';
+        const curr = projectData?.currency || getDefaultCurrency();
+        if (!projectData?.discount?.amount) return formatCurrency(0, curr);
         return formatCurrency(projectData.discount.amount, curr);
       })(),
       tax_amount: (() => {
-        if (!projectData?.taxAmount) return '£0.00';
-        const curr = projectData?.currency || 'GBP';
+        const curr = projectData?.currency || getDefaultCurrency();
+        if (!projectData?.taxAmount) return formatCurrency(0, curr);
         return formatCurrency(projectData.taxAmount, curr);
       })(),
       tax_rate: projectData?.taxRate ? `${(projectData.taxRate * 100).toFixed(1)}%` : '0%',
       total: (() => {
-        if (!projectData?.total) return '£0.00';
-        const curr = projectData?.currency || 'GBP';
+        const curr = projectData?.currency || getDefaultCurrency();
+        if (!projectData?.total) return formatCurrency(0, curr);
         return formatCurrency(projectData.total, curr);
       })(),
       
@@ -1010,10 +1024,10 @@ const LivePreviewBlock = ({
                               {item.quantity || 1}
                             </td>
                             <td style={{ padding: '5px 6px', fontSize: '14px', fontWeight: '400', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
-                              {formatCurrency((item.unit_price || item.total_cost || item.total || 0) / (item.quantity || 1), projectData?.currency || 'GBP')}
+                              {formatCurrency((item.unit_price || item.total_cost || item.total || 0) / (item.quantity || 1), projectData?.currency || getDefaultCurrency())}
                             </td>
                             <td style={{ padding: '5px 6px', fontSize: '14px', fontWeight: '500', color: '#000', textAlign: 'right', verticalAlign: 'top', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
-                              {formatCurrency(item.total_cost || item.total || 0, projectData?.currency || 'GBP')}
+                              {formatCurrency(item.total_cost || item.total || 0, projectData?.currency || getDefaultCurrency())}
                             </td>
                           </tr>
                           
@@ -1050,10 +1064,10 @@ const LivePreviewBlock = ({
                                 {breakdownItem.quantity > 0 ? `${Number(breakdownItem.quantity).toFixed(2)} ${breakdownItem.unit || ''}`.trim() : '-'}
                               </td>
                               <td style={{ padding: '3px 6px', fontSize: '12px', fontWeight: '400', color: '#666', textAlign: 'right', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
-                                {breakdownItem.unit_price > 0 ? formatCurrency(breakdownItem.unit_price, projectData?.currency || 'GBP') : '-'}
+                                {breakdownItem.unit_price > 0 ? formatCurrency(breakdownItem.unit_price, projectData?.currency || getDefaultCurrency()) : '-'}
                               </td>
                               <td style={{ padding: '3px 6px', fontSize: '12px', fontWeight: '400', color: '#666', textAlign: 'right', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
-                                {formatCurrency(breakdownItem.total_cost || 0, projectData?.currency || 'GBP')}
+                                {formatCurrency(breakdownItem.total_cost || 0, projectData?.currency || getDefaultCurrency())}
                               </td>
                             </tr>
                           ))}
@@ -1167,7 +1181,7 @@ const LivePreviewBlock = ({
                       >
                         <CreditCard className="h-5 w-5" />
                         {projectData.payment.type === 'deposit' 
-                          ? `Pay Deposit (${projectData.payment.percentage || 50}%) - ${formatCurrency(projectData.payment.amount, projectData?.currency || 'GBP')}`
+                          ? `Pay Deposit (${projectData.payment.percentage || 50}%) - ${formatCurrency(projectData.payment.amount, projectData?.currency || getDefaultCurrency())}`
                           : `Pay Full Amount - ${renderTokenValue('total')}`
                         }
                       </Button>
@@ -1333,8 +1347,8 @@ const LivePreviewBlock = ({
                             <td style={{ padding: '12px', fontSize: '14px', color: '#000' }}>{item.name}</td>
                             <td style={{ padding: '12px', fontSize: '14px', textAlign: 'center', color: '#000' }}>{item.quantity}</td>
                             <td style={{ padding: '12px', fontSize: '14px', textAlign: 'center', color: '#000' }}>{item.unit}</td>
-                            <td style={{ padding: '12px', fontSize: '14px', textAlign: 'right', color: '#000' }}>{formatCurrency(item.unitPrice, projectData?.currency || 'GBP')}</td>
-                            <td style={{ padding: '12px', fontSize: '14px', textAlign: 'right', fontWeight: '500', color: '#000' }}>{formatCurrency(item.total, projectData?.currency || 'GBP')}</td>
+                            <td style={{ padding: '12px', fontSize: '14px', textAlign: 'right', color: '#000' }}>{formatCurrency(item.unitPrice, projectData?.currency || getDefaultCurrency())}</td>
+                            <td style={{ padding: '12px', fontSize: '14px', textAlign: 'right', fontWeight: '500', color: '#000' }}>{formatCurrency(item.total, projectData?.currency || getDefaultCurrency())}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1343,7 +1357,7 @@ const LivePreviewBlock = ({
                   <div style={{ backgroundColor: '#f9fafb', padding: '8px 16px', borderTop: '1px solid #e5e7eb' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '14px', fontWeight: '500', color: '#000' }}>
                       <span style={{ color: '#000' }}>{category.category} Subtotal:</span>
-                      <span style={{ color: '#000' }}>{formatCurrency(category.items.reduce((sum, item) => sum + item.total, 0), projectData?.currency || 'GBP')}</span>
+                      <span style={{ color: '#000' }}>{formatCurrency(category.items.reduce((sum, item) => sum + item.total, 0), projectData?.currency || getDefaultCurrency())}</span>
                     </div>
                   </div>
                 </div>
@@ -1380,32 +1394,32 @@ const LivePreviewBlock = ({
               <div style={{ width: '256px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px', paddingBottom: '4px' }}>
                   <span style={{ color: '#000' }}>Total:</span>
-                  <span style={{ fontWeight: '500', color: '#000' }}>{formatCurrency(projectData?.subtotal || 0, projectData?.currency || 'GBP', { showSymbol: false })}{renderTokenValue('currency_code')}</span>
+                  <span style={{ fontWeight: '500', color: '#000' }}>{formatCurrency(projectData?.subtotal || 0, projectData?.currency || getDefaultCurrency(), { showSymbol: false })}{renderTokenValue('currency_code')}</span>
                 </div>
                 
                 {content.showDiscount !== false && projectData?.discount && projectData.discount.amount > 0 && (
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px', paddingBottom: '4px', fontStyle: 'italic', color: '#dc2626' }}>
                       <span>
-                        Discount: {projectData.discount.type === 'percentage' ? `${projectData.discount.value}%` : `${projectData.discount.value}${renderTokenValue('currency_code')}`}
+...
                         {projectData.discount.scope === 'fabrics_only' && ' (Fabrics only)'}
                         {projectData.discount.scope === 'selected_items' && ' (Selected items)'}
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px', paddingBottom: '4px', color: '#dc2626' }}>
                       <span>Discount</span>
-                      <span style={{ fontWeight: '500' }}>-{formatCurrency(projectData.discount.amount, projectData?.currency || 'GBP', { showSymbol: false })}{renderTokenValue('currency_code')}</span>
+                      <span style={{ fontWeight: '500' }}>-{formatCurrency(projectData.discount.amount, projectData?.currency || getDefaultCurrency(), { showSymbol: false })}{renderTokenValue('currency_code')}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px', paddingBottom: '4px' }}>
                       <span style={{ color: '#000' }}>Price after discount:</span>
                       <span style={{ fontWeight: '500', color: '#000' }}>
-                        {formatCurrency((projectData.subtotal || 0) - projectData.discount.amount, projectData?.currency || 'GBP', { showSymbol: false })}{renderTokenValue('currency_code')}
+                        {formatCurrency((projectData.subtotal || 0) - projectData.discount.amount, projectData?.currency || getDefaultCurrency(), { showSymbol: false })}{renderTokenValue('currency_code')}
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px', paddingBottom: '4px' }}>
                       <span style={{ color: '#000' }}>Price excl. GST:</span>
                       <span style={{ fontWeight: '500', color: '#000' }}>
-                        {formatCurrency(((projectData.subtotal || 0) - projectData.discount.amount) / (1 + (projectData.taxRate || 0)), projectData?.currency || 'GBP', { showSymbol: false })}{renderTokenValue('currency_code')}
+                        {formatCurrency(((projectData.subtotal || 0) - projectData.discount.amount) / (1 + (projectData.taxRate || 0)), projectData?.currency || getDefaultCurrency(), { showSymbol: false })}{renderTokenValue('currency_code')}
                       </span>
                     </div>
                   </>
@@ -1413,11 +1427,11 @@ const LivePreviewBlock = ({
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px', paddingBottom: '4px' }}>
                   <span style={{ color: '#000' }}>GST ({projectData?.taxRate ? `${(projectData.taxRate * 100).toFixed(1)}%` : '0%'}):</span>
-                  <span style={{ fontWeight: '500', color: '#000' }}>{formatCurrency(projectData?.taxAmount || 0, projectData?.currency || 'GBP', { showSymbol: false })}{renderTokenValue('currency_code')}</span>
+                  <span style={{ fontWeight: '500', color: '#000' }}>{formatCurrency(projectData?.taxAmount || 0, projectData?.currency || getDefaultCurrency(), { showSymbol: false })}{renderTokenValue('currency_code')}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', paddingBottom: '8px', borderTop: '1px solid #d1d5db', fontWeight: 'bold', fontSize: '18px' }}>
                   <span style={{ color: '#000' }}>Grand total:</span>
-                  <span style={{ color: '#000' }}>{formatCurrency(projectData?.total || 0, projectData?.currency || 'GBP', { showSymbol: false })}{renderTokenValue('currency_code')}</span>
+                  <span style={{ color: '#000' }}>{formatCurrency(projectData?.total || 0, projectData?.currency || getDefaultCurrency(), { showSymbol: false })}{renderTokenValue('currency_code')}</span>
                 </div>
               </div>
             </div>
@@ -1553,12 +1567,12 @@ const LivePreviewBlock = ({
                     )}
                     {columns.includes('unit_price') && (
                       <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '14px', color: '#111827 !important', backgroundColor: 'transparent !important' }}>
-                        {formatCurrency(item.unit_price || item.price || 0, projectData?.currency || 'GBP')}
+                        {formatCurrency(item.unit_price || item.price || 0, projectData?.currency || getDefaultCurrency())}
                       </td>
                     )}
                     {columns.includes('total') && (
                       <td style={{ padding: '12px 8px', textAlign: 'right', fontSize: '14px', fontWeight: '600', color: '#111827 !important', backgroundColor: 'transparent !important' }}>
-                        {formatCurrency((item.quantity || 1) * (item.unit_price || item.price || 0), projectData?.currency || 'GBP')}
+                        {formatCurrency((item.quantity || 1) * (item.unit_price || item.price || 0), projectData?.currency || getDefaultCurrency())}
                       </td>
                     )}
                   </tr>
