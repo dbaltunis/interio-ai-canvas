@@ -700,7 +700,7 @@ export default function AdminBugManagement() {
                 <div className="space-y-2">
                   <Label>Update Status</Label>
                   <Select
-                    value={selectedBug?.status}
+                    value={selectedBug?.status || ""}
                     onValueChange={(value: BugReport["status"]) => {
                       if (selectedBug) {
                         updateBug.mutate({ bugId: selectedBug.id, updates: { status: value } });
