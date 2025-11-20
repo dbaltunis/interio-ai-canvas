@@ -1505,10 +1505,10 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
             />
             
             <EditableText
-              value={content.caption || ''}
+              value={content.caption || 'Add images to your proposal'}
               onChange={(value) => updateBlockContent({ caption: value })}
               className="text-sm text-muted-foreground"
-              placeholder="Add a description (optional)"
+              placeholder="Click to edit caption"
             />
 
             {/* Upload Button */}
