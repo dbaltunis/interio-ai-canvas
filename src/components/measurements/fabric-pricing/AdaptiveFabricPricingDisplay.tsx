@@ -773,13 +773,18 @@ export const AdaptiveFabricPricingDisplay = ({
                   
                   {/* Show leftover information when multiple horizontal pieces are needed */}
                   {fabricCalculation.horizontalPiecesNeeded > 1 && fabricCalculation.leftoverFromLastPiece > 0 && (
-                    <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md p-2 mt-2">
+                    <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md p-3 mt-2 space-y-2">
                       <div className="flex justify-between text-xs">
-                        <span className="text-amber-900 dark:text-amber-100">📦 Leftover from Piece 2:</span>
+                        <span className="text-amber-900 dark:text-amber-100 font-semibold">📦 Extra Fabric Purchased</span>
                         <span className="font-medium text-amber-900 dark:text-amber-100">{formatMeasurement(fabricCalculation.leftoverFromLastPiece)}</span>
                       </div>
-                      <div className="text-xs text-amber-800 dark:text-amber-200 mt-1">
-                        Will be tracked in client's fabric pool for future reuse
+                      <div className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
+                        <p className="mb-1.5">
+                          <strong>Why?</strong> The curtain height ({formatMeasurement(fabricCalculation.totalDrop || 0)}) requires {formatMeasurement((selectedFabricItem?.fabric_width || 137) * fabricCalculation.horizontalPiecesNeeded)} of fabric ({formatMeasurement(selectedFabricItem?.fabric_width || 137)} × {fabricCalculation.horizontalPiecesNeeded} pieces).
+                        </p>
+                        <p className="text-green-700 dark:text-green-300 font-medium">
+                          ✓ Charged once • Will be saved to fabric pool for reuse in other treatments
+                        </p>
                       </div>
                     </div>
                   )}
@@ -814,29 +819,41 @@ export const AdaptiveFabricPricingDisplay = ({
                     <div className="font-medium mb-0.5">Formula:</div>
                     {/* Show width breakdown only if actively using leftover */}
                     {usedLeftoverCount > 0 && fabricCalculation.widthsRequired > 1 ? (
-                      <div className="space-y-1">
-                        {Array.from({ length: fabricCalculation.widthsRequired }).map((_, idx) => {
-                          const isFromLeftover = idx < usedLeftoverCount;
-                          const widthCost = isFromLeftover ? 0 : pricePerUnit;
-                          const widthLabel = `Width ${idx + 1}`;
-                          
-                          return (
-                            <div key={idx} className="flex items-center gap-2 text-xs">
-                              <span className={isFromLeftover ? "text-green-600 dark:text-green-400 font-medium" : ""}>
-                                {widthLabel}: {quantity.toFixed(2)}{unitSuffix}
-                              </span>
-                              {isFromLeftover ? (
-                                <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
-                                  from leftover ({formatPrice(0)} fabric)
-                                </Badge>
-                              ) : (
-                                <span className="text-muted-foreground">
-                                  × {formatPrice(pricePerUnit)}/unit = {formatPrice(widthCost)}
+                      <div className="space-y-2">
+                        <div className="space-y-1">
+                          {Array.from({ length: fabricCalculation.widthsRequired }).map((_, idx) => {
+                            const isFromLeftover = idx < usedLeftoverCount;
+                            const widthCost = isFromLeftover ? 0 : pricePerUnit;
+                            const widthLabel = `Width ${idx + 1}`;
+                            
+                            return (
+                              <div key={idx} className="flex items-center gap-2 text-xs">
+                                <span className={isFromLeftover ? "text-green-600 dark:text-green-400 font-medium" : ""}>
+                                  {widthLabel}: {quantity.toFixed(2)}{unitSuffix}
                                 </span>
-                              )}
+                                {isFromLeftover ? (
+                                  <span className="text-green-600 dark:text-green-400 text-xs font-medium">
+                                    (Reused - no charge)
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground">
+                                    × {formatPrice(pricePerUnit)}/unit = {formatPrice(widthCost)}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {usedLeftoverCount > 0 && (
+                          <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded p-2 mt-1">
+                            <div className="text-xs text-green-800 dark:text-green-200">
+                              <p className="font-semibold mb-1">♻️ Reusing Leftover Fabric</p>
+                              <p className="text-green-700 dark:text-green-300">
+                                {usedLeftoverCount} width{usedLeftoverCount > 1 ? 's' : ''} from previous treatment(s) • Already paid for • No additional cost
+                              </p>
                             </div>
-                          );
-                        })}
+                          </div>
+                        )}
                         <div className="pt-1 mt-1 border-t border-border/30 font-medium">
                           Total: {fabricCalculation.widthsRequired} widths × {`${fabricCalculation.widthsRequired - usedLeftoverCount} new`} = {formatPrice(totalCost - seamingCost)}
                         </div>
