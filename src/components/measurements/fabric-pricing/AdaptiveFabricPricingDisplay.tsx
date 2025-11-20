@@ -394,28 +394,37 @@ export const AdaptiveFabricPricingDisplay = ({
           <h4 className="font-semibold text-sm">Fabric Usage Breakdown</h4>
           <div className="text-xs space-y-1 text-muted-foreground">
             <div className="flex justify-between">
-              <span>Rail Width:</span>
-              <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.railWidth || 0)}</span>
+              <span>Fabric Width:</span>
+              <span className="font-medium text-foreground">{formatFabricWidth(selectedFabricItem?.fabric_width || 137)}</span>
             </div>
-            <div className="flex justify-between">
-              <span>Fullness Ratio:</span>
-              <span className="font-medium text-foreground">{treatmentCategory === 'roman_blinds' ? '1' : (fabricCalculation.fullnessRatio || 0)}x</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Required Width:</span>
-              <span className="font-medium text-foreground">{formatMeasurement((fabricCalculation.railWidth || 0) * (fabricCalculation.fullnessRatio || 0))}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Returns (L+R):</span>
-              <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.returns || 0)}</span>
-            </div>
-            {(fabricCalculation.totalSideHems || 0) > 0 && (
-              <div className="flex justify-between">
-                <span>Side Hems:</span>
-                <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalSideHems)}</span>
-              </div>
+            
+            {fabricCalculation.fabricOrientation === 'vertical' ? (
+              <>
+                <div className="flex justify-between pt-2 mt-2 border-t border-border/30">
+                  <span className="font-medium">Total Width:</span>
+                  <span className="font-medium text-foreground"></span>
+                </div>
+                <div className="flex justify-between pl-2">
+                  <span>Widths Required:</span>
+                  <span className="font-medium text-foreground">{fabricCalculation.widthsRequired || 0} width(s)</span>
+                </div>
+                <div className="flex justify-between pl-2">
+                  <span>Drops Used:</span>
+                  <span className="font-medium text-foreground">{measurements.quantity || 1} drop(s)</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between pt-2 mt-2 border-t border-border/30">
+                  <span className="font-medium">Height Total:</span>
+                  <span className="font-medium text-foreground"></span>
+                </div>
+                <div className="flex justify-between pl-2">
+                  <span>Drop Height:</span>
+                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.drop || measurements.drop || 0)}</span>
+                </div>
+              </>
             )}
-            {/* Width Calculation Explanation */}
           </div>
         </div>
 
