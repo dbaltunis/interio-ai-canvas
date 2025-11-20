@@ -692,6 +692,20 @@ const LivePreviewBlock = ({
       const rooms = projectData?.rooms || [];
       const windowSummaries = projectData?.windowSummaries?.windows || [];
       
+      // Get layout mode from content - default to 'detailed'
+      const layoutMode = content.layout || 'detailed';
+      const isSimpleLayout = layoutMode === 'simple';
+      
+      // For simple layout, we don't show the detailed breakdown
+      const effectiveShowDetailed = isSimpleLayout ? false : showDetailedProducts;
+      
+      console.log('[PRODUCTS BLOCK] Layout mode:', {
+        layoutMode,
+        isSimpleLayout,
+        effectiveShowDetailed,
+        originalShowDetailed: showDetailedProducts
+      });
+      
       // Use projectData.items as PRIMARY source (this is the data from treatments)
       let projectItems = [];
       
@@ -848,7 +862,9 @@ const LivePreviewBlock = ({
         windowSummariesCount: windowSummaries.length,
         rooms: rooms.map((r: any) => r.name),
         groupByRoom,
-        showDetailedProducts,
+        showDetailedProducts: effectiveShowDetailed,
+        layoutMode,
+        isSimpleLayout,
         showImages,
         sampleItemChildren: projectItems[0]?.children?.map((c: any) => ({
           name: c.name,
@@ -952,7 +968,7 @@ const LivePreviewBlock = ({
                         <React.Fragment key={`item-${roomName}-${itemIndex}`}>
                           {/* Main product row */}
                           <tr style={{ 
-                            borderBottom: ((breakdown.length > 0 || options.length > 0) && showDetailedProducts) || isPrintMode ? 'none' : '1px solid #ddd',
+                            borderBottom: ((breakdown.length > 0 || options.length > 0) && effectiveShowDetailed) || isPrintMode ? 'none' : '1px solid #ddd',
                             backgroundColor: '#fff'
                           }}>
                             <td style={{ padding: '5px 6px', fontSize: '15px', fontWeight: '500', color: '#000', verticalAlign: 'top', backgroundColor: '#ffffff' }}>
@@ -981,7 +997,11 @@ const LivePreviewBlock = ({
                               </div>
                             </td>
                             <td style={{ padding: '5px 6px', fontSize: '13px', color: '#000', fontWeight: '400', verticalAlign: 'top', wordWrap: 'break-word', overflowWrap: 'break-word', backgroundColor: '#ffffff' }}>
-                              {options.length > 0 ? (
+                              {isSimpleLayout ? (
+                                // Simple layout: Just show description without options breakdown
+                                item.description || item.notes || '-'
+                              ) : options.length > 0 ? (
+                                // Detailed layout: Show options breakdown
                                 <div>
                                   {item.description && !item.description.toLowerCase().includes('option') && (
                                     <div style={{ marginBottom: '8px', color: '#000' }}>{item.description}</div>
@@ -1031,8 +1051,8 @@ const LivePreviewBlock = ({
                             </td>
                           </tr>
                           
-                          {/* Detailed breakdown rows - indented */}
-                          {breakdown.length > 0 && showDetailedProducts && breakdown.map((breakdownItem: any, bidx: number) => (
+                          {/* Detailed breakdown rows - only show in detailed mode */}
+                          {breakdown.length > 0 && effectiveShowDetailed && breakdown.map((breakdownItem: any, bidx: number) => (
                             <tr key={bidx} style={{ 
                               backgroundColor: '#fff',
                               borderBottom: isPrintMode ? 'none' : (bidx === breakdown.length - 1 ? '1px solid #ddd' : '1px solid #e8e8e8')
