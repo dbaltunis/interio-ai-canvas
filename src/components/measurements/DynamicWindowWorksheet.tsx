@@ -1054,7 +1054,38 @@ export const DynamicWindowWorksheet = forwardRef<{
             hardware_cost: hardwareCost || 0,
             options_cost: (displayCategory === 'blinds' || displayCategory === 'shutters') ? blindOptionsCost : curtainOptionsCost,
             heading_cost: finalHeadingCost || 0,
-            selected_options: selectedOptions || [],
+            // CRITICAL: Save comprehensive options list including ALL selections
+            selected_options: [
+              // Dynamic options from treatment_options
+              ...selectedOptions,
+              // Add heading if selected
+              ...(selectedHeading && selectedHeading !== 'standard' && selectedHeading !== 'none' ? [{
+                name: `Heading: ${(() => {
+                  const headingOpt = headingOptionsFromSettings.find((h: any) => h.id === selectedHeading);
+                  return headingOpt?.name || selectedHeading;
+                })()}`,
+                price: finalHeadingCost || 0,
+                pricingMethod: 'fixed'
+              }] : []),
+              // Add manufacturing finish  
+              ...(measurements.manufacturing_type ? [{
+                name: `Manufacturing: ${measurements.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished'}`,
+                price: manufacturingCost || 0,
+                pricingMethod: 'fixed'
+              }] : []),
+              // Add fullness ratio
+              ...(fabricCalculation?.fullnessRatio ? [{
+                name: `Fullness Ratio: ${fabricCalculation.fullnessRatio}x`,
+                price: 0,
+                pricingMethod: 'included'
+              }] : []),
+              // Add eyelet ring if selected
+              ...(measurements.selected_eyelet_ring ? [{
+                name: `Ring Type: ${measurements.selected_eyelet_ring}`,
+                price: 0,
+                pricingMethod: 'included'
+              }] : [])
+            ],
             
             // PHASE 2: Add dimensions - STORE IN CM, save null instead of 0 for empty values
             rail_width: measurements.rail_width && parseFloat(measurements.rail_width) > 0 
@@ -1700,6 +1731,39 @@ export const DynamicWindowWorksheet = forwardRef<{
                 {/* Bottom Section - Configuration & Cost */}
                 <div className="space-y-4">
                   {(() => {
+                    // Build comprehensive options list for display
+                    const allDisplayOptions = [
+                      // Dynamic options from treatment_options system
+                      ...selectedOptions,
+                      // Add heading if selected and not default
+                      ...(selectedHeading && selectedHeading !== 'standard' && selectedHeading !== 'none' ? [{
+                        name: `Heading: ${(() => {
+                          const headingOpt = headingOptionsFromSettings.find((h: any) => h.id === selectedHeading);
+                          return headingOpt?.name || selectedHeading;
+                        })()}`,
+                        price: calculatedCosts.headingCost || 0,
+                        pricingMethod: 'fixed'
+                      }] : []),
+                      // Add manufacturing finish
+                      ...(measurements.manufacturing_type ? [{
+                        name: `Manufacturing: ${measurements.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished'}`,
+                        price: calculatedCosts.manufacturingCost || 0,
+                        pricingMethod: 'fixed'
+                      }] : []),
+                      // Add fullness ratio if exists
+                      ...(fabricCalculation?.fullnessRatio ? [{
+                        name: `Fullness Ratio: ${fabricCalculation.fullnessRatio}x`,
+                        price: 0,
+                        pricingMethod: 'included'
+                      }] : []),
+                      // Add eyelet ring if selected
+                      ...(measurements.selected_eyelet_ring ? [{
+                        name: `Ring Type: ${measurements.selected_eyelet_ring}`,
+                        price: 0,
+                        pricingMethod: 'included'
+                      }] : [])
+                    ];
+                    
                     // Calculate costs for curtains
                     if (!selectedTemplate || !fabricCalculation || treatmentCategory === 'wallpaper') {
                       return (
@@ -1711,7 +1775,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                           selectedHeading={selectedHeading} 
                           inventory={[]} 
                           fabricCalculation={fabricCalculation}
-                          selectedOptions={selectedOptions}
+                          selectedOptions={allDisplayOptions}
                         />
                       );
                     }
@@ -1832,7 +1896,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                         selectedHeading={selectedHeading} 
                         inventory={[]} 
                         fabricCalculation={fabricCalculation}
-                        selectedOptions={selectedOptions}
+                        selectedOptions={allDisplayOptions}
                         calculatedFabricCost={calculatedCosts.fabricTotalCost}
                         calculatedLiningCost={calculatedCosts.liningCost}
                         calculatedManufacturingCost={calculatedCosts.manufacturingCost}
