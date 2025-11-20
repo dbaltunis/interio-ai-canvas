@@ -42,7 +42,7 @@ export const useQuotes = (projectId?: string) => {
         query = query.eq("project_id", projectId);
       }
       
-      const { data, error } = await query.order("created_at", { ascending: false });
+      const { data, error } = await query.order("created_at", { ascending: true });
 
       if (error) throw error;
       return data || [];
@@ -63,6 +63,21 @@ export const useCreateQuote = () => {
     mutationFn: async (quote: Omit<QuoteInsert, "user_id" | "quote_number"> & { quote_number?: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
+
+      // Check if a quote already exists for this project
+      if (quote.project_id) {
+        const { data: existingQuote } = await supabase
+          .from("quotes")
+          .select("*")
+          .eq("project_id", quote.project_id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        if (existingQuote) {
+          console.log("Quote already exists for project, returning existing quote");
+          return existingQuote;
+        }
+      }
 
       // Generate quote number using number sequences based on status
       let quoteNumber = quote.quote_number;
