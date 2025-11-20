@@ -672,11 +672,12 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
             variant="ghost"
             size="sm"
             onClick={() => {
-              handleUpdateTemplateSettings('showDetailedBreakdown', !templateSettings.showDetailedBreakdown);
+              const newLayout = templateSettings.layout === 'detailed' ? 'simple' : 'detailed';
+              handleUpdateTemplateSettings('layout', newLayout);
             }}
             className="h-8"
           >
-            {templateSettings.showDetailedBreakdown ? 'Simple View' : 'Detailed View'}
+            {templateSettings.layout === 'detailed' ? 'Simple View' : 'Detailed View'}
           </Button>
           
           <Button
