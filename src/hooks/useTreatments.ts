@@ -387,17 +387,41 @@ export const useDeleteTreatment = () => {
 
   return useMutation({
     mutationFn: async (treatmentId: string) => {
-      console.log("=== DELETING TREATMENT ===");
+      console.log("=== DELETING TREATMENT AND RELATED MATERIALS ===");
       console.log("Treatment ID:", treatmentId);
       
-      const { error } = await supabase
+      // First, get the treatment to find its project_id and window_id
+      const { data: treatment } = await supabase
+        .from("treatments")
+        .select("project_id, window_id")
+        .eq("id", treatmentId)
+        .single();
+
+      // Delete the treatment
+      const { error: treatmentError } = await supabase
         .from("treatments")
         .delete()
         .eq("id", treatmentId);
 
-      if (error) {
-        console.error("Delete treatment database error:", error);
-        throw error;
+      if (treatmentError) {
+        console.error("Delete treatment database error:", treatmentError);
+        throw treatmentError;
+      }
+
+      // Delete related materials from queue (only pending/in_batch status)
+      if (treatment?.project_id) {
+        const { error: materialsError } = await supabase
+          .from("material_order_queue")
+          .delete()
+          .eq("project_id", treatment.project_id)
+          .in("status", ["pending", "in_batch"]);
+
+        if (materialsError) {
+          console.error("Error deleting materials:", materialsError);
+          // Don't throw - treatment is already deleted
+        } else {
+          console.log("Deleted related materials from queue");
+        }
       }
       
       console.log("Treatment deleted successfully");
@@ -409,6 +433,8 @@ export const useDeleteTreatment = () => {
       queryClient.invalidateQueries({ queryKey: ["treatments"] });
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
       queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
+      queryClient.invalidateQueries({ queryKey: ["material-queue-v2"] });
+      queryClient.invalidateQueries({ queryKey: ["material-queue-stats"] });
       queryClient.refetchQueries({ queryKey: ["treatments"] });
       toast({
         title: "Success",

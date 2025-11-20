@@ -130,12 +130,40 @@ export const useDeleteSurface = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      console.log("=== DELETING SURFACE AND RELATED MATERIALS ===");
+      console.log("Surface ID:", id);
+
+      // First, get the surface to find its project_id
+      const { data: surface } = await supabase
+        .from("surfaces")
+        .select("project_id")
+        .eq("id", id)
+        .single();
+
+      // Delete the surface
+      const { error: surfaceError } = await supabase
         .from("surfaces")
         .delete()
         .eq("id", id);
 
-      if (error) throw error;
+      if (surfaceError) throw surfaceError;
+
+      // Delete related materials from queue (only pending/in_batch status)
+      if (surface?.project_id) {
+        const { error: materialsError } = await supabase
+          .from("material_order_queue")
+          .delete()
+          .eq("project_id", surface.project_id)
+          .in("status", ["pending", "in_batch"]);
+
+        if (materialsError) {
+          console.error("Error deleting materials:", materialsError);
+          // Don't throw - surface is already deleted
+        } else {
+          console.log("Deleted related materials from queue");
+        }
+      }
+
       return id;
     },
     onSuccess: (deletedId) => {
@@ -143,6 +171,8 @@ export const useDeleteSurface = () => {
       queryClient.invalidateQueries({ queryKey: ["treatments"] });
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
       queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
+      queryClient.invalidateQueries({ queryKey: ["material-queue-v2"] });
+      queryClient.invalidateQueries({ queryKey: ["material-queue-stats"] });
       
       toast({
         title: "Success",
