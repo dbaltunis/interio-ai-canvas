@@ -1900,3 +1900,5 @@ export const EditableLivePreview = ({
     </div>
   );
 };
+
+export default EditableLivePreview;
