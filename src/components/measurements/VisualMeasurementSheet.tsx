@@ -314,14 +314,22 @@ export const VisualMeasurementSheet = ({
           pooling
         }
       });
-      const calculatedTotalCost = result.details?.sqm ? result.details.sqm * pricePerMeter : result.meters * pricePerMeter;
-      console.log('📊 VisualMeasurementSheet fabricCalculation:', {
+      const calculatedTotalCost = result.details?.sqm 
+        ? result.details.sqm * pricePerMeter 
+        : result.meters * pricePerMeter;
+      console.log('📊 VisualMeasurementSheet fabricCalculation - FULL DEBUG:', {
         hasBlindData: !!result.details?.sqm,
         sqm: result.details?.sqm,
-        linearMeters: result.meters,
+        resultMeters: result.meters,
+        resultYards: result.yards,
         pricePerMeter,
+        calculationFormula: result.details?.sqm 
+          ? `${result.details.sqm} sqm × ${pricePerMeter} = ${calculatedTotalCost}`
+          : `${result.meters} m × ${pricePerMeter} = ${calculatedTotalCost}`,
         calculatedTotalCost,
-        formula: result.details?.sqm ? `${result.details.sqm.toFixed(2)} sqm × £${pricePerMeter.toFixed(2)} = £${calculatedTotalCost.toFixed(2)}` : `${result.meters.toFixed(2)} m × £${pricePerMeter.toFixed(2)} = £${calculatedTotalCost.toFixed(2)}`
+        widthsRequired: result.widthsRequired,
+        fabricOrientation: result.fabricOrientation,
+        fullResultObject: result
       });
       const fabricCalcResult = {
         linearMeters: result.meters,
