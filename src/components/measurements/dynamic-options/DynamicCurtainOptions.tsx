@@ -181,12 +181,9 @@ export const DynamicCurtainOptions = ({
     const lining = template?.lining_types?.find((l: any) => l.type === liningType);
     console.log('🔥 Found lining:', lining);
     
-    if (lining && onOptionPriceChange) {
-      // Pass price_per_metre as the base price (per-meter calculation will be done in pricing engine)
-      const pricePerMetre = lining.price_per_metre || 0;
-      const pricingMethod = lining.pricing_method || 'per-meter'; // Default to per-meter
-      onOptionPriceChange('lining', pricePerMetre, lining.type, pricingMethod);
-    }
+    // ❌ REMOVED: Lining should NOT be added to selectedOptions
+    // Lining has dedicated calculation in parent component that uses fabric usage
+    // DO NOT call onOptionPriceChange for lining
     
     // CRITICAL: Update both measurements object AND parent state
     onChange('selected_lining', liningType);
@@ -199,7 +196,8 @@ export const DynamicCurtainOptions = ({
       found: !!lining,
       pricePerMetre: lining?.price_per_metre || 0,
       labourPerCurtain: lining?.labour_per_curtain || 0,
-      pricingMethod: lining?.pricing_method || 'per-meter'
+      pricingMethod: lining?.pricing_method || 'per-meter',
+      note: 'Lining calculated separately with fabric usage - NOT in selectedOptions'
     });
   };
 
