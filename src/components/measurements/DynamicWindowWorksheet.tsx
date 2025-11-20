@@ -958,7 +958,8 @@ export const DynamicWindowWorksheet = forwardRef<{
           
           const summaryData = {
             window_id: surfaceId,
-            linear_meters: linearMeters,
+            // CRITICAL: Save ORDERED fabric (what gets charged) not USED fabric
+            linear_meters: fabricCalculation?.orderedLinearMeters || linearMeters,
             // For blinds/shutters, widths_required doesn't apply - use 1
             widths_required: (displayCategory === 'blinds' || displayCategory === 'shutters') ? 1 : (fabricCalculation?.widthsRequired || 0),
             // For blinds/shutters, use material price; for curtains use fabric calculation
