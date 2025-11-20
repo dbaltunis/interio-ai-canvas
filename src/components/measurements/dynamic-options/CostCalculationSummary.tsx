@@ -443,9 +443,19 @@ export const CostCalculationSummary = ({
 
       <div className="grid gap-2 text-sm">
         {fabricCost > 0 && (
-          <div className="flex justify-between py-1.5 border-b border-border/50">
-            <span className="text-card-foreground font-medium">Fabric Material</span>
-            <span className="font-semibold text-card-foreground">{formatPrice(fabricCost)}</span>
+          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+              <div className="flex flex-col min-w-0">
+                <span className="text-card-foreground font-medium">Fabric Material</span>
+                {fabricCalculation?.linearMeters && (
+                  <span className="text-xs text-muted-foreground truncate">
+                    {fabricCalculation.linearMeters.toFixed(2)}m × {formatPrice(fabricCalculation.pricePerMeter || 0)}/m
+                  </span>
+                )}
+              </div>
+            </div>
+            <span className="font-semibold text-card-foreground ml-2">{formatPrice(fabricCost)}</span>
           </div>
         )}
 
