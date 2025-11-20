@@ -186,16 +186,9 @@ export const VisualMeasurementSheet = ({
     }
   }, []);
 
-  // Auto-set fabric rotation based on fabric width when fabric is first selected
-  useEffect(() => {
-    if (selectedFabricItem && measurements.fabric_rotated === undefined && !readOnly) {
-      const fabricWidthCm = selectedFabricItem.fabric_width || 137;
-      const isWideFabric = fabricWidthCm >= 250;
-      // Wide fabrics (≥250cm) default to horizontal/railroaded (true)
-      // Narrow fabrics (<250cm) default to vertical/standard (false)
-      handleInputChange("fabric_rotated", isWideFabric.toString());
-    }
-  }, [selectedFabricItem]);
+  // ✅ Fabric rotation is now MANUAL ONLY - no auto-rotation
+  // Users must manually toggle rotation if they want to railroad the fabric
+  // This allows for alternative solutions like adding borders or using fewer widths
 
   // Calculate fabric usage when measurements and fabric change
   const fabricCalculation = useMemo(() => {
@@ -800,7 +793,7 @@ export const VisualMeasurementSheet = ({
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <Label className="text-sm font-semibold text-card-foreground cursor-pointer">
-                        Rotate Fabric 90°
+                        Rotate Fabric 90° (Manual)
                       </Label>
                       <div className="text-xs text-muted-foreground mt-1 space-y-1">
                         {(() => {
@@ -816,52 +809,28 @@ export const VisualMeasurementSheet = ({
                       const isWideFabric = fabricWidthCm >= 250;
                       const canRailroad = totalDrop <= fabricWidthCm;
                       const fabricRotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
-                      if (isWideFabric) {
-                        // For wide fabrics: toggle ON = railroaded (default), toggle OFF = vertical
-                        if (fabricRotated !== false) {
-                          // Toggle is ON (default for wide fabrics)
-                          if (canRailroad) {
-                            return <>
-                                    <p>✓ Wide fabric ({fabricWidthCm}cm) - railroaded (default)</p>
-                                    <p className="text-primary">Fabric width for drop, buying length for curtain width</p>
-                                  </>;
-                          } else {
-                            return <>
-                                    <p>⚠ Wide fabric ({fabricWidthCm}cm) - cannot railroad</p>
-                                    <p className="text-amber-600">Drop ({totalDrop.toFixed(0)}cm) exceeds fabric width - switch to vertical orientation</p>
-                                  </>;
-                          }
-                        } else {
-                          // Toggle is OFF - user manually switched to vertical
+                      
+                      // Show current status - default is always vertical unless user toggles
+                      if (fabricRotated) {
+                        // User has toggled ON - railroaded/horizontal orientation
+                        if (canRailroad) {
                           return <>
-                                  <p>Wide fabric ({fabricWidthCm}cm) - switched to vertical orientation</p>
-                                  <p className="text-primary">Buying drops of fabric, seaming for width</p>
+                                  <p>✓ Fabric rotated - railroaded orientation</p>
+                                  <p className="text-primary">Fabric width used for drop, buying length for curtain width</p>
+                                </>;
+                        } else {
+                          return <>
+                                  <p>⚠ Cannot railroad - drop too long</p>
+                                  <p className="text-amber-600">Drop ({totalDrop.toFixed(0)}cm) exceeds fabric width ({fabricWidthCm}cm). Turn off rotation or consider adding a border.</p>
                                 </>;
                         }
-                      } else if (isNarrowFabric) {
-                        // For narrow fabrics: toggle OFF = vertical (default), toggle ON = railroaded
-                        if (fabricRotated) {
-                          // Toggle is ON - user wants to railroad
-                          if (canRailroad) {
-                            return <>
-                                    <p>Narrow fabric ({fabricWidthCm}cm) - rotated to railroaded</p>
-                                    <p className="text-primary">Fabric width for drop, buying length for curtain width</p>
-                                  </>;
-                          } else {
-                            return <>
-                                    <p>⚠ Narrow fabric ({fabricWidthCm}cm) - cannot railroad</p>
-                                    <p className="text-amber-600">Drop ({totalDrop.toFixed(0)}cm) exceeds fabric width ({fabricWidthCm}cm)</p>
-                                  </>;
-                          }
-                        } else {
-                          // Toggle is OFF (default for narrow fabrics) - vertical orientation
-                          return <>
-                                  <p>✓ Narrow fabric ({fabricWidthCm}cm) - standard vertical (default)</p>
-                                  <p className="text-primary">Buying drops for height, seaming widths for curtain width</p>
-                                </>;
-                        }
+                      } else {
+                        // Default: vertical orientation (no rotation)
+                        return <>
+                                <p>✓ Standard vertical orientation (default)</p>
+                                <p className="text-muted-foreground">Buying drops for height, seaming widths for curtain width. Toggle ON to railroad if fabric is wide enough.</p>
+                              </>;
                       }
-                      return <p>Standard fabric orientation</p>;
                     })()}
                       </div>
                     </div>
