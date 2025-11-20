@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,16 +82,24 @@ export default function AdminBugManagement() {
   const queryClient = useQueryClient();
   const { data: teamMembers } = useTeamMembers();
 
+  // Reset status filter to "all" when switching to Kanban view
+  useEffect(() => {
+    if (viewMode === "kanban" && statusFilter !== "all") {
+      setStatusFilter("all");
+    }
+  }, [viewMode]);
+
   // Query all bug reports - System Owners and Admins see ALL bugs across all accounts
   const { data: bugs, isLoading } = useQuery({
-    queryKey: ["bug_reports", statusFilter, priorityFilter],
+    queryKey: ["bug_reports", statusFilter, priorityFilter, viewMode],
     queryFn: async () => {
       let query = supabase
         .from("bug_reports")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (statusFilter !== "all") {
+      // In Kanban view, fetch ALL bugs regardless of statusFilter to populate all columns
+      if (statusFilter !== "all" && viewMode !== "kanban") {
         query = query.eq("status", statusFilter);
       }
 
@@ -418,9 +426,13 @@ export default function AdminBugManagement() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="md:max-w-sm"
             />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select 
+              value={statusFilter} 
+              onValueChange={setStatusFilter}
+              disabled={viewMode === "kanban"}
+            >
               <SelectTrigger className="md:w-[180px]">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={viewMode === "kanban" ? "All Statuses (Kanban)" : "Filter by status"} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
