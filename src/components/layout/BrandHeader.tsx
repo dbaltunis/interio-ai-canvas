@@ -23,19 +23,24 @@ export const BrandHeader = ({ className = "", size = "md", showTagline = true }:
     xl: "text-[10px] sm:text-xs" // Made even smaller for xl
   };
 
+  const textSizeClasses = {
+    sm: "text-lg sm:text-xl", 
+    md: "text-xl sm:text-2xl",  
+    lg: "text-2xl sm:text-3xl",
+    xl: "text-3xl sm:text-4xl"  
+  };
+
   return (
     <div className={`relative flex items-center ${className}`}>
       <div className="relative inline-flex items-center">
-        <img 
-          src="/lovable-uploads/b4044156-cf14-4da2-92bf-8996d9998f72.png" 
-          alt="InterioApp Logo" 
-          className={`logo-white ${sizeClasses[size]} w-auto object-contain transition-all brightness-110 drop-shadow-md md:drop-shadow-lg`}
-        />
-        {/* Tiny blink near the "i" of Interio every 10s */}
-        <span 
-          className="pointer-events-none absolute top-1/2 left-[13%] -translate-y-1/2 h-2 w-2 rounded-full bg-primary/80 dark:bg-primary/90 shadow-[0_0_10px_hsl(var(--primary)/0.7)] opacity-0 animate-i-blink-10s" 
-          aria-hidden="true"
-        />
+        <h1 className={`${textSizeClasses[size]} font-bold text-foreground tracking-tight`}>
+          InterioApp
+        </h1>
+        {showTagline && (
+          <span className={`${sloganSizeClasses[size]} text-muted-foreground ml-2 hidden sm:inline`}>
+            Window Treatment Solutions
+          </span>
+        )}
       </div>
     </div>
   );
