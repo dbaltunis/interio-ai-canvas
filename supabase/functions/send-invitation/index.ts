@@ -105,10 +105,10 @@ serve(async (req) => {
 </body>
 </html>`;
 
-    console.log('Sending invitation email...');
+    console.log('Attempting to send invitation email...');
 
     let emailSent = false;
-    let lastError: Error | null = null;
+    let emailError = null;
 
     // Try custom SendGrid first if configured
     if (useCustomSendGrid) {
@@ -139,41 +139,61 @@ serve(async (req) => {
         if (!emailResponse.ok) {
           const errorText = await emailResponse.text();
           console.error('SendGrid API error:', emailResponse.status, errorText);
-          throw new Error(`SendGrid error: ${emailResponse.status} - ${errorText}`);
+          emailError = `SendGrid error: ${emailResponse.status}`;
+        } else {
+          console.log('Email sent via custom SendGrid');
+          emailSent = true;
         }
-        console.log('Email sent via custom SendGrid');
-        emailSent = true;
       } catch (sendgridError: any) {
-        console.error('SendGrid failed, falling back to Resend:', sendgridError.message);
-        lastError = sendgridError;
+        console.error('SendGrid failed:', sendgridError.message);
+        emailError = sendgridError.message;
       }
     }
 
     // Fallback to shared Resend if SendGrid failed or wasn't configured
     if (!emailSent) {
       const resendApiKey = Deno.env.get('RESEND_API_KEY');
-      if (!resendApiKey) {
-        throw new Error('RESEND_API_KEY not configured and SendGrid failed');
-      }
+      if (resendApiKey) {
+        try {
+          const resend = new Resend(resendApiKey);
+          const { error: resendError } = await resend.emails.send({
+            from: `${brandName} <onboarding@resend.dev>`,
+            to: [invitedEmail],
+            subject: `You've been invited to join ${brandName}!`,
+            html: emailHtml,
+          });
 
-      const resend = new Resend(resendApiKey);
-      const { error: resendError } = await resend.emails.send({
-        from: `${brandName} <onboarding@resend.dev>`,
-        to: [invitedEmail],
-        subject: `You've been invited to join ${brandName}!`,
-        html: emailHtml,
-      });
-
-      if (resendError) {
-        console.error('Resend error:', resendError);
-        throw new Error(`All email providers failed. Last error: ${resendError.message}`);
+          if (resendError) {
+            console.error('Resend error:', resendError);
+            emailError = resendError.message;
+          } else {
+            console.log('Email sent via shared Resend (fallback)');
+            emailSent = true;
+          }
+        } catch (resendErr: any) {
+          console.error('Resend failed:', resendErr.message);
+          emailError = resendErr.message;
+        }
       }
-      console.log('Email sent via shared Resend (fallback)');
-      emailSent = true;
+    }
+
+    // Always return success with invitation link, even if email failed
+    const response: any = { 
+      success: true, 
+      invitationLink,
+      emailSent 
+    };
+
+    if (!emailSent) {
+      response.message = 'Invitation created but email delivery failed. Share the invitation link manually.';
+      response.emailError = emailError;
+      console.log('Invitation created successfully, but email failed:', emailError);
+    } else {
+      response.message = 'Invitation email sent successfully';
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: 'Invitation email sent' }),
+      JSON.stringify(response),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error: any) {
