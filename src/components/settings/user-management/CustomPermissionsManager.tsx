@@ -56,6 +56,26 @@ const PERMISSION_CATEGORIES: PermissionCategory[] = [
     ]
   },
   {
+    name: "Dashboard & KPIs",
+    permissions: [
+      { 
+        id: "view_primary_kpis", 
+        label: "View Primary Metrics", 
+        description: "View primary KPI dashboard section (clients, projects, quotes)" 
+      },
+      { 
+        id: "view_revenue_kpis", 
+        label: "View Revenue KPIs", 
+        description: "View financial and revenue metrics" 
+      },
+      { 
+        id: "view_email_kpis", 
+        label: "View Email Performance", 
+        description: "View email campaign performance KPIs" 
+      },
+    ]
+  },
+  {
     name: "Inventory",
     permissions: [
       { id: "view_inventory", label: "View Inventory", description: "View inventory items" },
