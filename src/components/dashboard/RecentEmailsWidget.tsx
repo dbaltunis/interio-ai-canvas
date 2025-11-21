@@ -86,37 +86,37 @@ export const RecentEmailsWidget = () => {
               {recentEmails.map((email) => (
             <div
               key={email.id}
-              className="flex items-start gap-2 sm:gap-2.5 p-2 sm:p-3 rounded-lg bg-background border border-border hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
+              className="flex items-start gap-2.5 p-3 rounded-lg bg-background border border-border hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
               onClick={() => navigate('/?tab=quotes')}
             >
-              <div className="mt-0.5 shrink-0 p-1 sm:p-1.5 rounded-md bg-muted/50">
+              <div className="mt-0.5 shrink-0 p-1.5 rounded-md bg-muted/50">
                 {getStatusIcon(email.status)}
               </div>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <h4 className="font-semibold text-xs sm:text-sm text-foreground truncate">
+                <div className="flex items-start gap-2 mb-1.5">
+                  <h4 className="font-semibold text-sm text-foreground line-clamp-1 flex-1">
                     {email.subject || "No subject"}
                   </h4>
                   <Badge 
                     variant={getStatusVariant(email.status)} 
-                    className="text-[10px] sm:text-xs shrink-0 h-4 sm:h-5 px-1.5 sm:px-2 font-medium"
+                    className="text-[10px] shrink-0 h-5 px-2 font-medium"
                   >
                     {email.status || "pending"}
                   </Badge>
                 </div>
                 
-                <p className="text-[10px] sm:text-xs text-muted-foreground truncate mb-1 max-w-[200px] sm:max-w-none">
+                <p className="text-xs text-muted-foreground line-clamp-1 mb-1.5">
                   To: {email.recipient_email}
                 </p>
                 
-                <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground flex-wrap">
-                  <span className="truncate">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="line-clamp-1">
                     {email.created_at ? formatDistanceToNow(new Date(email.created_at), { addSuffix: true }) : ""}
                   </span>
                   {email.open_count > 0 && (
-                    <span className="flex items-center gap-1 shrink-0 text-green-600 font-medium whitespace-nowrap">
-                      <CheckCircle2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                    <span className="flex items-center gap-1 shrink-0 text-green-600 font-medium">
+                      <CheckCircle2 className="h-3 w-3" />
                       Opened {email.open_count}x
                     </span>
                   )}

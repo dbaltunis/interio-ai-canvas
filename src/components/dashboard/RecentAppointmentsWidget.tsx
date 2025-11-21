@@ -107,48 +107,48 @@ export const RecentAppointmentsWidget = () => {
                 const statusColor = statusColors[booking.status as keyof typeof statusColors] || statusColors.pending;
                 
                 return (
-                  <div
-                    key={booking.id}
-                    className="flex items-center gap-3 p-2.5 rounded-lg bg-background border border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
-                    onClick={() => navigate(`/?tab=calendar`)}
-                  >
-                    <div className="flex flex-col items-center justify-center min-w-[50px] h-[50px] rounded-lg bg-primary/5 border border-primary/20 shadow-sm">
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-                        {format(appointmentDate, "MMM")}
-                      </span>
-                      <span className="text-2xl font-bold text-foreground leading-none">
-                        {format(appointmentDate, "d")}
-                      </span>
-                    </div>
-                    
-                    <div className="flex-1 min-w-0 overflow-hidden">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <Bell className="h-3 w-3 text-primary shrink-0" />
-                        <h4 className="font-semibold text-sm text-foreground truncate">
-                          {booking.customer_name}
-                        </h4>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3 shrink-0" />
-                        <span className="truncate">
-                          {booking.appointment_time}
-                          {booking.scheduler?.name && ` • ${booking.scheduler.name}`}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <Badge 
-                      variant="secondary"
-                      className="text-xs shrink-0 h-6 px-3 flex items-center justify-center font-medium capitalize whitespace-nowrap"
-                      style={{
-                        backgroundColor: statusColor.bg,
-                        color: statusColor.text,
-                        borderColor: statusColor.border
-                      }}
-                    >
-                      {booking.status}
-                    </Badge>
+                <div
+                  key={booking.id}
+                  className="flex items-start gap-3 p-3 rounded-lg bg-background border border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
+                  onClick={() => navigate(`/?tab=calendar`)}
+                >
+                  <div className="flex flex-col items-center justify-center min-w-[50px] w-[50px] h-[50px] rounded-lg bg-primary/5 border border-primary/20 shadow-sm shrink-0">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                      {format(appointmentDate, "MMM")}
+                    </span>
+                    <span className="text-2xl font-bold text-foreground leading-none">
+                      {format(appointmentDate, "d")}
+                    </span>
                   </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Bell className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <h4 className="font-semibold text-sm text-foreground line-clamp-1">
+                        {booking.customer_name}
+                      </h4>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-0.5">
+                      <Clock className="h-3 w-3 shrink-0" />
+                      <span className="line-clamp-1">
+                        {booking.appointment_time} • {booking.scheduler?.name || 'Appointment'}
+                      </span>
+                    </div>
+                    <div className="mt-2">
+                      <Badge 
+                        variant="secondary"
+                        className="text-[10px] h-5 px-2.5 font-medium capitalize"
+                        style={{
+                          backgroundColor: statusColor.bg,
+                          color: statusColor.text,
+                          borderColor: statusColor.border
+                        }}
+                      >
+                        {booking.status}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
                 );
               })}
             </div>
