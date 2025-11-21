@@ -157,7 +157,7 @@ serve(async (req) => {
         try {
           const resend = new Resend(resendApiKey);
           const { error: resendError } = await resend.emails.send({
-            from: `${brandName} <onboarding@resend.dev>`,
+            from: `InterioApp <noreply@interioapp.com>`,
             to: [invitedEmail],
             subject: `You've been invited to join ${brandName}!`,
             html: emailHtml,
