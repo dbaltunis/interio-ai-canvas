@@ -9385,6 +9385,14 @@ export type Database = {
         Returns: string
       }
       refresh_client_stats: { Args: never; Returns: undefined }
+      repair_broken_invitation_account: {
+        Args: {
+          inviter_id_param: string
+          should_be_role: string
+          user_id_param: string
+        }
+        Returns: Json
+      }
       sanitize_phone_number: { Args: { phone_number: string }; Returns: string }
       sanitize_text_input: { Args: { input_text: string }; Returns: string }
       sanitize_user_input: {
