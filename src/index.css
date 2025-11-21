@@ -50,6 +50,8 @@
     --ring: var(--company-primary);
     --destructive: var(--company-error);
     --destructive-foreground: 0 0% 100%;
+    --warning: var(--company-warning);
+    --warning-foreground: 0 0% 100%;
     --radius: 0.875rem;
     
     --chart-1: 12 76% 61%;
@@ -100,6 +102,8 @@
     --accent-foreground: 0 0% 100%;
     --destructive: 0 70% 60%;
     --destructive-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
     --border: 240 3% 28%; /* #48484a - visible but subtle */
     --input: 240 3% 23%;
     --ring: 218 25% 45%;

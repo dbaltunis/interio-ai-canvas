@@ -164,7 +164,7 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
         route: location.pathname,
         user_agent: navigator.userAgent,
         browser_info: browserInfo,
-        app_version: "beta v0.1.1",
+        app_version: "v2.0",
         images: images.length > 0 ? images : null,
       });
 
@@ -197,7 +197,7 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
     }
   };
 
-  const version = "beta v0.1.1";
+  const version = "v2.0";
 
   return (
     <>
@@ -208,12 +208,11 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
         <DialogTrigger asChild>
           <div className={`fixed bottom-20 md:bottom-6 right-6 z-40 ${className}`}>
             <Button
-              variant="destructive"
-              className="h-auto px-3 py-2 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 flex flex-col items-center gap-0.5"
+              className="h-auto px-3 py-2 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 flex flex-col items-center gap-0.5 bg-warning text-warning-foreground hover:bg-warning/90"
               title="Help & Support"
             >
               <Bug className="h-5 w-5" />
-              <span className="text-[10px] font-normal opacity-80">
+              <span className="text-[10px] font-normal opacity-90">
                 {version}
               </span>
             </Button>
