@@ -66,11 +66,14 @@ export const EnhancedHomeDashboard = () => {
   const { integration: shopifyIntegration } = useShopifyIntegrationReal();
   const isShopifyConnected = !!shopifyIntegration?.is_connected;
   
-  // Permission checks for widgets
+  // Permission checks for widgets and KPIs
   const canViewCalendar = useHasPermission('view_calendar');
   const canViewShopify = useHasPermission('view_shopify');
   const canViewEmails = useHasPermission('view_emails');
   const canViewInventory = useHasPermission('view_inventory');
+  const canViewPrimaryKPIs = useHasPermission('view_primary_kpis');
+  const canViewEmailKPIs = useHasPermission('view_email_kpis');
+  const canViewRevenueKPIs = useHasPermission('view_revenue_kpis');
 
   // Debug logging for Shopify permission
   console.log('[Dashboard] Shopify Permission Check:', {
@@ -128,6 +131,7 @@ export const EnhancedHomeDashboard = () => {
       icon: DollarSign,
       trend: { value: 12.5, isPositive: true },
       category: "primary" as const,
+      requiresPermission: "view_revenue_kpis",
     },
     {
       id: "active-projects",
@@ -208,12 +212,19 @@ export const EnhancedHomeDashboard = () => {
   const enabledEmailKPIs = getEnabledKPIs("email");
   const enabledBusinessKPIs = getEnabledKPIs("business");
 
-  const filteredPrimaryKPIs = primaryKPIs.filter(kpi => 
-    enabledPrimaryKPIs.some(config => config.id === kpi.id)
-  );
+  // Filter KPIs by both customization AND permissions
+  const filteredPrimaryKPIs = primaryKPIs.filter(kpi => {
+    // Check if KPI is enabled in customizer
+    const isEnabled = enabledPrimaryKPIs.some(config => config.id === kpi.id);
+    if (!isEnabled) return false;
+    
+    // Check permissions
+    if (kpi.id === 'total-revenue') return canViewRevenueKPIs === true;
+    return canViewPrimaryKPIs === true;
+  });
 
   const filteredEmailKPIs = emailKPIsData.filter(kpi => 
-    enabledEmailKPIs.some(config => config.id === kpi.id)
+    enabledEmailKPIs.some(config => config.id === kpi.id) && canViewEmailKPIs === true
   );
 
   return (
