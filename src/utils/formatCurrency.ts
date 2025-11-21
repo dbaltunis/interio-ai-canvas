@@ -17,13 +17,15 @@ export const getCurrencySymbol = (currency: string): string => {
 
 export const formatCurrency = (
   amount: number | null | undefined,
-  currency: string = 'EUR',
+  currency?: string,
   options?: {
     showSymbol?: boolean;
     decimals?: number;
     locale?: string;
   }
 ): string => {
+  // If no currency provided, return empty (prevents showing wrong default)
+  if (!currency) return '';
   const {
     showSymbol = true,
     decimals = 2,
@@ -58,8 +60,10 @@ export const formatCurrency = (
  */
 export const formatCompactCurrency = (
   amount: number | null | undefined,
-  currency: string = 'EUR'
+  currency?: string
 ): string => {
+  // If no currency provided, return empty (prevents showing wrong default)
+  if (!currency) return '';
   const numAmount = Number(amount ?? 0);
   
   if (!Number.isFinite(numAmount)) {

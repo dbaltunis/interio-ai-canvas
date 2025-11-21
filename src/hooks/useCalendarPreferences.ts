@@ -36,11 +36,13 @@ export const useCalendarPreferences = () => {
           show_personal_events: true,
           default_event_visibility: 'private' as const,
           default_view: 'week'
-        };
+        } as Partial<CalendarPreferences>;
       }
 
       return data as CalendarPreferences;
     },
+    // Add staleTime to prevent unnecessary refetches
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 

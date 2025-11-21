@@ -2,7 +2,7 @@
 import { useBusinessSettings, type MeasurementUnits, defaultMeasurementUnits, convertLength, formatMeasurement } from "./useBusinessSettings";
 
 export const useMeasurementUnits = () => {
-  const { data: businessSettings } = useBusinessSettings();
+  const { data: businessSettings, isLoading } = useBusinessSettings();
   
   const units: MeasurementUnits = (() => {
     try {
@@ -58,6 +58,7 @@ export const useMeasurementUnits = () => {
     formatArea, 
     formatFabric,
     getLengthUnitLabel,
-    getFabricUnitLabel
+    getFabricUnitLabel,
+    isLoading
   };
 };

@@ -112,6 +112,8 @@ export const useBusinessSettings = () => {
 
       return data;
     },
+    // Add staleTime to prevent unnecessary refetches
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 
