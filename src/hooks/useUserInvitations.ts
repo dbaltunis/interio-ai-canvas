@@ -94,7 +94,7 @@ export const useCreateInvitation = () => {
       }
 
       // Send invitation email
-      const { error: emailError } = await supabase.functions.invoke("send-invitation", {
+      const { data: emailResult, error: emailError } = await supabase.functions.invoke("send-invitation", {
         body: {
           invitedEmail: invitation.invited_email,
           invitedName: invitation.invited_name || '',
@@ -107,19 +107,31 @@ export const useCreateInvitation = () => {
 
       if (emailError) {
         console.error("Email sending failed:", emailError);
-        // Don't throw error - invitation was created successfully
-        // We'll show a warning in the success handler instead
-        return { ...data, emailSent: false, emailError: emailError.message };
+        return { 
+          ...data, 
+          emailSent: false, 
+          emailError: emailError.message,
+          invitationLink: `${window.location.origin}/auth?invitation=${data.invitation_token}`
+        };
       }
 
-      return { ...data, emailSent: true };
+      // Check if email was actually sent (edge function returns success even if email failed)
+      const emailSent = emailResult?.emailSent !== false;
+      const invitationLink = emailResult?.invitationLink || `${window.location.origin}/auth?invitation=${data.invitation_token}`;
+
+      return { 
+        ...data, 
+        emailSent, 
+        invitationLink,
+        emailError: emailResult?.emailError 
+      };
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["user-invitations"] });
       
       if (data?.emailSent === false) {
         // Invitation created but email failed to send
-        const invitationLink = `${window.location.origin}/auth?invitation=${data.invitation_token}`;
+        const invitationLink = data.invitationLink || `${window.location.origin}/auth?invitation=${data.invitation_token}`;
         
         // Copy link to clipboard
         if (navigator.clipboard) {
@@ -128,12 +140,29 @@ export const useCreateInvitation = () => {
           });
         }
         
+        const errorReason = data.emailError || 'Email service not configured';
+        
         toast({
-          title: "⚠️ Invitation created (Email not sent)",
-          description: "Invitation created but email couldn't be sent. The invitation link has been copied to your clipboard. Configure SendGrid in Settings → Integrations to enable email invitations.",
+          title: "⚠️ Invitation Created (Email Failed)",
+          description: `Invitation link copied to clipboard! Share it manually with the user.\n\nReason: ${errorReason}`,
           variant: "default",
-          duration: 10000,
+          duration: 15000,
+          importance: 'important',
         });
+        
+        // Also show a more prominent alert with the link
+        setTimeout(() => {
+          const shouldShowLink = window.confirm(
+            `✅ Invitation created successfully!\n\n` +
+            `❌ Email delivery failed: ${errorReason}\n\n` +
+            `📋 The invitation link has been copied to your clipboard.\n\n` +
+            `Click OK to view the link again, or Cancel to close this message.`
+          );
+          
+          if (shouldShowLink) {
+            prompt('Copy this invitation link:', invitationLink);
+          }
+        }, 500);
       } else {
         // Email sent successfully
         toast({
