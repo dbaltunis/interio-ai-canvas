@@ -59,12 +59,24 @@ export const InviteChildAccountDialog = ({ open, onClose }: InviteChildAccountDi
 
   const onSubmit = async (data: InviteFormData) => {
     try {
-      await createInvitation.mutateAsync({
+      const result: any = await createInvitation.mutateAsync({
         invited_email: data.email,
         invited_name: data.name,
         role: data.role,
         permissions: {},
       });
+      
+      // Check if email was sent successfully
+      if (result && !result.emailSent && result.invitationLink) {
+        // Show invitation link if email failed
+        const copyLink = () => {
+          navigator.clipboard.writeText(result.invitationLink);
+        };
+        
+        alert(`⚠️ Invitation Created (Email Failed)\n\nThe invitation was created successfully, but the email couldn't be delivered.\n\nShare this link manually:\n${result.invitationLink}\n\nReason: ${result.emailError || 'Email service not configured'}\n\nClick OK to copy the link to clipboard.`);
+        copyLink();
+      }
+      
       reset();
       onClose();
     } catch (error) {
