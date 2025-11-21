@@ -113,7 +113,7 @@ export const WhatsNewDialog = ({ open, onOpenChange }: WhatsNewDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh]">
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">
             What's New in {version.version}
@@ -123,8 +123,8 @@ export const WhatsNewDialog = ({ open, onOpenChange }: WhatsNewDialogProps) => {
           </p>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[70vh]">
-          <div className="space-y-6 text-sm pr-4">
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <div className="space-y-6 text-sm pr-4 pb-4">
             {/* Summary */}
             <div className="pb-4 border-b border-border/30">
               <p className="text-foreground/80 leading-relaxed">{notes.summary}</p>
