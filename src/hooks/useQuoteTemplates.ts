@@ -20,7 +20,8 @@ export const useQuoteTemplates = () => {
     queryKey: ["quote-templates"],
     queryFn: async () => {
       try {
-        // Try to fetch from the database first
+        // Fetch templates - RLS policy handles inheritance and access control
+        // Staff users will see both their own templates and their parent account's templates
         const { data: dbTemplates, error } = await supabase
           .from('quote_templates')
           .select('*')

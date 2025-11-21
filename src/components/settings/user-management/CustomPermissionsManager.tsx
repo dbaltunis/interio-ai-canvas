@@ -23,10 +23,11 @@ const PERMISSION_CATEGORIES: PermissionCategory[] = [
   {
     name: "Jobs & Projects",
     permissions: [
-      { id: "view_jobs", label: "View Jobs", description: "View job listings" },
-      { id: "create_jobs", label: "Create Jobs", description: "Create new jobs", requiredBy: ["view_jobs"] },
-      { id: "delete_jobs", label: "Delete Jobs", description: "Delete jobs", requiredBy: ["view_jobs"] },
-      { id: "view_all_jobs", label: "View All Jobs", description: "View jobs created by other users" },
+      { id: "view_own_jobs", label: "View Own Jobs", description: "View jobs created by this user" },
+      { id: "view_all_jobs", label: "View All Jobs", description: "View jobs created by all team members", requiredBy: ["view_own_jobs"] },
+      { id: "view_jobs", label: "View Jobs (Legacy)", description: "Legacy permission for viewing jobs" },
+      { id: "create_jobs", label: "Create Jobs", description: "Create new jobs", requiredBy: ["view_own_jobs"] },
+      { id: "delete_jobs", label: "Delete Jobs", description: "Delete jobs", requiredBy: ["view_own_jobs"] },
       { id: "view_all_projects", label: "View All Projects", description: "View projects created by other users" },
     ]
   },
@@ -45,6 +46,13 @@ const PERMISSION_CATEGORIES: PermissionCategory[] = [
       { id: "view_calendar", label: "View Calendar", description: "View calendar and appointments" },
       { id: "create_appointments", label: "Create Appointments", description: "Schedule appointments", requiredBy: ["view_calendar"] },
       { id: "delete_appointments", label: "Delete Appointments", description: "Remove appointments", requiredBy: ["view_calendar"] },
+    ]
+  },
+  {
+    name: "Workroom & Materials",
+    permissions: [
+      { id: "view_workroom", label: "View Workroom", description: "Access workroom tab and work orders" },
+      { id: "view_materials", label: "View Materials", description: "View materials and inventory in jobs", requiredBy: ["view_workroom"] },
     ]
   },
   {
