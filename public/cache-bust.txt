@@ -1,7 +1,12 @@
-Build timestamp: 2025-11-18T15:33:00Z
-Version: 2.0.0
+Build timestamp: 2025-11-21T12:00:00Z
+Version: 2.0.1
 Changes:
-- Fixed bug_reports RLS policy for admin access
-- Added comprehensive block type aliases for quote templates
-- Enhanced logging for debugging
+- Production-ready release with comprehensive feature updates
+- Enhanced permissions system with granular controls
+- KPI visibility management for sensitive data protection
+- Major security hardening and RLS policy improvements
+- Full team collaboration features
+- Collections and tagging system
+- Notification system fixes
+- Performance optimizations
 - Force cache invalidation
