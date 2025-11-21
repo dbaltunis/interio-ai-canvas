@@ -5,7 +5,6 @@ import { toast } from "@/hooks/use-toast";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from 'react';
 import { AuthProvider } from "./components/auth/AuthProvider";
@@ -121,8 +120,6 @@ const App = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-            {/* Devtools only in development - automatically removed in production */}
-            {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
             <TooltipProvider>
             {/* Ensure custom themes also apply the dark class */}
             <ThemeProvider
