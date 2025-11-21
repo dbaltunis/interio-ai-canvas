@@ -1,4 +1,16 @@
-# Welcome to your Lovable project
+# InterioApp - Window Treatment Business Management
+
+**Version**: 2.0.1 | **Last Updated**: November 21, 2025
+
+A comprehensive SaaS solution for managing window treatment businesses, featuring CRM, quotes, inventory, team collaboration, and more.
+
+## 📚 Documentation
+
+- [Changelog](./docs/CHANGELOG.md) - Full version history and release notes
+- [Permissions System](./docs/PERMISSIONS.md) - Custom permissions and access control
+- [Team Management](./docs/TEAM_MANAGEMENT.md) - Collaboration and team features
+- [Dashboard & KPIs](./docs/DASHBOARD.md) - Metrics and analytics
+- [Security](./docs/SECURITY.md) - Security features and best practices
 
 ## Project info
 
