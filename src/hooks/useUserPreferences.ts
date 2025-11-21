@@ -52,6 +52,8 @@ export const useUserPreferences = () => {
       if (error && error.code !== 'PGRST116') throw error;
       return data as UserPreferences | null;
     },
+    // Add staleTime to prevent unnecessary refetches
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 
