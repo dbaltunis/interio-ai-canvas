@@ -107,42 +107,53 @@ serve(async (req) => {
 
     console.log('Sending invitation email...');
 
-    if (useCustomSendGrid) {
-      // Use custom SendGrid for branding
-      const sendgridApiKey = integrationSettings.api_credentials.api_key;
-      const emailResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${sendgridApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          personalizations: [{
-            to: [{ email: invitedEmail, name: invitedName }],
-            subject: `You've been invited to join ${brandName}!`,
-          }],
-          from: {
-            email: inviterEmail,
-            name: brandName,
-          },
-          content: [{
-            type: 'text/html',
-            value: emailHtml,
-          }],
-        }),
-      });
+    let emailSent = false;
+    let lastError: Error | null = null;
 
-      if (!emailResponse.ok) {
-        const errorText = await emailResponse.text();
-        console.error('SendGrid API error:', emailResponse.status, errorText);
-        throw new Error(`SendGrid error: ${emailResponse.status} - ${errorText}`);
+    // Try custom SendGrid first if configured
+    if (useCustomSendGrid) {
+      try {
+        const sendgridApiKey = integrationSettings.api_credentials.api_key;
+        const emailResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${sendgridApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            personalizations: [{
+              to: [{ email: invitedEmail, name: invitedName }],
+              subject: `You've been invited to join ${brandName}!`,
+            }],
+            from: {
+              email: inviterEmail,
+              name: brandName,
+            },
+            content: [{
+              type: 'text/html',
+              value: emailHtml,
+            }],
+          }),
+        });
+
+        if (!emailResponse.ok) {
+          const errorText = await emailResponse.text();
+          console.error('SendGrid API error:', emailResponse.status, errorText);
+          throw new Error(`SendGrid error: ${emailResponse.status} - ${errorText}`);
+        }
+        console.log('Email sent via custom SendGrid');
+        emailSent = true;
+      } catch (sendgridError: any) {
+        console.error('SendGrid failed, falling back to Resend:', sendgridError.message);
+        lastError = sendgridError;
       }
-      console.log('Email sent via custom SendGrid');
-    } else {
-      // Use shared Resend (default - works for all accounts)
+    }
+
+    // Fallback to shared Resend if SendGrid failed or wasn't configured
+    if (!emailSent) {
       const resendApiKey = Deno.env.get('RESEND_API_KEY');
       if (!resendApiKey) {
-        throw new Error('RESEND_API_KEY not configured');
+        throw new Error('RESEND_API_KEY not configured and SendGrid failed');
       }
 
       const resend = new Resend(resendApiKey);
@@ -155,9 +166,10 @@ serve(async (req) => {
 
       if (resendError) {
         console.error('Resend error:', resendError);
-        throw new Error(`Failed to send email: ${resendError.message}`);
+        throw new Error(`All email providers failed. Last error: ${resendError.message}`);
       }
-      console.log('Email sent via shared Resend');
+      console.log('Email sent via shared Resend (fallback)');
+      emailSent = true;
     }
 
     return new Response(
