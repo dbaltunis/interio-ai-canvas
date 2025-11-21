@@ -13,6 +13,8 @@ import { useUserFilters } from "@/hooks/useUserFilters";
 import { useBulkUserSelection } from "@/hooks/useBulkUserSelection";
 import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserInvitations, useDeleteInvitation, useResendInvitation } from "@/hooks/useUserInvitations";
+import { X, Send } from "lucide-react";
 
 interface User {
   id: string;
@@ -33,6 +35,13 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const deleteUser = useDeleteUser();
+  
+  // Fetch pending invitations
+  const { data: invitations = [] } = useUserInvitations();
+  const deleteInvitation = useDeleteInvitation();
+  const resendInvitation = useResendInvitation();
+  
+  const pendingInvitations = invitations.filter(inv => inv.status === 'pending');
 
   // Get current user ID
   useEffect(() => {
@@ -113,6 +122,78 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
             onStatusFilter={setStatusFilter}
             activeFilters={activeFilters}
           />
+          
+          {/* Pending Invitations Section */}
+          {pendingInvitations.length > 0 && (
+            <div className="space-y-3 pb-4 border-b">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h4 className="font-medium text-amber-600 dark:text-amber-500">
+                    Pending Invitations ({pendingInvitations.length})
+                  </h4>
+                  <p className="text-sm text-muted-foreground">Users invited but not yet joined</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                {pendingInvitations.map((invitation) => (
+                  <div
+                    key={invitation.id}
+                    className="flex items-start gap-3 p-3 border border-amber-200 dark:border-amber-900 rounded-lg bg-amber-50/50 dark:bg-amber-950/20"
+                  >
+                    <Avatar className="h-10 w-10 shrink-0">
+                      <AvatarFallback className="text-sm font-medium bg-amber-100 dark:bg-amber-900">
+                        {invitation.invited_email?.[0]?.toUpperCase() || 'I'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="font-medium truncate">{invitation.invited_name || 'Pending User'}</div>
+                      <div className="text-sm text-muted-foreground flex items-center gap-1 min-w-0">
+                        <Mail className="h-3 w-3 shrink-0" />
+                        <span className="truncate" title={invitation.invited_email}>
+                          {invitation.invited_email}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="border-amber-300 dark:border-amber-700">
+                          {invitation.role}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          Expires: {new Date(invitation.expires_at).toLocaleDateString()}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950"
+                        onClick={() => resendInvitation.mutate(invitation)}
+                        disabled={resendInvitation.isPending}
+                        title="Resend invitation"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                        onClick={() => {
+                          if (confirm('Cancel this invitation?')) {
+                            deleteInvitation.mutate(invitation.id);
+                          }
+                        }}
+                        disabled={deleteInvitation.isPending}
+                        title="Cancel invitation"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           
           <BulkUserActions
             users={filteredUsers}
