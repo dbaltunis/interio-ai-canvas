@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { User, Box, FileText, Wrench, Mail, Calendar } from "lucide-react";
 import { useEffect } from "react";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 interface ProjectNavigationProps {
   activeTab: string;
@@ -18,14 +19,27 @@ export const ProjectNavigation = ({
   client,
   shouldRedirectToQuote = false 
 }: ProjectNavigationProps) => {
-  const navItems = [
+  // Check permissions for tab visibility
+  const canViewWorkroom = useHasPermission('view_workroom');
+  const canViewEmails = useHasPermission('view_emails');
+  const canViewCalendar = useHasPermission('view_calendar');
+
+  const allNavItems = [
     { id: "client", label: "Client", icon: User },
     { id: "jobs", label: "Rooms & Treatments", icon: Box },
     { id: "quote", label: "Quotation", icon: FileText },
-    { id: "workshop", label: "Workroom", icon: Wrench },
-    { id: "emails", label: "Emails", icon: Mail },
-    { id: "calendar", label: "Calendar", icon: Calendar },
+    { id: "workshop", label: "Workroom", icon: Wrench, permission: canViewWorkroom },
+    { id: "emails", label: "Emails", icon: Mail, permission: canViewEmails },
+    { id: "calendar", label: "Calendar", icon: Calendar, permission: canViewCalendar },
   ];
+
+  // Filter nav items based on permissions
+  const navItems = allNavItems.filter(item => {
+    // Always show tabs without permission requirements
+    if (item.permission === undefined) return true;
+    // Show tabs where permission check is true (hide if false or undefined/loading)
+    return item.permission === true;
+  });
 
   // Handle automatic redirect to quote tab when status changes to "Quote"
   useEffect(() => {
