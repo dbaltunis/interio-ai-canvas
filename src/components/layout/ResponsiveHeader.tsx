@@ -99,14 +99,43 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
     staleTime: 0,
     refetchOnMount: 'always',
   });
+
+  // Check if user has SendGrid configured - emails menu should only show if they have it set up
+  const { data: hasEmailsConfigured } = useQuery({
+    queryKey: ['has-emails-configured'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      
+      // Get account owner to check account-level integrations
+      const { data: accountOwnerId } = await supabase.rpc('get_account_owner', { 
+        user_id_param: user.id 
+      });
+
+      const { data: integration } = await supabase
+        .from('integration_settings')
+        .select('active, configuration')
+        .eq('account_owner_id', accountOwnerId || user.id)
+        .eq('integration_type', 'sendgrid')
+        .eq('active', true)
+        .maybeSingle();
+
+      const config = integration?.configuration as { api_key?: string } | null;
+      const hasValidApiKey = config?.api_key && config.api_key.trim().length > 0;
+      
+      return !!integration && !!hasValidApiKey;
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
   
-  // Filter nav items based on permissions
+  // Filter nav items based on permissions AND actual setup
   const visibleNavItems = navItems.filter(item => {
     if (!item.permission) return true; // No permission required (dashboard)
     
     if (item.permission === 'view_jobs') return canViewJobs === true;
     if (item.permission === 'view_clients') return canViewClients === true;
-    if (item.permission === 'view_emails') return canViewEmails === true;
+    // Only show emails if they have permission AND SendGrid is configured
+    if (item.permission === 'view_emails') return canViewEmails === true && hasEmailsConfigured === true;
     if (item.permission === 'view_calendar') return canViewCalendar === true;
     if (item.permission === 'view_inventory') return canViewInventory === true;
     if (item.permission === 'has_online_store') return hasOnlineStore === true;

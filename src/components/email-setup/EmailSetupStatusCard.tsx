@@ -48,12 +48,19 @@ export const EmailSetupStatusCard = () => {
     }
   };
 
+  // Check if email settings have actual values (not just defaults)
+  const hasConfiguredEmailSettings = emailSettings && 
+    emailSettings.from_email && 
+    emailSettings.from_email.trim().length > 0 &&
+    emailSettings.from_name && 
+    emailSettings.from_name.trim().length > 0;
+
   const setupItems: SetupItem[] = [
     {
       id: 'sendgrid-account',
       title: 'SendGrid Account',
       description: 'Email service provider account for sending emails',
-      status: 'complete', // Assume they have one if they're setting up
+      status: hasSendGridIntegration ? 'complete' : 'pending',
       externalLink: 'https://signup.sendgrid.com/'
     },
     {
@@ -61,30 +68,30 @@ export const EmailSetupStatusCard = () => {
       title: 'SendGrid Integration',
       description: 'API key configured and connection established',
       status: hasSendGridIntegration ? 'complete' : 'error',
-      action: () => window.open('/settings?tab=integrations', '_blank'),
+      action: () => { window.location.href = '/settings?section=integrations'; },
       actionLabel: 'Configure Integration'
     },
     {
       id: 'sender-verification',
       title: 'Sender Email Verification',
       description: 'Verify your sender email address in SendGrid',
-      status: emailSettings?.from_email ? 'complete' : 'pending',
+      status: hasConfiguredEmailSettings ? 'complete' : 'pending',
       externalLink: 'https://app.sendgrid.com/settings/sender_auth'
     },
     {
       id: 'email-settings',
       title: 'Email Settings',
       description: 'Configure sender name, email, and signature',
-      status: emailSettings ? 'complete' : 'error',
-      action: () => window.open('/settings?tab=integrations', '_blank'),
+      status: hasConfiguredEmailSettings ? 'complete' : 'error',
+      action: () => { window.location.href = '/settings?section=integrations'; },
       actionLabel: 'Configure Settings'
     },
     {
       id: 'webhook-setup',
       title: 'Webhook Configuration',
       description: 'Track email delivery and engagement events',
-      status: integrationData ? 'complete' : 'warning',
-      action: () => window.open('/settings?tab=integrations', '_blank'),
+      status: integrationData?.configuration ? 'complete' : 'warning',
+      action: () => { window.location.href = '/settings?section=integrations'; },
       actionLabel: 'Setup Webhooks'
     }
   ];
@@ -192,7 +199,7 @@ export const EmailSetupStatusCard = () => {
                   </Button>
                   <Button 
                     variant="outline"
-                    onClick={() => window.open('/settings?tab=integrations', '_blank')}
+                    onClick={() => { window.location.href = '/settings?section=integrations'; }}
                   >
                     <Settings className="h-4 w-4 mr-2" />
                     Manual Setup
