@@ -115,26 +115,35 @@ export const WhatsNewDialog = ({ open, onOpenChange }: WhatsNewDialogProps) => {
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[85vh]">
         <DialogHeader>
-          <DialogTitle className="text-sm font-mono">
-            {version.version} — {new Date(version.release_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+          <DialogTitle className="text-lg font-semibold">
+            What's New in {version.version}
           </DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            {new Date(version.release_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
         </DialogHeader>
 
         <ScrollArea className="max-h-[70vh]">
-          <div className="space-y-4 text-[9px] leading-tight font-mono pr-4">
+          <div className="space-y-6 text-sm pr-4">
             {/* Summary */}
-            <div className="pb-2 border-b border-border/50">
-              <p className="text-muted-foreground">{notes.summary}</p>
+            <div className="pb-4 border-b border-border/30">
+              <p className="text-foreground/80 leading-relaxed">{notes.summary}</p>
             </div>
 
             {/* New Features */}
             {notes.newFeatures && notes.newFeatures.length > 0 && (
               <div>
-                <h3 className="font-semibold mb-1.5 text-foreground">NEW</h3>
-                <ul className="space-y-1 list-disc list-inside text-muted-foreground">
+                <h3 className="text-base font-semibold mb-3 text-foreground flex items-center gap-2">
+                  <span className="text-success">✦</span> New Features
+                </h3>
+                <ul className="space-y-3">
                   {notes.newFeatures.map((feature, index) => (
-                    <li key={index}>
-                      <span className="font-medium text-foreground">{feature.title}:</span> {feature.description}
+                    <li key={index} className="flex gap-2">
+                      <span className="text-success mt-1.5 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">{feature.title}</span>
+                        <p className="text-muted-foreground mt-0.5">{feature.description}</p>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -144,11 +153,17 @@ export const WhatsNewDialog = ({ open, onOpenChange }: WhatsNewDialogProps) => {
             {/* Improvements/Fixes */}
             {notes.improvements && notes.improvements.length > 0 && (
               <div>
-                <h3 className="font-semibold mb-1.5 text-foreground">FIXED</h3>
-                <ul className="space-y-1 list-disc list-inside text-muted-foreground">
+                <h3 className="text-base font-semibold mb-3 text-foreground flex items-center gap-2">
+                  <span className="text-primary">✦</span> Improvements
+                </h3>
+                <ul className="space-y-3">
                   {notes.improvements.map((improvement, index) => (
-                    <li key={index}>
-                      <span className="font-medium text-foreground">{improvement.title}:</span> {improvement.description}
+                    <li key={index} className="flex gap-2">
+                      <span className="text-primary mt-1.5 flex-shrink-0">•</span>
+                      <div>
+                        <span className="font-medium text-foreground">{improvement.title}</span>
+                        <p className="text-muted-foreground mt-0.5">{improvement.description}</p>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -158,10 +173,15 @@ export const WhatsNewDialog = ({ open, onOpenChange }: WhatsNewDialogProps) => {
             {/* Known Issues */}
             {notes.knownIssues && notes.knownIssues.length > 0 && (
               <div>
-                <h3 className="font-semibold mb-1.5 text-foreground">KNOWN ISSUES</h3>
-                <ul className="space-y-1 list-disc list-inside text-muted-foreground">
+                <h3 className="text-base font-semibold mb-3 text-foreground flex items-center gap-2">
+                  <span className="text-warning">⚠</span> Known Issues
+                </h3>
+                <ul className="space-y-2">
                   {notes.knownIssues.map((issue, index) => (
-                    <li key={index}>{issue}</li>
+                    <li key={index} className="flex gap-2 text-muted-foreground">
+                      <span className="mt-1.5 flex-shrink-0">•</span>
+                      <span>{issue}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
