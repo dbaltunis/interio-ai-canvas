@@ -98,7 +98,7 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId, tas
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px] max-w-[95vw] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Task' : 'Create New Task'}</DialogTitle>
         </DialogHeader>
@@ -202,7 +202,7 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId, tas
                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[10001]" align="start">
                   <Command>
                     <CommandInput placeholder="Search clients..." />
-                    <CommandList>
+                    <CommandList className="max-h-[200px] overflow-y-auto">
                       <CommandEmpty>No client found.</CommandEmpty>
                       <CommandGroup>
                         {clients.map((client) => (
@@ -252,7 +252,7 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId, tas
                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[10001]" align="start">
                   <Command>
                     <CommandInput placeholder="Search projects..." />
-                    <CommandList>
+                    <CommandList className="max-h-[200px] overflow-y-auto">
                       <CommandEmpty>No project found.</CommandEmpty>
                       <CommandGroup>
                         {projects.map((project) => (
