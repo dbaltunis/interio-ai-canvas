@@ -75,6 +75,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const [showAnalytics, setShowAnalytics] = useState(false);
   // CalDAV sync removed
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showTasksSidebar, setShowTasksSidebar] = useState(false);
   
   // Auto-switch from month view on tablet
   useEffect(() => {
@@ -430,40 +431,36 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   };
 
   return (
-    <Tabs defaultValue="calendar" className="h-screen flex flex-col overflow-hidden">
-      <div className="flex-shrink-0 bg-background px-6 pt-6 pb-4">
-        <TabsList className="inline-flex h-11 items-center justify-center rounded-full bg-muted p-1 text-muted-foreground shadow-sm">
-          <TabsTrigger 
-            value="calendar" 
-            className="
-              inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 py-2
-              text-sm font-medium ring-offset-background transition-all
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
-              disabled:pointer-events-none disabled:opacity-50
-              data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md
-            "
-          >
-            <CalendarIcon className="h-4 w-4" />
-            Calendar
-          </TabsTrigger>
-          <TabsTrigger 
-            value="tasks"
-            className="
-              inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 py-2
-              text-sm font-medium ring-offset-background transition-all
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
-              disabled:pointer-events-none disabled:opacity-50
-              data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md
-            "
-          >
-            <ListTodo className="h-4 w-4" />
-            Tasks
-          </TabsTrigger>
-        </TabsList>
+    <div className="h-screen flex overflow-hidden">
+      {/* Tasks Sidebar - Collapsible */}
+      <div className={`
+        flex-shrink-0 border-r bg-muted/30 transition-all duration-300 overflow-hidden
+        ${showTasksSidebar ? 'w-80' : 'w-0'}
+      `}>
+        {showTasksSidebar && <TaskListView />}
       </div>
 
-      <TabsContent value="calendar" className="flex-1 overflow-hidden mt-0">
-        <div className="h-full flex overflow-hidden">
+      {/* Main Calendar Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Compact Tasks Toggle - Top Right */}
+        <div className="flex-shrink-0 border-b bg-background px-6 py-3 flex items-center justify-end">
+          <button
+            onClick={() => setShowTasksSidebar(!showTasksSidebar)}
+            className={`
+              inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium
+              transition-all duration-200 border
+              ${showTasksSidebar 
+                ? 'bg-primary text-primary-foreground border-primary shadow-sm' 
+                : 'bg-background text-muted-foreground border-border hover:bg-accent hover:text-foreground'
+              }
+            `}
+          >
+            <ListTodo className="h-4 w-4" />
+            <span>Tasks</span>
+          </button>
+        </div>
+
+        <div className="flex-1 flex overflow-hidden">
           {/* Collapsible Sidebar - Hidden on desktop and tablets */}
           {!isDesktop && !isTablet && (
         <CalendarSidebar 
@@ -517,9 +514,9 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
           )}
         </div>
       </div>
+    </div>
 
-      {/* Old New Event Dialog removed - using UnifiedAppointmentDialog */}
-
+      {/* Dialogs */}
       <Dialog open={showSchedulerManagement} onOpenChange={setShowSchedulerManagement}>
         <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -611,13 +608,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       />
 
       <OfflineIndicator />
-        </div>
-      </TabsContent>
-
-      <TabsContent value="tasks" className="flex-1 overflow-hidden mt-0">
-        <TaskListView />
-      </TabsContent>
-    </Tabs>
+    </div>
   );
 };
 
