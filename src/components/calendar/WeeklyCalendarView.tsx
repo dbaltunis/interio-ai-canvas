@@ -7,13 +7,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell, Video, CheckSquare } from "lucide-react";
+import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell, Video, CheckSquare, CheckCheck } from "lucide-react";
 import { useUpdateAppointment } from "@/hooks/useAppointments";
 import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
 import { SchedulerSlotDialog } from "./SchedulerSlotDialog";
 import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
-import { useMyTasks, Task } from "@/hooks/useTasks";
+import { useMyTasks, Task, useUpdateTask } from "@/hooks/useTasks";
 import { UnifiedTaskDialog } from "@/components/tasks/UnifiedTaskDialog";
 
 interface WeeklyCalendarViewProps {
@@ -32,6 +32,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const { data: schedulers } = useAppointmentSchedulers();
   const updateAppointment = useUpdateAppointment();
   const { data: tasks } = useMyTasks();
+  const updateTask = useUpdateTask();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
   // Debug logging for data fetching
@@ -650,7 +651,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         // Clear visual distinction with MORE VISIBLE colors
                         const getEventStyling = (event: any) => {
                           if (event.isTask) {
-                            // Tasks: distinct styling with priority colors
+                            // Completed tasks: green/happy color
+                            if (event.status === 'completed') {
+                              return {
+                                background: 'hsl(142 76% 36% / 0.15)',
+                                border: 'hsl(142 76% 36%)',
+                                textClass: 'text-foreground',
+                                isDashed: false,
+                                isCompact: false,
+                                minHeight: 32,
+                              } as const;
+                            }
+                            // Active tasks: distinct styling with priority colors
                             const priorityColors = {
                               urgent: { bg: 'hsl(0 84% 60% / 0.15)', border: 'hsl(0 84% 60%)' },
                               high: { bg: 'hsl(25 95% 53% / 0.15)', border: 'hsl(25 95% 53%)' },
@@ -827,18 +839,37 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
                                    {/* Task content - distinct display */}
                                     {event.isTask && (
-                                      <div className="flex items-center gap-2 h-full px-2 py-1.5">
-                                        <CheckSquare className="h-4 w-4 flex-shrink-0" style={{
-                                          color: event.priority === 'urgent' ? 'hsl(0 84% 40%)' :
-                                                 event.priority === 'high' ? 'hsl(25 95% 40%)' :
-                                                 event.priority === 'medium' ? 'hsl(45 93% 35%)' :
-                                                 'hsl(217 91% 45%)'
-                                        }} />
+                                      <div 
+                                        className="flex items-center gap-2 h-full px-2 py-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const newStatus = event.status === 'completed' ? 'in_progress' : 'completed';
+                                          updateTask.mutate({
+                                            id: event.id,
+                                            status: newStatus
+                                          });
+                                        }}
+                                      >
+                                        {event.status === 'completed' ? (
+                                          <CheckCheck className="h-4 w-4 flex-shrink-0" style={{
+                                            color: 'hsl(142 76% 36%)'
+                                          }} />
+                                        ) : (
+                                          <CheckSquare className="h-4 w-4 flex-shrink-0" style={{
+                                            color: event.priority === 'urgent' ? 'hsl(0 84% 40%)' :
+                                                   event.priority === 'high' ? 'hsl(25 95% 40%)' :
+                                                   event.priority === 'medium' ? 'hsl(45 93% 35%)' :
+                                                   'hsl(217 91% 45%)'
+                                          }} />
+                                        )}
                                         <div className="font-semibold text-sm leading-tight break-words flex-1 min-w-0" style={{
-                                          color: event.priority === 'urgent' ? 'hsl(0 84% 40%)' :
-                                                 event.priority === 'high' ? 'hsl(25 95% 40%)' :
-                                                 event.priority === 'medium' ? 'hsl(45 93% 35%)' :
-                                                 'hsl(217 91% 45%)',
+                                          color: event.status === 'completed' ? 'hsl(142 76% 36%)' : (
+                                            event.priority === 'urgent' ? 'hsl(0 84% 40%)' :
+                                            event.priority === 'high' ? 'hsl(25 95% 40%)' :
+                                            event.priority === 'medium' ? 'hsl(45 93% 35%)' :
+                                            'hsl(217 91% 45%)'
+                                          ),
+                                          textDecoration: event.status === 'completed' ? 'line-through' : 'none',
                                           display: '-webkit-box',
                                           WebkitLineClamp: finalHeight > 60 ? 2 : 1,
                                           WebkitBoxOrient: 'vertical',
