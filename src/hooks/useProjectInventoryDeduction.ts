@@ -197,6 +197,8 @@ export const useProjectInventoryItems = () => {
           quote_items (
             inventory_item_id,
             quantity,
+            name,
+            product_details,
             enhanced_inventory_items (
               id,
               name
@@ -210,16 +212,40 @@ export const useProjectInventoryItems = () => {
     if (!project || !project.quotes) return [];
 
     const items: InventoryUsageItem[] = [];
+    const processedItemIds = new Set<string>(); // Avoid duplicates
     
     for (const quote of project.quotes as any[]) {
       if (quote.quote_items) {
         for (const item of quote.quote_items) {
+          // NEW: Use inventory_item_id directly if available
           if (item.inventory_item_id && item.quantity) {
-            items.push({
-              inventory_item_id: item.inventory_item_id,
-              quantity_used: item.quantity,
-              item_name: item.enhanced_inventory_items?.name
-            });
+            if (!processedItemIds.has(item.inventory_item_id)) {
+              items.push({
+                inventory_item_id: item.inventory_item_id,
+                quantity_used: item.quantity,
+                item_name: item.enhanced_inventory_items?.name || item.name
+              });
+              processedItemIds.add(item.inventory_item_id);
+            }
+            continue;
+          }
+
+          // FALLBACK: Parse product_details.children for backward compatibility
+          const productDetails = item.product_details as any;
+          if (productDetails?.children && Array.isArray(productDetails.children)) {
+            for (const child of productDetails.children) {
+              // Look for material/fabric items with inventory_item_id
+              if (child.inventory_item_id && ['Material', 'Fabric', 'Wallpaper'].includes(child.name)) {
+                if (!processedItemIds.has(child.inventory_item_id)) {
+                  items.push({
+                    inventory_item_id: child.inventory_item_id,
+                    quantity_used: child.quantity || 0,
+                    item_name: child.description || child.name
+                  });
+                  processedItemIds.add(child.inventory_item_id);
+                }
+              }
+            }
           }
         }
       }

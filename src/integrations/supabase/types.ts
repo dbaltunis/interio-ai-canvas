@@ -6091,6 +6091,7 @@ export type Database = {
           currency: string | null
           description: string | null
           id: string
+          inventory_item_id: string | null
           name: string
           product_details: Json | null
           quantity: number
@@ -6106,6 +6107,7 @@ export type Database = {
           currency?: string | null
           description?: string | null
           id?: string
+          inventory_item_id?: string | null
           name: string
           product_details?: Json | null
           quantity?: number
@@ -6121,6 +6123,7 @@ export type Database = {
           currency?: string | null
           description?: string | null
           id?: string
+          inventory_item_id?: string | null
           name?: string
           product_details?: Json | null
           quantity?: number
@@ -6130,7 +6133,15 @@ export type Database = {
           unit_price?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quote_templates: {
         Row: {
