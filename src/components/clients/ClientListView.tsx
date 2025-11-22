@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Mail, Phone, User, Building2, MoreHorizontal, Star, TrendingUp, Clock, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { formatDistanceToNow, isPast } from "date-fns";
 import { useIsTablet } from "@/hooks/use-tablet";
+import { ClientDetailDrawer } from "./ClientDetailDrawer";
 
 interface Client {
   id: string;
@@ -45,6 +47,14 @@ interface ClientListViewProps {
 
 export const ClientListView = ({ clients, onClientClick, isLoading }: ClientListViewProps) => {
   const isTablet = useIsTablet();
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const handleClientClick = (client: Client) => {
+    setSelectedClient(client);
+    setDrawerOpen(true);
+    onClientClick(client);
+  };
 
   const getClientAvatarColor = (clientName: string) => {
     const colors = [
@@ -174,7 +184,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                   <TableRow 
                     key={client.id} 
                     className="hover:bg-muted/50 cursor-pointer border-border/50"
-                    onClick={() => onClientClick(client)}
+                    onClick={() => handleClientClick(client)}
                   >
                     <TableCell className="text-muted-foreground font-medium">
                       {index + 1}
@@ -336,6 +346,12 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
           </div>
         )}
       </CardContent>
+
+      <ClientDetailDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        client={selectedClient}
+      />
     </Card>
   );
 };
