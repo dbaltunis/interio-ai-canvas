@@ -397,7 +397,26 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
                               <Badge variant={item.quantity && item.quantity > 0 ? "default" : "secondary"} className="text-xs py-0 h-5">
                                 {item.quantity || 0}m
                               </Badge>
-...
+                              {(() => {
+                                const leftover = leftovers.find(l => l.fabric_id === item.id);
+                                if (leftover && leftover.total_leftover_sqm > 0) {
+                                  return (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Badge variant="outline" className="w-fit text-xs py-0 h-5 bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-100 cursor-help">
+                                            +{leftover.total_leftover_sqm.toFixed(1)}
+                                          </Badge>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>{leftover.piece_count} leftover piece(s)</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </div>
                           </td>
                           <td className="px-2 py-1">
