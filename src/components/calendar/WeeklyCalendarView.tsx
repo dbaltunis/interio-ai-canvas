@@ -653,9 +653,9 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         const getEventStyling = (event: any) => {
                           if (event.isTask) {
                             // Completed tasks: green/happy color
-                            if (event.status === 'completed') {
+                             if (event.status === 'completed') {
                               return {
-                                background: 'hsl(142 76% 36% / 0.15)',
+                                background: 'hsl(142 76% 85% / 0.4)',
                                 border: 'hsl(142 76% 36%)',
                                 textClass: 'text-foreground',
                                 isDashed: false,
@@ -851,12 +851,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                           });
                                         }}
                                       >
-                                        {event.status === 'completed' ? (
-                                          <CheckCheck className="h-4 w-4 flex-shrink-0" style={{
-                                            color: 'hsl(142 76% 36%)'
+                                         {event.status === 'completed' ? (
+                                          <CheckCheck className="h-5 w-5 flex-shrink-0 font-bold" style={{
+                                            color: 'hsl(142 76% 36%)',
+                                            strokeWidth: 3
                                           }} />
                                         ) : (
-                                          <CheckSquare className="h-4 w-4 flex-shrink-0" style={{
+                                          <CheckSquare className="h-5 w-5 flex-shrink-0" style={{
                                             color: event.priority === 'urgent' ? 'hsl(0 84% 40%)' :
                                                    event.priority === 'high' ? 'hsl(25 95% 40%)' :
                                                    event.priority === 'medium' ? 'hsl(45 93% 35%)' :
