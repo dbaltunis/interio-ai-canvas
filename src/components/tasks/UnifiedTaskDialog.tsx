@@ -32,6 +32,8 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
   const [estimatedHours, setEstimatedHours] = useState("");
   const [clientSearch, setClientSearch] = useState("");
   const [projectSearch, setProjectSearch] = useState("");
+  const [clientExpanded, setClientExpanded] = useState(false);
+  const [projectExpanded, setProjectExpanded] = useState(false);
 
   const { data: clients = [] } = useClients();
   const { data: projects = [] } = useProjects();
@@ -161,60 +163,95 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
 
           {!clientId && (
             <div className="space-y-2">
-              <Label>Client</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search clients..."
-                  value={clientSearch}
-                  onChange={(e) => setClientSearch(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <ScrollArea className="h-[200px] border rounded-md">
-                <div className="p-1">
-                  {filteredClients.length === 0 ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">
-                      No clients found.
-                    </div>
+              <Label>Client (optional)</Label>
+              {!clientExpanded ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal"
+                  onClick={() => setClientExpanded(true)}
+                >
+                  {selectedClientId ? (
+                    <span className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-primary" />
+                      {clients.find(c => c.id === selectedClientId)?.name}
+                    </span>
                   ) : (
-                    filteredClients.map((client) => (
-                      <button
-                        key={client.id}
+                    <span className="text-muted-foreground">Select client...</span>
+                  )}
+                </Button>
+              ) : (
+                <div className="space-y-2 border rounded-md p-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search clients..."
+                      value={clientSearch}
+                      onChange={(e) => setClientSearch(e.target.value)}
+                      className="pl-9"
+                      autoFocus
+                    />
+                  </div>
+                  <ScrollArea className="h-[150px]">
+                    <div className="space-y-1">
+                      {filteredClients.length === 0 ? (
+                        <div className="py-4 text-center text-sm text-muted-foreground">
+                          No clients found.
+                        </div>
+                      ) : (
+                        filteredClients.map((client) => (
+                          <button
+                            key={client.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedClientId(client.id);
+                              setClientSearch("");
+                              setClientExpanded(false);
+                            }}
+                            className={cn(
+                              "w-full text-left px-3 py-2 rounded-sm hover:bg-accent transition-colors flex items-center gap-2",
+                              selectedClientId === client.id && "bg-accent"
+                            )}
+                          >
+                            <Check
+                              className={cn(
+                                "h-4 w-4",
+                                selectedClientId === client.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {client.name}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </ScrollArea>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        setClientExpanded(false);
+                        setClientSearch("");
+                      }}
+                    >
+                      Close
+                    </Button>
+                    {selectedClientId && (
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => {
-                          setSelectedClientId(client.id);
+                          setSelectedClientId("");
                           setClientSearch("");
                         }}
-                        className={cn(
-                          "w-full text-left px-3 py-2 rounded-sm hover:bg-accent transition-colors flex items-center gap-2",
-                          selectedClientId === client.id && "bg-accent"
-                        )}
                       >
-                        <Check
-                          className={cn(
-                            "h-4 w-4",
-                            selectedClientId === client.id ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        {client.name}
-                      </button>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-              {selectedClientId && (
-                <div className="text-sm text-muted-foreground">
-                  Selected: {clients.find(c => c.id === selectedClientId)?.name}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="ml-2 h-auto p-0 text-xs"
-                    onClick={() => setSelectedClientId("")}
-                  >
-                    Clear
-                  </Button>
+                        Clear
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -222,60 +259,95 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
 
           {!projectId && (
             <div className="space-y-2">
-              <Label>Project</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search projects..."
-                  value={projectSearch}
-                  onChange={(e) => setProjectSearch(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <ScrollArea className="h-[200px] border rounded-md">
-                <div className="p-1">
-                  {filteredProjects.length === 0 ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">
-                      No projects found.
-                    </div>
+              <Label>Project (optional)</Label>
+              {!projectExpanded ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal"
+                  onClick={() => setProjectExpanded(true)}
+                >
+                  {selectedProjectId ? (
+                    <span className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-primary" />
+                      {projects.find(p => p.id === selectedProjectId)?.job_number}
+                    </span>
                   ) : (
-                    filteredProjects.map((project) => (
-                      <button
-                        key={project.id}
+                    <span className="text-muted-foreground">Select project...</span>
+                  )}
+                </Button>
+              ) : (
+                <div className="space-y-2 border rounded-md p-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search projects..."
+                      value={projectSearch}
+                      onChange={(e) => setProjectSearch(e.target.value)}
+                      className="pl-9"
+                      autoFocus
+                    />
+                  </div>
+                  <ScrollArea className="h-[150px]">
+                    <div className="space-y-1">
+                      {filteredProjects.length === 0 ? (
+                        <div className="py-4 text-center text-sm text-muted-foreground">
+                          No projects found.
+                        </div>
+                      ) : (
+                        filteredProjects.map((project) => (
+                          <button
+                            key={project.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedProjectId(project.id);
+                              setProjectSearch("");
+                              setProjectExpanded(false);
+                            }}
+                            className={cn(
+                              "w-full text-left px-3 py-2 rounded-sm hover:bg-accent transition-colors flex items-center gap-2",
+                              selectedProjectId === project.id && "bg-accent"
+                            )}
+                          >
+                            <Check
+                              className={cn(
+                                "h-4 w-4",
+                                selectedProjectId === project.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {project.job_number}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </ScrollArea>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        setProjectExpanded(false);
+                        setProjectSearch("");
+                      }}
+                    >
+                      Close
+                    </Button>
+                    {selectedProjectId && (
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => {
-                          setSelectedProjectId(project.id);
+                          setSelectedProjectId("");
                           setProjectSearch("");
                         }}
-                        className={cn(
-                          "w-full text-left px-3 py-2 rounded-sm hover:bg-accent transition-colors flex items-center gap-2",
-                          selectedProjectId === project.id && "bg-accent"
-                        )}
                       >
-                        <Check
-                          className={cn(
-                            "h-4 w-4",
-                            selectedProjectId === project.id ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        {project.job_number}
-                      </button>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-              {selectedProjectId && (
-                <div className="text-sm text-muted-foreground">
-                  Selected: {projects.find(p => p.id === selectedProjectId)?.job_number}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="ml-2 h-auto p-0 text-xs"
-                    onClick={() => setSelectedProjectId("")}
-                  >
-                    Clear
-                  </Button>
+                        Clear
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
