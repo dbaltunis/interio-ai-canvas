@@ -98,6 +98,7 @@ export const CalendarSyncToolbar = ({
   }, [isConnected, googleSyncEnabled, syncFromGoogle, syncAllToGoogle]);
 
   const isMobile = useIsMobile();
+  const [isBlinking, setIsBlinking] = useState(false);
   const isDesktop = !isMobile && !isTablet;
 
   // Format last sync time - shorter for mobile
@@ -310,8 +311,12 @@ export const CalendarSyncToolbar = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={onTasksClick}
-            className="h-7 px-3 gap-1.5"
+            onClick={() => {
+              setIsBlinking(true);
+              setTimeout(() => setIsBlinking(false), 600);
+              onTasksClick();
+            }}
+            className={`h-7 px-3 gap-1.5 transition-all ${isBlinking ? 'animate-pulse' : ''}`}
           >
             {showTasksView ? (
               <>
