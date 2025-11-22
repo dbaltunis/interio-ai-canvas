@@ -13,7 +13,8 @@ import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
 import { SchedulerSlotDialog } from "./SchedulerSlotDialog";
 import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
-import { useMyTasks } from "@/hooks/useTasks";
+import { useMyTasks, Task } from "@/hooks/useTasks";
+import { UnifiedTaskDialog } from "@/components/tasks/UnifiedTaskDialog";
 
 interface WeeklyCalendarViewProps {
   currentDate: Date;
@@ -31,6 +32,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const { data: schedulers } = useAppointmentSchedulers();
   const updateAppointment = useUpdateAppointment();
   const { data: tasks } = useMyTasks();
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
   // Debug logging for data fetching
   console.log('Calendar data status:', { 
@@ -755,8 +757,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   e.stopPropagation();
                                   console.log('Event clicked:', event.isAvailableSlot ? 'Available Slot' : event.isBooking ? 'Booking' : event.isTask ? 'Task' : 'Personal Event', event);
                                   if (event.isTask) {
-                                    // Handle task click - log for now
-                                    console.log('Task clicked:', event.taskData);
+                                    // Handle task click - open edit dialog
+                                    setSelectedTask(event.taskData as Task);
                                   } else if (event.isBooking) {
                                     // Open booked appointment dialog with full details
                                     setBookedAppointmentDialog({ open: true, appointment: event });
@@ -986,6 +988,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         open={schedulerSlotDialog.open}
         onOpenChange={(open) => setSchedulerSlotDialog({ ...schedulerSlotDialog, open })}
         slot={schedulerSlotDialog.slot}
+      />
+      
+      <UnifiedTaskDialog
+        open={!!selectedTask}
+        onOpenChange={(open) => !open && setSelectedTask(null)}
+        task={selectedTask}
       />
     </DndContext>
   );
