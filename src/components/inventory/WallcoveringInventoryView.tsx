@@ -317,24 +317,24 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
                 <table className="w-full">
                   <thead className="bg-muted/20 border-b">
                     <tr>
-                      <th className="px-4 py-3 w-12">
+                      <th className="px-2 py-1 w-8">
                         <Checkbox
                           checked={selectionStats.allSelected}
                           onCheckedChange={(checked) => selectAll(!!checked)}
                           aria-label="Select all"
                         />
                       </th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">Image</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">Name</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">SKU</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">Supplier</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">Sold By</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">Roll Size</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">Pattern Repeat</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">Price</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">Stock</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">QR</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
+                      <th className="px-2 py-1 text-left text-xs font-medium">Image</th>
+                      <th className="px-2 py-1 text-left text-xs font-medium">Name</th>
+                      <th className="px-2 py-1 text-left text-xs font-medium">SKU</th>
+                      <th className="px-2 py-1 text-left text-xs font-medium">Supplier</th>
+                      <th className="px-2 py-1 text-left text-xs font-medium">Sold By</th>
+                      <th className="px-2 py-1 text-left text-xs font-medium">Roll Size</th>
+                      <th className="px-2 py-1 text-left text-xs font-medium">Pattern Repeat</th>
+                      <th className="px-2 py-1 text-left text-xs font-medium">Price</th>
+                      <th className="px-2 py-1 text-left text-xs font-medium">Stock</th>
+                      <th className="px-2 py-1 text-left text-xs font-medium">QR</th>
+                      <th className="px-2 py-1 text-left text-xs font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -342,51 +342,51 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
                       const isSelected = selectedItems.includes(item.id);
                       return (
                         <tr key={item.id} className="border-t hover:bg-accent/50 transition-colors">
-                          <td className="px-4 py-3">
+                          <td className="px-2 py-1">
                             <Checkbox
                               checked={isSelected}
                               onCheckedChange={(checked) => selectItem(item.id, !!checked)}
                               aria-label={`Select ${item.name}`}
                             />
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-2 py-1">
                             {item.image_url ? (
-                              <img src={item.image_url} alt={item.name} className="h-12 w-12 rounded object-cover" />
+                              <img src={item.image_url} alt={item.name} className="h-8 w-8 rounded object-cover" />
                             ) : (
-                              <div className="h-12 w-12 rounded bg-muted flex items-center justify-center">
-                                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                              <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
+                                <ImageIcon className="h-4 w-4 text-muted-foreground" />
                               </div>
                             )}
                           </td>
-                          <td className="px-4 py-3 font-medium">{item.name}</td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground">{item.sku || '-'}</td>
-                          <td className="px-4 py-3 text-sm">{item.supplier || '-'}</td>
-                          <td className="px-4 py-3">
+                          <td className="px-2 py-1 text-xs font-medium">{item.name}</td>
+                          <td className="px-2 py-1 text-xs text-muted-foreground">{item.sku || '-'}</td>
+                          <td className="px-2 py-1 text-xs">{item.supplier || '-'}</td>
+                          <td className="px-2 py-1">
                             {(item as any).wallpaper_sold_by ? (
-                              <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-xs">
+                              <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-xs py-0 h-5">
                                 {(item as any).wallpaper_sold_by === 'per_roll' ? 'Per Roll' : 
                                  (item as any).wallpaper_sold_by === 'per_unit' ? 'Per Meter' : 
                                  (item as any).wallpaper_sold_by === 'per_sqm' ? 'Per m²' : 'Per Unit'}
                               </Badge>
                             ) : (
-                              <span className="text-muted-foreground text-sm">-</span>
+                              <span className="text-muted-foreground text-xs">-</span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-sm">
+                          <td className="px-2 py-1 text-xs">
                             {(item as any).wallpaper_roll_width && (item as any).wallpaper_roll_length ? (
                               <span>{(item as any).wallpaper_roll_width}cm × {(item as any).wallpaper_roll_length}m</span>
                             ) : (
-                              <Badge variant="secondary" className="text-xs">Not specified</Badge>
+                              <Badge variant="secondary" className="text-xs py-0 h-5">Not specified</Badge>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-sm">
+                          <td className="px-2 py-1 text-xs">
                             {item.pattern_repeat_vertical ? `${item.pattern_repeat_vertical}cm` : '-'}
                           </td>
-                          <td className="px-4 py-3 font-medium">
+                          <td className="px-2 py-1 text-xs font-medium">
                             <div className="flex flex-col">
                               <span>{formatPrice(item.price_per_meter || item.selling_price || 0)}</span>
                               {(item as any).wallpaper_sold_by && (
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-[10px] text-muted-foreground">
                                   per {(item as any).wallpaper_sold_by === 'per_roll' ? 'roll' : 
                                        (item as any).wallpaper_sold_by === 'per_unit' ? 'meter' : 
                                        (item as any).wallpaper_sold_by === 'per_sqm' ? 'm²' : 'unit'}
@@ -394,22 +394,22 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
                               )}
                             </div>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-2 py-1">
                             {item.quantity > 0 || (item as any).stock_quantity > 0 ? (
-                              <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20">
+                              <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20 text-xs py-0 h-5">
                                 {(item as any).stock_quantity || item.quantity || 0} {(item as any).wallpaper_sold_by === 'per_roll' ? 'rolls' : 'units'}
                               </Badge>
                             ) : (
-                              <Badge variant="secondary" className="bg-orange-500/10 text-orange-600 border-orange-500/20">
+                              <Badge variant="secondary" className="bg-orange-500/10 text-orange-600 border-orange-500/20 text-xs py-0 h-5">
                                 Not tracked
                               </Badge>
                             )}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-2 py-1">
                             <Popover>
                               <PopoverTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <QrCode className="h-4 w-4" />
+                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                  <QrCode className="h-3 w-3" />
                                 </Button>
                               </PopoverTrigger>
                               <PopoverContent className="w-auto">
@@ -422,22 +422,23 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
                               </PopoverContent>
                             </Popover>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-2 py-1">
                             <div className="flex items-center gap-1">
                               <EditInventoryDialog 
                                 item={item}
                                 trigger={
-                                  <Button variant="ghost" size="sm">
-                                    <Edit className="h-4 w-4" />
+                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                    <Edit className="h-3 w-3" />
                                   </Button>
                                 }
                               />
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                className="h-6 w-6 p-0"
                                 onClick={() => handleDelete(item.id)}
                               >
-                                <Trash2 className="h-4 w-4 text-destructive" />
+                                <Trash2 className="h-3 w-3 text-destructive" />
                               </Button>
                             </div>
                           </td>
