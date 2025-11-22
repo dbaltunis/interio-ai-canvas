@@ -48,7 +48,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedClient, setEditedClient] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("projects");
+  const [activeTab, setActiveTab] = useState("activity");
   
   // Calculate total value from quotes
   const calculatedDealValue = calculateClientDealValue(quotes || []);
@@ -239,6 +239,9 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
           </CardContent>
         </Card>
       </div>
+
+      {/* Client Projects Section */}
+      <ClientProjectsList clientId={clientId} onTabChange={onTabChange} />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Main Info Card */}
@@ -588,16 +591,11 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="emails">Emails</TabsTrigger>
           <TabsTrigger value="measurements">Measurements</TabsTrigger>
           <TabsTrigger value="documents">Files</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="projects" className="mt-6">
-          <ClientProjectsList clientId={clientId} onTabChange={onTabChange} />
-        </TabsContent>
 
         <TabsContent value="activity" className="mt-6">
           <div id="activity-section">
