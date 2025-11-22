@@ -195,6 +195,22 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingCli
                 <SelectItem value="Canada">Canada</SelectItem>
                 <SelectItem value="Australia">Australia</SelectItem>
                 <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                <SelectItem value="Germany">Germany</SelectItem>
+                <SelectItem value="France">France</SelectItem>
+                <SelectItem value="Spain">Spain</SelectItem>
+                <SelectItem value="Italy">Italy</SelectItem>
+                <SelectItem value="Netherlands">Netherlands</SelectItem>
+                <SelectItem value="Belgium">Belgium</SelectItem>
+                <SelectItem value="Switzerland">Switzerland</SelectItem>
+                <SelectItem value="Austria">Austria</SelectItem>
+                <SelectItem value="Poland">Poland</SelectItem>
+                <SelectItem value="Ireland">Ireland</SelectItem>
+                <SelectItem value="Portugal">Portugal</SelectItem>
+                <SelectItem value="Sweden">Sweden</SelectItem>
+                <SelectItem value="Norway">Norway</SelectItem>
+                <SelectItem value="Denmark">Denmark</SelectItem>
+                <SelectItem value="Finland">Finland</SelectItem>
+                <SelectItem value="Czech Republic">Czech Republic</SelectItem>
               </SelectContent>
             </Select>
           </FormFieldGroup>
