@@ -49,6 +49,7 @@ export const QuoteItemImage: React.FC<QuoteItemImageProps> = ({
         src={displayImage}
         alt={alt}
         loading="lazy"
+        crossOrigin="anonymous"
         className="w-full h-full object-cover"
         onLoad={() => setIsLoading(false)}
         onError={() => {
