@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Eye, MoreVertical, Trash2, StickyNote, Copy, MapPin, DollarSign } from "lucide-react";
 import { useQuotes, useDeleteQuote } from "@/hooks/useQuotes";
@@ -296,6 +296,9 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
           const primaryQuote = projectQuotes.find(q => q.status !== 'draft') || projectQuotes[0];
           if (!primaryQuote) return null;
           
+          // Find client for avatar
+          const client = clients.find(c => c.id === project.client_id);
+          
           const initials = getClientInitials(clientName);
           const avatarColor = getClientAvatarColor(clientName);
           const notesCount = projectNotes[project.id] || 0;
@@ -310,6 +313,7 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
                 <div className="flex items-start gap-3">
                   {/* Avatar */}
                   <Avatar className="h-10 w-10 shrink-0">
+                    <AvatarImage src={(client as any)?.avatar_url || undefined} />
                     <AvatarFallback className={`${avatarColor} text-primary-foreground text-xs font-semibold`}>
                       {initials}
                     </AvatarFallback>

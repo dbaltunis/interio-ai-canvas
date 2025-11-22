@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, MoreVertical, Users, Filter, HelpCircle } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
@@ -178,6 +178,7 @@ export const MobileClientView = ({ onClientClick }: MobileClientViewProps) => {
                   <div className="flex items-start gap-3">
                     {/* Colored Avatar */}
                     <Avatar className="h-10 w-10 shrink-0">
+                      <AvatarImage src={(client as any).avatar_url || undefined} />
                       <AvatarFallback className={`${avatarColor} text-white text-xs font-semibold`}>
                         {initials}
                       </AvatarFallback>
