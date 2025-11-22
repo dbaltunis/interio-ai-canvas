@@ -45,9 +45,7 @@ export const MyTasksPage = () => {
     }
 
     // Apply filter type
-    if (filterType !== 'all' && task.due_date) {
-      const dueDate = parseISO(task.due_date);
-      
+    if (filterType !== 'all') {
       filtered = filtered.filter(task => {
         if (!task.due_date) return false;
         const dueDate = parseISO(task.due_date);
@@ -108,7 +106,7 @@ export const MyTasksPage = () => {
           break;
         case 'project':
           const project = projects.find(p => p.id === task.project_id);
-          groupKey = project?.title || 'No Project';
+          groupKey = project?.job_number || 'No Project';
           break;
         case 'priority':
           groupKey = task.priority.charAt(0).toUpperCase() + task.priority.slice(1);
@@ -312,6 +310,7 @@ export const MyTasksPage = () => {
                   {groupTasks.map((task) => {
                     const client = clients.find(c => c.id === task.client_id);
                     const project = projects.find(p => p.id === task.project_id);
+                    const projectName = project?.job_number || 'Unknown Project';
                     
                     return (
                       <div
@@ -347,7 +346,7 @@ export const MyTasksPage = () => {
                             )}
                             {project && (
                               <span className="flex items-center gap-1">
-                                📁 {project.title}
+                                📁 {projectName}
                               </span>
                             )}
                             {task.estimated_hours && (

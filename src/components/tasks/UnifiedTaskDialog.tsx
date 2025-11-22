@@ -169,7 +169,7 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
                 <SelectContent>
                   {projects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
-                      {project.title}
+                      {project.job_number}
                     </SelectItem>
                   ))}
                 </SelectContent>
