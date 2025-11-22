@@ -29,6 +29,7 @@ const navItems = [
   { id: "projects", label: "Projects", icon: FolderOpen, permission: "view_jobs" },
   { id: "job-editor", label: "Job Editor", icon: PlusCircle, permission: "create_jobs" },
   { id: "quotes", label: "Quote Builder", icon: FileText, permission: "view_jobs" },
+  { id: "emails", label: "Emails", icon: BookOpen, permission: "view_jobs" },
   { id: "workshop", label: "Work Orders", icon: Wrench, permission: "view_jobs" },
   { id: "inventory", label: "Product Library", icon: Package, permission: "view_inventory" },
   { id: "ordering-hub", label: "Ordering Hub", icon: ShoppingCart, badge: true, permission: "view_inventory" },

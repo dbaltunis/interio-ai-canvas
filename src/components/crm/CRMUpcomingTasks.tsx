@@ -49,16 +49,16 @@ export const CRMUpcomingTasks = () => {
             {upcomingTasks.map((task) => (
               <div
                 key={task.id}
-                className="flex items-start gap-2 p-2 rounded-lg border hover:bg-accent/5 transition-colors"
+                className="flex items-start gap-2 p-3 rounded-lg border hover:bg-accent/5 transition-colors touch-manipulation active:bg-accent/10"
               >
                 <Checkbox
                   checked={false}
                   onCheckedChange={() => completeTask.mutateAsync(task.id)}
-                  className="mt-0.5"
+                  className="mt-0.5 min-w-[20px]"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{task.title}</p>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
                     {task.due_date && getDueDateBadge(task.due_date)}
                     {task.estimated_hours && (
                       <span className="text-xs text-muted-foreground flex items-center gap-1">

@@ -96,7 +96,7 @@ export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto touch-manipulation">
         <DialogHeader>
           <DialogTitle>Edit Task</DialogTitle>
         </DialogHeader>
@@ -204,13 +204,13 @@ export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps
                     {dueDate ? format(dueDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 z-[10000]" align="start">
+                <PopoverContent className="w-auto p-0 z-[10000] bg-popover border border-border shadow-lg" align="start" sideOffset={8}>
                   <Calendar 
                     mode="single" 
                     selected={dueDate} 
                     onSelect={setDueDate} 
                     initialFocus 
-                    className="pointer-events-auto"
+                    className="pointer-events-auto touch-manipulation"
                   />
                 </PopoverContent>
               </Popover>
