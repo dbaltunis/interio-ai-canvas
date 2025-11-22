@@ -989,6 +989,12 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         onOpenChange={(open) => setSchedulerSlotDialog({ ...schedulerSlotDialog, open })}
         slot={schedulerSlotDialog.slot}
       />
+
+      <UnifiedTaskDialog
+        open={!!selectedTask}
+        onOpenChange={(open) => !open && setSelectedTask(null)}
+        task={selectedTask}
+      />
     </DndContext>
   );
 };

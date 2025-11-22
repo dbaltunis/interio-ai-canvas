@@ -5,7 +5,8 @@ import { Clock, MapPin, CheckSquare } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useClients } from "@/hooks/useClients";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
-import { useMyTasks } from "@/hooks/useTasks";
+import { useMyTasks, Task } from "@/hooks/useTasks";
+import { UnifiedTaskDialog } from "@/components/tasks/UnifiedTaskDialog";
 
 interface DailyCalendarViewProps {
   currentDate: Date;
@@ -19,6 +20,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
   const { data: currentUserProfile } = useCurrentUserProfile();
   const { data: tasks } = useMyTasks();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   // Helper function to get client name
   const getClientName = (clientId?: string) => {
