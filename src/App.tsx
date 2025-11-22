@@ -39,6 +39,7 @@ const Documentation = lazy(() => import("./pages/Documentation"));
 const OnlineStore = lazy(() => import("./pages/OnlineStore"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
 const AdminAccountManagement = lazy(() => import("./pages/AdminAccountManagement"));
+const Tasks = lazy(() => import("./pages/Tasks"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -263,6 +264,15 @@ const App = () => {
                   <ProtectedRoute>
                     <ErrorBoundary>
                       <OnlineStore />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                } />
+
+                {/* Tasks Management */}
+                <Route path="/tasks" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <Tasks />
                     </ErrorBoundary>
                   </ProtectedRoute>
                 } />
