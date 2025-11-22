@@ -677,6 +677,17 @@ export const AdaptiveFabricPricingDisplay = ({
                   // ✅ CRITICAL: Multiply by horizontal pieces for total meters to order
                   const totalLinearMetersToOrder = linearMeters * horizontalPiecesNeeded;
                   
+                  // 🔍 DEBUG: Log horizontal calculation
+                  console.log('🔧 HORIZONTAL DISPLAY CALCULATION:', {
+                    linearMeters: `${linearMeters.toFixed(2)}m per piece`,
+                    horizontalPiecesNeeded,
+                    totalLinearMetersToOrder: `${totalLinearMetersToOrder.toFixed(2)}m`,
+                    calculation: `${linearMeters.toFixed(2)}m × ${horizontalPiecesNeeded} pieces = ${totalLinearMetersToOrder.toFixed(2)}m`,
+                    pricePerUnit: formatPrice(pricePerUnit),
+                    totalCost: formatPrice(totalLinearMetersToOrder * pricePerUnit),
+                    fabricCalculation
+                  });
+                  
                   quantity = totalLinearMetersToOrder;
                   totalCost = quantity * pricePerUnit;
                   unitLabel = 'Linear Meters to Order';
@@ -701,11 +712,51 @@ export const AdaptiveFabricPricingDisplay = ({
                   unitSuffix = 'm';
                   calculationText = `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
                   
-                  // Enhanced breakdown showing ordered vs used
-                  if (fabricCalculation.widthsRequired > 1 && remnantMeters > 0) {
-                    calculationBreakdown = `${fabricCalculation.widthsRequired} width(s) × ${(fabricCalculation.dropPerWidthMeters || 0).toFixed(2)}m/width = ${orderedMeters.toFixed(2)}m ordered (${usedMeters.toFixed(2)}m used + ${remnantMeters.toFixed(2)}m remnant) × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
+                  // ✅ TRANSPARENT CALCULATION BREAKDOWN
+                  // Extract all components to show accurate formula
+                  const rawDrop = fabricCalculation.drop || parseFloat(measurements.drop) || 0;
+                  const headerHem = fabricCalculation.details?.headerHem || template?.header_allowance || 0;
+                  const bottomHem = fabricCalculation.details?.bottomHem || template?.bottom_hem || 0;
+                  const pooling = fabricCalculation.details?.pooling || parseFloat(measurements.pooling) || 0;
+                  const patternRepeat = fabricCalculation.details?.patternRepeat || 0;
+                  const totalSeamAllowance = fabricCalculation.details?.totalSeamAllowance || 0;
+                  const widthsRequired = fabricCalculation.widthsRequired || 0;
+                  
+                  // Calculate ACTUAL drop per width used in calculation
+                  const dropWithAllowances = rawDrop + headerHem + bottomHem + pooling + patternRepeat;
+                  const totalAllowances = headerHem + bottomHem + pooling + patternRepeat;
+                  
+                  console.log('🔍 FABRIC CALCULATION BREAKDOWN DEBUG:', {
+                    widthsRequired,
+                    rawDrop: `${rawDrop.toFixed(0)}cm`,
+                    headerHem: `${headerHem.toFixed(0)}cm`,
+                    bottomHem: `${bottomHem.toFixed(0)}cm`,
+                    pooling: `${pooling.toFixed(0)}cm`,
+                    patternRepeat: `${patternRepeat.toFixed(0)}cm`,
+                    totalAllowances: `${totalAllowances.toFixed(0)}cm`,
+                    dropWithAllowances: `${dropWithAllowances.toFixed(0)}cm`,
+                    totalSeamAllowance: `${totalSeamAllowance.toFixed(0)}cm`,
+                    finalQuantity: `${quantity.toFixed(2)}m`,
+                    calculation: `${widthsRequired} × ${dropWithAllowances.toFixed(0)}cm + ${totalSeamAllowance.toFixed(0)}cm seams = ${((widthsRequired * dropWithAllowances + totalSeamAllowance) / 100).toFixed(2)}m`,
+                    fabricCalculation
+                  });
+                  
+                  // Build transparent breakdown showing ALL components
+                  if (totalAllowances > 0 || totalSeamAllowance > 0) {
+                    let breakdownParts = `${widthsRequired} width(s) × ${dropWithAllowances.toFixed(0)}cm`;
+                    
+                    if (totalAllowances > 0) {
+                      breakdownParts += ` (${rawDrop.toFixed(0)}cm drop + ${totalAllowances.toFixed(0)}cm allowances)`;
+                    }
+                    
+                    if (totalSeamAllowance > 0) {
+                      breakdownParts += ` + ${totalSeamAllowance.toFixed(0)}cm seams`;
+                    }
+                    
+                    calculationBreakdown = `${breakdownParts} = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
                   } else {
-                    calculationBreakdown = `${fabricCalculation.widthsRequired || 0} width(s) × ${(fabricCalculation.totalDrop || 0).toFixed(0)}cm = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
+                    // Fallback for simple cases
+                    calculationBreakdown = `${widthsRequired} width(s) × ${dropWithAllowances.toFixed(0)}cm = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
                   }
                 }
               }

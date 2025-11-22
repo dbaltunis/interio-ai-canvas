@@ -83,6 +83,16 @@ export const useFabricPricing = (params: FabricPricingParams): FabricPricingResu
     const horizontalPieces = fabricUsageResult.horizontalPiecesNeeded || 1;
     const totalFabricToOrder = fabricAmount * horizontalPieces;
     const fabricCost = totalFabricToOrder * fabricCostPerYard;
+    
+    // 🔍 DEBUG: Log fabric pricing multiplier
+    console.log('🔧 FABRIC PRICING MULTIPLIER:', {
+      fabricAmount: `${fabricAmount.toFixed(2)}${units.fabric}`,
+      horizontalPieces,
+      totalFabricToOrder: `${totalFabricToOrder.toFixed(2)}${units.fabric}`,
+      calculation: `${fabricAmount.toFixed(2)} × ${horizontalPieces} = ${totalFabricToOrder.toFixed(2)}`,
+      costPerUnit: fabricCostPerYard.toFixed(2),
+      fabricCost: fabricCost.toFixed(2)
+    });
 
     return {
       fabricCost,

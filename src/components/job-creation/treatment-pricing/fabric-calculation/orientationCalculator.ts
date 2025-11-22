@@ -59,14 +59,32 @@ export const calculateOrientation = (
       // Calculate how many horizontal pieces needed to cover the height
       horizontalPiecesNeeded = Math.ceil(requiredLength / fabricWidth);
       
+      // 🔍 DEBUG: Verify calculation
+      const expectedPieces = Math.ceil(requiredLength / fabricWidth);
+      console.log('🔧 HORIZONTAL PIECES CALCULATION:', {
+        dropWithAllowances: `${requiredLength.toFixed(0)}cm`,
+        fabricWidth: `${fabricWidth}cm`,
+        calculation: `Math.ceil(${requiredLength} / ${fabricWidth})`,
+        result: horizontalPiecesNeeded,
+        expectedResult: expectedPieces,
+        MATCHES: horizontalPiecesNeeded === expectedPieces,
+        WARNING: horizontalPiecesNeeded !== expectedPieces ? '⚠️ CALCULATION MISMATCH!' : '✓ Correct'
+      });
+      
+      if (horizontalPiecesNeeded !== expectedPieces) {
+        console.error('⚠️ CALCULATION MISMATCH!', {
+          horizontalPiecesNeeded,
+          expected: expectedPieces
+        });
+      }
+      
       // Calculate what's used from the last piece and leftover
       const totalUsedHeight = requiredLength;
       const lastPieceUsage = totalUsedHeight % fabricWidth;
       leftoverFromLastPiece = lastPieceUsage > 0 ? fabricWidth - lastPieceUsage : 0;
       
       warnings.push(
-        `⚠️ Horizontal seaming required: Curtain height (${requiredLength.toFixed(0)}cm) exceeds fabric width (${fabricWidth}cm). ` +
-        `${horizontalPiecesNeeded} horizontal pieces needed with ${(horizontalPiecesNeeded - 1)} seam(s).`
+        `⚠️ Second width required: Drop height exceeds fabric width`
       );
       
       if (leftoverFromLastPiece > 0) {
