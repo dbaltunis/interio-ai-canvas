@@ -313,7 +313,6 @@ export const MobileJobsView = ({ onJobSelect, searchTerm, statusFilter }: Mobile
                 <div className="flex items-start gap-3">
                   {/* Avatar */}
                   <Avatar className="h-10 w-10 shrink-0">
-                    <AvatarImage src={(client as any)?.avatar_url || undefined} />
                     <AvatarFallback className={`${avatarColor} text-primary-foreground text-xs font-semibold`}>
                       {initials}
                     </AvatarFallback>

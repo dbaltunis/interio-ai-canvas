@@ -18,7 +18,6 @@ interface Client {
   city?: string;
   state?: string;
   funnel_stage?: string;
-  avatar_url?: string;
   notes?: string;
 }
 
@@ -59,7 +58,6 @@ export const ClientDetailDrawer = ({ open, onOpenChange, client }: ClientDetailD
         <SheetHeader>
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
-              <AvatarImage src={client.avatar_url} />
               <AvatarFallback className="bg-primary text-primary-foreground text-lg">
                 {initials}
               </AvatarFallback>

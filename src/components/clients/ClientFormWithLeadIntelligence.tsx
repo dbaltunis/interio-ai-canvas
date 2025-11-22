@@ -11,7 +11,6 @@ import { useCreateClient, useUpdateClient } from "@/hooks/useClients";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { LeadSourceSelect } from "@/components/crm/LeadSourceSelect";
-import { ClientAvatarUpload } from "./ClientAvatarUpload";
 
 interface ClientFormWithLeadIntelligenceProps {
   onCancel: () => void;
@@ -34,7 +33,6 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingCli
   const [notes, setNotes] = useState(editingClient?.notes || "");
   const [tags, setTags] = useState<string[]>(editingClient?.tags || []);
   const [currentTag, setCurrentTag] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(editingClient?.avatar_url || null);
   
   // Lead intelligence fields
   const [leadSource, setLeadSource] = useState(editingClient?.lead_source || "");
@@ -78,7 +76,6 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingCli
         company_name: clientType === "B2B" ? companyName || null : null,
         contact_person: clientType === "B2B" ? contactPerson || null : null,
         tags: tags.length > 0 ? tags : null,
-        avatar_url: avatarUrl,
         // Lead intelligence fields
         lead_source: leadSource || null,
         referral_source: referralSource || null,
@@ -101,20 +98,6 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingCli
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Avatar Upload Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Client Photo</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ClientAvatarUpload
-            currentAvatarUrl={avatarUrl}
-            clientName={name || "Client"}
-            onAvatarChange={setAvatarUrl}
-            disabled={createClient.isPending || updateClient.isPending}
-          />
-        </CardContent>
-      </Card>
       <Card>
         <CardHeader>
           <CardTitle>Client Information</CardTitle>
