@@ -1,5 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { Resend } from 'npm:resend@2.0.0';
+
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -79,81 +84,117 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
 
-    // Get account owner's email settings and SendGrid integration (shared by team)
+    // Get account owner's email settings
     const { data: emailSettings } = await supabase
       .from('email_settings')
       .select('*')
       .eq('account_owner_id', ownerId)
-      .single();
+      .maybeSingle();
 
+    // Check for optional custom SendGrid integration
     const { data: integrationSettings } = await supabase
       .from('integration_settings')
       .select('*')
       .eq('account_owner_id', ownerId)
       .eq('integration_type', 'sendgrid')
       .eq('active', true)
-      .single();
+      .maybeSingle();
 
-    // Use SendGrid API key from integration settings or fallback to env
-    const sendgridApiKey = integrationSettings?.configuration?.sendgrid_api_key || Deno.env.get('SENDGRID_API_KEY');
-    if (!sendgridApiKey) {
-      throw new Error('SendGrid API key not found');
-    }
+    const sendgridApiKey = integrationSettings?.api_credentials?.api_key;
+    const useCustomSendGrid = !!sendgridApiKey;
 
-    // Get sender email from settings or use default
-    const fromEmail = emailSettings?.sender_email || 'noreply@interioapp.com';
-    const fromName = emailSettings?.sender_name || 'InterioApp';
+    // Get sender details from settings or use defaults
+    const fromEmail = emailSettings?.from_email || 'noreply@interioapp.com';
+    const fromName = emailSettings?.from_name || 'InterioApp';
 
-    // Send email via SendGrid API
-    const emailResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${sendgridApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        personalizations: [
-          {
-            to: [{ email: to, name: clientName }],
-            subject: subject,
-          },
-        ],
-        from: {
-          email: fromEmail,
-          name: fromName,
+    console.log('Email provider:', useCustomSendGrid ? 'Custom SendGrid' : 'Shared Resend');
+
+    let emailResponse;
+
+    if (useCustomSendGrid) {
+      // Use custom SendGrid for premium users
+      console.log('Sending via custom SendGrid');
+      emailResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sendgridApiKey}`,
+          'Content-Type': 'application/json',
         },
-        content: [
-          {
-            type: 'text/html',
-            value: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #333; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px;">
-                  Message from ${fromName}
-                </h2>
-                <div style="margin: 20px 0; line-height: 1.6; color: #555;">
-                  ${message.replace(/\n/g, '<br>')}
-                </div>
-                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #888; font-size: 12px;">
-                  <p>This email was sent from ${fromName}.</p>
-                </div>
-              </div>
-            `,
+        body: JSON.stringify({
+          personalizations: [
+            {
+              to: [{ email: to, name: clientName }],
+              subject: subject,
+            },
+          ],
+          from: {
+            email: fromEmail,
+            name: fromName,
           },
-        ],
-      }),
-    });
+          content: [
+            {
+              type: 'text/html',
+              value: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: #333; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px;">
+                    Message from ${fromName}
+                  </h2>
+                  <div style="margin: 20px 0; line-height: 1.6; color: #555;">
+                    ${message.replace(/\n/g, '<br>')}
+                  </div>
+                  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #888; font-size: 12px;">
+                    <p>This email was sent from ${fromName}.</p>
+                  </div>
+                </div>
+              `,
+            },
+          ],
+        }),
+      });
 
-    if (!emailResponse.ok) {
-      const errorText = await emailResponse.text();
-      console.error('SendGrid API error:', errorText);
-      throw new Error(`SendGrid API error: ${emailResponse.status} ${errorText}`);
+      if (!emailResponse.ok) {
+        const errorText = await emailResponse.text();
+        console.error('SendGrid API error:', errorText);
+        throw new Error(`SendGrid API error: ${emailResponse.status} ${errorText}`);
+      }
+    } else {
+      // Use shared Resend for all users by default
+      console.log('Sending via shared Resend');
+      const resendApiKey = Deno.env.get('RESEND_API_KEY');
+      if (!resendApiKey) {
+        throw new Error('Resend API key not configured');
+      }
+
+      const resend = new Resend(resendApiKey);
+
+      const { data: resendData, error: resendError } = await resend.emails.send({
+        from: `${fromName} <${fromEmail}>`,
+        to: [to],
+        subject: subject,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px;">
+              Message from ${fromName}
+            </h2>
+            <div style="margin: 20px 0; line-height: 1.6; color: #555;">
+              ${message.replace(/\n/g, '<br>')}
+            </div>
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #888; font-size: 12px;">
+              <p>This email was sent from ${fromName}.</p>
+            </div>
+          </div>
+        `,
+      });
+
+      if (resendError) {
+        console.error('Resend API error:', resendError);
+        throw new Error(`Resend API error: ${resendError.message}`);
+      }
+
+      emailResponse = { ok: true, headers: { get: () => resendData?.id } };
     }
 
     // Update email usage tracking
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-
     const { data: usage } = await supabase
       .from('notification_usage')
       .select('email_count')
@@ -173,7 +214,7 @@ const handler = async (req: Request): Promise<Response> => {
         sms_count: (usage as any)?.sms_count || 0,
       });
 
-    console.log("Email sent successfully via SendGrid");
+    console.log("Email sent successfully via", useCustomSendGrid ? 'SendGrid' : 'Resend');
 
     return new Response(JSON.stringify({ success: true, messageId: emailResponse.headers.get('X-Message-Id') }), {
       status: 200,
