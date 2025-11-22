@@ -130,6 +130,11 @@ export const InventoryImportDialog: React.FC = () => {
     try {
       const { headers, rows } = await parseCsv();
       const localResults: ImportResultRow[] = [];
+      
+      // Get userId once for SKU generation
+      const { data: auth } = await supabase.auth.getUser();
+      const userId = auth?.user?.id;
+      if (!userId) throw new Error("Not authenticated");
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
@@ -137,6 +142,13 @@ export const InventoryImportDialog: React.FC = () => {
         try {
           const item = toItem(headers, row);
           if (!item.name && !item.sku) throw new Error("Missing name or sku");
+          
+          // Auto-generate SKU if not provided
+          if (!item.sku && item.category) {
+            const { generateSKU } = await import("@/utils/skuGenerator");
+            item.sku = await generateSKU(item.category, userId);
+          }
+          
           const action = await upsertBySku(item);
           localResults.push({ row: i + 2, status: action === "updated" ? "updated" : "success", sku: item.sku, name: item.name });
         } catch (e: any) {
