@@ -1782,6 +1782,73 @@ export type Database = {
           },
         ]
       }
+      client_files: {
+        Row: {
+          bucket_name: string
+          client_id: string
+          created_at: string | null
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string | null
+          id: string
+          project_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bucket_name?: string
+          client_id: string
+          created_at?: string | null
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type?: string | null
+          id?: string
+          project_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bucket_name?: string
+          client_id?: string
+          created_at?: string | null
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string | null
+          id?: string
+          project_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_files_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_files_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_files_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_interactions: {
         Row: {
           client_id: string

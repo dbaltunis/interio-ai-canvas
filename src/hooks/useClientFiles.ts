@@ -10,32 +10,31 @@ interface ClientFile {
   file_size: number;
   file_type: string;
   bucket_name: string;
+  project_id: string | null;
+  description: string | null;
+  project?: {
+    id: string;
+    name: string;
+  };
 }
 
 export const useClientFiles = (clientId: string, userId: string) => {
   return useQuery({
     queryKey: ["client-files", clientId, userId],
     queryFn: async () => {
-      const folderPath = `${userId}/${clientId}/`;
-      
-      const { data, error } = await supabase.storage
-        .from('client-files')
-        .list(folderPath, {
-          limit: 100,
-          offset: 0,
-        });
+      const { data, error } = await supabase
+        .from('client_files')
+        .select(`
+          *,
+          project:projects(id, name)
+        `)
+        .eq('client_id', clientId)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      return data?.map(file => ({
-        id: file.id || crypto.randomUUID(),
-        created_at: file.created_at,
-        file_name: file.name,
-        file_path: `${folderPath}${file.name}`,
-        file_size: file.metadata?.size || 0,
-        file_type: file.metadata?.mimetype || '',
-        bucket_name: 'client-files',
-      })) || [];
+      return data as ClientFile[];
     },
     enabled: !!clientId && !!userId,
   });
@@ -45,23 +44,58 @@ export const useUploadClientFile = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ file, clientId, userId }: { file: File; clientId: string; userId: string }) => {
-      const fileExt = file.name.split('.').pop();
+    mutationFn: async ({ 
+      file, 
+      clientId, 
+      userId, 
+      projectId, 
+      description 
+    }: { 
+      file: File; 
+      clientId: string; 
+      userId: string; 
+      projectId?: string;
+      description?: string;
+    }) => {
+      // Upload to storage
       const fileName = `${userId}/${clientId}/${Date.now()}-${file.name}`;
       
-      const { data, error } = await supabase.storage
+      const { data: storageData, error: storageError } = await supabase.storage
         .from('client-files')
         .upload(fileName, file, {
           upsert: false,
           cacheControl: '3600'
         });
 
-      if (error) {
-        console.error('Upload error:', error);
-        throw error;
+      if (storageError) {
+        console.error('Upload error:', storageError);
+        throw storageError;
       }
 
-      return { fileName: data.path, bucketName: 'client-files' };
+      // Create database record
+      const { data: dbData, error: dbError } = await supabase
+        .from('client_files')
+        .insert({
+          user_id: userId,
+          client_id: clientId,
+          project_id: projectId || null,
+          file_name: file.name,
+          file_path: storageData.path,
+          file_size: file.size,
+          file_type: file.type,
+          bucket_name: 'client-files',
+          description: description || null,
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        // Rollback storage upload if database insert fails
+        await supabase.storage.from('client-files').remove([storageData.path]);
+        throw dbError;
+      }
+
+      return dbData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["client-files"] });
@@ -78,11 +112,20 @@ export const useDeleteClientFile = () => {
   
   return useMutation({
     mutationFn: async (file: ClientFile) => {
-      const { error } = await supabase.storage
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
         .from(file.bucket_name)
         .remove([file.file_path]);
 
-      if (error) throw error;
+      if (storageError) throw storageError;
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('client_files')
+        .delete()
+        .eq('id', file.id);
+
+      if (dbError) throw dbError;
       
       return file;
     },
@@ -104,6 +147,43 @@ export const useGetClientFileUrl = () => {
         .getPublicUrl(filePath);
 
       return data.publicUrl;
+    },
+  });
+};
+
+export const useUpdateClientFile = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      id, 
+      projectId, 
+      description 
+    }: { 
+      id: string; 
+      projectId?: string | null;
+      description?: string;
+    }) => {
+      const { data, error } = await supabase
+        .from('client_files')
+        .update({
+          project_id: projectId,
+          description: description,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["client-files"] });
+      toast.success("File updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(`Update failed: ${error.message}`);
     },
   });
 };
