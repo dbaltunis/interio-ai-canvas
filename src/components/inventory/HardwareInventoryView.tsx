@@ -200,6 +200,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
                         <img 
                           src={item.image_url} 
                           alt={item.name}
+                          crossOrigin="anonymous"
                           className="object-cover w-full h-full group-hover:scale-105 transition-transform"
                         />
                       ) : (
@@ -329,7 +330,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
                           </td>
                           <td className="px-2 py-1">
                             {item.image_url ? (
-                              <img src={item.image_url} alt={item.name} className="h-8 w-8 rounded object-cover" />
+                              <img src={item.image_url} alt={item.name} crossOrigin="anonymous" className="h-8 w-8 rounded object-cover" />
                             ) : (
                               <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
                                 <ImageIcon className="h-4 w-4 text-muted-foreground" />
