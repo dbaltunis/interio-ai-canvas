@@ -49,7 +49,7 @@ import { SchedulerManagement } from "./SchedulerManagement";
 import { BookingManagement } from "./BookingManagement";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
 import { Shield, ListTodo } from "lucide-react";
-import { TaskListView } from "./TaskListView";
+import { TaskListView } from "@/components/tasks/TaskListView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type CalendarView = 'month' | 'week' | 'day';
