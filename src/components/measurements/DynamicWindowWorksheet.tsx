@@ -1737,9 +1737,11 @@ export const DynamicWindowWorksheet = forwardRef<{
                   disabled={readOnly} 
                   className={`px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap flex items-center gap-1 ${
                     activeTab === step 
-                      ? 'bg-blue-500/20 text-blue-700 border-2 border-blue-400 animate-pulse shadow-sm' 
+                      ? 'bg-blue-500/20 text-blue-700 border-2 border-blue-400 shadow-sm' 
                       : isCompleted 
                       ? 'bg-green-500/10 text-green-700 hover:bg-green-500/20' 
+                      : isNextStep
+                      ? 'bg-orange-500/10 text-orange-700 border-2 border-orange-400 animate-pulse hover:bg-orange-500/20'
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   } ${!readOnly ? 'cursor-pointer' : 'cursor-default'}`}
                 >
