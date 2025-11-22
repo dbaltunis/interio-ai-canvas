@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Download, Upload, Filter, Mail, Phone, MoreHorizontal, User, Building2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useClients } from "@/hooks/useClients";
-import { ClientCreateForm } from "./ClientCreateForm";
+import { ClientFormWithLeadIntelligence } from "./ClientFormWithLeadIntelligence";
 import { useIsTablet } from "@/hooks/use-tablet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileClientView } from "./MobileClientView";
@@ -73,7 +73,7 @@ export const EnhancedClientManagement = () => {
   }
 
   if (showCreateForm || editingClient) {
-    return <ClientCreateForm onBack={() => {
+    return <ClientFormWithLeadIntelligence onBack={() => {
       setShowCreateForm(false);
       setEditingClient(null);
     }} editingClient={editingClient} />;

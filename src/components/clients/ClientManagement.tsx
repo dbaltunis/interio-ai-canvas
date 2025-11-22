@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Mail, Phone, MapPin, Users, Building2, User } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useFormattedDates } from "@/hooks/useFormattedDate";
-import { ClientCreateForm } from "./ClientCreateForm";
+import { ClientFormWithLeadIntelligence } from "./ClientFormWithLeadIntelligence";
 import { useIsTablet } from "@/hooks/use-tablet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileClientView } from "./MobileClientView";
@@ -79,7 +79,7 @@ export const ClientManagement = () => {
   }
 
   if (showCreateForm || editingClient) {
-    return <ClientCreateForm onBack={() => {
+    return <ClientFormWithLeadIntelligence onBack={() => {
       setShowCreateForm(false);
       setEditingClient(null);
     }} editingClient={editingClient} />;
