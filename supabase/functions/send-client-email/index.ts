@@ -25,12 +25,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Sending email to ${to} (${clientName})`);
 
-    // Initialize Supabase client
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
     // Get user from auth header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -42,12 +36,48 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Invalid authorization');
     }
 
-    // Get the account owner for shared settings
+    // Check usage limit (500 emails/month) - only for shared Resend, not custom SendGrid
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    // Get account owner for shared settings
     const { data: accountOwner } = await supabase.rpc('get_account_owner', { 
       user_id_param: user.id 
     });
-    
     const ownerId = accountOwner || user.id;
+
+    // Check if user has custom SendGrid configured
+    const { data: customSendGrid } = await supabase
+      .from('integration_settings')
+      .select('active')
+      .eq('account_owner_id', ownerId)
+      .eq('integration_type', 'sendgrid')
+      .eq('active', true)
+      .maybeSingle();
+
+    // Only enforce limit if using shared Resend (not custom SendGrid)
+    if (!customSendGrid) {
+      const { data: usageData } = await supabase
+        .from('notification_usage')
+        .select('email_count')
+        .eq('user_id', user.id)
+        .gte('period_start', startOfMonth.toISOString())
+        .single();
+
+      const currentUsage = usageData?.email_count || 0;
+      const EMAIL_LIMIT = 500;
+
+      if (currentUsage >= EMAIL_LIMIT) {
+        console.error(`Email limit reached for user ${user.id}: ${currentUsage}/${EMAIL_LIMIT}`);
+        throw new Error(`Monthly email limit of ${EMAIL_LIMIT} reached. Upgrade to custom SendGrid for unlimited sending.`);
+      }
+
+      console.log(`Email usage for user ${user.id}: ${currentUsage}/${EMAIL_LIMIT}`);
+    } else {
+      console.log('User has custom SendGrid - no usage limit enforced');
+    }
+
 
     // Get account owner's email settings and SendGrid integration (shared by team)
     const { data: emailSettings } = await supabase
