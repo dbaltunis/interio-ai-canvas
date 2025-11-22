@@ -171,7 +171,7 @@ export const DynamicCurtainOptions = ({
     console.log('🔥🔥🔥 DROPDOWN FIRED: handleHeadingChange', { 
       headingId,
       currentValue: measurements.selected_heading,
-      availableHeadings: availableHeadings.length
+      totalHeadingOptions: headingOptions.length
     });
     
     const heading = headingOptions.find(h => h.id === headingId);
