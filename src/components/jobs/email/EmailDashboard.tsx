@@ -5,6 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Mail, Search, Filter, Eye, Archive, Download, MousePointer, TrendingUp, Users, CheckCircle, XCircle, Trash2, RefreshCw } from "lucide-react";
 import { useEmails, useEmailKPIs } from "@/hooks/useEmails";
 import { useClients } from "@/hooks/useClients";
@@ -33,6 +41,9 @@ export const EmailDashboard = ({
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
   const [showEmailDetail, setShowEmailDetail] = useState(false);
   const [followUpEmailId, setFollowUpEmailId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [focusedIndex, setFocusedIndex] = useState(0);
   const {
     data: emails = [],
     isLoading: emailsLoading,
@@ -138,6 +149,53 @@ export const EmailDashboard = ({
     const matchesProject = projectFilter === "all" || projects.find(p => p.client_id === email.client_id)?.id === projectFilter;
     return matchesSearch && matchesStatus && matchesClient && matchesProject;
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredEmails.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedEmails = filteredEmails.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+    setFocusedIndex(0);
+  }, [searchTerm, statusFilter, clientFilter, projectFilter]);
+
+  // Reset focused index when changing pages
+  useEffect(() => {
+    setFocusedIndex(0);
+  }, [currentPage]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't handle if dialog is open or user is typing in input
+      if (showEmailDetail || (e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'SELECT') return;
+
+      switch (e.key) {
+        case 'ArrowDown':
+        case 'j':
+          e.preventDefault();
+          setFocusedIndex(prev => Math.min(prev + 1, paginatedEmails.length - 1));
+          break;
+        case 'ArrowUp':
+        case 'k':
+          e.preventDefault();
+          setFocusedIndex(prev => Math.max(prev - 1, 0));
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (paginatedEmails[focusedIndex]) {
+            handleViewEmail(paginatedEmails[focusedIndex]);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showEmailDetail, focusedIndex, paginatedEmails]);
   const handleViewEmail = (email: any) => {
     setSelectedEmail(email);
     setShowEmailDetail(true);
@@ -282,7 +340,24 @@ export const EmailDashboard = ({
                     </SelectItem>)}
                 </SelectContent>
               </Select>
+
+              <Select value={pageSize.toString()} onValueChange={(val) => setPageSize(parseInt(val))}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10 per page</SelectItem>
+                  <SelectItem value="20">20 per page</SelectItem>
+                  <SelectItem value="50">50 per page</SelectItem>
+                  <SelectItem value="100">100 per page</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+            {paginatedEmails.length > 0 && (
+              <div className="text-xs text-muted-foreground">
+                Tip: Use ↑↓ or j/k to navigate, Enter to open
+              </div>
+            )}
           </CardContent>
         </Card>}
 
@@ -305,7 +380,14 @@ export const EmailDashboard = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredEmails.map(email => <TableRow key={email.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => handleViewEmail(email)}>
+                {paginatedEmails.map((email, index) => <TableRow 
+                    key={email.id} 
+                    className={`hover:bg-muted/50 cursor-pointer transition-colors ${
+                      index === focusedIndex ? 'bg-muted/50 ring-2 ring-primary/20' : ''
+                    }`}
+                    onClick={() => handleViewEmail(email)}
+                    onMouseEnter={() => setFocusedIndex(index)}
+                  >
                     <TableCell onClick={e => e.stopPropagation()}>
                       <button onClick={() => handleViewEmail(email)} className="font-medium text-foreground hover:text-primary text-left">
                         {email.subject}
@@ -359,6 +441,56 @@ export const EmailDashboard = ({
                   </TableRow>)}
               </TableBody>
             </Table>}
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t">
+              <p className="text-xs text-muted-foreground">
+                Showing {startIndex + 1}-{Math.min(endIndex, filteredEmails.length)} of {filteredEmails.length} emails
+              </p>
+              
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {[...Array(totalPages)].map((_, i) => {
+                    const page = i + 1;
+                    if (
+                      page === 1 || 
+                      page === totalPages || 
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => setCurrentPage(page)}
+                            isActive={currentPage === page}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    } else if (page === currentPage - 2 || page === currentPage + 2) {
+                      return <PaginationItem key={page}>...</PaginationItem>;
+                    }
+                    return null;
+                  })}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
 
