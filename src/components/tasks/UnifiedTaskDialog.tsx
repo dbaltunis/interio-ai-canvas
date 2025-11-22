@@ -110,11 +110,13 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId, tas
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle>{isEditMode ? 'Edit Task' : 'Create New Task'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <ScrollArea className="flex-1 px-6">
+            <div className="space-y-4 pb-4">
           <div>
             <Label htmlFor="title">Title *</Label>
             <Input
@@ -384,8 +386,10 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId, tas
               )}
             </div>
           )}
-
-          <div className="flex justify-end gap-2 pt-4">
+            </div>
+          </ScrollArea>
+          
+          <div className="border-t bg-background px-6 py-4 flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
