@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell, Video, CheckSquare, CheckCheck } from "lucide-react";
+import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell, Video, Square, CheckCheck } from "lucide-react";
 import { useUpdateAppointment } from "@/hooks/useAppointments";
 import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
 import { SchedulerSlotDialog } from "./SchedulerSlotDialog";
@@ -446,7 +446,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
             <span>Your Events</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <CheckSquare className="w-3 h-3 text-orange-500" />
+            <Square className="w-3 h-3 text-orange-500" />
             <span>Tasks</span>
           </div>
         </div>
@@ -851,13 +851,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                           });
                                         }}
                                       >
-                                         {event.status === 'completed' ? (
+                                        {event.status === 'completed' ? (
                                           <CheckCheck className="h-5 w-5 flex-shrink-0 font-bold" style={{
                                             color: 'hsl(142 76% 36%)',
                                             strokeWidth: 3
                                           }} />
                                         ) : (
-                                          <CheckSquare className="h-5 w-5 flex-shrink-0" style={{
+                                          <Square className="h-5 w-5 flex-shrink-0" style={{
                                             color: event.priority === 'urgent' ? 'hsl(0 84% 40%)' :
                                                    event.priority === 'high' ? 'hsl(25 95% 40%)' :
                                                    event.priority === 'medium' ? 'hsl(45 93% 35%)' :
