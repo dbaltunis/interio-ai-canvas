@@ -431,13 +431,31 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
   return (
     <Tabs defaultValue="calendar" className="h-screen flex flex-col overflow-hidden">
-      <div className="flex-shrink-0 border-b bg-background px-6 pt-4">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="calendar" className="flex items-center gap-2">
+      <div className="flex-shrink-0 bg-background px-6 pt-6 pb-4">
+        <TabsList className="inline-flex h-11 items-center justify-center rounded-full bg-muted p-1 text-muted-foreground shadow-sm">
+          <TabsTrigger 
+            value="calendar" 
+            className="
+              inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 py-2
+              text-sm font-medium ring-offset-background transition-all
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+              disabled:pointer-events-none disabled:opacity-50
+              data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md
+            "
+          >
             <CalendarIcon className="h-4 w-4" />
             Calendar
           </TabsTrigger>
-          <TabsTrigger value="tasks" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="tasks"
+            className="
+              inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 py-2
+              text-sm font-medium ring-offset-background transition-all
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+              disabled:pointer-events-none disabled:opacity-50
+              data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md
+            "
+          >
             <ListTodo className="h-4 w-4" />
             Tasks
           </TabsTrigger>

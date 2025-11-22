@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useMyTasks, Task } from "@/hooks/useTasks";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { CheckSquare, Clock, AlertCircle } from "lucide-react";
+import { CheckSquare, Clock, AlertCircle, CalendarDays, Sparkles } from "lucide-react";
 import { format, isToday, isTomorrow, isThisWeek, isPast } from "date-fns";
 import { useCompleteTask } from "@/hooks/useTasks";
 import { UnifiedTaskDialog } from "../tasks/UnifiedTaskDialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { motion, AnimatePresence } from "framer-motion";
 
 export const TaskListView = () => {
   const { data: tasks, isLoading } = useMyTasks();
@@ -59,96 +59,163 @@ export const TaskListView = () => {
     }
   };
 
-  const renderTaskGroup = (title: string, tasks: Task[], icon: React.ReactNode, variant: 'default' | 'destructive' = 'default') => {
+  const renderTaskGroup = (title: string, tasks: Task[], icon: React.ReactNode, accentColor: string) => {
     if (tasks.length === 0) return null;
 
     return (
-      <Card className="mb-4">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-6"
+      >
+        <div className="flex items-center gap-3 mb-4 px-1">
+          <div className={`p-2 rounded-lg ${accentColor}`}>
             {icon}
-            <span>{title}</span>
-            <Badge variant={variant} className="ml-auto">{tasks.length}</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {tasks.map((task) => (
-            <div
-              key={task.id}
-              className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 cursor-pointer transition-colors"
-              onClick={() => setSelectedTask(task)}
-            >
-              <Checkbox
-                checked={task.status === 'completed'}
-                onCheckedChange={(checked) => {
-                  completeTask.mutate(task.id);
-                }}
-                onClick={(e) => e.stopPropagation()}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className={`font-medium truncate ${task.status === 'completed' ? 'line-through text-muted-foreground' : ''}`}>
-                    {task.title}
-                  </h4>
-                  <Badge variant={getPriorityColor(task.priority)} className="text-xs">
-                    {task.priority}
-                  </Badge>
-                </div>
-                {task.description && (
-                  <p className="text-sm text-muted-foreground truncate">{task.description}</p>
-                )}
-                {task.due_date && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                    <Clock className="h-3 w-3" />
-                    {format(new Date(task.due_date), 'MMM d, yyyy')}
+          </div>
+          <h3 className="text-lg font-semibold">{title}</h3>
+          <div className="ml-auto">
+            <Badge variant="secondary" className="rounded-full px-3">
+              {tasks.length}
+            </Badge>
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <AnimatePresence mode="popLayout">
+            {tasks.map((task, index) => (
+              <motion.div
+                key={task.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ delay: index * 0.05 }}
+                className="group relative"
+              >
+                <div
+                  className={`
+                    relative overflow-hidden rounded-xl border bg-card p-4 cursor-pointer
+                    transition-all duration-200 hover:shadow-md hover:scale-[1.01]
+                    ${task.status === 'completed' ? 'opacity-60' : ''}
+                  `}
+                  onClick={() => setSelectedTask(task)}
+                >
+                  {/* Priority accent bar */}
+                  <div className={`
+                    absolute left-0 top-0 bottom-0 w-1
+                    ${task.priority === 'urgent' ? 'bg-destructive' : ''}
+                    ${task.priority === 'high' ? 'bg-orange-500' : ''}
+                    ${task.priority === 'medium' ? 'bg-primary' : ''}
+                    ${task.priority === 'low' ? 'bg-muted-foreground' : ''}
+                  `} />
+                  
+                  <div className="flex items-start gap-4">
+                    <Checkbox
+                      checked={task.status === 'completed'}
+                      onCheckedChange={() => completeTask.mutate(task.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-1"
+                    />
+                    
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-start gap-2">
+                        <h4 className={`
+                          font-semibold text-base flex-1
+                          ${task.status === 'completed' ? 'line-through text-muted-foreground' : ''}
+                        `}>
+                          {task.title}
+                        </h4>
+                        <Badge 
+                          variant={getPriorityColor(task.priority)} 
+                          className="text-xs font-medium"
+                        >
+                          {task.priority}
+                        </Badge>
+                      </div>
+                      
+                      {task.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {task.description}
+                        </p>
+                      )}
+                      
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        {task.due_date && (
+                          <div className="flex items-center gap-1.5">
+                            <CalendarDays className="h-3.5 w-3.5" />
+                            {format(new Date(task.due_date), 'MMM d, yyyy')}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </motion.div>
     );
   };
 
   if (isLoading) {
     return (
-      <div className="space-y-4 p-6">
-        {[1, 2, 3].map((i) => (
-          <Card key={i}>
-            <CardHeader>
-              <Skeleton className="h-6 w-32" />
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {[1, 2].map((j) => (
-                <Skeleton key={j} className="h-16 w-full" />
-              ))}
-            </CardContent>
-          </Card>
-        ))}
+      <div className="h-full overflow-y-auto p-8 bg-gradient-to-b from-background to-muted/20">
+        <div className="max-w-5xl mx-auto space-y-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="space-y-4">
+              <Skeleton className="h-8 w-48" />
+              <div className="space-y-2">
+                {[1, 2].map((j) => (
+                  <Skeleton key={j} className="h-24 w-full rounded-xl" />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full overflow-y-auto p-6">
-      <div className="max-w-4xl mx-auto">
-        {renderTaskGroup('Overdue', grouped.overdue, <AlertCircle className="h-5 w-5 text-destructive" />, 'destructive')}
-        {renderTaskGroup('Today', grouped.today, <CheckSquare className="h-5 w-5 text-primary" />)}
-        {renderTaskGroup('Tomorrow', grouped.tomorrow, <Clock className="h-5 w-5" />)}
-        {renderTaskGroup('This Week', grouped.thisWeek, <Clock className="h-5 w-5" />)}
-        {renderTaskGroup('Later', grouped.later, <Clock className="h-5 w-5" />)}
+    <div className="h-full overflow-y-auto bg-gradient-to-b from-background to-muted/20">
+      <div className="max-w-5xl mx-auto p-8">
+        {/* Header */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <Sparkles className="h-6 w-6 text-primary" />
+            <h2 className="text-2xl font-bold">My Tasks</h2>
+          </div>
+          <p className="text-muted-foreground">
+            Stay organized and focused on what matters most
+          </p>
+        </motion.div>
 
+        {/* Task Groups */}
+        {renderTaskGroup('Overdue', grouped.overdue, <AlertCircle className="h-5 w-5 text-white" />, 'bg-destructive')}
+        {renderTaskGroup('Today', grouped.today, <CheckSquare className="h-5 w-5 text-white" />, 'bg-primary')}
+        {renderTaskGroup('Tomorrow', grouped.tomorrow, <Clock className="h-5 w-5 text-white" />, 'bg-orange-500')}
+        {renderTaskGroup('This Week', grouped.thisWeek, <CalendarDays className="h-5 w-5 text-white" />, 'bg-blue-500')}
+        {renderTaskGroup('Later', grouped.later, <Clock className="h-5 w-5 text-white" />, 'bg-muted-foreground')}
+
+        {/* Empty State */}
         {tasks && tasks.length === 0 && (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <CheckSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No tasks yet</h3>
-              <p className="text-sm text-muted-foreground">
-                Create your first task to get started
-              </p>
-            </CardContent>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center justify-center py-16 px-4"
+          >
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <CheckSquare className="h-8 w-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">No tasks yet</h3>
+            <p className="text-muted-foreground text-center max-w-sm">
+              Create your first task to get started with organizing your work
+            </p>
+          </motion.div>
         )}
       </div>
 
