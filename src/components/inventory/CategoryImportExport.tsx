@@ -29,28 +29,28 @@ const CATEGORY_CONFIG = {
     templateFile: '/templates/fabrics_import_template.csv',
     dbCategory: 'fabric',
     parser: parseFabricCSV,
-    fieldCount: 20
+    fieldCount: 25
   },
   hardware: {
     label: 'Hardware',
     templateFile: '/templates/hardware_import_template.csv',
     dbCategory: 'hardware',
     parser: parseHardwareCSV,
-    fieldCount: 18
+    fieldCount: 22
   },
   wallpaper: {
     label: 'Wallpaper',
     templateFile: '/templates/wallpaper_import_template.csv',
     dbCategory: 'wallcovering',
     parser: parseWallpaperCSV,
-    fieldCount: 21
+    fieldCount: 25
   },
   trimmings: {
     label: 'Trimmings',
     templateFile: '/templates/trimmings_import_template.csv',
     dbCategory: 'trimming',
     parser: parseTrimmingsCSV,
-    fieldCount: 16
+    fieldCount: 19
   }
 };
 
