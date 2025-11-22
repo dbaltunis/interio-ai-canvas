@@ -241,6 +241,11 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </Card>
       </div>
 
+      {/* Tasks Section - Moved Higher for Better Visibility */}
+      <div className="mt-6">
+        <TasksListEnhanced clientId={clientId} />
+      </div>
+
       {/* Client Projects Section */}
       <ClientProjectsList clientId={clientId} onTabChange={onTabChange} />
 

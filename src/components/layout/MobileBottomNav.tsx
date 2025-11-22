@@ -30,9 +30,8 @@ interface MobileBottomNavProps {
 
 const navItems = [
   { id: "dashboard", label: "Home", icon: Home, permission: "view_dashboard" },
-  { id: "projects", label: "Jobs", icon: FolderOpen, permission: "view_jobs" },
+  { id: "tasks", label: "Tasks", icon: FolderOpen, permission: "view_tasks" },
   { id: "clients", label: "Clients", icon: Users, permission: "view_clients" },
-  { id: "online-store", label: "Store", icon: Store, permission: "has_online_store" },
   { id: "calendar", label: "Calendar", icon: Calendar, permission: "view_calendar" },
 ];
 
