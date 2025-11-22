@@ -827,14 +827,14 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
                                    {/* Task content - distinct display */}
                                     {event.isTask && (
-                                      <div className="flex items-center gap-1.5 h-full px-1">
+                                      <div className="flex items-center gap-1.5 h-full px-2 py-1">
                                         <CheckSquare className="h-4 w-4 flex-shrink-0" />
-                                        <div className="flex-1 min-w-0">
-                                          <div className="font-semibold text-xs leading-tight truncate">
+                                        <div className="flex-1 min-w-0 overflow-hidden">
+                                          <div className="font-semibold text-xs leading-tight truncate max-w-full">
                                             {event.title}
                                           </div>
                                           {finalHeight > 30 && event.description && (
-                                            <div className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                                            <div className="text-[10px] text-muted-foreground mt-0.5 truncate max-w-full">
                                               {event.description}
                                             </div>
                                           )}
