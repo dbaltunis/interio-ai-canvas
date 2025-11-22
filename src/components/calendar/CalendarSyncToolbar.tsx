@@ -30,6 +30,7 @@ interface CalendarSyncToolbarProps {
   onViewBookings?: () => void;
   onViewAnalytics?: () => void;
   onTasksClick?: () => void;
+  showTasksView?: boolean;
 }
 
 export const CalendarSyncToolbar = ({
@@ -45,7 +46,8 @@ export const CalendarSyncToolbar = ({
   onManageTemplates,
   onViewBookings,
   onViewAnalytics,
-  onTasksClick
+  onTasksClick,
+  showTasksView = false
 }: CalendarSyncToolbarProps) => {
   const { integration, isConnected } = useGoogleCalendarIntegration();
   const { syncFromGoogle, syncAllToGoogle, isSyncingFromGoogle, isSyncingAll } = useGoogleCalendarSync();
@@ -306,14 +308,22 @@ export const CalendarSyncToolbar = ({
         {/* Tasks View Toggle */}
         {onTasksClick && (
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={onTasksClick}
-            className="h-7 px-2 gap-1.5"
-            title="View Tasks"
+            className="h-7 px-3 gap-1.5"
           >
-            <ListTodo className="h-4 w-4" />
-            <span className="hidden lg:inline text-xs">Tasks</span>
+            {showTasksView ? (
+              <>
+                <CalendarIcon className="h-4 w-4" />
+                <span className="text-xs">Calendar</span>
+              </>
+            ) : (
+              <>
+                <ListTodo className="h-4 w-4" />
+                <span className="text-xs">Tasks</span>
+              </>
+            )}
           </Button>
         )}
 
