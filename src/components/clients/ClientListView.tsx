@@ -2,7 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Mail, Phone, User, Building2, MoreHorizontal, Star, TrendingUp, Clock, AlertCircle, Target, Calendar, MessageSquare, Briefcase, Package } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -183,6 +183,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                     <TableCell className="font-medium max-w-[280px]">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9 flex-shrink-0">
+                          <AvatarImage src={(client as any).avatar_url || undefined} />
                           <AvatarFallback className={`${avatarColor} text-white text-xs font-semibold`}>
                             {initials}
                           </AvatarFallback>

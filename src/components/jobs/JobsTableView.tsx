@@ -43,7 +43,7 @@ import {
   AlertDialogTitle 
 } from "@/components/ui/alert-dialog";
 import { JobNotesDialog } from "./JobNotesDialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmailStatusDisplay } from "./EmailStatusDisplay";
 import { JobsPagination } from "./JobsPagination";
 import { JobsTableSkeleton } from "./skeleton/JobsTableSkeleton";
@@ -683,6 +683,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
         return (
           <div className="flex items-center space-x-2">
             <Avatar className="h-8 w-8 flex-shrink-0">
+              <AvatarImage src={(client as any)?.avatar_url || undefined} />
               <AvatarFallback className={`${getClientAvatarColor(clientName)} text-primary-foreground text-xs font-medium`}>
                 {clientName === 'No Client' ? '—' : getClientInitials(clientName)}
               </AvatarFallback>

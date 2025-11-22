@@ -1897,6 +1897,7 @@ export type Database = {
           abn: string | null
           address: string | null
           assigned_to: string | null
+          avatar_url: string | null
           business_email: string | null
           business_phone: string | null
           city: string | null
@@ -1939,6 +1940,7 @@ export type Database = {
           abn?: string | null
           address?: string | null
           assigned_to?: string | null
+          avatar_url?: string | null
           business_email?: string | null
           business_phone?: string | null
           city?: string | null
@@ -1981,6 +1983,7 @@ export type Database = {
           abn?: string | null
           address?: string | null
           assigned_to?: string | null
+          avatar_url?: string | null
           business_email?: string | null
           business_phone?: string | null
           city?: string | null
