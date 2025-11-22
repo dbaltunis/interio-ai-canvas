@@ -111,7 +111,7 @@ const Index = () => {
         );
       case "projects":
         return (
-          <Suspense fallback={<></>}>
+          <Suspense fallback={<JobsPageSkeleton />}>
             <JobsPage key="jobs-persistent" />
           </Suspense>
         );
@@ -177,7 +177,7 @@ const Index = () => {
         );
       default:
         return (
-          <Suspense fallback={<></>}>
+          <Suspense fallback={<JobsPageSkeleton />}>
             <JobsPage key="jobs-persistent" />
           </Suspense>
         );
