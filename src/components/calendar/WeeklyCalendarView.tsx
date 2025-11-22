@@ -4,16 +4,17 @@ import { useAppointmentBookings } from "@/hooks/useAppointmentBookings";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell, Video, Square, CheckCheck } from "lucide-react";
+import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell, Video, Square, CheckCheck, Archive } from "lucide-react";
 import { useUpdateAppointment } from "@/hooks/useAppointments";
 import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
 import { SchedulerSlotDialog } from "./SchedulerSlotDialog";
 import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
-import { useMyTasks, Task, useUpdateTask } from "@/hooks/useTasks";
+import { useMyTasks, Task, useUpdateTask, useArchiveCompletedTasks } from "@/hooks/useTasks";
 import { UnifiedTaskDialog } from "@/components/tasks/UnifiedTaskDialog";
 
 interface WeeklyCalendarViewProps {
@@ -33,6 +34,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const updateAppointment = useUpdateAppointment();
   const { data: tasks } = useMyTasks();
   const updateTask = useUpdateTask();
+  const archiveCompletedTasks = useArchiveCompletedTasks();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
   // Debug logging for data fetching
@@ -432,23 +434,35 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div className="flex flex-col h-full pt-3" onMouseUp={handleMouseUp}>
         {/* Calendar Legend */}
-        <div className="flex items-center gap-4 px-4 pb-2 text-xs text-muted-foreground border-b mb-2">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded border border-dashed border-green-500 bg-green-500/40"></div>
-            <span>Available Slots (click to share)</span>
+        <div className="flex items-center justify-between px-4 pb-2 border-b mb-2">
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded border border-dashed border-green-500 bg-green-500/40"></div>
+              <span>Available Slots (click to share)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded border-l-4 border-blue-500" style={{ backgroundColor: 'hsl(217 91% 60% / 0.8)' }}></div>
+              <span>Customer Bookings (click for details)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded bg-primary/80 border-l-4 border-primary"></div>
+              <span>Your Events</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Square className="w-3 h-3 text-orange-500" />
+              <span>Tasks</span>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded border-l-4 border-blue-500" style={{ backgroundColor: 'hsl(217 91% 60% / 0.8)' }}></div>
-            <span>Customer Bookings (click for details)</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-primary/80 border-l-4 border-primary"></div>
-            <span>Your Events</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Square className="w-3 h-3 text-orange-500" />
-            <span>Tasks</span>
-          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => archiveCompletedTasks.mutate()}
+            disabled={archiveCompletedTasks.isPending}
+            className="h-7 text-xs"
+          >
+            <Archive className="h-3 w-3 mr-1" />
+            {archiveCompletedTasks.isPending ? "Archiving..." : "Archive Completed"}
+          </Button>
         </div>
 
         {/* Week header with dates - Sticky header that stays fixed on scroll */}
