@@ -81,18 +81,11 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
   // Get tasks for the current day
   const getDayTasks = () => {
     if (!tasks) return [];
-    const dayTasks = tasks
+    return tasks
       .filter(task => {
         if (!task.due_date) return false;
         const taskDate = new Date(task.due_date);
-        const matches = isSameDay(taskDate, currentDate);
-        console.log('Task filter:', { 
-          taskTitle: task.title, 
-          taskDate: taskDate.toISOString(), 
-          currentDate: currentDate.toISOString(), 
-          matches 
-        });
-        return matches;
+        return isSameDay(taskDate, currentDate);
       })
       .map(task => {
         // Display tasks at 9 AM on their due date
@@ -114,9 +107,6 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
           status: task.status
         };
       });
-    
-    console.log('Total tasks fetched:', tasks?.length, 'Day tasks filtered:', dayTasks.length);
-    return dayTasks;
   };
 
   const dayEvents = [...getDayEvents(), ...getDayTasks()];
