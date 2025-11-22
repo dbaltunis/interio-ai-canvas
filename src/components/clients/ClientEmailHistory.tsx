@@ -38,6 +38,7 @@ export const ClientEmailHistory = ({ clientId, clientEmail, onComposeEmail }: Cl
   const [emailDetailOpen, setEmailDetailOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [focusedIndex, setFocusedIndex] = useState(0);
 
   const handleEmailClick = (email: Email) => {
     setSelectedEmail(email);
@@ -49,6 +50,39 @@ export const ClientEmailHistory = ({ clientId, clientEmail, onComposeEmail }: Cl
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const paginatedEmails = emails ? emails.slice(startIndex, endIndex) : [];
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (emailDetailOpen || (e.target as HTMLElement).tagName === 'INPUT') return;
+
+      switch (e.key) {
+        case 'ArrowDown':
+        case 'j':
+          e.preventDefault();
+          setFocusedIndex(prev => Math.min(prev + 1, paginatedEmails.length - 1));
+          break;
+        case 'ArrowUp':
+        case 'k':
+          e.preventDefault();
+          setFocusedIndex(prev => Math.max(prev - 1, 0));
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (paginatedEmails[focusedIndex]) {
+            handleEmailClick(paginatedEmails[focusedIndex]);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [emailDetailOpen, focusedIndex, paginatedEmails]);
+
+  useEffect(() => {
+    setFocusedIndex(0);
+  }, [currentPage]);
 
   const emailStats = emails ? {
     total: emails.length,
@@ -169,8 +203,14 @@ export const ClientEmailHistory = ({ clientId, clientEmail, onComposeEmail }: Cl
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedEmails.map((email) => (
-                    <TableRow key={email.id} className="cursor-pointer hover:bg-muted/50">
+                  {paginatedEmails.map((email, index) => (
+                    <TableRow 
+                      key={email.id} 
+                      className={`cursor-pointer hover:bg-muted/50 ${
+                        index === focusedIndex ? 'bg-muted/50 ring-2 ring-primary/20' : ''
+                      }`}
+                      onMouseEnter={() => setFocusedIndex(index)}
+                    >
                       <TableCell onClick={() => handleEmailClick(email)}>
                         <div className="font-medium truncate max-w-[200px]">{email.subject}</div>
                       </TableCell>

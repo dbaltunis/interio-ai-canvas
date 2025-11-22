@@ -60,6 +60,7 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
   const [pageSize, setPageSize] = useState(20);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [emailDetailOpen, setEmailDetailOpen] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(0);
   
   const { data: emails = [], isLoading } = useEmails();
   
@@ -80,7 +81,43 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
+    setFocusedIndex(0);
   }, [searchTerm, statusFilter]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't handle if dialog is open or user is typing in input
+      if (emailDetailOpen || (e.target as HTMLElement).tagName === 'INPUT') return;
+
+      switch (e.key) {
+        case 'ArrowDown':
+        case 'j':
+          e.preventDefault();
+          setFocusedIndex(prev => Math.min(prev + 1, paginatedEmails.length - 1));
+          break;
+        case 'ArrowUp':
+        case 'k':
+          e.preventDefault();
+          setFocusedIndex(prev => Math.max(prev - 1, 0));
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (paginatedEmails[focusedIndex]) {
+            handleEmailClick(paginatedEmails[focusedIndex]);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [emailDetailOpen, focusedIndex, paginatedEmails]);
+
+  // Reset focused index when changing pages
+  useEffect(() => {
+    setFocusedIndex(0);
+  }, [currentPage]);
 
   const handleEmailClick = (email: Email) => {
     setSelectedEmail(email);
@@ -156,6 +193,13 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
         </Select>
       </div>
 
+      {/* Keyboard shortcuts hint */}
+      {paginatedEmails.length > 0 && (
+        <div className="text-xs text-muted-foreground flex items-center gap-2">
+          <span>Tip: Use ↑↓ or j/k to navigate, Enter to open</span>
+        </div>
+      )}
+
       {/* Compact Email List */}
       <div className="border rounded-lg divide-y">
         {isLoading ? (
@@ -178,11 +222,14 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
             <p className="text-sm text-muted-foreground">No emails match your current filters.</p>
           </div>
         ) : (
-          paginatedEmails.map((email) => (
+          paginatedEmails.map((email, index) => (
             <div
               key={email.id}
-              className="flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors cursor-pointer"
+              className={`flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors cursor-pointer ${
+                index === focusedIndex ? 'bg-muted/50 ring-2 ring-primary/20' : ''
+              }`}
               onClick={() => handleEmailClick(email)}
+              onMouseEnter={() => setFocusedIndex(index)}
             >
               {/* Status Indicator */}
               <div className="flex-shrink-0">
