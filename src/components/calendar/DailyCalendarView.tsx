@@ -1,10 +1,11 @@
 import { format, isSameDay, isToday } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useState, useRef, useEffect } from "react";
-import { Clock, MapPin } from "lucide-react";
+import { Clock, MapPin, CheckSquare } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useClients } from "@/hooks/useClients";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
+import { useMyTasks } from "@/hooks/useTasks";
 
 interface DailyCalendarViewProps {
   currentDate: Date;
@@ -16,6 +17,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
   const { data: appointments } = useAppointments();
   const { data: clients } = useClients();
   const { data: currentUserProfile } = useCurrentUserProfile();
+  const { data: tasks } = useMyTasks();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Helper function to get client name
@@ -74,7 +76,38 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
     );
   };
 
-  const dayEvents = getDayEvents();
+  // Get tasks for the current day
+  const getDayTasks = () => {
+    if (!tasks) return [];
+    return tasks
+      .filter(task => {
+        if (!task.due_date) return false;
+        const taskDate = new Date(task.due_date);
+        return isSameDay(taskDate, currentDate);
+      })
+      .map(task => {
+        // Display tasks at 9 AM on their due date
+        const startTime = new Date(currentDate);
+        startTime.setHours(9, 0, 0, 0);
+        
+        const endTime = new Date(startTime);
+        endTime.setMinutes(endTime.getMinutes() + 30);
+        
+        return {
+          id: task.id,
+          title: task.title,
+          description: task.description,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          isTask: true,
+          taskData: task,
+          priority: task.priority,
+          status: task.status
+        };
+      });
+  };
+
+  const dayEvents = [...getDayEvents(), ...getDayTasks()];
 
   // Calculate event position and styling
   const calculateEventStyle = (startTime: Date, endTime: Date) => {
@@ -206,12 +239,52 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
           {/* Events overlay */}
           <div className="absolute inset-0 pointer-events-none">
             <div className="relative ml-20"> {/* Offset for time labels */}
-              {dayEvents.map((event, eventIndex) => {
+              {dayEvents.map((event: any, eventIndex) => {
                 const startTime = new Date(event.start_time);
                 const endTime = new Date(event.end_time);
                 const style = calculateEventStyle(startTime, endTime);
                 
                 if (!style.visible) return null;
+
+                // Render tasks differently
+                if (event.isTask) {
+                  const priorityColors = {
+                    urgent: { border: 'border-red-500', bg: 'bg-red-50', text: 'text-red-700' },
+                    high: { border: 'border-orange-500', bg: 'bg-orange-50', text: 'text-orange-700' },
+                    medium: { border: 'border-yellow-500', bg: 'bg-yellow-50', text: 'text-yellow-700' },
+                    low: { border: 'border-blue-500', bg: 'bg-blue-50', text: 'text-blue-700' }
+                  };
+                  
+                  const colorScheme = priorityColors[event.priority as keyof typeof priorityColors] || priorityColors.medium;
+                  
+                  return (
+                    <div
+                      key={event.id}
+                      className={`absolute left-2 right-2 rounded-lg border-2 ${colorScheme.border} ${colorScheme.bg} shadow-sm hover:shadow-md transition-all pointer-events-auto cursor-pointer group overflow-hidden`}
+                      style={{
+                        top: `${style.top}px`,
+                        height: `${style.height}px`,
+                        zIndex: 10 + eventIndex,
+                      }}
+                      onClick={() => console.log('Task clicked:', event.taskData)}
+                      title={`Task: ${event.title}\nDue: ${format(startTime, 'HH:mm')}\n${event.description || ''}`}
+                    >
+                      <div className="p-2 h-full flex items-center gap-2">
+                        <CheckSquare className={`h-4 w-4 flex-shrink-0 ${colorScheme.text}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className={`font-medium text-sm leading-tight line-clamp-1 ${colorScheme.text}`}>
+                            {event.title}
+                          </div>
+                          {style.height > 50 && event.description && (
+                            <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                              {event.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
                 
                 const attendees = getAttendeeInfo(event);
                 const eventColor = event.color || '#3b82f6'; // Default blue
