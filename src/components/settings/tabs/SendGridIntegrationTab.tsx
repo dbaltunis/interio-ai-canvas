@@ -41,10 +41,10 @@ export const SendGridIntegrationTab = () => {
             <div className="flex-1">
               <h3 className="font-semibold text-green-900 mb-2">✅ Email Service Included!</h3>
               <p className="text-green-800 mb-3">
-                Your account includes email functionality with up to <strong>500 emails per month</strong> using our shared email service. No additional setup required!
+                Your account includes email functionality with up to <strong>500 emails per month</strong> using our shared email service. Advanced tracking (opens, clicks, engagement analytics) is built-in!
               </p>
               <div className="text-sm text-green-700">
-                <strong>Current Status:</strong> Email service is active and ready to use
+                <strong>Current Status:</strong> Email service is active and ready to use with full analytics
               </div>
             </div>
           </div>
@@ -63,7 +63,7 @@ export const SendGridIntegrationTab = () => {
             <div className="flex-1">
               <h3 className="font-semibold text-gray-900 mb-2">💎 Premium: Custom Email Domain</h3>
               <p className="text-gray-600 mb-3">
-                Want to use your own SendGrid account for custom branding, unlimited sending, and enhanced deliverability? Set it up below.
+                Want to use your own SendGrid account for custom branding and unlimited sending? Set it up below. (Note: Tracking and analytics work the same with both Resend and SendGrid)
               </p>
               <div className="space-y-2 text-sm text-gray-600">
                 <div className="flex items-center gap-2">

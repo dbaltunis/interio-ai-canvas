@@ -63,6 +63,12 @@ export const EmailSetupStatusCard = () => {
       status: 'complete'
     },
     {
+      id: 'engagement-tracking',
+      title: 'Engagement Tracking',
+      description: 'Advanced analytics (opens, clicks, time spent) included by default',
+      status: 'complete'
+    },
+    {
       id: 'usage-limit',
       title: 'Usage Limit',
       description: '500 emails per month included in your plan',
