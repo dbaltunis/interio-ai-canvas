@@ -827,14 +827,20 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
                                    {/* Task content - distinct display */}
                                     {event.isTask && (
-                                      <div className="flex flex-col h-full px-2 py-1.5 overflow-hidden">
-                                        <div className="font-semibold text-sm leading-snug break-words" style={{
-                                          color: event.priority === 'urgent' ? 'hsl(0 84% 60%)' :
-                                                 event.priority === 'high' ? 'hsl(25 95% 53%)' :
-                                                 event.priority === 'medium' ? 'hsl(45 93% 47%)' :
-                                                 'hsl(217 91% 60%)',
+                                      <div className="flex items-center gap-2 h-full px-2 py-1.5">
+                                        <CheckSquare className="h-4 w-4 flex-shrink-0" style={{
+                                          color: event.priority === 'urgent' ? 'hsl(0 84% 40%)' :
+                                                 event.priority === 'high' ? 'hsl(25 95% 40%)' :
+                                                 event.priority === 'medium' ? 'hsl(45 93% 35%)' :
+                                                 'hsl(217 91% 45%)'
+                                        }} />
+                                        <div className="font-semibold text-sm leading-tight break-words flex-1 min-w-0" style={{
+                                          color: event.priority === 'urgent' ? 'hsl(0 84% 40%)' :
+                                                 event.priority === 'high' ? 'hsl(25 95% 40%)' :
+                                                 event.priority === 'medium' ? 'hsl(45 93% 35%)' :
+                                                 'hsl(217 91% 45%)',
                                           display: '-webkit-box',
-                                          WebkitLineClamp: finalHeight > 60 ? 3 : 2,
+                                          WebkitLineClamp: finalHeight > 60 ? 2 : 1,
                                           WebkitBoxOrient: 'vertical',
                                           overflow: 'hidden'
                                         }}>
