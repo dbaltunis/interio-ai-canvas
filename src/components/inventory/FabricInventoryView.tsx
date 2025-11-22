@@ -5,8 +5,16 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Home, Image as ImageIcon, Trash2, Edit, QrCode } from "lucide-react";
+import { Home, Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { CategoryImportExport } from "./CategoryImportExport";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { EditInventoryDialog } from "./EditInventoryDialog";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { supabase } from "@/integrations/supabase/client";
@@ -154,6 +162,26 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
 
   return (
     <div className="space-y-6">
+      {/* Action Bar */}
+      <div className="flex justify-between items-center gap-4 flex-wrap">
+        <p className="text-sm text-muted-foreground">
+          {filteredItems.length} fabric{filteredItems.length !== 1 ? 's' : ''} found
+        </p>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Import/Export
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Import/Export Fabrics</DialogTitle>
+            </DialogHeader>
+            <CategoryImportExport category="fabrics" onImportComplete={refetch} />
+          </DialogContent>
+        </Dialog>
+      </div>
 
       {/* Category Tabs */}
       <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
