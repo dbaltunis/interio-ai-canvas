@@ -25,8 +25,7 @@ import {
   X,
   MessageCircle,
   ShoppingCart,
-  Store,
-  CheckSquare
+  Store
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -39,7 +38,6 @@ const navItems = [
   { id: "dashboard", label: "Home", icon: LayoutDashboard, tourId: "dashboard-tab" },
   { id: "clients", label: "CRM", icon: Users, tourId: "crm-tab", permission: "view_clients" },
   { id: "projects", label: "Jobs", icon: FolderOpen, tourId: "projects-tab", permission: "view_jobs" },
-  { id: "tasks", label: "Tasks", icon: CheckSquare, tourId: "tasks-tab", permission: "view_jobs", route: "/tasks" },
   { id: "quotes", label: "Emails", icon: FileText, tourId: "emails-tab", permission: "view_emails" },
   { id: "calendar", label: "Calendar", icon: Calendar, tourId: "calendar-tab", permission: "view_calendar" },
   { id: "inventory", label: "Library", icon: Package, tourId: "library-tab", permission: "view_inventory" },
@@ -179,13 +177,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                 return (
                   <button
                     key={item.id}
-                    onClick={() => {
-                      if (item.route) {
-                        window.location.href = item.route;
-                      } else {
-                        onTabChange(item.id);
-                      }
-                    }}
+                    onClick={() => onTabChange(item.id)}
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative",
                       activeTab === item.id 

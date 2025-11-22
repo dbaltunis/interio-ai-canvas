@@ -1,21 +1,18 @@
-import { useState } from "react";
-import { format, isToday, isTomorrow, isPast, isThisWeek, startOfDay } from "date-fns";
-import { useMyTasks, useClientTasks, useCompleteTask, useUpdateTask, useDeleteTask, Task, TaskPriority } from "@/hooks/useTasks";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Clock, Calendar, Trash2, User, Edit2, CheckCircle2, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { TaskDetailPanel } from "./TaskDetailPanel";
+import { Checkbox } from "@/components/ui/checkbox";
+import { 
+  CheckCircle2, Clock, Calendar, Trash2, AlertCircle,
+  Sparkles
+} from "lucide-react";
+import { useClientTasks, useCompleteTask, useDeleteTask, Task, TaskPriority } from "@/hooks/useTasks";
+import { format, isPast, isToday, isTomorrow } from "date-fns";
 import { QuickAddTask } from "./QuickAddTask";
+import { cn } from "@/lib/utils";
 
 interface TasksListProps {
-  filter?: "all" | "today" | "week" | "overdue";
   clientId?: string;
-  projectId?: string;
   compact?: boolean;
 }
 
@@ -42,15 +39,10 @@ const getDueDateColor = (dueDate: string) => {
   return "text-muted-foreground";
 };
 
-export const TasksList = ({ filter = "all", clientId, projectId, compact = false }: TasksListProps) => {
-  const { data: clientTasks } = useClientTasks(clientId);
-  const { data: myTasks, isLoading } = useMyTasks();
+export const TasksList = ({ clientId, compact = false }: TasksListProps) => {
+  const { data: tasks, isLoading } = useClientTasks(clientId);
   const completeTask = useCompleteTask();
   const deleteTask = useDeleteTask();
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  
-  // Use client tasks if clientId is provided, otherwise use my tasks
-  const tasks = clientId ? clientTasks : myTasks;
 
   const handleComplete = async (taskId: string) => {
     await completeTask.mutateAsync(taskId);
@@ -62,85 +54,19 @@ export const TasksList = ({ filter = "all", clientId, projectId, compact = false
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "urgent": return "destructive";
-      case "high": return "default";
-      case "medium": return "secondary";
-      case "low": return "outline";
-      default: return "outline";
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed": return "text-muted-foreground line-through";
-      case "in_progress": return "text-primary";
-      case "pending": return "text-foreground";
-      default: return "text-muted-foreground";
-    }
-  };
-
-  const getDueDateBadge = (dueDate: string) => {
-    const date = new Date(dueDate);
-    const today = startOfDay(new Date());
-    const taskDate = startOfDay(date);
-    
-    if (taskDate < today) {
-      return <Badge variant="destructive" className="text-xs">Overdue</Badge>;
-    } else if (isToday(date)) {
-      return <Badge variant="default" className="text-xs">Today</Badge>;
-    } else if (isTomorrow(date)) {
-      return <Badge variant="secondary" className="text-xs">Tomorrow</Badge>;
-    }
-    return <Badge variant="outline" className="text-xs">{format(date, "MMM d")}</Badge>;
-  };
-
-  const filterTasks = (tasks: Task[]) => {
-    let filtered = tasks || [];
-
-    if (clientId) {
-      filtered = filtered.filter(task => task.client_id === clientId);
-    }
-    if (projectId) {
-      filtered = filtered.filter(task => task.project_id === projectId);
-    }
-
-    switch (filter) {
-      case "today":
-        return filtered.filter(task => 
-          task.due_date && isToday(new Date(task.due_date))
-        );
-      case "week":
-        return filtered.filter(task => 
-          task.due_date && isThisWeek(new Date(task.due_date))
-        );
-      case "overdue":
-        return filtered.filter(task => 
-          task.due_date && isPast(new Date(task.due_date)) && !isToday(new Date(task.due_date))
-        );
-      default:
-        return filtered;
-    }
-  };
-
   if (isLoading) {
     return (
-      <div className="space-y-3">
-        {[1, 2, 3].map(i => (
-          <Card key={i} className="p-4">
-            <Skeleton className="h-6 w-3/4 mb-2" />
-            <Skeleton className="h-4 w-1/2" />
-          </Card>
-        ))}
-      </div>
+      <Card>
+        <CardContent className="p-12 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        </CardContent>
+      </Card>
     );
   }
 
-  const filteredTasks = filterTasks(tasks || []);
-  const pendingTasks = filteredTasks.filter(t => t.status === "pending" || t.status === "in_progress");
+  const pendingTasks = tasks?.filter(t => t.status === "pending" || t.status === "in_progress") || [];
   const hasTasks = pendingTasks.length > 0;
-  const displayTasks = compact ? pendingTasks.slice(0, 3) : filteredTasks;
+  const displayTasks = compact ? pendingTasks.slice(0, 3) : pendingTasks;
 
   if (compact) {
     return (
@@ -185,109 +111,6 @@ export const TasksList = ({ filter = "all", clientId, projectId, compact = false
     );
   }
 
-  if (!compact) {
-    if (displayTasks.length === 0) {
-      return (
-        <Card className="p-12 text-center">
-          <p className="text-muted-foreground">No tasks found</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Create a new task to get started
-          </p>
-        </Card>
-      );
-    }
-
-    return (
-      <div className="flex gap-4 h-full">
-        <ScrollArea className="flex-1">
-          <div className="space-y-3 pr-4">
-            {displayTasks.map((task) => (
-              <Card
-                key={task.id}
-                className={cn(
-                  "p-4 hover:shadow-md transition-all cursor-pointer",
-                  selectedTask?.id === task.id && "ring-2 ring-primary"
-                )}
-                onClick={() => setSelectedTask(task)}
-              >
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    checked={task.status === "completed"}
-                    onCheckedChange={() => completeTask.mutate(task.id)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="mt-1"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className={cn("font-medium", getStatusColor(task.status))}>
-                        {task.title}
-                      </h3>
-                      <Badge variant={getPriorityColor(task.priority)} className="shrink-0">
-                        {task.priority}
-                      </Badge>
-                    </div>
-
-                    {task.description && (
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {task.description}
-                      </p>
-                    )}
-
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                      {task.due_date && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {getDueDateBadge(task.due_date)}
-                        </div>
-                      )}
-                      {task.estimated_hours && (
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {task.estimated_hours}h
-                        </div>
-                      )}
-                      {task.assigned_to && (
-                        <div className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          Assigned
-                        </div>
-                      )}
-                      {task.clients && (
-                        <Badge variant="outline" className="text-xs">
-                          {task.clients.name}
-                        </Badge>
-                      )}
-                    </div>
-
-                    {task.tags && task.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {task.tags.map((tag, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </ScrollArea>
-
-        {selectedTask && (
-          <div className="w-96 shrink-0">
-            <TaskDetailPanel
-              task={selectedTask}
-              onClose={() => setSelectedTask(null)}
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Compact view for widgets
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -313,34 +136,64 @@ export const TasksList = ({ filter = "all", clientId, projectId, compact = false
             />
           </div>
         ) : (
-          <div className="space-y-2">
-            {displayTasks.map((task) => {
+          <div className="space-y-3">
+            {pendingTasks.map((task) => {
               const priorityInfo = priorityConfig[task.priority];
               
               return (
                 <div
                   key={task.id}
-                  className="flex items-center gap-2 p-2 rounded border bg-card text-xs"
+                  className="group flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-all"
                 >
                   <Checkbox
                     checked={false}
                     onCheckedChange={() => handleComplete(task.id)}
-                    className="h-3 w-3"
+                    className="mt-1"
                   />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{task.title}</p>
+                  
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm leading-none mb-1">{task.title}</h4>
+                        {task.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {task.description}
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                        onClick={() => handleDelete(task.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <Badge variant="outline" className={cn("text-xs", priorityInfo.color)}>
+                        {priorityInfo.icon} {priorityInfo.label}
+                      </Badge>
+                      
+                      {task.due_date && (
+                        <span className={cn("flex items-center gap-1", getDueDateColor(task.due_date))}>
+                          <Calendar className="h-3 w-3" />
+                          {getDueDateLabel(task.due_date)}
+                        </span>
+                      )}
+                      
+                      {task.estimated_hours && (
+                        <span className="flex items-center gap-1 text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {task.estimated_hours}h
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <Badge variant="outline" className={cn("text-[10px] px-1 py-0", priorityInfo.color)}>
-                    {priorityInfo.icon}
-                  </Badge>
                 </div>
               );
             })}
-            {pendingTasks.length > 3 && (
-              <p className="text-xs text-muted-foreground text-center pt-1">
-                +{pendingTasks.length - 3} more tasks
-              </p>
-            )}
           </div>
         )}
       </CardContent>
