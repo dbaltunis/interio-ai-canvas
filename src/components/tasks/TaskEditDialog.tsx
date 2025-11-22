@@ -201,7 +201,7 @@ export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps
                     {dueDate ? format(dueDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 z-[10000]" align="start">
                   <Calendar 
                     mode="single" 
                     selected={dueDate} 
