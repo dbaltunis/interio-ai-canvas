@@ -164,7 +164,7 @@ export const SendGridSetup = () => {
           </div>
           <div>
             <CardTitle className="flex items-center gap-2">
-              SendGrid Email Service
+              Custom SendGrid Integration (Optional)
               {hasSendGridIntegration && (
                 <Badge variant="default" className="bg-green-100 text-green-800">
                   <CheckCircle className="h-3 w-3 mr-1" />
@@ -173,7 +173,7 @@ export const SendGridSetup = () => {
               )}
             </CardTitle>
             <CardDescription>
-              Configure SendGrid for email delivery and tracking
+              Connect your own SendGrid account for custom branding and unlimited emails
             </CardDescription>
           </div>
         </div>
@@ -182,17 +182,18 @@ export const SendGridSetup = () => {
         {!hasSendGridIntegration ? (
           <>
             {/* Setup Instructions */}
-            <Alert>
-              <Key className="h-4 w-4" />
-              <AlertDescription>
-                You'll need a SendGrid API key with "Mail Send" permissions. 
+            <Alert className="border-blue-200 bg-blue-50">
+              <Key className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
+                <strong>Optional Premium Feature:</strong> This is only needed if you want to use your own SendGrid account for custom email branding. The default email service (500 emails/month) works without this.
+                <br />
                 <a 
                   href="https://app.sendgrid.com/settings/api_keys" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 ml-1"
+                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 mt-2 font-medium"
                 >
-                  Get your API key here
+                  Get your SendGrid API key here
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </AlertDescription>

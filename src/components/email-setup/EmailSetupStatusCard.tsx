@@ -57,42 +57,32 @@ export const EmailSetupStatusCard = () => {
 
   const setupItems: SetupItem[] = [
     {
-      id: 'sendgrid-account',
-      title: 'SendGrid Account',
-      description: 'Email service provider account for sending emails',
-      status: hasSendGridIntegration ? 'complete' : 'pending',
-      externalLink: 'https://signup.sendgrid.com/'
+      id: 'email-service',
+      title: 'Email Service',
+      description: 'Built-in email service ready to send emails',
+      status: 'complete'
     },
     {
-      id: 'sendgrid-integration',
-      title: 'SendGrid Integration',
-      description: 'API key configured and connection established',
-      status: hasSendGridIntegration ? 'complete' : 'error',
-      action: () => { window.location.href = '/settings?section=integrations'; },
-      actionLabel: 'Configure Integration'
-    },
-    {
-      id: 'sender-verification',
-      title: 'Sender Email Verification',
-      description: 'Verify your sender email address in SendGrid',
-      status: hasConfiguredEmailSettings ? 'complete' : 'pending',
-      externalLink: 'https://app.sendgrid.com/settings/sender_auth'
+      id: 'usage-limit',
+      title: 'Usage Limit',
+      description: '500 emails per month included in your plan',
+      status: 'complete'
     },
     {
       id: 'email-settings',
       title: 'Email Settings',
       description: 'Configure sender name, email, and signature',
-      status: hasConfiguredEmailSettings ? 'complete' : 'error',
+      status: hasConfiguredEmailSettings ? 'complete' : 'warning',
       action: () => { window.location.href = '/settings?section=integrations'; },
       actionLabel: 'Configure Settings'
     },
     {
-      id: 'webhook-setup',
-      title: 'Webhook Configuration',
-      description: 'Track email delivery and engagement events',
-      status: integrationData?.configuration ? 'complete' : 'warning',
+      id: 'custom-domain',
+      title: 'Custom Domain (Optional Premium)',
+      description: 'Use your own SendGrid for custom branding and unlimited sending',
+      status: hasSendGridIntegration ? 'complete' : 'pending',
       action: () => { window.location.href = '/settings?section=integrations'; },
-      actionLabel: 'Setup Webhooks'
+      actionLabel: 'Setup SendGrid'
     }
   ];
 

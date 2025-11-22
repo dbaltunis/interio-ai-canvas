@@ -35,6 +35,49 @@ const handler = async (req: Request): Promise<Response> => {
     const { to, subject, content, html, client_id, user_id, bookingId, emailId, message, attachmentPaths }: EmailRequest = requestBody;
 
     console.log("Processing email send request:", { to, subject, client_id, user_id, bookingId, emailId, attachments: attachmentPaths?.length || 0 });
+
+    // Check usage limit (500 emails/month) - only for shared Resend, not custom SendGrid
+    if (user_id) {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      // Check if user has custom SendGrid configured
+      const { data: accountOwner } = await supabase.rpc('get_account_owner', { 
+        user_id_param: user_id 
+      });
+      const ownerId = accountOwner || user_id;
+
+      const { data: customSendGrid } = await supabase
+        .from('integration_settings')
+        .select('active')
+        .eq('account_owner_id', ownerId)
+        .eq('integration_type', 'sendgrid')
+        .eq('active', true)
+        .maybeSingle();
+
+      // Only enforce limit if using shared Resend (not custom SendGrid)
+      if (!customSendGrid) {
+        const { data: usageData } = await supabase
+          .from('notification_usage')
+          .select('email_count')
+          .eq('user_id', user_id)
+          .gte('period_start', startOfMonth.toISOString())
+          .single();
+
+        const currentUsage = usageData?.email_count || 0;
+        const EMAIL_LIMIT = 500;
+
+        if (currentUsage >= EMAIL_LIMIT) {
+          console.error(`Email limit reached for user ${user_id}: ${currentUsage}/${EMAIL_LIMIT}`);
+          throw new Error(`Monthly email limit of ${EMAIL_LIMIT} reached. Upgrade to custom SendGrid for unlimited sending.`);
+        }
+
+        console.log(`Email usage for user ${user_id}: ${currentUsage}/${EMAIL_LIMIT}`);
+      } else {
+        console.log('User has custom SendGrid - no usage limit enforced');
+      }
+    }
     
     // Use html if provided, otherwise use content, then use message as fallback
     const emailContent = html || content || message;

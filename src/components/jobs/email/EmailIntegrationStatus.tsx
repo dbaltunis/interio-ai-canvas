@@ -20,28 +20,35 @@ export const EmailIntegrationStatus = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* SendGrid Integration Status */}
-        <div className="flex items-center justify-between p-3 border rounded-lg">
+        {/* Email Service Status - Always Ready */}
+        <div className="flex items-center justify-between p-3 border rounded-lg bg-green-50 border-green-200">
           <div className="flex items-center gap-3">
-            {hasSendGridIntegration ? (
-              <CheckCircle className="h-5 w-5 text-green-600" />
-            ) : (
-              <XCircle className="h-5 w-5 text-red-600" />
-            )}
+            <CheckCircle className="h-5 w-5 text-green-600" />
             <div>
-              <p className="font-medium">SendGrid Integration</p>
-              <p className="text-sm text-gray-600">
-                {hasSendGridIntegration 
-                  ? "Email service is configured and ready" 
-                  : "Email service not configured"
-                }
+              <p className="font-medium text-green-900">Email Service</p>
+              <p className="text-sm text-green-700">
+                Built-in email service ready (500 emails/month included)
               </p>
             </div>
           </div>
-          <Badge variant={hasSendGridIntegration ? "default" : "destructive"}>
-            {hasSendGridIntegration ? "Connected" : "Not Connected"}
-          </Badge>
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Ready</Badge>
         </div>
+
+        {/* Custom SendGrid Status - Optional */}
+        {hasSendGridIntegration && (
+          <div className="flex items-center justify-between p-3 border rounded-lg bg-blue-50 border-blue-200">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="font-medium text-blue-900">Custom SendGrid (Premium)</p>
+                <p className="text-sm text-blue-700">
+                  Using your own SendGrid for unlimited emails
+                </p>
+              </div>
+            </div>
+            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Active</Badge>
+          </div>
+        )}
 
         {/* Email Settings Status */}
         <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -66,24 +73,14 @@ export const EmailIntegrationStatus = () => {
           </Badge>
         </div>
 
-        {/* Status Alerts */}
-        {!hasSendGridIntegration && (
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Email functionality is limited without SendGrid integration. 
-              Please configure your email service in Settings to send emails.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {!emailSettings && hasSendGridIntegration && (
-          <Alert className="border-red-200 bg-red-50">
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">
+        {/* Status Alerts - Only show if email settings not configured */}
+        {!emailSettings && (
+          <Alert className="border-yellow-200 bg-yellow-50">
+            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800">
               <div className="space-y-2">
-                <p className="font-medium">Email Settings Required!</p>
-                <p>You have SendGrid configured but need to set your verified sender email. This is required by SendGrid for all outgoing emails.</p>
+                <p className="font-medium">Configure Your Sender Details</p>
+                <p>Set up your sender name and email to personalize emails sent to clients.</p>
                 <Button 
                   size="sm" 
                   className="mt-2"
@@ -94,7 +91,7 @@ export const EmailIntegrationStatus = () => {
                     window.location.href = url.toString();
                   }}
                 >
-                  Configure Email Settings Now
+                  Configure Email Settings
                 </Button>
               </div>
             </AlertDescription>
@@ -118,6 +115,7 @@ export const EmailIntegrationStatus = () => {
           </Button>
           {!hasSendGridIntegration && (
             <Button 
+              variant="outline"
               className="flex items-center gap-2"
               onClick={() => { 
                 const url = new URL(window.location.href);
@@ -127,7 +125,7 @@ export const EmailIntegrationStatus = () => {
               }}
             >
               <Mail className="h-4 w-4" />
-              Configure SendGrid
+              Upgrade to Custom SendGrid
             </Button>
           )}
         </div>
