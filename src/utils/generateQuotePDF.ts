@@ -39,12 +39,14 @@ export const generateQuotePDF = async (
     html2canvas: {
       scale,
       useCORS: true,
-      logging: false,
+      logging: true,
       letterRendering: true,
-      allowTaint: false,
+      allowTaint: true,
       backgroundColor: '#ffffff',
       windowWidth,
       windowHeight,
+      imageTimeout: 15000,
+      removeContainer: true,
     },
     jsPDF: {
       unit: 'mm',
@@ -96,12 +98,14 @@ export const generateQuotePDFBlob = async (
     html2canvas: {
       scale,
       useCORS: true,
-      logging: false,
+      logging: true,
       letterRendering: true,
-      allowTaint: false,
+      allowTaint: true,
       backgroundColor: '#ffffff',
       windowWidth,
       windowHeight,
+      imageTimeout: 15000,
+      removeContainer: true,
     },
     jsPDF: {
       unit: 'mm',
