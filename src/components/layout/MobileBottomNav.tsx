@@ -10,7 +10,8 @@ import {
   Plus,
   UserCircle,
   ShoppingCart,
-  Store
+  Store,
+  CheckCircle2
 } from "lucide-react";
 import { useState } from "react";
 import { CreateActionDialog } from "./CreateActionDialog";
@@ -30,7 +31,7 @@ interface MobileBottomNavProps {
 
 const navItems = [
   { id: "dashboard", label: "Home", icon: Home, permission: "view_dashboard" },
-  { id: "tasks", label: "Tasks", icon: FolderOpen, permission: "view_tasks" },
+  { id: "tasks", label: "Tasks", icon: CheckCircle2, permission: "view_tasks" },
   { id: "clients", label: "Clients", icon: Users, permission: "view_clients" },
   { id: "calendar", label: "Calendar", icon: Calendar, permission: "view_calendar" },
 ];
