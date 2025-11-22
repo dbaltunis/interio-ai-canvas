@@ -7,23 +7,15 @@ import { Separator } from "@/components/ui/separator";
 import { Upload, FileText, CheckCircle2, AlertTriangle, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/usePermissions";
-import { supabase } from "@/integrations/supabase/client";
-
-interface ImportResultRow {
-  row: number;
-  status: "success" | "updated" | "error";
-  message?: string;
-  sku?: string;
-  name?: string;
-}
+import { useBatchInventoryImport, ImportResultRow } from "@/hooks/useBatchInventoryImport";
+import { ImportProgressIndicator } from "./ImportProgressIndicator";
 
 export const InventoryImportDialog: React.FC = () => {
   const { toast } = useToast();
   const canImportInventory = useHasPermission('import_inventory');
   const [open, setOpen] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [importing, setImporting] = useState(false);
-  const [results, setResults] = useState<ImportResultRow[]>([]);
+  const { state, startImport, pause, resume, reset } = useBatchInventoryImport();
 
   const allowedKeys = useMemo(
     () => [
@@ -91,80 +83,56 @@ export const InventoryImportDialog: React.FC = () => {
     return obj;
   };
 
-  const upsertBySku = async (item: Record<string, any>): Promise<"updated" | "inserted"> => {
-    // Attach user_id for inserts (RLS)
-    const { data: auth } = await supabase.auth.getUser();
-    const userId = auth?.user?.id;
-    if (!userId) throw new Error("Not authenticated");
-
-    // Derive unit_price if missing
-    if (item.unit_price == null) {
-      if (typeof item.selling_price === "number") item.unit_price = item.selling_price;
-      else if (typeof item.price_per_unit === "number") item.unit_price = item.price_per_unit;
-      else if (typeof item.cost_price === "number") item.unit_price = item.cost_price;
-      else item.unit_price = 0;
-    }
-
-    if (item.sku) {
-      // Try update existing by SKU in current account scope
-      const { data: updated, error: updErr } = await supabase
-        .from("enhanced_inventory_items")
-        .update(item)
-        .eq("sku", item.sku)
-        .select("id")
-        .limit(1);
-      if (updErr) throw new Error(updErr.message);
-      if (updated && updated.length > 0) return "updated";
-    }
-
-    const insertPayload = { ...item, user_id: userId, active: item.active ?? true };
-    const { error: insErr } = await supabase.from("enhanced_inventory_items").insert([insertPayload as any]);
-    if (insErr) throw new Error(insErr.message);
-    return "inserted";
-  };
-
   const doImport = async () => {
     if (!csvFile) return;
-    setImporting(true);
-    setResults([]);
+    
     try {
       const { headers, rows } = await parseCsv();
-      const localResults: ImportResultRow[] = [];
-      
-      // Get userId once for SKU generation
-      const { data: auth } = await supabase.auth.getUser();
-      const userId = auth?.user?.id;
-      if (!userId) throw new Error("Not authenticated");
+      const parsedItems = [];
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         if (!row || row.every((v) => !v)) continue;
+        
         try {
           const item = toItem(headers, row);
           if (!item.name && !item.sku) throw new Error("Missing name or sku");
           
-          // Auto-generate SKU if not provided
-          if (!item.sku && item.category) {
-            const { generateSKU } = await import("@/utils/skuGenerator");
-            item.sku = await generateSKU(item.category, userId);
-          }
-          
-          const action = await upsertBySku(item);
-          localResults.push({ row: i + 2, status: action === "updated" ? "updated" : "success", sku: item.sku, name: item.name });
+          parsedItems.push({
+            data: item,
+            rowNumber: i + 2,
+          });
         } catch (e: any) {
-          localResults.push({ row: i + 2, status: "error", message: e?.message, sku: row[headers.indexOf("sku")], name: row[headers.indexOf("name")] });
+          // Add error items to parsed list so they show in results
+          parsedItems.push({
+            data: { name: row[headers.indexOf("name")], sku: row[headers.indexOf("sku")] },
+            rowNumber: i + 2,
+          });
         }
       }
 
-      setResults(localResults);
-      const ok = localResults.filter((r) => r.status !== "error").length;
-      const errs = localResults.filter((r) => r.status === "error").length;
-      toast({ title: "Import complete", description: `${ok} processed, ${errs} errors` });
+      const result = await startImport(parsedItems);
+      
+      const successCount = result.results.filter(r => r.status === 'success').length;
+      const updatedCount = result.results.filter(r => r.status === 'updated').length;
+      const errorCount = result.results.filter(r => r.status === 'error').length;
+      
+      toast({ 
+        title: "Import complete", 
+        description: `${successCount} inserted, ${updatedCount} updated, ${errorCount} errors` 
+      });
     } catch (e: any) {
-      toast({ title: "Import failed", description: e?.message || "Invalid CSV", variant: "destructive" });
-    } finally {
-      setImporting(false);
+      toast({ 
+        title: "Import failed", 
+        description: e?.message || "Invalid CSV", 
+        variant: "destructive" 
+      });
     }
+  };
+
+  const handleCancel = () => {
+    pause();
+    reset();
   };
 
   const downloadSample = () => {
@@ -207,20 +175,41 @@ export const InventoryImportDialog: React.FC = () => {
           </div>
 
           <div className="flex gap-2">
-            <Button disabled={!csvFile || importing} onClick={doImport} className="flex-1">
-              {importing ? "Importing..." : "Start Import"}
+            <Button 
+              disabled={!csvFile || state.status === 'processing' || state.status === 'preparing'} 
+              onClick={doImport} 
+              className="flex-1"
+            >
+              {state.status === 'preparing' ? "Preparing..." : state.status === 'processing' ? "Processing..." : "Start Import"}
             </Button>
             <Button type="button" variant="ghost" onClick={downloadSample}>
               <FileText className="mr-2 h-4 w-4" /> Sample CSV
             </Button>
           </div>
 
-          {results.length > 0 && (
+          {(state.status === 'preparing' || state.status === 'processing' || state.status === 'paused') && (
+            <ImportProgressIndicator
+              current={state.progress.current}
+              total={state.progress.total}
+              percentage={state.progress.percentage}
+              successCount={state.progress.successCount}
+              updatedCount={state.progress.updatedCount}
+              errorCount={state.progress.errorCount}
+              status={state.status}
+              canPause={state.canPause}
+              canResume={state.canResume}
+              onPause={pause}
+              onResume={resume}
+              onCancel={handleCancel}
+            />
+          )}
+
+          {state.results.length > 0 && (
             <div className="max-h-56 overflow-auto rounded-md border">
               <div className="grid grid-cols-6 text-xs font-medium px-3 py-2 bg-muted">
                 <span>Row</span><span>Status</span><span>SKU</span><span>Name</span><span className="col-span-2">Message</span>
               </div>
-              {results.map((r, idx) => (
+              {state.results.map((r, idx) => (
                 <div key={idx} className="grid grid-cols-6 text-xs px-3 py-2 border-t">
                   <span>{r.row}</span>
                   <span className={r.status === 'error' ? 'text-destructive' : r.status === 'updated' ? 'text-yellow-600' : 'text-green-600'}>
