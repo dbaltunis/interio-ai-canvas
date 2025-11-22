@@ -122,13 +122,12 @@ export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="client">Client</Label>
-              <Select value={clientId} onValueChange={setClientId}>
+              <Label htmlFor="client">Client (optional)</Label>
+              <Select value={clientId || undefined} onValueChange={setClientId}>
                 <SelectTrigger id="client">
                   <SelectValue placeholder="Select client..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
                   {clients.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
                       {client.name}
@@ -139,13 +138,12 @@ export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="project">Project</Label>
-              <Select value={projectId} onValueChange={setProjectId}>
+              <Label htmlFor="project">Project (optional)</Label>
+              <Select value={projectId || undefined} onValueChange={setProjectId}>
                 <SelectTrigger id="project">
                   <SelectValue placeholder="Select project..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
                   {projects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.name}
