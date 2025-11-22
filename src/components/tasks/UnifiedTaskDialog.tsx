@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { CalendarIcon, Check, ChevronsUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { useCreateTask } from "@/hooks/useTasks";
 import { useClients } from "@/hooks/useClients";
@@ -29,6 +30,8 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
   const [selectedProjectId, setSelectedProjectId] = useState(projectId || "");
   const [dueDate, setDueDate] = useState<Date>();
   const [estimatedHours, setEstimatedHours] = useState("");
+  const [clientOpen, setClientOpen] = useState(false);
+  const [projectOpen, setProjectOpen] = useState(false);
 
   const { data: clients = [] } = useClients();
   const { data: projects = [] } = useProjects();
@@ -144,37 +147,99 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
 
           {!clientId && (
             <div>
-              <Label htmlFor="client">Client</Label>
-              <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select client (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Client</Label>
+              <Popover open={clientOpen} onOpenChange={setClientOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={clientOpen}
+                    className="w-full justify-between"
+                  >
+                    {selectedClientId
+                      ? clients.find((client) => client.id === selectedClientId)?.name
+                      : "Select client (optional)"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 z-[10000]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search clients..." />
+                    <CommandList>
+                      <CommandEmpty>No client found.</CommandEmpty>
+                      <CommandGroup>
+                        {clients.map((client) => (
+                          <CommandItem
+                            key={client.id}
+                            value={client.name}
+                            onSelect={() => {
+                              setSelectedClientId(client.id);
+                              setClientOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedClientId === client.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {client.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
 
           {!projectId && (
             <div>
-              <Label htmlFor="project">Project</Label>
-              <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select project (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.job_number}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Project</Label>
+              <Popover open={projectOpen} onOpenChange={setProjectOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={projectOpen}
+                    className="w-full justify-between"
+                  >
+                    {selectedProjectId
+                      ? projects.find((project) => project.id === selectedProjectId)?.job_number
+                      : "Select project (optional)"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 z-[10000]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search projects..." />
+                    <CommandList>
+                      <CommandEmpty>No project found.</CommandEmpty>
+                      <CommandGroup>
+                        {projects.map((project) => (
+                          <CommandItem
+                            key={project.id}
+                            value={project.job_number}
+                            onSelect={() => {
+                              setSelectedProjectId(project.id);
+                              setProjectOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedProjectId === project.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {project.job_number}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
 
