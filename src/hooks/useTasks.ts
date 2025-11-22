@@ -20,6 +20,7 @@ export interface Task {
   tags?: string[];
   estimated_hours?: number;
   completed_at?: string;
+  archived?: boolean;
   calendar_synced?: boolean;
   appointment_id?: string;
   created_at: string;
@@ -49,6 +50,7 @@ export const useClientTasks = (clientId?: string) => {
         `)
         .eq("client_id", clientId)
         .neq("status", "cancelled")
+        .eq("archived", false)
         .order("due_date", { ascending: true, nullsFirst: false })
         .order("priority", { ascending: false });
 
@@ -78,6 +80,7 @@ export const useMyTasks = () => {
         `)
         .or(`user_id.eq.${user.id},assigned_to.eq.${user.id}`)
         .neq("status", "cancelled")
+        .eq("archived", false)
         .order("due_date", { ascending: true, nullsFirst: false })
         .order("priority", { ascending: false });
 
@@ -237,6 +240,41 @@ export const useDeleteTask = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to delete task",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useArchiveCompletedTasks = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from("tasks")
+        .update({ archived: true })
+        .eq("status", "completed")
+        .eq("archived", false)
+        .or(`user_id.eq.${user.id},assigned_to.eq.${user.id}`);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast({
+        title: "Tasks archived",
+        description: "All completed tasks have been archived",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to archive tasks",
         variant: "destructive",
       });
     },

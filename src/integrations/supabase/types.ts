@@ -7666,6 +7666,7 @@ export type Database = {
       tasks: {
         Row: {
           appointment_id: string | null
+          archived: boolean | null
           assigned_to: string | null
           calendar_synced: boolean | null
           client_id: string | null
@@ -7686,6 +7687,7 @@ export type Database = {
         }
         Insert: {
           appointment_id?: string | null
+          archived?: boolean | null
           assigned_to?: string | null
           calendar_synced?: boolean | null
           client_id?: string | null
@@ -7706,6 +7708,7 @@ export type Database = {
         }
         Update: {
           appointment_id?: string | null
+          archived?: boolean | null
           assigned_to?: string | null
           calendar_synced?: boolean | null
           client_id?: string | null
