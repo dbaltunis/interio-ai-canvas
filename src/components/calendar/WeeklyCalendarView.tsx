@@ -828,10 +828,15 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                    {/* Task content - distinct display */}
                                     {event.isTask && (
                                       <div className="flex flex-col h-full px-2 py-1.5 overflow-hidden">
-                                        <div className="font-medium text-[11px] leading-tight break-words overflow-hidden text-foreground" style={{ 
+                                        <div className="font-semibold text-sm leading-snug break-words" style={{
+                                          color: event.priority === 'urgent' ? 'hsl(0 84% 60%)' :
+                                                 event.priority === 'high' ? 'hsl(25 95% 53%)' :
+                                                 event.priority === 'medium' ? 'hsl(45 93% 47%)' :
+                                                 'hsl(217 91% 60%)',
                                           display: '-webkit-box',
                                           WebkitLineClamp: finalHeight > 60 ? 3 : 2,
-                                          WebkitBoxOrient: 'vertical'
+                                          WebkitBoxOrient: 'vertical',
+                                          overflow: 'hidden'
                                         }}>
                                           {event.title}
                                         </div>
