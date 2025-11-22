@@ -81,11 +81,18 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
   // Get tasks for the current day
   const getDayTasks = () => {
     if (!tasks) return [];
-    return tasks
+    const dayTasks = tasks
       .filter(task => {
         if (!task.due_date) return false;
         const taskDate = new Date(task.due_date);
-        return isSameDay(taskDate, currentDate);
+        const matches = isSameDay(taskDate, currentDate);
+        console.log('Task filter:', { 
+          taskTitle: task.title, 
+          taskDate: taskDate.toISOString(), 
+          currentDate: currentDate.toISOString(), 
+          matches 
+        });
+        return matches;
       })
       .map(task => {
         // Display tasks at 9 AM on their due date
@@ -107,6 +114,9 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
           status: task.status
         };
       });
+    
+    console.log('Total tasks fetched:', tasks?.length, 'Day tasks filtered:', dayTasks.length);
+    return dayTasks;
   };
 
   const dayEvents = [...getDayEvents(), ...getDayTasks()];
@@ -263,23 +273,23 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                   return (
                     <div
                       key={event.id}
-                      className={`absolute left-2 right-2 rounded-lg border-2 ${colorScheme.border} ${colorScheme.bg} shadow-sm hover:shadow-md transition-all pointer-events-auto cursor-pointer group overflow-hidden`}
+                      className={`absolute left-2 right-2 rounded-lg border-2 ${colorScheme.border} ${colorScheme.bg} shadow-md hover:shadow-lg transition-all pointer-events-auto cursor-pointer group overflow-hidden`}
                       style={{
                         top: `${style.top}px`,
-                        height: `${style.height}px`,
+                        height: `${Math.max(style.height, 56)}px`, // Minimum height for mobile visibility
                         zIndex: 10 + eventIndex,
                       }}
                       onClick={() => setSelectedTask(event.taskData as Task)}
                       title={`Task: ${event.title}\nDue: ${format(startTime, 'HH:mm')}\n${event.description || ''}`}
                     >
-                       <div className="p-2 h-full flex items-center gap-2">
-                         <CheckSquare className={`h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 ${colorScheme.text}`} />
+                       <div className="p-3 h-full flex items-center gap-2">
+                         <CheckSquare className={`h-5 w-5 flex-shrink-0 ${colorScheme.text}`} />
                          <div className="flex-1 min-w-0">
-                           <div className={`font-medium text-xs sm:text-sm leading-tight line-clamp-1 ${colorScheme.text}`}>
+                           <div className={`font-semibold text-sm leading-tight line-clamp-1 ${colorScheme.text}`}>
                              {event.title}
                            </div>
-                           {style.height > 40 && event.description && (
-                             <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                           {event.description && (
+                             <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
                                {event.description}
                              </div>
                            )}
