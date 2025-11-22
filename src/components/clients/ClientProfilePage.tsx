@@ -49,7 +49,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedClient, setEditedClient] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("tasks");
+  const [activeTab, setActiveTab] = useState("overview");
   
   // Calculate total value from quotes
   const calculatedDealValue = calculateClientDealValue(quotes || []);
