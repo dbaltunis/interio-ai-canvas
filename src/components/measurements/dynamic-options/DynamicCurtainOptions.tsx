@@ -42,11 +42,27 @@ export const DynamicCurtainOptions = ({
   onSelectedOptionsChange,
   selectedEyeletRing,
   onEyeletRingChange,
+  selectedHeading,
   onHeadingChange,
+  selectedLining,
   onLiningChange
 }: DynamicCurtainOptionsProps) => {
   const [availableRings, setAvailableRings] = useState<EyeletRing[]>([]);
   const [treatmentOptionSelections, setTreatmentOptionSelections] = useState<Record<string, string>>({});
+  
+  // Early returns MUST come before hooks to prevent violations
+  if (!template) {
+    return (
+      <div className="text-sm text-muted-foreground">
+        Please select a curtain template first
+      </div>
+    );
+  }
+
+  // Hooks MUST be called unconditionally after early returns
+  const { units } = useMeasurementUnits();
+  const { data: inventory = [], isLoading: headingsLoading } = useEnhancedInventory();
+  const { data: treatmentOptions = [], isLoading: treatmentOptionsLoading } = useTreatmentOptions('curtains', 'category');
   
   // Initialize treatmentOptionSelections from saved measurements
   useEffect(() => {
@@ -74,19 +90,36 @@ export const DynamicCurtainOptions = ({
     }
   }, [template?.id, measurements]); // Re-initialize when template or measurements change
   
-  // Early returns MUST come before hooks to prevent violations
-  if (!template) {
-    return (
-      <div className="text-sm text-muted-foreground">
-        Please select a curtain template first
-      </div>
-    );
-  }
-
-  // Hooks MUST be called unconditionally after early returns
-  const { units } = useMeasurementUnits();
-  const { data: inventory = [], isLoading: headingsLoading } = useEnhancedInventory();
-  const { data: treatmentOptions = [], isLoading: treatmentOptionsLoading } = useTreatmentOptions('curtains', 'category');
+  // Auto-select first option when treatment options load
+  useEffect(() => {
+    if (treatmentOptions.length === 0 || treatmentOptionsLoading) return;
+    
+    const autoSelections: Record<string, string> = {};
+    let hasChanges = false;
+    
+    treatmentOptions.forEach(option => {
+      if (!option.visible || !option.option_values || option.option_values.length === 0) return;
+      
+      const currentSelection = treatmentOptionSelections[option.key] || measurements[`treatment_option_${option.key}`];
+      
+      // Auto-select first option if none selected
+      if (!currentSelection) {
+        const firstValue = option.option_values[0];
+        autoSelections[option.key] = firstValue.id;
+        hasChanges = true;
+        
+        // Save to measurements and trigger price calculation
+        onChange(`treatment_option_${option.key}`, firstValue.id);
+        handleTreatmentOptionChange(option.key, firstValue.id);
+        
+        console.log(`✅ Auto-selected first option for ${option.label}:`, firstValue.label);
+      }
+    });
+    
+    if (hasChanges) {
+      setTreatmentOptionSelections(prev => ({ ...prev, ...autoSelections }));
+    }
+  }, [treatmentOptions.length, treatmentOptionsLoading]);
   
   // Filter for heading items from inventory - ONLY heading/pleat types, NOT hardware/tracks
   const headingOptions = inventory.filter(item => {
@@ -98,6 +131,34 @@ export const DynamicCurtainOptions = ({
            && !category.includes('rod')
            && !category.includes('hardware');
   });
+  
+  // Auto-select first heading if none selected
+  useEffect(() => {
+    if (headingsLoading || headingOptions.length === 0) return;
+    
+    const currentHeading = measurements.selected_heading || selectedHeading;
+    if (!currentHeading || currentHeading === 'standard') {
+      const firstHeading = headingOptions[0];
+      if (firstHeading && onHeadingChange) {
+        console.log(`✅ Auto-selected first heading:`, firstHeading.name);
+        handleHeadingChange(firstHeading.id);
+      }
+    }
+  }, [headingOptions.length, headingsLoading]);
+  
+  // Auto-select first lining if none selected
+  useEffect(() => {
+    if (!template?.lining_types || template.lining_types.length === 0) return;
+    
+    const currentLining = measurements.selected_lining || selectedLining;
+    if (!currentLining || currentLining === 'none') {
+      const firstLining = template.lining_types[0];
+      if (firstLining && onLiningChange) {
+        console.log(`✅ Auto-selected first lining:`, firstLining.type);
+        handleLiningChange(firstLining.type);
+      }
+    }
+  }, [template?.lining_types?.length]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
