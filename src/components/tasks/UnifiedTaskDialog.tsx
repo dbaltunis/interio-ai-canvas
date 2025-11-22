@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CalendarIcon, Check, Search } from "lucide-react";
-import { format } from "date-fns";
-import { useCreateTask } from "@/hooks/useTasks";
+import { format, parseISO } from "date-fns";
+import { useCreateTask, useUpdateTask, Task, TaskPriority } from "@/hooks/useTasks";
 import { useClients } from "@/hooks/useClients";
 import { useProjects } from "@/hooks/useProjects";
 import { cn } from "@/lib/utils";
@@ -20,12 +20,13 @@ interface UnifiedTaskDialogProps {
   onOpenChange: (open: boolean) => void;
   clientId?: string;
   projectId?: string;
+  task?: Task | null;
 }
 
-export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: UnifiedTaskDialogProps) => {
+export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId, task }: UnifiedTaskDialogProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
+  const [priority, setPriority] = useState<TaskPriority>("medium");
   const [selectedClientId, setSelectedClientId] = useState(clientId || "");
   const [selectedProjectId, setSelectedProjectId] = useState(projectId || "");
   const [dueDate, setDueDate] = useState<Date>();
@@ -38,6 +39,31 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
   const { data: clients = [] } = useClients();
   const { data: projects = [] } = useProjects();
   const createTask = useCreateTask();
+  const updateTask = useUpdateTask();
+
+  const isEditMode = !!task;
+
+  // Populate form when editing
+  useEffect(() => {
+    if (task) {
+      setTitle(task.title);
+      setDescription(task.description || "");
+      setPriority(task.priority);
+      setSelectedClientId(task.client_id || "");
+      setSelectedProjectId(task.project_id || "");
+      setDueDate(task.due_date ? parseISO(task.due_date) : undefined);
+      setEstimatedHours(task.estimated_hours?.toString() || "");
+    } else {
+      // Reset form for create mode
+      setTitle("");
+      setDescription("");
+      setPriority("medium");
+      setSelectedClientId(clientId || "");
+      setSelectedProjectId(projectId || "");
+      setDueDate(undefined);
+      setEstimatedHours("");
+    }
+  }, [task, clientId, projectId]);
 
   const filteredClients = useMemo(() => {
     if (!clientSearch) return clients;
@@ -56,24 +82,29 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    await createTask.mutateAsync({
-      title,
-      description,
-      priority,
-      client_id: selectedClientId || undefined,
-      project_id: selectedProjectId || undefined,
-      due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : undefined,
-      estimated_hours: estimatedHours ? parseFloat(estimatedHours) : undefined,
-    });
+    if (isEditMode) {
+      await updateTask.mutateAsync({
+        id: task.id,
+        title,
+        description,
+        priority,
+        client_id: selectedClientId || undefined,
+        project_id: selectedProjectId || undefined,
+        due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : undefined,
+        estimated_hours: estimatedHours ? parseFloat(estimatedHours) : undefined,
+      });
+    } else {
+      await createTask.mutateAsync({
+        title,
+        description,
+        priority,
+        client_id: selectedClientId || undefined,
+        project_id: selectedProjectId || undefined,
+        due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : undefined,
+        estimated_hours: estimatedHours ? parseFloat(estimatedHours) : undefined,
+      });
+    }
 
-    // Reset form
-    setTitle("");
-    setDescription("");
-    setPriority("medium");
-    setSelectedClientId(clientId || "");
-    setSelectedProjectId(projectId || "");
-    setDueDate(undefined);
-    setEstimatedHours("");
     onOpenChange(false);
   };
 
@@ -81,7 +112,7 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edit Task' : 'Create New Task'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -117,6 +148,7 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -357,8 +389,8 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!title || createTask.isPending}>
-              {createTask.isPending ? "Creating..." : "Create Task"}
+            <Button type="submit" disabled={!title || createTask.isPending || updateTask.isPending}>
+              {createTask.isPending || updateTask.isPending ? "Saving..." : isEditMode ? "Update Task" : "Create Task"}
             </Button>
           </div>
         </form>

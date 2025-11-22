@@ -23,6 +23,7 @@ export const MyTasksPage = () => {
   const [groupBy, setGroupBy] = useState<GroupByType>('due-date');
   const [sortBy, setSortBy] = useState<SortByType>('due-date');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
   const { data: tasks = [] } = useMyTasks();
   const { data: clients = [] } = useClients();
@@ -316,11 +317,8 @@ export const MyTasksPage = () => {
                       <button
                         key={task.id}
                         type="button"
-                        onClick={() => {
-                          // TODO: Open task detail dialog
-                          console.log('Task clicked:', task);
-                        }}
-                        className="w-full flex items-start gap-2 p-2 rounded-lg border hover:bg-accent/10 hover:border-accent transition-colors text-left"
+                        onClick={() => setSelectedTask(task)}
+                        className="w-full flex items-start gap-2 p-2 rounded-lg border hover:bg-accent/10 hover:border-accent transition-colors text-left cursor-pointer"
                       >
                         <Checkbox
                           checked={false}
@@ -389,9 +387,13 @@ export const MyTasksPage = () => {
         </Card>
       )}
 
-      <UnifiedTaskDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
+      <UnifiedTaskDialog 
+        open={showCreateDialog || !!selectedTask} 
+        onOpenChange={(open) => {
+          setShowCreateDialog(open);
+          if (!open) setSelectedTask(null);
+        }}
+        task={selectedTask}
       />
     </div>
   );
