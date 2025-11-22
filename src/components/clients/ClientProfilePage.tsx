@@ -27,6 +27,8 @@ import { QuickAddTask } from "../tasks/QuickAddTask";
 import { ClientActivityLog } from "./ClientActivityLog";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { ClientFilesManager } from "./ClientFilesManager";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface ClientProfilePageProps {
   clientId: string;
@@ -42,6 +44,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const updateClient = useUpdateClient();
   const { toast } = useToast();
   const { probability: autoConversionProb, factors } = useConversionProbability(client);
+  const { user } = useAuth();
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedClient, setEditedClient] = useState<any>(null);
@@ -589,7 +592,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="emails">Emails</TabsTrigger>
           <TabsTrigger value="measurements">Measurements</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="documents">Files</TabsTrigger>
         </TabsList>
 
         <TabsContent value="projects" className="mt-6">
@@ -619,12 +622,9 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </TabsContent>
 
         <TabsContent value="documents" className="mt-6">
-          <Card>
-            <CardContent className="p-12 text-center">
-              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No documents uploaded yet</p>
-            </CardContent>
-          </Card>
+          {user && (
+            <ClientFilesManager clientId={clientId} userId={user.id} />
+          )}
         </TabsContent>
       </Tabs>
     </div>
