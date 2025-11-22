@@ -214,37 +214,30 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0 z-[10000]" align="start">
-                  <Command shouldFilter={false}>
+                <PopoverContent className="w-[400px] p-0 z-[10000]" align="start">
+                  <Command>
                     <CommandInput placeholder="Search projects..." />
-                    <CommandList className="pointer-events-auto">
+                    <CommandList>
                       <CommandEmpty>No project found.</CommandEmpty>
                       <CommandGroup>
-                        {projects
-                          .filter((project) => {
-                            if (!projectOpen) return true;
-                            const searchTerm = document.querySelector<HTMLInputElement>('[cmdk-input]')?.value?.toLowerCase() || '';
-                            if (!searchTerm) return true;
-                            return project.job_number?.toLowerCase().includes(searchTerm);
-                          })
-                          .map((project) => (
-                            <CommandItem
-                              key={project.id}
-                              value={project.id}
-                              onSelect={(currentValue) => {
-                                setSelectedProjectId(currentValue);
-                                setProjectOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedProjectId === project.id ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {project.job_number}
-                            </CommandItem>
-                          ))}
+                        {projects.map((project) => (
+                          <CommandItem
+                            key={project.id}
+                            value={project.job_number || project.id}
+                            onSelect={() => {
+                              setSelectedProjectId(project.id);
+                              setProjectOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedProjectId === project.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {project.job_number}
+                          </CommandItem>
+                        ))}
                       </CommandGroup>
                     </CommandList>
                   </Command>
