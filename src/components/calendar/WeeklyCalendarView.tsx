@@ -7,12 +7,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell, Video } from "lucide-react";
+import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell, Video, CheckSquare } from "lucide-react";
 import { useUpdateAppointment } from "@/hooks/useAppointments";
 import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
 import { SchedulerSlotDialog } from "./SchedulerSlotDialog";
 import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
+import { useMyTasks } from "@/hooks/useTasks";
 
 interface WeeklyCalendarViewProps {
   currentDate: Date;
@@ -29,6 +30,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   const { data: bookedAppointments, isLoading: bookingsLoading } = useAppointmentBookings();
   const { data: schedulers } = useAppointmentSchedulers();
   const updateAppointment = useUpdateAppointment();
+  const { data: tasks } = useMyTasks();
   
   // Debug logging for data fetching
   console.log('Calendar data status:', { 
@@ -214,12 +216,45 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
       });
   };
 
-  // Combine regular events, booked appointments, and available scheduler slots
+  // Get tasks for a specific date
+  const getTasksForDate = (date: Date) => {
+    if (!tasks) return [];
+    
+    return tasks
+      .filter(task => {
+        if (!task.due_date) return false;
+        const taskDate = new Date(task.due_date);
+        return isSameDay(taskDate, date);
+      })
+      .map(task => {
+        // Display tasks at 9 AM on their due date
+        const startTime = new Date(date);
+        startTime.setHours(9, 0, 0, 0);
+        
+        const endTime = new Date(startTime);
+        endTime.setMinutes(endTime.getMinutes() + 30); // 30-min block
+        
+        return {
+          id: task.id,
+          title: task.title,
+          description: task.description,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          isTask: true,
+          taskData: task,
+          priority: task.priority,
+          status: task.status
+        };
+      });
+  };
+
+  // Combine regular events, booked appointments, available scheduler slots, and tasks
   const getAllEventsForDate = (date: Date) => {
     const regularEvents = getEventsForDate(date);
     const bookedEvents = getBookedEventsForDate(date);
     const availableSlots = getSchedulerSlotsForDate(date);
-    return [...regularEvents, ...bookedEvents, ...availableSlots];
+    const dateTasks = getTasksForDate(date);
+    return [...regularEvents, ...bookedEvents, ...availableSlots, ...dateTasks];
   };
 
   // Check if a time slot is occupied by booked appointments or events
@@ -405,6 +440,10 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded bg-primary/80 border-l-4 border-primary"></div>
             <span>Your Events</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <CheckSquare className="w-3 h-3 text-orange-500" />
+            <span>Tasks</span>
           </div>
         </div>
 
@@ -608,7 +647,24 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                         
                         // Clear visual distinction with MORE VISIBLE colors
                         const getEventStyling = (event: any) => {
-                          if (event.isBooking) {
+                          if (event.isTask) {
+                            // Tasks: distinct styling with priority colors
+                            const priorityColors = {
+                              urgent: { bg: 'hsl(0 84% 60% / 0.15)', border: 'hsl(0 84% 60%)' },
+                              high: { bg: 'hsl(25 95% 53% / 0.15)', border: 'hsl(25 95% 53%)' },
+                              medium: { bg: 'hsl(45 93% 47% / 0.15)', border: 'hsl(45 93% 47%)' },
+                              low: { bg: 'hsl(217 91% 60% / 0.15)', border: 'hsl(217 91% 60%)' }
+                            };
+                            const colors = priorityColors[event.priority as keyof typeof priorityColors] || priorityColors.medium;
+                            return {
+                              background: colors.bg,
+                              border: colors.border,
+                              textClass: 'text-foreground',
+                              isDashed: false,
+                              isCompact: false,
+                              minHeight: 32,
+                            } as const;
+                          } else if (event.isBooking) {
                             // Booked appointments: blue/purple color
                             return {
                               background: 'hsl(217 91% 60% / 0.2)',
@@ -648,36 +704,42 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                              ? Math.max(style.height, 45)  // Minimum 45px for booked appointments
                              : Math.max(style.height, eventStyling.minHeight);
 
-                          const eventStyle: React.CSSProperties = {
-                            top: event.isAvailableSlot ? `${style.top}px` : `${style.top}px`,
-                            height: `${finalHeight}px`,
-                            width: event.isAvailableSlot ? '96%' : event.isBooking ? '96%' : eventWidth,
-                            left: event.isAvailableSlot ? '2%' : event.isBooking ? '2%' : eventLeft,
-                            zIndex: event.isAvailableSlot ? 20 : event.isBooking ? 15 + eventIndex : 10 + eventIndex,
-                            background: event.isAvailableSlot 
-                              ? 'linear-gradient(135deg, hsl(142 76% 80% / 0.5), hsl(142 76% 70% / 0.6))'
-                              : event.isBooking
-                              ? 'hsl(217 91% 60% / 0.9)'
-                              : eventStyling.background,
-                            borderLeftColor: event.isAvailableSlot ? 'hsl(142 76% 50%)' : event.isBooking ? 'hsl(217 91% 70%)' : eventStyling.border,
-                            borderColor: event.isAvailableSlot 
-                              ? 'hsl(142 76% 50% / 0.6)'
-                              : event.isBooking
-                              ? 'hsl(217 91% 70% / 0.8)'
-                              : 'hsl(var(--border))',
-                            borderRadius: event.isAvailableSlot ? '4px' : '6px',
-                            borderStyle: event.isAvailableSlot ? 'dashed' : 'solid',
-                            borderWidth: event.isAvailableSlot ? '2px' : event.isBooking ? '1px 1px 1px 4px' : '1px 1px 1px 4px',
-                            boxShadow: event.isAvailableSlot
-                              ? '0 1px 3px hsl(142 76% 50% / 0.3)'
-                              : event.isBooking
-                              ? '0 3px 10px -2px hsl(217 91% 60% / 0.4), 0 2px 6px -1px hsl(217 91% 60% / 0.3)'
-                              : '0 8px 16px -4px hsl(var(--background) / 0.25), 0 4px 8px -2px hsl(var(--background) / 0.2)',
-                            transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-                            opacity: isDragging ? 0.85 : 1,
-                            cursor: (event.isBooking || event.isAvailableSlot) ? 'pointer' : 'grab',
-                            pointerEvents: 'auto',
-                          };
+                            const eventStyle: React.CSSProperties = {
+                             top: event.isAvailableSlot ? `${style.top}px` : `${style.top}px`,
+                             height: `${finalHeight}px`,
+                             width: event.isAvailableSlot || event.isBooking || event.isTask ? '96%' : eventWidth,
+                             left: event.isAvailableSlot || event.isBooking || event.isTask ? '2%' : eventLeft,
+                             zIndex: event.isAvailableSlot ? 20 : event.isBooking ? 15 + eventIndex : event.isTask ? 12 + eventIndex : 10 + eventIndex,
+                             background: event.isAvailableSlot 
+                               ? 'linear-gradient(135deg, hsl(142 76% 80% / 0.5), hsl(142 76% 70% / 0.6))'
+                               : event.isBooking
+                               ? 'hsl(217 91% 60% / 0.9)'
+                               : event.isTask
+                               ? eventStyling.background
+                               : eventStyling.background,
+                             borderLeftColor: event.isAvailableSlot ? 'hsl(142 76% 50%)' : event.isBooking ? 'hsl(217 91% 70%)' : event.isTask ? eventStyling.border : eventStyling.border,
+                             borderColor: event.isAvailableSlot 
+                               ? 'hsl(142 76% 50% / 0.6)'
+                               : event.isBooking
+                               ? 'hsl(217 91% 70% / 0.8)'
+                               : event.isTask
+                               ? eventStyling.border
+                               : 'hsl(var(--border))',
+                             borderRadius: event.isAvailableSlot ? '4px' : '6px',
+                             borderStyle: event.isAvailableSlot ? 'dashed' : 'solid',
+                             borderWidth: event.isAvailableSlot ? '2px' : event.isBooking || event.isTask ? '1px 1px 1px 4px' : '1px 1px 1px 4px',
+                             boxShadow: event.isAvailableSlot
+                               ? '0 1px 3px hsl(142 76% 50% / 0.3)'
+                               : event.isBooking
+                               ? '0 3px 10px -2px hsl(217 91% 60% / 0.4), 0 2px 6px -1px hsl(217 91% 60% / 0.3)'
+                               : event.isTask
+                               ? '0 2px 8px -2px hsl(var(--foreground) / 0.15)'
+                               : '0 8px 16px -4px hsl(var(--background) / 0.25), 0 4px 8px -2px hsl(var(--background) / 0.2)',
+                             transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+                             opacity: isDragging ? 0.85 : 1,
+                             cursor: (event.isBooking || event.isAvailableSlot || event.isTask) ? 'pointer' : 'grab',
+                             pointerEvents: 'auto',
+                           };
 
                             return (
                               <div
@@ -689,10 +751,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   ${!event.isBooking && !event.isAvailableSlot ? 'hover:ring-2 hover:ring-primary/40' : ''}
                                   ${event.isBooking ? 'text-white' : eventStyling.textClass}`}
                                   style={eventStyle}
-                                 onClick={(e) => {
+                                  onClick={(e) => {
                                   e.stopPropagation();
-                                  console.log('Event clicked:', event.isAvailableSlot ? 'Available Slot' : event.isBooking ? 'Booking' : 'Personal Event', event);
-                                  if (event.isBooking) {
+                                  console.log('Event clicked:', event.isAvailableSlot ? 'Available Slot' : event.isBooking ? 'Booking' : event.isTask ? 'Task' : 'Personal Event', event);
+                                  if (event.isTask) {
+                                    // Handle task click - log for now
+                                    console.log('Task clicked:', event.taskData);
+                                  } else if (event.isBooking) {
                                     // Open booked appointment dialog with full details
                                     setBookedAppointmentDialog({ open: true, appointment: event });
                                   } else if (event.isAvailableSlot) {
@@ -719,16 +784,18 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                     onEventClick?.(event.id);
                                   }
                                 }}
-                                title={
-                                   event.isAvailableSlot
+                                 title={
+                                   event.isTask
+                                     ? `✅ TASK\n${event.title}\n📅 Due: ${format(startTime, 'HH:mm')}\n${event.description || ''}\n🔸 Priority: ${event.priority}\n✏️ Click to edit`
+                                     : event.isAvailableSlot
                                      ? `📅 SHAREABLE APPOINTMENT SLOT\n${event.schedulerName}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')} (${event.duration} min)\n📤 Click to get booking link and share with clients`
                                      : event.isBooking 
                                      ? `👤 CUSTOMER BOOKING\n${event.bookingData?.customer_name || 'Customer'}\n📋 ${event.scheduler_name}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n📞 Click to view contact details and video link`
                                      : `📝 PERSONAL EVENT\n${event.title}\n🕐 ${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}\n✏️ Click to edit or move`
-                                }
+                                 }
                              >
-                                {/* Drag Handle - only for personal events */}
-                                {!event.isBooking && !event.isAvailableSlot && (
+                                {/* Drag Handle - only for personal events, not for tasks, bookings, or slots */}
+                                {!event.isBooking && !event.isAvailableSlot && !event.isTask && (
                                   <div 
                                     {...listeners}
                                     {...attributes}
@@ -755,9 +822,26 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                         </span>
                                       </div>
                                     )}
+
+                                   {/* Task content - distinct display */}
+                                    {event.isTask && (
+                                      <div className="flex items-center gap-1.5 h-full">
+                                        <CheckSquare className="h-3 w-3 flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-semibold text-[11px] leading-tight truncate">
+                                            {event.title}
+                                          </div>
+                                          {finalHeight > 40 && event.description && (
+                                            <div className="text-[9px] text-muted-foreground mt-0.5 truncate">
+                                              {event.description}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
                                    
-                                   {/* Event content - only show for non-available-slot events */}
-                                   {!event.isAvailableSlot && (
+                                   {/* Event content - only show for non-available-slot and non-task events */}
+                                   {!event.isAvailableSlot && !event.isTask && (
                                      <>
                                        <div className="flex items-start justify-between gap-1 mb-0.5">
                                          {/* Title and time - adaptive based on screen size */}
