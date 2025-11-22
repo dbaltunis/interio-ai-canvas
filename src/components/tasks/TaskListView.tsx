@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { useMyTasks, useCreateTask, useCompleteTask, useUpdateTask, useDeleteTask, Task } from "@/hooks/useTasks";
+import { useMyTasks, useCreateTask, useCompleteTask, Task } from "@/hooks/useTasks";
+import { TaskEditDialog } from "./TaskEditDialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -12,22 +13,12 @@ import {
   Calendar,
   Clock,
   Tag,
-  MoreVertical,
-  Trash2,
-  Edit,
   CheckCircle2,
   Circle,
   AlertCircle,
   ChevronRight,
   X,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -44,16 +35,14 @@ export const TaskListView = () => {
   const { data: tasks = [], isLoading } = useMyTasks();
   const createTask = useCreateTask();
   const completeTask = useCompleteTask();
-  const updateTask = useUpdateTask();
-  const deleteTask = useDeleteTask();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<FilterType>("all");
   const [sortBy, setSortBy] = useState<SortType>("due_date");
   const [showNewTask, setShowNewTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [editingTitle, setEditingTitle] = useState("");
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   // Filter and sort tasks
   const filteredTasks = useMemo(() => {
@@ -134,29 +123,12 @@ export const TaskListView = () => {
   };
 
   const handleToggleComplete = async (task: Task) => {
-    if (task.status === "completed") {
-      await updateTask.mutateAsync({
-        id: task.id,
-        status: "pending",
-        completed_at: null,
-      });
-    } else {
-      await completeTask.mutateAsync(task.id);
-    }
+    await completeTask.mutateAsync(task.id);
   };
 
-  const handleEditTask = (task: Task) => {
-    setEditingTaskId(task.id);
-    setEditingTitle(task.title);
-  };
-
-  const handleSaveEdit = async (taskId: string) => {
-    if (!editingTitle.trim()) return;
-    await updateTask.mutateAsync({
-      id: taskId,
-      title: editingTitle,
-    });
-    setEditingTaskId(null);
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setShowEditDialog(true);
   };
 
   const getPriorityColor = (priority: string) => {
@@ -179,122 +151,70 @@ export const TaskListView = () => {
 
   const TaskItem = ({ task }: { task: Task }) => (
     <Card
-      className="group p-4 hover:shadow-md transition-all duration-200 border-l-4"
+      className="group p-4 hover:shadow-md transition-all duration-200 border-l-4 cursor-pointer"
       style={{ borderLeftColor: getPriorityColor(task.priority) }}
+      onClick={() => handleTaskClick(task)}
     >
       <div className="flex items-start gap-3">
         <Checkbox
           checked={task.status === "completed"}
           onCheckedChange={() => handleToggleComplete(task)}
+          onClick={(e) => e.stopPropagation()}
           className="mt-1"
         />
 
         <div className="flex-1 min-w-0">
-          {editingTaskId === task.id ? (
-            <div className="flex gap-2">
-              <Input
-                value={editingTitle}
-                onChange={(e) => setEditingTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSaveEdit(task.id);
-                  if (e.key === "Escape") setEditingTaskId(null);
-                }}
-                className="h-8"
-                autoFocus
-              />
-              <Button size="sm" onClick={() => handleSaveEdit(task.id)}>
-                Save
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setEditingTaskId(null)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-start gap-2 mb-2">
-                <h4
-                  className={`font-medium text-foreground flex-1 ${
-                    task.status === "completed" ? "line-through text-muted-foreground" : ""
-                  }`}
-                >
-                  {task.title}
-                </h4>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEditTask(task)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleToggleComplete(task)}
-                    >
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      {task.status === "completed" ? "Mark Incomplete" : "Mark Complete"}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => deleteTask.mutate(task.id)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+          <div className="flex items-start gap-2 mb-2">
+            <h4
+              className={`font-medium text-foreground flex-1 ${
+                task.status === "completed" ? "line-through text-muted-foreground" : ""
+              }`}
+            >
+              {task.title}
+            </h4>
+          </div>
 
-              {task.description && (
-                <p className="text-sm text-muted-foreground mb-2">{task.description}</p>
-              )}
-
-              <div className="flex flex-wrap gap-2 items-center">
-                {task.due_date && (
-                  <Badge variant="outline" className="text-xs">
-                    <Calendar className="h-3 w-3 mr-1" />
-                    {format(parseISO(task.due_date), "MMM d")}
-                  </Badge>
-                )}
-
-                <Badge
-                  variant="outline"
-                  className="text-xs"
-                  style={{ borderColor: getPriorityColor(task.priority) }}
-                >
-                  {getPriorityIcon(task.priority)}
-                  <span className="ml-1 capitalize">{task.priority}</span>
-                </Badge>
-
-                {task.estimated_hours && (
-                  <Badge variant="outline" className="text-xs">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {task.estimated_hours}h
-                  </Badge>
-                )}
-
-                {task.tags && task.tags.length > 0 && (
-                  <Badge variant="secondary" className="text-xs">
-                    <Tag className="h-3 w-3 mr-1" />
-                    {task.tags[0]}
-                  </Badge>
-                )}
-
-                {task.clients && (
-                  <Badge variant="secondary" className="text-xs">
-                    {task.clients.name}
-                  </Badge>
-                )}
-              </div>
-            </>
+          {task.description && (
+            <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{task.description}</p>
           )}
+
+          <div className="flex flex-wrap gap-2 items-center">
+            {task.due_date && (
+              <Badge variant="outline" className="text-xs">
+                <Calendar className="h-3 w-3 mr-1" />
+                {format(parseISO(task.due_date), "MMM d")}
+              </Badge>
+            )}
+
+            <Badge
+              variant="outline"
+              className="text-xs"
+              style={{ borderColor: getPriorityColor(task.priority) }}
+            >
+              {getPriorityIcon(task.priority)}
+              <span className="ml-1 capitalize">{task.priority}</span>
+            </Badge>
+
+            {task.estimated_hours && (
+              <Badge variant="outline" className="text-xs">
+                <Clock className="h-3 w-3 mr-1" />
+                {task.estimated_hours}h
+              </Badge>
+            )}
+
+            {task.tags && task.tags.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                <Tag className="h-3 w-3 mr-1" />
+                {task.tags[0]}
+              </Badge>
+            )}
+
+            {task.clients && (
+              <Badge variant="secondary" className="text-xs">
+                {task.clients.name}
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
     </Card>
@@ -345,8 +265,11 @@ export const TaskListView = () => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-background">
-      {/* Header */}
+    <>
+      <TaskEditDialog task={selectedTask} open={showEditDialog} onOpenChange={setShowEditDialog} />
+      
+      <div className="h-full flex flex-col bg-background">
+        {/* Header */}
       <div className="border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between mb-4">
@@ -487,5 +410,6 @@ export const TaskListView = () => {
         )}
       </div>
     </div>
+    </>
   );
 };

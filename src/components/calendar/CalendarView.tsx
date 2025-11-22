@@ -459,6 +459,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
             onViewBookings={() => setShowBookingManagement(true)}
             onViewAnalytics={() => setShowAnalytics(true)}
             onTasksClick={() => setShowTasksView(!showTasksView)}
+            showTasksView={showTasksView}
           />
         </div>
 
