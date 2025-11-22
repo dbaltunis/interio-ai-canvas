@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Upload, File, Image, FileText, Download, Trash2, Eye } from "lucide-react";
 import { useClientFiles, useUploadClientFile, useDeleteClientFile, useGetClientFileUrl } from "@/hooks/useClientFiles";
 import { toast } from "sonner";
+import { FileViewerDialog } from "./FileViewerDialog";
 
 interface ClientFilesManagerProps {
   clientId: string;
@@ -14,6 +15,8 @@ interface ClientFilesManagerProps {
 export const ClientFilesManager = ({ clientId, userId }: ClientFilesManagerProps) => {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [currentFile, setCurrentFile] = useState<{ url: string; name: string; type: string } | null>(null);
 
   const { data: files, isLoading } = useClientFiles(clientId, userId);
   const uploadFile = useUploadClientFile();
@@ -59,7 +62,12 @@ export const ClientFilesManager = ({ clientId, userId }: ClientFilesManagerProps
         bucketName: file.bucket_name,
         filePath: file.file_path,
       });
-      window.open(url, '_blank');
+      setCurrentFile({
+        url,
+        name: file.file_name,
+        type: file.file_type,
+      });
+      setViewerOpen(true);
     } catch (error) {
       toast.error("Failed to open file");
     }
@@ -168,6 +176,16 @@ export const ClientFilesManager = ({ clientId, userId }: ClientFilesManagerProps
           </Table>
         )}
       </CardContent>
+
+      {currentFile && (
+        <FileViewerDialog
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+          fileUrl={currentFile.url}
+          fileName={currentFile.name}
+          fileType={currentFile.type}
+        />
+      )}
     </Card>
   );
 };
