@@ -13,7 +13,8 @@ import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
 import { SchedulerSlotDialog } from "./SchedulerSlotDialog";
 import { useSchedulerSlots } from "@/hooks/useSchedulerSlots";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
-import { useMyTasks } from "@/hooks/useTasks";
+import { useMyTasks, Task } from "@/hooks/useTasks";
+import { UnifiedTaskDialog } from "@/components/tasks/UnifiedTaskDialog";
 
 interface WeeklyCalendarViewProps {
   currentDate: Date;
@@ -47,6 +48,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
   
   const [bookedAppointmentDialog, setBookedAppointmentDialog] = useState<{ open: boolean; appointment: any }>({ open: false, appointment: null });
   const [schedulerSlotDialog, setSchedulerSlotDialog] = useState<{ open: boolean; slot: any }>({ open: false, slot: null });
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   
   // Get current user ID
   useEffect(() => {
@@ -755,8 +757,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   e.stopPropagation();
                                   console.log('Event clicked:', event.isAvailableSlot ? 'Available Slot' : event.isBooking ? 'Booking' : event.isTask ? 'Task' : 'Personal Event', event);
                                   if (event.isTask) {
-                                    // Handle task click - log for now
-                                    console.log('Task clicked:', event.taskData);
+                                    // Open task edit dialog
+                                    setSelectedTask(event.taskData);
                                   } else if (event.isBooking) {
                                     // Open booked appointment dialog with full details
                                     setBookedAppointmentDialog({ open: true, appointment: event });
