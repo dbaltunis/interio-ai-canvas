@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { 
   Mail, 
   Search, 
@@ -31,6 +40,8 @@ import {
 } from "lucide-react";
 import { useEmails } from "@/hooks/useEmails";
 import { format } from "date-fns";
+import { EmailDetailDialog } from "../email-components/EmailDetailDialog";
+import type { Email } from "@/hooks/useEmails";
 
 interface AttachmentData {
   filename: string;
@@ -45,8 +56,12 @@ interface ProjectEmailHistoryProps {
 export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
+  const [emailDetailOpen, setEmailDetailOpen] = useState(false);
   
-  const { data: emails = [] } = useEmails();
+  const { data: emails = [], isLoading } = useEmails();
   
   // Filter emails for this project
   const projectEmails = emails.filter(email => {
@@ -55,6 +70,22 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
     const matchesStatus = statusFilter === "all" || email.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  // Pagination
+  const totalPages = Math.ceil(projectEmails.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedEmails = projectEmails.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
+  const handleEmailClick = (email: Email) => {
+    setSelectedEmail(email);
+    setEmailDetailOpen(true);
+  };
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -112,21 +143,46 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
             <SelectItem value="queued">Queued</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={pageSize.toString()} onValueChange={(val) => setPageSize(parseInt(val))}>
+          <SelectTrigger className="w-full sm:w-[120px] h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="10">10 per page</SelectItem>
+            <SelectItem value="20">20 per page</SelectItem>
+            <SelectItem value="50">50 per page</SelectItem>
+            <SelectItem value="100">100 per page</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Compact Email List */}
       <div className="border rounded-lg divide-y">
-        {projectEmails.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-0 divide-y">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 p-3">
+                <Skeleton className="h-6 w-20" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+                <Skeleton className="h-8 w-8" />
+              </div>
+            ))}
+          </div>
+        ) : projectEmails.length === 0 ? (
           <div className="text-center py-12">
             <Mail className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
             <h3 className="text-sm font-medium mb-1">No emails found</h3>
             <p className="text-sm text-muted-foreground">No emails match your current filters.</p>
           </div>
         ) : (
-          projectEmails.map((email) => (
+          paginatedEmails.map((email) => (
             <div
               key={email.id}
-              className="flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors"
+              className="flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors cursor-pointer"
+              onClick={() => handleEmailClick(email)}
             >
               {/* Status Indicator */}
               <div className="flex-shrink-0">
@@ -167,13 +223,16 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
 
               {/* Actions Dropdown */}
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation();
+                    handleEmailClick(email);
+                  }}>
                     <Eye className="h-4 w-4 mr-2" />
                     View Details
                   </DropdownMenuItem>
@@ -192,12 +251,71 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
         )}
       </div>
 
-      {/* Results Count */}
-      {projectEmails.length > 0 && (
+      {/* Pagination */}
+      {projectEmails.length > 0 && totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            Showing {startIndex + 1}-{Math.min(endIndex, projectEmails.length)} of {projectEmails.length} emails
+          </p>
+          
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+              
+              {[...Array(totalPages)].map((_, i) => {
+                const page = i + 1;
+                // Show first, last, current, and adjacent pages
+                if (
+                  page === 1 || 
+                  page === totalPages || 
+                  (page >= currentPage - 1 && page <= currentPage + 1)
+                ) {
+                  return (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        onClick={() => setCurrentPage(page)}
+                        isActive={currentPage === page}
+                        className="cursor-pointer"
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                } else if (page === currentPage - 2 || page === currentPage + 2) {
+                  return <PaginationItem key={page}>...</PaginationItem>;
+                }
+                return null;
+              })}
+              
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
+
+      {/* Results Count (no pagination) */}
+      {projectEmails.length > 0 && totalPages <= 1 && (
         <p className="text-xs text-muted-foreground text-center">
           Showing {projectEmails.length} email{projectEmails.length !== 1 ? 's' : ''}
         </p>
       )}
+
+      {/* Email Detail Dialog */}
+      <EmailDetailDialog
+        open={emailDetailOpen}
+        onOpenChange={setEmailDetailOpen}
+        email={selectedEmail}
+      />
     </div>
   );
 };
