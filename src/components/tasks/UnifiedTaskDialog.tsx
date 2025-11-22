@@ -162,12 +162,12 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0 z-[10000]" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search clients..." />
-                    <CommandList>
-                      <CommandEmpty>No client found.</CommandEmpty>
-                      <CommandGroup>
+              <PopoverContent className="w-full p-0 z-[10000]" align="start">
+                <Command>
+                  <CommandInput placeholder="Search clients..." />
+                  <CommandList className="pointer-events-auto">
+                    <CommandEmpty>No client found.</CommandEmpty>
+                    <CommandGroup>
                         {clients.map((client) => (
                           <CommandItem
                             key={client.id}
@@ -217,7 +217,7 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
                 <PopoverContent className="w-full p-0 z-[10000]" align="start">
                   <Command shouldFilter={false}>
                     <CommandInput placeholder="Search projects..." />
-                    <CommandList>
+                    <CommandList className="pointer-events-auto">
                       <CommandEmpty>No project found.</CommandEmpty>
                       <CommandGroup>
                         {projects
