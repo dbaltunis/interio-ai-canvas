@@ -66,6 +66,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date()); // Pre-select today
   const [view, setView] = useState<CalendarView>('week'); // Default to week view
+  const [showTasksView, setShowTasksView] = useState(false); // Toggle between calendar and tasks
   const [showCreateEventDialog, setShowCreateEventDialog] = useState(false);
   const [showSchedulerSlider, setShowSchedulerSlider] = useState(false);
   const [showEventDetails, setShowEventDetails] = useState(false);
@@ -457,30 +458,37 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
             onManageTemplates={() => setShowSchedulerManagement(true)}
             onViewBookings={() => setShowBookingManagement(true)}
             onViewAnalytics={() => setShowAnalytics(true)}
+            onTasksClick={() => setShowTasksView(!showTasksView)}
           />
         </div>
 
-        {/* Scrollable Calendar Content */}
+        {/* Scrollable Content - Calendar or Tasks */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
-          {view === 'week' && (
-            <WeeklyCalendarView 
-              currentDate={currentDate}
-              onEventClick={handleEventClick}
-              onTimeSlotClick={handleTimeSlotClick}
-              filteredAppointments={filteredAppointments}
-            />
-          )}
-          {view === 'month' && (
-            <div className="h-full flex flex-col overflow-hidden">
-              {renderMonthView()}
-            </div>
-          )}
-          {view === 'day' && (
-            <DailyCalendarView 
-              currentDate={currentDate}
-              onEventClick={handleEventClick}
-              onTimeSlotClick={handleTimeSlotClick}
-            />
+          {showTasksView ? (
+            <TaskListView />
+          ) : (
+            <>
+              {view === 'week' && (
+                <WeeklyCalendarView 
+                  currentDate={currentDate}
+                  onEventClick={handleEventClick}
+                  onTimeSlotClick={handleTimeSlotClick}
+                  filteredAppointments={filteredAppointments}
+                />
+              )}
+              {view === 'month' && (
+                <div className="h-full flex flex-col overflow-hidden">
+                  {renderMonthView()}
+                </div>
+              )}
+              {view === 'day' && (
+                <DailyCalendarView 
+                  currentDate={currentDate}
+                  onEventClick={handleEventClick}
+                  onTimeSlotClick={handleTimeSlotClick}
+                />
+              )}
+            </>
           )}
         </div>
       </div>
