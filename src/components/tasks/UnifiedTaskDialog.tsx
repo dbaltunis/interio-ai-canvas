@@ -38,27 +38,30 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId, tas
 
   const isEditMode = !!task;
 
-  // Populate form when editing
+  // Populate form when editing or reset when creating
   useEffect(() => {
-    if (task) {
-      setTitle(task.title);
-      setDescription(task.description || "");
-      setPriority(task.priority);
-      setSelectedClientId(task.client_id || "");
-      setSelectedProjectId(task.project_id || "");
-      setDueDate(task.due_date ? parseISO(task.due_date) : undefined);
-      setEstimatedHours(task.estimated_hours?.toString() || "");
-    } else {
-      // Reset form for create mode
-      setTitle("");
-      setDescription("");
-      setPriority("medium");
-      setSelectedClientId(clientId || "");
-      setSelectedProjectId(projectId || "");
-      setDueDate(undefined);
-      setEstimatedHours("");
+    if (open) {
+      if (task) {
+        // Edit mode - populate with task data
+        setTitle(task.title);
+        setDescription(task.description || "");
+        setPriority(task.priority);
+        setSelectedClientId(task.client_id || "");
+        setSelectedProjectId(task.project_id || "");
+        setDueDate(task.due_date ? parseISO(task.due_date) : undefined);
+        setEstimatedHours(task.estimated_hours?.toString() || "");
+      } else {
+        // Create mode - reset form
+        setTitle("");
+        setDescription("");
+        setPriority("medium");
+        setSelectedClientId(clientId || "");
+        setSelectedProjectId(projectId || "");
+        setDueDate(undefined);
+        setEstimatedHours("");
+      }
     }
-  }, [task, clientId, projectId]);
+  }, [open, task, clientId, projectId]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
