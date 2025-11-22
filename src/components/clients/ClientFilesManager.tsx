@@ -17,7 +17,7 @@ interface ClientFilesManagerProps {
 
 export const ClientFilesManager = ({ clientId, userId }: ClientFilesManagerProps) => {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("none");
   const [filterProjectId, setFilterProjectId] = useState<string>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -45,11 +45,11 @@ export const ClientFilesManager = ({ clientId, userId }: ClientFilesManagerProps
           file: selectedFiles[i],
           clientId,
           userId,
-          projectId: selectedProjectId || undefined,
+          projectId: selectedProjectId === "none" ? undefined : selectedProjectId,
         });
       }
       setSelectedFiles(null);
-      setSelectedProjectId("");
+      setSelectedProjectId("none");
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -160,7 +160,7 @@ export const ClientFilesManager = ({ clientId, userId }: ClientFilesManagerProps
                 <SelectValue placeholder="Link to project (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">General (No Project)</SelectItem>
+                <SelectItem value="none">General (No Project)</SelectItem>
                 {projects?.map((project) => (
                   <SelectItem key={project.id} value={project.id}>
                     {project.name}
