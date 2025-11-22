@@ -181,6 +181,7 @@ export const TrimmingsInventoryView = ({ searchQuery, viewMode }: TrimmingsInven
                     <img 
                       src={trimming.image_url} 
                       alt={trimming.name}
+                      crossOrigin="anonymous"
                       className="w-full h-full object-cover"
                     />
                   </div>
