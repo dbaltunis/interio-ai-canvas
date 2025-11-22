@@ -1316,7 +1316,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                       .from('windows_summary')
                       .upsert({
                         window_id: surfaceId,
-                        user_id: (await supabase.auth.getUser()).data.user?.id,
+                        // ✅ REMOVED user_id - doesn't exist in windows_summary table
                         fabric_type: fabricItem.name,
                         fabric_details: {
                           id: fabricItem.id,

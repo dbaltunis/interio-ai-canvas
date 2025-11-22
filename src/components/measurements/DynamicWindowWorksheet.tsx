@@ -1632,7 +1632,7 @@ export const DynamicWindowWorksheet = forwardRef<{
           .from('windows_summary')
           .upsert({
             window_id: surfaceId,
-            user_id: (await supabase.auth.getUser()).data.user?.id,
+            // ✅ REMOVED user_id - doesn't exist in windows_summary table
             fabric_type: item.name,
             fabric_details: {
               id: item.id,
@@ -1800,7 +1800,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                           .from('windows_summary')
                           .upsert({
                             window_id: surfaceId,
-                            user_id: (await supabase.auth.getUser()).data.user?.id,
+                            // ✅ REMOVED user_id - doesn't exist in windows_summary table
                             template_id: template.id,
                             template_name: template.name,
                             treatment_type: detectedCategory,
