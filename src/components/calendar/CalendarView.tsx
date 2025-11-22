@@ -515,6 +515,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
         </div>
       </div>
     </div>
+  </div>
 
       {/* Dialogs */}
       <Dialog open={showSchedulerManagement} onOpenChange={setShowSchedulerManagement}>
