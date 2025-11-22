@@ -272,17 +272,17 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                       onClick={() => setSelectedTask(event.taskData as Task)}
                       title={`Task: ${event.title}\nDue: ${format(startTime, 'HH:mm')}\n${event.description || ''}`}
                     >
-                      <div className="p-2 h-full flex items-center gap-2">
-                        <CheckSquare className={`h-4 w-4 flex-shrink-0 ${colorScheme.text}`} />
-                        <div className="flex-1 min-w-0">
-                          <div className={`font-medium text-sm leading-tight line-clamp-1 ${colorScheme.text}`}>
-                            {event.title}
-                          </div>
-                          {style.height > 50 && event.description && (
-                            <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                              {event.description}
-                            </div>
-                          )}
+                       <div className="p-2 h-full flex items-center gap-2">
+                         <CheckSquare className={`h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0 ${colorScheme.text}`} />
+                         <div className="flex-1 min-w-0">
+                           <div className={`font-medium text-xs sm:text-sm leading-tight line-clamp-1 ${colorScheme.text}`}>
+                             {event.title}
+                           </div>
+                           {style.height > 40 && event.description && (
+                             <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                               {event.description}
+                             </div>
+                           )}
                         </div>
                       </div>
                     </div>
