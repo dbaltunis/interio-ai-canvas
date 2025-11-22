@@ -27,7 +27,7 @@ export const EmailIntegrationStatus = () => {
             <div>
               <p className="font-medium text-green-900">Email Service</p>
               <p className="text-sm text-green-700">
-                Built-in email service ready (500 emails/month included)
+                Built-in email service ready (500 emails/month included) with advanced tracking
               </p>
             </div>
           </div>

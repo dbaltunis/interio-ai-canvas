@@ -27,7 +27,7 @@ export const EmailIntegrationBanners = ({
               <CheckCircle className="h-5 w-5 text-green-600" />
               <div>
                 <p className="font-medium text-green-800">Email Service Ready</p>
-                <p className="text-sm text-green-700">Your company email is configured and ready to use. You can send emails to clients with 500 emails/month included.</p>
+                <p className="text-sm text-green-700">Your company email is configured with 500 emails/month included. Advanced tracking (opens, clicks, engagement) is active.</p>
               </div>
             </div>
           </CardContent>
@@ -80,7 +80,7 @@ export const EmailIntegrationBanners = ({
               <div className="flex-1">
                 <p className="font-medium text-green-800">Email Service Ready</p>
                 <p className="text-sm text-green-700">
-                  You can send up to 500 emails per month. 
+                  You can send up to 500 emails per month with advanced tracking (opens, clicks, time spent). 
                   {hasSendGridIntegration 
                     ? " Using your custom SendGrid account for unlimited sending."
                     : " Want unlimited? Upgrade to custom SendGrid in Settings."
