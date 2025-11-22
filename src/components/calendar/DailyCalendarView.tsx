@@ -5,7 +5,8 @@ import { Clock, MapPin, CheckSquare } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useClients } from "@/hooks/useClients";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
-import { useMyTasks } from "@/hooks/useTasks";
+import { useMyTasks, Task } from "@/hooks/useTasks";
+import { UnifiedTaskDialog } from "@/components/tasks/UnifiedTaskDialog";
 
 interface DailyCalendarViewProps {
   currentDate: Date;
@@ -18,6 +19,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
   const { data: clients } = useClients();
   const { data: currentUserProfile } = useCurrentUserProfile();
   const { data: tasks } = useMyTasks();
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Helper function to get client name
@@ -151,6 +153,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
   }, [currentDate]);
 
   return (
+    <>
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="border-b bg-background sticky top-0 z-10 p-4">
@@ -266,7 +269,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                         height: `${style.height}px`,
                         zIndex: 10 + eventIndex,
                       }}
-                      onClick={() => console.log('Task clicked:', event.taskData)}
+                      onClick={() => setSelectedTask(event.taskData as Task)}
                       title={`Task: ${event.title}\nDue: ${format(startTime, 'HH:mm')}\n${event.description || ''}`}
                     >
                       <div className="p-2 h-full flex items-center gap-2">
@@ -364,5 +367,12 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
         </div>
       </div>
     </div>
+    
+    <UnifiedTaskDialog
+      open={!!selectedTask}
+      onOpenChange={(open) => !open && setSelectedTask(null)}
+      task={selectedTask}
+    />
+    </>
   );
 };
