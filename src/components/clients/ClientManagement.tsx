@@ -186,7 +186,6 @@ export const ClientManagement = () => {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10 shrink-0">
-                          <AvatarImage src={(client as any).avatar_url || undefined} />
                           <AvatarFallback className={`${avatarColor} text-white text-xs font-semibold`}>
                             {initials}
                           </AvatarFallback>

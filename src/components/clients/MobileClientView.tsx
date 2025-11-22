@@ -178,7 +178,6 @@ export const MobileClientView = ({ onClientClick }: MobileClientViewProps) => {
                   <div className="flex items-start gap-3">
                     {/* Colored Avatar */}
                     <Avatar className="h-10 w-10 shrink-0">
-                      <AvatarImage src={(client as any).avatar_url || undefined} />
                       <AvatarFallback className={`${avatarColor} text-white text-xs font-semibold`}>
                         {initials}
                       </AvatarFallback>

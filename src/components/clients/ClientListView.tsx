@@ -193,7 +193,6 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                     <TableCell className="font-medium max-w-[280px]">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9 flex-shrink-0">
-                          <AvatarImage src={(client as any).avatar_url || undefined} />
                           <AvatarFallback className={`${avatarColor} text-white text-xs font-semibold`}>
                             {initials}
                           </AvatarFallback>
