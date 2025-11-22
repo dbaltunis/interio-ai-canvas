@@ -189,6 +189,7 @@ export const useQuotationSync = ({
               unit_price: pricePerMetre,
               total: summary.fabric_cost,
               image_url: materialImageUrl, // Child shows actual fabric/material from inventory
+              inventory_item_id: materialDetails.inventory_item_id || fabricDetails.inventory_item_id || null, // NEW: Store for tracking
               isChild: true
             });
           }
@@ -490,26 +491,41 @@ export const useQuotationSync = ({
 
     // Save quote items to database
     try {
-      const itemsToSave = quotationData.items.map((item, index) => ({
-        quote_id: quoteId,
-        name: item.name,
-        description: item.description || item.treatment_type || "",
-        quantity: item.quantity || 1,
-        unit_price: item.unit_price || item.total || 0,
-        total_price: item.total || 0,
-        product_details: {
-          room_id: item.room_id,
-          room_name: item.room_name,
-          surface_name: item.surface_name,
-          treatment_type: item.treatment_type,
-          image_url: item.image_url,
-          hasChildren: item.hasChildren || false,
-          children: item.children || [],
-        },
-        breakdown: item.breakdown || {},
-        currency: item.currency || "GBP",
-        sort_order: index,
-      }));
+      const itemsToSave = quotationData.items.map((item, index) => {
+        // Extract inventory_item_id from the first material/fabric child
+        // This is used for automatic inventory deduction
+        let inventoryItemId = null;
+        if (item.children && item.children.length > 0) {
+          // Find the first child that represents material/fabric (has inventory_item_id)
+          const materialChild = item.children.find((child: any) => 
+            child.inventory_item_id || 
+            ['Material', 'Fabric', 'Wallpaper'].includes(child.name)
+          );
+          inventoryItemId = materialChild?.inventory_item_id || null;
+        }
+
+        return {
+          quote_id: quoteId,
+          name: item.name,
+          description: item.description || item.treatment_type || "",
+          quantity: item.quantity || 1,
+          unit_price: item.unit_price || item.total || 0,
+          total_price: item.total || 0,
+          inventory_item_id: inventoryItemId, // NEW: Link to inventory for tracking
+          product_details: {
+            room_id: item.room_id,
+            room_name: item.room_name,
+            surface_name: item.surface_name,
+            treatment_type: item.treatment_type,
+            image_url: item.image_url,
+            hasChildren: item.hasChildren || false,
+            children: item.children || [],
+          },
+          breakdown: item.breakdown || {},
+          currency: item.currency || "GBP",
+          sort_order: index,
+        };
+      });
 
       // Delete existing items for this quote
       await supabase
