@@ -1,14 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Upload, Download, CheckCircle2, XCircle, AlertCircle, ChevronLeft, ChevronRight, Link2, Calendar as CalendarIcon, UserPlus, Settings as SettingsIcon, BarChart3 } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Link2, Calendar as CalendarIcon, UserPlus, Settings as SettingsIcon, BarChart3, HelpCircle, ListTodo } from "lucide-react";
 import { useGoogleCalendarIntegration, useGoogleCalendarSync } from "@/hooks/useGoogleCalendar";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { formatDistanceToNow, format } from "date-fns";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
 import { CalendarVisibilityFilter } from "./filters/CalendarVisibilityFilter";
@@ -30,6 +29,7 @@ interface CalendarSyncToolbarProps {
   onManageTemplates?: () => void;
   onViewBookings?: () => void;
   onViewAnalytics?: () => void;
+  onTasksClick?: () => void;
 }
 
 export const CalendarSyncToolbar = ({
@@ -44,43 +44,56 @@ export const CalendarSyncToolbar = ({
   onDateChange,
   onManageTemplates,
   onViewBookings,
-  onViewAnalytics
+  onViewAnalytics,
+  onTasksClick
 }: CalendarSyncToolbarProps) => {
   const { integration, isConnected } = useGoogleCalendarIntegration();
   const { syncFromGoogle, syncAllToGoogle, isSyncingFromGoogle, isSyncingAll } = useGoogleCalendarSync();
   const isTablet = useIsTablet();
   const [showCalendarPicker, setShowCalendarPicker] = useState(false);
   
-  // Auto-sync state
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(() => {
-    const saved = localStorage.getItem('autoSyncEnabled');
-    return saved !== null ? JSON.parse(saved) : true; // Default: enabled
+  // Google Calendar sync toggle state
+  const [googleSyncEnabled, setGoogleSyncEnabled] = useState(() => {
+    const saved = localStorage.getItem('googleSyncEnabled');
+    return saved !== null ? JSON.parse(saved) : true;
   });
 
-  // Save auto-sync preference
+  // Save sync preference
   useEffect(() => {
-    localStorage.setItem('autoSyncEnabled', JSON.stringify(autoSyncEnabled));
-  }, [autoSyncEnabled]);
+    localStorage.setItem('googleSyncEnabled', JSON.stringify(googleSyncEnabled));
+  }, [googleSyncEnabled]);
 
-  // Auto-sync interval - every 5 minutes
+  // Handle sync toggle
+  const handleSyncToggle = async (enabled: boolean) => {
+    setGoogleSyncEnabled(enabled);
+    if (enabled && isConnected) {
+      // Import and export when enabling
+      await syncFromGoogle();
+      await syncAllToGoogle();
+    }
+  };
+
+  // Auto-sync interval - every 5 minutes when enabled
   useEffect(() => {
-    if (!isConnected || !autoSyncEnabled) return;
+    if (!isConnected || !googleSyncEnabled) return;
 
-    // Sync immediately on mount if last sync > 5 minutes ago
+    // Sync immediately on mount
     const lastSyncTime = integration?.last_sync;
     if (!lastSyncTime || Date.now() - new Date(lastSyncTime).getTime() > 5 * 60 * 1000) {
       console.log('Initial auto-sync triggered');
       syncFromGoogle();
+      syncAllToGoogle();
     }
 
     // Set up interval for background sync every 5 minutes
     const interval = setInterval(() => {
       console.log('Background auto-sync triggered');
       syncFromGoogle();
+      syncAllToGoogle();
     }, 5 * 60 * 1000); // 5 minutes
 
     return () => clearInterval(interval);
-  }, [isConnected, autoSyncEnabled, syncFromGoogle]);
+  }, [isConnected, googleSyncEnabled, syncFromGoogle, syncAllToGoogle]);
 
   const isMobile = useIsMobile();
   const isDesktop = !isMobile && !isTablet;
@@ -147,7 +160,7 @@ export const CalendarSyncToolbar = ({
           <span className="text-[11px] text-muted-foreground">
             {lastSyncTime}
           </span>
-          {isSyncingFromGoogle && autoSyncEnabled && (
+          {(isSyncingFromGoogle || isSyncingAll) && googleSyncEnabled && (
             <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
           )}
         </div>
@@ -290,56 +303,48 @@ export const CalendarSyncToolbar = ({
           </Popover>
         )}
 
-        {/* Google Calendar sync controls (only if connected) */}
+        {/* Tasks View Toggle */}
+        {onTasksClick && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onTasksClick}
+            className="h-7 px-2 gap-1.5"
+            title="View Tasks"
+          >
+            <ListTodo className="h-4 w-4" />
+            <span className="hidden lg:inline text-xs">Tasks</span>
+          </Button>
+        )}
+
+        {/* Google Calendar sync toggle (only if connected) */}
         {isConnected && (
-          <>
-            {/* Auto-sync toggle */}
-            <div className="flex items-center gap-1">
+          <TooltipProvider>
+            <div className="flex items-center gap-1.5">
               <Switch
-                id="auto-sync"
-                checked={autoSyncEnabled}
-                onCheckedChange={setAutoSyncEnabled}
+                id="google-sync"
+                checked={googleSyncEnabled}
+                onCheckedChange={handleSyncToggle}
+                disabled={isSyncingFromGoogle || isSyncingAll}
                 className="scale-75"
               />
-              <Label htmlFor="auto-sync" className="text-[10px] sm:text-[11px] cursor-pointer text-muted-foreground whitespace-nowrap hidden md:block">
-                Auto 5m
-              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="cursor-help">
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p className="text-sm">
+                    <strong>Google Calendar Sync</strong>
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Automatically imports and exports all events, appointments, and tasks between your calendar and Google Calendar every 5 minutes.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             </div>
-
-            {/* Manual sync buttons */}
-            {/* Manual sync buttons - Hidden on smaller screens */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => syncFromGoogle()}
-              disabled={isSyncingFromGoogle || isSyncingAll}
-              className="h-6 px-1.5 sm:px-2 gap-1 text-[11px] hidden xl:flex"
-              title="Import from Google Calendar"
-            >
-              {isSyncingFromGoogle ? (
-                <RefreshCw className="h-3 w-3 animate-spin" />
-              ) : (
-                <Download className="h-3 w-3" />
-              )}
-              <span>Import</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => syncAllToGoogle()}
-              disabled={isSyncingFromGoogle || isSyncingAll}
-              className="h-6 px-1.5 sm:px-2 gap-1 text-[11px] hidden xl:flex"
-              title="Export to Google Calendar"
-            >
-              {isSyncingAll ? (
-                <RefreshCw className="h-3 w-3 animate-spin" />
-              ) : (
-                <Upload className="h-3 w-3" />
-              )}
-              <span>Export</span>
-            </Button>
-          </>
+          </TooltipProvider>
         )}
       </div>
     </div>
