@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { CalendarIcon, Check, ChevronsUpDown } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { CalendarIcon, Check, Search } from "lucide-react";
 import { format } from "date-fns";
 import { useCreateTask } from "@/hooks/useTasks";
 import { useClients } from "@/hooks/useClients";
@@ -30,12 +30,26 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
   const [selectedProjectId, setSelectedProjectId] = useState(projectId || "");
   const [dueDate, setDueDate] = useState<Date>();
   const [estimatedHours, setEstimatedHours] = useState("");
-  const [clientOpen, setClientOpen] = useState(false);
-  const [projectOpen, setProjectOpen] = useState(false);
+  const [clientSearch, setClientSearch] = useState("");
+  const [projectSearch, setProjectSearch] = useState("");
 
   const { data: clients = [] } = useClients();
   const { data: projects = [] } = useProjects();
   const createTask = useCreateTask();
+
+  const filteredClients = useMemo(() => {
+    if (!clientSearch) return clients;
+    return clients.filter(client => 
+      client.name.toLowerCase().includes(clientSearch.toLowerCase())
+    );
+  }, [clients, clientSearch]);
+
+  const filteredProjects = useMemo(() => {
+    if (!projectSearch) return projects;
+    return projects.filter(project => 
+      project.job_number?.toLowerCase().includes(projectSearch.toLowerCase())
+    );
+  }, [projects, projectSearch]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,103 +160,124 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
           </div>
 
           {!clientId && (
-            <div>
+            <div className="space-y-2">
               <Label>Client</Label>
-              <Popover open={clientOpen} onOpenChange={setClientOpen}>
-                <PopoverTrigger asChild>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search clients..."
+                  value={clientSearch}
+                  onChange={(e) => setClientSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <ScrollArea className="h-[200px] border rounded-md">
+                <div className="p-1">
+                  {filteredClients.length === 0 ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">
+                      No clients found.
+                    </div>
+                  ) : (
+                    filteredClients.map((client) => (
+                      <button
+                        key={client.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedClientId(client.id);
+                          setClientSearch("");
+                        }}
+                        className={cn(
+                          "w-full text-left px-3 py-2 rounded-sm hover:bg-accent transition-colors flex items-center gap-2",
+                          selectedClientId === client.id && "bg-accent"
+                        )}
+                      >
+                        <Check
+                          className={cn(
+                            "h-4 w-4",
+                            selectedClientId === client.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {client.name}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+              {selectedClientId && (
+                <div className="text-sm text-muted-foreground">
+                  Selected: {clients.find(c => c.id === selectedClientId)?.name}
                   <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={clientOpen}
-                    className="w-full justify-between"
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="ml-2 h-auto p-0 text-xs"
+                    onClick={() => setSelectedClientId("")}
                   >
-                    {selectedClientId
-                      ? clients.find((client) => client.id === selectedClientId)?.name
-                      : "Select client (optional)"}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    Clear
                   </Button>
-                </PopoverTrigger>
-              <PopoverContent className="w-full p-0 z-[10000]" align="start">
-                <Command>
-                  <CommandInput placeholder="Search clients..." />
-                  <CommandList className="pointer-events-auto">
-                    <CommandEmpty>No client found.</CommandEmpty>
-                    <CommandGroup>
-                        {clients.map((client) => (
-                          <CommandItem
-                            key={client.id}
-                            value={client.name}
-                            onSelect={() => {
-                              setSelectedClientId(client.id);
-                              setClientOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedClientId === client.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {client.name}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+                </div>
+              )}
             </div>
           )}
 
           {!projectId && (
-            <div>
+            <div className="space-y-2">
               <Label>Project</Label>
-              <Popover open={projectOpen} onOpenChange={setProjectOpen}>
-                <PopoverTrigger asChild>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search projects..."
+                  value={projectSearch}
+                  onChange={(e) => setProjectSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <ScrollArea className="h-[200px] border rounded-md">
+                <div className="p-1">
+                  {filteredProjects.length === 0 ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">
+                      No projects found.
+                    </div>
+                  ) : (
+                    filteredProjects.map((project) => (
+                      <button
+                        key={project.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedProjectId(project.id);
+                          setProjectSearch("");
+                        }}
+                        className={cn(
+                          "w-full text-left px-3 py-2 rounded-sm hover:bg-accent transition-colors flex items-center gap-2",
+                          selectedProjectId === project.id && "bg-accent"
+                        )}
+                      >
+                        <Check
+                          className={cn(
+                            "h-4 w-4",
+                            selectedProjectId === project.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {project.job_number}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+              {selectedProjectId && (
+                <div className="text-sm text-muted-foreground">
+                  Selected: {projects.find(p => p.id === selectedProjectId)?.job_number}
                   <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={projectOpen}
-                    className="w-full justify-between"
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="ml-2 h-auto p-0 text-xs"
+                    onClick={() => setSelectedProjectId("")}
                   >
-                    {selectedProjectId
-                      ? (() => {
-                          const project = projects.find((p) => p.id === selectedProjectId);
-                          return project?.job_number || "Select project (optional)";
-                        })()
-                      : "Select project (optional)"}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    Clear
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[400px] p-0 z-[10000]" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search projects..." />
-                    <CommandList>
-                      <CommandEmpty>No project found.</CommandEmpty>
-                      <CommandGroup>
-                        {projects.map((project) => (
-                          <CommandItem
-                            key={project.id}
-                            value={project.job_number || project.id}
-                            onSelect={() => {
-                              setSelectedProjectId(project.id);
-                              setProjectOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedProjectId === project.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {project.job_number}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+                </div>
+              )}
             </div>
           )}
 
