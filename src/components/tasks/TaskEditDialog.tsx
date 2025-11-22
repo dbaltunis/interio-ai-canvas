@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Task, useUpdateTask, useDeleteTask } from "@/hooks/useTasks";
+import { useClients } from "@/hooks/useClients";
+import { useProjects } from "@/hooks/useProjects";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +35,8 @@ interface TaskEditDialogProps {
 export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps) => {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const { data: clients = [] } = useClients();
+  const { data: projects = [] } = useProjects();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -41,6 +45,8 @@ export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps
   const [dueDate, setDueDate] = useState<Date | undefined>();
   const [estimatedHours, setEstimatedHours] = useState("");
   const [tags, setTags] = useState("");
+  const [clientId, setClientId] = useState<string>("");
+  const [projectId, setProjectId] = useState<string>("");
 
   useEffect(() => {
     if (task) {
@@ -51,6 +57,8 @@ export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps
       setDueDate(task.due_date ? new Date(task.due_date) : undefined);
       setEstimatedHours(task.estimated_hours?.toString() || "");
       setTags(task.tags?.join(", ") || "");
+      setClientId(task.client_id || "");
+      setProjectId(task.project_id || "");
     }
   }, [task]);
 
@@ -66,6 +74,8 @@ export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps
       due_date: dueDate ? dueDate.toISOString() : null,
       estimated_hours: estimatedHours ? parseFloat(estimatedHours) : null,
       tags: tags ? tags.split(",").map((t) => t.trim()).filter(Boolean) : null,
+      client_id: clientId || null,
+      project_id: projectId || null,
     });
 
     onOpenChange(false);
@@ -108,6 +118,42 @@ export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps
               placeholder="Add details about this task..."
               rows={4}
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="client">Client</Label>
+              <Select value={clientId} onValueChange={setClientId}>
+                <SelectTrigger id="client">
+                  <SelectValue placeholder="Select client..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="project">Project</Label>
+              <Select value={projectId} onValueChange={setProjectId}>
+                <SelectTrigger id="project">
+                  <SelectValue placeholder="Select project..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -158,7 +204,13 @@ export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={dueDate} onSelect={setDueDate} initialFocus />
+                  <Calendar 
+                    mode="single" 
+                    selected={dueDate} 
+                    onSelect={setDueDate} 
+                    initialFocus 
+                    className="pointer-events-auto"
+                  />
                 </PopoverContent>
               </Popover>
             </div>
