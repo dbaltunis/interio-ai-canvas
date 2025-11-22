@@ -21,6 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ImagePreviewDialog } from "@/components/ui/image-preview-dialog";
 
 interface TrimmingsInventoryViewProps {
   searchQuery: string;
@@ -32,6 +33,7 @@ export const TrimmingsInventoryView = ({ searchQuery, viewMode }: TrimmingsInven
   const deleteItem = useDeleteEnhancedInventoryItem();
   const { toast } = useToast();
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
 
   const {
     selectedItems,
@@ -177,7 +179,10 @@ export const TrimmingsInventoryView = ({ searchQuery, viewMode }: TrimmingsInven
               </CardHeader>
               <CardContent className="space-y-2">
                 {trimming.image_url && (
-                  <div className="w-full h-24 rounded-md overflow-hidden bg-muted mb-2">
+                  <div 
+                    className="w-full h-24 rounded-md overflow-hidden bg-muted mb-2 cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setPreviewImage({ url: trimming.image_url!, title: trimming.name })}
+                  >
                     <img 
                       src={trimming.image_url} 
                       alt={trimming.name}
@@ -220,6 +225,15 @@ export const TrimmingsInventoryView = ({ searchQuery, viewMode }: TrimmingsInven
             setEditingItem(null);
             refetch();
           }}
+        />
+      )}
+
+      {previewImage && (
+        <ImagePreviewDialog
+          open={!!previewImage}
+          onOpenChange={(open) => !open && setPreviewImage(null)}
+          imageUrl={previewImage.url}
+          title={previewImage.title}
         />
       )}
     </>

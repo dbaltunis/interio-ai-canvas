@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Minus, Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { CategoryImportExport } from "./CategoryImportExport";
+import { ImagePreviewDialog } from "@/components/ui/image-preview-dialog";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +49,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
 
   const hardwareItems = inventory?.filter(item => 
     item.category === 'hardware'
@@ -195,7 +197,10 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
                 <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                   {paginatedItems.map((item) => (
                   <Card key={item.id} className="group hover:shadow-lg transition-all overflow-hidden">
-                    <div className="aspect-[16/5] relative overflow-hidden bg-muted">
+                    <div 
+                      className="aspect-[16/5] relative overflow-hidden bg-muted cursor-pointer"
+                      onClick={() => item.image_url && setPreviewImage({ url: item.image_url, title: item.name })}
+                    >
                       {item.image_url ? (
                         <img 
                           src={item.image_url} 
@@ -330,7 +335,13 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
                           </td>
                           <td className="px-2 py-1">
                             {item.image_url ? (
-                              <img src={item.image_url} alt={item.name} crossOrigin="anonymous" className="h-8 w-8 rounded object-cover" />
+                              <img 
+                                src={item.image_url} 
+                                alt={item.name} 
+                                crossOrigin="anonymous" 
+                                className="h-8 w-8 rounded object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => setPreviewImage({ url: item.image_url!, title: item.name })}
+                              />
                             ) : (
                               <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
                                 <ImageIcon className="h-4 w-4 text-muted-foreground" />
@@ -421,6 +432,15 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
           </TabsContent>
         ))}
       </Tabs>
+
+      {previewImage && (
+        <ImagePreviewDialog
+          open={!!previewImage}
+          onOpenChange={(open) => !open && setPreviewImage(null)}
+          imageUrl={previewImage.url}
+          title={previewImage.title}
+        />
+      )}
     </div>
   );
 };
