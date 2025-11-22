@@ -117,7 +117,7 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
 
           <div>
             <Label>Due Date</Label>
-            <Popover modal={true}>
+            <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -130,7 +130,7 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId }: U
                   {dueDate ? format(dueDate, "PPP") : "Pick a date"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 z-[200]" align="start" sideOffset={5}>
+              <PopoverContent className="w-auto p-0 z-[10000] bg-popover" align="start" sideOffset={5}>
                 <Calendar
                   mode="single"
                   selected={dueDate}
