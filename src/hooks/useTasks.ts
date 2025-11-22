@@ -13,6 +13,7 @@ export interface Task {
   title: string;
   description?: string;
   due_date?: string;
+  due_time?: string;
   priority: TaskPriority;
   status: TaskStatus;
   assigned_to?: string;
