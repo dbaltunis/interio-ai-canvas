@@ -75,7 +75,6 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const [showAnalytics, setShowAnalytics] = useState(false);
   // CalDAV sync removed
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showTasksSidebar, setShowTasksSidebar] = useState(false);
   
   // Auto-switch from month view on tablet
   useEffect(() => {
@@ -432,37 +431,8 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
   return (
     <div className="h-screen flex overflow-hidden">
-      {/* Tasks Sidebar - Collapsible */}
-      <div className={`
-        flex-shrink-0 border-r bg-muted/30 transition-all duration-300 overflow-hidden
-        ${showTasksSidebar ? 'w-80' : 'w-0'}
-      `}>
-        {showTasksSidebar && <TaskListView />}
-      </div>
-
-      {/* Main Calendar Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Compact Tasks Toggle - Top Right */}
-        <div className="flex-shrink-0 border-b bg-background px-6 py-3 flex items-center justify-end">
-          <button
-            onClick={() => setShowTasksSidebar(!showTasksSidebar)}
-            className={`
-              inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium
-              transition-all duration-200 border
-              ${showTasksSidebar 
-                ? 'bg-primary text-primary-foreground border-primary shadow-sm' 
-                : 'bg-background text-muted-foreground border-border hover:bg-accent hover:text-foreground'
-              }
-            `}
-          >
-            <ListTodo className="h-4 w-4" />
-            <span>Tasks</span>
-          </button>
-        </div>
-
-        <div className="flex-1 flex overflow-hidden">
-          {/* Collapsible Sidebar - Hidden on desktop and tablets */}
-          {!isDesktop && !isTablet && (
+      {/* Collapsible Sidebar - Hidden on desktop and tablets */}
+      {!isDesktop && !isTablet && (
         <CalendarSidebar 
           currentDate={currentDate}
           onDateChange={setCurrentDate}
@@ -514,8 +484,6 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
           )}
         </div>
       </div>
-    </div>
-  </div>
 
       {/* Dialogs */}
       <Dialog open={showSchedulerManagement} onOpenChange={setShowSchedulerManagement}>
