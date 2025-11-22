@@ -43,6 +43,7 @@ export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps
   const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">("medium");
   const [status, setStatus] = useState<"pending" | "in_progress" | "completed" | "cancelled">("pending");
   const [dueDate, setDueDate] = useState<Date | undefined>();
+  const [dueTime, setDueTime] = useState<string>("09:00");
   const [estimatedHours, setEstimatedHours] = useState("");
   const [tags, setTags] = useState("");
   const [clientId, setClientId] = useState<string>("");
@@ -55,6 +56,7 @@ export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps
       setPriority(task.priority);
       setStatus(task.status);
       setDueDate(task.due_date ? new Date(task.due_date) : undefined);
+      setDueTime(task.due_time || "09:00");
       setEstimatedHours(task.estimated_hours?.toString() || "");
       setTags(task.tags?.join(", ") || "");
       setClientId(task.client_id || "");
@@ -72,6 +74,7 @@ export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps
       priority,
       status,
       due_date: dueDate ? dueDate.toISOString() : null,
+      due_time: dueTime,
       estimated_hours: estimatedHours ? parseFloat(estimatedHours) : null,
       tags: tags ? tags.split(",").map((t) => t.trim()).filter(Boolean) : null,
       client_id: clientId || null,
@@ -185,7 +188,7 @@ export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Due Date</Label>
               <Popover>
@@ -211,6 +214,16 @@ export const TaskEditDialog = ({ task, open, onOpenChange }: TaskEditDialogProps
                   />
                 </PopoverContent>
               </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dueTime">Time</Label>
+              <Input
+                id="dueTime"
+                type="time"
+                value={dueTime}
+                onChange={(e) => setDueTime(e.target.value)}
+              />
             </div>
 
             <div className="space-y-2">

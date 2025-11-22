@@ -7673,6 +7673,7 @@ export type Database = {
           created_at: string
           description: string | null
           due_date: string | null
+          due_time: string | null
           estimated_hours: number | null
           id: string
           priority: string | null
@@ -7692,6 +7693,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          due_time?: string | null
           estimated_hours?: number | null
           id?: string
           priority?: string | null
@@ -7711,6 +7713,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          due_time?: string | null
           estimated_hours?: number | null
           id?: string
           priority?: string | null

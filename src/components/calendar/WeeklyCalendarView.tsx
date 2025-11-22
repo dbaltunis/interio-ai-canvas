@@ -230,9 +230,10 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
         return isSameDay(taskDate, date);
       })
       .map(task => {
-        // Display tasks at 9 AM on their due date
+        // Use task's due_time or default to 9 AM
         const startTime = new Date(date);
-        startTime.setHours(9, 0, 0, 0);
+        const [hours, minutes] = (task.due_time || "09:00").split(':').map(Number);
+        startTime.setHours(hours, minutes, 0, 0);
         
         const endTime = new Date(startTime);
         endTime.setMinutes(endTime.getMinutes() + 30); // 30-min block
