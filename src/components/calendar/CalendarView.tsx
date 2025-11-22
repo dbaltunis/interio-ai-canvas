@@ -48,7 +48,9 @@ import { CalendarSyncToolbar } from "./CalendarSyncToolbar";
 import { SchedulerManagement } from "./SchedulerManagement";
 import { BookingManagement } from "./BookingManagement";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
-import { Shield } from "lucide-react";
+import { Shield, ListTodo } from "lucide-react";
+import { TaskListView } from "./TaskListView";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -428,9 +430,24 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden">
-      {/* Collapsible Sidebar - Hidden on desktop and tablets */}
-      {!isDesktop && !isTablet && (
+    <Tabs defaultValue="calendar" className="h-screen flex flex-col overflow-hidden">
+      <div className="flex-shrink-0 border-b bg-background px-6 pt-4">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="calendar" className="flex items-center gap-2">
+            <CalendarIcon className="h-4 w-4" />
+            Calendar
+          </TabsTrigger>
+          <TabsTrigger value="tasks" className="flex items-center gap-2">
+            <ListTodo className="h-4 w-4" />
+            Tasks
+          </TabsTrigger>
+        </TabsList>
+      </div>
+
+      <TabsContent value="calendar" className="flex-1 overflow-hidden mt-0">
+        <div className="h-full flex overflow-hidden">
+          {/* Collapsible Sidebar - Hidden on desktop and tablets */}
+          {!isDesktop && !isTablet && (
         <CalendarSidebar 
           currentDate={currentDate}
           onDateChange={setCurrentDate}
@@ -576,7 +593,13 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       />
 
       <OfflineIndicator />
-    </div>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="tasks" className="flex-1 overflow-hidden mt-0">
+        <TaskListView />
+      </TabsContent>
+    </Tabs>
   );
 };
 
