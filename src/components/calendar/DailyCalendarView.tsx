@@ -268,7 +268,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                         height: `${style.height}px`,
                         zIndex: 10 + eventIndex,
                       }}
-                      onClick={() => console.log('Task clicked:', event.taskData)}
+                      onClick={() => setSelectedTask(event.taskData)}
                       title={`Task: ${event.title}\nDue: ${format(startTime, 'HH:mm')}\n${event.description || ''}`}
                     >
                       <div className="p-2 h-full flex items-center gap-2">
