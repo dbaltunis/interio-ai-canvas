@@ -128,14 +128,14 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
   
-  // Filter nav items based on permissions AND actual setup
+  // Filter nav items based on permissions
   const visibleNavItems = navItems.filter(item => {
     if (!item.permission) return true; // No permission required (dashboard)
     
     if (item.permission === 'view_jobs') return canViewJobs === true;
     if (item.permission === 'view_clients') return canViewClients === true;
-    // Only show emails if they have permission AND SendGrid is configured
-    if (item.permission === 'view_emails') return canViewEmails === true && hasEmailsConfigured === true;
+    // Show emails if user has permission - email service is included by default (uses Resend)
+    if (item.permission === 'view_emails') return canViewEmails === true;
     if (item.permission === 'view_calendar') return canViewCalendar === true;
     if (item.permission === 'view_inventory') return canViewInventory === true;
     if (item.permission === 'has_online_store') return hasOnlineStore === true;
