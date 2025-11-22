@@ -243,6 +243,18 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
       {/* Client Projects Section */}
       <ClientProjectsList clientId={clientId} onTabChange={onTabChange} />
 
+      {/* Client Files Section */}
+      {user && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Files & Documents</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ClientFilesManager clientId={clientId} userId={user.id} />
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Main Info Card */}
         <Card className="xl:col-span-2">
@@ -594,7 +606,6 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="emails">Emails</TabsTrigger>
           <TabsTrigger value="measurements">Measurements</TabsTrigger>
-          <TabsTrigger value="documents">Files</TabsTrigger>
         </TabsList>
 
         <TabsContent value="activity" className="mt-6">
@@ -617,12 +628,6 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
             onViewMeasurement={() => {}}
             onEditMeasurement={() => {}}
           />
-        </TabsContent>
-
-        <TabsContent value="documents" className="mt-6">
-          {user && (
-            <ClientFilesManager clientId={clientId} userId={user.id} />
-          )}
         </TabsContent>
       </Tabs>
     </div>
