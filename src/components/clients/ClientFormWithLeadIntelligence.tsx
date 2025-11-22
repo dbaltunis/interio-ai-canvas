@@ -108,8 +108,8 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingCli
         </CardHeader>
         <CardContent>
           <ClientAvatarUpload
-            currentAvatarUrl={avatarUrl}
-            clientName={name || "Client"}
+            currentAvatarUrl={avatarUrl || editingClient?.avatar_url}
+            clientName={name || editingClient?.name || "Client"}
             onAvatarChange={setAvatarUrl}
             disabled={createClient.isPending || updateClient.isPending}
           />

@@ -23,6 +23,7 @@ export const ClientManagement = () => {
     false
   );
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingClient, setEditingClient] = useState<any>(null);
   const isTablet = useIsTablet();
   const isMobile = useIsMobile();
 
@@ -74,11 +75,14 @@ export const ClientManagement = () => {
 
   // Return mobile view for mobile devices
   if (isMobile) {
-    return <MobileClientView onClientClick={(client) => console.log('Client clicked:', client)} />;
+    return <MobileClientView onClientClick={(client) => setEditingClient(client)} />;
   }
 
-  if (showCreateForm) {
-    return <ClientCreateForm onBack={() => setShowCreateForm(false)} />;
+  if (showCreateForm || editingClient) {
+    return <ClientCreateForm onBack={() => {
+      setShowCreateForm(false);
+      setEditingClient(null);
+    }} editingClient={editingClient} />;
   }
 
   if (isLoading) {
@@ -247,14 +251,14 @@ export const ClientManagement = () => {
                     )}
                     <TableCell>
                       <div className="flex space-x-2">
+                        <Button variant="ghost" size="sm" onClick={() => setEditingClient(client)}>
+                          Edit
+                        </Button>
                         <Button variant="ghost" size="sm">
                           <Mail className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="sm">
                           <Phone className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <MapPin className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>

@@ -16,6 +16,7 @@ import { MobileClientView } from "./MobileClientView";
 export const EnhancedClientManagement = () => {
   const { data: clients, isLoading } = useClients();
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingClient, setEditingClient] = useState<any>(null);
   const [showFilters, setShowFilters] = useState(false);
   const isTablet = useIsTablet();
   const isMobile = useIsMobile();
@@ -68,11 +69,14 @@ export const EnhancedClientManagement = () => {
 
   // Return mobile view for mobile devices
   if (isMobile) {
-    return <MobileClientView onClientClick={(client) => console.log('Client clicked:', client)} />;
+    return <MobileClientView onClientClick={(client) => setEditingClient(client)} />;
   }
 
-  if (showCreateForm) {
-    return <ClientCreateForm onBack={() => setShowCreateForm(false)} />;
+  if (showCreateForm || editingClient) {
+    return <ClientCreateForm onBack={() => {
+      setShowCreateForm(false);
+      setEditingClient(null);
+    }} editingClient={editingClient} />;
   }
 
   if (isLoading) {
@@ -243,7 +247,10 @@ export const EnhancedClientManagement = () => {
                             <Phone className="mr-2 h-4 w-4" />
                             Call Client
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingClient(client);
+                          }}>
                             <User className="mr-2 h-4 w-4" />
                             Edit Client
                           </DropdownMenuItem>
