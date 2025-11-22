@@ -23,6 +23,7 @@ import { LeadSourceSelect } from "@/components/crm/LeadSourceSelect";
 import { ClientProjectsList } from "./ClientProjectsList";
 import { MeasurementsList } from "../measurements/MeasurementsList";
 import { TasksList } from "../tasks/TasksList";
+import { TasksListEnhanced } from "../tasks/TasksListEnhanced";
 import { QuickAddTask } from "../tasks/QuickAddTask";
 import { ClientActivityLog } from "./ClientActivityLog";
 import { useToast } from "@/hooks/use-toast";
@@ -48,7 +49,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedClient, setEditedClient] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("activity");
+  const [activeTab, setActiveTab] = useState("tasks");
   
   // Calculate total value from quotes
   const calculatedDealValue = calculateClientDealValue(quotes || []);
@@ -565,12 +566,12 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
 
             <div className="h-px bg-border" />
             
-            {/* Compact Tasks & Activity Section */}
+            {/* Compact Tasks Section with Metrics */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-semibold flex items-center gap-2">
                   <CheckCircle className="h-4 w-4" />
-                  Tasks & Activity
+                  Quick Tasks
                 </h4>
                 <QuickAddTask clientId={clientId} />
               </div>
@@ -603,10 +604,15 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
+          <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="emails">Emails</TabsTrigger>
           <TabsTrigger value="measurements">Measurements</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="tasks" className="mt-6">
+          <TasksListEnhanced clientId={clientId} />
+        </TabsContent>
 
         <TabsContent value="activity" className="mt-6">
           <div id="activity-section">
