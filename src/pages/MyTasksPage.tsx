@@ -318,13 +318,13 @@ export const MyTasksPage = () => {
                         key={task.id}
                         type="button"
                         onClick={() => setSelectedTask(task)}
-                        className="w-full flex items-start gap-2 p-2 rounded-lg border hover:bg-accent/10 hover:border-accent transition-colors text-left cursor-pointer"
+                        className="w-full flex items-start gap-3 p-3 rounded-lg border hover:bg-accent/10 hover:border-accent transition-colors text-left cursor-pointer touch-manipulation active:bg-accent/20"
                       >
                         <Checkbox
                           checked={false}
                           onCheckedChange={() => completeTask.mutateAsync(task.id)}
                           onClick={(e) => e.stopPropagation()}
-                          className="mt-0.5"
+                          className="mt-0.5 min-w-[20px] min-h-[20px]"
                         />
                         <div className="flex-1 min-w-0 space-y-1.5">
                           <div className="flex items-start justify-between gap-2">

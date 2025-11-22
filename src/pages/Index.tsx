@@ -138,6 +138,14 @@ const Index = () => {
             </ComponentWrapper>
           </Suspense>
         );
+      case "emails":
+        return (
+          <Suspense fallback={<EmailManagementSkeleton />}>
+            <ComponentWrapper>
+              <EmailManagement />
+            </ComponentWrapper>
+          </Suspense>
+        );
       case "inventory":
         return (
           <Suspense fallback={<InventorySkeleton />}>

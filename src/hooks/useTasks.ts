@@ -81,6 +81,7 @@ export const useMyTasks = () => {
         .or(`user_id.eq.${user.id},assigned_to.eq.${user.id}`)
         .neq("status", "cancelled")
         .eq("archived", false)
+        .order("created_at", { ascending: false })
         .order("due_date", { ascending: true, nullsFirst: false })
         .order("priority", { ascending: false });
 
