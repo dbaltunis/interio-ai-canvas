@@ -31,7 +31,7 @@ interface MobileBottomNavProps {
 
 const navItems = [
   { id: "dashboard", label: "Home", icon: Home },
-  { id: "tasks", label: "Tasks", icon: CheckCircle2 },
+  { id: "jobs", label: "Jobs", icon: FolderOpen, permission: "view_jobs" },
   { id: "clients", label: "Clients", icon: Users, permission: "view_clients" },
   { id: "calendar", label: "Calendar", icon: Calendar, permission: "view_calendar" },
 ];
