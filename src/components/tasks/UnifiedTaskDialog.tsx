@@ -7,8 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { CalendarIcon, Check, Search } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { CalendarIcon, Check } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useCreateTask, useUpdateTask, Task, TaskPriority } from "@/hooks/useTasks";
 import { useClients } from "@/hooks/useClients";
@@ -31,10 +31,8 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId, tas
   const [selectedProjectId, setSelectedProjectId] = useState(projectId || "");
   const [dueDate, setDueDate] = useState<Date>();
   const [estimatedHours, setEstimatedHours] = useState("");
-  const [clientSearch, setClientSearch] = useState("");
-  const [projectSearch, setProjectSearch] = useState("");
-  const [clientExpanded, setClientExpanded] = useState(false);
-  const [projectExpanded, setProjectExpanded] = useState(false);
+  const [clientOpen, setClientOpen] = useState(false);
+  const [projectOpen, setProjectOpen] = useState(false);
 
   const { data: clients = [] } = useClients();
   const { data: projects = [] } = useProjects();
@@ -65,19 +63,9 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId, tas
     }
   }, [task, clientId, projectId]);
 
-  const filteredClients = useMemo(() => {
-    if (!clientSearch) return clients;
-    return clients.filter(client => 
-      client.name.toLowerCase().includes(clientSearch.toLowerCase())
-    );
-  }, [clients, clientSearch]);
+  const filteredClients = useMemo(() => clients, [clients]);
 
-  const filteredProjects = useMemo(() => {
-    if (!projectSearch) return projects;
-    return projects.filter(project => 
-      project.job_number?.toLowerCase().includes(projectSearch.toLowerCase())
-    );
-  }, [projects, projectSearch]);
+  const filteredProjects = useMemo(() => projects, [projects]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,13 +98,11 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId, tas
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-0">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Task' : 'Create New Task'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <ScrollArea className="flex-1 px-6">
-            <div className="space-y-4 pb-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="title">Title *</Label>
             <Input
@@ -196,200 +182,106 @@ export const UnifiedTaskDialog = ({ open, onOpenChange, clientId, projectId, tas
           </div>
 
           {!clientId && (
-            <div className="space-y-2">
+            <div>
               <Label>Client (optional)</Label>
-              {!clientExpanded ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal"
-                  onClick={() => setClientExpanded(true)}
-                >
-                  {selectedClientId ? (
-                    <span className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-primary" />
-                      {clients.find(c => c.id === selectedClientId)?.name}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">Select client...</span>
-                  )}
-                </Button>
-              ) : (
-                <div className="space-y-2 border rounded-md p-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search clients..."
-                      value={clientSearch}
-                      onChange={(e) => setClientSearch(e.target.value)}
-                      className="pl-9"
-                      autoFocus
-                    />
-                  </div>
-                  <ScrollArea className="h-[150px]">
-                    <div className="space-y-1">
-                      {filteredClients.length === 0 ? (
-                        <div className="py-4 text-center text-sm text-muted-foreground">
-                          No clients found.
-                        </div>
-                      ) : (
-                        filteredClients.map((client) => (
-                          <button
+              <Popover open={clientOpen} onOpenChange={setClientOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={clientOpen}
+                    className="w-full justify-between"
+                  >
+                    {selectedClientId
+                      ? clients.find(c => c.id === selectedClientId)?.name
+                      : "Select client..."}
+                    <Check className={cn("ml-2 h-4 w-4", selectedClientId ? "opacity-100" : "opacity-0")} />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[10001]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search clients..." />
+                    <CommandList>
+                      <CommandEmpty>No client found.</CommandEmpty>
+                      <CommandGroup>
+                        {clients.map((client) => (
+                          <CommandItem
                             key={client.id}
-                            type="button"
-                            onClick={() => {
+                            value={client.name}
+                            onSelect={() => {
                               setSelectedClientId(client.id);
-                              setClientSearch("");
-                              setClientExpanded(false);
+                              setClientOpen(false);
                             }}
-                            className={cn(
-                              "w-full text-left px-3 py-2 rounded-sm hover:bg-accent transition-colors flex items-center gap-2",
-                              selectedClientId === client.id && "bg-accent"
-                            )}
                           >
                             <Check
                               className={cn(
-                                "h-4 w-4",
+                                "mr-2 h-4 w-4",
                                 selectedClientId === client.id ? "opacity-100" : "opacity-0"
                               )}
                             />
                             {client.name}
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => {
-                        setClientExpanded(false);
-                        setClientSearch("");
-                      }}
-                    >
-                      Close
-                    </Button>
-                    {selectedClientId && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedClientId("");
-                          setClientSearch("");
-                        }}
-                      >
-                        Clear
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
 
           {!projectId && (
-            <div className="space-y-2">
+            <div>
               <Label>Project (optional)</Label>
-              {!projectExpanded ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal"
-                  onClick={() => setProjectExpanded(true)}
-                >
-                  {selectedProjectId ? (
-                    <span className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-primary" />
-                      {projects.find(p => p.id === selectedProjectId)?.job_number}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">Select project...</span>
-                  )}
-                </Button>
-              ) : (
-                <div className="space-y-2 border rounded-md p-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search projects..."
-                      value={projectSearch}
-                      onChange={(e) => setProjectSearch(e.target.value)}
-                      className="pl-9"
-                      autoFocus
-                    />
-                  </div>
-                  <ScrollArea className="h-[150px]">
-                    <div className="space-y-1">
-                      {filteredProjects.length === 0 ? (
-                        <div className="py-4 text-center text-sm text-muted-foreground">
-                          No projects found.
-                        </div>
-                      ) : (
-                        filteredProjects.map((project) => (
-                          <button
+              <Popover open={projectOpen} onOpenChange={setProjectOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={projectOpen}
+                    className="w-full justify-between"
+                  >
+                    {selectedProjectId
+                      ? projects.find(p => p.id === selectedProjectId)?.job_number
+                      : "Select project..."}
+                    <Check className={cn("ml-2 h-4 w-4", selectedProjectId ? "opacity-100" : "opacity-0")} />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[10001]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search projects..." />
+                    <CommandList>
+                      <CommandEmpty>No project found.</CommandEmpty>
+                      <CommandGroup>
+                        {projects.map((project) => (
+                          <CommandItem
                             key={project.id}
-                            type="button"
-                            onClick={() => {
+                            value={project.job_number || ""}
+                            onSelect={() => {
                               setSelectedProjectId(project.id);
-                              setProjectSearch("");
-                              setProjectExpanded(false);
+                              setProjectOpen(false);
                             }}
-                            className={cn(
-                              "w-full text-left px-3 py-2 rounded-sm hover:bg-accent transition-colors flex items-center gap-2",
-                              selectedProjectId === project.id && "bg-accent"
-                            )}
                           >
                             <Check
                               className={cn(
-                                "h-4 w-4",
+                                "mr-2 h-4 w-4",
                                 selectedProjectId === project.id ? "opacity-100" : "opacity-0"
                               )}
                             />
                             {project.job_number}
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => {
-                        setProjectExpanded(false);
-                        setProjectSearch("");
-                      }}
-                    >
-                      Close
-                    </Button>
-                    {selectedProjectId && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedProjectId("");
-                          setProjectSearch("");
-                        }}
-                      >
-                        Clear
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
-            </div>
-          </ScrollArea>
-          
-          <div className="border-t bg-background px-6 py-4 flex justify-end gap-2">
+
+          <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
