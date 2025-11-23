@@ -58,24 +58,6 @@ const JobsPage = () => {
     refetchQuotes();
   };
 
-  // Only block if permission is explicitly denied (false), not undefined (loading)
-  // This allows skeleton to show immediately while permissions load
-  if (canViewJobs === false) {
-    return (
-      <div className="min-h-screen flex items-center justify-center animate-fade-in">
-        <Card className="max-w-md">
-          <CardContent className="text-center p-8">
-            <div className="p-4 bg-red-500/10 rounded-lg inline-block mb-4">
-              <Shield className="h-8 w-8 text-red-600" />
-            </div>
-            <h2 className="text-2xl font-semibold text-foreground mb-2">Access Denied</h2>
-            <p className="text-muted-foreground">You don't have permission to view projects.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   const handleNewJob = async (clientId?: string | null) => {
     try {
       console.log("Creating new job...", clientId ? `for client: ${clientId}` : '');
@@ -130,24 +112,22 @@ const JobsPage = () => {
 
   // Handle automatic project creation from client page using location state
   useEffect(() => {
+    console.log('[JOBS] useEffect triggered - location.state:', location.state);
     const clientIdFromState = (location.state as any)?.createProjectForClient;
+    console.log('[JOBS] Client ID from state:', clientIdFromState);
+    console.log('[JOBS] canCreateJobs:', canCreateJobs, 'isAutoCreating:', isAutoCreating);
     
     if (clientIdFromState && canCreateJobs && !isAutoCreating) {
+      console.log('[JOBS] Starting auto-create for client:', clientIdFromState);
       setIsAutoCreating(true);
       
-      const createProjectForClient = async () => {
-        try {
-          await handleNewJob(clientIdFromState);
-        } finally {
-          // Clear the location state by replacing with clean state
-          window.history.replaceState({}, document.title);
-          setIsAutoCreating(false);
-        }
-      };
-      
-      createProjectForClient();
+      handleNewJob(clientIdFromState).finally(() => {
+        console.log('[JOBS] Auto-create completed, clearing state');
+        window.history.replaceState({}, document.title);
+        setIsAutoCreating(false);
+      });
     }
-  }, [location.state, canCreateJobs, isAutoCreating]);
+  }, [location.state, canCreateJobs]);
 
   const handleJobSelect = async (quote: any) => {
     // Check if quote already has a project_id
