@@ -373,10 +373,24 @@ export const InventorySelectionPanel = ({
               
               {/* Price and stock */}
               <div className="flex items-center justify-between gap-1 pt-0.5">
-                <span className="text-xs font-semibold">
-                  ${price.toFixed(2)}
-                  {item.unit && <span className="text-[9px] text-muted-foreground">/{item.unit}</span>}
-                </span>
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold">
+                    {(() => {
+                      // Check if using pricing grid
+                      if (item.pricing_grid_data && Array.isArray(item.pricing_grid_data) && item.pricing_grid_data.length > 0) {
+                        const minPrice = Math.min(...item.pricing_grid_data.map((row: any) => parseFloat(row.price || 0)));
+                        return `from $${minPrice.toFixed(2)}`;
+                      }
+                      return `$${price.toFixed(2)}`;
+                    })()}
+                    {item.unit && <span className="text-[9px] text-muted-foreground">/{item.unit}</span>}
+                  </span>
+                  <span className="text-[8px] text-muted-foreground leading-none">
+                    {item.pricing_grid_data && Array.isArray(item.pricing_grid_data) && item.pricing_grid_data.length > 0 
+                      ? 'Grid pricing' 
+                      : item.pricing_method || 'Fixed price'}
+                  </span>
+                </div>
                 {item.quantity !== undefined && <Badge variant={item.quantity > 0 ? "secondary" : "destructive"} className="text-[9px] px-1 py-0 h-3.5">
                     {item.quantity > 0 ? `${item.quantity} ${item.unit || 'm'}` : 'Out'}
                   </Badge>}
