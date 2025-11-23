@@ -1,10 +1,11 @@
-// DEPRECATED: Use new pricing utilities from @/hooks/pricing instead
-// This file is kept for backward compatibility only
+// CRITICAL: Option pricing calculations
+// Currency symbol must be passed from user settings via useCurrencyAwarePricing hook
+// Fullness and fabricWidth should ideally come from template/item settings
 
 import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
 import { calculatePrice, resolvePricingMethod, type PricingMethod, type PricingContext } from "@/utils/pricing/pricingStrategies";
 
-export const calculateOptionCost = (option: any, formData: any) => {
+export const calculateOptionCost = (option: any, formData: any, currencySymbol: string = '$') => {
   const baseCost = getOptionPrice(option);
   let method = getOptionPricingMethod(option) as PricingMethod;
   
@@ -24,13 +25,14 @@ export const calculateOptionCost = (option: any, formData: any) => {
     fabricUsage: parseFloat(formData.fabric_usage || "0") || 0,
     windowCoveringPricingMethod: option.window_covering_pricing_method as PricingMethod,
     // CRITICAL: Pass pricing grid data for options
-    pricingGridData: option.extra_data?.pricing_grid_data || option.pricing_grid_data
+    pricingGridData: option.extra_data?.pricing_grid_data || option.pricing_grid_data,
+    currencySymbol
   };
 
   return calculatePrice(method, context);
 };
 
-export const calculateHierarchicalOptionCost = (option: any, formData: any) => {
+export const calculateHierarchicalOptionCost = (option: any, formData: any, currencySymbol: string = '$') => {
   const baseCost = getOptionPrice(option);
   let method = getOptionPricingMethod(option) as PricingMethod;
   
@@ -52,7 +54,8 @@ export const calculateHierarchicalOptionCost = (option: any, formData: any) => {
     fabricUsage: parseFloat(formData.fabric_usage || "0") || 0,
     windowCoveringPricingMethod: option.window_covering_pricing_method as PricingMethod,
     // CRITICAL: Pass pricing grid data for options
-    pricingGridData: option.extra_data?.pricing_grid_data || option.pricing_grid_data
+    pricingGridData: option.extra_data?.pricing_grid_data || option.pricing_grid_data,
+    currencySymbol
   };
 
   return calculatePrice(method, context);

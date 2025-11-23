@@ -27,6 +27,7 @@ export interface PricingContext {
   fabricUsage?: number;
   pricingGridData?: any; // CRITICAL: For pricing-grid method
   windowCoveringPricingMethod?: PricingMethod;
+  currencySymbol?: string; // CRITICAL: From user settings, not hardcoded
 }
 
 export interface PricingResult {
@@ -49,23 +50,24 @@ export const calculatePrice = (
     railWidth,
     drop,
     quantity,
-    fullness = 2.5,
-    fabricWidth = 137,
+    fullness = 2.5, // TODO: Should come from template settings, not hardcoded
+    fabricWidth = 137, // TODO: Should come from inventory item settings, not hardcoded
     fabricCost = 0,
-    fabricUsage = 0
+    fabricUsage = 0,
+    currencySymbol = '$' // Fallback currency symbol
   } = context;
 
   switch (method) {
     case 'fixed':
       return {
         cost: baseCost * quantity,
-        calculation: `Fixed: £${baseCost.toFixed(2)} × ${quantity} = £${(baseCost * quantity).toFixed(2)}`
+        calculation: `Fixed: ${currencySymbol}${baseCost.toFixed(2)} × ${quantity} = ${currencySymbol}${(baseCost * quantity).toFixed(2)}`
       };
 
     case 'per-unit':
       return {
         cost: baseCost * quantity,
-        calculation: `£${baseCost.toFixed(2)} × ${quantity} units = £${(baseCost * quantity).toFixed(2)}`,
+        calculation: `${currencySymbol}${baseCost.toFixed(2)} × ${quantity} units = ${currencySymbol}${(baseCost * quantity).toFixed(2)}`,
         breakdown: { units: quantity, unitCost: baseCost, multiplier: 1 }
       };
 
@@ -74,7 +76,7 @@ export const calculatePrice = (
       const cost = baseCost * panelsNeeded * quantity;
       return {
         cost,
-        calculation: `£${baseCost.toFixed(2)} × ${panelsNeeded} panels × ${quantity} = £${cost.toFixed(2)}`,
+        calculation: `${currencySymbol}${baseCost.toFixed(2)} × ${panelsNeeded} panels × ${quantity} = ${currencySymbol}${cost.toFixed(2)}`,
         breakdown: { units: panelsNeeded, unitCost: baseCost, multiplier: quantity }
       };
     }
@@ -82,7 +84,7 @@ export const calculatePrice = (
     case 'per-drop':
       return {
         cost: baseCost * quantity,
-        calculation: `£${baseCost.toFixed(2)} per drop × ${quantity} = £${(baseCost * quantity).toFixed(2)}`,
+        calculation: `${currencySymbol}${baseCost.toFixed(2)} per drop × ${quantity} = ${currencySymbol}${(baseCost * quantity).toFixed(2)}`,
         breakdown: { units: quantity, unitCost: baseCost, multiplier: 1 }
       };
 
@@ -93,7 +95,7 @@ export const calculatePrice = (
       const cost = baseCost * widthInMeters * quantity;
       return {
         cost,
-        calculation: `£${baseCost.toFixed(2)} × ${widthInMeters.toFixed(2)}m × ${quantity} = £${cost.toFixed(2)}`,
+        calculation: `${currencySymbol}${baseCost.toFixed(2)} × ${widthInMeters.toFixed(2)}m × ${quantity} = ${currencySymbol}${cost.toFixed(2)}`,
         breakdown: { units: widthInMeters, unitCost: baseCost, multiplier: quantity }
       };
     }
@@ -104,7 +106,7 @@ export const calculatePrice = (
       const cost = baseCost * widthInYards * quantity;
       return {
         cost,
-        calculation: `£${baseCost.toFixed(2)} × ${widthInYards.toFixed(2)} yards × ${quantity} = £${cost.toFixed(2)}`,
+        calculation: `${currencySymbol}${baseCost.toFixed(2)} × ${widthInYards.toFixed(2)} yards × ${quantity} = ${currencySymbol}${cost.toFixed(2)}`,
         breakdown: { units: widthInYards, unitCost: baseCost, multiplier: quantity }
       };
     }
@@ -115,7 +117,7 @@ export const calculatePrice = (
       const cost = baseCost * areaInSqm * quantity;
       return {
         cost,
-        calculation: `£${baseCost.toFixed(2)} × ${areaInSqm.toFixed(2)}m² × ${quantity} = £${cost.toFixed(2)}`,
+        calculation: `${currencySymbol}${baseCost.toFixed(2)} × ${areaInSqm.toFixed(2)}m² × ${quantity} = ${currencySymbol}${cost.toFixed(2)}`,
         breakdown: { units: areaInSqm, unitCost: baseCost, multiplier: quantity }
       };
     }
@@ -125,7 +127,7 @@ export const calculatePrice = (
       const cost = (baseCost / 100) * totalFabricCost;
       return {
         cost,
-        calculation: `${baseCost}% × £${totalFabricCost.toFixed(2)} fabric = £${cost.toFixed(2)}`,
+        calculation: `${baseCost}% × ${currencySymbol}${totalFabricCost.toFixed(2)} fabric = ${currencySymbol}${cost.toFixed(2)}`,
         breakdown: { units: totalFabricCost, unitCost: baseCost / 100, multiplier: 1 }
       };
     }
@@ -144,7 +146,7 @@ export const calculatePrice = (
         console.warn('⚠️ pricing-grid method used but no grid data provided');
         return {
           cost: baseCost * quantity,
-          calculation: `No grid data - using base: £${baseCost.toFixed(2)} × ${quantity}`
+          calculation: `No grid data - using base: ${currencySymbol}${baseCost.toFixed(2)} × ${quantity}`
         };
       }
       
@@ -169,14 +171,14 @@ export const calculatePrice = (
         
         return {
           cost: gridPrice * quantity,
-          calculation: `Grid: ${widthCm}cm → £${gridPrice.toFixed(2)} × ${quantity}`,
+          calculation: `Grid: ${widthCm}cm → ${currencySymbol}${gridPrice.toFixed(2)} × ${quantity}`,
           breakdown: { units: 1, unitCost: gridPrice, multiplier: quantity }
         };
       } catch (error) {
         console.error('❌ Error calculating grid price for option:', error);
         return {
           cost: baseCost * quantity,
-          calculation: `Grid error - using base: £${baseCost.toFixed(2)} × ${quantity}`
+          calculation: `Grid error - using base: ${currencySymbol}${baseCost.toFixed(2)} × ${quantity}`
         };
       }
     }
@@ -184,7 +186,7 @@ export const calculatePrice = (
     default:
       return {
         cost: baseCost * quantity,
-        calculation: `Default: £${baseCost.toFixed(2)} × ${quantity} = £${(baseCost * quantity).toFixed(2)}`
+        calculation: `Default: ${currencySymbol}${baseCost.toFixed(2)} × ${quantity} = ${currencySymbol}${(baseCost * quantity).toFixed(2)}`
       };
   }
 };
