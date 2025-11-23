@@ -8,6 +8,7 @@ import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
 import { convertLength } from "@/hooks/useBusinessSettings";
 import { PoolUsageDisplay } from "../PoolUsageDisplay";
 import { PoolUsage } from "@/hooks/useProjectFabricPool";
+import { detectTreatmentType, getMeasurementLabels } from "@/utils/treatmentTypeDetection";
 
 interface AdaptiveFabricPricingDisplayProps {
   selectedFabricItem: any;
@@ -32,6 +33,10 @@ export const AdaptiveFabricPricingDisplay = ({
   usedLeftoverCount = 0
 }: AdaptiveFabricPricingDisplayProps) => {
   const { units, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
+  
+  // Detect treatment type and get measurement labels
+  const treatmentType = detectTreatmentType(template);
+  const measurementLabels = getMeasurementLabels(treatmentType);
   
   // Enrich fabric with pricing grid data if applicable
   const { enrichedFabric, isLoading: isEnrichingFabric, hasGrid: fabricHasGrid } = useFabricEnrichment({
@@ -142,11 +147,11 @@ export const AdaptiveFabricPricingDisplay = ({
         <h4 className="font-semibold text-sm">Pricing Grid Calculation</h4>
         <div className="text-xs space-y-1 text-muted-foreground">
           <div className="flex justify-between">
-            <span>Width:</span>
+            <span>{measurementLabels.width}:</span>
             <span className="font-medium text-foreground">{formatMeasurement(gridWidth)}</span>
           </div>
           <div className="flex justify-between">
-            <span>Drop:</span>
+            <span>{measurementLabels.height}:</span>
             <span className="font-medium text-foreground">{formatMeasurement(gridDrop)}</span>
           </div>
           <div className="flex justify-between border-t border-border pt-2 mt-2">
@@ -221,11 +226,11 @@ export const AdaptiveFabricPricingDisplay = ({
         <h4 className="font-semibold text-sm">Fabric Usage</h4>
         <div className="text-xs space-y-1 text-muted-foreground">
           <div className="flex justify-between">
-            <span>Blind Width:</span>
+            <span>{measurementLabels.width}:</span>
             <span className="font-medium text-foreground">{formatMeasurement(parseFloat(measurements.rail_width) || 0)}</span>
           </div>
           <div className="flex justify-between">
-            <span>Blind Drop:</span>
+            <span>{measurementLabels.height}:</span>
             <span className="font-medium text-foreground">{formatMeasurement(parseFloat(measurements.drop) || 0)}</span>
           </div>
           {isFabricPerSqm ? (
