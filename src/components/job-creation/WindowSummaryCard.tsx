@@ -220,12 +220,29 @@ export function WindowSummaryCard({
         fabricDescription = `${fabricQuantity.toFixed(2)}m • ${squareMeters.toFixed(2)} m²`;
       }
     } else if (usePricingGrid) {
-      // For pricing grids: show sqm calculation
-      const sqm = fabricQuantity * (Number(summary.widths_required) || 1) / 10000; // Convert cm to sqm
+      // CRITICAL FIX: Calculate sqm from actual dimensions in MM
+      const widthMm = parseFloat(summary.measurements_details?.rail_width) || 0;
+      const dropMm = parseFloat(summary.measurements_details?.drop) || 0;
+      // Convert mm to m: divide by 1000, then multiply for area
+      const widthM = widthMm / 1000;
+      const dropM = dropMm / 1000;
+      const sqm = widthM * dropM;
+      
+      console.log('📐 SQM CALCULATION FIXED:', {
+        widthMm,
+        dropMm,
+        widthM,
+        dropM,
+        sqm,
+        displayFabricCost,
+        calculation: `${widthM.toFixed(3)}m × ${dropM.toFixed(3)}m = ${sqm.toFixed(4)} sqm`
+      });
+      
+      // For pricing grid, show grid price directly (no unit breakdown)
       fabricQuantity = sqm;
       fabricUnit = 'sqm';
-      fabricUnitPrice = displayFabricCost / sqm;
-      fabricDescription = `${sqm.toFixed(2)} sqm × ${fabricUnitPrice.toFixed(2)}/sqm`;
+      fabricUnitPrice = displayFabricCost / (sqm || 1); // Avoid division by zero
+      fabricDescription = `Grid Price: ${formatCurrency(displayFabricCost, userCurrency)}`;
     } else {
       // For curtains/blinds: show linear meters and widths
       // CRITICAL: For horizontal/railroaded, multiply by pieces and show total
