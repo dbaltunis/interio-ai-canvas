@@ -184,10 +184,65 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
         </CardContent>
       </Card>
       
+      {/* Pre-Installation Checklist */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardHeader>
+          <CardTitle className="text-blue-900">Pre-Installation Checklist</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="flex items-start gap-2">
+              <Checkbox className="mt-0.5" />
+              <span>All hardware present and correct</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox className="mt-0.5" />
+              <span>Measurements verified on-site</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox className="mt-0.5" />
+              <span>Walls/ceiling suitable for mounting</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox className="mt-0.5" />
+              <span>All tools and equipment ready</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox className="mt-0.5" />
+              <span>Client contacted about arrival</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox className="mt-0.5" />
+              <span>Protection sheets for floors/furniture</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Required Tools */}
+      <Card className="bg-gray-50">
+        <CardHeader>
+          <CardTitle>Required Tools & Equipment</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            <div>• Drill & bits</div>
+            <div>• Spirit level</div>
+            <div>• Tape measure</div>
+            <div>• Pencil</div>
+            <div>• Screwdriver set</div>
+            <div>• Step ladder</div>
+            <div>• Stud finder</div>
+            <div>• Wall anchors</div>
+            <div>• Safety glasses</div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Installation Items by Room */}
       {data.rooms.map((room, roomIndex) => (
         <div key={roomIndex} className="space-y-4 workshop-room-section">
-          <h2 className="text-xl font-bold">{room.roomName}</h2>
+          <h2 className="text-xl font-bold border-l-4 border-blue-600 pl-3">{room.roomName}</h2>
           
           {room.items.map((item, itemIndex) => {
             const isComplete = completedItems.has(item.id);
@@ -214,37 +269,67 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Measurements */}
-                  <div>
-                    <h4 className="font-semibold mb-2">Measurements</h4>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>Width: {item.measurements?.width ?? "—"} {item.measurements?.unit}</div>
-                      <div>Height/Drop: {item.measurements?.drop ?? item.measurements?.height ?? "—"} {item.measurements?.unit}</div>
+                  {/* Critical Measurements - Prominent Display */}
+                  <div className="bg-yellow-50 p-4 rounded border-2 border-yellow-400">
+                    <h4 className="font-bold text-yellow-900 mb-3 flex items-center gap-2">
+                      📏 Critical Measurements - Verify Before Installing
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="bg-white p-2 rounded">
+                        <div className="text-xs text-muted-foreground">Width</div>
+                        <div className="text-lg font-bold">{item.measurements?.width ?? "—"} {item.measurements?.unit}</div>
+                      </div>
+                      <div className="bg-white p-2 rounded">
+                        <div className="text-xs text-muted-foreground">Height/Drop</div>
+                        <div className="text-lg font-bold">{item.measurements?.drop ?? item.measurements?.height ?? "—"} {item.measurements?.unit}</div>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-xs text-yellow-900 font-medium">
+                      ⚠️ Measure on-site before drilling - walls may not be perfectly square
                     </div>
                   </div>
                   
-                  {/* Hardware Installation */}
+                  {/* Hardware Installation - Step by Step */}
                   {hardware && (
                     <div className="border-t pt-4">
-                      <h4 className="font-semibold mb-2">Hardware Installation</h4>
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <span className="font-medium">Type:</span> {hardware.type || "—"}
-                        </div>
-                        <div>
-                          <span className="font-medium">Quantity:</span> {hardware.quantity || "—"}
-                        </div>
-                        <div>
-                          <span className="font-medium">Spacing:</span> {hardware.spacing || "—"} cm
-                        </div>
-                        <div>
-                          <span className="font-medium">Diameter:</span> {hardware.diameter || "—"} mm
-                        </div>
-                        {hardware.color && (
-                          <div className="col-span-2">
-                            <span className="font-medium">Finish:</span> {hardware.color}
+                      <h4 className="font-semibold mb-3 text-blue-800">🔧 Hardware Installation Guide</h4>
+                      <div className="bg-blue-50 p-3 rounded space-y-3">
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <span className="font-medium">Type:</span> {hardware.type || "—"}
                           </div>
-                        )}
+                          <div>
+                            <span className="font-medium">Quantity:</span> {hardware.quantity || "—"}
+                          </div>
+                          <div>
+                            <span className="font-medium">Spacing:</span> {hardware.spacing || "—"} cm
+                          </div>
+                          <div>
+                            <span className="font-medium">Diameter:</span> {hardware.diameter || "—"} mm
+                          </div>
+                          {hardware.color && (
+                            <div className="col-span-2">
+                              <span className="font-medium">Finish:</span> {hardware.color}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="border-t border-blue-200 pt-2 mt-2">
+                          <div className="text-xs font-semibold mb-2">Installation Steps:</div>
+                          <ol className="text-xs space-y-1 list-decimal list-inside">
+                            <li>Mark center point of window/opening</li>
+                            <li>Use level to mark horizontal line for brackets</li>
+                            <li>Mark bracket positions (typically {hardware.spacing || "30"} cm from edges)</li>
+                            <li>Check for studs/solid fixing points with stud finder</li>
+                            <li>Drill pilot holes (use appropriate wall anchors if needed)</li>
+                            <li>Install brackets ensuring they're level and secure</li>
+                            <li>Mount hardware and verify it's straight before final tightening</li>
+                          </ol>
+                        </div>
+                        
+                        <div className="text-xs text-blue-900 font-medium bg-blue-100 p-2 rounded">
+                          💡 Tip: For plasterboard walls, use appropriate fixings rated for the weight. For masonry, use 6mm minimum wall plugs.
+                        </div>
                       </div>
                     </div>
                   )}
