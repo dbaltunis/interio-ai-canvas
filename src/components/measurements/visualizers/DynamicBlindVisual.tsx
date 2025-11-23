@@ -410,7 +410,7 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
   };
 
   return (
-    <div className="relative container-level-2 rounded-lg p-8 min-h-[400px]" style={{ paddingTop: '48px', paddingRight: '100px', overflow: 'visible' }}>
+    <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
       {/* Window Frame - Same structure as curtains */}
       {windowType === 'bay' ? (
         <>
@@ -460,29 +460,29 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
       {/* Blind Treatment */}
       {renderBlindVisualization()}
 
-      {/* Width measurement */}
+      {/* Width measurement - inside visualization, on top */}
       {hasValue(measurements.rail_width) && (
-        <div className="absolute left-12 right-12 flex items-center z-10" style={{ top: '-28px' }}>
-          <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-r-[8px] border-transparent border-r-blue-600"></div>
-          <div className="flex-1 border-t-2 border-blue-600 relative">
-            <span className="absolute left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-2.5 py-1 rounded text-xs font-bold shadow-lg whitespace-nowrap" style={{ top: '-30px' }}>
-              Width: {displayValue(measurements.rail_width)}
+        <div className="absolute left-12 right-12 flex items-center z-30" style={{ top: '12px' }}>
+          <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-r-[6px] border-transparent border-r-blue-600"></div>
+          <div className="flex-1 border-t border-blue-600 relative">
+            <span className="absolute left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold shadow-md whitespace-nowrap" style={{ top: '-18px' }}>
+              W: {displayValue(measurements.rail_width)}
             </span>
           </div>
-          <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-l-[8px] border-transparent border-l-blue-600"></div>
+          <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-l-[6px] border-transparent border-l-blue-600"></div>
         </div>
       )}
 
-      {/* Drop measurement */}
+      {/* Drop measurement - inside visualization, on top */}
       {hasValue(measurements.drop) && (
-        <div className="absolute top-20 bottom-16 flex flex-col items-center z-20" style={{ right: '-28px' }}>
-          <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-b-[8px] border-transparent border-b-green-600"></div>
-          <div className="flex-1 border-r-2 border-green-600 relative">
-            <span className="absolute top-1/2 transform -translate-y-1/2 bg-green-600 text-white px-2.5 py-1 rounded text-xs font-bold shadow-lg whitespace-nowrap" style={{ right: '-70px' }}>
-              Drop: {displayValue(measurements.drop)}
+        <div className="absolute top-20 bottom-16 flex flex-col items-center z-30" style={{ right: '12px' }}>
+          <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-transparent border-b-green-600"></div>
+          <div className="flex-1 border-r border-green-600 relative">
+            <span className="absolute top-1/2 transform -translate-y-1/2 bg-green-600 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold shadow-md whitespace-nowrap" style={{ right: '-42px' }}>
+              H: {displayValue(measurements.drop)}
             </span>
           </div>
-          <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[8px] border-transparent border-t-green-600"></div>
+          <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-transparent border-t-green-600"></div>
         </div>
       )}
 
