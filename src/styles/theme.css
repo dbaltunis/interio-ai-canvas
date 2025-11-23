@@ -5,7 +5,8 @@
   --interio-dark-teal: #415e6b;
   --interio-white: #ffffff;
   --interio-sage: #9bb6bc;
-  --interio-burgundy: #9bb6bc;
+  --interio-burgundy: #733341;
+  --interio-terracotta: #C67B5C;
   --interio-charcoal: #575656;
   
   /* Primary brand color mapping */
@@ -20,8 +21,10 @@
   --primary-foreground: 0 0% 100%;
   --secondary: 192 24% 67%;
   --secondary-foreground: 0 0% 100%;
-  --accent: 345 36% 38%;
+  --accent: 17 49% 57%;
   --accent-foreground: 0 0% 100%;
+  --burgundy: 345 39% 33%;
+  --burgundy-foreground: 0 0% 100%;
   --muted: 210 17% 98%;
   --muted-foreground: 0 0% 35%;
   
@@ -115,19 +118,22 @@
 /* Brand-specific utility classes */
 .bg-brand-primary { background-color: var(--interio-dark-teal); }
 .bg-brand-secondary { background-color: var(--interio-sage); }
-.bg-brand-accent { background-color: var(--interio-burgundy); }
+.bg-brand-accent { background-color: var(--interio-terracotta); }
+.bg-brand-burgundy { background-color: var(--interio-burgundy); }
 .bg-brand-neutral { background-color: var(--interio-charcoal); }
 .bg-brand-light { background-color: var(--interio-white); }
 
 .text-brand-primary { color: var(--interio-dark-teal); }
 .text-brand-secondary { color: var(--interio-sage); }
-.text-brand-accent { color: var(--interio-burgundy); }
+.text-brand-accent { color: var(--interio-terracotta); }
+.text-brand-burgundy { color: var(--interio-burgundy); }
 .text-brand-neutral { color: var(--interio-charcoal); }
 .text-brand-light { color: var(--interio-white); }
 
 .border-brand-primary { border-color: var(--interio-dark-teal); }
 .border-brand-secondary { border-color: var(--interio-sage); }
-.border-brand-accent { border-color: var(--interio-burgundy); }
+.border-brand-accent { border-color: var(--interio-terracotta); }
+.border-brand-burgundy { border-color: var(--interio-burgundy); }
 
 /* Professional styling for the industry */
 .interio-gradient {
@@ -147,7 +153,7 @@
 }
 
 .interio-button-primary:hover {
-  background: var(--interio-burgundy);
+  background: var(--interio-terracotta);
   transform: translateY(-1px);
 }
 
