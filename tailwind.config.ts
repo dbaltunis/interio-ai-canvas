@@ -30,10 +30,19 @@ export default {
 				error: '0 84% 60%',
 				info: '189 40% 65%',
 				
-				// Company brand colors with AI design system
+				// InterioApp Original Brand Colors - converted to HSL
+				brand: {
+					primary: 'hsl(var(--brand-dark-teal))',
+					secondary: 'hsl(var(--brand-sage))',
+					terracotta: 'hsl(var(--brand-terracotta))',
+					burgundy: 'hsl(var(--brand-burgundy))',
+					neutral: '0 2% 34%',
+					light: '0 0% 100%'
+				},
+				// Company colors reference brand colors
 				company: {
-					primary: 'hsl(var(--company-primary))',
-					secondary: 'hsl(var(--company-secondary))',
+					primary: 'hsl(var(--brand-dark-teal))',
+					secondary: 'hsl(var(--brand-sage))',
 					tertiary: 'hsl(var(--company-tertiary))',
 					warning: 'hsl(var(--company-warning))',
 					error: 'hsl(var(--company-error))',
@@ -44,14 +53,6 @@ export default {
 					medium: 'hsl(var(--risk-medium))',
 					low: 'hsl(var(--risk-low))',
 					none: 'hsl(var(--risk-none))',
-				},
-				// InterioApp Brand Colors (legacy support) - converted to HSL
-				brand: {
-					primary: 'hsl(var(--company-primary))',
-					secondary: 'hsl(var(--company-secondary))',
-					accent: '345 37% 33%',
-					neutral: '0 2% 34%',
-					light: '0 0% 100%'
 				},
 				// Keep existing shadcn colors for compatibility
 				border: 'hsl(var(--border))',

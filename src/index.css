@@ -13,9 +13,13 @@
 
 @layer base {
   :root {
-    /* Modern Color System - Beautiful, Clean Design */
-    --company-primary: 218 25% 15%; /* Deep navy-blue */
-    --company-secondary: 189 40% 65%; /* Modern cyan-blue */
+    /* Original Brand Colors - InterioApp */
+    --brand-dark-teal: 200 26% 34%; /* #415e6b - Main brand color */
+    --brand-sage: 192 24% 67%; /* #9bb6bc - Secondary brand color */
+    --brand-terracotta: 17 49% 57%; /* #C67B5C - CTA accent */
+    --brand-burgundy: 345 39% 33%; /* #733341 - Special states */
+    
+    /* Supporting Colors */
     --company-tertiary: 142 76% 36%; /* Success green */
     --company-warning: 38 92% 50%; /* Vibrant orange */
     --company-error: 0 84% 60%; /* Clean red */
@@ -26,28 +30,28 @@
     --risk-low: 45 85% 60%; /* Yellow gradient */
     --risk-none: 142 76% 55%; /* Green gradient */
     
-    /* AI Design System */
-    --primary: var(--company-primary);
+    /* Semantic Token Mapping */
+    --primary: var(--brand-dark-teal);
     --primary-foreground: 0 0% 100%;
-    --primary-rgb: 55, 68, 92; /* RGB values for primary (218 25% 15%) */
-    --secondary: var(--company-secondary);
+    --primary-rgb: 65, 94, 107; /* RGB values for primary (200 26% 34%) */
+    --secondary: var(--brand-sage);
     --secondary-foreground: 0 0% 100%;
-    --secondary-rgb: 102, 178, 201; /* RGB values for secondary (189 40% 65%) */
-    --accent: 210 20% 96%; /* Light muted background for hover states */
-    --accent-foreground: 220 15% 15%; /* Dark text for proper contrast */
-    --accent-rgb: 102, 178, 201; /* RGB values for accent */
+    --secondary-rgb: 155, 182, 188; /* RGB values for secondary (192 24% 67%) */
+    --accent: var(--brand-terracotta);
+    --accent-foreground: 0 0% 100%;
+    --accent-rgb: 198, 123, 92; /* RGB values for accent (17 49% 57%) */
     
     --background: 216 20% 97%; /* Light gray background for contrast */
     --foreground: 220 15% 15%; /* Dark text for clarity */
     --muted: 210 20% 96%;
     --muted-foreground: 220 15% 45%;
     --popover: 0 0% 100%; /* Bright white */
-    --popover-foreground: var(--company-primary);
+    --popover-foreground: var(--brand-dark-teal);
     --card: 0 0% 100%; /* Bright white */
     --card-foreground: 220 15% 15%;
     --border: 220 13% 88%; /* Slightly darker border for visibility */
     --input: 0 0% 100%; /* Bright white inputs */
-    --ring: var(--company-primary);
+    --ring: var(--brand-dark-teal);
     --destructive: var(--company-error);
     --destructive-foreground: 0 0% 100%;
     --warning: var(--company-warning);
@@ -92,21 +96,21 @@
     --card-foreground: 0 0% 98%;
     --popover: 240 3% 18%;
     --popover-foreground: 0 0% 98%;
-    --primary: 218 25% 45%; /* Softer primary */
+    --primary: 200 26% 40%; /* Brand teal adjusted for dark mode */
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 3% 23%; /* #3a3a3c - more elevated */
+    --secondary: 192 24% 55%; /* Brand sage adjusted for dark mode */
     --secondary-foreground: 0 0% 98%;
     --muted: 240 3% 23%;
     --muted-foreground: 0 0% 70%;
-    --accent: 240 3% 20%; /* Darker surface for dark mode hover */
-    --accent-foreground: 0 0% 98%; /* Light text for proper contrast */
+    --accent: 17 49% 50%; /* Brand terracotta adjusted for dark mode */
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 70% 60%;
     --destructive-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
     --border: 240 3% 28%; /* #48484a - visible but subtle */
     --input: 240 3% 23%;
-    --ring: 218 25% 45%;
+    --ring: 200 26% 40%;
     
     --chart-1: 218 70% 50%;
     --chart-2: 160 60% 45%;
@@ -121,14 +125,19 @@
 
   /* Accent switcher (applies across all themes) */
   :root[data-accent='primary'] {
-    --primary: var(--company-primary);
-    --accent: var(--company-primary);
-    --ring: var(--company-primary);
+    --primary: var(--brand-dark-teal);
+    --accent: var(--brand-dark-teal);
+    --ring: var(--brand-dark-teal);
   }
   :root[data-accent='secondary'] {
-    --primary: var(--company-secondary);
-    --accent: var(--company-secondary);
-    --ring: var(--company-secondary);
+    --primary: var(--brand-sage);
+    --accent: var(--brand-sage);
+    --ring: var(--brand-sage);
+  }
+  :root[data-accent='terracotta'] {
+    --primary: var(--brand-terracotta);
+    --accent: var(--brand-terracotta);
+    --ring: var(--brand-terracotta);
   }
 }
 
