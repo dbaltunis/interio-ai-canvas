@@ -83,6 +83,7 @@ export const EnhancedRoomView = ({ project, clientId }: EnhancedRoomViewProps) =
       onRenameRoom={handleRenameRoom}
       onCreateRoom={handleCreateRoom}
       isCreatingRoom={createRoom.isPending}
+      isCopyingRoom={createRoom.isPending}
       onChangeRoomType={handleChangeRoomType}
       onCreateFromTemplate={handleCreateFromTemplate}
     />

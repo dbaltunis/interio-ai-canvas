@@ -28,6 +28,7 @@ interface RoomCardProps {
   setEditingRoomName: (name: string) => void;
   onRenameRoom: (roomId: string, newName: string) => void;
   onChangeRoomType: (roomId: string, roomType: string) => void;
+  isCopyingRoom?: boolean;
 }
 
 export const RoomCard = ({ 
@@ -46,7 +47,8 @@ export const RoomCard = ({
   editingRoomName,
   setEditingRoomName,
   onRenameRoom,
-  onChangeRoomType
+  onChangeRoomType,
+  isCopyingRoom = false
 }: RoomCardProps) => {
   const {
     surfacesLoading,
@@ -126,6 +128,7 @@ export const RoomCard = ({
         onCopyRoom={onCopyRoom}
         onDeleteRoom={onDeleteRoom}
         onChangeRoomType={onChangeRoomType}
+        isCopyingRoom={isCopyingRoom}
       />
 
       {/* Room Type Badge */}

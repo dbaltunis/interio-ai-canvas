@@ -21,6 +21,7 @@ interface RoomManagementTabsProps {
   onRenameRoom: (roomId: string, newName: string) => void;
   onCreateRoom: () => void;
   isCreatingRoom: boolean;
+  isCopyingRoom?: boolean;
   onChangeRoomType: (roomId: string, roomType: string) => void;
   onCreateFromTemplate?: (template: any, customName?: string) => void;
 }
@@ -45,6 +46,7 @@ export const RoomManagementTabs = ({
   onRenameRoom,
   onCreateRoom,
   isCreatingRoom,
+  isCopyingRoom = false,
   onChangeRoomType,
   onCreateFromTemplate
 }: RoomManagementTabsProps) => {
@@ -68,6 +70,7 @@ export const RoomManagementTabs = ({
         onRenameRoom={onRenameRoom}
         onCreateRoom={onCreateRoom}
         isCreatingRoom={isCreatingRoom}
+        isCopyingRoom={isCopyingRoom}
         onChangeRoomType={onChangeRoomType}
         onCreateFromTemplate={onCreateFromTemplate}
       />
