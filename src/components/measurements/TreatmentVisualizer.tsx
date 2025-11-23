@@ -72,6 +72,28 @@ export const TreatmentVisualizer = ({
             ))}
           </div>
 
+          {/* Width measurement - compact, inside */}
+          <div className="absolute left-4 right-4 flex items-center z-30" style={{ top: '12px' }}>
+            <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-r-[6px] border-transparent border-r-blue-600"></div>
+            <div className="flex-1 border-t border-blue-600 relative">
+              <span className="absolute left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold shadow-md whitespace-nowrap" style={{ top: '-18px' }}>
+                W: {Number(width).toFixed(1)}{units.length}
+              </span>
+            </div>
+            <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-l-[6px] border-transparent border-l-blue-600"></div>
+          </div>
+
+          {/* Height measurement - compact, inside */}
+          <div className="absolute top-4 bottom-4 flex flex-col items-center z-30" style={{ right: '12px' }}>
+            <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-transparent border-b-green-600"></div>
+            <div className="flex-1 border-r border-green-600 relative">
+              <span className="absolute top-1/2 transform -translate-y-1/2 bg-green-600 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold shadow-md whitespace-nowrap" style={{ right: '-42px' }}>
+                H: {Number(height).toFixed(1)}{units.length}
+              </span>
+            </div>
+            <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-transparent border-t-green-600"></div>
+          </div>
+
           {/* Labels */}
           <div className="absolute bottom-2 left-2 text-xs text-foreground font-semibold">
             <Badge variant="outline">Curtains</Badge>
@@ -119,6 +141,28 @@ export const TreatmentVisualizer = ({
 
             {/* Control cord */}
             <div className="absolute right-2 top-0 bottom-0 w-0.5 bg-foreground" />
+          </div>
+
+          {/* Width measurement - compact, inside */}
+          <div className="absolute left-4 right-4 flex items-center z-30" style={{ top: '12px' }}>
+            <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-r-[6px] border-transparent border-r-blue-600"></div>
+            <div className="flex-1 border-t border-blue-600 relative">
+              <span className="absolute left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold shadow-md whitespace-nowrap" style={{ top: '-18px' }}>
+                W: {Number(width).toFixed(1)}{units.length}
+              </span>
+            </div>
+            <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-l-[6px] border-transparent border-l-blue-600"></div>
+          </div>
+
+          {/* Height measurement - compact, inside */}
+          <div className="absolute top-4 bottom-4 flex flex-col items-center z-30" style={{ right: '12px' }}>
+            <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-transparent border-b-green-600"></div>
+            <div className="flex-1 border-r border-green-600 relative">
+              <span className="absolute top-1/2 transform -translate-y-1/2 bg-green-600 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold shadow-md whitespace-nowrap" style={{ right: '-42px' }}>
+                H: {Number(height).toFixed(1)}{units.length}
+              </span>
+            </div>
+            <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-transparent border-t-green-600"></div>
           </div>
 
           <div className="absolute bottom-2 left-2 text-xs text-foreground font-semibold">
@@ -169,6 +213,28 @@ export const TreatmentVisualizer = ({
               {/* Control mechanism */}
               <div className="absolute right-2 top-0 bottom-0 w-0.5 bg-foreground" />
             </div>
+          </div>
+
+          {/* Width measurement - compact, inside */}
+          <div className="absolute left-4 right-4 flex items-center z-30" style={{ top: '12px' }}>
+            <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-r-[6px] border-transparent border-r-blue-600"></div>
+            <div className="flex-1 border-t border-blue-600 relative">
+              <span className="absolute left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold shadow-md whitespace-nowrap" style={{ top: '-18px' }}>
+                W: {Number(width).toFixed(1)}{units.length}
+              </span>
+            </div>
+            <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-l-[6px] border-transparent border-l-blue-600"></div>
+          </div>
+
+          {/* Height measurement - compact, inside */}
+          <div className="absolute top-4 bottom-4 flex flex-col items-center z-30" style={{ right: '12px' }}>
+            <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-transparent border-b-green-600"></div>
+            <div className="flex-1 border-r border-green-600 relative">
+              <span className="absolute top-1/2 transform -translate-y-1/2 bg-green-600 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold shadow-md whitespace-nowrap" style={{ right: '-42px' }}>
+                H: {Number(height).toFixed(1)}{units.length}
+              </span>
+            </div>
+            <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-transparent border-t-green-600"></div>
           </div>
 
           <div className="absolute bottom-2 left-2 text-xs text-foreground font-semibold">
@@ -235,6 +301,28 @@ export const TreatmentVisualizer = ({
             ))}
           </div>
 
+          {/* Width measurement - compact, inside */}
+          <div className="absolute left-4 right-4 flex items-center z-30" style={{ top: '12px' }}>
+            <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-r-[6px] border-transparent border-r-blue-600"></div>
+            <div className="flex-1 border-t border-blue-600 relative">
+              <span className="absolute left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold shadow-md whitespace-nowrap" style={{ top: '-18px' }}>
+                W: {Number(width).toFixed(1)}{units.length}
+              </span>
+            </div>
+            <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-l-[6px] border-transparent border-l-blue-600"></div>
+          </div>
+
+          {/* Height measurement - compact, inside */}
+          <div className="absolute top-4 bottom-4 flex flex-col items-center z-30" style={{ right: '12px' }}>
+            <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-transparent border-b-green-600"></div>
+            <div className="flex-1 border-r border-green-600 relative">
+              <span className="absolute top-1/2 transform -translate-y-1/2 bg-green-600 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold shadow-md whitespace-nowrap" style={{ right: '-42px' }}>
+                H: {Number(height).toFixed(1)}{units.length}
+              </span>
+            </div>
+            <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-transparent border-t-green-600"></div>
+          </div>
+
           <div className="absolute bottom-2 left-2 text-xs text-foreground font-semibold">
             <Badge variant="outline">Shutters</Badge>
           </div>
@@ -295,22 +383,32 @@ export const TreatmentVisualizer = ({
               <div className="border border-border/40 bg-background/40" />
             </div>
 
-            {/* Width label */}
+            {/* Width label - compact, inside */}
             <div
-              className="absolute left-1/2 -bottom-6 -translate-x-1/2 text-xs"
+              className="absolute left-4 right-4 flex items-center z-30"
+              style={{ top: '12px' }}
             >
-              <Badge variant="secondary">
-                W: {Number(width).toFixed(1)} {units.length}
-              </Badge>
+              <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-r-[6px] border-transparent border-r-blue-600"></div>
+              <div className="flex-1 border-t border-blue-600 relative">
+                <span className="absolute left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold shadow-md whitespace-nowrap" style={{ top: '-18px' }}>
+                  W: {Number(width).toFixed(1)}{units.length}
+                </span>
+              </div>
+              <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-l-[6px] border-transparent border-l-blue-600"></div>
             </div>
 
-            {/* Height label */}
+            {/* Height label - compact, inside */}
             <div
-              className="absolute -left-6 top-1/2 -translate-y-1/2 origin-center -rotate-90 text-xs"
+              className="absolute top-4 bottom-4 flex flex-col items-center z-30"
+              style={{ right: '12px' }}
             >
-              <Badge variant="secondary">
-                H: {Number(height).toFixed(1)} {units.length}
-              </Badge>
+              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-transparent border-b-green-600"></div>
+              <div className="flex-1 border-r border-green-600 relative">
+                <span className="absolute top-1/2 transform -translate-y-1/2 bg-green-600 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold shadow-md whitespace-nowrap" style={{ right: '-42px' }}>
+                  H: {Number(height).toFixed(1)}{units.length}
+                </span>
+              </div>
+              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-transparent border-t-green-600"></div>
             </div>
 
             {/* Horizontal ruler with ticks (below window) */}
