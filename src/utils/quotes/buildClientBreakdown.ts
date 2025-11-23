@@ -91,63 +91,18 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
     });
   }
 
-  // Extract measurement details options for all treatment types
-  const measurementDetails = summary.measurements_details || {};
-  const displayOptions: ClientBreakdownItem[] = [];
-  
-  // Define which measurement fields to display for each treatment type
-  const optionFieldMap: Record<string, { label: string; valueFormatter?: (val: any) => string }> = {
-    // Universal options
-    mount_type: { label: 'Mount Type', valueFormatter: (v) => v?.replace(/_/g, ' ') || v },
-    control_type: { label: 'Control Type', valueFormatter: (v) => v?.replace(/_/g, ' ') || v },
-    chain_side: { label: 'Chain Side', valueFormatter: (v) => v?.replace(/_/g, ' ') || v },
-    stack_direction: { label: 'Stack Direction', valueFormatter: (v) => v?.replace(/_/g, ' ') || v },
-    
-    // Blind-specific options
-    vane_width: { label: 'Vane Width', valueFormatter: (v) => `${v}mm` },
-    louvre_width: { label: 'Louvre Width', valueFormatter: (v) => `${v}mm louvres` },
-    slat_width: { label: 'Slat Width', valueFormatter: (v) => `${v}mm` },
-    lift_system: { label: 'Lift System', valueFormatter: (v) => v?.replace(/_/g, ' ') || v },
-    headrail_type: { label: 'Headrail Type', valueFormatter: (v) => v?.replace(/_/g, ' ') || v },
-    fabric_type: { label: 'Material', valueFormatter: (v) => v?.replace(/_/g, ' ') || v },
-    material_type: { label: 'Material', valueFormatter: (v) => v?.replace(/_/g, ' ') || v },
-    bracket_type: { label: 'Bracket Type', valueFormatter: (v) => v?.replace(/_/g, ' ') || v },
-    
-    // Curtain-specific options
-    hardware_type: { label: 'Hardware Type', valueFormatter: (v) => v?.replace(/_/g, ' ') || v },
-    heading_type: { label: 'Heading Type', valueFormatter: (v) => v?.replace(/_/g, ' ') || v },
-    lining_type: { label: 'Lining Type', valueFormatter: (v) => v === 'none' || v === 'unlined' ? 'Unlined' : v?.replace(/_/g, ' ') || v },
-    curtain_type: { label: 'Curtain Type', valueFormatter: (v) => v?.replace(/_/g, ' ') || v },
-    
-    // Wallpaper-specific options
-    pattern_match: { label: 'Pattern Match', valueFormatter: (v) => v?.replace(/_/g, ' ') || v },
-    pattern_repeat: { label: 'Pattern Repeat', valueFormatter: (v) => `${v}cm` },
-  };
-
-  // Extract and format measurement options
-  Object.entries(optionFieldMap).forEach(([field, config]) => {
-    const value = measurementDetails[field];
-    if (value !== undefined && value !== null && value !== '' && value !== 'none') {
-      const formatter = config.valueFormatter || ((v) => String(v));
-      displayOptions.push({
-        id: `measurement-${field}`,
-        name: config.label,
-        description: formatter(value),
-        total_cost: 0,
-        unit_price: 0,
-        quantity: 1,
-        category: 'option',
-        details: { field, value },
-      });
-    }
-  });
-
-  // Add selected_options from the array (these may have costs)
+  // Selected Options - These are pre-formatted client-facing options
+  // CRITICAL: selected_options is the ONLY source for displaying treatment options in quotes
+  // It contains properly formatted names, descriptions, and prices
+  // DO NOT extract from measurements_details as that contains raw internal data
   if (summary.selected_options && Array.isArray(summary.selected_options)) {
     summary.selected_options.forEach((option: any, index: number) => {
+      // Try multiple possible price fields
       const price = Number(option.price || option.cost || option.total_cost || option.unit_price || 0);
       
-      displayOptions.push({
+      // Always add options regardless of price - even zero-price options should be visible
+      // This ensures clients see all treatment configuration details (mount type, control type, etc.)
+      items.push({
         id: option.id || `option-${index}`,
         name: option.name || option.label || 'Option',
         description: option.description || option.name,
@@ -160,9 +115,6 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
       });
     });
   }
-
-  // Add all display options to items
-  items.push(...displayOptions);
 
   // Manufacturing/Assembly - only show separately if NOT using pricing grid
   // (pricing grid combines fabric + manufacturing into single "Fabric Material" line)
