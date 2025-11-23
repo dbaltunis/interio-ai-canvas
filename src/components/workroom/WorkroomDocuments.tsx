@@ -332,6 +332,8 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
               orientation={orientation}
               margins={margins}
               projectId={projectId}
+              template={template}
+              blocks={templateBlocks}
             />
           )}
         </div>
@@ -350,6 +352,9 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
             data={filteredData}
             orientation={orientation}
             margins={margins}
+            projectId={projectId}
+            template={template}
+            blocks={templateBlocks}
           />
         </WorkshopPreviewModal>
       )}
