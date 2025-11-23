@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Pencil, RotateCcw } from "lucide-react";
+import { Pencil, RotateCcw, Save, CheckCircle } from "lucide-react";
 import { WorkshopData } from "@/hooks/useWorkshopData";
 import { MaterialsTable } from "../sections/MaterialsTable";
 import { RoomSection } from "../sections/RoomSection";
 import { WorkshopInformationLandscape } from "./WorkshopInformationLandscape";
+import { useWorkshopNotes } from "@/hooks/useWorkshopNotes";
 
 interface WorkshopInformationProps {
   data: WorkshopData;
@@ -23,8 +24,21 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
 
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  
+  // Integrate workshop notes hook
+  const {
+    productionNotes,
+    itemNotes,
+    setProductionNotes,
+    setItemNote,
+    saveNotes,
+    isLoading: notesLoading,
+    isSaving
+  } = useWorkshopNotes(projectId);
   
   const hasOverrides = Object.keys(overrides).length > 0;
+  const hasUnsavedNotes = productionNotes !== "" || Object.keys(itemNotes).length > 0;
   
   const getFieldValue = (field: keyof typeof data.header) => {
     return overrides[field] ?? data.header[field] ?? "";
@@ -36,6 +50,15 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
   
   const handleReset = () => {
     setOverrides({});
+  };
+  
+  const handleSaveNotes = async () => {
+    try {
+      await saveNotes();
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error("Failed to save notes:", error);
+    }
   };
   
   const EditableField: React.FC<{
@@ -83,6 +106,12 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Workshop Information</CardTitle>
           <div className="flex items-center gap-2">
+            {lastSaved && (
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <CheckCircle className="h-3 w-3 text-green-500" />
+                Saved {lastSaved.toLocaleTimeString()}
+              </div>
+            )}
             {hasOverrides && (
               <Button
                 variant="ghost"
@@ -94,6 +123,16 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
                 Reset to defaults
               </Button>
             )}
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleSaveNotes}
+              disabled={isSaving || !projectId}
+              className="h-8"
+            >
+              <Save className="h-3.5 w-3.5 mr-1" />
+              {isSaving ? "Saving..." : "Save Notes"}
+            </Button>
             <Button
               variant={editing ? "default" : "outline"}
               size="sm"
@@ -126,10 +165,10 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
       {/* Enhanced Work Order Items */}
       <div className="space-y-4">
         {data.rooms.map((room, roomIdx) => (
-          <div key={roomIdx} className="space-y-3">
+          <div key={roomIdx} className="space-y-3 workshop-room-section">
             <h3 className="text-lg font-semibold border-b pb-2">{room.roomName}</h3>
             {room.items.map((item) => (
-              <Card key={item.id} className="workshop-item-card border-2">
+              <Card key={item.id} className="workshop-item-card border-2 avoid-page-break">
                 <CardHeader className="bg-muted/30 pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -258,7 +297,8 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
                     <Textarea 
                       placeholder="Add any special instructions..."
                       className="text-xs min-h-[50px]"
-                      defaultValue={item.notes}
+                      value={itemNotes[item.id] || ""}
+                      onChange={(e) => setItemNote(item.id, e.target.value)}
                     />
                   </div>
                 </CardContent>

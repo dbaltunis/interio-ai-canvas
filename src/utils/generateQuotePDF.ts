@@ -56,9 +56,9 @@ export const generateQuotePDF = async (
     },
     pagebreak: {
       mode: ['avoid-all', 'css', 'legacy'],
-      before: '.page-break-before',
-      after: '.page-break-after',
-      avoid: ['.avoid-page-break', 'tr', 'table', '.products-table', 'img']
+      before: '.page-break-before, .force-page-break',
+      after: '.page-break-after, .workshop-room-section',
+      avoid: ['.avoid-page-break', '.workshop-item-card', 'tr', 'table', '.products-table', 'img']
     },
   };
 
@@ -115,9 +115,9 @@ export const generateQuotePDFBlob = async (
     },
     pagebreak: {
       mode: ['avoid-all', 'css', 'legacy'],
-      before: '.page-break-before',
-      after: '.page-break-after',
-      avoid: ['.avoid-page-break', 'tr', 'table', 'img']
+      before: '.page-break-before, .force-page-break',
+      after: '.page-break-after, .workshop-room-section',
+      avoid: ['.avoid-page-break', '.workshop-item-card', 'tr', 'table', 'img']
     },
   };
 

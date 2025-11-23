@@ -52,10 +52,26 @@
 
   /* Prevent page breaks inside elements */
   .avoid-page-break,
+  .workshop-item-card,
   table,
   tr {
-    page-break-inside: avoid;
-    break-inside: avoid;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  
+  /* Optional page break after room sections */
+  .workshop-room-section {
+    page-break-after: auto;
+  }
+  
+  /* Force page break before specific elements */
+  .force-page-break {
+    page-break-before: always !important;
+  }
+  
+  /* Ensure cards have proper spacing for page breaks */
+  .workshop-item-card {
+    margin-bottom: 0.5rem;
   }
 
   /* CRITICAL: Ensure images are visible in PDF */

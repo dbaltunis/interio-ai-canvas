@@ -1,26 +1,42 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Pencil, RotateCcw, CheckCircle2 } from "lucide-react";
+import { Pencil, RotateCcw, CheckCircle2, Save, CheckCircle } from "lucide-react";
 import { WorkshopData } from "@/hooks/useWorkshopData";
 import { BeforeAfterPhotoUpload } from "../components/BeforeAfterPhotoUpload";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { useWorkshopNotes } from "@/hooks/useWorkshopNotes";
 
 interface FittingInstructionsProps {
   data: WorkshopData;
   orientation?: 'portrait' | 'landscape';
+  projectId?: string;
 }
 
 export const FittingInstructions: React.FC<FittingInstructionsProps> = ({ 
   data, 
-  orientation = 'portrait' 
+  orientation = 'portrait',
+  projectId
 }) => {
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
   const [fittingDate, setFittingDate] = useState("");
   const [completedItems, setCompletedItems] = useState<Set<string>>(new Set());
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  
+  // Integrate workshop notes hook
+  const {
+    productionNotes,
+    itemNotes,
+    setProductionNotes,
+    setItemNote,
+    saveNotes,
+    isLoading: notesLoading,
+    isSaving
+  } = useWorkshopNotes(projectId);
   
   const hasOverrides = Object.keys(overrides).length > 0;
   
@@ -34,6 +50,15 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
   
   const handleReset = () => {
     setOverrides({});
+  };
+  
+  const handleSaveNotes = async () => {
+    try {
+      await saveNotes();
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error("Failed to save notes:", error);
+    }
   };
   
   const toggleItemComplete = (itemId: string) => {
@@ -55,6 +80,12 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Fitting Instructions</CardTitle>
           <div className="flex items-center gap-2 no-print">
+            {lastSaved && (
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <CheckCircle className="h-3 w-3 text-green-500" />
+                Saved {lastSaved.toLocaleTimeString()}
+              </div>
+            )}
             {hasOverrides && (
               <Button
                 variant="ghost"
@@ -66,6 +97,16 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
                 Reset
               </Button>
             )}
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleSaveNotes}
+              disabled={isSaving || !projectId}
+              className="h-8"
+            >
+              <Save className="h-3.5 w-3.5 mr-1" />
+              {isSaving ? "Saving..." : "Save Notes"}
+            </Button>
             <Button
               variant={editing ? "default" : "outline"}
               size="sm"
@@ -146,7 +187,7 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
       
       {/* Fitting Items by Room */}
       {data.rooms.map((room, roomIndex) => (
-        <div key={roomIndex} className="space-y-4 break-after-page">
+        <div key={roomIndex} className="space-y-4 workshop-room-section">
           <h2 className="text-xl font-bold">{room.roomName}</h2>
           
           {room.items.map((item, itemIndex) => {
@@ -154,7 +195,7 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
             const hardware = (item.fullness as any)?.hardware;
             
             return (
-              <Card key={itemIndex} className={isComplete ? "border-green-500" : ""}>
+              <Card key={itemIndex} className={`workshop-item-card avoid-page-break ${isComplete ? "border-green-500" : ""}`}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center gap-2">
@@ -314,12 +355,16 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
                     </ul>
                   </div>
                   
-                  {item.notes && (
-                    <div className="border-t pt-4">
-                      <h4 className="font-semibold mb-2">Special Instructions</h4>
-                      <p className="text-sm text-muted-foreground">{item.notes}</p>
-                    </div>
-                  )}
+                  {/* Special Instructions */}
+                  <div className="border-t pt-4">
+                    <h4 className="font-semibold mb-2">Special Instructions</h4>
+                    <Textarea 
+                      placeholder="Add special fitting instructions..."
+                      className="text-sm min-h-[60px]"
+                      value={itemNotes[item.id] || ""}
+                      onChange={(e) => setItemNote(item.id, e.target.value)}
+                    />
+                  </div>
                   
                   {/* Photo Upload Sections */}
                   <div className="border-t pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
