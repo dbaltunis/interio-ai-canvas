@@ -85,7 +85,6 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         id: client.id,
         ...editedClient,
       });
-      // Removed unnecessary success toast
       setIsEditing(false);
     } catch (error) {
       toast({
@@ -96,22 +95,26 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
     }
   };
 
-  const handleSyncDealValue = async () => {
-    if (calculatedDealValue > 0) {
-      setEditedClient({ ...editedClient, deal_value: calculatedDealValue });
-      // Removed unnecessary success toast - value updated silently
-    } else {
-      toast({
-        title: "No quotes found",
-        description: "Create quotes for this client's projects to calculate deal value",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleCancel = () => {
     setEditedClient(null);
     setIsEditing(false);
+  };
+
+  const getStageColor = (stage: string) => {
+    switch (stage?.toLowerCase()) {
+      case 'lead':
+        return 'bg-blue-100 text-blue-700';
+      case 'contacted':
+        return 'bg-purple-100 text-purple-700';
+      case 'qualified':
+        return 'bg-green-100 text-green-700';
+      case 'proposal':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'client':
+        return 'bg-primary/10 text-primary';
+      default:
+        return 'bg-muted text-muted-foreground';
+    }
   };
 
   const currentClient = isEditing ? editedClient : client;
@@ -147,46 +150,6 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
               )}
             </div>
           </div>
-        </div>
-        
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-          {!isEditing ? (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  setActiveTab("emails");
-                  setTimeout(() => {
-                    const emailSection = document.getElementById('email-section');
-                    if (emailSection) {
-                      emailSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                  }, 100);
-                }}
-                className="h-8 px-2 sm:px-3"
-              >
-                <Mail className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Email</span>
-              </Button>
-              <Button size="sm" onClick={handleEdit} className="h-8 px-2 sm:px-3">
-                <Edit className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Edit</span>
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="outline" size="sm" onClick={handleCancel} className="h-8 px-2 sm:px-3">
-                <X className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Cancel</span>
-              </Button>
-              <Button size="sm" onClick={handleSave} className="h-8 px-2 sm:px-3">
-                <Save className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Save</span>
-              </Button>
-            </>
-          )}
         </div>
       </div>
 
@@ -241,11 +204,6 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </Card>
       </div>
 
-      {/* Tasks Section - Moved Higher for Better Visibility */}
-      <div className="mt-6">
-        <TasksListEnhanced clientId={clientId} />
-      </div>
-
       {/* Client Projects Section */}
       <ClientProjectsList clientId={clientId} onTabChange={onTabChange} />
 
@@ -261,262 +219,155 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </Card>
       )}
 
+      {/* Client Information & Engagement - Side by Side */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Main Info Card */}
+        {/* Client Information Card */}
         <Card className="xl:col-span-2">
           <CardHeader>
-            <CardTitle>Client Information</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">Client Information</CardTitle>
+              {!isEditing && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleEdit}
+                  className="gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  Edit
+                </Button>
+              )}
+            </div>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent>
             {isEditing ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
-                  <Input
-                    id="name"
-                    value={editedClient.name || ''}
-                    onChange={(e) => setEditedClient({ ...editedClient, name: e.target.value })}
-                  />
-                </div>
-                
-                {editedClient.client_type === 'B2B' && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="company_name">Company Name</Label>
-                      <Input
-                        id="company_name"
-                        value={editedClient.company_name || ''}
-                        onChange={(e) => setEditedClient({ ...editedClient, company_name: e.target.value })}
-                      />
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{currentClient.email}</span>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="contact_person">Contact Person</Label>
-                      <Input
-                        id="contact_person"
-                        value={editedClient.contact_person || ''}
-                        onChange={(e) => setEditedClient({ ...editedClient, contact_person: e.target.value })}
-                      />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Phone</Label>
+                    <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{currentClient.phone || 'Not provided'}</span>
                     </div>
-                  </>
-                )}
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={editedClient.email || ''}
-                    onChange={(e) => setEditedClient({ ...editedClient, email: e.target.value })}
-                  />
+                  </div>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={editedClient.phone || ''}
-                    onChange={(e) => setEditedClient({ ...editedClient, phone: e.target.value })}
-                  />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="stage">Stage</Label>
+                    <Select 
+                      value={editedClient.funnel_stage || 'lead'}
+                      onValueChange={(value) => setEditedClient({ ...editedClient, funnel_stage: value })}
+                    >
+                      <SelectTrigger id="stage">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="lead">Lead</SelectItem>
+                        <SelectItem value="contacted">Contacted</SelectItem>
+                        <SelectItem value="qualified">Qualified</SelectItem>
+                        <SelectItem value="proposal">Proposal</SelectItem>
+                        <SelectItem value="client">Client</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="priority">Priority</Label>
+                    <Select 
+                      value={editedClient.priority || 'medium'}
+                      onValueChange={(value) => setEditedClient({ ...editedClient, priority: value })}
+                    >
+                      <SelectTrigger id="priority">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="funnel_stage">Stage</Label>
-                  <Select
-                    value={editedClient.funnel_stage || 'lead'}
-                    onValueChange={(value) => setEditedClient({ ...editedClient, funnel_stage: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="lead">Lead</SelectItem>
-                      <SelectItem value="contacted">Contacted</SelectItem>
-                      <SelectItem value="measuring_scheduled">Measuring Scheduled</SelectItem>
-                      <SelectItem value="quoted">Quoted</SelectItem>
-                      <SelectItem value="approved">Approved</SelectItem>
-                      <SelectItem value="lost">Lost</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="priority_level">Priority</Label>
-                  <Select
-                    value={editedClient.priority_level || 'medium'}
-                    onValueChange={(value) => setEditedClient({ ...editedClient, priority_level: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="lead_source">Lead Source</Label>
-                  <LeadSourceSelect 
-                    value={editedClient.lead_source || ''} 
+                  <LeadSourceSelect
+                    value={editedClient.lead_source || 'other'}
                     onValueChange={(value) => setEditedClient({ ...editedClient, lead_source: value })}
-                    placeholder="Select lead source"
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="deal_value">Deal Value ($)</Label>
-                    {calculatedDealValue > 0 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleSyncDealValue}
-                        className="text-xs h-6 px-2"
-                      >
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                        Use ${calculatedDealValue.toLocaleString()} from quotes
-                      </Button>
-                    )}
-                  </div>
-                  <Input
-                    id="deal_value"
-                    type="number"
-                    value={editedClient.deal_value || 0}
-                    onChange={(e) => setEditedClient({ ...editedClient, deal_value: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="conversion_probability">Conversion Probability (%)</Label>
-                  <Input
-                    id="conversion_probability"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={editedClient.conversion_probability || 0}
-                    onChange={(e) => setEditedClient({ ...editedClient, conversion_probability: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
-                
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Input
-                    id="address"
-                    value={editedClient.address || ''}
-                    onChange={(e) => setEditedClient({ ...editedClient, address: e.target.value })}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
-                  <Input
-                    id="city"
-                    value={editedClient.city || ''}
-                    onChange={(e) => setEditedClient({ ...editedClient, city: e.target.value })}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="state">State</Label>
-                  <Input
-                    id="state"
-                    value={editedClient.state || ''}
-                    onChange={(e) => setEditedClient({ ...editedClient, state: e.target.value })}
-                  />
-                </div>
-                
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    rows={4}
-                    value={editedClient.notes || ''}
-                    onChange={(e) => setEditedClient({ ...editedClient, notes: e.target.value })}
-                  />
+
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={updateClient.isPending}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSave}
+                    disabled={updateClient.isPending}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {updateClient.isPending ? 'Saving...' : 'Save Changes'}
+                  </Button>
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  {currentClient.email && (
-                    <div 
-                      className="flex items-center gap-3 cursor-pointer hover:bg-accent/5 p-2 rounded-lg transition-colors"
-                      onClick={() => {
-                        setActiveTab("emails");
-                        setTimeout(() => {
-                          const emailSection = document.getElementById('email-section');
-                          if (emailSection) {
-                            emailSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                          }
-                        }, 100);
-                      }}
-                    >
-                      <Mail className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Email</p>
-                        <p className="font-medium text-primary hover:underline">{currentClient.email}</p>
-                      </div>
-                    </div>
-                  )}
-                  {currentClient.phone && (
-                    <div className="flex items-center gap-3">
-                      <Phone className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Phone</p>
-                        <p className="font-medium">{currentClient.phone}</p>
-                      </div>
-                    </div>
-                  )}
-                  {(currentClient.address || currentClient.city) && (
-                    <div className="flex items-center gap-3">
-                      <MapPin className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Address</p>
-                        <p className="font-medium">
-                          {currentClient.address || ''}
-                          {currentClient.city && `, ${currentClient.city}`}
-                          {currentClient.state && `, ${currentClient.state}`}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="space-y-4">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Stage</p>
-                    <Badge variant="outline">
+                    <p className="text-sm text-muted-foreground mb-1.5 flex items-center gap-2">
+                      <Mail className="h-3.5 w-3.5" />
+                      Email
+                    </p>
+                    <p className="font-medium text-sm">{currentClient.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1.5 flex items-center gap-2">
+                      <Phone className="h-3.5 w-3.5" />
+                      Phone
+                    </p>
+                    <p className="font-medium text-sm">{currentClient.phone || 'Not provided'}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 pt-3 border-t">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1.5">Stage</p>
+                    <Badge className={getStageColor(currentClient.funnel_stage || 'lead')}>
                       {(currentClient.funnel_stage || 'lead').replace('_', ' ').toUpperCase()}
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Priority</p>
-                    <Badge variant="outline">
-                      {(currentClient.priority_level || 'medium').toUpperCase()}
+                    <p className="text-sm text-muted-foreground mb-1.5">Priority</p>
+                    <Badge variant="secondary" className={
+                      currentClient.priority === 'high' ? 'bg-red-100 text-red-700' :
+                      currentClient.priority === 'low' ? 'bg-gray-100 text-gray-700' :
+                      'bg-yellow-100 text-yellow-700'
+                    }>
+                      {(currentClient.priority || 'medium').toUpperCase()}
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Lead Source</p>
-                    <Badge variant="secondary">
+                    <p className="text-sm text-muted-foreground mb-1.5">Lead Source</p>
+                    <Badge variant="outline">
                       {(currentClient.lead_source || 'other').replace('_', ' ')}
                     </Badge>
                   </div>
-                  {currentClient.last_contact_date && (
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">Last Contact</p>
-                      <p className="font-medium text-sm">
-                        {formatDistanceToNow(new Date(currentClient.last_contact_date), { addSuffix: true })}
-                      </p>
-                    </div>
-                  )}
                 </div>
                 
                 {currentClient.notes && (
-                  <div className="md:col-span-2">
+                  <div className="pt-3 border-t">
                     <p className="text-sm text-muted-foreground mb-2">Notes</p>
                     <p className="text-sm">{currentClient.notes}</p>
                   </div>
@@ -526,19 +377,21 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
           </CardContent>
         </Card>
 
-        {/* Side Panel - Combined Tasks & Activity */}
-        <Card className="space-y-6">
+        {/* Engagement Overview */}
+        <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-purple-600" />
-              Engagement Overview
+              <TrendingUp className="h-5 w-5 text-accent" />
+              Engagement Insights
             </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Track how likely this lead is to convert
+            </p>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Automated Conversion Probability */}
+          <CardContent className="space-y-5">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Conversion Probability</span>
+                <span className="text-sm font-medium">Conversion Likelihood</span>
                 <Badge 
                   variant="outline" 
                   className={`${
@@ -552,26 +405,29 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                   {autoConversionProb}%
                 </Badge>
               </div>
-              <Progress 
-                value={autoConversionProb} 
-                className="h-2.5"
-              />
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">
-                  Auto-calculated based on:
-                </p>
-                <div className="grid grid-cols-2 gap-1 text-xs">
-                  <span className="text-muted-foreground">• Lead score: {factors.leadScore}</span>
-                  <span className="text-muted-foreground">• Stage: {factors.stage}</span>
-                  <span className="text-muted-foreground">• Emails: {factors.emailEngagement}</span>
-                  <span className="text-muted-foreground">• Activity: {factors.activityLevel}</span>
+              <Progress value={autoConversionProb} className="h-2.5" />
+              <div className="grid grid-cols-2 gap-1.5 text-xs bg-muted/30 p-2.5 rounded-md">
+                <div className="flex items-center gap-1.5">
+                  <Star className="h-3 w-3 text-muted-foreground" />
+                  <span>Score: {factors.leadScore}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Briefcase className="h-3 w-3 text-muted-foreground" />
+                  <span>Stage: {factors.stage}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Mail className="h-3 w-3 text-muted-foreground" />
+                  <span>Emails: {factors.emailEngagement}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="h-3 w-3 text-muted-foreground" />
+                  <span>Activity: {factors.activityLevel}</span>
                 </div>
               </div>
             </div>
 
             <div className="h-px bg-border" />
             
-            {/* Compact Tasks Section with Metrics */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-semibold flex items-center gap-2">
@@ -583,64 +439,80 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
               
               <TasksList clientId={clientId} compact={true} />
               
-              <div className="pt-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => {
-                    setActiveTab("activity");
-                    setTimeout(() => {
-                      const activitySection = document.getElementById('activity-section');
-                      if (activitySection) {
-                        activitySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }
-                    }, 100);
-                  }}
-                >
-                  <Clock className="h-4 w-4 mr-2" />
-                  View Full Timeline
-                </Button>
-              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full mt-2"
+                onClick={() => setActiveTab("activity")}
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                View Full Timeline
+              </Button>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-          <TabsTrigger value="emails">Emails</TabsTrigger>
-          <TabsTrigger value="measurements">Measurements</TabsTrigger>
-        </TabsList>
+      {/* Redesigned Tabs Section */}
+      <div className="mt-8">
+        <h3 className="text-lg font-semibold mb-4">More Details</h3>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/30">
+            <TabsTrigger 
+              value="tasks" 
+              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              <CheckCircle className="h-5 w-5" />
+              <span className="font-medium">Tasks</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="activity" 
+              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              <Clock className="h-5 w-5" />
+              <span className="font-medium">Activity</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="emails" 
+              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              <Mail className="h-5 w-5" />
+              <span className="font-medium">Emails</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="measurements" 
+              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              <Package className="h-5 w-5" />
+              <span className="font-medium">Measurements</span>
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="tasks" className="mt-6">
-          <TasksListEnhanced clientId={clientId} />
-        </TabsContent>
+          <TabsContent value="tasks" className="mt-6">
+            <TasksListEnhanced clientId={clientId} />
+          </TabsContent>
 
-        <TabsContent value="activity" className="mt-6">
-          <div id="activity-section">
+          <TabsContent value="activity" className="mt-6">
             <ClientActivityLog clientId={clientId} />
-          </div>
-        </TabsContent>
+          </TabsContent>
 
-        <TabsContent value="emails" className="mt-6">
-          <EnhancedClientEmailHistory 
-            clientId={clientId} 
-            clientEmail={client.email}
-            onComposeEmail={() => {}}
-          />
-        </TabsContent>
+          <TabsContent value="emails" className="mt-6">
+            <EnhancedClientEmailHistory 
+              clientId={clientId} 
+              clientEmail={client.email}
+              onComposeEmail={() => {}}
+            />
+          </TabsContent>
 
-        <TabsContent value="measurements" className="mt-6">
-          <MeasurementsList 
-            clientId={clientId}
-            onViewMeasurement={() => {}}
-            onEditMeasurement={() => {}}
-          />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="measurements" className="mt-6">
+            <MeasurementsList 
+              clientId={clientId}
+              onViewMeasurement={() => {}}
+              onEditMeasurement={() => {}}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
