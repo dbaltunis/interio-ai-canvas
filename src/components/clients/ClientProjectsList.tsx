@@ -72,11 +72,13 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
   };
 
   const handleCreateProject = () => {
+    console.log('[CLIENT] Creating project for client:', clientId);
     // Navigate to projects tab for creating a new project
     const newParams = new URLSearchParams(searchParams);
     newParams.set('tab', 'projects');
     newParams.set('client', clientId);
     newParams.set('action', 'create');
+    console.log('[CLIENT] New URL params:', newParams.toString());
     setSearchParams(newParams);
     
     if (onTabChange) {
