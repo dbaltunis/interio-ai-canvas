@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,9 @@ import { Plus, Calendar, DollarSign, AlertCircle, CheckCircle, Clock, ExternalLi
 import { useClientJobs } from "@/hooks/useClientJobs";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { formatJobNumber } from "@/lib/format-job-number";
+import { useCreateProject } from "@/hooks/useProjects";
+import { useCreateQuote } from "@/hooks/useQuotes";
+import { useToast } from "@/hooks/use-toast";
 
 interface ClientProjectsListProps {
   clientId: string;
@@ -17,6 +21,10 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
   const { data: projects, isLoading } = useClientJobs(clientId);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const createProject = useCreateProject();
+  const createQuote = useCreateQuote();
+  const { toast } = useToast();
+  const [isCreating, setIsCreating] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -63,7 +71,7 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
     // Set URL params to navigate to projects tab with the specific job
     const newParams = new URLSearchParams(searchParams);
     newParams.set('tab', 'projects');
-    newParams.set('jobId', projectId); // Changed from 'project' to 'jobId'
+    newParams.set('jobId', projectId);
     setSearchParams(newParams);
     
     // If onTabChange is provided, use it to navigate
@@ -72,12 +80,60 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
     }
   };
 
-  const handleCreateProject = () => {
-    // Navigate to projects tab with client ID in URL
-    navigate(`/?tab=projects&createClient=${clientId}`);
-    
-    if (onTabChange) {
-      onTabChange('projects');
+  const handleCreateProject = async () => {
+    setIsCreating(true);
+    try {
+      console.log('[CLIENT] Creating new project for client:', clientId);
+      
+      // Generate unique job number
+      const jobNumber = `JOB-${Date.now()}`;
+      
+      // Create the project
+      const newProject = await createProject.mutateAsync({
+        name: `New Job ${new Date().toLocaleDateString()}`,
+        description: "",
+        status: "planning",
+        job_number: jobNumber,
+        client_id: clientId
+      });
+
+      console.log('[CLIENT] Project created:', newProject.id);
+
+      // Create a quote for this project
+      await createQuote.mutateAsync({
+        project_id: newProject.id,
+        client_id: clientId,
+        status: "draft",
+        subtotal: 0,
+        tax_rate: 0,
+        tax_amount: 0,
+        total_amount: 0,
+        notes: "New job created",
+        quote_number: jobNumber
+      });
+
+      console.log('[CLIENT] Quote created, navigating to project');
+
+      // Navigate to the projects tab with the new job opened
+      navigate(`/?tab=projects&jobId=${newProject.id}`);
+      
+      if (onTabChange) {
+        onTabChange('projects');
+      }
+
+      toast({
+        title: "Success",
+        description: "Project created successfully",
+      });
+    } catch (error) {
+      console.error('[CLIENT] Failed to create project:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create project. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -93,9 +149,9 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
             <Calendar className="h-5 w-5" />
             Client Projects
           </CardTitle>
-          <Button size="sm" onClick={handleCreateProject}>
+          <Button size="sm" onClick={handleCreateProject} disabled={isCreating}>
             <Plus className="h-4 w-4 mr-2" />
-            New Project
+            {isCreating ? "Creating..." : "New Project"}
           </Button>
         </div>
       </CardHeader>
@@ -104,9 +160,9 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
           <div className="text-center py-8 text-muted-foreground">
             <Calendar className="mx-auto h-12 w-12 mb-4 opacity-50" />
             <p>No projects found for this client</p>
-            <Button className="mt-2" variant="outline" onClick={handleCreateProject}>
+            <Button className="mt-2" variant="outline" onClick={handleCreateProject} disabled={isCreating}>
               <Plus className="h-4 w-4 mr-2" />
-              Create First Project
+              {isCreating ? "Creating..." : "Create First Project"}
             </Button>
           </div>
         ) : (
