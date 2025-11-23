@@ -296,23 +296,65 @@ export const useQuotationSync = ({
             });
           }
 
-          // DETAILED BREAKDOWN - Options (CRITICAL: Include options cost!)
+          // DETAILED BREAKDOWN - Options (CRITICAL: Display each option separately)
           if (summary.options_cost && summary.options_cost > 0) {
             const selectedOptions = summary.selected_options || [];
-            const optionsDescription = Array.isArray(selectedOptions) && selectedOptions.length > 0
-              ? selectedOptions.map((opt: any) => opt.name || opt.label).filter(Boolean).join(', ')
-              : 'Selected options';
             
-            parentItem.children.push({
-              id: `${window.window_id}-options`,
-              name: 'Options',
-              description: optionsDescription,
-              quantity: 1,
-              unit: '',
-              unit_price: summary.options_cost,
-              total: summary.options_cost,
-              isChild: true
-            });
+            if (Array.isArray(selectedOptions) && selectedOptions.length > 0) {
+              selectedOptions.forEach((opt: any, index: number) => {
+                // Skip if no price or price is 0
+                if (!opt.price || opt.price === 0) return;
+                
+                // Extract option key and value from name
+                let optionName = '';
+                let optionValue = '';
+                
+                if (opt.name) {
+                  // Name format is usually "optionKey: value" or just a descriptive name
+                  const parts = opt.name.split(':');
+                  if (parts.length >= 2) {
+                    optionName = parts[0].trim();
+                    optionValue = parts.slice(1).join(':').trim();
+                  } else {
+                    // If no colon, use the whole name as the option name
+                    optionName = opt.name;
+                    optionValue = opt.label || '';
+                  }
+                }
+                
+                // Use optionKey if available for cleaner display
+                if (opt.optionKey) {
+                  // Format optionKey to be more readable (e.g., "slat_width" -> "Slat Width")
+                  optionName = opt.optionKey
+                    .split('_')
+                    .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+                }
+                
+                // If still no value, try to extract from name or use description
+                if (!optionValue && opt.name) {
+                  const colonIndex = opt.name.indexOf(':');
+                  if (colonIndex > -1) {
+                    optionValue = opt.name.substring(colonIndex + 1).trim();
+                  }
+                }
+                
+                const quantity = opt.quantity || 1;
+                const unitPrice = opt.unit_price || opt.price;
+                const total = opt.price;
+                
+                parentItem.children.push({
+                  id: `${window.window_id}-option-${index}`,
+                  name: optionName || 'Option',
+                  description: optionValue || '-',
+                  quantity: quantity,
+                  unit: opt.unit || '',
+                  unit_price: unitPrice,
+                  total: total,
+                  isChild: true
+                });
+              });
+            }
           }
 
           roomGroups[roomId].items.push(parentItem);
