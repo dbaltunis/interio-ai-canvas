@@ -1,13 +1,13 @@
 import { useState, useMemo } from "react";
-import { useMyTasks, useCreateTask, useCompleteTask, Task } from "@/hooks/useTasks";
+import { useMyTasks, useCompleteTask, Task } from "@/hooks/useTasks";
 import { TaskEditDialog } from "./TaskEditDialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { SmartTaskCreation } from "./SmartTaskCreation";
 import {
-  Plus,
   Filter,
   Search,
   Calendar,
@@ -17,7 +17,7 @@ import {
   Circle,
   AlertCircle,
   ChevronRight,
-  X,
+  Plus,
 } from "lucide-react";
 import {
   Select,
@@ -33,14 +33,12 @@ type SortType = "due_date" | "priority" | "created_at";
 
 export const TaskListView = () => {
   const { data: tasks = [], isLoading } = useMyTasks();
-  const createTask = useCreateTask();
   const completeTask = useCompleteTask();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<FilterType>("all");
   const [sortBy, setSortBy] = useState<SortType>("due_date");
   const [showNewTask, setShowNewTask] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
 
@@ -112,15 +110,6 @@ export const TaskListView = () => {
     return groups;
   }, [filteredTasks]);
 
-  const handleCreateTask = async () => {
-    if (!newTaskTitle.trim()) return;
-    await createTask.mutateAsync({
-      title: newTaskTitle,
-      priority: "medium",
-    });
-    setNewTaskTitle("");
-    setShowNewTask(false);
-  };
 
   const handleToggleComplete = async (task: Task) => {
     await completeTask.mutateAsync(task.id);
@@ -332,35 +321,9 @@ export const TaskListView = () => {
       {/* Task List */}
       <div className="flex-1 overflow-y-auto p-6">
         {showNewTask && (
-          <Card className="p-4 mb-6 border-2 border-primary/20 bg-primary/5">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Task title..."
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCreateTask();
-                  if (e.key === "Escape") {
-                    setShowNewTask(false);
-                    setNewTaskTitle("");
-                  }
-                }}
-                autoFocus
-              />
-              <Button onClick={handleCreateTask} disabled={!newTaskTitle.trim()}>
-                Add
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setShowNewTask(false);
-                  setNewTaskTitle("");
-                }}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </Card>
+          <div className="mb-6">
+            <SmartTaskCreation onSuccess={() => setShowNewTask(false)} />
+          </div>
         )}
 
         {filteredTasks.length === 0 ? (
