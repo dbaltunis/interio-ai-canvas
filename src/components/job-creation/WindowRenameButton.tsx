@@ -37,11 +37,16 @@ export const WindowRenameButton = ({ windowName, onRename, disabled }: WindowRen
           value={editName}
           onChange={(e) => setEditName(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSave();
-            if (e.key === 'Escape') handleCancel();
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleSave();
+            }
+            if (e.key === 'Escape') {
+              e.preventDefault();
+              handleCancel();
+            }
           }}
-          onBlur={handleSave}
-          className="h-8 text-sm font-semibold flex-1 bg-background border-input"
+          className="h-6 text-xs font-semibold flex-1 min-w-0 bg-background border-input"
           autoFocus
           placeholder="Enter design name"
         />
@@ -52,9 +57,9 @@ export const WindowRenameButton = ({ windowName, onRename, disabled }: WindowRen
             e.preventDefault(); // Prevent blur from firing
             handleSave();
           }}
-          className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+          className="h-6 w-6 p-0 hover:bg-transparent text-green-600 hover:text-green-700 shrink-0"
         >
-          <Check className="h-4 w-4" />
+          <Check className="h-3.5 w-3.5" />
         </Button>
         <Button
           size="sm"
@@ -63,9 +68,9 @@ export const WindowRenameButton = ({ windowName, onRename, disabled }: WindowRen
             e.preventDefault(); // Prevent blur from firing
             handleCancel();
           }}
-          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+          className="h-6 w-6 p-0 hover:bg-transparent text-muted-foreground hover:text-foreground shrink-0"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3.5 w-3.5" />
         </Button>
       </div>
     );
@@ -73,15 +78,15 @@ export const WindowRenameButton = ({ windowName, onRename, disabled }: WindowRen
 
   return (
     <div className="flex items-center gap-2 min-w-0 flex-1">
-      <span className="font-semibold text-lg truncate">{windowName}</span>
+      <span className="text-xs font-semibold truncate flex-1">{windowName}</span>
       {!disabled && (
         <Button
           size="sm"
           variant="ghost"
           onClick={() => setIsEditing(true)}
-          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground transition-opacity"
+          className="h-6 w-6 p-0 hover:bg-transparent opacity-60 hover:opacity-100 shrink-0"
         >
-          <Pencil className="h-4 w-4" />
+          <Pencil className="h-3.5 w-3.5" />
         </Button>
       )}
     </div>
