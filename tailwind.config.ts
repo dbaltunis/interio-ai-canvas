@@ -30,12 +30,14 @@ export default {
 				error: '0 84% 60%',
 				info: '189 40% 65%',
 				
-				// InterioApp Original Brand Colors - converted to HSL
+				// InterioApp Original Brand Colors - Cool Toned Palette
 				brand: {
 					primary: 'hsl(var(--brand-dark-teal))',
+					'primary-bright': 'hsl(var(--brand-teal-bright))',
+					'primary-deep': 'hsl(var(--brand-teal-deep))',
 					secondary: 'hsl(var(--brand-sage))',
-					terracotta: 'hsl(var(--brand-terracotta))',
-					burgundy: 'hsl(var(--brand-burgundy))',
+					'secondary-light': 'hsl(var(--brand-sage-light))',
+					'secondary-dark': 'hsl(var(--brand-sage-dark))',
 					neutral: '0 2% 34%',
 					light: '0 0% 100%'
 				},

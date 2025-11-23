@@ -1,18 +1,23 @@
 
 /* InterioApp Custom Theme Variables */
 :root {
-  /* Brand Colors from uploaded palette */
+  /* Brand Colors - Cool Toned Palette */
   --interio-dark-teal: #415e6b;
+  --interio-teal-bright: #4A8BA0;
+  --interio-teal-deep: #2F4A54;
   --interio-white: #ffffff;
   --interio-sage: #9bb6bc;
-  --interio-burgundy: #733341;
-  --interio-terracotta: #C67B5C;
+  --interio-sage-light: #C5D6DA;
+  --interio-sage-dark: #7A9BA3;
   --interio-charcoal: #575656;
   
   /* Primary brand color mapping */
   --brand-primary: var(--interio-dark-teal);
+  --brand-primary-bright: var(--interio-teal-bright);
+  --brand-primary-deep: var(--interio-teal-deep);
   --brand-secondary: var(--interio-sage);
-  --brand-accent: var(--interio-burgundy);
+  --brand-secondary-light: var(--interio-sage-light);
+  --brand-secondary-dark: var(--interio-sage-dark);
   --brand-neutral: var(--interio-charcoal);
   --brand-light: var(--interio-white);
   
@@ -107,23 +112,27 @@
 
 /* Brand-specific utility classes */
 .bg-brand-primary { background-color: var(--interio-dark-teal); }
+.bg-brand-primary-bright { background-color: var(--interio-teal-bright); }
+.bg-brand-primary-deep { background-color: var(--interio-teal-deep); }
 .bg-brand-secondary { background-color: var(--interio-sage); }
-.bg-brand-accent { background-color: var(--interio-terracotta); }
-.bg-brand-burgundy { background-color: var(--interio-burgundy); }
+.bg-brand-secondary-light { background-color: var(--interio-sage-light); }
+.bg-brand-secondary-dark { background-color: var(--interio-sage-dark); }
 .bg-brand-neutral { background-color: var(--interio-charcoal); }
 .bg-brand-light { background-color: var(--interio-white); }
 
 .text-brand-primary { color: var(--interio-dark-teal); }
+.text-brand-primary-bright { color: var(--interio-teal-bright); }
+.text-brand-primary-deep { color: var(--interio-teal-deep); }
 .text-brand-secondary { color: var(--interio-sage); }
-.text-brand-accent { color: var(--interio-terracotta); }
-.text-brand-burgundy { color: var(--interio-burgundy); }
+.text-brand-secondary-light { color: var(--interio-sage-light); }
+.text-brand-secondary-dark { color: var(--interio-sage-dark); }
 .text-brand-neutral { color: var(--interio-charcoal); }
 .text-brand-light { color: var(--interio-white); }
 
 .border-brand-primary { border-color: var(--interio-dark-teal); }
+.border-brand-primary-bright { border-color: var(--interio-teal-bright); }
 .border-brand-secondary { border-color: var(--interio-sage); }
-.border-brand-accent { border-color: var(--interio-terracotta); }
-.border-brand-burgundy { border-color: var(--interio-burgundy); }
+.border-brand-secondary-light { border-color: var(--interio-sage-light); }
 
 /* Professional styling for the industry */
 .interio-gradient {
@@ -136,14 +145,14 @@
 }
 
 .interio-button-primary {
-  background: var(--interio-dark-teal);
+  background: var(--interio-teal-bright);
   color: var(--interio-white);
   border: none;
   transition: all 0.2s ease;
 }
 
 .interio-button-primary:hover {
-  background: var(--interio-terracotta);
+  background: var(--interio-dark-teal);
   transform: translateY(-1px);
 }
 

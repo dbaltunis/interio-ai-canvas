@@ -13,11 +13,13 @@
 
 @layer base {
   :root {
-    /* Original Brand Colors - InterioApp (Exact HSL conversions) */
-    --brand-dark-teal: 200 24% 34%; /* #415e6b - Main brand color (exact) */
-    --brand-sage: 191 19% 67%; /* #9bb6bc - Secondary brand color (exact) */
-    --brand-terracotta: 18 49% 57%; /* #C67B5C - CTA accent (exact) */
-    --brand-burgundy: 347 39% 33%; /* #733341 - Special states (exact) */
+    /* Original Brand Colors - Cool Toned Palette */
+    --brand-dark-teal: 200 24% 34%; /* #415e6b - Main brand color */
+    --brand-teal-bright: 196 35% 46%; /* #4A8BA0 - Brighter teal for CTAs */
+    --brand-teal-deep: 200 29% 26%; /* #2F4A54 - Deeper teal for hover/active */
+    --brand-sage: 191 19% 67%; /* #9bb6bc - Secondary brand color */
+    --brand-sage-light: 191 19% 81%; /* #C5D6DA - Light sage for surfaces */
+    --brand-sage-dark: 191 19% 56%; /* #7A9BA3 - Deeper sage for secondary actions */
     
     /* Supporting Colors */
     --company-tertiary: 142 76% 36%; /* Success green */
@@ -30,16 +32,16 @@
     --risk-low: 45 85% 60%; /* Yellow gradient */
     --risk-none: 142 76% 55%; /* Green gradient */
     
-    /* Semantic Token Mapping */
+    /* Semantic Token Mapping - Cool Toned System */
     --primary: var(--brand-dark-teal);
     --primary-foreground: 0 0% 100%;
-    --primary-rgb: 65, 94, 107; /* RGB values for primary (200 26% 34%) */
+    --primary-rgb: 65, 94, 107; /* RGB for primary */
     --secondary: var(--brand-sage);
-    --secondary-foreground: 0 0% 100%;
-    --secondary-rgb: 155, 182, 188; /* RGB values for secondary (192 24% 67%) */
-    --accent: var(--brand-terracotta);
+    --secondary-foreground: 200 24% 34%; /* Dark teal on sage */
+    --secondary-rgb: 155, 182, 188; /* RGB for secondary */
+    --accent: var(--brand-teal-bright); /* Bright teal for CTAs */
     --accent-foreground: 0 0% 100%;
-    --accent-rgb: 198, 123, 92; /* RGB values for accent (17 49% 57%) */
+    --accent-rgb: 74, 139, 160; /* RGB for bright teal */
     
     --background: 216 20% 97%; /* Light gray background for contrast */
     --foreground: 220 15% 15%; /* Dark text for clarity */
@@ -102,7 +104,7 @@
     --secondary-foreground: 0 0% 98%;
     --muted: 240 3% 23%;
     --muted-foreground: 0 0% 70%;
-    --accent: 18 49% 55%; /* Brand terracotta adjusted for dark mode */
+    --accent: 196 35% 52%; /* Bright teal adjusted for dark mode */
     --accent-foreground: 0 0% 98%;
     --destructive: 0 70% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -131,13 +133,13 @@
   }
   :root[data-accent='secondary'] {
     --primary: var(--brand-sage);
-    --accent: var(--brand-sage);
-    --ring: var(--brand-sage);
+    --accent: var(--brand-sage-dark);
+    --ring: var(--brand-sage-dark);
   }
-  :root[data-accent='terracotta'] {
-    --primary: var(--brand-terracotta);
-    --accent: var(--brand-terracotta);
-    --ring: var(--brand-terracotta);
+  :root[data-accent='bright'] {
+    --primary: var(--brand-teal-bright);
+    --accent: var(--brand-teal-bright);
+    --ring: var(--brand-teal-bright);
   }
 }
 
