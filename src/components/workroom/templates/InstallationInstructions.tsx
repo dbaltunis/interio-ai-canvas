@@ -20,6 +20,8 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
   orientation = 'portrait',
   projectId
 }) => {
+  console.log('🔍 [InstallationInstructions] projectId:', projectId);
+  
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
   const [installationDate, setInstallationDate] = useState("");
@@ -36,6 +38,12 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
     isLoading: notesLoading,
     isSaving
   } = useWorkshopNotes(projectId);
+  
+  console.log('🔍 [InstallationInstructions] Notes state:', { 
+    hasProjectId: !!projectId,
+    itemNotesCount: Object.keys(itemNotes).length,
+    isSaving 
+  });
   
   const hasOverrides = Object.keys(overrides).length > 0;
   
@@ -102,6 +110,7 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
               onClick={handleSaveNotes}
               disabled={isSaving || !projectId}
               className="h-8"
+              title={!projectId ? "Project ID required to save notes" : isSaving ? "Saving..." : "Click to save all notes"}
             >
               <Save className="h-3.5 w-3.5 mr-1" />
               {isSaving ? "Saving..." : "Save Notes"}

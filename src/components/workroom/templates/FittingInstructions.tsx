@@ -21,6 +21,8 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
   orientation = 'portrait',
   projectId
 }) => {
+  console.log('🔍 [FittingInstructions] projectId:', projectId);
+  
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
   const [fittingDate, setFittingDate] = useState("");
@@ -37,6 +39,12 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
     isLoading: notesLoading,
     isSaving
   } = useWorkshopNotes(projectId);
+  
+  console.log('🔍 [FittingInstructions] Notes state:', { 
+    hasProjectId: !!projectId,
+    itemNotesCount: Object.keys(itemNotes).length,
+    isSaving 
+  });
   
   const hasOverrides = Object.keys(overrides).length > 0;
   
@@ -103,6 +111,7 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
               onClick={handleSaveNotes}
               disabled={isSaving || !projectId}
               className="h-8"
+              title={!projectId ? "Project ID required to save notes" : isSaving ? "Saving..." : "Click to save all notes"}
             >
               <Save className="h-3.5 w-3.5 mr-1" />
               {isSaving ? "Saving..." : "Save Notes"}
