@@ -136,7 +136,7 @@ export const getPriceFromGrid = (gridData: any, width: number, drop: number): nu
       console.log("✅ GRID MATCH FOUND:");
       console.log("  📏 Requested Width:", width + "cm", "→ Using:", closestWidth + "cm");
       console.log("  📏 Requested Drop:", drop + "cm", "→ Using:", closestDrop + "cm");
-      console.log("  💰 Manufacturing Price:", "£" + price);
+      console.log("  💰 Manufacturing Price:", price);
       console.log("🔍 === END PRICING GRID LOOKUP ===");
       
       return price;
@@ -192,7 +192,7 @@ export const getPriceFromGrid = (gridData: any, width: number, drop: number): nu
       console.log("✅ GRID MATCH FOUND:");
       console.log("  📏 Requested Width:", width + "cm", "→ Using:", closestWidth + "cm");
       console.log("  📏 Requested Drop:", drop + "cm", "→ Using:", closestDrop + "cm");
-      console.log("  💰 Manufacturing Price:", "£" + price);
+      console.log("  💰 Manufacturing Price:", price);
       console.log("🔍 === END PRICING GRID LOOKUP ===");
       
       return price;
@@ -230,7 +230,7 @@ export const getPriceFromGrid = (gridData: any, width: number, drop: number): nu
       }
     }
     
-    console.log("📊 Legacy pricing calculation result:", "£" + matchingPrice);
+    console.log("📊 Legacy pricing calculation result:", matchingPrice);
     return parseFloat(matchingPrice.toString()) || 0;
   } catch (error) {
     console.error("❌ Error parsing pricing grid:", error);
