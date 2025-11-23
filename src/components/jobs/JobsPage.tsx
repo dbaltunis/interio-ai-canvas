@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,9 +21,8 @@ import { useColumnPreferences } from "@/hooks/useColumnPreferences";
 
 const JobsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const selectedJobId = searchParams.get('jobId');
-  const clientIdParam = searchParams.get('client');
-  const actionParam = searchParams.get('action');
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showHelp, setShowHelp] = useState(false);
@@ -49,52 +48,7 @@ const JobsPage = () => {
   const updateQuote = useUpdateQuote();
   const { toast } = useToast();
 
-  // Debug logging for component lifecycle
-  useEffect(() => {
-    console.warn('[JOBS] JobsPage MOUNTED');
-    console.warn('[JOBS] URL Params:', { clientIdParam, actionParam, selectedJobId });
-    return () => {
-      console.warn('[JOBS] JobsPage UNMOUNTING - selectedJobId was:', selectedJobId);
-    };
-  }, []);
-
-  // Handle automatic project creation from client page
-  useEffect(() => {
-    console.warn('[JOBS] Auto-create effect running:', { 
-      actionParam, 
-      clientIdParam, 
-      canCreateJobs, 
-      isAutoCreating 
-    });
-    
-    if (actionParam === 'create' && clientIdParam && canCreateJobs && !isAutoCreating) {
-      console.log('[JOBS] Auto-creating project for client:', clientIdParam);
-      setIsAutoCreating(true);
-      
-      const createProjectForClient = async () => {
-        try {
-          await handleNewJob(clientIdParam);
-        } finally {
-          // Clean up URL params after creation
-          setSearchParams(prev => {
-            const newParams = new URLSearchParams(prev);
-            newParams.delete('action');
-            newParams.delete('client');
-            return newParams;
-          });
-          setIsAutoCreating(false);
-        }
-      };
-      
-      createProjectForClient();
-    }
-  }, [actionParam, clientIdParam, canCreateJobs]);
-
-  // Debug logging for state changes
-  console.warn('[JOBS] JobsPage render - selectedJobId:', selectedJobId, 'canViewJobs:', canViewJobs, 'timestamp:', Date.now());
-
   const handleBackFromJob = () => {
-    console.warn('[JOBS] handleBackFromJob called');
     setSearchParams(prev => {
       const newParams = new URLSearchParams(prev);
       newParams.delete('jobId');
@@ -174,13 +128,31 @@ const JobsPage = () => {
     }
   };
 
-  const handleJobSelect = async (quote: any) => {
-    console.warn('[JOBS] handleJobSelect called with:', quote);
+  // Handle automatic project creation from client page using location state
+  useEffect(() => {
+    const clientIdFromState = (location.state as any)?.createProjectForClient;
     
+    if (clientIdFromState && canCreateJobs && !isAutoCreating) {
+      setIsAutoCreating(true);
+      
+      const createProjectForClient = async () => {
+        try {
+          await handleNewJob(clientIdFromState);
+        } finally {
+          // Clear the location state by replacing with clean state
+          window.history.replaceState({}, document.title);
+          setIsAutoCreating(false);
+        }
+      };
+      
+      createProjectForClient();
+    }
+  }, [location.state, canCreateJobs, isAutoCreating]);
+
+  const handleJobSelect = async (quote: any) => {
     // Check if quote already has a project_id
     const existingProjectId = quote.project_id || quote.projects?.id;
     if (existingProjectId) {
-      console.warn('[JOBS] Setting selectedJobId to:', existingProjectId);
       setSearchParams(prev => {
         const newParams = new URLSearchParams(prev);
         newParams.set('jobId', existingProjectId);
