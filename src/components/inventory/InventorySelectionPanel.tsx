@@ -376,20 +376,25 @@ export const InventorySelectionPanel = ({
                 <div className="flex flex-col">
                   <span className="text-xs font-semibold">
                     {(() => {
-                      // Check if using pricing grid (check both price_group and pricing_grid_data)
-                      const hasGrid = item.price_group || (item.pricing_grid_data && Array.isArray(item.pricing_grid_data) && item.pricing_grid_data.length > 0);
-                      if (hasGrid && item.pricing_grid_data && Array.isArray(item.pricing_grid_data) && item.pricing_grid_data.length > 0) {
-                        const minPrice = Math.min(...item.pricing_grid_data.map((row: any) => parseFloat(row.price || 0)));
-                        return `from $${minPrice.toFixed(2)}`;
+                      // Check if using pricing grid
+                      if (item.price_group) {
+                        // Has grid - try to show min price from grid data
+                        if (item.pricing_grid_data && Array.isArray(item.pricing_grid_data) && item.pricing_grid_data.length > 0) {
+                          const minPrice = Math.min(...item.pricing_grid_data.map((row: any) => parseFloat(row.price || 0)));
+                          return `from $${minPrice.toFixed(2)}`;
+                        }
+                        // Grid exists but no data loaded - show the stored price
+                        return `from $${price.toFixed(2)}`;
                       }
+                      // No grid - show normal price
                       return `$${price.toFixed(2)}`;
                     })()}
                     {item.unit && <span className="text-[9px] text-muted-foreground">/{item.unit}</span>}
                   </span>
                   <span className="text-[8px] text-muted-foreground leading-none">
-                    {item.price_group || (item.pricing_grid_data && Array.isArray(item.pricing_grid_data) && item.pricing_grid_data.length > 0)
-                      ? 'Grid pricing' 
-                      : item.pricing_method || 'Fixed price'}
+                    {item.price_group 
+                      ? `Grid: ${item.price_group}` 
+                      : (item.pricing_method || 'Fixed')}
                   </span>
                 </div>
                 {item.quantity !== undefined && <Badge variant={item.quantity > 0 ? "secondary" : "destructive"} className="text-[9px] px-1 py-0 h-3.5">
