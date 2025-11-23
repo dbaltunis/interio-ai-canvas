@@ -8,6 +8,7 @@ import { Upload, Download, FileText, AlertCircle, CheckCircle } from "lucide-rea
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PricingGridPreview } from "./pricing/PricingGridPreview";
 
 interface PricingGridData {
   widthRanges: string[];
@@ -231,14 +232,17 @@ export const PricingGridUploader = ({ onDataChange, initialData }: PricingGridUp
               Sample
             </Button>
             {gridData && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={clearGrid}
-                className="whitespace-nowrap"
-              >
-                Clear
-              </Button>
+              <>
+                <PricingGridPreview gridData={gridData} />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={clearGrid}
+                  className="whitespace-nowrap"
+                >
+                  Clear
+                </Button>
+              </>
             )}
           </div>
         </div>
