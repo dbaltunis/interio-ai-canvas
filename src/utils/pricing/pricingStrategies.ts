@@ -18,14 +18,14 @@ export type PricingMethod =
 
 export interface PricingContext {
   baseCost: number;
-  railWidth: number; // in cm
-  drop: number; // in cm
+  railWidth: number; // CRITICAL: in MM (database storage unit)
+  drop: number; // CRITICAL: in MM (database storage unit)
   quantity: number;
   fullness?: number;
   fabricWidth?: number;
   fabricCost?: number;
   fabricUsage?: number;
-  pricingGridData?: string;
+  pricingGridData?: any; // CRITICAL: For pricing-grid method
   windowCoveringPricingMethod?: PricingMethod;
 }
 
@@ -70,7 +70,7 @@ export const calculatePrice = (
       };
 
     case 'per-panel': {
-      const panelsNeeded = Math.ceil((railWidth * fullness) / fabricWidth);
+      const panelsNeeded = Math.ceil((railWidth * fullness) / (fabricWidth * 10)); // CRITICAL: railWidth in MM, fabricWidth in CM
       const cost = baseCost * panelsNeeded * quantity;
       return {
         cost,
@@ -89,7 +89,7 @@ export const calculatePrice = (
     case 'per-meter':
     case 'per-metre':
     case 'per-linear-meter': {
-      const widthInMeters = railWidth / 100;
+      const widthInMeters = railWidth / 1000; // CRITICAL: Convert MM to M
       const cost = baseCost * widthInMeters * quantity;
       return {
         cost,
@@ -100,7 +100,7 @@ export const calculatePrice = (
 
     case 'per-yard':
     case 'per-linear-yard': {
-      const widthInYards = railWidth / 91.44;
+      const widthInYards = railWidth / 914.4; // CRITICAL: Convert MM to yards
       const cost = baseCost * widthInYards * quantity;
       return {
         cost,
@@ -111,7 +111,7 @@ export const calculatePrice = (
 
     case 'per-sqm':
     case 'per-square-meter': {
-      const areaInSqm = (railWidth / 100) * (drop / 100);
+      const areaInSqm = (railWidth / 1000) * (drop / 1000); // CRITICAL: Convert MM to M
       const cost = baseCost * areaInSqm * quantity;
       return {
         cost,
@@ -138,12 +138,48 @@ export const calculatePrice = (
       // Fallback to fixed if no parent method
       return calculatePrice('fixed', context);
 
-    case 'pricing-grid':
-      // Pricing grid needs special handling - see pricingGridCalculator
-      return {
-        cost: 0,
-        calculation: 'Use pricing grid calculator for this method'
-      };
+    case 'pricing-grid': {
+      // CRITICAL FIX: Actually calculate price from grid based on dimensions
+      if (!context.pricingGridData) {
+        console.warn('⚠️ pricing-grid method used but no grid data provided');
+        return {
+          cost: baseCost * quantity,
+          calculation: `No grid data - using base: £${baseCost.toFixed(2)} × ${quantity}`
+        };
+      }
+      
+      try {
+        // Import getPriceFromGrid dynamically to avoid circular dependency
+        const { getPriceFromGrid } = require('@/hooks/usePricingGrids');
+        
+        // CRITICAL: railWidth and drop in context are in MM, getPriceFromGrid expects CM
+        const widthCm = railWidth / 10; // Convert mm to cm
+        const dropCm = drop / 10; // Convert mm to cm
+        
+        const gridPrice = getPriceFromGrid(context.pricingGridData, widthCm, dropCm);
+        
+        console.log('📊 OPTION PRICING GRID:', {
+          widthMm: railWidth,
+          dropMm: drop,
+          widthCm,
+          dropCm,
+          gridPrice,
+          quantity
+        });
+        
+        return {
+          cost: gridPrice * quantity,
+          calculation: `Grid: ${widthCm}cm → £${gridPrice.toFixed(2)} × ${quantity}`,
+          breakdown: { units: 1, unitCost: gridPrice, multiplier: quantity }
+        };
+      } catch (error) {
+        console.error('❌ Error calculating grid price for option:', error);
+        return {
+          cost: baseCost * quantity,
+          calculation: `Grid error - using base: £${baseCost.toFixed(2)} × ${quantity}`
+        };
+      }
+    }
 
     default:
       return {

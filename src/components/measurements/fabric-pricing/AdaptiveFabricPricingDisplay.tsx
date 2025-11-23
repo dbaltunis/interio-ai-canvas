@@ -60,10 +60,10 @@ export const AdaptiveFabricPricingDisplay = ({
     return `${symbol}${price.toFixed(2)}`;
   };
 
-  // CRITICAL: Format measurement - measurements are stored in CM internally
-  const formatMeasurement = (valueInCm: number) => {
-    // Convert from cm to user's preferred unit
-    const converted = convertLength(valueInCm, 'cm', units.length);
+  // CRITICAL: Format measurement - measurements are stored in MM internally
+  const formatMeasurement = (valueInMm: number) => {
+    // Convert from mm to user's preferred unit
+    const converted = convertLength(valueInMm, 'mm', units.length);
     return `${converted.toFixed(1)}${getLengthUnitLabel()}`;
   };
 
@@ -85,35 +85,39 @@ export const AdaptiveFabricPricingDisplay = ({
                         template?.fullness_ratio > 1;
 
   // CRITICAL: Calculate grid price if applicable
-  // measurements.rail_width and measurements.drop are stored in CM
+  // measurements.rail_width and measurements.drop are stored in MM
   let gridPrice = 0;
-  let gridWidthCm = 0;
-  let gridDropCm = 0;
+  let gridWidthMm = 0;
+  let gridDropMm = 0;
   if (usesPricingGrid && measurements.rail_width && measurements.drop) {
-    // Store in cm (measurements are already in cm from database)
-    gridWidthCm = parseFloat(measurements.rail_width);
-    gridDropCm = parseFloat(measurements.drop);
-    // getPriceFromGrid expects CM
+    // Store in mm (measurements are in mm from database)
+    gridWidthMm = parseFloat(measurements.rail_width);
+    gridDropMm = parseFloat(measurements.drop);
+    // getPriceFromGrid expects CM, so convert mm to cm
+    const gridWidthCm = gridWidthMm / 10;
+    const gridDropCm = gridDropMm / 10;
     gridPrice = getPriceFromGrid(template.pricing_grid_data, gridWidthCm, gridDropCm);
     console.log('📊 GRID PRICE CALCULATION:', {
-      railWidthCm: gridWidthCm,
-      dropCm: gridDropCm,
+      railWidthMm: gridWidthMm,
+      dropMm: gridDropMm,
+      gridWidthCm,
+      gridDropCm,
       gridPrice
     });
   }
 
-  // CRITICAL: Calculate square meters - measurements are in CM
+  // CRITICAL: Calculate square meters - measurements are in MM
   const calculateSquareMeters = () => {
     if (!measurements.rail_width || !measurements.drop) return 0;
-    const widthCm = parseFloat(measurements.rail_width);
-    const dropCm = parseFloat(measurements.drop);
-    // Convert cm to m: divide by 100
-    const widthM = widthCm / 100;
-    const dropM = dropCm / 100;
+    const widthMm = parseFloat(measurements.rail_width);
+    const dropMm = parseFloat(measurements.drop);
+    // Convert mm to m: divide by 1000
+    const widthM = widthMm / 1000;
+    const dropM = dropMm / 1000;
     const sqm = widthM * dropM;
     console.log('📐 SQM CALCULATION:', {
-      widthCm,
-      dropCm,
+      widthMm,
+      dropMm,
       widthM,
       dropM,
       sqm
@@ -124,8 +128,8 @@ export const AdaptiveFabricPricingDisplay = ({
   // Calculate linear meters for roller blinds (drop + 5% waste)
   const calculateLinearMeters = () => {
     if (!measurements.drop) return 0;
-    const dropCm = parseFloat(measurements.drop);
-    const dropM = dropCm / 100;
+    const dropMm = parseFloat(measurements.drop);
+    const dropM = dropMm / 1000;
     return dropM * 1.05; // 5% waste
   };
 
@@ -167,7 +171,7 @@ export const AdaptiveFabricPricingDisplay = ({
             <div className="flex justify-between">
               <span>Dimensions:</span>
               <span className="font-medium text-foreground">
-                {formatMeasurement(gridWidthCm)} × {formatMeasurement(gridDropCm)}
+                {formatMeasurement(gridWidthMm)} × {formatMeasurement(gridDropMm)}
               </span>
             </div>
           <div className="flex justify-between border-t border-border pt-2 mt-2">
