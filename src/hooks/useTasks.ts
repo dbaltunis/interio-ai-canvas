@@ -102,6 +102,7 @@ export const useCreateTask = () => {
       client_id?: string;
       project_id?: string;
       due_date?: string;
+      due_time?: string;
       priority?: TaskPriority;
       assigned_to?: string;
       tags?: string[];
