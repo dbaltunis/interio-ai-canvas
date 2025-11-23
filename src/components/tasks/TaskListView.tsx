@@ -140,22 +140,35 @@ export const TaskListView = () => {
 
   const TaskItem = ({ task }: { task: Task }) => (
     <Card
-      className="group p-4 hover:shadow-md transition-all duration-200 border-l-4 cursor-pointer"
+      className="group p-3 hover:shadow-md transition-all duration-200 border-l-4 cursor-pointer"
       style={{ borderLeftColor: getPriorityColor(task.priority) }}
       onClick={() => handleTaskClick(task)}
     >
-      <div className="flex items-start gap-3">
-        <Checkbox
-          checked={task.status === "completed"}
-          onCheckedChange={() => handleToggleComplete(task)}
-          onClick={(e) => e.stopPropagation()}
-          className="mt-1"
-        />
+      <div className="flex items-start gap-2">
+        {/* Custom circular checkbox */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleToggleComplete(task);
+          }}
+          className={`
+            flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center
+            transition-all duration-200 mt-0.5
+            ${task.status === "completed" 
+              ? "border-primary bg-primary" 
+              : "border-muted-foreground bg-white hover:border-primary"
+            }
+          `}
+        >
+          {task.status === "completed" && (
+            <CheckCircle2 className="h-3 w-3 text-white" />
+          )}
+        </button>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-start gap-2 mb-2">
+          <div className="flex items-start gap-2 mb-1">
             <h4
-              className={`font-medium text-foreground flex-1 ${
+              className={`text-sm font-medium text-foreground flex-1 ${
                 task.status === "completed" ? "line-through text-muted-foreground" : ""
               }`}
             >
@@ -164,42 +177,42 @@ export const TaskListView = () => {
           </div>
 
           {task.description && (
-            <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{task.description}</p>
+            <p className="text-xs text-muted-foreground mb-1.5 line-clamp-2">{task.description}</p>
           )}
 
-          <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex flex-wrap gap-1.5 items-center">
             {task.due_date && (
-              <Badge variant="outline" className="text-xs">
-                <Calendar className="h-3 w-3 mr-1" />
+              <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+                <Calendar className="h-2.5 w-2.5 mr-0.5" />
                 {format(parseISO(task.due_date), "MMM d")}
               </Badge>
             )}
 
             <Badge
               variant="outline"
-              className="text-xs"
+              className="text-[10px] h-5 px-1.5"
               style={{ borderColor: getPriorityColor(task.priority) }}
             >
               {getPriorityIcon(task.priority)}
-              <span className="ml-1 capitalize">{task.priority}</span>
+              <span className="ml-0.5 capitalize">{task.priority}</span>
             </Badge>
 
             {task.estimated_hours && (
-              <Badge variant="outline" className="text-xs">
-                <Clock className="h-3 w-3 mr-1" />
+              <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+                <Clock className="h-2.5 w-2.5 mr-0.5" />
                 {task.estimated_hours}h
               </Badge>
             )}
 
             {task.tags && task.tags.length > 0 && (
-              <Badge variant="secondary" className="text-xs">
-                <Tag className="h-3 w-3 mr-1" />
+              <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+                <Tag className="h-2.5 w-2.5 mr-0.5" />
                 {task.tags[0]}
               </Badge>
             )}
 
             {task.clients && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
                 {task.clients.name}
               </Badge>
             )}
