@@ -33,11 +33,11 @@ export const ManufacturingDefaults = () => {
     return_left: 7.5,
     return_right: 7.5,
     overlap: 10,
-    header_allowance: 8,
-    bottom_hem: 15,
-    side_hems: 7.5,
-    seam_hems: 1.5,
-    waste_percent: 5,
+    header_allowance: 0,  // Zero by default - let users opt-in
+    bottom_hem: 0,        // Zero by default - let users opt-in
+    side_hems: 0,         // Zero by default - let users opt-in
+    seam_hems: 0,         // Zero by default - let users opt-in
+    waste_percent: 0,     // Zero by default - let users opt-in
     supports_railroading: true,
     supports_pattern_matching: true,
     supports_custom_hems: true,
@@ -149,11 +149,30 @@ export const ManufacturingDefaults = () => {
 
   return (
     <div className="space-y-6">
+      {/* Warning Banner */}
+      <Card className="border-orange-200 bg-orange-50">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-3">
+            <div className="text-orange-600 mt-1">⚠️</div>
+            <div className="space-y-2">
+              <p className="font-semibold text-orange-900">CRITICAL: Curtain Templates Only</p>
+              <p className="text-sm text-orange-800">
+                These manufacturing defaults apply <strong>ONLY to curtain templates</strong>. 
+                Hem allowances should be <strong>zero (0)</strong> for roller blinds, venetian blinds, shutters, and other non-curtain products.
+              </p>
+              <p className="text-sm text-orange-800">
+                <strong>For Roman Blinds:</strong> You can set hem allowances in the individual template settings if needed.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
       <Card>
         <CardHeader>
-          <CardTitle>Manufacturing Defaults</CardTitle>
+          <CardTitle>Manufacturing Defaults (Curtains Only)</CardTitle>
           <CardDescription>
-            Configure default allowances and settings that will be applied to new templates
+            Configure default allowances for curtain templates. Set to 0 for blinds, shutters, and other products.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
