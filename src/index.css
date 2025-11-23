@@ -33,8 +33,8 @@
     --secondary: var(--company-secondary);
     --secondary-foreground: 0 0% 100%;
     --secondary-rgb: 102, 178, 201; /* RGB values for secondary (189 40% 65%) */
-    --accent: var(--company-secondary);
-    --accent-foreground: var(--company-primary);
+    --accent: 210 20% 96%; /* Light muted background for hover states */
+    --accent-foreground: 220 15% 15%; /* Dark text for proper contrast */
     --accent-rgb: 102, 178, 201; /* RGB values for accent */
     
     --background: 216 20% 97%; /* Light gray background for contrast */
@@ -98,8 +98,8 @@
     --secondary-foreground: 0 0% 98%;
     --muted: 240 3% 23%;
     --muted-foreground: 0 0% 70%;
-    --accent: 189 40% 55%; /* Softer accent */
-    --accent-foreground: 0 0% 100%;
+    --accent: 240 3% 20%; /* Darker surface for dark mode hover */
+    --accent-foreground: 0 0% 98%; /* Light text for proper contrast */
     --destructive: 0 70% 60%;
     --destructive-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
