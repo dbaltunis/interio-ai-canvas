@@ -855,7 +855,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                    {/* Task content - distinct display */}
                                     {event.isTask && (
                                       <div 
-                                        className="flex items-center gap-1.5 h-full px-2 py-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+                                        className="flex items-center gap-1.5 h-full px-2 cursor-pointer hover:opacity-80 transition-opacity"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           const newStatus = event.status === 'completed' ? 'in_progress' : 'completed';
@@ -880,7 +880,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                             <CheckCheck className="h-2.5 w-2.5 text-white" strokeWidth={3} />
                                           )}
                                         </button>
-                                        <div className="font-medium text-[10px] leading-[1.4] break-words flex-1 min-w-0 text-foreground" style={{
+                                        <div className="font-medium text-[10px] leading-[1.2] break-words flex-1 min-w-0 text-foreground" style={{
                                           textDecoration: event.status === 'completed' ? 'line-through' : 'none',
                                           display: '-webkit-box',
                                           WebkitLineClamp: finalHeight > 60 ? 2 : 1,
