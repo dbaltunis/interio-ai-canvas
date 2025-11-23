@@ -19,15 +19,21 @@ export const useMeasurementUnits = () => {
   };
 
   const formatLength = (value: number): string => {
-    return formatMeasurement(value, units.length);
+    // Convert from cm (internal storage) to user's preferred unit
+    const converted = convertLength(value, 'cm', units.length);
+    return formatMeasurement(converted, units.length);
   };
 
   const formatArea = (value: number): string => {
-    return formatMeasurement(value, units.area);
+    // Convert from cm² (internal storage) to user's preferred area unit
+    const converted = convertLength(value, 'sq_cm', units.area);
+    return formatMeasurement(converted, units.area);
   };
 
   const formatFabric = (value: number): string => {
-    return formatMeasurement(value, units.fabric);
+    // Convert from cm (internal storage) to user's preferred fabric unit
+    const converted = convertLength(value, 'cm', units.fabric);
+    return formatMeasurement(converted, units.fabric);
   };
 
   const getLengthUnitLabel = (): string => {
