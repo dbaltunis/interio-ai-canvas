@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Calendar, DollarSign, AlertCircle, CheckCircle, Clock, ExternalLink } from "lucide-react";
 import { useClientJobs } from "@/hooks/useClientJobs";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { formatJobNumber } from "@/lib/format-job-number";
 
 interface ClientProjectsListProps {
@@ -16,6 +16,7 @@ interface ClientProjectsListProps {
 export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsListProps) => {
   const { data: projects, isLoading } = useClientJobs(clientId);
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -72,14 +73,13 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
   };
 
   const handleCreateProject = () => {
-    console.log('[CLIENT] Creating project for client:', clientId);
-    // Navigate to projects tab for creating a new project
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set('tab', 'projects');
-    newParams.set('client', clientId);
-    newParams.set('action', 'create');
-    console.log('[CLIENT] New URL params:', newParams.toString());
-    setSearchParams(newParams);
+    // Navigate to projects tab with state
+    navigate('/?tab=projects', { 
+      state: { 
+        createProjectForClient: clientId 
+      },
+      replace: false
+    });
     
     if (onTabChange) {
       onTabChange('projects');
