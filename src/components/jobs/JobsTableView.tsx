@@ -222,27 +222,57 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   // Helper function to get client name
   const getClientName = (quote: any) => {
     try {
-      if (quote?.clients?.name) {
-        return quote.clients.name;
-      }
-      
-      if (quote?.client_id && clients.length > 0) {
-        const client = clients.find(c => c?.id === quote.client_id);
-        if (client?.name) {
+      // Check if clients data is directly on the quote
+      if (quote?.clients) {
+        const client = quote.clients;
+        if (client.client_type === 'B2B' && client.company_name) {
+          return client.company_name;
+        }
+        if (client.name) {
           return client.name;
         }
       }
       
+      // Check if we have a client_id to look up
+      if (quote?.client_id && clients.length > 0) {
+        const client = clients.find(c => c?.id === quote.client_id);
+        if (client) {
+          if (client.client_type === 'B2B' && client.company_name) {
+            return client.company_name;
+          }
+          if (client.name) {
+            return client.name;
+          }
+        }
+      }
+      
+      // Check if client_id is on the project
       if (quote?.projects?.client_id && clients.length > 0) {
         const client = clients.find(c => c?.id === quote.projects.client_id);
-        if (client?.name) {
+        if (client) {
+          if (client.client_type === 'B2B' && client.company_name) {
+            return client.company_name;
+          }
+          if (client.name) {
+            return client.name;
+          }
+        }
+      }
+      
+      // Check if client data is nested differently
+      if (quote?.projects?.clients) {
+        const client = quote.projects.clients;
+        if (client.client_type === 'B2B' && client.company_name) {
+          return client.company_name;
+        }
+        if (client.name) {
           return client.name;
         }
       }
       
       return 'No Client';
     } catch (error) {
-      console.error('Error getting client name:', error);
+      console.error('Error getting client name:', error, quote);
       return 'No Client';
     }
   };
