@@ -22,6 +22,8 @@ import { useColumnPreferences } from "@/hooks/useColumnPreferences";
 const JobsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedJobId = searchParams.get('jobId');
+  const clientIdParam = searchParams.get('client');
+  const actionParam = searchParams.get('action');
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showHelp, setShowHelp] = useState(false);
@@ -53,6 +55,21 @@ const JobsPage = () => {
       console.warn('[JOBS] JobsPage UNMOUNTING - selectedJobId was:', selectedJobId);
     };
   }, []);
+
+  // Handle automatic project creation from client page
+  useEffect(() => {
+    if (actionParam === 'create' && clientIdParam && canCreateJobs) {
+      console.log('[JOBS] Auto-creating project for client:', clientIdParam);
+      handleNewJob(clientIdParam);
+      // Clean up URL params
+      setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        newParams.delete('action');
+        newParams.delete('client');
+        return newParams;
+      });
+    }
+  }, [actionParam, clientIdParam, canCreateJobs]);
 
   // Debug logging for state changes
   console.warn('[JOBS] JobsPage render - selectedJobId:', selectedJobId, 'canViewJobs:', canViewJobs, 'timestamp:', Date.now());
@@ -86,9 +103,9 @@ const JobsPage = () => {
     );
   }
 
-  const handleNewJob = async () => {
+  const handleNewJob = async (clientId?: string | null) => {
     try {
-      console.log("Creating new job...");
+      console.log("Creating new job...", clientId ? `for client: ${clientId}` : '');
       
       // Generate a unique job number
       const jobNumber = `JOB-${Date.now()}`;
@@ -98,7 +115,8 @@ const JobsPage = () => {
         name: `New Job ${new Date().toLocaleDateString()}`,
         description: "",
         status: "planning",
-        job_number: jobNumber
+        job_number: jobNumber,
+        client_id: clientId || null
       });
 
       console.log("Project created:", newProject);
@@ -106,7 +124,7 @@ const JobsPage = () => {
       // Then create a quote for this project
       const newQuote = await createQuote.mutateAsync({
         project_id: newProject.id,
-        client_id: null,
+        client_id: clientId || null,
         status: "draft",
         subtotal: 0,
         tax_rate: 0,
@@ -248,7 +266,7 @@ const JobsPage = () => {
             />
             {canCreateJobs && !isMobile && (
               <Button 
-                onClick={handleNewJob}
+                onClick={() => handleNewJob()}
                 disabled={createProject.isPending || createQuote.isPending}
                 className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md"
                 data-create-project
