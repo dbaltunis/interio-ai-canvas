@@ -15,8 +15,21 @@ export const RollerBlindVisual = ({
   material,
   className = ""
 }: RollerBlindVisualProps) => {
-  const { formatLength } = useMeasurementUnits();
+  const { units } = useMeasurementUnits();
   const controlSide = measurements.control_side || "right";
+  
+  // Helper to display measurement with correct unit (measurements already in user's unit)
+  const displayValue = (value: any) => {
+    const unitLabels: Record<string, string> = {
+      'mm': 'mm',
+      'cm': 'cm',
+      'm': 'm',
+      'inches': '"',
+      'feet': "'"
+    };
+    const unitSymbol = unitLabels[units.length] || units.length;
+    return `${value}${unitSymbol}`;
+  };
 
   const getBlindColor = () => {
     if (material?.color) return material.color;
@@ -31,7 +44,7 @@ export const RollerBlindVisual = ({
           <div className="w-0 h-0 border-t-2 border-b-2 border-r-4 border-transparent border-r-blue-600"></div>
           <div className="flex-1 border-t-2 border-blue-600 relative">
             <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-20 whitespace-nowrap">
-              Rail Width: {formatLength(measurements.rail_width)}
+              Rail Width: {displayValue(measurements.rail_width)}
             </span>
           </div>
           <div className="w-0 h-0 border-t-2 border-b-2 border-l-4 border-transparent border-l-blue-600"></div>
@@ -44,7 +57,7 @@ export const RollerBlindVisual = ({
           <div className="w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-green-600"></div>
           <div className="flex-1 border-r-2 border-green-600 relative">
             <span className="absolute top-1/2 -right-16 transform -translate-y-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg whitespace-nowrap">
-              Drop: {formatLength(measurements.drop)}
+              Drop: {displayValue(measurements.drop)}
             </span>
           </div>
           <div className="w-0 h-0 border-l-2 border-r-2 border-t-4 border-transparent border-t-green-600"></div>
