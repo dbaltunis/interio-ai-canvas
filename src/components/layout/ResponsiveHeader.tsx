@@ -38,7 +38,7 @@ const navItems = [
   { id: "dashboard", label: "Home", icon: LayoutDashboard, tourId: "dashboard-tab" },
   { id: "clients", label: "Clients", icon: Users, tourId: "crm-tab", permission: "view_clients" },
   { id: "projects", label: "Jobs", icon: FolderOpen, tourId: "projects-tab", permission: "view_jobs" },
-  { id: "quotes", label: "Emails", icon: FileText, tourId: "emails-tab", permission: "view_emails" },
+  { id: "emails", label: "Emails", icon: FileText, tourId: "emails-tab", permission: "view_jobs" },
   { id: "calendar", label: "Calendar", icon: Calendar, tourId: "calendar-tab", permission: "view_calendar" },
   { id: "inventory", label: "Library", icon: Package, tourId: "library-tab", permission: "view_inventory" },
   { id: "online-store", label: "Store", icon: Store, tourId: "online-store-tab", permission: "has_online_store" },
@@ -58,7 +58,6 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   // Permission checks - these return undefined while loading
   const canViewJobs = useHasPermission('view_jobs');
   const canViewClients = useHasPermission('view_clients');
-  const canViewEmails = useHasPermission('view_emails');
   const canViewCalendar = useHasPermission('view_calendar');
   const canViewInventory = useHasPermission('view_inventory');
   
@@ -134,8 +133,6 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
     
     if (item.permission === 'view_jobs') return canViewJobs === true;
     if (item.permission === 'view_clients') return canViewClients === true;
-    // Show emails if user has permission - email service is included by default (uses Resend)
-    if (item.permission === 'view_emails') return canViewEmails === true;
     if (item.permission === 'view_calendar') return canViewCalendar === true;
     if (item.permission === 'view_inventory') return canViewInventory === true;
     if (item.permission === 'has_online_store') return hasOnlineStore === true;
