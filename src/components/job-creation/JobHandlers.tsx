@@ -187,7 +187,10 @@ export const useJobHandlers = (project: any) => {
           name: surface.name,
           surface_type: surface.surface_type,
           width: surface.width,
-          height: surface.height
+          height: surface.height,
+          surface_width: surface.surface_width,
+          surface_height: surface.surface_height,
+          notes: surface.notes
         });
         surfaceIdMap[surface.id] = newSurface.id;
       }
@@ -202,6 +205,7 @@ export const useJobHandlers = (project: any) => {
           room_id: newRoom.id,
           window_id: mappedWindowId,
           treatment_type: treatment.treatment_type,
+          treatment_name: treatment.treatment_name,
           material_cost: treatment.material_cost,
           labor_cost: treatment.labor_cost,
           total_price: treatment.total_price,
@@ -210,7 +214,15 @@ export const useJobHandlers = (project: any) => {
           measurements: treatment.measurements,
           fabric_details: treatment.fabric_details,
           treatment_details: treatment.treatment_details,
-          calculation_details: treatment.calculation_details
+          calculation_details: treatment.calculation_details,
+          color: treatment.color,
+          fabric_type: treatment.fabric_type,
+          hardware: treatment.hardware,
+          mounting_type: treatment.mounting_type,
+          notes: treatment.notes,
+          pattern: treatment.pattern,
+          product_name: treatment.product_name,
+          status: treatment.status
         });
       }
 
