@@ -185,10 +185,45 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
         </CardContent>
       </Card>
       
+      {/* Pre-Fitting Checklist */}
+      <Card className="bg-purple-50 border-purple-200">
+        <CardHeader>
+          <CardTitle className="text-purple-900">Pre-Fitting Checklist</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="flex items-start gap-2">
+              <Checkbox className="mt-0.5" />
+              <span>All items steamed and pressed</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox className="mt-0.5" />
+              <span>Hardware installed and secure</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox className="mt-0.5" />
+              <span>Seams aligned and pressed</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox className="mt-0.5" />
+              <span>Hems measured and straight</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox className="mt-0.5" />
+              <span>Lining hangs evenly</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <Checkbox className="mt-0.5" />
+              <span>Client present for final approval</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Fitting Items by Room */}
       {data.rooms.map((room, roomIndex) => (
         <div key={roomIndex} className="space-y-4 workshop-room-section">
-          <h2 className="text-xl font-bold">{room.roomName}</h2>
+          <h2 className="text-xl font-bold border-l-4 border-purple-600 pl-3">{room.roomName}</h2>
           
           {room.items.map((item, itemIndex) => {
             const isComplete = completedItems.has(item.id);
@@ -276,27 +311,40 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
                     </div>
                   )}
                   
-                  {/* Fabric Details */}
+                  {/* Fabric Details with Direction Indicators */}
                   {item.fabricDetails && (
                     <div className="border-t pt-4">
-                      <h4 className="font-semibold mb-2">Fabric Details</h4>
-                      <div className="flex gap-4 items-start">
-                        {item.fabricDetails.imageUrl && (
-                          <img 
-                            src={item.fabricDetails.imageUrl} 
-                            alt={item.fabricDetails.name}
-                            className="w-20 h-20 object-cover rounded border print-image"
-                          />
-                        )}
-                        <div className="text-sm space-y-1 flex-1">
-                          <div><span className="font-medium">Fabric:</span> {item.fabricDetails.name}</div>
-                          <div><span className="font-medium">Width:</span> {item.fabricDetails.fabricWidth} cm</div>
-                          {item.fabricDetails.rollDirection && (
-                            <div><span className="font-medium">Roll Direction:</span> {item.fabricDetails.rollDirection}</div>
+                      <h4 className="font-semibold mb-3 text-purple-800">🧵 Fabric Information</h4>
+                      <div className="bg-purple-50 p-3 rounded">
+                        <div className="flex gap-4 items-start">
+                          {item.fabricDetails.imageUrl && (
+                            <div className="relative">
+                              <img 
+                                src={item.fabricDetails.imageUrl} 
+                                alt={item.fabricDetails.name}
+                                className="w-24 h-24 object-cover rounded border-2 border-purple-200 print-image"
+                              />
+                              {item.fabricDetails.rollDirection && (
+                                <div className="absolute -bottom-2 -right-2 bg-purple-600 text-white text-xs px-2 py-1 rounded font-bold">
+                                  {item.fabricDetails.rollDirection === 'vertical' ? '↕️' : '↔️'} {item.fabricDetails.rollDirection}
+                                </div>
+                              )}
+                            </div>
                           )}
-                          {item.fabricDetails.patternRepeat && (
-                            <div><span className="font-medium">Pattern Repeat:</span> {item.fabricDetails.patternRepeat} cm</div>
-                          )}
+                          <div className="text-sm space-y-2 flex-1">
+                            <div className="font-medium text-base">{item.fabricDetails.name}</div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div><span className="font-medium">Width:</span> {item.fabricDetails.fabricWidth} cm</div>
+                              {item.fabricDetails.patternRepeat && (
+                                <div><span className="font-medium">Pattern:</span> {item.fabricDetails.patternRepeat} cm repeat</div>
+                              )}
+                            </div>
+                            {item.fabricDetails.rollDirection && (
+                              <div className="bg-yellow-100 p-2 rounded text-xs mt-2">
+                                <span className="font-bold">⚠️ Direction:</span> Fabric runs {item.fabricDetails.rollDirection} - ensure seams match pattern!
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -342,17 +390,55 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
                     </div>
                   )}
                   
-                  {/* Fitting Notes */}
+                  {/* On-Site Fitting Checklist */}
                   <div className="border-t pt-4">
-                    <h4 className="font-semibold mb-2">Fitting Checklist</h4>
-                    <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground">
-                      <li>Steam curtains to remove creases</li>
-                      <li>Verify hardware is secure and level</li>
-                      <li>Check pooling measurement on floor</li>
-                      <li>Ensure seams are aligned and hidden</li>
-                      <li>Verify lining hangs evenly</li>
-                      <li>Test opening and closing mechanism</li>
-                    </ul>
+                    <h4 className="font-semibold mb-3 text-green-800">✓ On-Site Fitting Checklist</h4>
+                    <div className="bg-green-50 p-3 rounded space-y-2">
+                      <div className="grid grid-cols-1 gap-2 text-sm">
+                        <div className="flex items-start gap-2 p-2 bg-white rounded">
+                          <Checkbox className="mt-0.5" />
+                          <div>
+                            <span className="font-medium">Steam Treatment:</span> Remove all transport creases with steamer
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2 p-2 bg-white rounded">
+                          <Checkbox className="mt-0.5" />
+                          <div>
+                            <span className="font-medium">Hardware Check:</span> Verify rails/tracks are secure and level
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2 p-2 bg-white rounded">
+                          <Checkbox className="mt-0.5" />
+                          <div>
+                            <span className="font-medium">Drop Measurement:</span> Check pooling matches specification ({item.measurements?.pooling || 0}{item.measurements?.unit})
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2 p-2 bg-white rounded">
+                          <Checkbox className="mt-0.5" />
+                          <div>
+                            <span className="font-medium">Seam Alignment:</span> Ensure all seams match pattern and are hidden in folds
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2 p-2 bg-white rounded">
+                          <Checkbox className="mt-0.5" />
+                          <div>
+                            <span className="font-medium">Lining Check:</span> Verify lining hangs straight and doesn't show from front
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2 p-2 bg-white rounded">
+                          <Checkbox className="mt-0.5" />
+                          <div>
+                            <span className="font-medium">Function Test:</span> Test opening/closing - should glide smoothly
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2 p-2 bg-white rounded">
+                          <Checkbox className="mt-0.5" />
+                          <div>
+                            <span className="font-medium">Client Approval:</span> Walk through with client before leaving
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   
                   {/* Special Instructions */}
