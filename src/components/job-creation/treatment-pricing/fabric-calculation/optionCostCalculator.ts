@@ -22,7 +22,9 @@ export const calculateOptionCost = (option: any, formData: any) => {
     fabricWidth: parseFloat(formData.fabric_width) || 137,
     fabricCost: parseFloat(formData.fabric_cost_per_yard || "0") || 0,
     fabricUsage: parseFloat(formData.fabric_usage || "0") || 0,
-    windowCoveringPricingMethod: option.window_covering_pricing_method as PricingMethod
+    windowCoveringPricingMethod: option.window_covering_pricing_method as PricingMethod,
+    // CRITICAL: Pass pricing grid data for options
+    pricingGridData: option.extra_data?.pricing_grid_data || option.pricing_grid_data
   };
 
   return calculatePrice(method, context);
@@ -48,7 +50,9 @@ export const calculateHierarchicalOptionCost = (option: any, formData: any) => {
     fabricWidth: parseFloat(formData.fabric_width) || 137,
     fabricCost: parseFloat(formData.fabric_cost_per_yard || "0") || 0,
     fabricUsage: parseFloat(formData.fabric_usage || "0") || 0,
-    windowCoveringPricingMethod: option.window_covering_pricing_method as PricingMethod
+    windowCoveringPricingMethod: option.window_covering_pricing_method as PricingMethod,
+    // CRITICAL: Pass pricing grid data for options
+    pricingGridData: option.extra_data?.pricing_grid_data || option.pricing_grid_data
   };
 
   return calculatePrice(method, context);
