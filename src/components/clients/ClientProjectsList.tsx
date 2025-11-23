@@ -73,13 +73,8 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
   };
 
   const handleCreateProject = () => {
-    // Navigate to projects tab with state
-    navigate('/?tab=projects', { 
-      state: { 
-        createProjectForClient: clientId 
-      },
-      replace: false
-    });
+    // Navigate to projects tab with client ID in URL
+    navigate(`/?tab=projects&createClient=${clientId}`);
     
     if (onTabChange) {
       onTabChange('projects');
