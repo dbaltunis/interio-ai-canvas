@@ -92,6 +92,77 @@ const sqm = widthM * dropM; // 1.0 sqm
 5. **src/hooks/pricing/useFabricPricing.ts** - Fabric pricing hook
 6. **src/components/job-creation/treatment-pricing/fabric-calculation/optionCostCalculator.ts** - Option pricing
 
+## Hem Allowances - CRITICAL CONSTRAINTS
+
+### RULE: Hem Allowances ONLY for Curtains and Roman Blinds
+- **Roller Blinds:** Hem allowances MUST be 0 (no header/bottom/side hems)
+- **Venetian Blinds:** Hem allowances MUST be 0
+- **Shutters:** Hem allowances MUST be 0
+- **Vertical Blinds:** Hem allowances MUST be 0
+- **Curtains:** Hem allowances can be set per template (typically 8-15cm)
+- **Roman Blinds:** Hem allowances can be set per template if needed
+
+### Manufacturing Defaults Settings
+The Manufacturing Defaults in settings should:
+1. Show a WARNING that they apply ONLY to curtain templates
+2. Default ALL hem values to 0 (zero) - users opt-in, not opt-out
+3. Be hidden/ignored for non-curtain products
+
+### Code Implementation
+All calculation functions MUST:
+- Use `template?.blind_header_hem_cm || template?.header_allowance || 0` (note the `|| 0` fallback)
+- NEVER hardcode non-zero fallbacks like `|| 8` or `|| 15`
+- ALL defaults must come from template settings, not code
+- Log warnings when non-zero hems are detected for blinds/shutters
+
+## Pricing Grid Display - SIMPLIFIED
+
+### RULE: Grid Pricing Should Be Simple
+- Show ONLY the consolidated grid price
+- NO detailed breakdowns of fabric quantity × price formulas
+- Display format: "Grid Price (150cm × 200cm): $XXX"
+- Note: "Pricing grid includes all material and manufacturing costs"
+
+### Why Simplify?
+- Clients cannot verify complex grid calculations
+- Different pricing grids may use different calculation methods
+- Showing formulas creates confusion and support issues
+- Grid price IS the final price - no need to show how it was calculated
+
+## No Hardcoded Values Rule
+
+### CRITICAL: All Values Must Come From Settings
+**NEVER hardcode** any of the following in calculation functions:
+- Currency symbols → Use `useCurrency()` hook
+- Measurement units → Use `useBusinessSettings()` or `useMeasurementUnits()`
+- Hem allowances → Use `template?.hem_value || 0` (zero fallback only)
+- Fullness ratios → Use `template?.fullness_ratio || 1`
+- Fabric widths → Use `fabricItem?.fabric_width`
+- Waste percentages → Use `template?.waste_percent || 0`
+- Default prices → Use template or inventory item prices
+
+### Examples of FORBIDDEN Code:
+```typescript
+// ❌ WRONG - Hardcoded currency
+const price = `£${amount}`;
+
+// ✅ CORRECT - From settings
+const currencySymbol = getCurrencySymbol(currency);
+const price = `${currencySymbol}${amount}`;
+
+// ❌ WRONG - Hardcoded hem fallback
+const hem = template?.header_hem || 8;
+
+// ✅ CORRECT - Zero fallback (opt-in, not opt-out)
+const hem = template?.header_hem || 0;
+
+// ❌ WRONG - Hardcoded fullness
+const fullness = 2.5;
+
+// ✅ CORRECT - From template
+const fullness = template?.fullness_ratio || 1;
+```
+
 ## Common Errors to AVOID
 
 ❌ **WRONG**: Treating database MM as CM
@@ -115,7 +186,7 @@ When input is **1000mm × 1000mm**:
 
 ## Why This Matters
 
-**CRITICAL FOR CLIENT INVOICING**: Incorrect unit conversions cause:
+**CRITICAL FOR CLIENT INVOICING**: Incorrect unit conversions or hardcoded values cause:
 - 100x errors in square meter calculations  
 - Inconsistent pricing for identical products
 - Loss of client trust and potential revenue loss

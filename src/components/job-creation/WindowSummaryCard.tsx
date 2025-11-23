@@ -223,26 +223,25 @@ export function WindowSummaryCard({
       // CRITICAL FIX: Measurements in database are stored in MM!
       const widthMm = parseFloat(summary.measurements_details?.rail_width) || 0;
       const dropMm = parseFloat(summary.measurements_details?.drop) || 0;
-      // Convert mm to m: divide by 1000
-      const widthM = widthMm / 1000;
-      const dropM = dropMm / 1000;
-      const sqm = widthM * dropM;
+      // Convert mm to cm for display
+      const widthCm = widthMm / 10;
+      const dropCm = dropMm / 10;
       
-      console.log('📐 SQM CALCULATION CORRECT:', {
+      console.log('📐 PRICING GRID DISPLAY (Simplified):', {
         widthMm,
         dropMm,
-        widthM,
-        dropM,
-        sqm,
-        displayFabricCost,
-        calculation: `${widthMm}mm (${widthM}m) × ${dropMm}mm (${dropM}m) = ${sqm.toFixed(4)} sqm`
+        widthCm,
+        dropCm,
+        gridPrice: displayFabricCost,
+        note: 'Showing consolidated grid price only - no detailed breakdown'
       });
       
-      // For pricing grid, show grid price directly (no formula breakdown)
-      fabricQuantity = sqm;
-      fabricUnit = 'sqm';
-      fabricUnitPrice = displayFabricCost / (sqm || 1); // Avoid division by zero
-      fabricDescription = `Grid Price`;
+      // For pricing grid, show ONLY the grid price - no quantity/unit breakdown
+      // This avoids confusing the client with formulas they can't verify
+      fabricQuantity = 1;
+      fabricUnit = 'item';
+      fabricUnitPrice = displayFabricCost;
+      fabricDescription = `Grid Price (${widthCm.toFixed(0)}cm × ${dropCm.toFixed(0)}cm)`;
     } else {
       // For curtains/blinds: show linear meters and widths
       // CRITICAL: For horizontal/railroaded, multiply by pieces and show total

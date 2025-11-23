@@ -27,25 +27,26 @@ export const calculateBlindCost = (
   selectedOptions: Array<{ name: string; price?: number }> = []
 ): BlindCostResult => {
   
+  // CRITICAL: All values must come from template settings - NO HARDCODED FALLBACKS
+  // For blinds (roller, venetian, etc.), hem allowances should be 0 unless explicitly set
+  const blindHeaderHem = template?.blind_header_hem_cm || template?.header_allowance || 0;
+  const blindBottomHem = template?.blind_bottom_hem_cm || template?.bottom_hem || 0;
+  const blindSideHem = template?.blind_side_hem_cm || 0;
+  const wastePercent = template?.waste_percent || 0;
+  
   console.log('🎯 calculateBlindCost:', {
     width,
     height,
     template: template?.name,
     pricing_type: template?.pricing_type,
     fabricPrice: fabricItem?.selling_price,
-    blindHeaderHem: template?.blind_header_hem_cm || template?.header_allowance || 8,
-    blindBottomHem: template?.blind_bottom_hem_cm || template?.bottom_hem || 8,
-    blindSideHem: template?.blind_side_hem_cm || 0,
-    wastePercent: template?.waste_percent || 0,
-    options: selectedOptions
+    blindHeaderHem,
+    blindBottomHem,
+    blindSideHem,
+    wastePercent,
+    options: selectedOptions,
+    WARNING: blindHeaderHem > 0 || blindBottomHem > 0 ? 'HEM ALLOWANCES DETECTED - Should be 0 for most blinds!' : 'Hems are zero (correct for most blinds)'
   });
-  
-  // Convert to meters for area calculation
-  // For blinds, include hems in the calculation (matching fabricUsageCalculator)
-  const blindHeaderHem = template?.blind_header_hem_cm || template?.header_allowance || 8;
-  const blindBottomHem = template?.blind_bottom_hem_cm || template?.bottom_hem || 8;
-  const blindSideHem = template?.blind_side_hem_cm || 0;
-  const wastePercent = template?.waste_percent || 0;
   const wasteMultiplier = 1 + (wastePercent / 100);
   
   const effectiveWidthCm = width + (blindSideHem * 2);

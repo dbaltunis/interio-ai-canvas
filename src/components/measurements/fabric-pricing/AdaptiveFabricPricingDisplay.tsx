@@ -87,17 +87,17 @@ export const AdaptiveFabricPricingDisplay = ({
   // CRITICAL: Calculate grid price if applicable
   // measurements.rail_width and measurements.drop are stored in MM
   let gridPrice = 0;
-  let gridWidthMm = 0;
-  let gridDropMm = 0;
+  let gridWidthCm = 0;
+  let gridDropCm = 0;
   if (usesPricingGrid && measurements.rail_width && measurements.drop) {
-    // Store in mm (measurements are in mm from database)
-    gridWidthMm = parseFloat(measurements.rail_width);
-    gridDropMm = parseFloat(measurements.drop);
-    // getPriceFromGrid expects CM, so convert mm to cm
-    const gridWidthCm = gridWidthMm / 10;
-    const gridDropCm = gridDropMm / 10;
+    // Measurements are in mm from database
+    const gridWidthMm = parseFloat(measurements.rail_width);
+    const gridDropMm = parseFloat(measurements.drop);
+    // Convert mm to cm for grid lookup and display
+    gridWidthCm = gridWidthMm / 10;
+    gridDropCm = gridDropMm / 10;
     gridPrice = getPriceFromGrid(template.pricing_grid_data, gridWidthCm, gridDropCm);
-    console.log('📊 GRID PRICE CALCULATION:', {
+    console.log('📊 GRID PRICE (Simplified Display):', {
       railWidthMm: gridWidthMm,
       dropMm: gridDropMm,
       gridWidthCm,
@@ -171,13 +171,16 @@ export const AdaptiveFabricPricingDisplay = ({
             <div className="flex justify-between">
               <span>Dimensions:</span>
               <span className="font-medium text-foreground">
-                {formatMeasurement(gridWidthMm)} × {formatMeasurement(gridDropMm)}
+                {gridWidthCm.toFixed(0)}cm × {gridDropCm.toFixed(0)}cm
               </span>
             </div>
           <div className="flex justify-between border-t border-border pt-2 mt-2">
             <span className="font-medium">Grid Price:</span>
             <span className="font-medium text-foreground text-lg">{formatPrice(gridPrice)}</span>
           </div>
+          <p className="text-xs text-muted-foreground italic pt-1">
+            Pricing grid includes all material and manufacturing costs
+          </p>
         </div>
       </div>
     </div>
