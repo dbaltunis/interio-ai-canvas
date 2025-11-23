@@ -634,23 +634,6 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
               Payment
             </Button>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 px-3">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleAddTerms}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  Add Terms & Conditions
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handlePrint}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Print Preview
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
 
