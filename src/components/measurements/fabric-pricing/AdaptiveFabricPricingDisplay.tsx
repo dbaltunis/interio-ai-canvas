@@ -823,22 +823,11 @@ export const AdaptiveFabricPricingDisplay = ({
                             <span className="text-2xl">💡</span>
                             <div className="flex-1 space-y-1.5">
                               <div className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                                Leftover Fabric: {leftoverSqm.toFixed(2)} sqm
+                                Leftover Fabric
                               </div>
                               <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">
-                                This project will generate <strong>{leftoverSqm.toFixed(2)} sqm</strong> of leftover fabric ({formatMeasurement(leftoverHeightCm)} × {requiredWidthM.toFixed(2)}m).
+                                This order includes <strong>{formatMeasurement(leftoverHeightCm)} × {requiredWidthM.toFixed(2)}m</strong> of extra fabric. You'll pay for it now, but it's <strong>free to use in future projects</strong>.
                               </p>
-                              <div className="pt-1 space-y-1">
-                                <p className="text-xs text-blue-700 dark:text-blue-300">
-                                  ✓ <strong>Charged to this project</strong> - You're paying for this fabric now
-                                </p>
-                                <p className="text-xs text-green-700 dark:text-green-300 font-medium">
-                                  ✓ <strong>Free for future use</strong> - When used in other treatments, this leftover won't be charged again
-                                </p>
-                                <p className="text-xs text-blue-700 dark:text-blue-300">
-                                  ✓ <strong>Visible in inventory</strong> - Shows as available leftover with yellow badge
-                                </p>
-                              </div>
                             </div>
                           </div>
                         </div>
