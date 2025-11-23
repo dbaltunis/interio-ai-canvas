@@ -348,6 +348,7 @@ export const useQuotationSync = ({
                   unit: opt.unit || '',
                   unit_price: unitPrice,
                   total: total,
+                  image_url: opt.image_url || null,
                   isChild: true
                 });
               });
