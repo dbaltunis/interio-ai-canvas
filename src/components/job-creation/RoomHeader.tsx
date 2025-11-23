@@ -69,7 +69,7 @@ export const RoomHeader = ({
               </Button>
             </div>
           )}
-          <p className="text-xl font-bold text-primary mt-1">{formatCurrency(projectTotal)}</p>
+          <p className="text-xl font-bold text-primary mt-1">{formatCurrency(roomTotal)}</p>
         </div>
         <div className="flex items-center gap-2">
           <RoomActionsMenu
