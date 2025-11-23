@@ -263,7 +263,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                       onClick={() => setSelectedTask(event.taskData as Task)}
                       title={`Task: ${event.title}\nDue: ${format(startTime, 'HH:mm')}\n${event.description || ''}`}
                     >
-                       <div className="p-2 h-full flex items-center gap-2">
+                       <div className="px-2 py-2 h-full flex items-center gap-2">
                          {/* Circular checkbox */}
                          <button
                            onClick={(e) => {
@@ -284,11 +284,11 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                            )}
                          </button>
                          <div className="flex-1 min-w-0">
-                           <div className="font-medium text-xs leading-tight line-clamp-1 text-foreground">
+                           <div className="font-medium text-[10px] leading-tight line-clamp-1 text-foreground">
                              {event.title}
                            </div>
                            {event.description && (
-                             <div className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">
+                             <div className="text-[9px] text-muted-foreground mt-0.5 line-clamp-1">
                                {event.description}
                              </div>
                            )}
