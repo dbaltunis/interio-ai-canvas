@@ -8,6 +8,7 @@ import { useCompleteTask } from "@/hooks/useTasks";
 import { UnifiedTaskDialog } from "../tasks/UnifiedTaskDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
+import { SmartTaskCreation } from "../tasks/SmartTaskCreation";
 
 export const TaskListView = () => {
   const { data: tasks, isLoading } = useMyTasks();
@@ -192,6 +193,15 @@ export const TaskListView = () => {
           <p className="text-muted-foreground">
             Stay organized and focused on what matters most
           </p>
+        </motion.div>
+
+        {/* Smart Task Creation */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <SmartTaskCreation />
         </motion.div>
 
         {/* Task Groups */}
