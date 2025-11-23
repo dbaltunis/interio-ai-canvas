@@ -21,8 +21,8 @@ import { useColumnPreferences } from "@/hooks/useColumnPreferences";
 
 const JobsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const location = useLocation();
   const selectedJobId = searchParams.get('jobId');
+  const createClientParam = searchParams.get('createClient');
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showHelp, setShowHelp] = useState(false);
@@ -110,24 +110,23 @@ const JobsPage = () => {
     }
   };
 
-  // Handle automatic project creation from client page using location state
+  // Handle automatic project creation from client page
   useEffect(() => {
-    console.log('[JOBS] useEffect triggered - location.state:', location.state);
-    const clientIdFromState = (location.state as any)?.createProjectForClient;
-    console.log('[JOBS] Client ID from state:', clientIdFromState);
-    console.log('[JOBS] canCreateJobs:', canCreateJobs, 'isAutoCreating:', isAutoCreating);
-    
-    if (clientIdFromState && canCreateJobs && !isAutoCreating) {
-      console.log('[JOBS] Starting auto-create for client:', clientIdFromState);
+    if (createClientParam && canCreateJobs && !isAutoCreating) {
+      console.log('[JOBS] Creating project for client:', createClientParam);
       setIsAutoCreating(true);
       
-      handleNewJob(clientIdFromState).finally(() => {
-        console.log('[JOBS] Auto-create completed, clearing state');
-        window.history.replaceState({}, document.title);
+      handleNewJob(createClientParam).finally(() => {
+        console.log('[JOBS] Project created, cleaning up URL');
+        setSearchParams(prev => {
+          const newParams = new URLSearchParams(prev);
+          newParams.delete('createClient');
+          return newParams;
+        });
         setIsAutoCreating(false);
       });
     }
-  }, [location.state, canCreateJobs]);
+  }, [createClientParam, canCreateJobs]);
 
   const handleJobSelect = async (quote: any) => {
     // Check if quote already has a project_id
