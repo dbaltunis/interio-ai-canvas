@@ -14,7 +14,7 @@ import { HeadingOptionsSection } from "./dynamic-options/HeadingOptionsSection";
 import { DynamicCurtainOptions } from "./dynamic-options/DynamicCurtainOptions";
 import { calculateFabricUsage } from "../job-creation/treatment-pricing/fabric-calculation/fabricUsageCalculator";
 import { TreatmentPreviewEngine } from "../treatment-visualizers/TreatmentPreviewEngine";
-import { detectTreatmentType, getTreatmentConfig } from "@/utils/treatmentTypeDetection";
+import { detectTreatmentType, getTreatmentConfig, getMeasurementLabels } from "@/utils/treatmentTypeDetection";
 import { DynamicRollerBlindFields } from "./roller-blind-fields/DynamicRollerBlindFields";
 import { RollerBlindVisual } from "./visualizers/RollerBlindVisual";
 import { DynamicBlindVisual } from "./visualizers/DynamicBlindVisual";
@@ -83,6 +83,7 @@ export const VisualMeasurementSheet = ({
   // Detect treatment type - use treatmentCategory prop if provided, otherwise detect from template
   const treatmentType = treatmentCategory || detectTreatmentType(selectedTemplate);
   const treatmentConfig = getTreatmentConfig(treatmentType);
+  const measurementLabels = getMeasurementLabels(treatmentType);
   
   console.log("🎯 VisualMeasurementSheet - Treatment Detection:", {
     treatmentCategory,
@@ -90,7 +91,8 @@ export const VisualMeasurementSheet = ({
     finalTreatmentType: treatmentType,
     selectedTemplate: selectedTemplate?.name,
     curtainType: selectedTemplate?.curtain_type,
-    hasConfig: !!treatmentConfig
+    hasConfig: !!treatmentConfig,
+    measurementLabels
   });
 
   // Handle invalid treatment config - render after hooks to avoid breaking Rules of Hooks
@@ -899,7 +901,7 @@ export const VisualMeasurementSheet = ({
                     <div className="flex items-center gap-2 mb-1">
                       <span className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-xs">W</span>
                       <Label htmlFor="rail_width" className="text-sm font-bold text-card-foreground">
-                        {hardwareType === "track" ? "Track" : "Rail"} Width
+                        {measurementLabels.width}
                       </Label>
                     </div>
                     <div className="relative">
@@ -922,7 +924,7 @@ export const VisualMeasurementSheet = ({
                     <div className="flex items-center gap-2 mb-1">
                       <span className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-xs">H</span>
                       <Label htmlFor="drop" className="text-sm font-bold text-card-foreground">
-                        Curtain Drop
+                        {measurementLabels.height}
                       </Label>
                     </div>
                     <div className="relative">
