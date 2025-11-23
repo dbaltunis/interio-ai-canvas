@@ -20,12 +20,29 @@ export interface ClientBreakdownItem {
 export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
   if (!summary) return [];
 
-  const raw = Array.isArray(summary.cost_breakdown) ? summary.cost_breakdown : [];
-  const hasStructured = raw.some((it: any) => it && 'category' in it && 'total_cost' in it);
-  if (hasStructured) return raw as ClientBreakdownItem[];
+  console.log('🔍 buildClientBreakdown called with summary:', {
+    hasCostBreakdown: !!summary.cost_breakdown,
+    breakdownLength: summary.cost_breakdown?.length,
+    fabricCost: summary.fabric_cost,
+    manufacturingCost: summary.manufacturing_cost
+  });
 
+  // CRITICAL: If cost_breakdown exists and is structured, USE IT DIRECTLY
+  // DO NOT build items from scratch - this causes duplicate fabric lines
+  const raw = Array.isArray(summary.cost_breakdown) ? summary.cost_breakdown : [];
+  const hasStructured = raw.length > 0 && raw.some((it: any) => it && 'category' in it && 'total_cost' in it);
+  
+  if (hasStructured) {
+    console.log('✅ Using structured cost_breakdown from database (%d items)', raw.length);
+    return raw as ClientBreakdownItem[];
+  }
+
+  console.log('⚠️ No structured breakdown - building from scratch (THIS SHOULD BE RARE)');
   const items: ClientBreakdownItem[] = [];
 
+  // ONLY BUILD FROM SCRATCH IF NO COST_BREAKDOWN EXISTS
+  // This path should rarely be used - cost_breakdown should always exist
+  
   // Fabric line - handle both fabric and material (for blinds/shutters)
   const isBlindsOrShutters = summary.treatment_category?.includes('blind') || summary.treatment_category?.includes('shutter');
   const materialDetails = isBlindsOrShutters ? (summary.material_details || summary.fabric_details) : summary.fabric_details;

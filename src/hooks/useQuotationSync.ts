@@ -96,6 +96,15 @@ export const useQuotationSync = ({
           const breakdown = buildClientBreakdown(window.summary);
           const summary = window.summary;
           
+          // CRITICAL: Check if cost_breakdown is structured (already has children items)
+          const hasStructuredBreakdown = breakdown && breakdown.length > 0 && breakdown.some((item: any) => item.category);
+          
+          console.log('[BREAKDOWN] Breakdown check:', {
+            hasStructuredBreakdown,
+            breakdownLength: breakdown?.length,
+            windowId: window.window_id
+          });
+          
           // Extract REAL details from JSON - handle both fabric and material
           const treatmentCategory = summary.treatment_category || summary.treatment_type || '';
           const isBlindsOrShutters = treatmentCategory?.includes('blind') || treatmentCategory?.includes('shutter');
@@ -160,10 +169,31 @@ export const useQuotationSync = ({
             room_id: roomId,
             surface_name: window.surface_name,
             treatment_type: summary.template_name,
-            image_url: treatmentImageUrl, // Parent shows treatment template visual
+            image_url: treatmentImageUrl,
             hasChildren: true,
             children: [] as any[]
           };
+
+          // CRITICAL FIX: If cost_breakdown is structured, USE IT DIRECTLY
+          // Do NOT build children from scratch - prevents duplicate fabric lines
+          if (hasStructuredBreakdown) {
+            console.log('[BREAKDOWN] Using structured breakdown directly (prevents duplicates)');
+            // Convert breakdown items to children format
+            parentItem.children = breakdown.map((item: any, idx: number) => ({
+              id: `${window.window_id}-${item.id || item.category}-${idx}`,
+              name: item.name || item.category,
+              description: item.description || '-',
+              quantity: item.quantity || 1,
+              unit: item.unit || '',
+              unit_price: item.unit_price || 0,
+              total: item.total_cost || 0,
+              image_url: item.image_url || null,
+              category: item.category,
+              isChild: true
+            }));
+          } else {
+            console.log('[BREAKDOWN] No structured breakdown - building children from scratch');
+            // ONLY BUILD CHILDREN IF NO STRUCTURED BREAKDOWN EXISTS
 
           // DETAILED BREAKDOWN - Material (dynamic label)
           if (summary.fabric_cost && summary.fabric_cost > 0) {
@@ -350,10 +380,11 @@ export const useQuotationSync = ({
                   total: total,
                   image_url: opt.image_url || null,
                   isChild: true
-                });
               });
+            });
             }
           }
+          } // END else block for building children from scratch
 
           roomGroups[roomId].items.push(parentItem);
         }
