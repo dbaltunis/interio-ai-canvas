@@ -1,7 +1,7 @@
 import { format, isSameDay, isToday } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useState, useRef, useEffect } from "react";
-import { Clock, MapPin, CheckSquare } from "lucide-react";
+import { Clock, MapPin, CheckCheck } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useClients } from "@/hooks/useClients";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
@@ -251,35 +251,44 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
 
                 // Render tasks differently
                 if (event.isTask) {
-                  const priorityColors = {
-                    urgent: { border: 'border-red-500', bg: 'bg-red-50', text: 'text-red-700' },
-                    high: { border: 'border-orange-500', bg: 'bg-orange-50', text: 'text-orange-700' },
-                    medium: { border: 'border-yellow-500', bg: 'bg-yellow-50', text: 'text-yellow-700' },
-                    low: { border: 'border-blue-500', bg: 'bg-blue-50', text: 'text-blue-700' }
-                  };
-                  
-                  const colorScheme = priorityColors[event.priority as keyof typeof priorityColors] || priorityColors.medium;
-                  
                   return (
                     <div
                       key={event.id}
-                      className={`absolute left-2 right-2 rounded-lg border-2 ${colorScheme.border} ${colorScheme.bg} shadow-md hover:shadow-lg transition-all pointer-events-auto cursor-pointer group overflow-hidden`}
+                      className="absolute left-2 right-2 rounded-lg border border-border bg-card shadow-md hover:shadow-lg transition-all pointer-events-auto cursor-pointer group overflow-hidden"
                       style={{
                         top: `${style.top}px`,
-                        height: `${Math.max(style.height, 56)}px`, // Minimum height for mobile visibility
+                        height: `${Math.max(style.height, 48)}px`, // Slightly smaller minimum height
                         zIndex: 10 + eventIndex,
                       }}
                       onClick={() => setSelectedTask(event.taskData as Task)}
                       title={`Task: ${event.title}\nDue: ${format(startTime, 'HH:mm')}\n${event.description || ''}`}
                     >
-                       <div className="p-3 h-full flex items-center gap-2">
-                         <CheckSquare className={`h-5 w-5 flex-shrink-0 ${colorScheme.text}`} />
+                       <div className="p-2 h-full flex items-center gap-2">
+                         {/* Circular checkbox */}
+                         <button
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             // Toggle task completion here if needed
+                           }}
+                           className={`
+                             flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center
+                             transition-all duration-200
+                             ${event.status === 'completed' 
+                               ? "border-primary bg-primary" 
+                               : "border-muted-foreground bg-white hover:border-primary"
+                             }
+                           `}
+                         >
+                           {event.status === 'completed' && (
+                             <CheckCheck className="h-2.5 w-2.5 text-white" strokeWidth={3} />
+                           )}
+                         </button>
                          <div className="flex-1 min-w-0">
-                           <div className={`font-semibold text-sm leading-tight line-clamp-1 ${colorScheme.text}`}>
+                           <div className="font-medium text-xs leading-tight line-clamp-1 text-foreground">
                              {event.title}
                            </div>
                            {event.description && (
-                             <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                             <div className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">
                                {event.description}
                              </div>
                            )}

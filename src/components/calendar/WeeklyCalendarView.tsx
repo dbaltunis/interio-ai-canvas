@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { DndContext, DragEndEvent, useDraggable, useDroppable, DragOverlay } from "@dnd-kit/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell, Video, Square, CheckCheck, Archive } from "lucide-react";
+import { Calendar, Clock, User, CalendarCheck, UserCheck, Bell, Video, CheckCheck, Archive } from "lucide-react";
 import { useUpdateAppointment } from "@/hooks/useAppointments";
 import { BookedAppointmentDialog } from "./BookedAppointmentDialog";
 import { SchedulerSlotDialog } from "./SchedulerSlotDialog";
@@ -449,7 +449,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
               <span>Your Events</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Square className="w-3 h-3 text-orange-500" />
+              <div className="w-3 h-3 rounded-full border-2 border-muted-foreground bg-white"></div>
               <span>Tasks</span>
             </div>
           </div>
@@ -855,7 +855,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                    {/* Task content - distinct display */}
                                     {event.isTask && (
                                       <div 
-                                        className="flex items-center gap-2 h-full px-2 py-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+                                        className="flex items-center gap-1.5 h-full px-1.5 py-1 cursor-pointer hover:opacity-80 transition-opacity"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           const newStatus = event.status === 'completed' ? 'in_progress' : 'completed';
@@ -865,26 +865,22 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                           });
                                         }}
                                       >
-                                        {event.status === 'completed' ? (
-                                          <CheckCheck className="h-5 w-5 flex-shrink-0 font-bold" style={{
-                                            color: 'hsl(142 76% 36%)',
-                                            strokeWidth: 3
-                                          }} />
-                                        ) : (
-                                          <Square className="h-5 w-5 flex-shrink-0" style={{
-                                            color: event.priority === 'urgent' ? 'hsl(0 84% 40%)' :
-                                                   event.priority === 'high' ? 'hsl(25 95% 40%)' :
-                                                   event.priority === 'medium' ? 'hsl(45 93% 35%)' :
-                                                   'hsl(217 91% 45%)'
-                                          }} />
-                                        )}
-                                        <div className="font-semibold text-sm leading-tight break-words flex-1 min-w-0" style={{
-                                          color: event.status === 'completed' ? 'hsl(142 76% 36%)' : (
-                                            event.priority === 'urgent' ? 'hsl(0 84% 40%)' :
-                                            event.priority === 'high' ? 'hsl(25 95% 40%)' :
-                                            event.priority === 'medium' ? 'hsl(45 93% 35%)' :
-                                            'hsl(217 91% 45%)'
-                                          ),
+                                        {/* Circular checkbox */}
+                                        <button
+                                          className={`
+                                            flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center
+                                            transition-all duration-200
+                                            ${event.status === 'completed' 
+                                              ? "border-primary bg-primary" 
+                                              : "border-muted-foreground bg-white hover:border-primary"
+                                            }
+                                          `}
+                                        >
+                                          {event.status === 'completed' && (
+                                            <CheckCheck className="h-2.5 w-2.5 text-white" strokeWidth={3} />
+                                          )}
+                                        </button>
+                                        <div className="font-medium text-xs leading-tight break-words flex-1 min-w-0 text-foreground" style={{
                                           textDecoration: event.status === 'completed' ? 'line-through' : 'none',
                                           display: '-webkit-box',
                                           WebkitLineClamp: finalHeight > 60 ? 2 : 1,
