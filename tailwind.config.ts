@@ -22,27 +22,13 @@ export default {
 				'70': '17.5rem', // 280px
 			},
 			colors: {
-				// Design System Tokens
-				primary: {
-					50:  '#f2f5f6',
-					500: '#415e6b',
-					600: '#3a5360',
-					700: '#2e4652',
-				},
-				accent: {
-					50:  '#f3f7f8',
-					500: '#9bb6bc',
-					600: '#87a2a8',
-				},
-				bg:      '#F5F5F7', /* Subtle gray background */
-				surface: '#FFFFFF', /* Bright white */
-				border:  '#DADCE0', /* Darker border */
-				text:    '#111827',
-				muted:   '#6B7280',
-				success: '#10B981',
-				warning: '#F59E0B',
-				error:   '#EF4444',
-				info:    '#3B82F6',
+				// Legacy support - converted to HSL
+				bg: '216 20% 97%',
+				surface: '0 0% 100%',
+				text: '220 15% 15%',
+				success: '142 76% 36%',
+				error: '0 84% 60%',
+				info: '189 40% 65%',
 				
 				// Company brand colors with AI design system
 				company: {
@@ -59,13 +45,13 @@ export default {
 					low: 'hsl(var(--risk-low))',
 					none: 'hsl(var(--risk-none))',
 				},
-				// InterioApp Brand Colors (legacy support)
+				// InterioApp Brand Colors (legacy support) - converted to HSL
 				brand: {
-					primary: '#415e6b',
-					secondary: '#9bb6bc',
-					accent: '#733341',
-					neutral: '#575656',
-					light: '#ffffff'
+					primary: 'hsl(var(--company-primary))',
+					secondary: 'hsl(var(--company-secondary))',
+					accent: '345 37% 33%',
+					neutral: '0 2% 34%',
+					light: '0 0% 100%'
 				},
 				// Keep existing shadcn colors for compatibility
 				border: 'hsl(var(--border))',
