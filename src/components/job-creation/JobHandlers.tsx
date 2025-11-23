@@ -4,6 +4,7 @@ import { useSurfaces, useCreateSurface, useUpdateSurface, useDeleteSurface } fro
 import { useTreatments, useCreateTreatment, useUpdateTreatment, useDeleteTreatment } from "@/hooks/useTreatments";
 import { useClientMeasurements, useCreateClientMeasurement } from "@/hooks/useClientMeasurements";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useJobHandlers = (project: any) => {
   const { toast } = useToast();
@@ -171,6 +172,9 @@ export const useJobHandlers = (project: any) => {
 
   const handleCopyRoom = async (room: any) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No authenticated user");
+
       const newRoom = await createRoom.mutateAsync({
         project_id: projectId,
         name: `${room.name} Copy`,
@@ -193,6 +197,25 @@ export const useJobHandlers = (project: any) => {
           notes: surface.notes
         });
         surfaceIdMap[surface.id] = newSurface.id;
+      }
+
+      // Copy windows_summary data for each surface
+      for (const [oldSurfaceId, newSurfaceId] of Object.entries(surfaceIdMap)) {
+        const { data: oldSummary } = await supabase
+          .from("windows_summary")
+          .select("*")
+          .eq("window_id", oldSurfaceId)
+          .maybeSingle();
+
+        if (oldSummary) {
+          const { window_id, updated_at, ...summaryData } = oldSummary;
+          await supabase
+            .from("windows_summary")
+            .upsert({
+              ...summaryData,
+              window_id: newSurfaceId
+            });
+        }
       }
 
       // Copy treatments and re-link to the newly created surfaces
