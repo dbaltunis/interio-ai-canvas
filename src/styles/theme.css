@@ -16,17 +16,7 @@
   --brand-neutral: var(--interio-charcoal);
   --brand-light: var(--interio-white);
   
-  /* Semantic color overrides */
-  --primary: 200 26% 34%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 192 24% 67%;
-  --secondary-foreground: 0 0% 100%;
-  --accent: 17 49% 57%;
-  --accent-foreground: 0 0% 100%;
-  --burgundy: 345 39% 33%;
-  --burgundy-foreground: 0 0% 100%;
-  --muted: 210 17% 98%;
-  --muted-foreground: 0 0% 35%;
+  /* These colors are now defined in index.css as the main design system */
   
   /* Update existing CSS variables for shadcn components */
   --background: 216 20% 97%; /* Light gray background */
