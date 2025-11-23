@@ -250,3 +250,99 @@ export const getTreatmentDisplayName = (category: TreatmentCategory): string => 
   };
   return names[category];
 };
+
+export interface MeasurementLabels {
+  width: string;
+  height: string;
+  widthShort: string;
+  heightShort: string;
+}
+
+/**
+ * Get treatment-specific measurement labels
+ * Returns appropriate terminology for width and height measurements based on treatment type
+ */
+export const getMeasurementLabels = (category: TreatmentCategory): MeasurementLabels => {
+  const labels: Record<TreatmentCategory, MeasurementLabels> = {
+    curtains: {
+      width: 'Rail Width',
+      height: 'Curtain Drop',
+      widthShort: 'Rail',
+      heightShort: 'Drop'
+    },
+    roller_blinds: {
+      width: 'Headrail Width',
+      height: 'Blind Drop',
+      widthShort: 'Headrail',
+      heightShort: 'Drop'
+    },
+    roman_blinds: {
+      width: 'Blind Width',
+      height: 'Blind Drop',
+      widthShort: 'Width',
+      heightShort: 'Drop'
+    },
+    venetian_blinds: {
+      width: 'Headrail Width',
+      height: 'Blind Drop',
+      widthShort: 'Headrail',
+      heightShort: 'Drop'
+    },
+    vertical_blinds: {
+      width: 'Track Width',
+      height: 'Drop Length',
+      widthShort: 'Track',
+      heightShort: 'Drop'
+    },
+    cellular_blinds: {
+      width: 'Headrail Width',
+      height: 'Shade Drop',
+      widthShort: 'Headrail',
+      heightShort: 'Drop'
+    },
+    cellular_shades: {
+      width: 'Headrail Width',
+      height: 'Shade Drop',
+      widthShort: 'Headrail',
+      heightShort: 'Drop'
+    },
+    panel_glide: {
+      width: 'Track Width',
+      height: 'Panel Length',
+      widthShort: 'Track',
+      heightShort: 'Length'
+    },
+    plantation_shutters: {
+      width: 'Frame Width',
+      height: 'Frame Height',
+      widthShort: 'Width',
+      heightShort: 'Height'
+    },
+    shutters: {
+      width: 'Frame Width',
+      height: 'Frame Height',
+      widthShort: 'Width',
+      heightShort: 'Height'
+    },
+    awning: {
+      width: 'Awning Width',
+      height: 'Projection',
+      widthShort: 'Width',
+      heightShort: 'Projection'
+    },
+    wallpaper: {
+      width: 'Wall Width',
+      height: 'Wall Height',
+      widthShort: 'Width',
+      heightShort: 'Height'
+    },
+    blinds: {
+      width: 'Blind Width',
+      height: 'Blind Drop',
+      widthShort: 'Width',
+      heightShort: 'Drop'
+    },
+  };
+  
+  return labels[category];
+};
