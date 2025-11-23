@@ -53,6 +53,7 @@ export const SmartTaskCreation = ({ clientId, projectId, onSuccess }: SmartTaskC
       project_id: selectedProjectId || undefined,
       priority,
       due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : undefined,
+      due_time: time || undefined,
       estimated_hours: estimatedHours ? parseFloat(estimatedHours) : undefined,
       tags: tags.trim() ? tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
     });
