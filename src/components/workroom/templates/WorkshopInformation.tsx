@@ -22,6 +22,8 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
     return <WorkshopInformationLandscape data={data} projectId={projectId} />;
   }
 
+  console.log('🔍 [WorkshopInformation] projectId:', projectId);
+
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -36,6 +38,13 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
     isLoading: notesLoading,
     isSaving
   } = useWorkshopNotes(projectId);
+  
+  console.log('🔍 [WorkshopInformation] Notes state:', { 
+    hasProjectId: !!projectId,
+    productionNotesLength: productionNotes.length,
+    itemNotesCount: Object.keys(itemNotes).length,
+    isSaving 
+  });
   
   const hasOverrides = Object.keys(overrides).length > 0;
   const hasUnsavedNotes = productionNotes !== "" || Object.keys(itemNotes).length > 0;
@@ -53,11 +62,13 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
   };
   
   const handleSaveNotes = async () => {
+    console.log('🔍 [WorkshopInformation] Save button clicked', { projectId, itemNotesCount: Object.keys(itemNotes).length });
     try {
       await saveNotes();
       setLastSaved(new Date());
+      console.log('✅ [WorkshopInformation] Notes saved successfully');
     } catch (error) {
-      console.error("Failed to save notes:", error);
+      console.error("❌ [WorkshopInformation] Failed to save notes:", error);
     }
   };
   
@@ -129,6 +140,7 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
               onClick={handleSaveNotes}
               disabled={isSaving || !projectId}
               className="h-8"
+              title={!projectId ? "Project ID required to save notes" : isSaving ? "Saving..." : "Click to save all notes"}
             >
               <Save className="h-3.5 w-3.5 mr-1" />
               {isSaving ? "Saving..." : "Save Notes"}
