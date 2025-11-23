@@ -192,9 +192,12 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingCli
               </SelectTrigger>
               <SelectContent className="z-[9999] bg-background border border-border shadow-lg" position="popper" sideOffset={4}>
                 <SelectItem value="United States">United States</SelectItem>
+                <SelectItem value="United Kingdom">United Kingdom</SelectItem>
                 <SelectItem value="Canada">Canada</SelectItem>
                 <SelectItem value="Australia">Australia</SelectItem>
-                <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                <SelectItem value="New Zealand">New Zealand</SelectItem>
+                <SelectItem value="Singapore">Singapore</SelectItem>
+                <SelectItem value="India">India</SelectItem>
                 <SelectItem value="Germany">Germany</SelectItem>
                 <SelectItem value="France">France</SelectItem>
                 <SelectItem value="Spain">Spain</SelectItem>
