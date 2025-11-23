@@ -22,6 +22,7 @@ interface RoomsGridProps {
   onRenameRoom: (roomId: string, newName: string) => void;
   onCreateRoom: () => void;
   isCreatingRoom: boolean;
+  isCopyingRoom?: boolean;
   onChangeRoomType: (roomId: string, roomType: string) => void;
   onCreateFromTemplate?: (template: any, customName?: string) => void;
 }
@@ -44,6 +45,7 @@ export const RoomsGrid = ({
   onRenameRoom,
   onCreateRoom,
   isCreatingRoom,
+  isCopyingRoom = false,
   onChangeRoomType,
   onCreateFromTemplate
 }: RoomsGridProps) => {
@@ -74,6 +76,7 @@ export const RoomsGrid = ({
               setEditingRoomName={setEditingRoomName}
               onRenameRoom={onRenameRoom}
               onChangeRoomType={onChangeRoomType}
+              isCopyingRoom={isCopyingRoom}
             />
           ))
         )}

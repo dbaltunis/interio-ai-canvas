@@ -171,9 +171,20 @@ export const useJobHandlers = (project: any) => {
   };
 
   const handleCopyRoom = async (room: any) => {
+    // Prevent duplicate copies if already in progress
+    if (createRoom.isPending) {
+      console.log("Room copy already in progress, ignoring duplicate request");
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
+
+      toast({
+        title: "Copying room...",
+        description: "Please wait while we duplicate the room and its contents",
+      });
 
       const newRoom = await createRoom.mutateAsync({
         project_id: projectId,

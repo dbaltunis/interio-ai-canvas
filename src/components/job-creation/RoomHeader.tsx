@@ -21,6 +21,7 @@ interface RoomHeaderProps {
   onCopyRoom: (room: any) => void;
   onDeleteRoom: any;
   onChangeRoomType: (roomId: string, roomType: string) => void;
+  isCopyingRoom?: boolean;
 }
 
 export const RoomHeader = ({
@@ -35,7 +36,8 @@ export const RoomHeader = ({
   onRenameRoom,
   onCopyRoom,
   onDeleteRoom,
-  onChangeRoomType
+  onChangeRoomType,
+  isCopyingRoom = false
 }: RoomHeaderProps) => {
   const { compact } = useCompactMode();
   const { formatCurrency } = useFormattedCurrency();
@@ -82,6 +84,7 @@ export const RoomHeader = ({
               }
             }}
             onChangeRoomType={(type) => onChangeRoomType(room.id, type)}
+            isCopying={isCopyingRoom}
           />
         </div>
       </div>

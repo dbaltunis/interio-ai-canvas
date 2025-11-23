@@ -15,6 +15,7 @@ interface RoomActionsMenuProps {
   onCopyRoom: () => void;
   onDeleteRoom: () => void;
   onChangeRoomType: (type: string) => void;
+  isCopying?: boolean;
 }
 
 export const RoomActionsMenu = ({ 
@@ -22,7 +23,8 @@ export const RoomActionsMenu = ({
   onEditName, 
   onCopyRoom, 
   onDeleteRoom, 
-  onChangeRoomType 
+  onChangeRoomType,
+  isCopying = false
 }: RoomActionsMenuProps) => {
   const canEditJobs = useHasPermission('edit_all_jobs') || useHasPermission('edit_own_jobs');
   const canDeleteJobs = useHasPermission('delete_jobs');
@@ -49,9 +51,9 @@ export const RoomActionsMenu = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 bg-background border border-border shadow-lg z-50">
         {canEditJobs && (
-          <DropdownMenuItem onClick={onCopyRoom}>
+          <DropdownMenuItem onClick={onCopyRoom} disabled={isCopying}>
             <Copy className="mr-2 h-4 w-4" />
-            Copy Room
+            {isCopying ? 'Copying...' : 'Copy Room'}
           </DropdownMenuItem>
         )}
         {canDeleteJobs && (
