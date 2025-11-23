@@ -302,9 +302,6 @@ export const useQuotationSync = ({
             
             if (Array.isArray(selectedOptions) && selectedOptions.length > 0) {
               selectedOptions.forEach((opt: any, index: number) => {
-                // Skip if no price or price is 0
-                if (!opt.price || opt.price === 0) return;
-                
                 // Extract option key and value from name
                 let optionName = '';
                 let optionValue = '';
