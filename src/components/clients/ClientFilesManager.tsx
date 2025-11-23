@@ -154,28 +154,67 @@ export const ClientFilesManager = ({ clientId, userId }: ClientFilesManagerProps
             />
           </div>
           
-          <div className="flex items-center gap-4">
-            <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Link to project (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">General (No Project)</SelectItem>
-                {projects?.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-2">
+            <div className="flex items-center gap-4">
+              <div className="flex-1 space-y-1.5">
+                <Select value={selectedProjectId} onValueChange={(value) => {
+                  setSelectedProjectId(value);
+                  const projectName = value === "none" 
+                    ? "General (No Project)" 
+                    : projects?.find(p => p.id === value)?.name || "Selected Project";
+                  toast.success(`Files will be linked to: ${projectName}`, {
+                    description: "Click 'Upload Files' button to complete the upload"
+                  });
+                }}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Link to project (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">General (No Project)</SelectItem>
+                    {projects?.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Select which project these files belong to
+                </p>
+              </div>
+              
+              <Button
+                onClick={handleUpload}
+                disabled={!selectedFiles || uploadFile.isPending}
+                size="lg"
+                className="px-6"
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {uploadFile.isPending ? 'Uploading...' : 'Upload Files'}
+              </Button>
+            </div>
             
-            <Button
-              onClick={handleUpload}
-              disabled={!selectedFiles || uploadFile.isPending}
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              {uploadFile.isPending ? 'Uploading...' : 'Upload'}
-            </Button>
+            {selectedFiles && selectedFiles.length > 0 && (
+              <div className="flex items-center justify-between p-3 bg-accent/10 rounded-md border border-accent/20">
+                <div className="flex items-center gap-2 text-sm">
+                  <File className="h-4 w-4 text-accent" />
+                  <span className="font-medium">
+                    {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''} selected
+                  </span>
+                  {selectedProjectId !== "none" && (
+                    <>
+                      <span className="text-muted-foreground">→</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {projects?.find(p => p.id === selectedProjectId)?.name || "Project"}
+                      </Badge>
+                    </>
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  Click "Upload Files" to complete →
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
