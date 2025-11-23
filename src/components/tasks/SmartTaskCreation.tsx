@@ -278,6 +278,7 @@ export const SmartTaskCreation = ({ clientId, projectId, onSuccess }: SmartTaskC
                     selected={dueDate}
                     onSelect={setDueDate}
                     initialFocus
+                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
