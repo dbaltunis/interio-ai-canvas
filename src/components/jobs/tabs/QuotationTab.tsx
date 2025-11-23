@@ -28,12 +28,10 @@ import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 import { generateQuotePDF, generateQuotePDFBlob } from '@/utils/generateQuotePDF';
 import { InlineDiscountPanel } from "@/components/jobs/quotation/InlineDiscountPanel";
 import { useQuoteDiscount } from "@/hooks/useQuoteDiscount";
-
 interface QuotationTabProps {
   projectId: string;
   quoteId?: string;
 }
-
 const removeDuplicateProductsBlocks = (blocks: any[] = []) => {
   let seen = false;
   return (blocks || []).filter(b => {
@@ -45,9 +43,13 @@ const removeDuplicateProductsBlocks = (blocks: any[] = []) => {
     return false;
   });
 };
-
-export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
-  const { toast } = useToast();
+export const QuotationTab = ({
+  projectId,
+  quoteId
+}: QuotationTabProps) => {
+  const {
+    toast
+  } = useToast();
   const queryClient = useQueryClient();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -55,36 +57,50 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   const [showQuotationItems, setShowQuotationItems] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
-
-  const { data: projects } = useProjects();
-  const { data: treatments } = useTreatments(projectId, quoteId);
-  const { data: rooms } = useRooms(projectId, quoteId);
-  const { data: surfaces } = useSurfaces(projectId);
-  const { data: projectSummaries } = useProjectWindowSummaries(projectId);
-  const { data: businessSettings } = useBusinessSettings();
-  const { quoteVersions } = useQuoteVersions(projectId);
-  const { data: quotes = [], isLoading: quotesLoading } = useQuotes(projectId);
+  const {
+    data: projects
+  } = useProjects();
+  const {
+    data: treatments
+  } = useTreatments(projectId, quoteId);
+  const {
+    data: rooms
+  } = useRooms(projectId, quoteId);
+  const {
+    data: surfaces
+  } = useSurfaces(projectId);
+  const {
+    data: projectSummaries
+  } = useProjectWindowSummaries(projectId);
+  const {
+    data: businessSettings
+  } = useBusinessSettings();
+  const {
+    quoteVersions
+  } = useQuoteVersions(projectId);
+  const {
+    data: quotes = [],
+    isLoading: quotesLoading
+  } = useQuotes(projectId);
   const createQuote = useCreateQuote();
-
   const project = projects?.find(p => p.id === projectId);
-  
   const currentQuote = quoteVersions?.find(q => q.id === quoteId);
   const currentVersion = currentQuote?.version || 1;
   const isEmptyVersion = (rooms?.length || 0) === 0 && quoteId;
 
-
   // Fetch client data
-  const { data: client } = useQuery({
+  const {
+    data: client
+  } = useQuery({
     queryKey: ["project-client", projectId],
     queryFn: async () => {
       if (!projectId) return null;
       const project = projects?.find(p => p.id === projectId);
       if (!project?.client_id) return null;
-      const { data, error } = await supabase
-        .from("clients")
-        .select("*")
-        .eq("id", project.client_id)
-        .maybeSingle();
+      const {
+        data,
+        error
+      } = await supabase.from("clients").select("*").eq("id", project.client_id).maybeSingle();
       if (error) {
         console.error('Error fetching client:', error);
         return null;
@@ -95,14 +111,16 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   });
 
   // Fetch workshop items
-  const { data: workshopItems } = useQuery({
+  const {
+    data: workshopItems
+  } = useQuery({
     queryKey: ["workshop-items", projectId],
     queryFn: async () => {
       if (!projectId) return [];
-      const { data, error } = await supabase
-        .from("workshop_items")
-        .select("*")
-        .eq("project_id", projectId);
+      const {
+        data,
+        error
+      } = await supabase.from("workshop_items").select("*").eq("project_id", projectId);
       if (error) return [];
       return data || [];
     },
@@ -111,16 +129,21 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   });
 
   // Fetch active quote templates - check if any valid templates exist
-  const { data: activeTemplates, isLoading: templatesLoading, refetch: refetchTemplates } = useQuery({
+  const {
+    data: activeTemplates,
+    isLoading: templatesLoading,
+    refetch: refetchTemplates
+  } = useQuery({
     queryKey: ["quote-templates"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("quote_templates")
-        .select("*")
-        .eq("active", true)
-        .order("updated_at", { ascending: false });
+      const {
+        data,
+        error
+      } = await supabase.from("quote_templates").select("*").eq("active", true).order("updated_at", {
+        ascending: false
+      });
       if (error) throw error;
-      
+
       // Filter out templates with invalid or missing blocks
       const validTemplates = (data || []).filter(template => {
         if (!template.blocks) return false;
@@ -129,7 +152,6 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         if (template.blocks.length === 0) return false;
         return true;
       });
-      
       return validTemplates;
     },
     staleTime: 5 * 60 * 1000
@@ -141,10 +163,10 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       setSelectedTemplateId(activeTemplates[0].id.toString());
     }
   }, [activeTemplates, selectedTemplateId]);
-
   const selectedTemplate = activeTemplates?.find(t => t.id.toString() === selectedTemplateId);
-
-  const { buildQuotationItems } = useQuotationSync({
+  const {
+    buildQuotationItems
+  } = useQuotationSync({
     projectId: projectId,
     clientId: project?.client_id || "",
     autoCreateQuote: false
@@ -155,7 +177,6 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     const data = buildQuotationItems();
     return data;
   }, [buildQuotationItems, projectSummaries?.windows, projectSummaries?.projectTotal, treatments?.length]);
-
   const hasQuotationItems = (quotationData.items || []).length > 0;
   const subtotal = quotationData.subtotal || 0;
   const taxAmount = quotationData.taxAmount || 0;
@@ -167,7 +188,6 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   // Use quotationData.items directly - they already have the correct children array with pricing!
   // DO NOT map/simplify the children array - it has the correct structure from useQuotationSync
   const sourceTreatments = (quotationData.items || []).filter(item => !item.isHeader);
-  
   console.log('[QuotationTab] Items with children:', {
     itemsCount: sourceTreatments.length,
     sampleItem: sourceTreatments[0] ? {
@@ -181,13 +201,17 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   // Get settings from template blocks safely - MUST be before early returns
   const templateSettings = useMemo(() => {
     const blocks = selectedTemplate?.blocks;
-    if (!blocks || typeof blocks === 'string') return { showImages: true, showDetailedBreakdown: false, groupByRoom: false, layout: 'detailed' as 'simple' | 'detailed' };
+    if (!blocks || typeof blocks === 'string') return {
+      showImages: true,
+      showDetailedBreakdown: false,
+      groupByRoom: false,
+      layout: 'detailed' as 'simple' | 'detailed'
+    };
     const blocksArray = Array.isArray(blocks) ? blocks : [];
     const productsBlock = blocksArray.find((b: any) => b?.type === 'products') as any;
-    
+
     // Get layout from content, defaulting to 'detailed'
     const layout = (productsBlock?.content?.layout || 'detailed') as 'simple' | 'detailed';
-    
     return {
       showImages: productsBlock?.content?.showImages ?? true,
       showDetailedBreakdown: productsBlock?.content?.showDetailedBreakdown ?? true,
@@ -199,7 +223,6 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   // Function to update template settings
   const handleUpdateTemplateSettings = async (key: string, value: any) => {
     if (!selectedTemplate) return;
-    
     try {
       const blocks = Array.isArray(selectedTemplate.blocks) ? selectedTemplate.blocks : [];
       const updatedBlocks = blocks.map((block: any) => {
@@ -214,20 +237,18 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         }
         return block;
       });
-
-      const { error } = await supabase
-        .from('quote_templates')
-        .update({ blocks: updatedBlocks })
-        .eq('id', selectedTemplate.id);
-
+      const {
+        error
+      } = await supabase.from('quote_templates').update({
+        blocks: updatedBlocks
+      }).eq('id', selectedTemplate.id);
       if (error) throw error;
-      
+
       // Refresh templates to show updated settings
       await refetchTemplates();
-      
       toast({
         title: "Settings updated",
-        description: "Quote display settings have been updated",
+        description: "Quote display settings have been updated"
       });
     } catch (error) {
       console.error('Error updating template settings:', error);
@@ -253,21 +274,18 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
     // Get currency from business settings
     let currency = 'GBP';
     try {
-      const measurementUnits = businessSettings?.measurement_units 
-        ? JSON.parse(businessSettings.measurement_units) 
-        : null;
+      const measurementUnits = businessSettings?.measurement_units ? JSON.parse(businessSettings.measurement_units) : null;
       currency = measurementUnits?.currency || 'GBP';
     } catch {
       currency = 'GBP';
     }
-    
+
     // Calculate discount if applicable - check for discount_type, not just amount
     const hasDiscount = !!currentQuote?.discount_type;
     const discountAmount = currentQuote?.discount_amount || 0;
     const subtotalAfterDiscount = subtotal - discountAmount;
     const taxAmountAfterDiscount = subtotalAfterDiscount * taxRate;
     const totalAfterDiscount = subtotalAfterDiscount + taxAmountAfterDiscount;
-    
     console.log('📊 QuotationTab - projectData calculation:', {
       currentQuoteId: currentQuote?.id,
       hasDiscount,
@@ -288,11 +306,12 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
         hasDiscountObject: hasDiscount
       }
     });
-    
-    
     return {
       quoteId: currentQuote?.id,
-      project: { ...project, client },
+      project: {
+        ...project,
+        client
+      },
       client,
       businessSettings,
       items: sourceTreatments,
@@ -333,11 +352,12 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       });
       return;
     }
-
     setIsGeneratingPDF(true);
     try {
       const filename = `quote-${project?.job_number || 'QT'}.pdf`;
-      await generateQuotePDF(element, { filename });
+      await generateQuotePDF(element, {
+        filename
+      });
       toast({
         title: "Success",
         description: "PDF downloaded successfully"
@@ -365,7 +385,6 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       });
       return;
     }
-
     setIsGeneratingPDF(true);
     try {
       const blob = await generateQuotePDFBlob(element);
@@ -385,7 +404,11 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
   };
 
   // Email quote
-  const handleSendEmail = async (emailData: { to: string; subject: string; message: string }) => {
+  const handleSendEmail = async (emailData: {
+    to: string;
+    subject: string;
+    message: string;
+  }) => {
     const element = document.getElementById('quote-live-preview');
     if (!element) {
       toast({
@@ -395,50 +418,48 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       });
       return;
     }
-
     setIsSendingEmail(true);
     try {
       toast({
         title: "Generating PDF...",
         description: "Please wait while we prepare your quote"
       });
-
       const pdfBlob = await generateQuotePDFBlob(element);
       const timestamp = Date.now();
       const fileName = `quote-${project?.job_number || 'QT'}-${timestamp}.pdf`;
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
-
       const filePath = `${user.id}/quotes/${fileName}`;
-
       toast({
         title: "Uploading PDF...",
         description: "Preparing attachment"
       });
-
-      const { error: uploadError } = await supabase.storage
-        .from('email-attachments')
-        .upload(filePath, pdfBlob, {
-          contentType: 'application/pdf',
-          upsert: true,
-          metadata: {
-            user_id: user.id,
-            client_id: project?.client_id || '',
-            project_id: projectId
-          }
-        });
-
+      const {
+        error: uploadError
+      } = await supabase.storage.from('email-attachments').upload(filePath, pdfBlob, {
+        contentType: 'application/pdf',
+        upsert: true,
+        metadata: {
+          user_id: user.id,
+          client_id: project?.client_id || '',
+          project_id: projectId
+        }
+      });
       if (uploadError) {
         console.error('Upload error:', uploadError);
         throw new Error(`Failed to upload PDF: ${uploadError.message}`);
       }
-
       toast({
         title: "Sending Email...",
         description: "Delivering quote to recipient"
       });
-
-      const { error: emailError } = await supabase.functions.invoke('send-email', {
+      const {
+        error: emailError
+      } = await supabase.functions.invoke('send-email', {
         body: {
           to: emailData.to,
           subject: emailData.subject,
@@ -448,12 +469,10 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
           attachmentPaths: [filePath]
         }
       });
-
       if (emailError) {
         console.error('Email error:', emailError);
         throw new Error(`Failed to send email: ${emailError.message}`);
       }
-
       toast({
         title: "Email Sent Successfully",
         description: `Quote sent to ${emailData.to}`
@@ -470,23 +489,22 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       setIsSendingEmail(false);
     }
   };
-
   const getOrCreateQuoteId = async (): Promise<string | null> => {
     // If we already have a quoteId, use it
     if (quoteId) return quoteId;
-    
+
     // If there's an existing quote for this project, use the first one
     if (quoteVersions && quoteVersions.length > 0) {
       return quoteVersions[0].id;
     }
-    
+
     // Otherwise, create a new quote
     try {
       const newQuote = await createQuote.mutateAsync({
         project_id: projectId,
         client_id: project?.client_id,
         status: 'draft',
-        version: 1,
+        version: 1
       });
       return newQuote.id;
     } catch (error) {
@@ -499,50 +517,52 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       return null;
     }
   };
-
   const handleAddDiscount = async () => {
     const effectiveQuoteId = await getOrCreateQuoteId();
     if (!effectiveQuoteId) return;
-    
+
     // Toggle the inline discount panel
     setIsDiscountDialogOpen(!isDiscountDialogOpen);
-    
+
     // Force refetch of quote versions when opening discount panel
-    await queryClient.invalidateQueries({ queryKey: ["quote-versions", projectId] });
+    await queryClient.invalidateQueries({
+      queryKey: ["quote-versions", projectId]
+    });
   };
-
   const handleAddTerms = () => {
-    toast({ title: "Add Terms & Conditions", description: "Terms & Conditions functionality would be implemented here" });
+    toast({
+      title: "Add Terms & Conditions",
+      description: "Terms & Conditions functionality would be implemented here"
+    });
   };
-
   const handlePayment = () => {
     const paymentSection = document.getElementById('payment-section');
     if (paymentSection) {
-      paymentSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      paymentSection.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
       // Add a subtle highlight animation
       paymentSection.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
       setTimeout(() => {
         paymentSection.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
       }, 2000);
     } else {
-      toast({ 
-        title: "Payment Section", 
+      toast({
+        title: "Payment Section",
         description: "Please save the quote first to configure payment options",
         variant: "destructive"
       });
     }
   };
-
   if (!project) {
     return <div className="flex items-center justify-center py-12">
       <div className="text-muted-foreground">Loading project...</div>
     </div>;
   }
-
   if (templatesLoading || quotesLoading) {
     return <QuotationSkeleton />;
   }
-
   if (!activeTemplates || activeTemplates.length === 0) {
     return <div className="flex items-center justify-center py-12">
       <div className="text-center">
@@ -553,9 +573,7 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       </div>
     </div>;
   }
-
-  return (
-    <div className="space-y-2 sm:space-y-3 pb-4 overflow-x-hidden">
+  return <div className="space-y-2 sm:space-y-3 pb-4 overflow-x-hidden">
       {/* Header with Actions - Improved Organization */}
       <Card className="p-3 sm:p-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -564,72 +582,44 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
               <h2 className="text-base sm:text-lg font-semibold">Quotation</h2>
               
               {/* Template Selector */}
-              {activeTemplates && activeTemplates.length > 1 && (
-                <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+              {activeTemplates && activeTemplates.length > 1 && <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
                   <SelectTrigger className="w-[200px] h-8">
                     <FileCheck className="h-4 w-4 mr-2" />
                     <SelectValue placeholder="Select template" />
                   </SelectTrigger>
                   <SelectContent>
-                    {activeTemplates.map((template) => (
-                      <SelectItem key={template.id} value={template.id.toString()}>
+                    {activeTemplates.map(template => <SelectItem key={template.id} value={template.id.toString()}>
                         {template.name}
-                      </SelectItem>
-                    ))}
+                      </SelectItem>)}
                   </SelectContent>
-                </Select>
-              )}
+                </Select>}
             </div>
-            <p className="text-xs text-muted-foreground">Generate and send professional quotes or invoices</p>
+            
           </div>
 
           {/* Action Buttons - Better organized */}
           <div className="flex flex-wrap items-center gap-2">
 
             {/* Primary Action */}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleDownloadPDF}
-              disabled={isGeneratingPDF || !selectedTemplate}
-              className="h-9 px-4"
-            >
+            <Button size="sm" variant="outline" onClick={handleDownloadPDF} disabled={isGeneratingPDF || !selectedTemplate} className="h-9 px-4">
               <Download className="h-4 w-4 mr-2" />
               {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
             </Button>
 
             {/* Secondary Actions */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEmailModalOpen(true)}
-              disabled={isGeneratingPDF || !selectedTemplate}
-              className="h-9 px-4"
-            >
+            <Button variant="outline" size="sm" onClick={() => setIsEmailModalOpen(true)} disabled={isGeneratingPDF || !selectedTemplate} className="h-9 px-4">
               <Mail className="h-4 w-4 mr-2" />
               Email
             </Button>
 
             {/* Discount Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleAddDiscount}
-              disabled={createQuote.isPending}
-              className="h-9 px-4"
-            >
+            <Button variant="outline" size="sm" onClick={handleAddDiscount} disabled={createQuote.isPending} className="h-9 px-4">
               <Percent className="h-4 w-4 mr-2" />
               Discount
             </Button>
 
             {/* Payment Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePayment}
-              disabled={createQuote.isPending}
-              className="h-9 px-4"
-            >
+            <Button variant="outline" size="sm" onClick={handlePayment} disabled={createQuote.isPending} className="h-9 px-4">
               <CreditCard className="h-4 w-4 mr-2" />
               Payment
             </Button>
@@ -642,35 +632,22 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
           <span className="text-xs font-medium text-muted-foreground">Display Options:</span>
           
           <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <Switch
-              checked={templateSettings.groupByRoom}
-              onCheckedChange={(checked) => {
-                handleUpdateTemplateSettings('groupByRoom', checked);
-              }}
-            />
+            <Switch checked={templateSettings.groupByRoom} onCheckedChange={checked => {
+            handleUpdateTemplateSettings('groupByRoom', checked);
+          }} />
             <span className="text-sm">Group by room</span>
           </label>
           
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              const newLayout = templateSettings.layout === 'detailed' ? 'simple' : 'detailed';
-              handleUpdateTemplateSettings('layout', newLayout);
-            }}
-            className="h-8"
-          >
+          <Button variant="ghost" size="sm" onClick={() => {
+          const newLayout = templateSettings.layout === 'detailed' ? 'simple' : 'detailed';
+          handleUpdateTemplateSettings('layout', newLayout);
+        }} className="h-8">
             {templateSettings.layout === 'detailed' ? 'Simple View' : 'Detailed View'}
           </Button>
           
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              handleUpdateTemplateSettings('showImages', !templateSettings.showImages);
-            }}
-            className="h-8"
-          >
+          <Button variant="ghost" size="sm" onClick={() => {
+          handleUpdateTemplateSettings('showImages', !templateSettings.showImages);
+        }} className="h-8">
             <ImageIconLucide className="h-4 w-4 mr-2" />
             {templateSettings.showImages ? 'Hide Images' : 'Show Images'}
           </Button>
@@ -678,119 +655,56 @@ export const QuotationTab = ({ projectId, quoteId }: QuotationTabProps) => {
       </Card>
 
       {/* Inline Discount Panel */}
-      <InlineDiscountPanel
-        isOpen={isDiscountDialogOpen}
-        onClose={() => setIsDiscountDialogOpen(false)}
-        quoteId={quoteId || quoteVersions?.[0]?.id || ''}
-        projectId={projectId}
-        items={quotationData.items || []}
-        subtotal={subtotal}
-        taxRate={taxRate * 100}
-        currency={projectData.currency}
-        currentDiscount={currentQuote?.discount_type ? {
-          type: currentQuote.discount_type as 'percentage' | 'fixed',
-          value: currentQuote.discount_value || 0,
-          scope: currentQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items',
-          amount: currentQuote.discount_amount || 0,
-          selectedItems: (currentQuote.selected_discount_items as string[]) || undefined,
-        } : undefined}
-      />
+      <InlineDiscountPanel isOpen={isDiscountDialogOpen} onClose={() => setIsDiscountDialogOpen(false)} quoteId={quoteId || quoteVersions?.[0]?.id || ''} projectId={projectId} items={quotationData.items || []} subtotal={subtotal} taxRate={taxRate * 100} currency={projectData.currency} currentDiscount={currentQuote?.discount_type ? {
+      type: currentQuote.discount_type as 'percentage' | 'fixed',
+      value: currentQuote.discount_value || 0,
+      scope: currentQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items',
+      amount: currentQuote.discount_amount || 0,
+      selectedItems: currentQuote.selected_discount_items as string[] || undefined
+    } : undefined} />
 
       {/* Quotation Items Modal */}
-      <QuotationItemsModal
-        key={`quote-modal-${projectSummaries?.projectTotal}-${quotationData.items?.length}`}
-        isOpen={showQuotationItems}
-        onClose={() => setShowQuotationItems(false)}
-        quotationData={quotationData}
-        currency="GBP"
-        treatments={sourceTreatments}
-        rooms={rooms || []}
-        surfaces={surfaces || []}
-        markupPercentage={markupPercentage}
-      />
+      <QuotationItemsModal key={`quote-modal-${projectSummaries?.projectTotal}-${quotationData.items?.length}`} isOpen={showQuotationItems} onClose={() => setShowQuotationItems(false)} quotationData={quotationData} currency="GBP" treatments={sourceTreatments} rooms={rooms || []} surfaces={surfaces || []} markupPercentage={markupPercentage} />
 
       {/* Quote Preview */}
-      {isEmptyVersion ? (
-        <EmptyQuoteVersionState
-          currentVersion={currentVersion}
-          onAddRoom={() => {
-            const roomsTab = document.querySelector('[data-state="inactive"]') as HTMLElement;
-            if (roomsTab) roomsTab.click();
-          }}
-        />
-      ) : !selectedTemplate || !templateBlocks || templateBlocks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
+      {isEmptyVersion ? <EmptyQuoteVersionState currentVersion={currentVersion} onAddRoom={() => {
+      const roomsTab = document.querySelector('[data-state="inactive"]') as HTMLElement;
+      if (roomsTab) roomsTab.click();
+    }} /> : !selectedTemplate || !templateBlocks || templateBlocks.length === 0 ? <div className="flex flex-col items-center justify-center py-20 text-center">
           <FileText className="h-16 w-16 text-muted-foreground/30 mb-4" />
           <h3 className="text-lg font-semibold mb-2">No Quote Template Found</h3>
           <p className="text-sm text-muted-foreground max-w-md mb-4">
             You need to create a quote template before you can generate quotes. Go to Settings → Documents to create your first template.
           </p>
-          <Button
-            onClick={() => {
-              // Navigate to settings/documents tab
-              window.location.href = '/?settings=documents';
-            }}
-          >
+          <Button onClick={() => {
+        // Navigate to settings/documents tab
+        window.location.href = '/?settings=documents';
+      }}>
             <FileText className="h-4 w-4 mr-2" />
             Create Template
           </Button>
-        </div>
-      ) : (
-        <section className="mt-2 sm:mt-4" key={`preview-${selectedTemplate?.id}-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}-${projectSummaries?.projectTotal}`}>
+        </div> : <section className="mt-2 sm:mt-4" key={`preview-${selectedTemplate?.id}-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}-${projectSummaries?.projectTotal}`}>
           {/* A4 Background Container - Gray background to simulate paper on desk */}
           <div className="w-full flex justify-center items-start bg-gradient-to-br from-muted/30 to-muted/50 dark:from-background dark:to-card/20 px-4 py-2 rounded-lg border border-border/40">
             <div className="transform scale-[0.52] sm:scale-[0.72] md:scale-[0.85] lg:scale-[0.95] xl:scale-[1.0] origin-top shadow-2xl dark:shadow-xl mx-auto">
-              <div
-                id="quote-live-preview"
-                className="quote-preview-container bg-document text-document-foreground"
-                style={{
-                  width: '210mm',
-                  minHeight: '297mm',
-                  fontFamily: 'Arial, Helvetica, sans-serif',
-                  fontSize: '10pt',
-                  padding: '8mm',
-                  boxSizing: 'border-box',
-                  overflow: 'hidden'
-                }}
-              >
-                <LivePreview
-                  key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`}
-                  blocks={templateBlocks}
-                  projectData={projectData}
-                  isEditable={false}
-                  isPrintMode={true}
-                  layout={templateSettings.layout}
-                  showDetailedBreakdown={templateSettings.layout === 'detailed'}
-                  showImages={templateSettings.showImages}
-                  groupByRoom={templateSettings.groupByRoom}
-                />
+              <div id="quote-live-preview" className="quote-preview-container bg-document text-document-foreground" style={{
+            width: '210mm',
+            minHeight: '297mm',
+            fontFamily: 'Arial, Helvetica, sans-serif',
+            fontSize: '10pt',
+            padding: '8mm',
+            boxSizing: 'border-box',
+            overflow: 'hidden'
+          }}>
+                <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} />
               </div>
             </div>
           </div>
-        </section>
-      )}
+        </section>}
 
       {/* Email Modal */}
-      <EmailQuoteModal
-        isOpen={isEmailModalOpen}
-        onClose={() => setIsEmailModalOpen(false)}
-        project={project}
-        client={client}
-        onSend={handleSendEmail}
-        isSending={isSendingEmail}
-        quotePreview={
-          <LivePreview
-            blocks={templateBlocks}
-            projectData={projectData}
-            isEditable={false}
-            isPrintMode={true}
-            showDetailedBreakdown={templateSettings.showDetailedBreakdown}
-            showImages={templateSettings.showImages}
-          />
-        }
-      />
+      <EmailQuoteModal isOpen={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} project={project} client={client} onSend={handleSendEmail} isSending={isSendingEmail} quotePreview={<LivePreview blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} showDetailedBreakdown={templateSettings.showDetailedBreakdown} showImages={templateSettings.showImages} />} />
 
 
-    </div>
-  );
+    </div>;
 };
