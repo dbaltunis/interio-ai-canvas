@@ -34,7 +34,7 @@ const navItems = [
   { id: "inventory", label: "Product Library", icon: Package, permission: "view_inventory" },
   { id: "ordering-hub", label: "Ordering Hub", icon: ShoppingCart, badge: true, permission: "view_inventory" },
   { id: "calendar", label: "Calendar", icon: Calendar, permission: "view_calendar" },
-  { id: "clients", label: "CRM", icon: Users, permission: "view_clients" },
+  { id: "clients", label: "Clients", icon: Users, permission: "view_clients" },
   { id: "calculator", label: "Calculator", icon: Calculator },
   { id: "settings", label: "Settings", icon: Settings, permission: "view_settings" },
 ];
