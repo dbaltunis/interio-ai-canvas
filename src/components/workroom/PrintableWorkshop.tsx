@@ -1,5 +1,5 @@
 import React from "react";
-import { WorkshopInformation } from "./templates/WorkshopInformation";
+import { DocumentRenderer } from "./DocumentRenderer";
 import { WorkshopData } from "@/hooks/useWorkshopData";
 
 interface PrintableWorkshopProps {
@@ -7,10 +7,12 @@ interface PrintableWorkshopProps {
   orientation: 'portrait' | 'landscape';
   margins: number;
   projectId?: string;
+  template: string;
+  blocks?: any[];
 }
 
 export const PrintableWorkshop = React.forwardRef<HTMLDivElement, PrintableWorkshopProps>(
-  ({ data, orientation, margins, projectId }, ref) => {
+  ({ data, orientation, margins, projectId, template, blocks }, ref) => {
     const width = orientation === 'landscape' ? '297mm' : '210mm';
     const minHeight = orientation === 'landscape' ? '210mm' : '297mm';
     
@@ -33,7 +35,13 @@ export const PrintableWorkshop = React.forwardRef<HTMLDivElement, PrintableWorks
           position: 'relative'
         }}
       >
-        <WorkshopInformation data={data} orientation={orientation} projectId={projectId} />
+        <DocumentRenderer 
+          template={template} 
+          data={data}
+          blocks={blocks}
+          projectId={projectId}
+          orientation={orientation}
+        />
       </div>
     );
   }
