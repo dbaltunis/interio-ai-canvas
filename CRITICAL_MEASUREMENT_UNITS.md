@@ -2,6 +2,37 @@
 
 **DO NOT MODIFY THIS FILE - IT DOCUMENTS CRITICAL SYSTEM BEHAVIOR**
 
+## System Settings - Never Hardcode
+
+### Currency Symbol
+- **Source**: User settings via `useCurrency()` hook
+- **Format**: Uses `getCurrencySymbol(currency)` utility
+- **Usage**: All pricing calculations MUST use currency from settings
+- **Fallback**: `$` only as emergency fallback
+
+```typescript
+// ✅ CORRECT: Get currency from settings
+import { useCurrency } from "@/hooks/useCurrency";
+import { getCurrencySymbol } from "@/utils/currency";
+
+const currency = useCurrency();
+const currencySymbol = getCurrencySymbol(currency);
+```
+
+```typescript
+// ❌ WRONG: Hardcoded currency
+const cost = `£${price.toFixed(2)}`; // Don't hardcode £, $, etc.
+```
+
+### Measurement Units
+- **Source**: Business settings via `useBusinessSettings()` hook
+- **Path**: `measurement_units` JSON field
+- **Units**: Length (mm/cm/m/inches/feet), Area (sq_cm/sq_m), Fabric (cm/yards)
+
+### Default Values (Template/Item Specific)
+- **Fullness**: Should come from template or 2.5 as fallback
+- **Fabric Width**: Should come from inventory item or 137cm as fallback
+
 ## Database Storage Units - SOURCE OF TRUTH
 
 All measurements stored in `measurements_details` field use **MILLIMETERS (MM)** as the base unit:
@@ -52,13 +83,14 @@ const sqm = widthM * dropM; // 1.0 sqm
 - **Input**: railWidth in MM, fabricWidth in CM
 - **Formula**: `panels = Math.ceil((railWidth * fullness) / (fabricWidth * 10))`
 
-## Files Using These Conversions
+## Files Using These Standards
 
-1. **src/utils/pricing/pricingStrategies.ts** - Core pricing calculations
-2. **src/components/measurements/fabric-pricing/AdaptiveFabricPricingDisplay.tsx** - Display calculations
-3. **src/components/job-creation/WindowSummaryCard.tsx** - Cost summary breakdown
-4. **src/hooks/pricing/useFabricPricing.ts** - Fabric pricing hook
-5. **src/components/job-creation/treatment-pricing/fabric-calculation/optionCostCalculator.ts** - Option pricing
+1. **src/utils/pricing/pricingStrategies.ts** - Core pricing calculations (currency from context)
+2. **src/hooks/pricing/useCurrencyAwarePricing.ts** - Provides currency-aware calculation functions
+3. **src/components/measurements/fabric-pricing/AdaptiveFabricPricingDisplay.tsx** - Display calculations
+4. **src/components/job-creation/WindowSummaryCard.tsx** - Cost summary breakdown
+5. **src/hooks/pricing/useFabricPricing.ts** - Fabric pricing hook
+6. **src/components/job-creation/treatment-pricing/fabric-calculation/optionCostCalculator.ts** - Option pricing
 
 ## Common Errors to AVOID
 
@@ -90,3 +122,14 @@ When input is **1000mm × 1000mm**:
 
 **Last verified:** 2025-11-23
 **Issue tickets:** Inconsistent pricing for fascia_type (NZ$65 vs NZ$160), sqm showing 101.60 instead of 1.0
+
+## Usage Example
+
+```typescript
+// Use the currency-aware hook for all pricing calculations
+import { useCurrencyAwarePricing } from "@/hooks/pricing/useCurrencyAwarePricing";
+
+const { currencySymbol, calculateOptionCost } = useCurrencyAwarePricing();
+const result = calculateOptionCost(option, formData);
+// result.calculation will have correct currency symbol from settings
+```
