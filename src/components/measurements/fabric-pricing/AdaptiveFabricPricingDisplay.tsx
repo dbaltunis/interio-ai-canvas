@@ -826,7 +826,7 @@ export const AdaptiveFabricPricingDisplay = ({
                                 Leftover Fabric
                               </div>
                               <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">
-                                This order includes <strong>{formatMeasurement(leftoverHeightCm)} × {requiredWidthM.toFixed(2)}m</strong> of extra fabric. You'll pay for it now, but it's <strong>free to use in future projects</strong>.
+                                This order includes <strong>{formatFabricWidth(leftoverHeightCm)} × {formatFabricWidth(requiredWidthM * 100)}</strong> of extra fabric. You'll pay for it now, but it's <strong>free to use in future projects</strong>.
                               </p>
                             </div>
                           </div>
