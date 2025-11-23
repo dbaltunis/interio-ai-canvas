@@ -1509,8 +1509,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     </CardContent>
                   </Card>
 
-                  {/* Bracket Deduction */}
-                  <div className="space-y-4">
+                  {/* Bracket Deduction - HIDDEN: Not working yet */}
+                  {/* <div className="space-y-4">
                     <div className="flex items-center gap-2">
                       <h4 className="font-medium">Bracket Deduction</h4>
                       <Tooltip>
@@ -1541,10 +1541,10 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     </div>
                   </div>
 
-                  <Separator />
+                  <Separator /> */}
 
-                  {/* Size Constraints */}
-                  <div className="space-y-4">
+                  {/* Size Constraints - HIDDEN: Not working yet */}
+                  {/* <div className="space-y-4">
                     <div className="flex items-center gap-2">
                       <h4 className="font-medium">Size Constraints</h4>
                       <Tooltip>
@@ -1616,7 +1616,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     )}
                   </div>
 
-                  <Separator />
+                  <Separator /> */}
 
                   {/* Stack Allowance (for Roman blinds, etc.) */}
                   <div className="space-y-4">
@@ -1685,94 +1685,96 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
 
                   <Separator />
 
-                  {/* Hem Allowances for Blinds */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium">Hem Allowances</h4>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Fabric allowances for hems in centimeters</p>
-                        </TooltipContent>
-                      </Tooltip>
+                  {/* Hem Allowances - Only for Roman Blinds (curtains have their own hem section) */}
+                  {formData.curtain_type === 'roman_blind' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium">Hem Allowances</h4>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Fabric allowances for hems in centimeters</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <Label htmlFor="blind_header_hem_cm">Header Hem (cm)</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="blind_header_hem_cm"
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              value={formData.blind_header_hem_cm || ""}
+                              onChange={(e) => handleInputChange("blind_header_hem_cm", e.target.value)}
+                              placeholder="0"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleInputChange("blind_header_hem_cm", "0")}
+                              className="px-3"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="blind_bottom_hem_cm">Bottom Hem (cm)</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="blind_bottom_hem_cm"
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              value={formData.blind_bottom_hem_cm || ""}
+                              onChange={(e) => handleInputChange("blind_bottom_hem_cm", e.target.value)}
+                              placeholder="0"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleInputChange("blind_bottom_hem_cm", "0")}
+                              className="px-3"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="blind_side_hem_cm">Side Hem per Side (cm)</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="blind_side_hem_cm"
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              value={formData.blind_side_hem_cm || ""}
+                              onChange={(e) => handleInputChange("blind_side_hem_cm", e.target.value)}
+                              placeholder="0"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleInputChange("blind_side_hem_cm", "0")}
+                              className="px-3"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        These values are added to the blind dimensions for fabric calculation. Click X to remove a hem allowance.
+                      </p>
                     </div>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div>
-                        <Label htmlFor="blind_header_hem_cm">Header Hem (cm)</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id="blind_header_hem_cm"
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            value={formData.blind_header_hem_cm || ""}
-                            onChange={(e) => handleInputChange("blind_header_hem_cm", e.target.value)}
-                            placeholder="0"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleInputChange("blind_header_hem_cm", "0")}
-                            className="px-3"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="blind_bottom_hem_cm">Bottom Hem (cm)</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id="blind_bottom_hem_cm"
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            value={formData.blind_bottom_hem_cm || ""}
-                            onChange={(e) => handleInputChange("blind_bottom_hem_cm", e.target.value)}
-                            placeholder="0"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleInputChange("blind_bottom_hem_cm", "0")}
-                            className="px-3"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="blind_side_hem_cm">Side Hem per Side (cm)</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id="blind_side_hem_cm"
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            value={formData.blind_side_hem_cm || ""}
-                            onChange={(e) => handleInputChange("blind_side_hem_cm", e.target.value)}
-                            placeholder="0"
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleInputChange("blind_side_hem_cm", "0")}
-                            className="px-3"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      These values are added to the blind dimensions for fabric calculation. Click X to remove a hem allowance.
-                    </p>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             )}
