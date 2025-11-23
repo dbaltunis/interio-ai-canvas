@@ -115,9 +115,13 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
       console.log('[CLIENT] Quote created, navigating to project');
 
       // Navigate to the projects tab with the new job opened
-      navigate(`/?tab=projects&jobId=${newProject.id}`);
+      const targetUrl = `/?tab=projects&jobId=${newProject.id}`;
+      console.log('[CLIENT] Navigating to:', targetUrl);
+      navigate(targetUrl);
+      console.log('[CLIENT] Navigate called, checking if onTabChange exists:', !!onTabChange);
       
       if (onTabChange) {
+        console.log('[CLIENT] Calling onTabChange with projects');
         onTabChange('projects');
       }
 

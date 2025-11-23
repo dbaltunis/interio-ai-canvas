@@ -23,6 +23,9 @@ const JobsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedJobId = searchParams.get('jobId');
   const createClientParam = searchParams.get('createClient');
+  
+  console.log('[JOBS] JobsPage render - selectedJobId:', selectedJobId, 'createClientParam:', createClientParam);
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showHelp, setShowHelp] = useState(false);
@@ -109,24 +112,6 @@ const JobsPage = () => {
       });
     }
   };
-
-  // Handle automatic project creation from client page
-  useEffect(() => {
-    if (createClientParam && canCreateJobs && !isAutoCreating) {
-      console.log('[JOBS] Creating project for client:', createClientParam);
-      setIsAutoCreating(true);
-      
-      handleNewJob(createClientParam).finally(() => {
-        console.log('[JOBS] Project created, cleaning up URL');
-        setSearchParams(prev => {
-          const newParams = new URLSearchParams(prev);
-          newParams.delete('createClient');
-          return newParams;
-        });
-        setIsAutoCreating(false);
-      });
-    }
-  }, [createClientParam, canCreateJobs]);
 
   const handleJobSelect = async (quote: any) => {
     // Check if quote already has a project_id
