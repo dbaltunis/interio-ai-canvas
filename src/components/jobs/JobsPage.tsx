@@ -28,6 +28,7 @@ const JobsPage = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [showHelp, setShowHelp] = useState(false);
   const [showColumnCustomization, setShowColumnCustomization] = useState(false);
+  const [isAutoCreating, setIsAutoCreating] = useState(false);
   
   const { 
     columns, 
@@ -51,6 +52,7 @@ const JobsPage = () => {
   // Debug logging for component lifecycle
   useEffect(() => {
     console.warn('[JOBS] JobsPage MOUNTED');
+    console.warn('[JOBS] URL Params:', { clientIdParam, actionParam, selectedJobId });
     return () => {
       console.warn('[JOBS] JobsPage UNMOUNTING - selectedJobId was:', selectedJobId);
     };
@@ -58,16 +60,33 @@ const JobsPage = () => {
 
   // Handle automatic project creation from client page
   useEffect(() => {
-    if (actionParam === 'create' && clientIdParam && canCreateJobs) {
+    console.warn('[JOBS] Auto-create effect running:', { 
+      actionParam, 
+      clientIdParam, 
+      canCreateJobs, 
+      isAutoCreating 
+    });
+    
+    if (actionParam === 'create' && clientIdParam && canCreateJobs && !isAutoCreating) {
       console.log('[JOBS] Auto-creating project for client:', clientIdParam);
-      handleNewJob(clientIdParam);
-      // Clean up URL params
-      setSearchParams(prev => {
-        const newParams = new URLSearchParams(prev);
-        newParams.delete('action');
-        newParams.delete('client');
-        return newParams;
-      });
+      setIsAutoCreating(true);
+      
+      const createProjectForClient = async () => {
+        try {
+          await handleNewJob(clientIdParam);
+        } finally {
+          // Clean up URL params after creation
+          setSearchParams(prev => {
+            const newParams = new URLSearchParams(prev);
+            newParams.delete('action');
+            newParams.delete('client');
+            return newParams;
+          });
+          setIsAutoCreating(false);
+        }
+      };
+      
+      createProjectForClient();
     }
   }, [actionParam, clientIdParam, canCreateJobs]);
 
@@ -223,6 +242,21 @@ const JobsPage = () => {
   // Direct rendering - no intermediate pages
   if (selectedJobId) {
     return <JobDetailPage jobId={selectedJobId} onBack={handleBackFromJob} />;
+  }
+
+  // Show loading state when auto-creating project
+  if (isAutoCreating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center animate-fade-in">
+        <Card className="max-w-md">
+          <CardContent className="text-center p-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Creating Project</h2>
+            <p className="text-muted-foreground">Setting up your new project with client information...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
