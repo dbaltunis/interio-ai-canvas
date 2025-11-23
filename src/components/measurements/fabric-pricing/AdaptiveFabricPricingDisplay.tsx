@@ -60,9 +60,10 @@ export const AdaptiveFabricPricingDisplay = ({
     return `${symbol}${price.toFixed(2)}`;
   };
 
-  // Format measurement from cm (internal) to user's preferred unit
-  const formatMeasurement = (valueInCm: number) => {
-    const converted = convertLength(valueInCm, 'cm', units.length);
+  // CRITICAL: Format measurement - measurements are stored in MM internally
+  const formatMeasurement = (valueInMm: number) => {
+    // First convert from mm to user's preferred unit
+    const converted = convertLength(valueInMm, 'mm', units.length);
     return `${converted.toFixed(1)}${getLengthUnitLabel()}`;
   };
 
@@ -83,22 +84,45 @@ export const AdaptiveFabricPricingDisplay = ({
                         treatmentCategory === 'roman_blinds' ||
                         template?.fullness_ratio > 1;
 
-  // Calculate grid price if applicable
+  // CRITICAL: Calculate grid price if applicable
+  // measurements.rail_width and measurements.drop are stored in MM
   let gridPrice = 0;
-  let gridWidth = 0;
-  let gridDrop = 0;
+  let gridWidthMm = 0;
+  let gridDropMm = 0;
   if (usesPricingGrid && measurements.rail_width && measurements.drop) {
-    gridWidth = parseFloat(measurements.rail_width);
-    gridDrop = parseFloat(measurements.drop);
-    gridPrice = getPriceFromGrid(template.pricing_grid_data, gridWidth, gridDrop);
+    // Store as mm for proper conversion later
+    gridWidthMm = parseFloat(measurements.rail_width);
+    gridDropMm = parseFloat(measurements.drop);
+    // getPriceFromGrid expects CM, so convert mm to cm
+    const gridWidthCm = gridWidthMm / 10;
+    const gridDropCm = gridDropMm / 10;
+    gridPrice = getPriceFromGrid(template.pricing_grid_data, gridWidthCm, gridDropCm);
+    console.log('📊 GRID PRICE CALCULATION:', {
+      railWidthMm: gridWidthMm,
+      dropMm: gridDropMm,
+      gridWidthCm,
+      gridDropCm,
+      gridPrice
+    });
   }
 
-  // Calculate square meters for fabric if sold per sqm
+  // CRITICAL: Calculate square meters for fabric if sold per sqm
+  // measurements.rail_width and measurements.drop are stored in MM
   const calculateSquareMeters = () => {
     if (!measurements.rail_width || !measurements.drop) return 0;
-    const widthM = parseFloat(measurements.rail_width) / 100;
-    const heightM = parseFloat(measurements.drop) / 100;
-    return widthM * heightM;
+    // Convert mm to meters: divide by 1000, not 100
+    const widthM = parseFloat(measurements.rail_width) / 1000;
+    const heightM = parseFloat(measurements.drop) / 1000;
+    const sqm = widthM * heightM;
+    console.log('📐 SQUARE METER CALCULATION:', {
+      railWidthMm: parseFloat(measurements.rail_width),
+      dropMm: parseFloat(measurements.drop),
+      widthM,
+      heightM,
+      sqm,
+      formula: `${widthM.toFixed(3)}m × ${heightM.toFixed(3)}m = ${sqm.toFixed(3)} sqm`
+    });
+    return sqm;
   };
 
   const renderPricingGridDisplay = () => (
@@ -148,11 +172,11 @@ export const AdaptiveFabricPricingDisplay = ({
         <div className="text-xs space-y-1 text-muted-foreground">
           <div className="flex justify-between">
             <span>{measurementLabels.width}:</span>
-            <span className="font-medium text-foreground">{formatMeasurement(gridWidth)}</span>
+            <span className="font-medium text-foreground">{formatMeasurement(gridWidthMm)}</span>
           </div>
           <div className="flex justify-between">
             <span>{measurementLabels.height}:</span>
-            <span className="font-medium text-foreground">{formatMeasurement(gridDrop)}</span>
+            <span className="font-medium text-foreground">{formatMeasurement(gridDropMm)}</span>
           </div>
           <div className="flex justify-between border-t border-border pt-2 mt-2">
             <span className="font-medium">Grid Price:</span>
@@ -168,16 +192,20 @@ export const AdaptiveFabricPricingDisplay = ({
           <div className="text-xs space-y-1 text-muted-foreground">
             <div className="flex justify-between">
               <span>Area Required:</span>
-              <span className="font-medium text-foreground">{calculateSquareMeters().toFixed(2)} sqm</span>
+              <span className="font-medium text-foreground">{calculateSquareMeters().toFixed(3)} sqm</span>
             </div>
             <div className="flex justify-between">
-              <span>Fabric Cost:</span>
+              <span>Price per sqm:</span>
+              <span className="font-medium text-foreground">{formatPrice(fabricToUse.price_per_meter || 0)}</span>
+            </div>
+            <div className="flex justify-between border-t border-border pt-1 mt-1">
+              <span className="font-medium">Fabric Cost:</span>
               <span className="font-medium text-foreground">
                 {formatPrice(calculateSquareMeters() * (fabricToUse.price_per_meter || 0))}
               </span>
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              Calculation: {calculateSquareMeters().toFixed(2)} sqm × {formatPrice(fabricToUse.price_per_meter || 0)}/sqm
+              Area: {formatMeasurement(parseFloat(measurements.rail_width) || 0)} × {formatMeasurement(parseFloat(measurements.drop) || 0)}
             </div>
           </div>
         </div>
@@ -233,14 +261,21 @@ export const AdaptiveFabricPricingDisplay = ({
             <span>{measurementLabels.height}:</span>
             <span className="font-medium text-foreground">{formatMeasurement(parseFloat(measurements.drop) || 0)}</span>
           </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            Area: {formatMeasurement(parseFloat(measurements.rail_width) || 0)} × {formatMeasurement(parseFloat(measurements.drop) || 0)}
+          </div>
           {isFabricPerSqm ? (
             <>
               <div className="flex justify-between border-t border-border pt-1 mt-1">
                 <span>Area Required:</span>
-                <span className="font-medium text-foreground">{calculateSquareMeters().toFixed(2)} sqm</span>
+                <span className="font-medium text-foreground">{calculateSquareMeters().toFixed(3)} sqm</span>
               </div>
               <div className="flex justify-between">
-                <span>Fabric Cost:</span>
+                <span>Price per sqm:</span>
+                <span className="font-medium text-foreground">{formatPrice(fabricToUse.price_per_meter || 0)}</span>
+              </div>
+              <div className="flex justify-between border-t border-border pt-1 mt-1">
+                <span className="font-medium">Fabric Cost:</span>
                 <span className="font-medium text-foreground">
                   {formatPrice(calculateSquareMeters() * (fabricToUse.price_per_meter || 0))}
                 </span>
@@ -251,13 +286,17 @@ export const AdaptiveFabricPricingDisplay = ({
               <div className="flex justify-between border-t border-border pt-1 mt-1">
                 <span>Linear Meters:</span>
                 <span className="font-medium text-foreground">
-                  {((parseFloat(measurements.drop || 0) / 100) * 1.05).toFixed(2)}m
+                  {((parseFloat(measurements.drop || 0) / 1000) * 1.05).toFixed(3)}m
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Fabric Cost:</span>
+                <span>Price per meter:</span>
+                <span className="font-medium text-foreground">{formatPrice(fabricToUse.price_per_meter || 0)}</span>
+              </div>
+              <div className="flex justify-between border-t border-border pt-1 mt-1">
+                <span className="font-medium">Fabric Cost:</span>
                 <span className="font-medium text-foreground">
-                  {formatPrice(((parseFloat(measurements.drop || 0) / 100) * 1.05) * (fabricToUse.price_per_meter || 0))}
+                  {formatPrice(((parseFloat(measurements.drop || 0) / 1000) * 1.05) * (fabricToUse.price_per_meter || 0))}
                 </span>
               </div>
             </>
@@ -352,7 +391,7 @@ export const AdaptiveFabricPricingDisplay = ({
                 <span className="text-foreground">{formatPrice(fabricCalculation.totalCost || 0)}</span>
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                Calculation: {fabricCalculation.sqm.toFixed(2)} sqm × {formatPrice(fabricCalculation.pricePerMeter || 0)}/sqm
+                Area: {formatMeasurement(parseFloat(measurements.rail_width) || 0)} × {formatMeasurement(parseFloat(measurements.drop) || 0)}
               </div>
             </div>
           </div>

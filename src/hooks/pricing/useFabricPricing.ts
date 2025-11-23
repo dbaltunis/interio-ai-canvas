@@ -39,9 +39,14 @@ export const useFabricPricing = (params: FabricPricingParams): FabricPricingResu
     if (selectedFabricItem) {
       // PRIORITY 1: Check if fabric has pricing grid data already resolved
       // (Grid should be resolved and attached when fabric is selected)
+      // CRITICAL: measurements are in MM, getPriceFromGrid expects CM
       if (selectedFabricItem.pricing_grid_data && formData.rail_width && formData.drop) {
-        const widthCm = parseFloat(formData.rail_width) || 0;
-        const dropCm = parseFloat(formData.drop) || 0;
+        const widthMm = parseFloat(formData.rail_width) || 0;
+        const dropMm = parseFloat(formData.drop) || 0;
+        
+        // Convert MM to CM for grid lookup
+        const widthCm = widthMm / 10;
+        const dropCm = dropMm / 10;
         
         const gridPrice = getPriceFromGrid(selectedFabricItem.pricing_grid_data, widthCm, dropCm);
         
@@ -51,7 +56,7 @@ export const useFabricPricing = (params: FabricPricingParams): FabricPricingResu
           console.log('ℹ️ Fabric has pricing grid attached:', {
             grid: selectedFabricItem.resolved_grid_name,
             gridCode: selectedFabricItem.resolved_grid_code,
-            dimensions: `${widthCm}cm × ${dropCm}cm`,
+            dimensions: `${widthMm}mm (${widthCm}cm) × ${dropMm}mm (${dropCm}cm)`,
             gridPrice: `${gridPrice} (manufacturing cost)`
           });
           usePricingGrid = true;
