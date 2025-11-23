@@ -220,25 +220,25 @@ export function WindowSummaryCard({
         fabricDescription = `${fabricQuantity.toFixed(2)}m • ${squareMeters.toFixed(2)} m²`;
       }
     } else if (usePricingGrid) {
-      // CRITICAL FIX: Calculate sqm from actual dimensions in MM
-      const widthMm = parseFloat(summary.measurements_details?.rail_width) || 0;
-      const dropMm = parseFloat(summary.measurements_details?.drop) || 0;
-      // Convert mm to m: divide by 1000, then multiply for area
-      const widthM = widthMm / 1000;
-      const dropM = dropMm / 1000;
+      // CRITICAL FIX: Measurements in database are stored in CM, not MM!
+      const widthCm = parseFloat(summary.measurements_details?.rail_width) || 0;
+      const dropCm = parseFloat(summary.measurements_details?.drop) || 0;
+      // Convert cm to m: divide by 100
+      const widthM = widthCm / 100;
+      const dropM = dropCm / 100;
       const sqm = widthM * dropM;
       
       console.log('📐 SQM CALCULATION FIXED:', {
-        widthMm,
-        dropMm,
+        widthCm,
+        dropCm,
         widthM,
         dropM,
         sqm,
         displayFabricCost,
-        calculation: `${widthM.toFixed(3)}m × ${dropM.toFixed(3)}m = ${sqm.toFixed(4)} sqm`
+        calculation: `${widthCm}cm (${widthM}m) × ${dropCm}cm (${dropM}m) = ${sqm.toFixed(4)} sqm`
       });
       
-      // For pricing grid, show grid price directly (no unit breakdown)
+      // For pricing grid, show grid price directly (no formula breakdown)
       fabricQuantity = sqm;
       fabricUnit = 'sqm';
       fabricUnitPrice = displayFabricCost / (sqm || 1); // Avoid division by zero
