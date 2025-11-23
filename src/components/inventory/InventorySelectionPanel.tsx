@@ -376,8 +376,9 @@ export const InventorySelectionPanel = ({
                 <div className="flex flex-col">
                   <span className="text-xs font-semibold">
                     {(() => {
-                      // Check if using pricing grid
-                      if (item.pricing_grid_data && Array.isArray(item.pricing_grid_data) && item.pricing_grid_data.length > 0) {
+                      // Check if using pricing grid (check both price_group and pricing_grid_data)
+                      const hasGrid = item.price_group || (item.pricing_grid_data && Array.isArray(item.pricing_grid_data) && item.pricing_grid_data.length > 0);
+                      if (hasGrid && item.pricing_grid_data && Array.isArray(item.pricing_grid_data) && item.pricing_grid_data.length > 0) {
                         const minPrice = Math.min(...item.pricing_grid_data.map((row: any) => parseFloat(row.price || 0)));
                         return `from $${minPrice.toFixed(2)}`;
                       }
@@ -386,7 +387,7 @@ export const InventorySelectionPanel = ({
                     {item.unit && <span className="text-[9px] text-muted-foreground">/{item.unit}</span>}
                   </span>
                   <span className="text-[8px] text-muted-foreground leading-none">
-                    {item.pricing_grid_data && Array.isArray(item.pricing_grid_data) && item.pricing_grid_data.length > 0 
+                    {item.price_group || (item.pricing_grid_data && Array.isArray(item.pricing_grid_data) && item.pricing_grid_data.length > 0)
                       ? 'Grid pricing' 
                       : item.pricing_method || 'Fixed price'}
                   </span>
