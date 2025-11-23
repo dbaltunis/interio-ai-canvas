@@ -13,11 +13,11 @@
 
 @layer base {
   :root {
-    /* Original Brand Colors - InterioApp */
-    --brand-dark-teal: 200 26% 34%; /* #415e6b - Main brand color */
-    --brand-sage: 192 24% 67%; /* #9bb6bc - Secondary brand color */
-    --brand-terracotta: 17 49% 57%; /* #C67B5C - CTA accent */
-    --brand-burgundy: 345 39% 33%; /* #733341 - Special states */
+    /* Original Brand Colors - InterioApp (Exact HSL conversions) */
+    --brand-dark-teal: 200 24% 34%; /* #415e6b - Main brand color (exact) */
+    --brand-sage: 191 19% 67%; /* #9bb6bc - Secondary brand color (exact) */
+    --brand-terracotta: 18 49% 57%; /* #C67B5C - CTA accent (exact) */
+    --brand-burgundy: 347 39% 33%; /* #733341 - Special states (exact) */
     
     /* Supporting Colors */
     --company-tertiary: 142 76% 36%; /* Success green */
@@ -96,13 +96,13 @@
     --card-foreground: 0 0% 98%;
     --popover: 240 3% 18%;
     --popover-foreground: 0 0% 98%;
-    --primary: 200 26% 40%; /* Brand teal adjusted for dark mode */
+    --primary: 200 24% 40%; /* Brand teal adjusted for dark mode */
     --primary-foreground: 0 0% 100%;
-    --secondary: 192 24% 55%; /* Brand sage adjusted for dark mode */
+    --secondary: 191 19% 60%; /* Brand sage adjusted for dark mode */
     --secondary-foreground: 0 0% 98%;
     --muted: 240 3% 23%;
     --muted-foreground: 0 0% 70%;
-    --accent: 17 49% 50%; /* Brand terracotta adjusted for dark mode */
+    --accent: 18 49% 55%; /* Brand terracotta adjusted for dark mode */
     --accent-foreground: 0 0% 98%;
     --destructive: 0 70% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -110,7 +110,7 @@
     --warning-foreground: 0 0% 100%;
     --border: 240 3% 28%; /* #48484a - visible but subtle */
     --input: 240 3% 23%;
-    --ring: 200 26% 40%;
+    --ring: 200 24% 40%;
     
     --chart-1: 218 70% 50%;
     --chart-2: 160 60% 45%;
