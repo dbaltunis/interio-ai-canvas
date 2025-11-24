@@ -30,7 +30,7 @@ import { useEyeletRings } from "@/hooks/useEyeletRings";
 import { usePricingGrids } from "@/hooks/usePricingGrids";
 import { calculateLengthPrice, type LengthUnit, type PricingUnit } from "@/utils/unitConversions";
 import { ColorSelector } from "./ColorSelector";
-import { useInventoryCategories } from '@/hooks/useInventoryCategories';
+// Category system now uses simple string-based categories
 
 const STORAGE_KEY = "inventory_draft_data";
 
@@ -55,7 +55,6 @@ export const UnifiedInventoryDialog = ({
 }: UnifiedInventoryDialogProps) => {
   const [activeTab, setActiveTab] = useState("basic");
   const [trackInventory, setTrackInventory] = useState(mode === "edit" ? (item?.quantity > 0) : false);
-  const { hierarchicalCategories, isLoading: categoriesLoading } = useInventoryCategories();
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
   const [uploadError, setUploadError] = useState<string>('');
@@ -177,9 +176,36 @@ export const UnifiedInventoryDialog = ({
   
   const [eyeletRings, setEyeletRings] = useState<EyeletRing[]>([]);
 
+  // Main categories
+  const MAIN_CATEGORIES = [
+    { value: "fabric", label: "Fabrics" },
+    { value: "material", label: "Blind Materials" },
+    { value: "hardware", label: "Hardware" },
+    { value: "wallcovering", label: "Wallcoverings" }
+  ];
+
+  // Subcategories for each main category
+  const SUBCATEGORIES: Record<string, { value: string; label: string }[]> = {
+    fabric: [
+      { value: "curtain_fabric", label: "Curtain & Roman Fabrics" },
+      { value: "roller_fabric", label: "Roller Blind Fabrics" },
+      { value: "cellular", label: "Cellular/Honeycomb" },
+      { value: "vertical_fabric", label: "Vertical Blind Fabrics" },
+      { value: "lining_fabric", label: "Lining Fabrics" },
+      { value: "upholstery_fabric", label: "Upholstery Fabrics" },
+      { value: "fabric", label: "Other Fabrics" }
+    ],
+    material: [
+      { value: "venetian", label: "Venetian Blinds" },
+      { value: "vertical", label: "Vertical Blinds" },
+      { value: "cellular", label: "Cellular/Honeycomb" }
+    ],
+    hardware: [],
+    wallcovering: []
+  };
+
   // Get subcategories for selected category
-  const selectedCategory = hierarchicalCategories.find(cat => cat.id === formData.category);
-  const subcategories = selectedCategory?.children || [];
+  const subcategories = SUBCATEGORIES[formData.category] || [];
 
   // Load draft data on mount for create mode
   useEffect(() => {
@@ -768,24 +794,18 @@ export const UnifiedInventoryDialog = ({
                 <Select 
                   value={formData.category} 
                   onValueChange={(value) => setFormData({ ...formData, category: value, subcategory: "" })}
-                  disabled={categoriesLoading}
                 >
                   <SelectTrigger className="bg-background">
-                    <SelectValue placeholder={categoriesLoading ? "Loading categories..." : "Select main category"} />
+                    <SelectValue placeholder="Select main category" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border border-border" position="popper" sideOffset={4}>
-                    {hierarchicalCategories.map(category => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
+                    {MAIN_CATEGORIES.map(category => (
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {hierarchicalCategories.length === 0 && !categoriesLoading && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    No categories yet. Create categories in Library → Categories.
-                  </p>
-                )}
               </div>
 
               {formData.category && subcategories.length > 0 && (
@@ -800,8 +820,8 @@ export const UnifiedInventoryDialog = ({
                     </SelectTrigger>
                     <SelectContent className="bg-popover border border-border max-h-[300px]" position="popper" sideOffset={4}>
                       {subcategories.map(subcat => (
-                        <SelectItem key={subcat.id} value={subcat.id}>
-                          {subcat.name}
+                        <SelectItem key={subcat.value} value={subcat.value}>
+                          {subcat.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
