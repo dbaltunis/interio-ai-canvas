@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Filter, Grid, List, Package, Home, Minus, Palette, Wallpaper, Lock, QrCode } from "lucide-react";
+import { Search, Plus, Filter, Grid, List, Package, Home, Minus, Palette, Wallpaper, Lock, QrCode, Upload } from "lucide-react";
 import { QRCodeScanner } from "./QRCodeScanner";
 import { QRCodeQuickActions } from "./QRCodeQuickActions";
 import { EditInventoryDialog } from "./EditInventoryDialog";
@@ -219,35 +219,37 @@ export const ModernInventoryDashboard = () => {
                   <List className="h-4 w-4" />
                 </Button>
               </div>
-
-              {/* Primary Actions */}
-              <Button
-                variant="outline"
-                onClick={() => setShowScanner(true)}
-              >
-                <QrCode className="h-4 w-4 mr-2" />
-                Scan
-              </Button>
-
-              <AddInventoryDialog
-                trigger={
-                  <Button variant="default">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add
-                  </Button>
-                }
-                onSuccess={refetch}
-              />
-
-              <Button 
-                variant="outline"
-                onClick={() => setActiveTab("analytics")}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Import/Export
-              </Button>
             </>
           )}
+
+          {/* Primary Actions - Show on all devices */}
+          <Button
+            variant="outline"
+            size={isMobile ? "sm" : "default"}
+            onClick={() => setShowScanner(true)}
+          >
+            <QrCode className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
+            {!isMobile && "Scan"}
+          </Button>
+
+          <AddInventoryDialog
+            trigger={
+              <Button variant="default" size={isMobile ? "sm" : "default"}>
+                <Plus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
+                {!isMobile && "Add"}
+              </Button>
+            }
+            onSuccess={refetch}
+          />
+
+          <Button 
+            variant="outline"
+            size={isMobile ? "sm" : "default"}
+            onClick={() => setActiveTab("analytics")}
+          >
+            <Upload className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
+            {!isMobile && "Import"}
+          </Button>
         </div>
       </div>
 
