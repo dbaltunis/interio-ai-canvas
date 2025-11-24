@@ -36,8 +36,7 @@ interface MaterialInventoryViewProps {
 const MATERIAL_CATEGORIES = [
   { key: "all", label: "All Materials" },
   { key: "venetian", label: "Venetian Blinds" },
-  { key: "vertical", label: "Vertical Blinds" },
-  { key: "cellular", label: "Cellular/Honeycomb" }
+  { key: "vertical", label: "Vertical Blinds" }
 ];
 
 const ITEMS_PER_PAGE = 24;
