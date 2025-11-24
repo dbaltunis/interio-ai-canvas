@@ -25,45 +25,40 @@ export const SimplifiedTemplateFormPricing = ({
   return (
     <Card>
       <CardContent className="pt-6 space-y-4">
-        {/* Pricing Method Selection */}
         <div>
-          <Label htmlFor="pricing_method">Pricing Method</Label>
+          <Label htmlFor="pricing_method">Method</Label>
           <Select 
             value={formData.pricing_type} 
             onValueChange={(value) => handleInputChange("pricing_type", value)}
           >
             <SelectTrigger id="pricing_method">
-              <SelectValue placeholder="Select method" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {isBlind && (
                 <>
-                  <SelectItem value="pricing_grid">Pricing Grid</SelectItem>
-                  <SelectItem value="per_sqm">Per Square Metre</SelectItem>
+                  <SelectItem value="pricing_grid">Grid</SelectItem>
+                  <SelectItem value="per_sqm">Per m²</SelectItem>
                 </>
               )}
               {isCurtainOrRoman && (
                 <>
-                  <SelectItem value="per_metre">Per Linear Metre</SelectItem>
-                  <SelectItem value="per_sqm">Per Square Metre</SelectItem>
-                  <SelectItem value="pricing_grid">Pricing Grid</SelectItem>
+                  <SelectItem value="per_metre">Per Metre</SelectItem>
+                  <SelectItem value="per_sqm">Per m²</SelectItem>
+                  <SelectItem value="pricing_grid">Grid</SelectItem>
                 </>
               )}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Pricing Grid Configuration */}
         {formData.pricing_type === "pricing_grid" && (
-          <>
-            <TemplateGridManager
-              productType={formData.curtain_type || ""}
-              systemType={formData.system_type || ""}
-            />
-          </>
+          <TemplateGridManager
+            productType={formData.curtain_type || ""}
+            systemType={formData.system_type || ""}
+          />
         )}
 
-        {/* Per Square Metre */}
         {formData.pricing_type === "per_sqm" && (
           <div>
             <Label htmlFor="unit_price">Price per m² ({units.currency})</Label>
@@ -73,12 +68,10 @@ export const SimplifiedTemplateFormPricing = ({
               step="0.01"
               value={formData.unit_price}
               onChange={(e) => handleInputChange("unit_price", e.target.value)}
-              placeholder="150"
             />
           </div>
         )}
 
-        {/* Per Linear Metre */}
         {formData.pricing_type === "per_metre" && (
           <div>
             <Label htmlFor="machine_price_per_metre">Price per metre ({units.currency})</Label>
@@ -88,7 +81,6 @@ export const SimplifiedTemplateFormPricing = ({
               step="0.01"
               value={formData.machine_price_per_metre}
               onChange={(e) => handleInputChange("machine_price_per_metre", e.target.value)}
-              placeholder="50"
             />
           </div>
         )}
