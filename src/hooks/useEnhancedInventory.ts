@@ -158,7 +158,7 @@ export const useCreateEnhancedInventoryItem = () => {
 
       // Whitelist fields to match enhanced_inventory_items schema
       const allowedKeys = [
-        'name','description','sku','category','subcategory','quantity','unit','cost_price','selling_price','supplier','vendor_id','location','reorder_point','active',
+        'name','description','sku','category','subcategory','quantity','unit','cost_price','selling_price','supplier','vendor_id','collection_id','location','reorder_point','active',
         'fabric_width','fabric_composition','fabric_care_instructions','fabric_origin','pattern_repeat_horizontal','pattern_repeat_vertical','fabric_grade','fabric_collection','is_flame_retardant',
         'hardware_finish','hardware_material','hardware_dimensions','hardware_weight','hardware_mounting_type','hardware_load_capacity',
         'price_per_yard','price_per_meter','price_per_unit','markup_percentage',
@@ -168,10 +168,18 @@ export const useCreateEnhancedInventoryItem = () => {
         'product_category','price_group','tags'
       ] as const;
 
+      // UUID fields that should be explicitly set to null if not provided
+      const uuidFields = ['vendor_id', 'collection_id', 'product_category', 'price_group'];
+
       const item: Record<string, any> = { user_id: userId, active: true };
       for (const key of allowedKeys) {
         const val = raw[key as typeof allowedKeys[number]];
-        if (val !== undefined && val !== null && val !== '') item[key] = val;
+        // For UUID fields, explicitly include null values (don't filter them out)
+        if (uuidFields.includes(key)) {
+          item[key] = val || null;
+        } else if (val !== undefined && val !== null && val !== '') {
+          item[key] = val;
+        }
       }
 
       // Ensure required pricing fields have defaults

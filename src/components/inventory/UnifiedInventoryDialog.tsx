@@ -103,6 +103,7 @@ export const UnifiedInventoryDialog = ({
     selling_price: 0,
     supplier: "",
     vendor_id: "",
+    collection_id: null as string | null,
     location: "",
     reorder_point: 5,
     fabric_width: 0,
@@ -114,8 +115,8 @@ export const UnifiedInventoryDialog = ({
     image_url: "",
     hardware_finish: "",
     hardware_material: "",
-    product_category: null,
-    price_group: null,
+    product_category: null as string | null,
+    price_group: null as string | null,
     tags: [] as string[],
   });
   
@@ -206,6 +207,7 @@ export const UnifiedInventoryDialog = ({
         selling_price: item.selling_price || 0,
         supplier: item.supplier || "",
         vendor_id: item.vendor_id || "",
+        collection_id: item.collection_id || null,
         location: item.location || "",
         reorder_point: item.reorder_point || 5,
         fabric_width: item.fabric_width || 0,
@@ -217,8 +219,8 @@ export const UnifiedInventoryDialog = ({
         image_url: item.image_url || "",
         hardware_finish: item.hardware_finish || "",
         hardware_material: item.hardware_material || "",
-        product_category: item.product_category || "",
-        price_group: item.price_group || "",
+        product_category: item.product_category || null,
+        price_group: item.price_group || null,
         tags: item.tags || [],
       });
       
@@ -307,13 +309,15 @@ export const UnifiedInventoryDialog = ({
       product_category: formData.product_category || null,
       price_group: formData.price_group || null,
       vendor_id: formData.vendor_id || null,
-      collection_id: (formData as any).collection_id || null,
+      collection_id: formData.collection_id || null,
       // Ensure numeric fields are properly set
       cost_price: Number(formData.cost_price) || 0,
       selling_price: Number(formData.selling_price) || 0,
-      fabric_width: Number(formData.fabric_width) || 0,
-      pattern_repeat_vertical: Number(formData.pattern_repeat_vertical) || 0,
-      pattern_repeat_horizontal: Number(formData.pattern_repeat_horizontal) || 0,
+      fabric_width: Number(formData.fabric_width) || null,
+      pattern_repeat_vertical: Number(formData.pattern_repeat_vertical) || null,
+      pattern_repeat_horizontal: Number(formData.pattern_repeat_horizontal) || null,
+      // Ensure tags array is included
+      tags: Array.isArray(formData.tags) ? formData.tags : [],
     };
 
     console.log('🔍 Submitting inventory item:', itemData);
