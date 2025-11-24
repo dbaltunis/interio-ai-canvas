@@ -26,12 +26,12 @@ export const SimplifiedTemplateFormPricing = ({
     <Card>
       <CardContent className="pt-6 space-y-4">
         <div>
-          <Label htmlFor="pricing_method">Method</Label>
+          <Label>Method</Label>
           <Select 
             value={formData.pricing_type} 
             onValueChange={(value) => handleInputChange("pricing_type", value)}
           >
-            <SelectTrigger id="pricing_method">
+            <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -61,9 +61,8 @@ export const SimplifiedTemplateFormPricing = ({
 
         {formData.pricing_type === "per_sqm" && (
           <div>
-            <Label htmlFor="unit_price">Price per m² ({units.currency})</Label>
+            <Label>Price ({units.currency}/m²)</Label>
             <Input
-              id="unit_price"
               type="number"
               step="0.01"
               value={formData.unit_price}
@@ -74,9 +73,8 @@ export const SimplifiedTemplateFormPricing = ({
 
         {formData.pricing_type === "per_metre" && (
           <div>
-            <Label htmlFor="machine_price_per_metre">Price per metre ({units.currency})</Label>
+            <Label>Price ({units.currency}/m)</Label>
             <Input
-              id="machine_price_per_metre"
               type="number"
               step="0.01"
               value={formData.machine_price_per_metre}
