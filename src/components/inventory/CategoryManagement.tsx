@@ -31,7 +31,7 @@ export const CategoryManagement = () => {
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: '',
-    category_type: 'material',
+    category_type: 'fabric',
     parent_category_id: null as string | null,
     sort_order: 0,
   });
@@ -54,9 +54,9 @@ export const CategoryManagement = () => {
         await createCategory.mutateAsync(formData);
       }
 
-      setDialogOpen(false);
-      setEditingCategory(null);
-      setFormData({ name: '', category_type: 'material', parent_category_id: null, sort_order: 0 });
+    setDialogOpen(false);
+    setEditingCategory(null);
+    setFormData({ name: '', category_type: 'fabric', parent_category_id: null, sort_order: 0 });
     } catch (error) {
       console.error('Error creating/updating category:', error);
     }
@@ -66,7 +66,7 @@ export const CategoryManagement = () => {
     setEditingCategory(category);
     setFormData({
       name: category.name,
-      category_type: category.category_type || 'material',
+      category_type: category.category_type || 'fabric',
       parent_category_id: category.parent_category_id,
       sort_order: category.sort_order || 0,
     });
@@ -76,7 +76,7 @@ export const CategoryManagement = () => {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this category? This will also delete all subcategories.')) {
       await deleteCategory.mutateAsync(id);
-      setFormData({ name: '', category_type: 'material', parent_category_id: null, sort_order: 0 });
+      setFormData({ name: '', category_type: 'fabric', parent_category_id: null, sort_order: 0 });
     }
   };
 
@@ -133,7 +133,7 @@ export const CategoryManagement = () => {
           <DialogTrigger asChild>
             <Button onClick={() => {
               setEditingCategory(null);
-              setFormData({ name: '', category_type: 'material', parent_category_id: null, sort_order: 0 });
+              setFormData({ name: '', category_type: 'fabric', parent_category_id: null, sort_order: 0 });
             }}>
               <Plus className="h-4 w-4 mr-2" />
               Add Category
@@ -150,8 +150,30 @@ export const CategoryManagement = () => {
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g., Fabrics, Hardware, Venetian Slats"
+                  placeholder="e.g., Flooring, Rugs, Wooden Floor"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category_type">Category Type</Label>
+                <Select
+                  value={formData.category_type}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, category_type: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background">
+                    <SelectItem value="fabric">Fabric</SelectItem>
+                    <SelectItem value="hardware">Hardware</SelectItem>
+                    <SelectItem value="wallcovering">Wallcovering</SelectItem>
+                    <SelectItem value="service">Service</SelectItem>
+                    <SelectItem value="accessory">Accessory</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Select the type of products this category will contain
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -166,7 +188,7 @@ export const CategoryManagement = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="None (Main Category)" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background">
                     <SelectItem value="none">None (Main Category)</SelectItem>
                     {hierarchicalCategories.map(cat => (
                       <SelectItem key={cat.id} value={cat.id}>
