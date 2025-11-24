@@ -38,10 +38,17 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     // Heading/Options
     selected_heading_ids: template?.selected_heading_ids || [],
     
+    // Hand-finished toggle
+    offers_hand_finished: template?.offers_hand_finished || false,
+    
     // Pricing
     pricing_type: template?.pricing_type || "per_metre",
     unit_price: template?.unit_price?.toString() || "",
     machine_price_per_metre: template?.machine_price_per_metre?.toString() || "",
+    hand_price_per_metre: template?.hand_price_per_metre?.toString() || "",
+    machine_price_per_panel: template?.machine_price_per_panel?.toString() || "",
+    hand_price_per_panel: template?.hand_price_per_panel?.toString() || "",
+    height_price_ranges: template?.height_price_ranges || [],
     
     // Manufacturing
     header_allowance: template?.header_allowance?.toString() || "8",
@@ -115,9 +122,14 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         curtain_type: formData.curtain_type,
         system_type: formData.system_type || formData.curtain_type,
         selected_heading_ids: formData.selected_heading_ids,
+        offers_hand_finished: formData.offers_hand_finished,
         pricing_type: formData.pricing_type,
         unit_price: formData.unit_price ? parseFloat(formData.unit_price) : null,
         machine_price_per_metre: formData.machine_price_per_metre ? parseFloat(formData.machine_price_per_metre) : null,
+        hand_price_per_metre: formData.hand_price_per_metre ? parseFloat(formData.hand_price_per_metre) : null,
+        machine_price_per_panel: formData.machine_price_per_panel ? parseFloat(formData.machine_price_per_panel) : null,
+        hand_price_per_panel: formData.hand_price_per_panel ? parseFloat(formData.hand_price_per_panel) : null,
+        height_price_ranges: formData.height_price_ranges,
         header_allowance: formData.header_allowance ? parseFloat(formData.header_allowance) : null,
         bottom_hem: formData.bottom_hem ? parseFloat(formData.bottom_hem) : null,
         side_hems: formData.side_hems ? parseFloat(formData.side_hems) : null,
