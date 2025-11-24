@@ -40,13 +40,16 @@ interface FabricInventoryViewProps {
 const FABRIC_CATEGORIES = [
   { key: "all", label: "All Fabrics" },
   { key: "curtain_fabric", label: "Curtain & Roman Fabrics" },
-  { key: "roller_fabric", label: "Roller Blind Fabrics" },
-  { key: "blind_fabric", label: "Blind Fabrics" },
-  { key: "furniture_fabric", label: "Upholstery Fabrics" },
-  { key: "sheer_fabric", label: "Sheer & Voile Fabrics" },
-  { key: "roman_blind_fabric", label: "Roman Blind Fabrics" },
+  { key: "roller_blockout", label: "Roller - Blockout" },
+  { key: "roller_light_filtering", label: "Roller - Light Filtering" },
+  { key: "roller_sunscreen", label: "Roller - Sunscreen" },
+  { key: "roller_translucent", label: "Roller - Translucent" },
+  { key: "cellular", label: "Cellular/Honeycomb" },
+  { key: "vertical_fabric", label: "Vertical Blind Fabrics" },
+  { key: "panel_glide", label: "Panel Glide Fabrics" },
+  { key: "sheer_fabric", label: "Sheer & Voile" },
+  { key: "lining_fabric", label: "Lining Fabrics" },
   { key: "upholstery_fabric", label: "Upholstery Fabrics" },
-  { key: "wallcovering", label: "Wallcoverings" },
   { key: "fabric", label: "Other Fabrics" }
 ];
 
