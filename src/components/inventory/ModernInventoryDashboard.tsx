@@ -250,104 +250,29 @@ export const ModernInventoryDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className={cn(
-          "bg-background border-b border-border/50 rounded-none p-0 h-auto flex w-full gap-0",
-          isMobile ? "overflow-x-auto justify-start" : "justify-start"
-        )}>
-          <TabsTrigger value="overview" className={cn(
-            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
-            isMobile ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm"
-          )}>
-            <Package className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
-            <span>Overview</span>
-          </TabsTrigger>
-          <TabsTrigger value="fabrics" className={cn(
-            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
-            isMobile ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm"
-          )}>
-            <Home className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
-            <span>Fabrics</span>
-          </TabsTrigger>
-          <TabsTrigger value="roller_fabric" className={cn(
-            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
-            isMobile ? "px-3 py-2 text-xs whitespace-nowrap" : "px-4 py-3 text-sm"
-          )}>
-            <Package className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
-            <span>Roller</span>
-          </TabsTrigger>
-          <TabsTrigger value="venetian_slats" className={cn(
-            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
-            isMobile ? "px-3 py-2 text-xs whitespace-nowrap" : "px-4 py-3 text-sm"
-          )}>
-            <Minus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
-            <span>Venetian</span>
-          </TabsTrigger>
-          <TabsTrigger value="vertical_vanes" className={cn(
-            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
-            isMobile ? "px-3 py-2 text-xs whitespace-nowrap" : "px-4 py-3 text-sm"
-          )}>
-            <Minus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
-            <span>Vertical</span>
-          </TabsTrigger>
-          <TabsTrigger value="cellular_fabric" className={cn(
-            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
-            isMobile ? "px-3 py-2 text-xs whitespace-nowrap" : "px-4 py-3 text-sm"
-          )}>
-            <Package className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
-            <span>Cellular</span>
-          </TabsTrigger>
-          <TabsTrigger value="hardware" className={cn(
-            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
-            isMobile ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm"
-          )}>
-            <Minus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
-            <span>Hardware</span>
-          </TabsTrigger>
-          <TabsTrigger value="wallcoverings" className={cn(
-            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
-            isMobile ? "px-3 py-2 text-xs whitespace-nowrap" : "px-4 py-3 text-sm"
-          )}>
-            <Wallpaper className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
-            <span>{isMobile ? "Walls" : "Wallcoverings"}</span>
-          </TabsTrigger>
-          <TabsTrigger value="headings" className={cn(
-            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
-            isMobile ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm"
-          )}>
-            <Minus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
-            <span>Tapes</span>
-          </TabsTrigger>
-          <TabsTrigger value="trimmings" className={cn(
-            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
-            isMobile ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm"
-          )}>
-            <Palette className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
-            <span>Trimmings</span>
-          </TabsTrigger>
-          <TabsTrigger value="remnants" className={cn(
-            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
-            isMobile ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm"
-          )}>
-            <Package className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
-            <span>Remnants</span>
-          </TabsTrigger>
-          <TabsTrigger value="vendors" className={cn(
-            "flex items-center gap-2 transition-all duration-200 font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50",
-            isMobile ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm"
-          )}>
-            <Package className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
-            <span>Vendors</span>
-          </TabsTrigger>
-          {!isMobile && (
-            <>
-              <TabsTrigger value="analytics" className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50">
-                <Palette className="h-4 w-4" />
-                <span>Analytics</span>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="w-full justify-start overflow-x-auto flex-nowrap">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Overview
               </TabsTrigger>
-            </>
-          )}
-        </TabsList>
+              {!categoriesLoading && inventoryCategories.map(category => (
+                <TabsTrigger key={category.id} value={category.id} className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  {category.name}
+                </TabsTrigger>
+              ))}
+              <TabsTrigger value="vendors" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Vendors
+              </TabsTrigger>
+              {!isMobile && (
+                <TabsTrigger value="analytics" className="flex items-center gap-2">
+                  <Palette className="h-4 w-4" />
+                  Analytics
+                </TabsTrigger>
+              )}
+            </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
           <BusinessInventoryOverview />
