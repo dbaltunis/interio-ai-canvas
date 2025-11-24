@@ -13,76 +13,88 @@ export const SimplifiedTemplateFormManufacturing = ({
 }: SimplifiedTemplateFormManufacturingProps) => {
   const isCurtain = formData.curtain_type === 'curtain';
   
+  // Only show manufacturing for curtains/romans - not for blinds
+  if (!isCurtain && formData.curtain_type !== 'roman_blind') {
+    return null;
+  }
+  
   return (
     <Card>
       <CardContent className="pt-6 space-y-4">
-        {isCurtain && (
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="header_allowance">Header</Label>
-              <Input
-                id="header_allowance"
-                type="number"
-                step="0.5"
-                value={formData.header_allowance}
-                onChange={(e) => handleInputChange("header_allowance", e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="bottom_hem">Bottom</Label>
-              <Input
-                id="bottom_hem"
-                type="number"
-                step="0.5"
-                value={formData.bottom_hem}
-                onChange={(e) => handleInputChange("bottom_hem", e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="side_hems">Sides</Label>
-              <Input
-                id="side_hems"
-                type="number"
-                step="0.5"
-                value={formData.side_hems}
-                onChange={(e) => handleInputChange("side_hems", e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="waste_percent">Waste %</Label>
-              <Input
-                id="waste_percent"
-                type="number"
-                step="0.1"
-                value={formData.waste_percent}
-                onChange={(e) => handleInputChange("waste_percent", e.target.value)}
-              />
-            </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Header</Label>
+            <Input
+              type="number"
+              step="0.5"
+              value={formData.header_allowance}
+              onChange={(e) => handleInputChange("header_allowance", e.target.value)}
+            />
           </div>
-        )}
-        
-        {!isCurtain && (
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="minimum_width">Min Width</Label>
-              <Input
-                id="minimum_width"
-                type="number"
-                value={formData.minimum_width}
-                onChange={(e) => handleInputChange("minimum_width", e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="maximum_width">Max Width</Label>
-              <Input
-                id="maximum_width"
-                type="number"
-                value={formData.maximum_width}
-                onChange={(e) => handleInputChange("maximum_width", e.target.value)}
-              />
-            </div>
+          <div>
+            <Label>Bottom</Label>
+            <Input
+              type="number"
+              step="0.5"
+              value={formData.bottom_hem}
+              onChange={(e) => handleInputChange("bottom_hem", e.target.value)}
+            />
           </div>
-        )}
+          <div>
+            <Label>Sides</Label>
+            <Input
+              type="number"
+              step="0.5"
+              value={formData.side_hems}
+              onChange={(e) => handleInputChange("side_hems", e.target.value)}
+            />
+          </div>
+          <div>
+            <Label>Seams</Label>
+            <Input
+              type="number"
+              step="0.5"
+              value={formData.seam_hems}
+              onChange={(e) => handleInputChange("seam_hems", e.target.value)}
+            />
+          </div>
+          <div>
+            <Label>Left Return</Label>
+            <Input
+              type="number"
+              step="0.5"
+              value={formData.return_left}
+              onChange={(e) => handleInputChange("return_left", e.target.value)}
+            />
+          </div>
+          <div>
+            <Label>Right Return</Label>
+            <Input
+              type="number"
+              step="0.5"
+              value={formData.return_right}
+              onChange={(e) => handleInputChange("return_right", e.target.value)}
+            />
+          </div>
+          <div>
+            <Label>Overlap</Label>
+            <Input
+              type="number"
+              step="0.5"
+              value={formData.overlap}
+              onChange={(e) => handleInputChange("overlap", e.target.value)}
+            />
+          </div>
+          <div>
+            <Label>Waste %</Label>
+            <Input
+              type="number"
+              step="0.1"
+              value={formData.waste_percent}
+              onChange={(e) => handleInputChange("waste_percent", e.target.value)}
+            />
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
