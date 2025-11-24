@@ -38,6 +38,7 @@ import { QuoteItemImage } from "@/components/quotes/QuoteItemImage";
 import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { useQuoteCustomData } from "@/hooks/useQuoteCustomData";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 // Lazy load the editable version to avoid circular dependencies and reduce bundle size
 const EditableLivePreview = React.lazy(() => import('./EditableLivePreview'));
@@ -333,6 +334,7 @@ interface LivePreviewBlockProps {
   isEditable?: boolean;
   isPrintMode?: boolean;
   userBusinessSettings?: any;
+  userPreferences?: any;
   showDetailedBreakdown?: boolean;
   showImages?: boolean;
   groupByRoom?: boolean;
@@ -348,6 +350,7 @@ const LivePreviewBlock = ({
   isEditable, 
   isPrintMode = false, 
   userBusinessSettings,
+  userPreferences,
   showDetailedBreakdown: propsShowDetailed,
   showImages: propsShowImages,
   groupByRoom: propsGroupByRoom,
@@ -388,6 +391,22 @@ const LivePreviewBlock = ({
       return 'EUR';
     }
   };
+  
+  // Helper function to convert user date format to date-fns format
+  const convertToDateFnsFormat = (userFormat: string): string => {
+    const formatMap: Record<string, string> = {
+      'MM/dd/yyyy': 'MM/dd/yyyy',
+      'dd/MM/yyyy': 'dd/MM/yyyy', 
+      'yyyy-MM-dd': 'yyyy-MM-dd',
+      'dd-MMM-yyyy': 'dd-MMM-yyyy',
+    };
+    return formatMap[userFormat] || 'MM/dd/yyyy';
+  };
+
+  // Get user's preferred timezone and date format
+  const businessSettings = projectData?.businessSettings || userBusinessSettings || {};
+  const userTimezone = userPreferences?.timezone || businessSettings?.timezone || 'UTC';
+  const userDateFormat = convertToDateFnsFormat(userPreferences?.date_format || 'MM/dd/yyyy');
   
   // Trim and normalize block type to prevent matching issues
   const blockType = (block.type || '').toString().trim().toLowerCase();
@@ -449,26 +468,26 @@ const LivePreviewBlock = ({
       project_name: project.name || 'Window Treatment Project',
       project_id: project.id || '',
       
-      // Dates - formatted in business timezone
+      // Dates - formatted using user's timezone and date format preferences
       date: project.start_date 
-        ? formatInTimeZone(new Date(project.start_date), businessSettings?.timezone || 'Australia/Sydney', 'M/d/yyyy')
+        ? formatInTimeZone(new Date(project.start_date), userTimezone, userDateFormat)
         : (project.created_at 
-          ? formatInTimeZone(new Date(project.created_at), businessSettings?.timezone || 'Australia/Sydney', 'M/d/yyyy')
-          : formatInTimeZone(new Date(), businessSettings?.timezone || 'Australia/Sydney', 'M/d/yyyy')),
+          ? formatInTimeZone(new Date(project.created_at), userTimezone, userDateFormat)
+          : formatInTimeZone(new Date(), userTimezone, userDateFormat)),
       quote_date: project.created_at 
-        ? formatInTimeZone(new Date(project.created_at), businessSettings?.timezone || 'Australia/Sydney', 'M/d/yyyy')
-        : formatInTimeZone(new Date(), businessSettings?.timezone || 'Australia/Sydney', 'M/d/yyyy'),
+        ? formatInTimeZone(new Date(project.created_at), userTimezone, userDateFormat)
+        : formatInTimeZone(new Date(), userTimezone, userDateFormat),
       start_date: project.start_date 
-        ? formatInTimeZone(new Date(project.start_date), businessSettings?.timezone || 'Australia/Sydney', 'M/d/yyyy')
+        ? formatInTimeZone(new Date(project.start_date), userTimezone, userDateFormat)
         : '',
       due_date: project.due_date 
-        ? formatInTimeZone(new Date(project.due_date), businessSettings?.timezone || 'Australia/Sydney', 'M/d/yyyy')
+        ? formatInTimeZone(new Date(project.due_date), userTimezone, userDateFormat)
         : '',
       valid_until: project.due_date 
-        ? formatInTimeZone(new Date(project.due_date), businessSettings?.timezone || 'Australia/Sydney', 'M/d/yyyy')
+        ? formatInTimeZone(new Date(project.due_date), userTimezone, userDateFormat)
         : (projectData?.validUntil 
-          ? formatInTimeZone(new Date(projectData.validUntil), businessSettings?.timezone || 'Australia/Sydney', 'M/d/yyyy')
-          : formatInTimeZone(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), businessSettings?.timezone || 'Australia/Sydney', 'M/d/yyyy')),
+          ? formatInTimeZone(new Date(projectData.validUntil), userTimezone, userDateFormat)
+          : formatInTimeZone(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), userTimezone, userDateFormat)),
       
       // Financial information with currency support
       currency: projectData?.currency || getDefaultCurrency(),
@@ -647,7 +666,7 @@ const LivePreviewBlock = ({
                       <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>Start Date: </span>
                       <span style={{ color: '#111827', fontWeight: 'bold', fontSize: '14px' }}>
                         {renderTokenValue('start_date') || (content.customDate 
-                          ? formatInTimeZone(new Date(content.customDate), projectData?.businessSettings?.timezone || 'Australia/Sydney', 'M/d/yyyy')
+                          ? formatInTimeZone(new Date(content.customDate), userTimezone, userDateFormat)
                           : renderTokenValue('date'))}
                       </span>
                     </div>
@@ -655,7 +674,7 @@ const LivePreviewBlock = ({
                       <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>Due Date: </span>
                       <span style={{ color: '#111827', fontWeight: 'bold', fontSize: '14px' }}>
                         {renderTokenValue('due_date') || (content.customValidUntil 
-                          ? formatInTimeZone(new Date(content.customValidUntil), projectData?.businessSettings?.timezone || 'Australia/Sydney', 'M/d/yyyy')
+                          ? formatInTimeZone(new Date(content.customValidUntil), userTimezone, userDateFormat)
                           : renderTokenValue('valid_until'))}
                       </span>
                     </div>
@@ -2001,6 +2020,7 @@ export const LivePreview = ({
   quoteId
 }: LivePreviewProps) => {
   const { data: businessSettings } = useBusinessSettings();
+  const { data: userPreferences } = useUserPreferences();
   const quoteCustomData = quoteId ? useQuoteCustomData(quoteId) : null;
   console.log('LivePreview rendering with blocks:', blocks?.length || 0);
 
@@ -2051,6 +2071,7 @@ export const LivePreview = ({
             isEditable={false}
             isPrintMode={true}
             userBusinessSettings={businessSettings}
+            userPreferences={userPreferences}
             showDetailedBreakdown={showDetailedBreakdown}
             showImages={showImages}
             groupByRoom={groupByRoom}
