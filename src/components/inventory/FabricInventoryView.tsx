@@ -39,10 +39,15 @@ interface FabricInventoryViewProps {
 
 const FABRIC_CATEGORIES = [
   { key: "all", label: "All Fabrics" },
-  { key: "curtain_fabric", label: "Curtain Fabrics" },
-  { key: "roller_fabric", label: "Roller Fabrics" },
-  { key: "furniture_fabric", label: "Furniture Fabrics" },
-  { key: "sheer_fabric", label: "Sheer Fabrics" }
+  { key: "curtain_fabric", label: "Curtain & Roman Fabrics" },
+  { key: "roller_fabric", label: "Roller Blind Fabrics" },
+  { key: "blind_fabric", label: "Blind Fabrics" },
+  { key: "furniture_fabric", label: "Upholstery Fabrics" },
+  { key: "sheer_fabric", label: "Sheer & Voile Fabrics" },
+  { key: "roman_blind_fabric", label: "Roman Blind Fabrics" },
+  { key: "upholstery_fabric", label: "Upholstery Fabrics" },
+  { key: "wallcovering", label: "Wallcoverings" },
+  { key: "fabric", label: "Other Fabrics" }
 ];
 
 const ITEMS_PER_PAGE = 24;
