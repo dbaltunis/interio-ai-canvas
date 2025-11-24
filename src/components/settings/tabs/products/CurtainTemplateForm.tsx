@@ -33,7 +33,10 @@ import { useOptionTypeCategories } from "@/hooks/useOptionTypeCategories";
 import { TREATMENT_CATEGORIES } from "@/types/treatmentCategories";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
-// Import pricing components
+import { SimplifiedTemplateFormPricing } from "./SimplifiedTemplateFormPricing";
+import { SimplifiedTemplateFormManufacturing } from "./SimplifiedTemplateFormManufacturing";
+
+// Import pricing components (still needed for curtains)
 import { HandFinishedToggle } from "./pricing/HandFinishedToggle";
 import { PricingMethodSelector } from "./pricing/PricingMethodSelector";
 import { FabricWidthSelector } from "./pricing/FabricWidthSelector";
@@ -901,7 +904,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Basic Information</CardTitle>
-                <CardDescription>General template details</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -910,31 +912,29 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     id="name"
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
-                    placeholder="e.g., Premium Roller Blind, Plantation Shutters"
+                    placeholder="e.g., Premium Roller Blind"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Each heading style should be a separate template</p>
                 </div>
                 <div>
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">Description (optional)</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => handleInputChange("description", e.target.value)}
-                    placeholder="Brief description of the template"
-                    rows={3}
+                    placeholder="Brief description"
+                    rows={2}
                   />
                 </div>
                 
-                {/* Product Image Upload */}
                 <div>
                   <Label htmlFor="product_image">Product Image</Label>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {formData.image_url ? (
                       <div className="relative inline-block">
                         <img 
                           src={formData.image_url} 
                           alt={formData.name || 'Product'}
-                          className="w-32 h-32 object-cover rounded-lg border"
+                          className="w-24 h-24 object-cover rounded-lg border"
                         />
                         <Button
                           type="button"
@@ -947,7 +947,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                         </Button>
                       </div>
                     ) : (
-                       <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                       <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
                         <input
                           type="file"
                           accept="image/*"
@@ -956,13 +956,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                           id="product_image"
                         />
                         <label htmlFor="product_image" className="cursor-pointer">
-                          <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
-                          <p className="mt-2 text-sm text-muted-foreground">
-                            Click to upload product image
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Will be displayed in rooms and quotes (max 5MB)
-                          </p>
+                          <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
+                          <p className="mt-1 text-xs text-muted-foreground">Click to upload</p>
                         </label>
                       </div>
                     )}
@@ -970,10 +965,10 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                 </div>
                 
                 <div>
-                  <Label htmlFor="window_covering_type">Window Covering Type</Label>
+                  <Label htmlFor="window_covering_type">Type</Label>
                   <Select value={formData.curtain_type} onValueChange={(value) => handleInputChange("curtain_type", value)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select window covering type" />
+                      <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
                       {Object.values(TREATMENT_CATEGORIES).map((category) => (
@@ -984,10 +979,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                     </SelectContent>
                   </Select>
                 </div>
-                
-                {formData.curtain_type === 'curtain' && (
-                  <p className="text-xs text-muted-foreground mt-1">Users will choose single or pair when creating quotes</p>
-                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -996,15 +987,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
           <TabsContent value="heading" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Available Heading Styles</CardTitle>
-                <CardDescription>
-                  Select heading styles to include in this template
-                  {formData.curtain_type && formData.curtain_type !== 'custom' && (
-                    <span className="block mt-1 text-xs">
-                      Showing only headings for: <strong>{formData.curtain_type.replace('_', ' ')}</strong>
-                    </span>
-                  )}
-                </CardDescription>
+                <CardTitle className="text-base">Heading Styles</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -2165,49 +2148,57 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
               </>
             )}
 
-            {/* Blind/Shutter Pricing */}
+            {/* Blind/Shutter/Roman Pricing */}
             {formData.curtain_type !== 'curtain' && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">{formData.curtain_type.replace('_', ' ')} Pricing</CardTitle>
-                  <CardDescription>
-                    Industry-standard pricing for {formData.curtain_type.replace('_', ' ')}
-                  </CardDescription>
+                  <CardTitle className="text-base">Pricing</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Pricing method for blinds/shutters */}
-                  <div className="space-y-2">
-                    <Label htmlFor="blind_pricing_method">Pricing Method</Label>
-                    <Select 
-                      value={formData.pricing_type} 
-                      onValueChange={(value) => handleInputChange("pricing_type", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select pricing method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="per_sqm">Per Square Metre (Most Common)</SelectItem>
-                        <SelectItem value="per_unit">Per Unit (Size Ranges)</SelectItem>
-                        <SelectItem value="pricing_grid">Pricing Grid (Width x Height)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      {formData.pricing_type === 'per_sqm' && 'Price calculated by width × height in square metres'}
-                      {formData.pricing_type === 'per_unit' && 'Fixed price per unit based on size ranges'}
-                      {formData.pricing_type === 'pricing_grid' && 'Upload a pricing grid with width/height combinations'}
-                    </p>
-                  </div>
+                  {/* For Romans, show width/drop options. For blinds, show grid as primary */}
+                  {formData.curtain_type === 'roman_blind' ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="roman_pricing_method">Pricing Method</Label>
+                        <Select 
+                          value={formData.pricing_type} 
+                          onValueChange={(value) => handleInputChange("pricing_type", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="per_metre">Per Linear Metre</SelectItem>
+                            <SelectItem value="per_sqm">Per Square Metre</SelectItem>
+                            <SelectItem value="pricing_grid">Pricing Grid</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="blind_pricing_method">Pricing Method</Label>
+                        <Select 
+                          value={formData.pricing_type} 
+                          onValueChange={(value) => handleInputChange("pricing_type", value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pricing_grid">Pricing Grid (Recommended)</SelectItem>
+                            <SelectItem value="per_sqm">Per Square Metre</SelectItem>
+                            <SelectItem value="per_unit">Per Unit</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
 
                   {/* Per Square Metre Pricing */}
                   {formData.pricing_type === "per_sqm" && (
-                    <div className="space-y-4">
-                      <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
-                        <h5 className="font-medium text-xs text-blue-900 dark:text-blue-100">💡 Square Metre Pricing</h5>
-                        <p className="text-xs text-blue-800 dark:text-blue-200 mt-1">
-                          Price = Width (m) × Height (m) × Price per m²<br/>
-                          <strong>Example:</strong> 1.5m wide × 2.0m high × $150/m² = $450
-                        </p>
-                      </div>
+                    <div className="space-y-3">
                       <div>
                         <Label htmlFor="price_per_sqm">Price per Square Metre ($)</Label>
                         <Input
