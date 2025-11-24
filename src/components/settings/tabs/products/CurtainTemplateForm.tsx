@@ -13,6 +13,7 @@ import { CurtainTemplate, useCreateCurtainTemplate, useUpdateCurtainTemplate } f
 import { TREATMENT_CATEGORIES } from "@/types/treatmentCategories";
 import { SimplifiedTemplateFormPricing } from "./SimplifiedTemplateFormPricing";
 import { SimplifiedTemplateFormManufacturing } from "./SimplifiedTemplateFormManufacturing";
+import { HeadingStyleSelector } from "./HeadingStyleSelector";
 
 interface CurtainTemplateFormProps {
   template?: CurtainTemplate;
@@ -241,11 +242,11 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         </TabsContent>
 
         <TabsContent value="heading" className="space-y-4 mt-4">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">Heading styles configuration</p>
-            </CardContent>
-          </Card>
+          <HeadingStyleSelector
+            selectedHeadingIds={formData.selected_heading_ids}
+            onSelectionChange={(ids) => handleInputChange("selected_heading_ids", ids)}
+            curtainType={formData.curtain_type}
+          />
         </TabsContent>
 
         <TabsContent value="pricing" className="space-y-4 mt-4">
