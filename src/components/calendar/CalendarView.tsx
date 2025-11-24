@@ -67,6 +67,8 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const isDesktop = !isMobile && !isTablet;
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date()); // Pre-select today
+  const [selectedStartTime, setSelectedStartTime] = useState<string>("09:00");
+  const [selectedEndTime, setSelectedEndTime] = useState<string>("10:00");
   const [view, setView] = useState<CalendarView>('week'); // Default to week view
   const [showTasksView, setShowTasksView] = useState(false); // Toggle between calendar and tasks
   const [showCreateEventDialog, setShowCreateEventDialog] = useState(false);
@@ -367,7 +369,9 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
       endTime = `${(hour + 1).toString().padStart(2, '0')}:${minutes}`;
     }
     
-    setSelectedDate(date);
+    // Store the selected times
+    setSelectedStartTime(startTime);
+    setSelectedEndTime(endTime);
     setShowCreateEventDialog(true);
   };
 
@@ -552,10 +556,14 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
           if (!open) {
             setSelectedAppointment(null);
             setSelectedDate(undefined);
+            setSelectedStartTime("09:00");
+            setSelectedEndTime("10:00");
           }
         }}
         appointment={selectedAppointment}
         selectedDate={selectedDate}
+        selectedStartTime={selectedStartTime}
+        selectedEndTime={selectedEndTime}
       />
 
       {/* CalDAV Sync Dialog removed */}
