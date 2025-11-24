@@ -9,6 +9,7 @@ interface RuleEvaluationResult {
 
 /**
  * Evaluates option rules for a given template and returns visibility/requirements/defaults
+ * CRITICAL: Rules are account-specific and should only apply within the same account
  */
 export const useOptionRulesEngine = (
   templateId: string | undefined,

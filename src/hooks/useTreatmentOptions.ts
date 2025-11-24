@@ -31,12 +31,25 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
   return useQuery({
     queryKey: ['treatment-options', templateIdOrCategory, queryType],
     queryFn: async () => {
+      // Get current user's account_id for data isolation
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('user_id, parent_account_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      const accountId = profile?.parent_account_id || user.id;
+      
       let query = supabase
         .from('treatment_options')
         .select(`
           *,
           option_values (*)
         `)
+        .eq('account_id', accountId) // CRITICAL: Filter by account for data isolation
         .order('order_index');
       
       if (templateIdOrCategory) {

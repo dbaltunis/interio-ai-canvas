@@ -218,7 +218,7 @@ const SortableOptionCard = ({ option, group, isEnabled, allAvailableValues, hasO
           <div className="space-y-2">
             <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800 mb-3">
               <p className="text-xs text-blue-800 dark:text-blue-200">
-                💡 <strong>Note:</strong> Options shown here are globally available for all templates using this treatment type. 
+                💡 <strong>Note:</strong> Options shown here are available for all YOUR templates using this treatment type. 
                 To add, edit, or remove options, go to <strong>Settings → Products → Options</strong> tab.
               </p>
             </div>
@@ -441,20 +441,33 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   // Fetch dynamic option type categories from database - will re-fetch when curtainType changes
   const { data: optionTypeCategories = [], isLoading: categoriesLoading } = useOptionTypeCategories(curtainType);
   
-  // Fetch ALL available treatment options - checking the WindowTreatmentOptionsManager approach
-  // We'll check for options from templates managed in the Options tab
+  // Fetch ALL available treatment options for THIS ACCOUNT only
   const { data: allAvailableOptions = [] } = useQuery({
     queryKey: ['available-treatment-options-from-manager', curtainType],
     queryFn: async () => {
       if (!formData.curtain_type) return [];
       
+      // Get current user's account_id
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('user_id, parent_account_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      const accountId = profile?.parent_account_id || user.id;
+      
       // Map formData.curtain_type to proper treatment_category
       const categoryToSearch = mapCurtainTypeToCategory(formData.curtain_type);
       
-      console.log('🔍 Fetching treatment options for category:', categoryToSearch);
+      console.log('🔍 Fetching treatment options for category and account:', { 
+        categoryToSearch, 
+        accountId 
+      });
       
-      // Query treatment options for this treatment category
-      // Note: treatment_options table doesn't have user_id column
+      // CRITICAL: Filter by account_id to ensure data isolation
       const query = supabase
         .from('treatment_options')
         .select(`
@@ -462,6 +475,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
           option_values (*)
         `)
         .eq('treatment_category', categoryToSearch)
+        .eq('account_id', accountId)
         .order('order_index');
       
       const { data, error } = await query;

@@ -145,6 +145,7 @@ export const useDeleteOptionValue = () => {
 };
 
 // Get all treatment options for management (category-based, not template-specific)
+// CRITICAL: Only returns options for the current user's account
 export const useAllTreatmentOptions = () => {
   return useQuery({
     queryKey: ['all-treatment-options'],
@@ -152,8 +153,16 @@ export const useAllTreatmentOptions = () => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return [];
       
-      // Get all category-based options (template_id is NULL)
-      // Show both system defaults AND user-created options
+      // Get current user's account_id
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('user_id, parent_account_id')
+        .eq('user_id', user.user.id)
+        .single();
+      
+      const accountId = profile?.parent_account_id || user.user.id;
+      
+      // Get all category-based options for THIS ACCOUNT ONLY
       const { data, error } = await supabase
         .from('treatment_options')
         .select(`
@@ -161,6 +170,7 @@ export const useAllTreatmentOptions = () => {
           option_values (*)
         `)
         .is('template_id', null)
+        .eq('account_id', accountId) // CRITICAL: Account isolation
         .order('treatment_category', { ascending: true })
         .order('order_index', { ascending: true });
       

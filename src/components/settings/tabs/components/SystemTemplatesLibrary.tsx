@@ -18,14 +18,28 @@ import {
 
 
 // Hook to get option count for a template's category
+// CRITICAL: Only counts options for the current user's account
 const useTemplateOptionCount = (treatmentCategory: string) => {
   return useQuery({
     queryKey: ['template-option-count', treatmentCategory],
     queryFn: async () => {
+      // Get current user's account_id
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return 0;
+      
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('user_id, parent_account_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      const accountId = profile?.parent_account_id || user.id;
+      
       const { count, error } = await supabase
         .from('treatment_options')
         .select('*', { count: 'exact', head: true })
         .eq('treatment_category', treatmentCategory)
+        .eq('account_id', accountId) // CRITICAL: Account isolation
         .is('template_id', null); // Category-based options only
       
       if (error) throw error;
