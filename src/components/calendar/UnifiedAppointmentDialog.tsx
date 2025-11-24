@@ -26,7 +26,7 @@ import { EventVisibilitySelector } from "./EventVisibilitySelector";
 import { TeamMemberPicker } from "./TeamMemberPicker";
 import { useCalendarPreferences } from "@/hooks/useCalendarPreferences";
 import { format } from "date-fns";
-import { formatInTimeZone } from "date-fns-tz";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { getAvatarColor, getInitials } from "@/lib/avatar-utils";
 import { TimezoneUtils } from "@/utils/timezoneUtils";
 import { supabase } from "@/integrations/supabase/client";
@@ -204,13 +204,20 @@ export const UnifiedAppointmentDialog = ({
 
     const userTimezone = prefs?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-    // Create date in user's timezone, then convert to UTC for storage
-    const localStartDateTime = new Date(`${event.date}T${event.startTime}:00`);
-    const localEndDateTime = new Date(`${event.date}T${event.endTime}:00`);
+    // Parse date/time components
+    const [year, month, day] = event.date.split('-').map(Number);
+    const [startHours, startMinutes] = event.startTime.split(':').map(Number);
+    const [endHours, endMinutes] = event.endTime.split(':').map(Number);
     
-    // Convert from user's timezone to UTC for database storage
-    const startDateTime = TimezoneUtils.fromTimezone(localStartDateTime, userTimezone);
-    const endDateTime = TimezoneUtils.fromTimezone(localEndDateTime, userTimezone);
+    // Create dates with local components - these represent the user's intended local time
+    // Using Date constructor with components creates date in system timezone
+    const localStartDate = new Date(year, month - 1, day, startHours, startMinutes, 0);
+    const localEndDate = new Date(year, month - 1, day, endHours, endMinutes, 0);
+    
+    // fromZonedTime takes a date with these time components and interprets them
+    // as being in the specified timezone, then converts to UTC
+    const startDateTime = fromZonedTime(localStartDate, userTimezone);
+    const endDateTime = fromZonedTime(localEndDate, userTimezone);
 
     const appointmentData = {
       title: event.title,
