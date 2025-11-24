@@ -30,6 +30,7 @@ import { useEyeletRings } from "@/hooks/useEyeletRings";
 import { usePricingGrids } from "@/hooks/usePricingGrids";
 import { calculateLengthPrice, type LengthUnit, type PricingUnit } from "@/utils/unitConversions";
 import { ColorSelector } from "./ColorSelector";
+import { COLOR_PALETTE } from "@/constants/inventoryCategories";
 // Category system now uses simple string-based categories
 
 const STORAGE_KEY = "inventory_draft_data";
@@ -175,6 +176,25 @@ export const UnifiedInventoryDialog = ({
   });
   
   const [eyeletRings, setEyeletRings] = useState<EyeletRing[]>([]);
+  const [customColors, setCustomColors] = useState<Array<{ name: string; value: string; hex: string }>>([]);
+
+  // Load custom colors from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('custom_inventory_colors');
+    if (stored) {
+      try {
+        setCustomColors(JSON.parse(stored));
+      } catch (e) {
+        console.error('Failed to parse custom colors:', e);
+      }
+    }
+  }, []);
+
+  // Save custom colors to localStorage when they change
+  const handleCustomColorsChange = (colors: Array<{ name: string; value: string; hex: string }>) => {
+    setCustomColors(colors);
+    localStorage.setItem('custom_inventory_colors', JSON.stringify(colors));
+  };
 
   // Main categories
   const MAIN_CATEGORIES = [
@@ -966,32 +986,26 @@ export const UnifiedInventoryDialog = ({
                     
                     {/* Color Variant Selector */}
                     <div className="md:col-span-2">
-                      <Label>Available Colors</Label>
                       <ColorSelector
-                        selectedColors={formData.tags.filter(tag => 
-                          tag === 'white' || tag === 'black' || tag === 'grey' || tag === 'silver' || 
-                          tag === 'bronze' || tag === 'gold' || tag === 'brown' || tag === 'beige' ||
-                          tag === 'cream' || tag === 'ivory' || tag === 'tan' || tag === 'charcoal' ||
-                          tag === 'light_grey' || tag === 'navy' || tag === 'blue' || tag === 'light_blue' ||
-                          tag === 'green' || tag === 'sage' || tag === 'red' || tag === 'burgundy' ||
-                          tag === 'pink' || tag === 'purple' || tag === 'yellow' || tag === 'orange'
-                        )}
+                        selectedColors={formData.tags.filter(tag => {
+                          // Check if it's a predefined color
+                          const isPredefinedColor = COLOR_PALETTE.some(c => c.value === tag);
+                          // Check if it's a custom color
+                          const isCustomColor = customColors.some(c => c.value === tag);
+                          return isPredefinedColor || isCustomColor;
+                        })}
                         onChange={(colors) => {
-                          // Remove old color tags and add new ones
-                          const nonColorTags = formData.tags.filter(tag => 
-                            !(tag === 'white' || tag === 'black' || tag === 'grey' || tag === 'silver' || 
-                            tag === 'bronze' || tag === 'gold' || tag === 'brown' || tag === 'beige' ||
-                            tag === 'cream' || tag === 'ivory' || tag === 'tan' || tag === 'charcoal' ||
-                            tag === 'light_grey' || tag === 'navy' || tag === 'blue' || tag === 'light_blue' ||
-                            tag === 'green' || tag === 'sage' || tag === 'red' || tag === 'burgundy' ||
-                            tag === 'pink' || tag === 'purple' || tag === 'yellow' || tag === 'orange')
-                          );
+                          // Remove all color tags (both predefined and custom)
+                          const allColorValues = [
+                            ...COLOR_PALETTE.map(c => c.value),
+                            ...customColors.map(c => c.value)
+                          ];
+                          const nonColorTags = formData.tags.filter(tag => !allColorValues.includes(tag));
                           setFormData({ ...formData, tags: [...nonColorTags, ...colors] });
                         }}
+                        customColors={customColors}
+                        onCustomColorsChange={handleCustomColorsChange}
                       />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Select all colors available for this product. Colors appear as a dropdown in quote calculator.
-                      </p>
                     </div>
                   </CardContent>
                 </Card>
