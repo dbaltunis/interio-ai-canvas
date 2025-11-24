@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Globe, Mail, Bell, Shield, Database, Download } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Globe, Mail, Bell, Shield, Database, Download, Layers, Sliders, Settings as SettingsIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useCompactMode } from "@/hooks/useCompactMode";
@@ -17,8 +17,15 @@ import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { NumberSequenceSettings } from "@/components/settings/NumberSequenceSettings";
 import { InventoryDeductionSettings } from "@/components/settings/InventoryDeductionSettings";
 import { StatusManagement } from "../user-management/StatusManagement";
+import { RollerBlindOptionsManager } from "./components/RollerBlindOptionsManager";
+import { HeadingManagement } from "./products/HeadingManagement";
+import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
+import { useSearchParams } from "react-router-dom";
 
 export const SystemSettingsTab = () => {
+  const [searchParams] = useSearchParams();
+  const subtab = searchParams.get('subtab') || 'general';
+  
   const [notifications, setNotifications] = useState({
     email: true,
     sms: false,
@@ -44,7 +51,27 @@ export const SystemSettingsTab = () => {
   }, [accent]);
 
   return (
-    <div className="space-y-6">
+    <Tabs value={subtab} className="w-full">
+      <TabsList className="grid w-full grid-cols-4 mb-4">
+        <TabsTrigger value="general">
+          <SettingsIcon className="h-4 w-4 mr-2" />
+          General
+        </TabsTrigger>
+        <TabsTrigger value="headings">
+          <Layers className="h-4 w-4 mr-2" />
+          Headings
+        </TabsTrigger>
+        <TabsTrigger value="options">
+          <Sliders className="h-4 w-4 mr-2" />
+          Options
+        </TabsTrigger>
+        <TabsTrigger value="defaults">
+          <SettingsIcon className="h-4 w-4 mr-2" />
+          Defaults
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="general" className="space-y-6">
       <SettingsInheritanceInfo 
         settingsType="system and feature" 
         isInheriting={isInheritingSettings}
@@ -285,6 +312,19 @@ export const SystemSettingsTab = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </TabsContent>
+
+      <TabsContent value="headings">
+        <HeadingManagement />
+      </TabsContent>
+
+      <TabsContent value="options">
+        <RollerBlindOptionsManager />
+      </TabsContent>
+
+      <TabsContent value="defaults">
+        <ManufacturingDefaults />
+      </TabsContent>
+    </Tabs>
   );
 };

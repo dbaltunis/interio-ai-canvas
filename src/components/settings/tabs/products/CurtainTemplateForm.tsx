@@ -14,6 +14,7 @@ import { TREATMENT_CATEGORIES } from "@/types/treatmentCategories";
 import { SimplifiedTemplateFormPricing } from "./SimplifiedTemplateFormPricing";
 import { SimplifiedTemplateFormManufacturing } from "./SimplifiedTemplateFormManufacturing";
 import { HeadingStyleSelector } from "./HeadingStyleSelector";
+import { TemplateOptionsManager } from "./TemplateOptionsManager";
 
 interface CurtainTemplateFormProps {
   template?: CurtainTemplate;
@@ -170,9 +171,10 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   return (
     <div className="space-y-6">
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="basic">Basic</TabsTrigger>
           <TabsTrigger value="heading">Heading</TabsTrigger>
+          <TabsTrigger value="options">Options</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
           <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>
         </TabsList>
@@ -259,6 +261,10 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
             onSelectionChange={(ids) => handleInputChange("selected_heading_ids", ids)}
             curtainType={formData.curtain_type}
           />
+        </TabsContent>
+
+        <TabsContent value="options" className="space-y-4 mt-4">
+          <TemplateOptionsManager curtainType={formData.curtain_type} />
         </TabsContent>
 
         <TabsContent value="pricing" className="space-y-4 mt-4">
