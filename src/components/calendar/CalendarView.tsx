@@ -46,6 +46,7 @@ import { useTimezone } from "@/hooks/useTimezone";
 import { TimezoneUtils } from "@/utils/timezoneUtils";
 import { CalendarSyncToolbar } from "./CalendarSyncToolbar";
 import { SchedulerManagement } from "./SchedulerManagement";
+import { formatUserTime, formatUserDate } from "@/utils/dateFormatUtils";
 import { BookingManagement } from "./BookingManagement";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
 import { Shield, ListTodo } from "lucide-react";
@@ -287,6 +288,9 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                         </div>
                         {event.notification_enabled && (
                           <Bell className="h-3 w-3 text-primary flex-shrink-0" />
+                        )}
+                        {(event.video_meeting_link) && (
+                          <Video className="h-3 w-3 text-blue-500 flex-shrink-0" />
                         )}
                       </div>
                     </div>
