@@ -1047,79 +1047,7 @@ const LivePreviewBlock = ({
         });
         console.log('[PRODUCTS BLOCK] Using workshop/surfaces fallback:', projectItems);
       }
-      
       const hasRealData = projectItems.length > 0;
-
-      // Get comprehensive breakdown - FROM CHILDREN ARRAY (has correct pricing)
-      // Extract and parse options from item children
-      const getItemOptions = (item: any) => {
-        if (!item.children || !Array.isArray(item.children)) return [];
-        
-        const allOptions: any[] = [];
-        
-        item.children.forEach((child: any) => {
-          if (!child.isChild) return;
-          
-          // Check if this is an options category
-          if (child.category === 'option' || 
-              child.category === 'options' ||
-              child.name?.toLowerCase().includes('option')) {
-            
-            // If description has comma-separated options, parse them
-            const description = child.description || child.value || '';
-            if (description.includes(',') && description.includes(':')) {
-              // Parse comma-separated options like "test: aaasdasf, chain_tidy: Wall Mounted"
-              const parts = description.split(',').map((s: string) => s.trim());
-              
-              parts.forEach((part: string) => {
-                const colonIndex = part.indexOf(':');
-                if (colonIndex > 0) {
-                  const optName = part.substring(0, colonIndex).trim();
-                  const optValue = part.substring(colonIndex + 1).trim();
-                  allOptions.push({
-                    id: `${child.id}-${optName}`,
-                    name: optName,
-                    value: optValue,
-                    image_url: child.image_url || null
-                  });
-                }
-              });
-            } else {
-              // Single option - parse name to extract key and value
-              const optionName = child.name || 'Option';
-              const colonIndex = optionName.indexOf(':');
-              
-              if (colonIndex > 0 && colonIndex < optionName.length - 1) {
-                // Has colon - split into key and value parts
-                const optKey = optionName.substring(0, colonIndex).trim();
-                const optValue = optionName.substring(colonIndex + 1).trim();
-                
-                // Format key to be more readable (capitalize, replace underscores)
-                const formattedKey = optKey
-                  .replace(/_/g, ' ')
-                  .replace(/\b\w/g, (c: string) => c.toUpperCase());
-                
-                allOptions.push({
-                  id: child.id,
-                  name: formattedKey,
-                  value: optValue,
-                  image_url: child.image_url
-                });
-              } else {
-                // No colon or invalid format - use as-is with description
-                allOptions.push({
-                  id: child.id,
-                  name: optionName,
-                  value: description || '-',
-                  image_url: child.image_url
-                });
-              }
-            }
-          }
-        });
-        
-        return allOptions;
-      };
 
       const getItemizedBreakdown = (item: any) => {
         const breakdown = [];
@@ -1137,19 +1065,33 @@ const LivePreviewBlock = ({
             // Skip if this is not a real breakdown item
             if (!child.isChild) return;
             
-            // Skip options - they'll be displayed separately
-            if (child.category === 'option' || 
-                child.category === 'options' || 
-                child.name?.toLowerCase().includes('option')) {
-              return;
+            // INCLUDE OPTIONS IN BREAKDOWN - they should be separate rows!
+            let displayName = child.name || 'Item';
+            let displayDescription = child.description || '';
+            
+            // If this is an option, parse the name format "key: value"
+            if (child.category === 'option' || child.category === 'options') {
+              const colonIndex = displayName.indexOf(':');
+              if (colonIndex > 0 && colonIndex < displayName.length - 1) {
+                // Split "vane_width: 89mm" into name and description
+                const optionKey = displayName.substring(0, colonIndex).trim();
+                const optionValue = displayName.substring(colonIndex + 1).trim();
+                
+                // Format key: capitalize and replace underscores
+                displayName = optionKey
+                  .replace(/_/g, ' ')
+                  .replace(/\b\w/g, (c: string) => c.toUpperCase());
+                
+                displayDescription = optionValue;
+              }
             }
             
             breakdown.push({
               id: child.id || `${item.id}-child-${idx}`,
-              name: child.name || 'Item',
+              name: displayName,
               category: child.category || 'Component',
-              description: child.description || '',
-              quantity: child.quantity || 0,
+              description: displayDescription,
+              quantity: child.quantity || 1,
               unit: child.unit || '',
               unit_price: child.unit_price || 0,
               total_cost: child.total || 0,
@@ -1157,7 +1099,8 @@ const LivePreviewBlock = ({
             });
             
             console.log('[BREAKDOWN] Added child:', {
-              name: child.name,
+              name: displayName,
+              description: displayDescription,
               unit_price: child.unit_price,
               total: child.total,
               quantity: child.quantity
@@ -1268,15 +1211,12 @@ const LivePreviewBlock = ({
                     {(items as any[]).map((item: any, itemIndex: number) => {
                       const itemNumber = groupByRoom ? itemIndex + 1 : Object.values(groupedItems).flat().indexOf(item) + 1;
                       const breakdown = getItemizedBreakdown(item);
-                      const options = getItemOptions(item);
-                      
                       console.log('[PRODUCT ROW]', {
                         itemNumber,
                         itemName: item.name || item.surface_name,
                         total_cost: item.total_cost,
                         unit_price: item.unit_price,
                         total: item.total,
-                        optionsCount: options.length,
                         breakdownCount: breakdown.length,
                         allItemData: item
                       });
@@ -1285,7 +1225,7 @@ const LivePreviewBlock = ({
                         <React.Fragment key={`item-${roomName}-${itemIndex}`}>
                           {/* Main product row */}
                           <tr style={{ 
-                            borderBottom: ((breakdown.length > 0 || options.length > 0) && effectiveShowDetailed) || isPrintMode ? 'none' : '1px solid #ddd',
+                            borderBottom: (breakdown.length > 0 && effectiveShowDetailed) || isPrintMode ? 'none' : '1px solid #ddd',
                             backgroundColor: '#fff'
                           }}>
                             <td style={{ padding: '5px 6px', fontSize: '15px', fontWeight: '500', color: '#000', verticalAlign: 'top', backgroundColor: '#ffffff' }}>
@@ -1314,48 +1254,7 @@ const LivePreviewBlock = ({
                               </div>
                             </td>
                             <td style={{ padding: '5px 6px', fontSize: '13px', color: '#000', fontWeight: '400', verticalAlign: 'top', wordWrap: 'break-word', overflowWrap: 'break-word', backgroundColor: '#ffffff' }}>
-                              {isSimpleLayout ? (
-                                // Simple layout: Just show room name or notes, no fabric/options
-                                <span>{item.room_name || item.notes || '-'}</span>
-                              ) : options.length > 0 ? (
-                                // Detailed layout: Show options breakdown
-                                <div>
-                                  {item.description && !item.description.toLowerCase().includes('option') && (
-                                    <div style={{ marginBottom: '8px', color: '#000' }}>{item.description}</div>
-                                  )}
-                                  <div style={{ fontSize: '12px', color: '#000' }}>
-                                    <div style={{ fontWeight: '600', marginBottom: '6px' }}>Options:</div>
-                                    <ul style={{ margin: 0, paddingLeft: '18px', listStyleType: 'disc' }}>
-                                      {options.map((opt: any, idx: number) => (
-                                        <li key={idx} style={{ marginBottom: '4px', lineHeight: '1.5' }}>
-                                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                            {showImages && opt.image_url && (
-                                              <img 
-                                                src={opt.image_url}
-                                                alt={opt.name}
-                                                className="print-image"
-                                                style={{
-                                                  width: '24px',
-                                                  height: '24px',
-                                                  objectFit: 'cover',
-                                                  borderRadius: '3px',
-                                                  border: '1px solid #ddd',
-                                                  flexShrink: 0
-                                                }}
-                                              />
-                                            )}
-                                            <span style={{ color: '#000' }}>
-                                              <strong>{opt.name}:</strong> {opt.value}
-                                            </span>
-                                          </div>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                </div>
-                              ) : (
-                                item.description || item.notes || '-'
-                              )}
+                              {item.description || item.notes || '-'}
                             </td>
                             <td style={{ padding: '5px 6px', fontSize: '14px', fontWeight: '400', color: '#000', textAlign: 'center', verticalAlign: 'top', backgroundColor: '#ffffff' }}>
                               {item.quantity || 1}
