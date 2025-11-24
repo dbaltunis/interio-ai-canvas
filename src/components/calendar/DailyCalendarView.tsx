@@ -80,17 +80,18 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
   const getDayEvents = () => {
     if (!appointments) return [];
     return appointments.filter(appointment => {
-      // Convert UTC time to user's timezone for date comparison
-      const appointmentDate = TimezoneUtils.toTimezone(appointment.start_time, userTimezone);
+      // Format both dates in the same timezone for comparison
+      const appointmentDateStr = TimezoneUtils.formatInTimezone(appointment.start_time, userTimezone, 'yyyy-MM-dd');
+      const currentDateStr = TimezoneUtils.formatInTimezone(currentDate.toISOString(), userTimezone, 'yyyy-MM-dd');
       console.log('[DailyCalendarView] Filtering appointment:', {
         title: appointment.title,
         utcStartTime: appointment.start_time,
         userTimezone,
-        convertedDate: appointmentDate,
-        currentDate,
-        isSame: isSameDay(appointmentDate, currentDate)
+        appointmentDateStr,
+        currentDateStr,
+        matches: appointmentDateStr === currentDateStr
       });
-      return isSameDay(appointmentDate, currentDate);
+      return appointmentDateStr === currentDateStr;
     });
   };
 
@@ -259,17 +260,28 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
           <div className="absolute inset-0 pointer-events-none">
             <div className="relative ml-20"> {/* Offset for time labels */}
               {dayEvents.map((event: any, eventIndex) => {
-                // Convert UTC times to user's timezone for display
-                const startTime = TimezoneUtils.toTimezone(event.start_time, userTimezone);
-                const endTime = TimezoneUtils.toTimezone(event.end_time, userTimezone);
+                // Parse times directly in user's timezone for calculations
+                // Extract hour and minute from the formatted time string
+                const startTimeStr = TimezoneUtils.formatInTimezone(event.start_time, userTimezone, 'HH:mm');
+                const endTimeStr = TimezoneUtils.formatInTimezone(event.end_time, userTimezone, 'HH:mm');
+                
+                const [startHour, startMin] = startTimeStr.split(':').map(Number);
+                const [endHour, endMin] = endTimeStr.split(':').map(Number);
+                
+                // Create Date objects with these time components for style calculation
+                const startTime = new Date(currentDate);
+                startTime.setHours(startHour, startMin, 0, 0);
+                const endTime = new Date(currentDate);
+                endTime.setHours(endHour, endMin, 0, 0);
+                
                 console.log('[DailyCalendarView] Rendering event:', {
                   title: event.title,
                   utcStartTime: event.start_time,
                   utcEndTime: event.end_time,
                   userTimezone,
-                  convertedStartTime: startTime,
-                  convertedEndTime: endTime,
-                  startTimeFormatted: format(startTime, 'yyyy-MM-dd HH:mm')
+                  startTimeStr,
+                  endTimeStr,
+                  displayStartTime: format(startTime, 'HH:mm')
                 });
                 const style = calculateEventStyle(startTime, endTime);
                 
@@ -336,8 +348,8 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                       height: `${style.height}px`,
                       zIndex: 10 + eventIndex,
                     }}
-                    onClick={() => onEventClick?.(event.id)}
-                    title={`${event.title}\n${format(startTime, 'HH:mm')} - ${format(endTime, 'HH:mm')}\n${event.description || ''}`}
+                      onClick={() => onEventClick?.(event.id)}
+                      title={`${event.title}\n${TimezoneUtils.formatInTimezone(event.start_time, userTimezone, 'HH:mm')} - ${TimezoneUtils.formatInTimezone(event.end_time, userTimezone, 'HH:mm')}\n${event.description || ''}`}
                   >
                     {/* Left color border */}
                     <div 
@@ -355,7 +367,7 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                       {style.height > 50 && (
                         <div className="flex items-center text-xs text-muted-foreground mt-1">
                           <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
-                          {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
+                          {TimezoneUtils.formatInTimezone(event.start_time, userTimezone, 'HH:mm')} - {TimezoneUtils.formatInTimezone(event.end_time, userTimezone, 'HH:mm')}
                         </div>
                       )}
                       
