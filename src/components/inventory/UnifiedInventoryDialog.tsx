@@ -211,6 +211,7 @@ export const UnifiedInventoryDialog = ({
       { value: "roller_fabric", label: "Roller Blind Fabrics" },
       { value: "cellular", label: "Cellular/Honeycomb" },
       { value: "vertical_fabric", label: "Vertical Blind Fabrics" },
+      { value: "awning_fabric", label: "Awning Fabrics" },
       { value: "lining_fabric", label: "Lining Fabrics" },
       { value: "upholstery_fabric", label: "Upholstery Fabrics" },
       { value: "fabric", label: "Other Fabrics" }
