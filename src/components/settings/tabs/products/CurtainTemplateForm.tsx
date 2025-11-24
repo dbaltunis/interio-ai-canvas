@@ -34,6 +34,9 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     // Hidden system_type - auto-generated from curtain_type
     system_type: (template as any)?.system_type || "",
     
+    // Heading/Options
+    selected_heading_ids: template?.selected_heading_ids || [],
+    
     // Pricing
     pricing_type: template?.pricing_type || "per_metre",
     unit_price: template?.unit_price?.toString() || "",
@@ -43,6 +46,10 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     header_allowance: template?.header_allowance?.toString() || "8",
     bottom_hem: template?.bottom_hem?.toString() || "15",
     side_hems: template?.side_hems?.toString() || "7.5",
+    seam_hems: template?.seam_hems?.toString() || "3",
+    return_left: template?.return_left?.toString() || "7.5",
+    return_right: template?.return_right?.toString() || "7.5",
+    overlap: template?.overlap?.toString() || "10",
     waste_percent: template?.waste_percent?.toString() || "5",
     minimum_width: (template as any)?.minimum_width?.toString() || "30",
     maximum_width: (template as any)?.maximum_width?.toString() || "300",
@@ -106,12 +113,17 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         image_url: formData.image_url,
         curtain_type: formData.curtain_type,
         system_type: formData.system_type || formData.curtain_type,
+        selected_heading_ids: formData.selected_heading_ids,
         pricing_type: formData.pricing_type,
         unit_price: formData.unit_price ? parseFloat(formData.unit_price) : null,
         machine_price_per_metre: formData.machine_price_per_metre ? parseFloat(formData.machine_price_per_metre) : null,
         header_allowance: formData.header_allowance ? parseFloat(formData.header_allowance) : null,
         bottom_hem: formData.bottom_hem ? parseFloat(formData.bottom_hem) : null,
         side_hems: formData.side_hems ? parseFloat(formData.side_hems) : null,
+        seam_hems: formData.seam_hems ? parseFloat(formData.seam_hems) : null,
+        return_left: formData.return_left ? parseFloat(formData.return_left) : null,
+        return_right: formData.return_right ? parseFloat(formData.return_right) : null,
+        overlap: formData.overlap ? parseFloat(formData.overlap) : null,
         waste_percent: formData.waste_percent ? parseFloat(formData.waste_percent) : null,
         minimum_width: formData.minimum_width ? parseFloat(formData.minimum_width) : null,
         maximum_width: formData.maximum_width ? parseFloat(formData.maximum_width) : null,
@@ -145,8 +157,9 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   return (
     <div className="space-y-6">
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="basic">Basic</TabsTrigger>
+          <TabsTrigger value="heading">Heading</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
           <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>
         </TabsList>
@@ -223,6 +236,14 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                   </SelectContent>
                 </Select>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="heading" className="space-y-4 mt-4">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">Heading styles configuration</p>
             </CardContent>
           </Card>
         </TabsContent>
