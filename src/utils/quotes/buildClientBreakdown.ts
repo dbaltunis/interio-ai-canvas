@@ -122,7 +122,8 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
       items.push({
         id: option.id || `option-${index}`,
         name: option.name || option.label || 'Option',
-        description: option.description || option.name,
+        // CRITICAL FIX: Only use description if it's different from name to avoid duplicates
+        description: option.description && option.description !== option.name ? option.description : undefined,
         total_cost: price,
         unit_price: price,
         quantity: 1,

@@ -1085,13 +1085,35 @@ const LivePreviewBlock = ({
                 }
               });
             } else {
-              // Single option
-              allOptions.push({
-                id: child.id,
-                name: child.name || 'Option',
-                value: description,
-                image_url: child.image_url
-              });
+              // Single option - parse name to extract key and value
+              const optionName = child.name || 'Option';
+              const colonIndex = optionName.indexOf(':');
+              
+              if (colonIndex > 0 && colonIndex < optionName.length - 1) {
+                // Has colon - split into key and value parts
+                const optKey = optionName.substring(0, colonIndex).trim();
+                const optValue = optionName.substring(colonIndex + 1).trim();
+                
+                // Format key to be more readable (capitalize, replace underscores)
+                const formattedKey = optKey
+                  .replace(/_/g, ' ')
+                  .replace(/\b\w/g, (c: string) => c.toUpperCase());
+                
+                allOptions.push({
+                  id: child.id,
+                  name: formattedKey,
+                  value: optValue,
+                  image_url: child.image_url
+                });
+              } else {
+                // No colon or invalid format - use as-is with description
+                allOptions.push({
+                  id: child.id,
+                  name: optionName,
+                  value: description || '-',
+                  image_url: child.image_url
+                });
+              }
             }
           }
         });
