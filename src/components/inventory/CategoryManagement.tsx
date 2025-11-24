@@ -37,20 +37,29 @@ export const CategoryManagement = () => {
   });
 
   const handleSubmit = async () => {
-    if (!formData.name.trim()) return;
-
-    if (editingCategory) {
-      await updateCategory.mutateAsync({
-        id: editingCategory.id,
-        ...formData,
-      });
-    } else {
-      await createCategory.mutateAsync(formData);
+    if (!formData.name.trim()) {
+      console.log('Category name is empty');
+      return;
     }
 
-    setDialogOpen(false);
-    setEditingCategory(null);
-    setFormData({ name: '', category_type: 'material', parent_category_id: null, sort_order: 0 });
+    console.log('Creating category with data:', formData);
+
+    try {
+      if (editingCategory) {
+        await updateCategory.mutateAsync({
+          id: editingCategory.id,
+          ...formData,
+        });
+      } else {
+        await createCategory.mutateAsync(formData);
+      }
+
+      setDialogOpen(false);
+      setEditingCategory(null);
+      setFormData({ name: '', category_type: 'material', parent_category_id: null, sort_order: 0 });
+    } catch (error) {
+      console.error('Error creating/updating category:', error);
+    }
   };
 
   const handleEdit = (category: any) => {
@@ -189,10 +198,20 @@ export const CategoryManagement = () => {
               </div>
 
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setDialogOpen(false)}
+                  disabled={createCategory.isPending || updateCategory.isPending}
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit}>
+                <Button 
+                  onClick={handleSubmit}
+                  disabled={!formData.name.trim() || createCategory.isPending || updateCategory.isPending}
+                >
+                  {(createCategory.isPending || updateCategory.isPending) && (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  )}
                   {editingCategory ? 'Update' : 'Create'}
                 </Button>
               </div>
