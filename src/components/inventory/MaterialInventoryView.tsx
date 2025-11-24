@@ -17,6 +17,13 @@ import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QRCodeDisplay } from "./QRCodeDisplay";
 import { InventoryQuickView } from "./InventoryQuickView";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface MaterialInventoryViewProps {
   searchQuery: string;
@@ -112,6 +119,20 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
             Slats, vanes, and cellular fabrics for window blinds
           </p>
         </div>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Import CSV for Blind Materials
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Import/Export Blind Materials</DialogTitle>
+            </DialogHeader>
+            <CategoryImportExport category="hardware" onImportComplete={refetch} />
+          </DialogContent>
+        </Dialog>
       </div>
 
       {selectionStats.selected > 0 && (
