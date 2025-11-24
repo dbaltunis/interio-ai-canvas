@@ -75,12 +75,10 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       
       toast({
         title: "Image uploaded",
-        description: "Product image uploaded successfully",
       });
     } catch (error: any) {
       toast({
         title: "Upload failed",
-        description: error.message,
         variant: "destructive",
       });
     }
@@ -93,8 +91,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   const handleSave = async () => {
     if (!formData.name.trim()) {
       toast({
-        title: "Validation Error",
-        description: "Template name is required",
+        title: "Name required",
         variant: "destructive",
       });
       return;
@@ -131,15 +128,13 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       }
 
       toast({
-        title: "Success",
-        description: template ? "Template updated" : "Template created",
+        title: template ? "Updated" : "Created",
       });
 
       onClose();
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -160,18 +155,16 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
           <Card>
             <CardContent className="pt-6 space-y-4">
               <div>
-                <Label htmlFor="name">Name *</Label>
+                <Label>Name *</Label>
                 <Input
-                  id="name"
                   value={formData.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
                 />
               </div>
 
               <div>
-                <Label htmlFor="description">Description</Label>
+                <Label>Description</Label>
                 <Textarea
-                  id="description"
                   value={formData.description}
                   onChange={(e) => handleInputChange("description", e.target.value)}
                   rows={2}
@@ -179,7 +172,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
               </div>
 
               <div>
-                <Label htmlFor="product_image">Image</Label>
+                <Label>Image</Label>
                 <div className="space-y-2">
                   {formData.image_url ? (
                     <div className="relative inline-block">
@@ -209,7 +202,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                       />
                       <label htmlFor="product_image" className="cursor-pointer">
                         <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-                        <p className="mt-1 text-xs text-muted-foreground">Upload</p>
                       </label>
                     </div>
                   )}
@@ -217,10 +209,10 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
               </div>
 
               <div>
-                <Label htmlFor="window_covering_type">Type</Label>
+                <Label>Type</Label>
                 <Select value={formData.curtain_type} onValueChange={(value) => handleInputChange("curtain_type", value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.values(TREATMENT_CATEGORIES).map((category) => (
@@ -251,28 +243,25 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         </TabsContent>
       </Tabs>
 
-      <div className="flex gap-3 pt-4 border-t">
+      <div className="flex gap-2 pt-4 border-t">
         <Button 
           onClick={handleSave} 
           className="flex-1"
           disabled={isSaving}
         >
-          <div className="flex items-center gap-2">
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Saving...</span>
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4" />
-                <span>{template ? "Update" : "Create"}</span>
-              </>
-            )}
-          </div>
+          {isSaving ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4 mr-2" />
+              {template ? "Update" : "Create"}
+            </>
+          )}
         </Button>
         <Button variant="outline" onClick={onClose}>
-          <X className="h-4 w-4 mr-2" />
           Cancel
         </Button>
       </div>
