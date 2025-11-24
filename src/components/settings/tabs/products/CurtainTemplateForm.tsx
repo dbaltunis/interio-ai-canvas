@@ -1,726 +1,93 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Save, X, Info, Plus, Trash2, Upload, Download, Loader2, Link2, GitBranch, Workflow, GripVertical } from "lucide-react";
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { Save, X, Upload, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CurtainTemplate, useCreateCurtainTemplate, useUpdateCurtainTemplate } from "@/hooks/useCurtainTemplates";
-import { EyeletRingManager } from "./EyeletRingManager";
-import { PricingGridUploader } from "./PricingGridUploader";
-import { TemplateGridManager } from "./TemplateGridManager";
-import { HardwareCompatibilityManager } from "./HardwareCompatibilityManager";
-import { useHeadingInventory } from "@/hooks/useHeadingInventory";
-import { useEnhancedInventoryByCategory } from "@/hooks/useEnhancedInventory";
-import { useTreatmentOptions, useUpdateTreatmentOption } from "@/hooks/useTreatmentOptions";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCreateTreatmentOption, useCreateOptionValue, useDeleteOptionValue } from "@/hooks/useTreatmentOptionsManagement";
-import { OptionRulesManager } from "./OptionRulesManager";
-import { useTreatmentOptionRules } from "@/hooks/useOptionRules";
-import { useOptionTypeCategories } from "@/hooks/useOptionTypeCategories";
 import { TREATMENT_CATEGORIES } from "@/types/treatmentCategories";
-import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-
 import { SimplifiedTemplateFormPricing } from "./SimplifiedTemplateFormPricing";
 import { SimplifiedTemplateFormManufacturing } from "./SimplifiedTemplateFormManufacturing";
-
-// Import pricing components (still needed for curtains)
-import { HandFinishedToggle } from "./pricing/HandFinishedToggle";
-import { PricingMethodSelector } from "./pricing/PricingMethodSelector";
-import { FabricWidthSelector } from "./pricing/FabricWidthSelector";
-import { PerDropPricing } from "./pricing/PerDropPricing";
-import { PerMetrePricing } from "./pricing/PerMetrePricing";
-import { PerPanelPricing } from "./pricing/PerPanelPricing";
-import { HeightBasedPricingRanges } from "./pricing/HeightBasedPricingRanges";
-import { ComplexityBasedPricing } from "./pricing/ComplexityBasedPricing";
-import { MultiplePricingMethodsManager } from "./pricing/MultiplePricingMethodsManager";
 
 interface CurtainTemplateFormProps {
   template?: CurtainTemplate;
   onClose: () => void;
 }
 
-const SortableOptionValue = ({ value, isEnabled, onToggle, formatPrice }: any) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: value.id });
-  
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-  
-  const isValueVisible = value.extra_data?.visible !== false;
-  
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="flex items-center space-x-2 p-3 border rounded bg-background hover:bg-muted/50"
-    >
-      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
-        <GripVertical className="h-4 w-4 text-muted-foreground" />
-      </div>
-      <Checkbox
-        checked={isValueVisible && isEnabled}
-        disabled={!isEnabled}
-        onCheckedChange={(checked) => onToggle(!!checked)}
-      />
-      <div className="flex-1 flex items-center justify-between">
-        <span className="font-medium text-sm">{value.label}</span>
-        <Badge variant={value.extra_data?.price === 0 ? "secondary" : "outline"} className="text-xs ml-2">
-          {formatPrice(value.extra_data?.price)}
-        </Badge>
-      </div>
-    </div>
-  );
-};
-
-const SortableOptionCard = ({ option, group, isEnabled, allAvailableValues, hasOptionsAvailable, formatPrice, onToggle, onValueToggle, onDragEnd, isUsedInRuleCondition, isControlledByRule, getRulesForOption }: any) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: option?.id || group.type });
-  
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-  
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-  
-  return (
-    <Card ref={setNodeRef} style={style}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 flex-1">
-            <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
-              <GripVertical className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-base">{group.label}</CardTitle>
-                {isUsedInRuleCondition(group.type) && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge variant="default" className="text-xs gap-1 bg-blue-500 hover:bg-blue-600">
-                          <Workflow className="h-3 w-3" />
-                          Condition
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        <p className="font-semibold mb-1">Used in Rule Condition</p>
-                        <p className="text-xs">This option triggers rules when selected</p>
-                        {getRulesForOption(group.type).filter((r: any) => r.condition.option_key === group.type).map((rule: any) => (
-                          <p key={rule.id} className="text-xs mt-1 opacity-90">
-                            • {rule.description || `When "${rule.condition.value}" is selected`}
-                          </p>
-                        ))}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-                {isControlledByRule(group.type) && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge variant="secondary" className="text-xs gap-1 bg-purple-100 hover:bg-purple-200 text-purple-800">
-                          <GitBranch className="h-3 w-3" />
-                          Controlled
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        <p className="font-semibold mb-1">Controlled by Rules</p>
-                        <p className="text-xs">This option's visibility is controlled by rules</p>
-                        {getRulesForOption(group.type).filter((r: any) => r.effect.target_option_key === group.type).map((rule: any) => (
-                          <p key={rule.id} className="text-xs mt-1 opacity-90">
-                            • {rule.description || `Shown when condition is met`}
-                          </p>
-                        ))}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-              </div>
-              <CardDescription>
-                Select which {group.label.toLowerCase()} to enable for this template
-              </CardDescription>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            {isControlledByRule(group.type) ? (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center space-x-2 opacity-60 cursor-not-allowed">
-                      <Switch checked={isEnabled} disabled={true} />
-                      <Label className="text-sm font-medium">
-                        {isEnabled ? 'Enabled' : 'Disabled'}
-                      </Label>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="left" className="max-w-xs">
-                    <p className="font-semibold mb-1">Cannot Toggle Manually</p>
-                    <p className="text-xs">This option is controlled by rules. Edit the rules in the "Rules" tab to change its behavior.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ) : (
-              <>
-                <Switch
-                  checked={isEnabled}
-                  onCheckedChange={(checked) => onToggle(group.type, group.label, checked)}
-                />
-                <Label className="text-sm font-medium">
-                  {isEnabled ? 'Enabled' : 'Disabled'}
-                </Label>
-              </>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {!hasOptionsAvailable ? (
-          <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-lg bg-muted/30">
-            <p className="font-medium">No {group.label.toLowerCase()} available.</p>
-            <p className="text-xs mt-1">
-              Go to Settings → Window Coverings → Options tab, select the treatment type, 
-              then add options under the "{group.label}" section.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800 mb-3">
-              <p className="text-xs text-blue-800 dark:text-blue-200">
-                💡 <strong>Note:</strong> Options shown here are available for all YOUR templates using this treatment type. 
-                To add, edit, or remove options, go to <strong>Settings → Products → Options</strong> tab.
-              </p>
-            </div>
-            <p className="text-sm text-muted-foreground mb-3">
-              {isEnabled ? 'Toggle individual options and drag to reorder:' : 'Toggle the switch above to enable these options'}
-            </p>
-            <DndContext 
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={(event) => onDragEnd(event, group.type)}
-            >
-              <SortableContext 
-                items={allAvailableValues.map((v: any) => v.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-2">
-                  {allAvailableValues.map((value: any) => (
-                    <SortableOptionValue
-                      key={value.id}
-                      value={value}
-                      isEnabled={isEnabled}
-                      onToggle={(enabled: boolean) => onValueToggle(group.type, value.id, enabled)}
-                      formatPrice={formatPrice}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
-
 export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormProps) => {
   const { toast } = useToast();
   const createTemplate = useCreateCurtainTemplate();
   const updateTemplate = useUpdateCurtainTemplate();
-  const { data: headingStyles = [] } = useHeadingInventory();
-  const { data: topSystems = [] } = useEnhancedInventoryByCategory('top_system');
-  const queryClient = useQueryClient();
-  const { units } = useMeasurementUnits();
-  
-  // Fetch treatment options for THIS template
-  const { data: treatmentOptionsForTemplate = [] } = useTreatmentOptions(template?.id);
-  const updateTreatmentOption = useUpdateTreatmentOption();
-  const createTreatmentOption = useCreateTreatmentOption();
-  const createOptionValue = useCreateOptionValue();
-  const deleteOptionValue = useDeleteOptionValue();
-  
-  // Fetch rules for this template to show rule indicators
-  const { data: templateRules = [] } = useTreatmentOptionRules(template?.id);
-
-  // Helper function to format price consistently
-  const formatOptionPrice = (price: number | undefined): string => {
-    if (price === undefined || price === null) return 'Included';
-    if (price === 0) return 'Included';
-    
-    const currencySymbol = units.currency === 'GBP' ? '£' : 
-                          units.currency === 'EUR' ? '€' : 
-                          units.currency === 'USD' ? '$' : 
-                          units.currency;
-    
-    return `+${currencySymbol}${price.toFixed(2)}`;
-  };
-  
-  // Helper function to check if an option is used in rule conditions
-  const isUsedInRuleCondition = (optionKey: string): boolean => {
-    return templateRules.some(rule => rule.condition.option_key === optionKey);
-  };
-  
-  // Helper function to check if an option is controlled by rules
-  const isControlledByRule = (optionKey: string): boolean => {
-    return templateRules.some(rule => rule.effect.target_option_key === optionKey);
-  };
-  
-  // Helper function to get rules affecting an option
-  const getRulesForOption = (optionKey: string) => {
-    return templateRules.filter(rule => 
-      rule.condition.option_key === optionKey || 
-      rule.effect.target_option_key === optionKey
-    );
-  };
-
-  // State for eyelet ring library
-  const [eyeletRings] = useState([
-    { id: 1, name: "Standard Silver 25mm", color: "Silver", diameter: 25 },
-    { id: 2, name: "Antique Brass 20mm", color: "Antique Brass", diameter: 20 },
-    { id: 3, name: "Black Matt 30mm", color: "Black", diameter: 30 },
-    { id: 4, name: "Chrome 25mm", color: "Chrome", diameter: 25 }
-  ]);
-
   const [isSaving, setIsSaving] = useState(false);
-  const [optionDisplayOrder, setOptionDisplayOrder] = useState<Record<string, number>>({});
   
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
   const [formData, setFormData] = useState({
-    // Basic Information
     name: template?.name || "",
     description: template?.description || "",
     image_url: (template as any)?.image_url || "",
-    
-    // Curtain Type
     curtain_type: template?.curtain_type || "curtain",
     
-    // Selected Headings from Library (for curtains)
-    selected_heading_ids: template?.selected_heading_ids || [],
+    // Hidden system_type - auto-generated from curtain_type
+    system_type: (template as any)?.system_type || "",
     
-    // Selected Top Systems from Library (for blinds)
-    selected_top_system_ids: (template as any)?.selected_top_system_ids || [],
+    // Pricing
+    pricing_type: template?.pricing_type || "per_metre",
+    unit_price: template?.unit_price?.toString() || "",
+    machine_price_per_metre: template?.machine_price_per_metre?.toString() || "",
     
-    // Fabric Requirements (for curtains - will use inventory)
-    fabric_width_type: template?.fabric_width_type || "wide",
-    vertical_repeat: template?.vertical_repeat?.toString() || "",
-    horizontal_repeat: template?.horizontal_repeat?.toString() || "",
-    fabric_direction: template?.fabric_direction || "standard",
-    
-    // Curtain-specific: Hem Allowances - Default + Editable
+    // Manufacturing
+    header_allowance: template?.header_allowance?.toString() || "8",
     bottom_hem: template?.bottom_hem?.toString() || "15",
     side_hems: template?.side_hems?.toString() || "7.5",
-    seam_hems: template?.seam_hems?.toString() || "1.5",
-    
-    // Curtain-specific: Returns - Set in template, ON/OFF toggle in projects
-    return_left: template?.return_left?.toString() || "7.5",
-    return_right: template?.return_right?.toString() || "7.5",
-    overlap: template?.overlap?.toString() || "10",
-    header_allowance: template?.header_allowance?.toString() || "8",
     waste_percent: template?.waste_percent?.toString() || "5",
-    is_railroadable: template?.is_railroadable || false,
-    
-    // Blind/Shutter-specific: Manufacturing settings
-    bracket_deduction: (template as any)?.bracket_deduction?.toString() || "0",
     minimum_width: (template as any)?.minimum_width?.toString() || "30",
     maximum_width: (template as any)?.maximum_width?.toString() || "300",
-    minimum_height: (template as any)?.minimum_height?.toString() || "30",
-    maximum_height: (template as any)?.maximum_height?.toString() || "300",
-    stack_allowance: (template as any)?.stack_allowance?.toString() || "0",
-    
-    // Pricing Grid Configuration (IMPORTANT: Used for grid routing)
-    system_type: (template as any)?.system_type || "",
-    price_group: (template as any)?.price_group || "",
-    
-    // Lining Selection - Pre-created with pricing (for curtains)
-    lining_types: template?.lining_types || [
-      { type: "Standard", price_per_metre: 15, labour_per_curtain: 25, pricing_method: 'per-meter' },
-      { type: "Blackout", price_per_metre: 22, labour_per_curtain: 35, pricing_method: 'per-meter' },
-      { type: "Thermal", price_per_metre: 28, labour_per_curtain: 40, pricing_method: 'per-meter' },
-      { type: "Interlining", price_per_metre: 18, labour_per_curtain: 45, pricing_method: 'per-meter' }
-    ],
-    
-    // Hardware - From inventory
-    compatible_hardware: template?.compatible_hardware || [],
-    
-    // Make-Up Pricing with machine/hand conditions
-    pricing_type: template?.pricing_type || "per_metre" as 'per_metre' | 'per_drop' | 'per_panel' | 'pricing_grid' | 'per_sqm' | 'per_unit' | 'complexity_based',
-    offers_hand_finished: template?.offers_hand_finished || false,
-    machine_price_per_metre: template?.machine_price_per_metre?.toString() || template?.unit_price?.toString() || "",
-    hand_price_per_metre: template?.hand_price_per_metre?.toString() || "",
-    machine_price_per_drop: template?.machine_price_per_drop?.toString() || "",
-    hand_price_per_drop: template?.hand_price_per_drop?.toString() || "",
-    machine_price_per_panel: template?.machine_price_per_panel?.toString() || "",
-    hand_price_per_panel: template?.hand_price_per_panel?.toString() || "",
-    average_drop_width: "140", // Default average drop width in cm
-    // Height range pricing
-    uses_height_pricing: false,
-    height_price_ranges: template?.height_price_ranges || [
-      { min_height: 1, max_height: 200, price: 24 }
-    ],
-    price_rules: template?.price_rules || [],
-    pricing_grid_data: template?.pricing_grid_data || null,
-    
-    // Height-based drop pricing
-    drop_height_ranges: template?.drop_height_ranges || [],
-    machine_drop_height_prices: template?.machine_drop_height_prices || [],
-    hand_drop_height_prices: template?.hand_drop_height_prices || [],
-    
-    // Complexity-based pricing tiers
-    complexity_pricing_tiers: (template as any)?.complexity_pricing_tiers || [],
-    
-    // Multiple pricing methods
-    pricing_methods: (template as any)?.pricing_methods || [],
-    
-    // Blind-specific hem allowances
-    blind_header_hem_cm: (template as any)?.blind_header_hem_cm?.toString() || "8",
-    blind_bottom_hem_cm: (template as any)?.blind_bottom_hem_cm?.toString() || "8",
-    blind_side_hem_cm: (template as any)?.blind_side_hem_cm?.toString() || "0",
-    machine_price_per_sqm: (template as any)?.machine_price_per_sqm?.toString() || ""
   });
-  
-  // Map curtain_type to treatment_category - make it reactive with useMemo
-  const mapCurtainTypeToCategory = (type: string) => {
-    const mapping: Record<string, string> = {
-      'curtain': 'curtains',
-      'roller_blind': 'roller_blinds',  // ✅ FIXED: Match the actual category
-      'roman_blind': 'roman_blinds',
-      'venetian_blind': 'venetian_blinds',
-      'vertical_blind': 'vertical_blinds',
-      'cellular_shade': 'cellular_blinds',  // ✅ FIXED: Match the actual category
-      'plantation_shutter': 'plantation_shutters',  // ✅ FIXED: Match the actual category
-      'cafe_shutter': 'shutters',
-      'panel_glide': 'panel_glide',
-      'awning': 'awning',
-    };
-    return mapping[type] || type;
-  };
-  
-  // Reactively compute curtainType based on current formData
-  const curtainType = useMemo(() => 
-    mapCurtainTypeToCategory(formData.curtain_type || 'roller_blind'),
-    [formData.curtain_type]
-  );
-  
-  // Fetch dynamic option type categories from database - will re-fetch when curtainType changes
-  const { data: optionTypeCategories = [], isLoading: categoriesLoading } = useOptionTypeCategories(curtainType);
-  
-  // Fetch ALL available treatment options for THIS ACCOUNT only
-  const { data: allAvailableOptions = [] } = useQuery({
-    queryKey: ['available-treatment-options-from-manager', curtainType],
-    queryFn: async () => {
-      if (!formData.curtain_type) return [];
-      
-      // Get current user's account_id
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-      
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('user_id, parent_account_id')
-        .eq('user_id', user.id)
-        .single();
-      
-      const accountId = profile?.parent_account_id || user.id;
-      
-      // Map formData.curtain_type to proper treatment_category
-      const categoryToSearch = mapCurtainTypeToCategory(formData.curtain_type);
-      
-      console.log('🔍 Fetching treatment options for category and account:', { 
-        categoryToSearch, 
-        accountId 
-      });
-      
-      // CRITICAL: Filter by account_id to ensure data isolation
-      const query = supabase
-        .from('treatment_options')
-        .select(`
-          *,
-          option_values (*)
-        `)
-        .eq('treatment_category', categoryToSearch)
-        .eq('account_id', accountId)
-        .order('order_index');
-      
-      const { data, error } = await query;
-      
-      console.log('📦 Treatment options query result:', { 
-        categoryToSearch, 
-        dataCount: data?.length, 
-        error,
-        sampleData: data?.slice(0, 2)
-      });
-      
-      if (error) {
-        console.error('Error fetching treatment options:', error);
-        throw error;
-      }
-      
-      // Group by key to get unique option types with all their values
-      const uniqueOptions = data?.reduce((acc: any[], opt: any) => {
-        const existing = acc.find((o: any) => o.key === opt.key);
-        if (!existing) {
-          // Sort option_values by order_index
-          if (opt.option_values) {
-            opt.option_values.sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0));
-          }
-          acc.push(opt);
-        } else {
-          // Merge option values from multiple templates
-          const existingValues = existing.option_values || [];
-          const newValues = opt.option_values || [];
-          newValues.forEach((newVal: any) => {
-            if (!existingValues.find((ev: any) => ev.code === newVal.code)) {
-              existingValues.push(newVal);
-            }
-          });
-          // Sort after merging
-          existingValues.sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0));
-          existing.option_values = existingValues;
-        }
-        return acc;
-      }, []);
-      
-      return uniqueOptions || [];
-    },
-    enabled: !!formData.curtain_type,
-  });
-  
-  const handleToggleOption = async (optionKey: string, optionLabel: string, enabled: boolean) => {
-    try {
-      // Find the category-based option (not template-specific)
-      const categoryOption = allAvailableOptions.find(opt => opt.key === optionKey);
-      
-      if (!categoryOption) {
-        throw new Error(`Option ${optionKey} not found. Please create it in the Options tab first.`);
-      }
-      
-      // Update the visibility of the category-based option
-      await updateTreatmentOption.mutateAsync({
-        id: categoryOption.id,
-        updates: { visible: enabled }
-      });
-      
-      // Force refetch
-      await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
-      await queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
-      
-      toast({
-        title: enabled ? "Option enabled" : "Option disabled",
-        description: `${optionLabel} has been ${enabled ? 'enabled' : 'disabled'} for this template.`,
-      });
-    } catch (error: any) {
-      console.error('Error toggling option:', error);
-      toast({
-        title: "Error",
-        description: error?.message || "Failed to toggle option.",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  // NOTE: Option values are managed globally in Settings → Options
-  // This function now handles toggling individual option values
-  const handleToggleOptionValue = async (optionKey: string, valueId: string, enabled: boolean) => {
-    try {
-      const categoryOption = allAvailableOptions.find(opt => opt.key === optionKey);
-      if (!categoryOption) return;
-      
-      // Update the option value extra_data to store visibility
-      const { data: currentValue, error: fetchError } = await supabase
-        .from('option_values')
-        .select('extra_data')
-        .eq('id', valueId)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      const currentExtra = (currentValue?.extra_data as any) || {};
-      const updatedExtraData = {
-        ...currentExtra,
-        visible: enabled
-      };
-      
-      const { error } = await supabase
-        .from('option_values')
-        .update({ extra_data: updatedExtraData as any })
-        .eq('id', valueId);
-      
-      if (error) throw error;
-      
-      await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
-      await queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
-      
-      toast({
-        title: enabled ? "Option value enabled" : "Option value disabled",
-        description: `Option value has been ${enabled ? 'enabled' : 'disabled'}.`,
-      });
-    } catch (error) {
-      console.error('Error toggling option value:', error);
-      toast({
-        title: "Error",
-        description: "Failed to toggle option value.",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const handleDragEnd = async (event: any, optionKey: string) => {
-    const { active, over } = event;
-    
-    if (!over || active.id === over.id) return;
-    
-    const categoryOption = allAvailableOptions.find(opt => opt.key === optionKey);
-    if (!categoryOption?.option_values) return;
-    
-    const oldIndex = categoryOption.option_values.findIndex((v: any) => v.id === active.id);
-    const newIndex = categoryOption.option_values.findIndex((v: any) => v.id === over.id);
-    
-    const reorderedValues = arrayMove(categoryOption.option_values, oldIndex, newIndex);
-    
-    // Update order_index for all values
-    try {
-      const updates = reorderedValues.map((value: any, index: number) => 
-        supabase
-          .from('option_values')
-          .update({ order_index: index })
-          .eq('id', value.id)
-      );
-      
-      await Promise.all(updates);
-      await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
-      await queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
-      
-      toast({
-        title: "Order updated",
-        description: "Option values have been reordered.",
-      });
-    } catch (error) {
-      console.error('Error reordering options:', error);
-      toast({
-        title: "Error",
-        description: "Failed to reorder options.",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const handleDragEndOptions = async (event: any) => {
-    const { active, over } = event;
-    
-    if (!over || active.id === over.id) return;
-    
-    const oldIndex = allAvailableOptions.findIndex((opt: any) => opt.id === active.id);
-    const newIndex = allAvailableOptions.findIndex((opt: any) => opt.id === over.id);
-    
-    if (oldIndex === -1 || newIndex === -1) return;
-    
-    const reorderedOptions = arrayMove(allAvailableOptions, oldIndex, newIndex);
-    
-    // Update order_index for all options
-    try {
-      const updates = reorderedOptions.map((option: any, index: number) => 
-        supabase
-          .from('treatment_options')
-          .update({ order_index: index })
-          .eq('id', option.id)
-      );
-      
-      await Promise.all(updates);
-      await queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
-      await queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
-      
-      toast({
-        title: "Order updated",
-        description: "Option categories have been reordered.",
-      });
-    } catch (error) {
-      console.error('Error reordering option categories:', error);
-      toast({
-        title: "Error",
-        description: "Failed to reorder option categories.",
-        variant: "destructive"
-      });
-    }
-  };
 
-  const handleInputChange = (field: string, value: string | any) => {
+  const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Invalid File",
-        description: "Please select an image file",
-        variant: "destructive"
-      });
-      return;
-    }
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).slice(2)}.${fileExt}`;
+      const filePath = `${fileName}`;
 
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File Too Large",
-        description: "Image must be less than 5MB",
-        variant: "destructive"
-      });
-      return;
-    }
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file);
 
-    // Convert to base64 for now (can be changed to storage upload later)
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData(prev => ({ ...prev, image_url: reader.result as string }));
-    };
-    reader.readAsDataURL(file);
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      handleInputChange("image_url", publicUrl);
+      
+      toast({
+        title: "Image uploaded",
+        description: "Product image uploaded successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleRemoveImage = () => {
-    setFormData(prev => ({ ...prev, image_url: "" }));
+    handleInputChange("image_url", "");
   };
 
   const handleSave = async () => {
@@ -728,152 +95,52 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       toast({
         title: "Validation Error",
         description: "Template name is required",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Only validate heading selection for curtains
-    if (formData.curtain_type === 'curtain' && formData.selected_heading_ids.length === 0) {
-      toast({
-        title: "Validation Error",
-        description: "At least one heading style must be selected",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     setIsSaving(true);
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to save templates",
-          variant: "destructive"
-        });
-        return;
-      }
 
-      const treatmentCategory: CurtainTemplate['treatment_category'] = 
-        formData.curtain_type === 'curtain' ? 'curtains' : 
-        formData.curtain_type === 'roller_blind' ? 'roller_blinds' :
-        formData.curtain_type === 'roman_blind' ? 'roman_blinds' :
-        formData.curtain_type === 'venetian_blind' ? 'venetian_blinds' :
-        formData.curtain_type === 'vertical_blind' ? 'vertical_blinds' :
-        formData.curtain_type === 'cellular_shade' ? 'cellular_shades' :
-        formData.curtain_type === 'plantation_shutter' ? 'plantation_shutters' :
-        formData.curtain_type === 'cafe_shutter' ? 'shutters' :
-        formData.curtain_type === 'panel_glide' ? 'panel_glide' :
-        formData.curtain_type === 'awning' ? 'awning' :
-        'curtains';
-      
-      const templateData = {
-        user_id: user.id,
+    try {
+      const templateData: any = {
         name: formData.name,
         description: formData.description,
         image_url: formData.image_url,
         curtain_type: formData.curtain_type,
-        treatment_category: treatmentCategory,
-        selected_heading_ids: formData.selected_heading_ids,
-        // Keep these for compatibility - now derived from selected headings
-        heading_name: formData.selected_heading_ids.length > 0 ? 
-          headingStyles.find(h => h.id === formData.selected_heading_ids[0])?.name || "" : "",
-        fullness_ratio: formData.selected_heading_ids.length > 0 ? 
-          headingStyles.find(h => h.id === formData.selected_heading_ids[0])?.fullness_ratio || 2.0 : 2.0,
-        fabric_width_type: formData.fabric_width_type as 'wide' | 'narrow',
-        vertical_repeat: formData.vertical_repeat ? parseFloat(formData.vertical_repeat.toString()) : undefined,
-        horizontal_repeat: formData.horizontal_repeat ? parseFloat(formData.horizontal_repeat.toString()) : undefined,
-        fabric_direction: formData.fabric_direction as 'standard' | 'railroaded',
-        bottom_hem: parseFloat(formData.bottom_hem.toString()) || 15,
-        side_hems: parseFloat(formData.side_hems.toString()) || 7.5,
-        seam_hems: parseFloat(formData.seam_hems.toString()) || 1.5,
-        lining_types: formData.lining_types,
-        compatible_hardware: [], // Legacy field - not used with new Options system
-        pricing_type: formData.pricing_type as 'per_metre' | 'per_drop' | 'per_panel' | 'pricing_grid',
-        offers_hand_finished: formData.offers_hand_finished,
-        machine_price_per_metre: formData.machine_price_per_metre ? parseFloat(formData.machine_price_per_metre.toString()) : undefined,
-        hand_price_per_metre: formData.hand_price_per_metre ? parseFloat(formData.hand_price_per_metre.toString()) : undefined,
-        machine_price_per_drop: formData.machine_price_per_drop ? parseFloat(formData.machine_price_per_drop.toString()) : undefined,
-        hand_price_per_drop: formData.hand_price_per_drop ? parseFloat(formData.hand_price_per_drop.toString()) : undefined,
-        drop_height_ranges: formData.drop_height_ranges || undefined,
-        machine_drop_height_prices: formData.machine_drop_height_prices || undefined,
-        hand_drop_height_prices: formData.hand_drop_height_prices || undefined,
-        machine_price_per_panel: formData.machine_price_per_panel ? parseFloat(formData.machine_price_per_panel.toString()) : undefined,
-        hand_price_per_panel: formData.hand_price_per_panel ? parseFloat(formData.hand_price_per_panel.toString()) : undefined,
-        average_drop_width: formData.average_drop_width ? parseFloat(formData.average_drop_width.toString()) : 140,
-        uses_height_pricing: formData.uses_height_pricing,
-        height_price_ranges: formData.height_price_ranges,
-        price_rules: formData.price_rules,
-        unit_price: formData.machine_price_per_metre ? parseFloat(formData.machine_price_per_metre.toString()) : undefined,
-        pricing_grid_data: formData.pricing_grid_data || {},
-        pricing_methods: formData.pricing_methods || [],
-        complexity_pricing_tiers: formData.complexity_pricing_tiers || [],
-        manufacturing_type: "machine" as 'machine' | 'hand', // Default to machine
-        hand_finished_upcharge_fixed: undefined,
-        hand_finished_upcharge_percentage: undefined,
-        return_left: (() => {
-          const val = parseFloat(formData.return_left.toString());
-          return isNaN(val) ? 7.5 : val;
-        })(),
-        return_right: (() => {
-          const val = parseFloat(formData.return_right.toString());
-          return isNaN(val) ? 7.5 : val;
-        })(),
-        overlap: (() => {
-          const val = parseFloat(formData.overlap.toString());
-          return isNaN(val) ? 10 : val;
-        })(),
-        header_allowance: (() => {
-          const val = parseFloat(formData.header_allowance.toString());
-          return isNaN(val) ? 8 : val;
-        })(),
-        waste_percent: formData.waste_percent !== '' && formData.waste_percent !== null && formData.waste_percent !== undefined 
-          ? parseFloat(formData.waste_percent.toString()) 
-          : 5,
-        is_railroadable: formData.is_railroadable,
-        
-        // Blind-specific hem allowances
-        blind_header_hem_cm: formData.blind_header_hem_cm ? parseFloat(formData.blind_header_hem_cm.toString()) : undefined,
-        blind_bottom_hem_cm: formData.blind_bottom_hem_cm ? parseFloat(formData.blind_bottom_hem_cm.toString()) : undefined,
-        blind_side_hem_cm: formData.blind_side_hem_cm ? parseFloat(formData.blind_side_hem_cm.toString()) : undefined,
-        
-        // Blind/Shutter-specific: Manufacturing settings
-        bracket_deduction: formData.bracket_deduction ? parseFloat(formData.bracket_deduction.toString()) : undefined,
-        minimum_width: formData.minimum_width ? parseFloat(formData.minimum_width.toString()) : undefined,
-        maximum_width: formData.maximum_width ? parseFloat(formData.maximum_width.toString()) : undefined,
-        minimum_height: formData.minimum_height ? parseFloat(formData.minimum_height.toString()) : undefined,
-        maximum_height: formData.maximum_height ? parseFloat(formData.maximum_height.toString()) : undefined,
-        stack_allowance: formData.stack_allowance ? parseFloat(formData.stack_allowance.toString()) : undefined,
-        
-        // Pricing Grid Configuration
-        system_type: formData.system_type || null,
-        price_group: formData.price_group || null,
-        
-        active: true
+        system_type: formData.system_type || formData.curtain_type,
+        pricing_type: formData.pricing_type,
+        unit_price: formData.unit_price ? parseFloat(formData.unit_price) : null,
+        machine_price_per_metre: formData.machine_price_per_metre ? parseFloat(formData.machine_price_per_metre) : null,
+        header_allowance: formData.header_allowance ? parseFloat(formData.header_allowance) : null,
+        bottom_hem: formData.bottom_hem ? parseFloat(formData.bottom_hem) : null,
+        side_hems: formData.side_hems ? parseFloat(formData.side_hems) : null,
+        waste_percent: formData.waste_percent ? parseFloat(formData.waste_percent) : null,
+        minimum_width: formData.minimum_width ? parseFloat(formData.minimum_width) : null,
+        maximum_width: formData.maximum_width ? parseFloat(formData.maximum_width) : null,
+        active: true,
       };
 
-      console.log('🔍 SAVING TEMPLATE DATA:', {
-        waste_percent_raw: formData.waste_percent,
-        waste_percent_parsed: parseFloat(formData.waste_percent.toString()),
-        waste_percent_in_data: templateData.waste_percent,
-        full_template_data: templateData
-      });
-
-      if (template) {
-        await updateTemplate.mutateAsync({ id: template.id, ...templateData });
+      if (template?.id) {
+        await updateTemplate.mutateAsync({
+          id: template.id,
+          ...templateData,
+        });
       } else {
         await createTemplate.mutateAsync(templateData);
       }
-      
+
+      toast({
+        title: "Success",
+        description: template ? "Template updated" : "Template created",
+      });
+
       onClose();
-    } catch (error) {
-      console.error("Error saving curtain template:", error);
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to save template. Please try again.",
-        variant: "destructive"
+        description: error.message,
+        variant: "destructive",
       });
     } finally {
       setIsSaving(false);
@@ -881,1453 +148,139 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   };
 
   return (
-    <TooltipProvider>
+    <div className="space-y-6">
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="basic">Basic</TabsTrigger>
-          {formData.curtain_type === 'curtain' ? (
-            <TabsTrigger value="heading">Heading</TabsTrigger>
-          ) : (
-            <TabsTrigger value="treatment_settings">Options</TabsTrigger>
-          )}
-          {formData.curtain_type === 'curtain' && (
-            <TabsTrigger value="curtain_options">Options</TabsTrigger>
-          )}
-          <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
-          <TabsTrigger value="rules" disabled={!template?.id}>Rules</TabsTrigger>
+          <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>
         </TabsList>
 
-        <div className="max-h-[70vh] overflow-y-auto py-4">
-          <TabsContent value="basic" className="space-y-6">
-            {/* Basic Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Basic Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Template Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    placeholder="e.g., Premium Roller Blind"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="description">Description (optional)</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => handleInputChange("description", e.target.value)}
-                    placeholder="Brief description"
-                    rows={2}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="product_image">Product Image</Label>
-                  <div className="space-y-2">
-                    {formData.image_url ? (
-                      <div className="relative inline-block">
-                        <img 
-                          src={formData.image_url} 
-                          alt={formData.name || 'Product'}
-                          className="w-24 h-24 object-cover rounded-lg border"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute -top-2 -right-2 h-6 w-6"
-                          onClick={handleRemoveImage}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ) : (
-                       <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="hidden"
-                          id="product_image"
-                        />
-                        <label htmlFor="product_image" className="cursor-pointer">
-                          <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-                          <p className="mt-1 text-xs text-muted-foreground">Click to upload</p>
-                        </label>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="window_covering_type">Type</Label>
-                  <Select value={formData.curtain_type} onValueChange={(value) => handleInputChange("curtain_type", value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.values(TREATMENT_CATEGORIES).map((category) => (
-                        <SelectItem key={category.singular} value={category.singular}>
-                          {category.display_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+        <TabsContent value="basic" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Basic Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  placeholder="e.g., Premium Roller Blind"
+                />
+              </div>
 
-          {/* Heading Tab - Only for Curtains */}
-          <TabsContent value="heading" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Heading Styles</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {headingStyles.filter(heading => 
-                    !heading.treatment_type || 
-                    heading.treatment_type === formData.curtain_type ||
-                    formData.curtain_type === 'custom'
-                  ).length === 0 ? (
-                    <p className="text-muted-foreground text-sm">
-                      No heading styles found for {formData.curtain_type}. Create heading styles in the inventory section first, or set their treatment type to "{formData.curtain_type}".
-                    </p>
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange("description", e.target.value)}
+                  placeholder="Brief description"
+                  rows={2}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="product_image">Image</Label>
+                <div className="space-y-2">
+                  {formData.image_url ? (
+                    <div className="relative inline-block">
+                      <img 
+                        src={formData.image_url} 
+                        alt={formData.name || 'Product'}
+                        className="w-24 h-24 object-cover rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={handleRemoveImage}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
                   ) : (
-                    headingStyles
-                      .filter(heading => 
-                        !heading.treatment_type || 
-                        heading.treatment_type === formData.curtain_type ||
-                        formData.curtain_type === 'custom'
-                      )
-                      .map((heading) => (
-                      <div key={heading.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                        <Checkbox
-                          id={`heading-${heading.id}`}
-                          checked={formData.selected_heading_ids.includes(heading.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              handleInputChange("selected_heading_ids", [...formData.selected_heading_ids, heading.id]);
-                            } else {
-                              handleInputChange("selected_heading_ids", formData.selected_heading_ids.filter(id => id !== heading.id));
-                            }
-                          }}
-                        />
-                        <div className="flex items-center gap-3 flex-1">
-                          {(heading as any).image_url && (
-                            <img 
-                              src={(heading as any).image_url} 
-                              alt={heading.name}
-                              className="w-12 h-12 object-cover rounded"
-                            />
-                          )}
-                          <div className="flex-1">
-                            <Label htmlFor={`heading-${heading.id}`} className="font-medium cursor-pointer">
-                              {heading.name}
-                            </Label>
-                            <div className="text-sm text-muted-foreground">
-                              Fullness: {heading.fullness_ratio}x
-                              {(heading as any).fullness_ratios && Array.isArray((heading as any).fullness_ratios) && 
-                                ` (${(heading as any).fullness_ratios.length} options)`
-                              }
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))
+                    <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        id="product_image"
+                      />
+                      <label htmlFor="product_image" className="cursor-pointer">
+                        <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
+                        <p className="mt-1 text-xs text-muted-foreground">Click to upload</p>
+                      </label>
+                    </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-          </TabsContent>
+              <div>
+                <Label htmlFor="window_covering_type">Type</Label>
+                <Select value={formData.curtain_type} onValueChange={(value) => handleInputChange("curtain_type", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(TREATMENT_CATEGORIES).map((category) => (
+                      <SelectItem key={category.singular} value={category.singular}>
+                        {category.display_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          {/* Curtain Options Tab - For Curtain-Specific Options */}
-          {formData.curtain_type === 'curtain' && (
-            <TabsContent value="curtain_options" className="space-y-6">
-              {templateRules.length > 0 && (
-                <Card className="bg-blue-50 border-blue-200">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-2">
-                      <Info className="h-4 w-4 text-blue-600" />
-                      <CardTitle className="text-sm text-blue-900">Rule Indicators Guide</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="default" className="text-xs gap-1 bg-blue-500">
-                        <Workflow className="h-3 w-3" />
-                        Condition
-                      </Badge>
-                      <span className="text-blue-800">This option triggers rules when a specific value is selected</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs gap-1 bg-purple-100 text-purple-800">
-                        <GitBranch className="h-3 w-3" />
-                        Controlled
-                      </Badge>
-                      <span className="text-blue-800">This option's visibility is controlled by rules (cannot manually toggle)</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {(() => {
-                const sortedOptions = [...allAvailableOptions]
-                  .filter((opt: any) => {
-                    if (opt.visible === true) return true;
-                    if (opt.visible === false && (!opt.option_values || opt.option_values.length === 0)) {
-                      return false;
-                    }
-                    return true;
-                  })
-                  .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0));
-                
-                const currentGroups = sortedOptions.map(opt => ({
-                  type: opt.key,
-                  label: opt.label,
-                  id: opt.id
-                }));
-                
-                if (categoriesLoading) {
-                  return (
-                    <Card>
-                      <CardContent className="p-8 text-center text-muted-foreground">
-                        Loading option types...
-                      </CardContent>
-                    </Card>
-                  );
-                }
-                
-                return currentGroups.length === 0 ? (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Curtain Options</CardTitle>
-                      <CardDescription>
-                        No option types configured for curtains yet
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">
-                        Go to <strong>Settings → Products → Options</strong> and create option types for <strong>curtains</strong>.
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEndOptions}
-                  >
-                    <SortableContext
-                      items={currentGroups.map((g: any) => g.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <div className="space-y-4">
-                        {currentGroups.map((group) => {
-                          const matchingOption = allAvailableOptions.find(opt => opt.key === group.type);
-                          const isEnabled = matchingOption?.visible || false;
-                          const availableInOtherTemplates = allAvailableOptions.find(opt => opt.key === group.type);
-                          const allAvailableValues = availableInOtherTemplates?.option_values || [];
-                          const hasOptionsAvailable = allAvailableValues.length > 0;
-                          
-                          return (
-                            <SortableOptionCard
-                              key={group.id}
-                              option={matchingOption}
-                              group={group}
-                              isEnabled={isEnabled}
-                              allAvailableValues={allAvailableValues}
-                              hasOptionsAvailable={hasOptionsAvailable}
-                              formatPrice={formatOptionPrice}
-                              onToggle={handleToggleOption}
-                              onValueToggle={handleToggleOptionValue}
-                              onDragEnd={handleDragEnd}
-                              isUsedInRuleCondition={isUsedInRuleCondition}
-                              isControlledByRule={isControlledByRule}
-                              getRulesForOption={getRulesForOption}
-                            />
-                          );
-                        })}
-                      </div>
-                    </SortableContext>
-                  </DndContext>
-                )
-              })()}
-            </TabsContent>
-          )}
+        <TabsContent value="pricing" className="space-y-4 mt-4">
+          <SimplifiedTemplateFormPricing 
+            formData={formData}
+            template={template}
+            handleInputChange={handleInputChange}
+          />
+        </TabsContent>
 
-          {/* Treatment Settings Tab - Only for Non-Curtain Window Coverings */}
-          <TabsContent value="treatment_settings" className="space-y-6">
-            {templateRules.length > 0 && (
-              <Card className="bg-blue-50 border-blue-200">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <Info className="h-4 w-4 text-blue-600" />
-                    <CardTitle className="text-sm text-blue-900">Rule Indicators Guide</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="default" className="text-xs gap-1 bg-blue-500">
-                      <Workflow className="h-3 w-3" />
-                      Condition
-                    </Badge>
-                    <span className="text-blue-800">This option triggers rules when a specific value is selected</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs gap-1 bg-purple-100 text-purple-800">
-                      <GitBranch className="h-3 w-3" />
-                      Controlled
-                    </Badge>
-                    <span className="text-blue-800">This option's visibility is controlled by rules (cannot manually toggle)</span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            
-            {(() => {
-              // Sort and filter allAvailableOptions - show visible AND enabled ones
-              // CRITICAL: Also filter out options where visible=false AND they have no option values
-              // This prevents ghost/test options from showing up
-              const sortedOptions = [...allAvailableOptions]
-                .filter((opt: any) => {
-                  // Always show if visible=true
-                  if (opt.visible === true) return true;
-                  // If visible=false, only show if it has option_values (legitimate hidden options)
-                  if (opt.visible === false && (!opt.option_values || opt.option_values.length === 0)) {
-                    return false; // Hide test/ghost options with no values
-                  }
-                  return true;
-                })
-                .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0));
-              
-              // Use sorted options to determine rendering order
-              const currentGroups = sortedOptions.map(opt => ({
-                type: opt.key,
-                label: opt.label,
-                id: opt.id
-              }));
-              
-              if (categoriesLoading) {
-                return (
-                  <Card>
-                    <CardContent className="p-8 text-center text-muted-foreground">
-                      Loading option types...
-                    </CardContent>
-                  </Card>
-                );
-              }
-              
-              return currentGroups.length === 0 ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Treatment Settings</CardTitle>
-                    <CardDescription>
-                      No option types configured for this treatment category yet
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Go to <strong>Settings → Products → Options</strong> and create option types for <strong>{formData.curtain_type}</strong>.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEndOptions}
-                >
-                  <SortableContext
-                    items={currentGroups.map((g: any) => g.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div className="space-y-4">
-                      {currentGroups.map((group) => {
-                        const matchingOption = allAvailableOptions.find(opt => opt.key === group.type);
-                        const isEnabled = matchingOption?.visible || false;
-                        const availableInOtherTemplates = allAvailableOptions.find(opt => opt.key === group.type);
-                        const allAvailableValues = availableInOtherTemplates?.option_values || [];
-                        const hasOptionsAvailable = allAvailableValues.length > 0;
-                        
-                        return (
-                          <SortableOptionCard
-                            key={group.id}
-                            option={matchingOption}
-                            group={group}
-                            isEnabled={isEnabled}
-                            allAvailableValues={allAvailableValues}
-                            hasOptionsAvailable={hasOptionsAvailable}
-                            formatPrice={formatOptionPrice}
-                            onToggle={handleToggleOption}
-                            onValueToggle={handleToggleOptionValue}
-                            onDragEnd={handleDragEnd}
-                            isUsedInRuleCondition={isUsedInRuleCondition}
-                            isControlledByRule={isControlledByRule}
-                            getRulesForOption={getRulesForOption}
-                          />
-                        );
-                      })}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-              )
-            })()}
-          </TabsContent>
+        <TabsContent value="manufacturing" className="space-y-4 mt-4">
+          <SimplifiedTemplateFormManufacturing 
+            formData={formData}
+            handleInputChange={handleInputChange}
+          />
+        </TabsContent>
+      </Tabs>
 
-          <TabsContent value="manufacturing" className="space-y-6">
-            {/* Curtain Manufacturing Configuration */}
-            {formData.curtain_type === 'curtain' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Curtain Manufacturing</CardTitle>
-                  <CardDescription>Fabric usage rules for curtain production</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Return & Overlap Allowance */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium">Returns & Overlap</h4>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Returns wrap to the wall. Overlap is for pairs only.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <Label htmlFor="return_left">Return Left (cm)</Label>
-                        <Input
-                          id="return_left"
-                          type="number"
-                          step="0.5"
-                          value={formData.return_left}
-                          onChange={(e) => handleInputChange("return_left", e.target.value)}
-                          placeholder="7.5"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="return_right">Return Right (cm)</Label>
-                        <Input
-                          id="return_right"
-                          type="number"
-                          step="0.5"
-                          value={formData.return_right}
-                          onChange={(e) => handleInputChange("return_right", e.target.value)}
-                          placeholder="7.5"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="overlap">Centre Overlap (cm)</Label>
-                        <Input
-                          id="overlap"
-                          type="number"
-                          step="0.5"
-                          value={formData.overlap}
-                          onChange={(e) => handleInputChange("overlap", e.target.value)}
-                          placeholder="10"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Hem Allowances */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium">Hem Allowances</h4>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Default values that can be overridden in projects if needed.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <div className="grid grid-cols-4 gap-4">
-                      <div>
-                        <Label htmlFor="header_allowance">Header Allowance (cm)</Label>
-                        <Input
-                          id="header_allowance"
-                          type="number"
-                          step="0.5"
-                          value={formData.header_allowance}
-                          onChange={(e) => handleInputChange("header_allowance", e.target.value)}
-                          placeholder="8"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="bottom_hem">Bottom Hem (cm)</Label>
-                        <Input
-                          id="bottom_hem"
-                          type="number"
-                          step="0.5"
-                          value={formData.bottom_hem}
-                          onChange={(e) => handleInputChange("bottom_hem", e.target.value)}
-                          placeholder="15"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="side_hems">Side Hems (cm)</Label>
-                        <Input
-                          id="side_hems"
-                          type="number"
-                          step="0.5"
-                          value={formData.side_hems}
-                          onChange={(e) => handleInputChange("side_hems", e.target.value)}
-                          placeholder="7.5"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="seam_hems">Seam Allowance (cm)</Label>
-                        <Input
-                          id="seam_hems"
-                          type="number"
-                          step="0.5"
-                          value={formData.seam_hems}
-                          onChange={(e) => handleInputChange("seam_hems", e.target.value)}
-                          placeholder="1.5"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Fabric added for joining widths/pieces
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Waste & Railroading */}
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium">Waste Allowance</h4>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Applied at the end to avoid cutting shortages.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <div>
-                        <Label htmlFor="waste_percent">Waste (%)</Label>
-                        <Input
-                          id="waste_percent"
-                          type="number"
-                          step="0.1"
-                          value={formData.waste_percent}
-                          onChange={(e) => handleInputChange("waste_percent", e.target.value)}
-                          placeholder="5"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium">Railroading</h4>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Allow cutting from fabric width instead of length when possible.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id="is_railroadable"
-                          checked={formData.is_railroadable}
-                          onCheckedChange={(checked) => handleInputChange("is_railroadable", checked)}
-                        />
-                        <Label htmlFor="is_railroadable">Allow railroading</Label>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Blind/Shutter Manufacturing Configuration */}
-            {formData.curtain_type !== 'curtain' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Manufacturing Specifications</CardTitle>
-                  <CardDescription>Size constraints and deductions for {formData.curtain_type.replace('_', ' ')}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Visual Explanation Card */}
-                  <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start gap-3">
-                        <Info className="h-5 w-5 text-blue-600 mt-0.5" />
-                        <div className="flex-1">
-                          <CardTitle className="text-sm text-blue-900">How These Settings Work</CardTitle>
-                          <CardDescription className="text-xs text-blue-700 mt-1">
-                            These manufacturing specifications control production calculations
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3 text-xs">
-                      <div className="flex items-start gap-2">
-                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300 shrink-0">Bracket Deduction</Badge>
-                        <span className="text-blue-800">Reduces the final width to account for mounting brackets on each side</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300 shrink-0">Size Constraints</Badge>
-                        <span className="text-blue-800">Validates minimum/maximum dimensions and shows warnings during quoting</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <Badge variant="outline" className="bg-white text-blue-700 border-blue-300 shrink-0">Stack Allowance</Badge>
-                        <span className="text-blue-800">Adds extra height for fabric stacking when blind is fully raised (Roman blinds)</span>
-                      </div>
-                      <Separator className="my-2" />
-                      <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded">
-                        <Info className="h-4 w-4 text-amber-600 shrink-0" />
-                        <p className="text-amber-800 font-medium">
-                          Note: These values are saved to the template but may not be fully integrated in quoting/workshop calculations yet
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Bracket Deduction - HIDDEN: Not working yet */}
-                  {/* <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium">Bracket Deduction</h4>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Amount to deduct from width for bracket space (per side)</p>
-                          <p className="text-xs mt-1 opacity-80">Example: If bracket deduction = 2cm, final width = measured width - 4cm</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <div>
-                      <Label htmlFor="bracket_deduction">Deduction per Side (cm)</Label>
-                      <Input
-                        id="bracket_deduction"
-                        type="number"
-                        step="0.1"
-                        value={formData.bracket_deduction}
-                        onChange={(e) => handleInputChange("bracket_deduction", e.target.value)}
-                        placeholder="0"
-                      />
-                      {formData.bracket_deduction && parseFloat(formData.bracket_deduction) > 0 && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Total width deduction: {(parseFloat(formData.bracket_deduction) * 2).toFixed(1)}cm
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <Separator /> */}
-
-                  {/* Size Constraints - HIDDEN: Not working yet */}
-                  {/* <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium">Size Constraints</h4>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Minimum and maximum dimensions for this product</p>
-                          <p className="text-xs mt-1 opacity-80">Shows validation warnings in quoting if dimensions are out of range</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="minimum_width">Min Width (cm)</Label>
-                        <Input
-                          id="minimum_width"
-                          type="number"
-                          step="1"
-                          value={formData.minimum_width}
-                          onChange={(e) => handleInputChange("minimum_width", e.target.value)}
-                          placeholder="30"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="maximum_width">Max Width (cm)</Label>
-                        <Input
-                          id="maximum_width"
-                          type="number"
-                          step="1"
-                          value={formData.maximum_width}
-                          onChange={(e) => handleInputChange("maximum_width", e.target.value)}
-                          placeholder="300"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="minimum_height">Min Height (cm)</Label>
-                        <Input
-                          id="minimum_height"
-                          type="number"
-                          step="1"
-                          value={formData.minimum_height}
-                          onChange={(e) => handleInputChange("minimum_height", e.target.value)}
-                          placeholder="30"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="maximum_height">Max Height (cm)</Label>
-                        <Input
-                          id="maximum_height"
-                          type="number"
-                          step="1"
-                          value={formData.maximum_height}
-                          onChange={(e) => handleInputChange("maximum_height", e.target.value)}
-                          placeholder="300"
-                        />
-                      </div>
-                    </div>
-                    {(formData.minimum_width || formData.maximum_width || formData.minimum_height || formData.maximum_height) && (
-                      <div className="p-3 bg-muted rounded-lg text-xs space-y-1">
-                        <p className="font-medium">Size Range Summary:</p>
-                        {formData.minimum_width && formData.maximum_width && (
-                          <p>Width: {formData.minimum_width}cm - {formData.maximum_width}cm</p>
-                        )}
-                        {formData.minimum_height && formData.maximum_height && (
-                          <p>Height: {formData.minimum_height}cm - {formData.maximum_height}cm</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <Separator /> */}
-
-                  {/* Stack Allowance (for Roman blinds, etc.) */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium">Stack Allowance</h4>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Height to add for stacking when raised (Roman blinds, etc.)</p>
-                          <p className="text-xs mt-1 opacity-80">Typical: 15-25cm for standard Roman blinds</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <div>
-                      <Label htmlFor="stack_allowance">Stack Height (cm)</Label>
-                      <Input
-                        id="stack_allowance"
-                        type="number"
-                        step="1"
-                        value={formData.stack_allowance}
-                        onChange={(e) => handleInputChange("stack_allowance", e.target.value)}
-                        placeholder="0"
-                      />
-                      {formData.stack_allowance && parseFloat(formData.stack_allowance) > 0 && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          When fully raised, the blind will stack approximately {formData.stack_allowance}cm from the top
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Waste Percentage - For all product types */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium">Waste Allowance</h4>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Extra percentage added to material calculations to account for cutting waste and errors</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <div>
-                      <Label htmlFor="waste_percent_blind">Waste Percentage (%)</Label>
-                      <Input
-                        id="waste_percent_blind"
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                        value={formData.waste_percent}
-                        onChange={(e) => handleInputChange("waste_percent", e.target.value)}
-                        placeholder="5"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Applied to final material calculations (default: 5%)
-                      </p>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Hem Allowances - Only for Roman Blinds (curtains have their own hem section) */}
-                  {formData.curtain_type === 'roman_blind' && (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium">Hem Allowances</h4>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Fabric allowances for hems in centimeters</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div>
-                          <Label htmlFor="blind_header_hem_cm">Header Hem (cm)</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              id="blind_header_hem_cm"
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              value={formData.blind_header_hem_cm || ""}
-                              onChange={(e) => handleInputChange("blind_header_hem_cm", e.target.value)}
-                              placeholder="0"
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleInputChange("blind_header_hem_cm", "0")}
-                              className="px-3"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div>
-                          <Label htmlFor="blind_bottom_hem_cm">Bottom Hem (cm)</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              id="blind_bottom_hem_cm"
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              value={formData.blind_bottom_hem_cm || ""}
-                              onChange={(e) => handleInputChange("blind_bottom_hem_cm", e.target.value)}
-                              placeholder="0"
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleInputChange("blind_bottom_hem_cm", "0")}
-                              className="px-3"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div>
-                          <Label htmlFor="blind_side_hem_cm">Side Hem per Side (cm)</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              id="blind_side_hem_cm"
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              value={formData.blind_side_hem_cm || ""}
-                              onChange={(e) => handleInputChange("blind_side_hem_cm", e.target.value)}
-                              placeholder="0"
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleInputChange("blind_side_hem_cm", "0")}
-                              className="px-3"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        These values are added to the blind dimensions for fabric calculation. Click X to remove a hem allowance.
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Pricing Grid Configuration (For Blinds) */}
-            {formData.curtain_type !== 'curtain' && (
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Workflow className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-base">Pricing Grid Configuration</CardTitle>
-                  </div>
-                  <CardDescription>
-                    Configure system type and price group for automatic grid selection
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Explanation Card */}
-                  <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start gap-3">
-                        <Info className="h-5 w-5 text-purple-600 mt-0.5" />
-                        <div className="flex-1">
-                          <CardTitle className="text-sm text-purple-900">How Pricing Grids Work</CardTitle>
-                          <CardDescription className="text-xs text-purple-700 mt-1">
-                            Grids are resolved by: Product Type + System Type + Fabric Price Group
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3 text-xs">
-                      <div className="space-y-2">
-                        <p className="text-purple-800 font-medium">System Type examples:</p>
-                        <ul className="list-disc list-inside space-y-1 text-purple-700 ml-2">
-                          <li>Roller: <code className="text-xs bg-white px-1 py-0.5 rounded">open</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">cassette</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">heavy_duty</code></li>
-                          <li>Venetian: <code className="text-xs bg-white px-1 py-0.5 rounded">25mm</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">50mm</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">faux_wood</code></li>
-                        </ul>
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-purple-800 font-medium">Price Group examples:</p>
-                        <p className="text-purple-700 ml-2">Fabrics are assigned to groups: <code className="text-xs bg-white px-1 py-0.5 rounded">A</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">B</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">C</code>, <code className="text-xs bg-white px-1 py-0.5 rounded">D</code></p>
-                      </div>
-                      <Separator className="my-2" />
-                      <div className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded">
-                        <Info className="h-4 w-4 text-blue-600 shrink-0" />
-                        <p className="text-blue-800 font-medium">
-                          Set these values here, then create routing rules in Settings → Pricing Grids → Grid Rules
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* System Type Field */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="system_type" className="font-medium">System Type</Label>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>The hardware/mechanism type (e.g., open, cassette, 25mm, 50mm)</p>
-                          <p className="text-xs mt-1 opacity-80">Used with fabric price group to select the correct pricing grid</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <Input
-                      id="system_type"
-                      type="text"
-                      value={formData.system_type}
-                      onChange={(e) => handleInputChange("system_type", e.target.value)}
-                      placeholder="e.g., open, cassette, 25mm, 50mm"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Examples: <span className="font-mono">open</span>, <span className="font-mono">cassette</span>, <span className="font-mono">heavy_duty</span>, <span className="font-mono">25mm</span>, <span className="font-mono">50mm</span>
-                    </p>
-                  </div>
-
-                  <Separator />
-
-                  {/* Price Group Field - Note about fabric */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Label className="font-medium">Fabric Price Group</Label>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-4 w-4 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Price groups are set on individual fabrics in Settings → Inventory</p>
-                          <p className="text-xs mt-1 opacity-80">This template field is not used - fabrics carry their own price_group (A/B/C/D)</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <div className="p-3 bg-muted rounded-lg">
-                      <p className="text-sm text-muted-foreground">
-                        ℹ️ Price groups (A, B, C, D) are assigned to individual fabrics in the Inventory section, not on templates.
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        The system will automatically use the fabric's price group + this template's system type to find the correct pricing grid.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="pricing" className="space-y-6">
-            {/* Curtain Pricing */}
-            {formData.curtain_type === 'curtain' && (
+      <div className="flex gap-3 pt-4 border-t">
+        <Button 
+          onClick={handleSave} 
+          className="flex-1"
+          disabled={isSaving}
+        >
+          <div className="flex items-center gap-2">
+            {isSaving ? (
               <>
-                {/* STEP 1: Hand-Finished Option */}
-                <Card className="border-l-4 border-l-primary">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="bg-primary/10">Step 1</Badge>
-                      <CardTitle className="text-base">Hand-Finished Options</CardTitle>
-                    </div>
-                    <CardDescription>Do you offer hand-finished curtains in addition to machine-finished?</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <HandFinishedToggle
-                      value={formData.offers_hand_finished}
-                      onChange={(checked) => handleInputChange("offers_hand_finished", checked)}
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* STEP 2: Choose Pricing Approach */}
-                <Card className="border-l-4 border-l-primary">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="bg-primary/10">Step 2</Badge>
-                      <CardTitle className="text-base">Choose Your Pricing Approach</CardTitle>
-                    </div>
-                    <CardDescription>Select how you want to configure pricing for this template</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Pricing Approach Selector */}
-                    <div className="grid gap-3">
-                      <div 
-                        onClick={() => handleInputChange("pricing_methods", [])}
-                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                          (!formData.pricing_methods || formData.pricing_methods.length === 0)
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${
-                            (!formData.pricing_methods || formData.pricing_methods.length === 0)
-                              ? 'border-primary bg-primary'
-                              : 'border-muted-foreground'
-                          }`}>
-                            {(!formData.pricing_methods || formData.pricing_methods.length === 0) && (
-                              <div className="w-2 h-2 rounded-full bg-white" />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium mb-1">Simple Pricing (Single Price)</h4>
-                            <p className="text-sm text-muted-foreground">
-                              One pricing method for all fabrics. Best for straightforward pricing with optional height-based adjustments.
-                            </p>
-                            {(!formData.pricing_methods || formData.pricing_methods.length === 0) && (
-                              <Badge variant="default" className="mt-2">Active</Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div 
-                        onClick={() => {
-                          if (!formData.pricing_methods || formData.pricing_methods.length === 0) {
-                            handleInputChange("pricing_methods", [{
-                              id: `method-${Date.now()}`,
-                              name: 'Standard',
-                              pricing_type: 'per_metre',
-                              fabric_width_type: 'wide',
-                              machine_price_per_metre: 0,
-                              hand_price_per_metre: 0,
-                            }]);
-                          }
-                        }}
-                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                          (formData.pricing_methods && formData.pricing_methods.length > 0)
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${
-                            (formData.pricing_methods && formData.pricing_methods.length > 0)
-                              ? 'border-primary bg-primary'
-                              : 'border-muted-foreground'
-                          }`}>
-                            {(formData.pricing_methods && formData.pricing_methods.length > 0) && (
-                              <div className="w-2 h-2 rounded-full bg-white" />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium mb-1">Multiple Pricing Methods</h4>
-                            <p className="text-sm text-muted-foreground">
-                              Create different pricing for wide vs narrow fabrics, standard vs premium, etc. Each method can have its own height-based pricing.
-                            </p>
-                            {(formData.pricing_methods && formData.pricing_methods.length > 0) && (
-                              <Badge variant="default" className="mt-2">Active ({formData.pricing_methods.length} method{formData.pricing_methods.length !== 1 ? 's' : ''})</Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* STEP 3: Configure Pricing */}
-                <Card className="border-l-4 border-l-primary">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="bg-primary/10">Step 3</Badge>
-                      <CardTitle className="text-base">Configure Your Pricing</CardTitle>
-                    </div>
-                    <CardDescription>
-                      {(formData.pricing_methods && formData.pricing_methods.length > 0)
-                        ? 'Set up your different pricing methods below'
-                        : 'Set your standard pricing below'
-                      }
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Multiple Pricing Methods - ACTIVE */}
-                    {formData.pricing_methods && formData.pricing_methods.length > 0 && (
-                      <div className="space-y-4">
-                        <div className="bg-green-50 dark:bg-green-950/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                          <div className="flex items-start gap-2">
-                            <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold mt-0.5">✓</div>
-                            <div>
-                              <h5 className="font-medium text-sm text-green-900 dark:text-green-100">Multiple Pricing Methods Active</h5>
-                              <p className="text-xs text-green-800 dark:text-green-200 mt-1">
-                                When creating quotes, you'll be able to select which pricing method to use for each curtain.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <MultiplePricingMethodsManager
-                          pricingMethods={formData.pricing_methods}
-                          offersHandFinished={formData.offers_hand_finished}
-                          onPricingMethodsChange={(methods) => handleInputChange("pricing_methods", methods)}
-                        />
-                      </div>
-                    )}
-
-                    {/* Simple Single Pricing - ACTIVE */}
-                    {(!formData.pricing_methods || formData.pricing_methods.length === 0) && (
-                      <div className="space-y-4">
-                        <div className="bg-green-50 dark:bg-green-950/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
-                          <div className="flex items-start gap-2">
-                            <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold mt-0.5">✓</div>
-                            <div>
-                              <h5 className="font-medium text-sm text-green-900 dark:text-green-100">Simple Pricing Active</h5>
-                              <p className="text-xs text-green-800 dark:text-green-200 mt-1">
-                                This pricing will be used for all quotes with this template.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Height-based pricing toggle */}
-                        <div className="space-y-3">
-                          <div className="flex items-center space-x-2">
-                            <Switch
-                              id="uses_height_pricing"
-                              checked={formData.uses_height_pricing}
-                              onCheckedChange={(checked) => handleInputChange("uses_height_pricing", checked)}
-                            />
-                            <Label htmlFor="uses_height_pricing" className="font-medium">
-                              Enable Height-Based Price Adjustments
-                            </Label>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <Info className="h-4 w-4 text-muted-foreground" />
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-xs">
-                                <p>Use different per-metre rates based on curtain height ranges (e.g., taller curtains cost more per metre)</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-
-                          {formData.uses_height_pricing && (
-                            <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                              <p className="text-xs text-blue-800 dark:text-blue-200">
-                                <strong>Example:</strong> Curtains 1-200cm tall = £18/m, 201-250cm = £22/m, 251cm+ = £25/m
-                              </p>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Height range pricing configuration */}
-                        {formData.uses_height_pricing && (
-                          <HeightBasedPricingRanges
-                            heightPriceRanges={formData.height_price_ranges}
-                            onInputChange={handleInputChange}
-                          />
-                        )}
-
-                        {/* Standard pricing when NOT using height-based */}
-                        {!formData.uses_height_pricing && (
-                          <>
-                            <PricingMethodSelector
-                              value={formData.pricing_type}
-                              onChange={(value) => handleInputChange("pricing_type", value)}
-                            />
-
-                            {formData.pricing_type === "per_drop" && (
-                              <FabricWidthSelector
-                                value={formData.fabric_width_type}
-                                onChange={(value) => handleInputChange("fabric_width_type", value)}
-                              />
-                            )}
-
-                            {formData.pricing_type === "per_metre" && (
-                              <PerMetrePricing
-                                machinePricePerMetre={formData.machine_price_per_metre}
-                                handPricePerMetre={formData.hand_price_per_metre}
-                                offersHandFinished={formData.offers_hand_finished}
-                                onInputChange={handleInputChange}
-                              />
-                            )}
-
-                            {formData.pricing_type === "per_drop" && (
-                              <PerDropPricing
-                                machinePricePerDrop={formData.machine_price_per_drop}
-                                handPricePerDrop={formData.hand_price_per_drop}
-                                offersHandFinished={formData.offers_hand_finished}
-                                dropHeightRanges={formData.drop_height_ranges}
-                                machineDropHeightPrices={formData.machine_drop_height_prices}
-                                handDropHeightPrices={formData.hand_drop_height_prices}
-                                onInputChange={handleInputChange}
-                              />
-                            )}
-
-                            {formData.pricing_type === "per_panel" && (
-                              <PerPanelPricing
-                                machinePricePerPanel={formData.machine_price_per_panel}
-                                handPricePerPanel={formData.hand_price_per_panel}
-                                offersHandFinished={formData.offers_hand_finished}
-                                onInputChange={handleInputChange}
-                              />
-                            )}
-
-                            {formData.pricing_type === "complexity_based" && (
-                              <ComplexityBasedPricing
-                                tiers={formData.complexity_pricing_tiers}
-                                offersHandFinished={formData.offers_hand_finished}
-                                onTiersChange={(tiers) => handleInputChange("complexity_pricing_tiers", tiers)}
-                              />
-                            )}
-
-                            {formData.pricing_type === "pricing_grid" && (
-                              <div className="space-y-4">
-                                <PricingGridUploader 
-                                  initialData={formData.pricing_grid_data}
-                                  onDataChange={(data) => handleInputChange("pricing_grid_data", data)}
-                                />
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                <span>{template ? "Update" : "Create"}</span>
               </>
             )}
-
-            {/* Blind/Shutter/Roman Pricing */}
-            {formData.curtain_type !== 'curtain' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Pricing</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* For Romans, show width/drop options. For blinds, show grid as primary */}
-                  {formData.curtain_type === 'roman_blind' ? (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="roman_pricing_method">Pricing Method</Label>
-                        <Select 
-                          value={formData.pricing_type} 
-                          onValueChange={(value) => handleInputChange("pricing_type", value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select method" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="per_metre">Per Linear Metre</SelectItem>
-                            <SelectItem value="per_sqm">Per Square Metre</SelectItem>
-                            <SelectItem value="pricing_grid">Pricing Grid</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="blind_pricing_method">Pricing Method</Label>
-                        <Select 
-                          value={formData.pricing_type} 
-                          onValueChange={(value) => handleInputChange("pricing_type", value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select method" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pricing_grid">Pricing Grid (Recommended)</SelectItem>
-                            <SelectItem value="per_sqm">Per Square Metre</SelectItem>
-                            <SelectItem value="per_unit">Per Unit</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Per Square Metre Pricing */}
-                  {formData.pricing_type === "per_sqm" && (
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="price_per_sqm">Price per Square Metre ($)</Label>
-                        <Input
-                          id="price_per_sqm"
-                          type="number"
-                          step="0.01"
-                          value={formData.machine_price_per_metre}
-                          onChange={(e) => handleInputChange("machine_price_per_metre", e.target.value)}
-                          placeholder="150.00"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Per Unit Pricing */}
-                  {formData.pricing_type === "per_unit" && (
-                    <div className="space-y-4">
-                      <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
-                        <h5 className="font-medium text-xs text-blue-900 dark:text-blue-100">💡 Per Unit Pricing</h5>
-                        <p className="text-xs text-blue-800 dark:text-blue-200 mt-1">
-                          Fixed price ranges based on blind dimensions<br/>
-                          <strong>Example:</strong> Small (up to 1m²) = $200, Medium (1-2m²) = $350, Large (2m²+) = $500
-                        </p>
-                      </div>
-                      <div>
-                        <Label htmlFor="base_price">Base Price per Unit ($)</Label>
-                        <Input
-                          id="base_price"
-                          type="number"
-                          step="0.01"
-                          value={formData.machine_price_per_drop}
-                          onChange={(e) => handleInputChange("machine_price_per_drop", e.target.value)}
-                          placeholder="200.00"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Additional size-based pricing can be configured in price rules
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Pricing Grid Upload */}
-                  {formData.pricing_type === "pricing_grid" && (
-                    <div className="space-y-4">
-                      <PricingGridUploader 
-                        initialData={formData.pricing_grid_data}
-                        onDataChange={(data) => handleInputChange("pricing_grid_data", data)}
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Pricing Grid Management - For Blinds */}
-            {formData.curtain_type !== 'curtain' && formData.system_type && (
-              <Card className="border-primary/20">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <GitBranch className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-base">Manage Pricing Grids</CardTitle>
-                  </div>
-                  <CardDescription>
-                    Upload CSV pricing grids for different fabric price tiers
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <TemplateGridManager 
-                    productType={mapCurtainTypeToCategory(formData.curtain_type)}
-                    systemType={formData.system_type}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Hardware Compatibility - Only for Curtains */}
-            {formData.curtain_type === 'curtain' && (
-              <HardwareCompatibilityManager 
-                headingType={formData.selected_heading_ids.length > 0 ? 
-                  headingStyles.find(h => h.id === formData.selected_heading_ids[0])?.name || "" : ""}
-                compatibleHardware={formData.compatible_hardware}
-                onHardwareChange={(hardware) => handleInputChange("compatible_hardware", hardware)}
-              />
-            )}
-          </TabsContent>
-
-          {/* Rules Tab */}
-          <TabsContent value="rules" className="space-y-6">
-            {!template?.id ? (
-              <Card>
-                <CardContent className="p-6">
-                  <p className="text-sm text-muted-foreground">
-                    Save the template first to configure conditional option rules.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <OptionRulesManager templateId={template.id} />
-            )}
-          </TabsContent>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-3 pt-4 border-t">
-          <Button 
-            onClick={handleSave} 
-            className="flex-1"
-            disabled={isSaving}
-          >
-            <div className="flex items-center gap-2">
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Saving...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  <span>{template ? "Update Template" : "Create Template"}</span>
-                </>
-              )}
-            </div>
-          </Button>
-          <Button variant="outline" onClick={onClose}>
-            <X className="h-4 w-4 mr-2" />
-            Cancel
-          </Button>
-        </div>
-      </Tabs>
-    </TooltipProvider>
+          </div>
+        </Button>
+        <Button variant="outline" onClick={onClose}>
+          <X className="h-4 w-4 mr-2" />
+          Cancel
+        </Button>
+      </div>
+    </div>
   );
 };
