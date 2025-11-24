@@ -24,6 +24,7 @@ import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
 import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QRCodeDisplay } from "./QRCodeDisplay";
+import { InventoryQuickView } from "./InventoryQuickView";
 
 interface HardwareInventoryViewProps {
   searchQuery: string;
@@ -50,6 +51,8 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
+  const [quickViewItem, setQuickViewItem] = useState<any>(null);
+  const [showQuickView, setShowQuickView] = useState(false);
 
   const hardwareItems = inventory?.filter(item => 
     item.category === 'hardware'
@@ -95,7 +98,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
     if (!confirm('Are you sure you want to delete this hardware item?')) return;
 
     const { error } = await supabase
-      .from('inventory')
+      .from('enhanced_inventory_items')
       .delete()
       .eq('id', id);
 
@@ -118,7 +121,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
     try {
       await Promise.all(
         selectedItems.map(itemId => 
-          supabase.from('inventory').delete().eq('id', itemId)
+          supabase.from('enhanced_inventory_items').delete().eq('id', itemId)
         )
       );
       
@@ -196,10 +199,20 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
               <>
                 <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                   {paginatedItems.map((item) => (
-                  <Card key={item.id} className="group hover:shadow-lg transition-all overflow-hidden">
+                  <Card 
+                    key={item.id} 
+                    className="group hover:shadow-lg transition-all overflow-hidden cursor-pointer"
+                    onClick={() => {
+                      setQuickViewItem(item);
+                      setShowQuickView(true);
+                    }}
+                  >
                     <div 
-                      className="aspect-[16/5] relative overflow-hidden bg-muted cursor-pointer"
-                      onClick={() => item.image_url && setPreviewImage({ url: item.image_url, title: item.name })}
+                      className="aspect-[16/5] relative overflow-hidden bg-muted"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (item.image_url) setPreviewImage({ url: item.image_url, title: item.name });
+                      }}
                     >
                       {item.image_url ? (
                         <img 
@@ -221,6 +234,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
                               variant="secondary"
                               size="sm"
                               className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -230,7 +244,10 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
                           variant="destructive"
                           size="sm"
                           className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => handleDelete(item.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(item.id);
+                          }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -439,6 +456,15 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
           onOpenChange={(open) => !open && setPreviewImage(null)}
           imageUrl={previewImage.url}
           title={previewImage.title}
+        />
+      )}
+      
+      {quickViewItem && (
+        <InventoryQuickView
+          item={quickViewItem}
+          open={showQuickView}
+          onOpenChange={setShowQuickView}
+          onSuccess={refetch}
         />
       )}
     </div>
