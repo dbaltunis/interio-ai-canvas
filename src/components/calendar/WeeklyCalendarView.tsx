@@ -930,8 +930,8 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                                 {!event.isAvailableSlot && event.notification_enabled && !isNarrowEvent && finalHeight > 40 && (
                                                   <Bell className="w-2.5 h-2.5 text-yellow-400 ml-0.5 hidden md:block" />
                                                 )}
-                                                {event.isBooking && event.video_meeting_link && (
-                                                  <Video className="w-3 h-3 text-white/90 ml-0.5" />
+                                                {(event.video_meeting_link || event.video_provider) && (
+                                                  <Video className="w-3 h-3 text-blue-500 ml-0.5" />
                                                 )}
                                               </div>
                                          </div>

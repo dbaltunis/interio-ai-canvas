@@ -13,6 +13,8 @@ import { CalendarFilters, CalendarFilterState } from "./CalendarFilters";
 import { CalendarVisibilityFilter } from "./filters/CalendarVisibilityFilter";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useIsTablet } from "@/hooks/use-tablet";
+import { useTimezone } from "@/hooks/useTimezone";
+import { TimezoneUtils } from "@/utils/timezoneUtils";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -99,6 +101,7 @@ export const CalendarSyncToolbar = ({
 
   const isMobile = useIsMobile();
   const isDesktop = !isMobile && !isTablet;
+  const { userTimezone, getCurrentOffset } = useTimezone();
 
   // Format last sync time - shorter for mobile
   const getLastSyncText = () => {
@@ -144,9 +147,23 @@ export const CalendarSyncToolbar = ({
             <ChevronRight className="h-4 w-4" />
           </Button>
           {!isMobile && (
-            <h2 className="text-sm md:text-base font-semibold ml-1">
-              {format(currentDate, 'MMMM yyyy')}
-            </h2>
+            <>
+              <h2 className="text-sm md:text-base font-semibold ml-1">
+                {format(currentDate, 'MMMM yyyy')}
+              </h2>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-xs text-muted-foreground ml-2 cursor-help">
+                      {getCurrentOffset(userTimezone)}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">{TimezoneUtils.getTimezoneDisplayName(userTimezone, true)}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </>
           )}
         </div>
       )}

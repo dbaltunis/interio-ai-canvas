@@ -28,6 +28,8 @@ import { useCalendarPreferences } from "@/hooks/useCalendarPreferences";
 import { format } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { getAvatarColor, getInitials } from "@/lib/avatar-utils";
+import { TimezoneUtils } from "@/utils/timezoneUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UnifiedAppointmentDialogProps {
   open: boolean;
@@ -96,18 +98,34 @@ export const UnifiedAppointmentDialog = ({
   };
 
   useEffect(() => {
-    if (appointment) {
-      // Parse times in UTC to prevent timezone conversion on display
-      const startDate = new Date(appointment.start_time);
-      const endDate = new Date(appointment.end_time);
-      
-      setEvent({
-        title: appointment.title || "",
-        description: appointment.description || "",
-        // Format in UTC timezone to preserve the stored time
-        date: formatInTimeZone(startDate, 'UTC', 'yyyy-MM-dd'),
-        startTime: formatInTimeZone(startDate, 'UTC', 'HH:mm'),
-        endTime: formatInTimeZone(endDate, 'UTC', 'HH:mm'),
+    const loadAppointment = async () => {
+      if (appointment) {
+        // Get user's timezone from preferences
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: prefs } = await supabase
+          .from('user_preferences')
+          .select('timezone')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        const userTimezone = prefs?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        // Convert UTC times to user's timezone for display
+        const startDate = new Date(appointment.start_time);
+        const endDate = new Date(appointment.end_time);
+        
+        // Use timezone utilities to convert to user's timezone
+        const zonedStart = TimezoneUtils.toTimezone(startDate, userTimezone);
+        const zonedEnd = TimezoneUtils.toTimezone(endDate, userTimezone);
+        
+        setEvent({
+          title: appointment.title || "",
+          description: appointment.description || "",
+          date: format(zonedStart, 'yyyy-MM-dd'),
+          startTime: format(zonedStart, 'HH:mm'),
+          endTime: format(zonedEnd, 'HH:mm'),
         location: appointment.location || "",
         appointment_type: appointment.appointment_type || "meeting",
         color: appointment.color || defaultColors[0],
@@ -119,7 +137,12 @@ export const UnifiedAppointmentDialog = ({
         visibility: appointment.visibility || "private",
         shared_with_organization: appointment.shared_with_organization || false
       });
-    } else if (selectedDate) {
+      }
+    };
+    
+    loadAppointment();
+    
+    if (!appointment && selectedDate) {
       setEvent({
         title: "",
         description: "",
@@ -169,9 +192,25 @@ export const UnifiedAppointmentDialog = ({
       return;
     }
 
-    // Create dates in UTC to avoid timezone conversion issues
-    const startDateTime = new Date(`${event.date}T${event.startTime}:00.000Z`);
-    const endDateTime = new Date(`${event.date}T${event.endTime}:00.000Z`);
+    // Get user's timezone
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: prefs } = await supabase
+      .from('user_preferences')
+      .select('timezone')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const userTimezone = prefs?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    // Create date in user's timezone, then convert to UTC for storage
+    const localStartDateTime = new Date(`${event.date}T${event.startTime}:00`);
+    const localEndDateTime = new Date(`${event.date}T${event.endTime}:00`);
+    
+    // Convert from user's timezone to UTC for database storage
+    const startDateTime = TimezoneUtils.fromTimezone(localStartDateTime, userTimezone);
+    const endDateTime = TimezoneUtils.fromTimezone(localEndDateTime, userTimezone);
 
     const appointmentData = {
       title: event.title,

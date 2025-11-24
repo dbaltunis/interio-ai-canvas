@@ -1,7 +1,7 @@
 import { format, isSameDay, isToday } from "date-fns";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useState, useRef, useEffect } from "react";
-import { Clock, MapPin, CheckCheck } from "lucide-react";
+import { Clock, MapPin, CheckCheck, Video } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useClients } from "@/hooks/useClients";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
@@ -338,6 +338,14 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                         <div className="flex items-center text-xs text-muted-foreground mt-1">
                           <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
                           <span className="truncate">{event.location}</span>
+                        </div>
+                      )}
+                      
+                      {/* Video meeting icon */}
+                      {style.height > 50 && (event.video_meeting_link || event.video_provider) && (
+                        <div className="flex items-center text-xs text-blue-500 mt-1">
+                          <Video className="h-3 w-3 mr-1 flex-shrink-0" />
+                          <span className="text-xs">Video meeting</span>
                         </div>
                       )}
                       
