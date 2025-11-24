@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/select';
 import { Plus, Pencil, Trash2, FolderTree, Loader2 } from 'lucide-react';
 import { useInventoryCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '@/hooks/useInventoryCategories';
-import { useInitializeDefaultCategories } from '@/hooks/useInitializeDefaultCategories';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -27,7 +26,6 @@ export const CategoryManagement = () => {
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
-  const initializeDefaults = useInitializeDefaultCategories();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
@@ -211,20 +209,7 @@ export const CategoryManagement = () => {
           </div>
         ) : hierarchicalCategories.length === 0 ? (
           <Card className="p-8 text-center">
-            <p className="text-muted-foreground mb-4">No categories yet. Initialize default categories to get started.</p>
-            <Button 
-              onClick={() => initializeDefaults.mutate()}
-              disabled={initializeDefaults.isPending}
-            >
-              {initializeDefaults.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Categories...
-                </>
-              ) : (
-                'Initialize Default Categories'
-              )}
-            </Button>
+            <p className="text-muted-foreground">No categories yet. Create your first category above.</p>
           </Card>
         ) : (
           hierarchicalCategories.map(category => renderCategory(category))
