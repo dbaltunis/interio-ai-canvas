@@ -252,8 +252,14 @@ export const UnifiedInventoryDialog = ({
 
   // Image upload
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('🖼️ handleImageUpload triggered');
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.log('❌ No file selected');
+      return;
+    }
+
+    console.log('📁 File selected:', file.name, file.size, file.type);
 
     try {
       setUploadingImage(true);
@@ -262,19 +268,30 @@ export const UnifiedInventoryDialog = ({
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `inventory/${fileName}`;
 
+      console.log('⬆️ Uploading to Supabase storage:', filePath);
+
       const { error: uploadError, data } = await supabase.storage
         .from('product-images')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('❌ Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('✅ Upload successful, getting public URL');
 
       const { data: { publicUrl } } = supabase.storage
         .from('product-images')
         .getPublicUrl(filePath);
 
+      console.log('🔗 Public URL:', publicUrl);
+
       setFormData({ ...formData, image_url: publicUrl });
+      console.log('✅ FormData updated with image_url');
       toast({ title: "Image uploaded successfully" });
     } catch (error: any) {
+      console.error('💥 Image upload error:', error);
       toast({ title: "Upload failed", description: error.message, variant: "destructive" });
     } finally {
       setUploadingImage(false);
@@ -799,7 +816,10 @@ export const UnifiedInventoryDialog = ({
                             <Button
                               type="button"
                               variant="outline"
-                              onClick={() => document.getElementById('image-upload')?.click()}
+                              onClick={() => {
+                                console.log('🔵 Upload button clicked');
+                                document.getElementById('image-upload')?.click();
+                              }}
                               disabled={uploadingImage}
                             >
                               <Upload className="h-4 w-4 mr-2" />
