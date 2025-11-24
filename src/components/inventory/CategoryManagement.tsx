@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,13 +28,6 @@ export const CategoryManagement = () => {
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
   const initializeDefaults = useInitializeDefaultCategories();
-
-  // Auto-initialize categories on first load
-  useEffect(() => {
-    if (!isLoading && hierarchicalCategories.length === 0 && !initializeDefaults.isPending) {
-      initializeDefaults.mutate();
-    }
-  }, [isLoading, hierarchicalCategories.length, initializeDefaults]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
@@ -211,13 +204,28 @@ export const CategoryManagement = () => {
       </div>
 
       <div className="space-y-2">
-        {isLoading || initializeDefaults.isPending ? (
+        {isLoading ? (
           <div className="flex items-center justify-center p-12">
             <Loader2 className="h-6 w-6 animate-spin mr-2" />
-            <span className="text-muted-foreground">
-              {initializeDefaults.isPending ? 'Setting up default categories...' : 'Loading categories...'}
-            </span>
+            <span className="text-muted-foreground">Loading categories...</span>
           </div>
+        ) : hierarchicalCategories.length === 0 ? (
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground mb-4">No categories yet. Initialize default categories to get started.</p>
+            <Button 
+              onClick={() => initializeDefaults.mutate()}
+              disabled={initializeDefaults.isPending}
+            >
+              {initializeDefaults.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Categories...
+                </>
+              ) : (
+                'Initialize Default Categories'
+              )}
+            </Button>
+          </Card>
         ) : (
           hierarchicalCategories.map(category => renderCategory(category))
         )}

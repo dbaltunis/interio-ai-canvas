@@ -87,7 +87,7 @@ export const useInitializeDefaultCategories = () => {
             description,
             category_type,
             sort_order,
-            parent_id: null,
+            parent_category_id: null,
           })
           .select()
           .single();
@@ -105,7 +105,7 @@ export const useInitializeDefaultCategories = () => {
               description: subcategory.description,
               category_type,
               sort_order: subcategory.sort_order,
-              parent_id: parentCategory.id,
+              parent_category_id: parentCategory.id,
             })
             .select()
             .single();
