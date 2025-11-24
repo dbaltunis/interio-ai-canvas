@@ -72,6 +72,9 @@ export const useUpdateUserPreferences = () => {
           user_id: user.id,
           ...preferences,
           updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id',
+          ignoreDuplicates: false
         })
         .select()
         .single();
