@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,12 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Pencil, Trash2, FolderTree, Loader2, Sparkles } from 'lucide-react';
+import { Plus, Pencil, Trash2, FolderTree, Loader2 } from 'lucide-react';
 import { useInventoryCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '@/hooks/useInventoryCategories';
 import { useInitializeDefaultCategories } from '@/hooks/useInitializeDefaultCategories';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const CategoryManagement = () => {
   const { hierarchicalCategories, isLoading } = useInventoryCategories();
@@ -29,6 +28,13 @@ export const CategoryManagement = () => {
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
   const initializeDefaults = useInitializeDefaultCategories();
+
+  // Auto-initialize categories on first load
+  useEffect(() => {
+    if (!isLoading && hierarchicalCategories.length === 0 && !initializeDefaults.isPending) {
+      initializeDefaults.mutate();
+    }
+  }, [isLoading, hierarchicalCategories.length, initializeDefaults]);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
@@ -205,77 +211,12 @@ export const CategoryManagement = () => {
       </div>
 
       <div className="space-y-2">
-        {isLoading ? (
-          <p className="text-muted-foreground">Loading categories...</p>
-        ) : hierarchicalCategories.length === 0 ? (
-          <div className="space-y-4">
-            <Card className="p-8 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-900">
-              <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <div className="rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white p-3 shadow-lg">
-                    <FolderTree className="h-6 w-6" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-blue-900 dark:text-blue-100 mb-3">
-                      🚀 Quick Setup: Industry-Standard Categories
-                    </h3>
-                    <p className="text-sm text-blue-800 dark:text-blue-200 mb-4">
-                      We'll automatically create a professional category structure based on your template library and industry best practices. This includes:
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                      <div className="p-3 bg-white/60 dark:bg-black/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <div className="font-semibold text-blue-900 dark:text-blue-100 text-sm mb-1">📦 Fabrics</div>
-                        <p className="text-xs text-blue-700 dark:text-blue-300">Curtains, Roller (Blockout, Light Filtering, Sunscreen), Cellular, Vertical, Panel Glide, Sheers, Linings</p>
-                      </div>
-                      <div className="p-3 bg-white/60 dark:bg-black/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <div className="font-semibold text-blue-900 dark:text-blue-100 text-sm mb-1">🪟 Hard Coverings</div>
-                        <p className="text-xs text-blue-700 dark:text-blue-300">Venetian (25mm, 50mm Aluminium/Wood), Vertical Vanes, Shutters (Timber, PVC, Aluminium)</p>
-                      </div>
-                      <div className="p-3 bg-white/60 dark:bg-black/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <div className="font-semibold text-blue-900 dark:text-blue-100 text-sm mb-1">🔧 Hardware</div>
-                        <p className="text-xs text-blue-700 dark:text-blue-300">Tracks & Rails, Rods & Poles, Brackets & Accessories, Motors & Controls</p>
-                      </div>
-                      <div className="p-3 bg-white/60 dark:bg-black/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <div className="font-semibold text-blue-900 dark:text-blue-100 text-sm mb-1">🎨 Wallcoverings</div>
-                        <p className="text-xs text-blue-700 dark:text-blue-300">Vinyl, Fabric, Grasscloth & Natural</p>
-                      </div>
-                    </div>
-                    <div className="p-4 bg-white/70 dark:bg-black/40 rounded-lg border-2 border-blue-300 dark:border-blue-800 mb-4">
-                      <p className="text-sm text-blue-900 dark:text-blue-100 font-semibold mb-2">
-                        ✅ Ready for Your Workflow:
-                      </p>
-                      <ul className="text-xs text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
-                        <li>Each subcategory is optimized for either <strong>linear pricing</strong> (curtains) or <strong>grid pricing</strong> (blinds)</li>
-                        <li>Upload pricing grids and link them to specific fabric/material categories</li>
-                        <li>Add products with images and colors for visual selection in quotes</li>
-                        <li>Start building your professional product catalog immediately</li>
-                      </ul>
-                    </div>
-                    <Button 
-                      size="lg" 
-                      className="w-full shadow-lg"
-                      onClick={() => initializeDefaults.mutate()}
-                      disabled={initializeDefaults.isPending}
-                    >
-                      {initializeDefaults.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          Creating Categories...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="mr-2 h-5 w-5" />
-                          Initialize Industry-Standard Categories
-                        </>
-                      )}
-                    </Button>
-                    <p className="text-xs text-center text-blue-600 dark:text-blue-400 mt-3">
-                      Don't worry! You can always add, edit, or remove categories later.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </Card>
+        {isLoading || initializeDefaults.isPending ? (
+          <div className="flex items-center justify-center p-12">
+            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+            <span className="text-muted-foreground">
+              {initializeDefaults.isPending ? 'Setting up default categories...' : 'Loading categories...'}
+            </span>
           </div>
         ) : (
           hierarchicalCategories.map(category => renderCategory(category))
