@@ -201,7 +201,8 @@ export const UnifiedInventoryDialog = ({
     { value: "fabric", label: "Fabrics" },
     { value: "material", label: "Blind Materials" },
     { value: "hardware", label: "Hardware" },
-    { value: "wallcovering", label: "Wallcoverings" }
+    { value: "wallcovering", label: "Wallcoverings" },
+    { value: "service", label: "Services" }
   ];
 
   // Subcategories for each main category
@@ -221,7 +222,15 @@ export const UnifiedInventoryDialog = ({
       { value: "vertical", label: "Vertical Blinds" }
     ],
     hardware: [],
-    wallcovering: []
+    wallcovering: [],
+    service: [
+      { value: "installation", label: "Installation Services" },
+      { value: "fitting", label: "Fitting Services" },
+      { value: "consultation", label: "Consultation Services" },
+      { value: "measurement", label: "Measurement Services" },
+      { value: "repair", label: "Repair & Maintenance" },
+      { value: "other_service", label: "Other Services" }
+    ]
   };
 
   // Get subcategories for selected category
