@@ -26,6 +26,7 @@ import { VendorDashboard } from "../vendors/VendorDashboard";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useVendors } from "@/hooks/useVendors";
 import { useHasPermission, useHasAnyPermission } from "@/hooks/usePermissions";
+import { useInventoryCategories } from "@/hooks/useInventoryCategories";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -48,6 +49,7 @@ export const ModernInventoryDashboard = () => {
   const [selectedStorageLocation, setSelectedStorageLocation] = useState<string | undefined>();
   const { data: allInventory, refetch } = useEnhancedInventory();
   const { data: vendors } = useVendors();
+  const { categories: inventoryCategories, isLoading: categoriesLoading } = useInventoryCategories();
   const isMobile = useIsMobile();
   
   // Permission checks - CRITICAL for data security

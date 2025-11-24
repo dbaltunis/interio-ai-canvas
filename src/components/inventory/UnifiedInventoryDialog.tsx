@@ -808,54 +808,6 @@ export const UnifiedInventoryDialog = ({
                   </Select>
                 </div>
               )}
-                        </>
-                      )}
-                      {formData.category === "panel_glide_fabric" && (
-                        <>
-                          <SelectItem value="light_filtering">Light Filtering</SelectItem>
-                          <SelectItem value="blockout">Blockout</SelectItem>
-                          <SelectItem value="decorative">Decorative</SelectItem>
-                        </>
-                      )}
-                      {formData.category === "awning_fabric" && (
-                        <>
-                          <SelectItem value="outdoor_acrylic">Outdoor Acrylic</SelectItem>
-                          <SelectItem value="outdoor_pvc">Outdoor PVC</SelectItem>
-                          <SelectItem value="retractable">Retractable</SelectItem>
-                        </>
-                      )}
-                      {formData.category === "hardware" && (
-                        <>
-                          <SelectItem value="track">Track System</SelectItem>
-                          <SelectItem value="rod">Rod System</SelectItem>
-                          <SelectItem value="bracket">Bracket</SelectItem>
-                          <SelectItem value="motor">Motor</SelectItem>
-                          <SelectItem value="accessory">Accessory</SelectItem>
-                        </>
-                      )}
-                      {formData.category === "wallcoverings" && (
-                        <>
-                          <SelectItem value="plain_wallpaper">Plain Wallpaper</SelectItem>
-                          <SelectItem value="patterned_wallpaper">Patterned Wallpaper</SelectItem>
-                          <SelectItem value="wall_panels_murals">Wall Panels / Murals</SelectItem>
-                        </>
-                      )}
-                      {formData.category === "heading" && (
-                        <>
-                          <SelectItem value="pencil_pleat">Pencil Pleat Tape</SelectItem>
-                          <SelectItem value="eyelet_pleat">Eyelet Pleat Tape</SelectItem>
-                          <SelectItem value="pinch_pleat">Pinch Pleat Tape</SelectItem>
-                          <SelectItem value="wave_tape">Wave Tape</SelectItem>
-                          <SelectItem value="tab_top">Tab Top</SelectItem>
-                          <SelectItem value="rod_pocket">Rod Pocket</SelectItem>
-                          <SelectItem value="grommet">Grommet/Eyelet</SelectItem>
-                          <SelectItem value="custom_heading">Custom Heading</SelectItem>
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
 
                 {/* Heading-Specific Fields */}
                 {formData.category === "heading" && (
