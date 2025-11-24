@@ -3,16 +3,19 @@ import { useGoogleCalendarIntegration } from "@/hooks/useGoogleCalendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, MapPin, Video, CheckCircle2 } from "lucide-react";
 import { format, isToday, isTomorrow, isPast, isWithinInterval, addHours } from "date-fns";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 
 export const UpcomingEventsWidget = () => {
   const navigate = useNavigate();
   const canViewCalendar = useHasPermission('view_calendar');
+  const { data: userPreferences } = useUserPreferences();
   
   // Only fetch appointments if user has calendar permission
   const { data: appointments, isLoading } = useAppointments();
@@ -23,20 +26,39 @@ export const UpcomingEventsWidget = () => {
   }
   const { integration: calendarIntegration } = useGoogleCalendarIntegration();
 
-  // Filter events to only show those within the next 24 hours
+  // Get user timezone and date format preferences
+  const userTimezone = userPreferences?.timezone || 'UTC';
+  const userDateFormat = userPreferences?.date_format || 'MM/dd/yyyy';
+  const userTimeFormat = userPreferences?.time_format || '12h';
+  
+  // Convert date format to date-fns format
+  const convertToDateFnsFormat = (format: string) => {
+    const formatMap: Record<string, string> = {
+      'MM/dd/yyyy': 'MM/dd/yyyy',
+      'dd/MM/yyyy': 'dd/MM/yyyy',
+      'yyyy-MM-dd': 'yyyy-MM-dd',
+      'dd-MMM-yyyy': 'dd-MMM-yyyy',
+    };
+    return formatMap[format] || 'MM/dd/yyyy';
+  };
+  
+  const dateFnsFormat = convertToDateFnsFormat(userDateFormat);
+  const timeFnsFormat = userTimeFormat === '24h' ? 'HH:mm' : 'h:mm a';
+
+  // Filter events to only show those within the next 24 hours (in user's timezone)
   const now = new Date();
   const next24Hours = addHours(now, 24);
   
   const upcomingAppointments = appointments
     ?.filter(apt => {
-      const startTime = new Date(apt.start_time);
+      const startTime = toZonedTime(new Date(apt.start_time), userTimezone);
       return isWithinInterval(startTime, { start: now, end: next24Hours });
     }) || [];
 
   const getDateLabel = (date: Date) => {
     if (isToday(date)) return "Today";
     if (isTomorrow(date)) return "Tomorrow";
-    return format(date, "MMM d, yyyy");
+    return formatInTimeZone(date, userTimezone, "MMM d, yyyy");
   };
 
   if (isLoading || canViewCalendar === undefined) {
@@ -83,7 +105,8 @@ export const UpcomingEventsWidget = () => {
           <ScrollArea className="h-[400px] pr-4">
             <div className="space-y-2">
               {upcomingAppointments.map((apt) => {
-            const startTime = new Date(apt.start_time);
+            // Convert UTC time to user's timezone for display
+            const startTime = toZonedTime(new Date(apt.start_time), userTimezone);
             const dateLabel = getDateLabel(startTime);
             
             return (
@@ -94,10 +117,10 @@ export const UpcomingEventsWidget = () => {
               >
                 <div className="flex flex-col items-center justify-center min-w-[40px] sm:min-w-[50px] h-[40px] sm:h-[50px] rounded-lg bg-background border border-border shadow-sm">
                   <span className="text-[9px] sm:text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-                    {format(startTime, "MMM")}
+                    {formatInTimeZone(new Date(apt.start_time), userTimezone, "MMM")}
                   </span>
                   <span className="text-xl sm:text-2xl font-bold text-foreground leading-none">
-                    {format(startTime, "d")}
+                    {formatInTimeZone(new Date(apt.start_time), userTimezone, "d")}
                   </span>
                 </div>
                 
@@ -107,7 +130,7 @@ export const UpcomingEventsWidget = () => {
                   </h4>
                   <div className="flex items-center gap-1 sm:gap-1.5 mt-0.5 text-[10px] sm:text-xs text-muted-foreground flex-wrap">
                     <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0" />
-                    <span className="whitespace-nowrap">{format(startTime, "h:mm a")}</span>
+                    <span className="whitespace-nowrap">{formatInTimeZone(new Date(apt.start_time), userTimezone, timeFnsFormat)}</span>
                   </div>
                 </div>
                 
