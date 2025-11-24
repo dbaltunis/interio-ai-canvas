@@ -22,6 +22,7 @@ import { InventoryDemoData } from "./InventoryDemoData";
 import { ReorderNotificationSystem } from "./ReorderNotificationSystem";
 import { InventoryImportExport } from "./InventoryImportExport";
 import { VendorDashboard } from "../vendors/VendorDashboard";
+import { CategoryManagement } from "./CategoryManagement";
 
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useVendors } from "@/hooks/useVendors";
@@ -264,6 +265,10 @@ export const ModernInventoryDashboard = () => {
                   {category.name}
                 </TabsTrigger>
               ))}
+              <TabsTrigger value="categories" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Categories
+              </TabsTrigger>
               <TabsTrigger value="vendors" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
                 Vendors
@@ -450,6 +455,20 @@ export const ModernInventoryDashboard = () => {
 
         <TabsContent value="remnants" className="space-y-6">
           <RemnantsInventoryView searchQuery={searchQuery} viewMode={viewMode} />
+        </TabsContent>
+
+        <TabsContent value="categories" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Category Management</CardTitle>
+              <CardDescription>
+                Create and manage your inventory categories and subcategories. All inventory items will be organized using these categories.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CategoryManagement />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="vendors" className="space-y-6">
