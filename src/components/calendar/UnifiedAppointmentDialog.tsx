@@ -35,6 +35,8 @@ interface UnifiedAppointmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedDate?: Date;
+  selectedStartTime?: string;
+  selectedEndTime?: string;
   appointment?: any;
 }
 
@@ -42,6 +44,8 @@ export const UnifiedAppointmentDialog = ({
   open, 
   onOpenChange, 
   selectedDate,
+  selectedStartTime,
+  selectedEndTime,
   appointment 
 }: UnifiedAppointmentDialogProps) => {
   const isEditing = !!appointment;
@@ -147,8 +151,8 @@ export const UnifiedAppointmentDialog = ({
         title: "",
         description: "",
         date: format(selectedDate, 'yyyy-MM-dd'),
-        startTime: "09:00",
-        endTime: "10:00",
+        startTime: selectedStartTime || "09:00",
+        endTime: selectedEndTime || "10:00",
         location: "",
         appointment_type: "meeting",
         color: defaultColors[0],
@@ -161,7 +165,7 @@ export const UnifiedAppointmentDialog = ({
         shared_with_organization: false
       });
     }
-  }, [appointment, selectedDate, defaultColors, preferences]);
+  }, [appointment, selectedDate, selectedStartTime, selectedEndTime, defaultColors, preferences]);
 
   // Validate date range
   const isValidDateRange = useMemo(() => {
