@@ -4,6 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { TemplateGridManager } from "./TemplateGridManager";
+import { HandFinishedToggle } from "./pricing/HandFinishedToggle";
+import { PerMetrePricing } from "./pricing/PerMetrePricing";
+import { PerPanelPricing } from "./pricing/PerPanelPricing";
 
 interface SimplifiedTemplateFormPricingProps {
   formData: any;
@@ -18,7 +21,6 @@ export const SimplifiedTemplateFormPricing = ({
 }: SimplifiedTemplateFormPricingProps) => {
   const { units } = useMeasurementUnits();
   
-  // Determine available pricing methods based on treatment type
   const isCurtainOrRoman = formData.curtain_type === 'curtain' || formData.curtain_type === 'roman_blind';
   const isWallpaper = formData.curtain_type === 'wallpaper';
   const isBlind = !isCurtainOrRoman && !isWallpaper;
@@ -26,6 +28,13 @@ export const SimplifiedTemplateFormPricing = ({
   return (
     <Card>
       <CardContent className="pt-6 space-y-4">
+        {isCurtainOrRoman && (
+          <HandFinishedToggle
+            value={formData.offers_hand_finished}
+            onChange={(checked) => handleInputChange("offers_hand_finished", checked)}
+          />
+        )}
+
         <div>
           <Label>Method</Label>
           <Select 
@@ -45,6 +54,7 @@ export const SimplifiedTemplateFormPricing = ({
               {isCurtainOrRoman && (
                 <>
                   <SelectItem value="per_metre">Per Metre</SelectItem>
+                  <SelectItem value="per_panel">Per Panel</SelectItem>
                   <SelectItem value="per_sqm">Per m²</SelectItem>
                   <SelectItem value="pricing_grid">Grid</SelectItem>
                 </>
@@ -66,6 +76,25 @@ export const SimplifiedTemplateFormPricing = ({
           />
         )}
 
+        {formData.pricing_type === "per_metre" && isCurtainOrRoman && (
+          <PerMetrePricing
+            machinePricePerMetre={formData.machine_price_per_metre}
+            handPricePerMetre={formData.hand_price_per_metre}
+            offersHandFinished={formData.offers_hand_finished}
+            heightPriceRanges={formData.height_price_ranges}
+            onInputChange={handleInputChange}
+          />
+        )}
+
+        {formData.pricing_type === "per_panel" && isCurtainOrRoman && (
+          <PerPanelPricing
+            machinePricePerPanel={formData.machine_price_per_panel}
+            handPricePerPanel={formData.hand_price_per_panel}
+            offersHandFinished={formData.offers_hand_finished}
+            onInputChange={handleInputChange}
+          />
+        )}
+
         {formData.pricing_type === "per_sqm" && (
           <div>
             <Label>Price ({units.currency}/m²)</Label>
@@ -78,19 +107,7 @@ export const SimplifiedTemplateFormPricing = ({
           </div>
         )}
 
-        {formData.pricing_type === "per_metre" && (
-          <div>
-            <Label>Price ({units.currency}/m)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              value={formData.machine_price_per_metre}
-              onChange={(e) => handleInputChange("machine_price_per_metre", e.target.value)}
-            />
-          </div>
-        )}
-
-        {formData.pricing_type === "per_unit" && (
+        {formData.pricing_type === "per_unit" && isWallpaper && (
           <div>
             <Label>Price ({units.currency}/roll)</Label>
             <Input
