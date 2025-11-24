@@ -20,7 +20,8 @@ export const SimplifiedTemplateFormPricing = ({
   
   // Determine available pricing methods based on treatment type
   const isCurtainOrRoman = formData.curtain_type === 'curtain' || formData.curtain_type === 'roman_blind';
-  const isBlind = !isCurtainOrRoman;
+  const isWallpaper = formData.curtain_type === 'wallpaper';
+  const isBlind = !isCurtainOrRoman && !isWallpaper;
   
   return (
     <Card>
@@ -46,6 +47,12 @@ export const SimplifiedTemplateFormPricing = ({
                   <SelectItem value="per_metre">Per Metre</SelectItem>
                   <SelectItem value="per_sqm">Per m²</SelectItem>
                   <SelectItem value="pricing_grid">Grid</SelectItem>
+                </>
+              )}
+              {isWallpaper && (
+                <>
+                  <SelectItem value="per_unit">Per Roll</SelectItem>
+                  <SelectItem value="per_sqm">Per m²</SelectItem>
                 </>
               )}
             </SelectContent>
@@ -79,6 +86,18 @@ export const SimplifiedTemplateFormPricing = ({
               step="0.01"
               value={formData.machine_price_per_metre}
               onChange={(e) => handleInputChange("machine_price_per_metre", e.target.value)}
+            />
+          </div>
+        )}
+
+        {formData.pricing_type === "per_unit" && (
+          <div>
+            <Label>Price ({units.currency}/roll)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={formData.unit_price}
+              onChange={(e) => handleInputChange("unit_price", e.target.value)}
             />
           </div>
         )}
