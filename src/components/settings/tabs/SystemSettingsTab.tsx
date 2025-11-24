@@ -62,120 +62,62 @@ export const SystemSettingsTab = () => {
       {/* Status Management */}
       <StatusManagement />
 
+      {/* Appearance */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            Appearance
+          </CardTitle>
+          <CardDescription>
+            Theme and density preferences
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Theme</Label>
+            <Select value={theme ?? 'system'} onValueChange={setTheme}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select theme" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">Light</SelectItem>
+                <SelectItem value="dark">Dark</SelectItem>
+                <SelectItem value="system">System</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">Current: {resolvedTheme} mode</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Accent color</Label>
+            <Select value={accent} onValueChange={(v) => setAccent(v as 'primary' | 'secondary')}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select accent" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="primary">Brand Primary</SelectItem>
+                <SelectItem value="secondary">Brand Secondary</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">Used for buttons, links and highlights</p>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="flex items-center gap-2">
+                Compact mode
+                <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] leading-none ${compact ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                  {compact ? 'ON' : 'OFF'}
+                </span>
+              </Label>
+              <p className="text-xs text-muted-foreground">Denser layout with tighter spacing</p>
+            </div>
+            <Switch checked={compact} onCheckedChange={() => toggleCompact()} />
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Appearance */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Appearance
-            </CardTitle>
-            <CardDescription>
-              Theme and density preferences
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Theme</Label>
-              <Select value={theme ?? 'system'} onValueChange={setTheme}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select theme" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="light">Light</SelectItem>
-                  <SelectItem value="dark">Dark</SelectItem>
-                  <SelectItem value="system">System</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">Current: {resolvedTheme} mode</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Accent color</Label>
-              <Select value={accent} onValueChange={(v) => setAccent(v as 'primary' | 'secondary')}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select accent" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="primary">Brand Primary</SelectItem>
-                  <SelectItem value="secondary">Brand Secondary</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">Used for buttons, links and highlights</p>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="flex items-center gap-2">
-                  Compact mode
-                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] leading-none ${compact ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                    {compact ? 'ON' : 'OFF'}
-                  </span>
-                </Label>
-                <p className="text-xs text-muted-foreground">Denser layout with tighter spacing</p>
-              </div>
-              <Switch checked={compact} onCheckedChange={() => toggleCompact()} />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Language & Localization */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5" />
-              Language & Localization
-            </CardTitle>
-            <CardDescription>
-              Configure language and regional settings
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>System Language</Label>
-              <Select defaultValue="en">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="es">Spanish</SelectItem>
-                  <SelectItem value="fr">French</SelectItem>
-                  <SelectItem value="de">German</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Date Format</Label>
-              <Select defaultValue="dd/mm/yyyy">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="dd/mm/yyyy">DD/MM/YYYY</SelectItem>
-                  <SelectItem value="mm/dd/yyyy">MM/DD/YYYY</SelectItem>
-                  <SelectItem value="yyyy-mm-dd">YYYY-MM-DD</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Time Zone</Label>
-              <Select defaultValue="utc">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="utc">UTC</SelectItem>
-                  <SelectItem value="est">Eastern Time</SelectItem>
-                  <SelectItem value="pst">Pacific Time</SelectItem>
-                  <SelectItem value="gmt">GMT</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Email Templates */}
         <Card>
           <CardHeader>
