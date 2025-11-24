@@ -107,6 +107,7 @@ export const UnifiedInventoryDialog = ({
     reorder_point: 5,
     fabric_width: 0,
     pattern_repeat_vertical: 0,
+    pattern_repeat_horizontal: 0,
     fabric_composition: "",
     collection_name: "",
     color: "",
@@ -209,6 +210,7 @@ export const UnifiedInventoryDialog = ({
         reorder_point: item.reorder_point || 5,
         fabric_width: item.fabric_width || 0,
         pattern_repeat_vertical: item.pattern_repeat_vertical || 0,
+        pattern_repeat_horizontal: item.pattern_repeat_horizontal || 0,
         fabric_composition: item.fabric_composition || "",
         collection_name: item.collection_name || "",
         color: item.color || "",
@@ -294,8 +296,12 @@ export const UnifiedInventoryDialog = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Auto-generate SKU if not provided
+    const generatedSku = formData.sku || `${formData.category.toUpperCase().substring(0, 3)}-${Date.now().toString().slice(-6)}`;
+
     const itemData = {
       ...formData,
+      sku: generatedSku,
       quantity: trackInventory ? formData.quantity : 0,
     };
 
@@ -410,14 +416,14 @@ export const UnifiedInventoryDialog = ({
                     </div>
                     
                     <div>
-                      <Label htmlFor="sku">SKU</Label>
+                      <Label htmlFor="sku">SKU (Optional)</Label>
                       <Input
                         id="sku"
                         value={formData.sku}
                         onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                         placeholder="e.g., LVN-001"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">Shared across all color variants</p>
+                      <p className="text-xs text-muted-foreground mt-1">Auto-generated if left blank. Shared across color variants.</p>
                     </div>
 
                     <div className="md:col-span-2">
@@ -707,12 +713,23 @@ export const UnifiedInventoryDialog = ({
                       </div>
 
                       <div>
-                        <Label>Pattern Repeat (cm)</Label>
+                        <Label>Pattern Repeat - Vertical (cm)</Label>
                         <Input
                           type="number"
                           step="0.1"
                           value={formData.pattern_repeat_vertical || ""}
                           onChange={(e) => setFormData({ ...formData, pattern_repeat_vertical: parseFloat(e.target.value) || 0 })}
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Pattern Repeat - Horizontal (cm)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={formData.pattern_repeat_horizontal || ""}
+                          onChange={(e) => setFormData({ ...formData, pattern_repeat_horizontal: parseFloat(e.target.value) || 0 })}
                           placeholder="0"
                         />
                       </div>
