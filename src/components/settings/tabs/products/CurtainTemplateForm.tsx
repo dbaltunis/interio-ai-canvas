@@ -158,17 +158,13 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
 
         <TabsContent value="basic" className="space-y-4 mt-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Basic Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="pt-6 space-y-4">
               <div>
                 <Label htmlFor="name">Name *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => handleInputChange("name", e.target.value)}
-                  placeholder="e.g., Premium Roller Blind"
                 />
               </div>
 
@@ -178,7 +174,6 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                   id="description"
                   value={formData.description}
                   onChange={(e) => handleInputChange("description", e.target.value)}
-                  placeholder="Brief description"
                   rows={2}
                 />
               </div>
@@ -214,7 +209,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
                       />
                       <label htmlFor="product_image" className="cursor-pointer">
                         <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-                        <p className="mt-1 text-xs text-muted-foreground">Click to upload</p>
+                        <p className="mt-1 text-xs text-muted-foreground">Upload</p>
                       </label>
                     </div>
                   )}

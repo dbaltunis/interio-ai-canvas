@@ -15,10 +15,7 @@ export const SimplifiedTemplateFormManufacturing = ({
   
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Manufacturing Defaults</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="pt-6 space-y-4">
         {isCurtain && (
           <>
             <div className="grid grid-cols-2 gap-4">
