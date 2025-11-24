@@ -171,6 +171,14 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
     return appointments.filter(appointment => {
       // Convert UTC appointment time to user's timezone for comparison
       const appointmentDate = TimezoneUtils.toTimezone(appointment.start_time, displayTimezone);
+      console.log('[CalendarView] Filtering for date:', {
+        title: appointment.title,
+        utcTime: appointment.start_time,
+        displayTimezone,
+        convertedDate: appointmentDate,
+        filterDate: date,
+        isSame: isSameDay(appointmentDate, date)
+      });
       return isSameDay(appointmentDate, date);
     });
   };
