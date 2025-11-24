@@ -265,6 +265,17 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                 const startTimeStr = TimezoneUtils.formatInTimezone(event.start_time, userTimezone, 'HH:mm');
                 const endTimeStr = TimezoneUtils.formatInTimezone(event.end_time, userTimezone, 'HH:mm');
                 
+                console.log('[DailyCalendarView] Event timezone conversion:', {
+                  title: event.title,
+                  utcStartTime: event.start_time,
+                  utcEndTime: event.end_time,
+                  userTimezone,
+                  startTimeStr,
+                  endTimeStr,
+                  step1_parsedStartTime: new Date(event.start_time).toISOString(),
+                  step2_formattedInTimezone: startTimeStr
+                });
+                
                 const [startHour, startMin] = startTimeStr.split(':').map(Number);
                 const [endHour, endMin] = endTimeStr.split(':').map(Number);
                 
@@ -274,13 +285,10 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                 const endTime = new Date(currentDate);
                 endTime.setHours(endHour, endMin, 0, 0);
                 
-                console.log('[DailyCalendarView] Rendering event:', {
+                console.log('[DailyCalendarView] Final display times:', {
                   title: event.title,
-                  utcStartTime: event.start_time,
-                  utcEndTime: event.end_time,
-                  userTimezone,
-                  startTimeStr,
-                  endTimeStr,
+                  displayStartHour: startHour,
+                  displayStartMin: startMin,
                   displayStartTime: format(startTime, 'HH:mm')
                 });
                 const style = calculateEventStyle(startTime, endTime);
