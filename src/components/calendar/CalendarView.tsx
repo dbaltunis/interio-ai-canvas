@@ -44,6 +44,7 @@ import { useCompactMode } from "@/hooks/useCompactMode";
 import { TimezoneSettingsDialog } from "./timezone/TimezoneSettingsDialog";
 import { useTimezone } from "@/hooks/useTimezone";
 import { TimezoneUtils } from "@/utils/timezoneUtils";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { CalendarSyncToolbar } from "./CalendarSyncToolbar";
 import { SchedulerManagement } from "./SchedulerManagement";
 import { formatUserTime, formatUserDate } from "@/utils/dateFormatUtils";
@@ -114,6 +115,10 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const { toast } = useToast();
   const { userTimezone, isTimezoneDifferent } = useTimezone();
   const { data: preferences } = useCalendarPreferences();
+  const { data: userPreferences } = useUserPreferences();
+  
+  // Get user's timezone for date conversions
+  const displayTimezone = userPreferences?.timezone || userTimezone;
   
   // Get current user ID for visibility filtering
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -163,9 +168,11 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
 
   const getEventsForDate = (date: Date) => {
     if (!appointments) return [];
-    return appointments.filter(appointment => 
-      isSameDay(new Date(appointment.start_time), date)
-    );
+    return appointments.filter(appointment => {
+      // Convert UTC appointment time to user's timezone for comparison
+      const appointmentDate = TimezoneUtils.toTimezone(appointment.start_time, displayTimezone);
+      return isSameDay(appointmentDate, date);
+    });
   };
 
   const getWeekDays = () => {
@@ -265,7 +272,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                     <div
                       key={event.id}
                       className="text-sm cursor-pointer hover:bg-accent/30 transition-colors rounded p-1 group"
-                      title={`${event.title}\n${format(new Date(event.start_time), 'HH:mm')} - ${format(new Date(event.end_time), 'HH:mm')}`}
+                      title={`${event.title}\n${TimezoneUtils.formatInTimezone(event.start_time, displayTimezone, 'HH:mm')} - ${TimezoneUtils.formatInTimezone(event.end_time, displayTimezone, 'HH:mm')}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEventClick(event.id);
@@ -280,7 +287,7 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
                         />
                         <div className="truncate text-foreground group-hover:text-foreground/80 flex-1">
                           <span className="font-semibold">
-                            {format(new Date(event.start_time), 'HH:mm')}
+                            {TimezoneUtils.formatInTimezone(event.start_time, displayTimezone, 'HH:mm')}
                           </span>
                           <span className="ml-1 font-medium">
                             {event.title}

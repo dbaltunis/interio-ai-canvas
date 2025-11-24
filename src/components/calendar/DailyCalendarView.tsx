@@ -7,6 +7,8 @@ import { useClients } from "@/hooks/useClients";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useMyTasks, Task } from "@/hooks/useTasks";
 import { UnifiedTaskDialog } from "@/components/tasks/UnifiedTaskDialog";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { TimezoneUtils } from "@/utils/timezoneUtils";
 
 interface DailyCalendarViewProps {
   currentDate: Date;
@@ -21,6 +23,10 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
   const { data: tasks } = useMyTasks();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const { data: userPreferences } = useUserPreferences();
+  
+  // Get user's timezone
+  const userTimezone = userPreferences?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   // Helper function to get client name
   const getClientName = (clientId?: string) => {
@@ -73,9 +79,11 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
   // Get events for the current day
   const getDayEvents = () => {
     if (!appointments) return [];
-    return appointments.filter(appointment => 
-      isSameDay(new Date(appointment.start_time), currentDate)
-    );
+    return appointments.filter(appointment => {
+      // Convert UTC time to user's timezone for date comparison
+      const appointmentDate = TimezoneUtils.toTimezone(appointment.start_time, userTimezone);
+      return isSameDay(appointmentDate, currentDate);
+    });
   };
 
   // Get tasks for the current day
@@ -243,8 +251,9 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
           <div className="absolute inset-0 pointer-events-none">
             <div className="relative ml-20"> {/* Offset for time labels */}
               {dayEvents.map((event: any, eventIndex) => {
-                const startTime = new Date(event.start_time);
-                const endTime = new Date(event.end_time);
+                // Convert UTC times to user's timezone for display
+                const startTime = TimezoneUtils.toTimezone(event.start_time, userTimezone);
+                const endTime = TimezoneUtils.toTimezone(event.end_time, userTimezone);
                 const style = calculateEventStyle(startTime, endTime);
                 
                 if (!style.visible) return null;
