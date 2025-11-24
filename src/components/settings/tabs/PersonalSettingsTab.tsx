@@ -655,70 +655,48 @@ export const PersonalSettingsTab = () => {
         </div>
       </FormSection>
 
-      {/* Localization & Preferences - HIDDEN until fully functional */}
-      {false && <FormSection title="Localization & Preferences" description="Configure your timezone, language, and regional settings" icon={<Globe className="h-5 w-5" />} isEditing={false} onEdit={() => {}} onSave={() => {}} onCancel={() => {}} isSaving={false}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormFieldGroup label="Timezone">
-            <Select value={preferencesData.timezone} onValueChange={async value => {
-            const updatedPrefs = {
-              ...preferencesData,
-              timezone: value
-            };
-            setPreferencesData(updatedPrefs);
-            await updatePreferences.mutateAsync(updatedPrefs);
-          }}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select timezone" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="UTC">UTC</SelectItem>
-                <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                <SelectItem value="America/Chicago">Central Time</SelectItem>
-                <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                <SelectItem value="Europe/London">London</SelectItem>
-                <SelectItem value="Europe/Paris">Paris</SelectItem>
-                <SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* Language & Localization */}
+      <FormSection 
+        title="Language & Localization" 
+        description="Configure language and regional settings" 
+        icon={<Globe className="h-5 w-5" />} 
+        isEditing={false} 
+        onEdit={() => {}} 
+        onSave={() => {}} 
+        onCancel={() => {}} 
+        isSaving={false}
+      >
+        <div className="space-y-6">
+          {/* System Language - Disabled */}
+          <FormFieldGroup label="System Language">
+            <div className="space-y-2">
+              <Select value={preferencesData.language} disabled>
+                <SelectTrigger className="bg-muted cursor-not-allowed">
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Additional languages available per request only. Contact support for custom language support.
+              </p>
+            </div>
           </FormFieldGroup>
 
-          <FormFieldGroup label="Language">
-            <Select value={preferencesData.language} onValueChange={async value => {
-            setPreferencesData({
-              ...preferencesData,
-              language: value
-            });
-            await updatePreferences.mutateAsync({
-              ...preferencesData,
-              language: value
-            });
-          }}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select language" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="es">Spanish</SelectItem>
-                <SelectItem value="fr">French</SelectItem>
-                <SelectItem value="de">German</SelectItem>
-                <SelectItem value="it">Italian</SelectItem>
-                <SelectItem value="pt">Portuguese</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormFieldGroup>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Date Format */}
           <FormFieldGroup label="Date Format">
-            <Select value={preferencesData.date_format} onValueChange={async value => {
-            const updatedPrefs = {
-              ...preferencesData,
-              date_format: value
-            };
-            setPreferencesData(updatedPrefs);
-            await updatePreferences.mutateAsync(updatedPrefs);
-          }}>
+            <Select 
+              value={preferencesData.date_format} 
+              onValueChange={async value => {
+                const updatedPrefs = {
+                  ...preferencesData,
+                  date_format: value
+                };
+                setPreferencesData(updatedPrefs);
+                await updatePreferences.mutateAsync(updatedPrefs);
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select format" />
               </SelectTrigger>
@@ -731,29 +709,88 @@ export const PersonalSettingsTab = () => {
             </Select>
           </FormFieldGroup>
 
-          <FormFieldGroup label="Time Format">
-            <Select value={preferencesData.time_format} onValueChange={async value => {
-            const updatedPrefs = {
-              ...preferencesData,
-              time_format: value
-            };
-            setPreferencesData(updatedPrefs);
-            await updatePreferences.mutateAsync(updatedPrefs);
-          }}>
+          {/* Time Zone */}
+          <FormFieldGroup label="Time Zone">
+            <Select 
+              value={preferencesData.timezone} 
+              onValueChange={async value => {
+                const updatedPrefs = {
+                  ...preferencesData,
+                  timezone: value
+                };
+                setPreferencesData(updatedPrefs);
+                await updatePreferences.mutateAsync(updatedPrefs);
+              }}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Select format" />
+                <SelectValue placeholder="Select timezone" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="12h">12 Hour (AM/PM)</SelectItem>
-                <SelectItem value="24h">24 Hour</SelectItem>
+              <SelectContent className="max-h-[300px]">
+                {/* UTC */}
+                <SelectItem value="UTC">UTC</SelectItem>
+                <SelectItem value="GMT">GMT</SelectItem>
+                
+                {/* Pacific/New Zealand */}
+                <SelectItem value="Pacific/Auckland">Pacific/Auckland (New Zealand)</SelectItem>
+                <SelectItem value="Pacific/Chatham">Pacific/Chatham (Chatham Islands)</SelectItem>
+                <SelectItem value="Pacific/Fiji">Pacific/Fiji</SelectItem>
+                <SelectItem value="Pacific/Tongatapu">Pacific/Tongatapu (Tonga)</SelectItem>
+                
+                {/* Australia */}
+                <SelectItem value="Australia/Sydney">Australia/Sydney</SelectItem>
+                <SelectItem value="Australia/Melbourne">Australia/Melbourne</SelectItem>
+                <SelectItem value="Australia/Brisbane">Australia/Brisbane</SelectItem>
+                <SelectItem value="Australia/Perth">Australia/Perth</SelectItem>
+                <SelectItem value="Australia/Adelaide">Australia/Adelaide</SelectItem>
+                
+                {/* Asia */}
+                <SelectItem value="Asia/Tokyo">Asia/Tokyo (Japan)</SelectItem>
+                <SelectItem value="Asia/Shanghai">Asia/Shanghai (China)</SelectItem>
+                <SelectItem value="Asia/Hong_Kong">Asia/Hong Kong</SelectItem>
+                <SelectItem value="Asia/Singapore">Asia/Singapore</SelectItem>
+                <SelectItem value="Asia/Bangkok">Asia/Bangkok (Thailand)</SelectItem>
+                <SelectItem value="Asia/Dubai">Asia/Dubai (UAE)</SelectItem>
+                <SelectItem value="Asia/Kolkata">Asia/Kolkata (India)</SelectItem>
+                
+                {/* Europe */}
+                <SelectItem value="Europe/London">Europe/London (UK)</SelectItem>
+                <SelectItem value="Europe/Paris">Europe/Paris (France)</SelectItem>
+                <SelectItem value="Europe/Berlin">Europe/Berlin (Germany)</SelectItem>
+                <SelectItem value="Europe/Rome">Europe/Rome (Italy)</SelectItem>
+                <SelectItem value="Europe/Madrid">Europe/Madrid (Spain)</SelectItem>
+                <SelectItem value="Europe/Amsterdam">Europe/Amsterdam (Netherlands)</SelectItem>
+                <SelectItem value="Europe/Brussels">Europe/Brussels (Belgium)</SelectItem>
+                <SelectItem value="Europe/Zurich">Europe/Zurich (Switzerland)</SelectItem>
+                
+                {/* Americas - North */}
+                <SelectItem value="America/New_York">America/New York (Eastern Time)</SelectItem>
+                <SelectItem value="America/Chicago">America/Chicago (Central Time)</SelectItem>
+                <SelectItem value="America/Denver">America/Denver (Mountain Time)</SelectItem>
+                <SelectItem value="America/Los_Angeles">America/Los Angeles (Pacific Time)</SelectItem>
+                <SelectItem value="America/Anchorage">America/Anchorage (Alaska)</SelectItem>
+                <SelectItem value="Pacific/Honolulu">Pacific/Honolulu (Hawaii)</SelectItem>
+                <SelectItem value="America/Toronto">America/Toronto (Canada)</SelectItem>
+                <SelectItem value="America/Vancouver">America/Vancouver (Canada)</SelectItem>
+                
+                {/* Americas - South */}
+                <SelectItem value="America/Sao_Paulo">America/São Paulo (Brazil)</SelectItem>
+                <SelectItem value="America/Buenos_Aires">America/Buenos Aires (Argentina)</SelectItem>
+                <SelectItem value="America/Santiago">America/Santiago (Chile)</SelectItem>
+                <SelectItem value="America/Mexico_City">America/Mexico City</SelectItem>
+                
+                {/* Africa */}
+                <SelectItem value="Africa/Johannesburg">Africa/Johannesburg (South Africa)</SelectItem>
+                <SelectItem value="Africa/Cairo">Africa/Cairo (Egypt)</SelectItem>
+                <SelectItem value="Africa/Lagos">Africa/Lagos (Nigeria)</SelectItem>
+                <SelectItem value="Africa/Nairobi">Africa/Nairobi (Kenya)</SelectItem>
               </SelectContent>
             </Select>
           </FormFieldGroup>
-        </div>
 
-        {/* Date & Time Preview */}
-        <DateTimePreview key={`${preferencesData.date_format}-${preferencesData.time_format}-${preferencesData.timezone}`} />
-      </FormSection>}
+          {/* Date & Time Preview */}
+          <DateTimePreview key={`${preferencesData.date_format}-${preferencesData.time_format}-${preferencesData.timezone}`} />
+        </div>
+      </FormSection>
 
       {/* Security Settings - HIDDEN until fully functional */}
       {false && <FormSection title="Security & Privacy" description="Manage your account security and privacy settings" icon={<Shield className="h-5 w-5" />} isEditing={false} onEdit={() => {}} onSave={handleSaveSecuritySettings} onCancel={() => {}} isSaving={updateSecuritySettings.isPending}>
