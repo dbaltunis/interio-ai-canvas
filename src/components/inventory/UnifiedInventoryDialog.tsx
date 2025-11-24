@@ -81,12 +81,12 @@ export const UnifiedInventoryDialog = ({
   const currencySymbol = currencySymbols[currency] || currency;
   
   const getPricingUnitLabel = () => {
-    if (lengthUnit === 'mm') return 'meter';
-    if (lengthUnit === 'cm') return 'meter';
-    if (lengthUnit === 'm') return 'meter';
-    if (lengthUnit === 'inches') return 'foot';
-    if (lengthUnit === 'feet') return 'foot';
-    if (lengthUnit === 'yards') return 'yard';
+    if (lengthUnit === 'mm') return 'running meter';
+    if (lengthUnit === 'cm') return 'running meter';
+    if (lengthUnit === 'm') return 'running meter';
+    if (lengthUnit === 'inches') return 'running foot';
+    if (lengthUnit === 'feet') return 'running foot';
+    if (lengthUnit === 'yards') return 'running yard';
     return lengthUnit;
   };
   const pricingUnitLabel = getPricingUnitLabel();
@@ -217,8 +217,8 @@ export const UnifiedInventoryDialog = ({
         image_url: item.image_url || "",
         hardware_finish: item.hardware_finish || "",
         hardware_material: item.hardware_material || "",
-        product_category: item.product_category || null,
-        price_group: item.price_group || null,
+        product_category: item.product_category || "",
+        price_group: item.price_group || "",
         tags: item.tags || [],
       });
       
@@ -303,7 +303,18 @@ export const UnifiedInventoryDialog = ({
       ...formData,
       sku: generatedSku,
       quantity: trackInventory ? formData.quantity : 0,
+      // Ensure empty strings become null for optional fields
+      product_category: formData.product_category || null,
+      price_group: formData.price_group || null,
+      // Ensure numeric fields are properly set
+      cost_price: Number(formData.cost_price) || 0,
+      selling_price: Number(formData.selling_price) || 0,
+      fabric_width: Number(formData.fabric_width) || 0,
+      pattern_repeat_vertical: Number(formData.pattern_repeat_vertical) || 0,
+      pattern_repeat_horizontal: Number(formData.pattern_repeat_horizontal) || 0,
     };
+
+    console.log('🔍 Submitting inventory item:', itemData);
 
     try {
       if (mode === "create") {
@@ -317,6 +328,7 @@ export const UnifiedInventoryDialog = ({
       onSuccess?.();
       onOpenChange(false);
     } catch (error: any) {
+      console.error('❌ Save error:', error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
   };
@@ -497,7 +509,7 @@ export const UnifiedInventoryDialog = ({
                           pricingMethod === 'linear' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                         }`}
                       >
-                        <div className="font-medium mb-1">Per Meter/Yard</div>
+                        <div className="font-medium mb-1">Per Running Meter/Yard</div>
                         <div className="text-xs text-muted-foreground">For curtains/fabrics</div>
                       </button>
                       
@@ -532,13 +544,16 @@ export const UnifiedInventoryDialog = ({
                               <SelectItem value="roman_blinds">Roman Blinds</SelectItem>
                             </SelectContent>
                           </Select>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Which blind type uses this fabric/material
+                          </p>
                         </div>
 
                         <div>
                           <Label>Select Pricing Grid</Label>
                           <Select
                             value={formData.price_group || undefined}
-                            onValueChange={(value) => setFormData({ ...formData, price_group: value === 'none' ? null : value })}
+                            onValueChange={(value) => setFormData({ ...formData, price_group: value === 'none' ? '' : value })}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Select grid" />
@@ -565,7 +580,7 @@ export const UnifiedInventoryDialog = ({
                       <div className="space-y-4 p-4 border rounded-lg">
                         <div className="grid gap-4 md:grid-cols-2">
                           <div>
-                            <Label>Cost Price ({currencySymbol}/{pricingUnitLabel})</Label>
+                            <Label>Cost Price ({currencySymbol} per running {lengthUnit})</Label>
                             <Input
                               type="number"
                               step="0.01"
@@ -576,7 +591,7 @@ export const UnifiedInventoryDialog = ({
                           </div>
 
                           <div>
-                            <Label>Selling Price ({currencySymbol}/{pricingUnitLabel})</Label>
+                            <Label>Selling Price ({currencySymbol} per running {lengthUnit})</Label>
                             <Input
                               type="number"
                               step="0.01"
