@@ -24,10 +24,10 @@ import { InventoryImportExport } from "./InventoryImportExport";
 import { VendorDashboard } from "../vendors/VendorDashboard";
 import { CategoryManagement } from "./CategoryManagement";
 
+import { MaterialInventoryView } from "./MaterialInventoryView";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useVendors } from "@/hooks/useVendors";
 import { useHasPermission, useHasAnyPermission } from "@/hooks/usePermissions";
-import { useInventoryCategories } from "@/hooks/useInventoryCategories";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -50,7 +50,6 @@ export const ModernInventoryDashboard = () => {
   const [selectedStorageLocation, setSelectedStorageLocation] = useState<string | undefined>();
   const { data: allInventory, refetch } = useEnhancedInventory();
   const { data: vendors } = useVendors();
-  const { categories: inventoryCategories, isLoading: categoriesLoading } = useInventoryCategories();
   const isMobile = useIsMobile();
   
   // Permission checks - CRITICAL for data security
@@ -259,12 +258,22 @@ export const ModernInventoryDashboard = () => {
                 <Package className="h-4 w-4" />
                 Overview
               </TabsTrigger>
-              {!categoriesLoading && inventoryCategories.map(category => (
-                <TabsTrigger key={category.id} value={category.id} className="flex items-center gap-2">
-                  <Package className="h-4 w-4" />
-                  {category.name}
-                </TabsTrigger>
-              ))}
+              <TabsTrigger value="fabrics" className="flex items-center gap-2">
+                <Home className="h-4 w-4" />
+                Fabrics
+              </TabsTrigger>
+              <TabsTrigger value="materials" className="flex items-center gap-2">
+                <Minus className="h-4 w-4" />
+                Materials
+              </TabsTrigger>
+              <TabsTrigger value="hardware" className="flex items-center gap-2">
+                <Minus className="h-4 w-4" />
+                Hardware
+              </TabsTrigger>
+              <TabsTrigger value="wallcoverings" className="flex items-center gap-2">
+                <Wallpaper className="h-4 w-4" />
+                Wallcoverings
+              </TabsTrigger>
               <TabsTrigger value="categories" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
                 Categories
@@ -411,6 +420,16 @@ export const ModernInventoryDashboard = () => {
 
         <TabsContent value="fabrics" className="space-y-6">
           <FabricInventoryView 
+            searchQuery={searchQuery} 
+            viewMode={viewMode}
+            selectedVendor={selectedVendor}
+            selectedCollection={selectedCollection}
+            selectedStorageLocation={selectedStorageLocation}
+          />
+        </TabsContent>
+
+        <TabsContent value="materials" className="space-y-6">
+          <MaterialInventoryView 
             searchQuery={searchQuery} 
             viewMode={viewMode}
             selectedVendor={selectedVendor}
