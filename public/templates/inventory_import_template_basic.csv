@@ -1,4 +1,7 @@
-name,sku,category,quantity,unit,cost_price,selling_price,unit_price,supplier,vendor_name,collection_name,location,reorder_point,price_group,product_category,tags
-"Sample Fabric","SF-001","fabric","50","meters","15","25","25","Fabric Co","Fabric Co","Spring Collection","Warehouse A","10","","","plain,linen,curtain"
-"Hardware Item","","hardware","20","pieces","30","50","50","Hardware Inc","","","Warehouse B","5","","","track,ceiling,motorized"
-"Wallcovering Sample","","wallcovering","30","rolls","20","40","40","Wall Suppliers","Wall Suppliers","Contemporary","Storage A","10","","","contemporary,vinyl,textured"
+name,sku,category,subcategory,colors,quantity,unit,cost_price,selling_price,unit_price,supplier,vendor_name,collection_name,location,reorder_point,price_group,product_category,tags
+"Sample Curtain Fabric","CRT-001","fabric","curtain_fabric","white,ivory,beige","50","meters","15","25","25","Fabric Co","Fabric Co","Spring Collection","Warehouse A","10","","","plain,linen,curtain"
+"Roller Blockout Fabric","RBF-001","fabric","roller_fabric","charcoal,grey,black","100","meters","12","22","22","Roller Fabrics Ltd","Roller Fabrics Ltd","Blockout Range","Warehouse A","20","GRID001","roller_blind","blockout,roller"
+"Awning Stripe Fabric","AWN-001","fabric","awning_fabric","navy,white,sand","75","meters","18","35","35","Outdoor Textiles","Outdoor Textiles","Marine Collection","Warehouse B","15","","","awning,outdoor,stripe"
+"Venetian Wood Slats","VEN-001","material","venetian","natural,walnut,white","20","pieces","30","50","50","Blind Components Inc","Blind Components Inc","","Warehouse B","5","GRID002","","venetian,wood,slats"
+"Hardware Track","TRK-001","hardware","","silver,white","20","pieces","30","50","50","Hardware Inc","Hardware Inc","","Warehouse B","5","","","track,ceiling,motorized"
+"Wallpaper Textured","WP-001","wallcovering","","cream,grey,white","30","rolls","20","40","40","Wall Suppliers","Wall Suppliers","Contemporary","Storage A","10","","","contemporary,vinyl,textured"
