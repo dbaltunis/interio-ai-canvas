@@ -197,8 +197,7 @@ export const UnifiedInventoryDialog = ({
     ],
     material: [
       { value: "venetian", label: "Venetian Blinds" },
-      { value: "vertical", label: "Vertical Blinds" },
-      { value: "cellular", label: "Cellular/Honeycomb" }
+      { value: "vertical", label: "Vertical Blinds" }
     ],
     hardware: [],
     wallcovering: []
