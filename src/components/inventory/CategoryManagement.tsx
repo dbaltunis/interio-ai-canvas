@@ -20,6 +20,7 @@ import { Plus, Pencil, Trash2, FolderTree } from 'lucide-react';
 import { useInventoryCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '@/hooks/useInventoryCategories';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const CategoryManagement = () => {
   const { hierarchicalCategories, isLoading } = useInventoryCategories();
@@ -172,14 +173,20 @@ export const CategoryManagement = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="sort_order">Sort Order</Label>
+                <Label htmlFor="sort_order" className="flex items-center gap-2">
+                  Display Order
+                  <span className="text-xs text-muted-foreground font-normal">(Optional)</span>
+                </Label>
                 <Input
                   id="sort_order"
                   type="number"
                   value={formData.sort_order}
                   onChange={(e) => setFormData(prev => ({ ...prev, sort_order: parseInt(e.target.value) || 0 }))}
-                  placeholder="0"
+                  placeholder="Leave 0 for automatic ordering"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Lower numbers appear first in tabs. Leave as 0 to order alphabetically.
+                </p>
               </div>
 
               <div className="flex gap-2 justify-end">
@@ -199,9 +206,42 @@ export const CategoryManagement = () => {
         {isLoading ? (
           <p className="text-muted-foreground">Loading categories...</p>
         ) : hierarchicalCategories.length === 0 ? (
-          <Card className="p-8 text-center">
-            <p className="text-muted-foreground">No categories yet. Create your first category to get started.</p>
-          </Card>
+          <div className="space-y-4">
+            <Card className="p-6 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-blue-500 text-white p-2">
+                    <FolderTree className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                      Quick Start: Build Your Inventory Structure
+                    </h3>
+                    <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800 dark:text-blue-200">
+                      <li>
+                        <strong>Create Main Categories</strong> - Examples: "Fabrics", "Hard Materials", "Hardware", "Wallcoverings"
+                      </li>
+                      <li>
+                        <strong>Add Subcategories</strong> - Under "Fabrics": "Curtain & Roman", "Roller - Blockout", "Roller - Light Filtering", "Cellular", etc.
+                      </li>
+                      <li>
+                        <strong>Organize as needed</strong> - Add more categories as your inventory grows
+                      </li>
+                    </ol>
+                    <div className="mt-4 p-3 bg-white/50 dark:bg-black/20 rounded border border-blue-300 dark:border-blue-800">
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        <strong>💡 Pro Tip:</strong> Leave "Display Order" as 0 unless you want specific tab ordering. 
+                        Categories with 0 will be sorted alphabetically.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-8 text-center">
+              <p className="text-muted-foreground">No categories yet. Click "Add Category" above to create your first category.</p>
+            </Card>
+          </div>
         ) : (
           hierarchicalCategories.map(category => renderCategory(category))
         )}
