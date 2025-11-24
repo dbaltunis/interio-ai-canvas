@@ -29,6 +29,8 @@ import { EyeletRingSelector, type EyeletRing } from "./EyeletRingSelector";
 import { useEyeletRings } from "@/hooks/useEyeletRings";
 import { usePricingGrids } from "@/hooks/usePricingGrids";
 import { calculateLengthPrice, type LengthUnit, type PricingUnit } from "@/utils/unitConversions";
+import { INVENTORY_CATEGORIES, getCategoryLabel, getSubcategoryLabel } from "@/constants/inventoryCategories";
+import { ColorSelector } from "./ColorSelector";
 
 const STORAGE_KEY = "inventory_draft_data";
 
@@ -766,9 +768,16 @@ export const UnifiedInventoryDialog = ({
                     <SelectValue placeholder="Select main category" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border border-border" position="popper" sideOffset={4}>
-                    <SelectItem value="fabric">Fabrics</SelectItem>
-                    <SelectItem value="hardware">Hardware</SelectItem>
-                    <SelectItem value="wallcovering">Wallcoverings</SelectItem>
+                    <SelectItem value="fabrics">Curtain/Roman Fabrics</SelectItem>
+                    <SelectItem value="roller_fabric">Roller Blind Fabric</SelectItem>
+                    <SelectItem value="venetian_slats">Venetian Slats</SelectItem>
+                    <SelectItem value="vertical_vanes">Vertical Vanes</SelectItem>
+                    <SelectItem value="cellular_fabric">Cellular/Honeycomb Fabric</SelectItem>
+                    <SelectItem value="shutter_panels">Shutter Panels</SelectItem>
+                    <SelectItem value="panel_glide_fabric">Panel Glide Fabric</SelectItem>
+                    <SelectItem value="awning_fabric">Awning Fabric</SelectItem>
+                    <SelectItem value="hardware">Hardware & Tracks</SelectItem>
+                    <SelectItem value="wallcoverings">Wallcoverings</SelectItem>
                     <SelectItem value="heading">Heading Tapes & Pleats</SelectItem>
                   </SelectContent>
                 </Select>
@@ -785,13 +794,69 @@ export const UnifiedInventoryDialog = ({
                       <SelectValue placeholder="Select subcategory" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border border-border max-h-[300px]" position="popper" sideOffset={4}>
-                      {formData.category === "fabric" && (
+                      {formData.category === "fabrics" && (
                         <>
                           <SelectItem value="curtain_fabric">Curtain Fabric</SelectItem>
-                          <SelectItem value="roller_fabric">Roller Blind Fabric</SelectItem>
-                          <SelectItem value="blind_fabric">Roman Blind Fabric</SelectItem>
-                          <SelectItem value="furniture_fabric">Furniture Fabric</SelectItem>
+                          <SelectItem value="roman_fabric">Roman Blind Fabric</SelectItem>
                           <SelectItem value="sheer_fabric">Sheer Fabric</SelectItem>
+                          <SelectItem value="furniture_fabric">Furniture Fabric</SelectItem>
+                        </>
+                      )}
+                      {formData.category === "roller_fabric" && (
+                        <>
+                          <SelectItem value="light_filtering">Light Filtering</SelectItem>
+                          <SelectItem value="blockout">Blockout</SelectItem>
+                          <SelectItem value="sunscreen">Sunscreen</SelectItem>
+                          <SelectItem value="dual_roller">Dual Roller</SelectItem>
+                        </>
+                      )}
+                      {formData.category === "venetian_slats" && (
+                        <>
+                          <SelectItem value="wood_25mm">Wood 25mm (1")</SelectItem>
+                          <SelectItem value="wood_50mm">Wood 50mm (2")</SelectItem>
+                          <SelectItem value="wood_63mm">Wood 63mm (2.5")</SelectItem>
+                          <SelectItem value="aluminum_16mm">Aluminum 16mm</SelectItem>
+                          <SelectItem value="aluminum_25mm">Aluminum 25mm (1")</SelectItem>
+                          <SelectItem value="aluminum_50mm">Aluminum 50mm (2")</SelectItem>
+                        </>
+                      )}
+                      {formData.category === "vertical_vanes" && (
+                        <>
+                          <SelectItem value="fabric_89mm">Fabric 89mm (3.5")</SelectItem>
+                          <SelectItem value="fabric_127mm">Fabric 127mm (5")</SelectItem>
+                          <SelectItem value="pvc_89mm">PVC 89mm (3.5")</SelectItem>
+                          <SelectItem value="pvc_127mm">PVC 127mm (5")</SelectItem>
+                        </>
+                      )}
+                      {formData.category === "cellular_fabric" && (
+                        <>
+                          <SelectItem value="single_cell_16mm">Single Cell 16mm</SelectItem>
+                          <SelectItem value="single_cell_20mm">Single Cell 20mm</SelectItem>
+                          <SelectItem value="double_cell_25mm">Double Cell 25mm</SelectItem>
+                          <SelectItem value="blackout_single">Blackout Single Cell</SelectItem>
+                          <SelectItem value="blackout_double">Blackout Double Cell</SelectItem>
+                        </>
+                      )}
+                      {formData.category === "shutter_panels" && (
+                        <>
+                          <SelectItem value="plantation_63mm">Plantation 63mm (2.5")</SelectItem>
+                          <SelectItem value="plantation_89mm">Plantation 89mm (3.5")</SelectItem>
+                          <SelectItem value="cafe_style">Cafe Style</SelectItem>
+                          <SelectItem value="solid_panel">Solid Panel</SelectItem>
+                        </>
+                      )}
+                      {formData.category === "panel_glide_fabric" && (
+                        <>
+                          <SelectItem value="light_filtering">Light Filtering</SelectItem>
+                          <SelectItem value="blockout">Blockout</SelectItem>
+                          <SelectItem value="decorative">Decorative</SelectItem>
+                        </>
+                      )}
+                      {formData.category === "awning_fabric" && (
+                        <>
+                          <SelectItem value="outdoor_acrylic">Outdoor Acrylic</SelectItem>
+                          <SelectItem value="outdoor_pvc">Outdoor PVC</SelectItem>
+                          <SelectItem value="retractable">Retractable</SelectItem>
                         </>
                       )}
                       {formData.category === "hardware" && (
@@ -803,7 +868,7 @@ export const UnifiedInventoryDialog = ({
                           <SelectItem value="accessory">Accessory</SelectItem>
                         </>
                       )}
-                      {formData.category === "wallcovering" && (
+                      {formData.category === "wallcoverings" && (
                         <>
                           <SelectItem value="plain_wallpaper">Plain Wallpaper</SelectItem>
                           <SelectItem value="patterned_wallpaper">Patterned Wallpaper</SelectItem>
@@ -960,6 +1025,36 @@ export const UnifiedInventoryDialog = ({
                       />
                       <p className="text-xs text-muted-foreground mt-1">
                         Add searchable tags to help categorize and find this item
+                      </p>
+                    </div>
+                    
+                    {/* Color Variant Selector */}
+                    <div className="md:col-span-2">
+                      <Label>Available Colors</Label>
+                      <ColorSelector
+                        selectedColors={formData.tags.filter(tag => 
+                          tag === 'white' || tag === 'black' || tag === 'grey' || tag === 'silver' || 
+                          tag === 'bronze' || tag === 'gold' || tag === 'brown' || tag === 'beige' ||
+                          tag === 'cream' || tag === 'ivory' || tag === 'tan' || tag === 'charcoal' ||
+                          tag === 'light_grey' || tag === 'navy' || tag === 'blue' || tag === 'light_blue' ||
+                          tag === 'green' || tag === 'sage' || tag === 'red' || tag === 'burgundy' ||
+                          tag === 'pink' || tag === 'purple' || tag === 'yellow' || tag === 'orange'
+                        )}
+                        onChange={(colors) => {
+                          // Remove old color tags and add new ones
+                          const nonColorTags = formData.tags.filter(tag => 
+                            !(tag === 'white' || tag === 'black' || tag === 'grey' || tag === 'silver' || 
+                            tag === 'bronze' || tag === 'gold' || tag === 'brown' || tag === 'beige' ||
+                            tag === 'cream' || tag === 'ivory' || tag === 'tan' || tag === 'charcoal' ||
+                            tag === 'light_grey' || tag === 'navy' || tag === 'blue' || tag === 'light_blue' ||
+                            tag === 'green' || tag === 'sage' || tag === 'red' || tag === 'burgundy' ||
+                            tag === 'pink' || tag === 'purple' || tag === 'yellow' || tag === 'orange')
+                          );
+                          setFormData({ ...formData, tags: [...nonColorTags, ...colors] });
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Select all colors available for this product. Colors appear as a dropdown in quote calculator.
                       </p>
                     </div>
                   </CardContent>
