@@ -295,14 +295,30 @@ export const UnifiedInventoryDialog = ({
   };
 
   // Form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    console.log('🟡 handleSubmit called');
+    e?.preventDefault();
+
+    // Validate required fields
+    if (!formData.name || !formData.name.trim()) {
+      toast({ title: "Error", description: "Product name is required", variant: "destructive" });
+      return;
+    }
+    if (!formData.category) {
+      toast({ title: "Error", description: "Category is required", variant: "destructive" });
+      return;
+    }
+    if (!formData.subcategory) {
+      toast({ title: "Error", description: "Subcategory is required", variant: "destructive" });
+      return;
+    }
 
     // Auto-generate SKU if not provided
     const generatedSku = formData.sku || `${formData.category.toUpperCase().substring(0, 3)}-${Date.now().toString().slice(-6)}`;
 
     const itemData = {
       ...formData,
+      name: formData.name.trim(),
       sku: generatedSku,
       quantity: trackInventory ? formData.quantity : 0,
       // Ensure empty strings become null for UUID fields
@@ -320,15 +336,19 @@ export const UnifiedInventoryDialog = ({
       tags: Array.isArray(formData.tags) ? formData.tags : [],
     };
 
-    console.log('🔍 Submitting inventory item:', itemData);
+    console.log('🔍 Submitting inventory item:', JSON.stringify(itemData, null, 2));
 
     try {
       if (mode === "create") {
-        await createMutation.mutateAsync(itemData);
+        console.log('📤 Calling create mutation...');
+        const result = await createMutation.mutateAsync(itemData);
+        console.log('✅ Create mutation result:', result);
         localStorage.removeItem(STORAGE_KEY);
         toast({ title: "Item created successfully" });
       } else {
-        await updateMutation.mutateAsync({ id: item.id, ...itemData });
+        console.log('📤 Calling update mutation...');
+        const result = await updateMutation.mutateAsync({ id: item.id, ...itemData });
+        console.log('✅ Update mutation result:', result);
         toast({ title: "Item updated successfully" });
       }
       onSuccess?.();
@@ -916,7 +936,12 @@ export const UnifiedInventoryDialog = ({
                 Cancel
               </Button>
               <Button 
-                type="submit" 
+                type="submit"
+                onClick={(e) => {
+                  console.log('🔴 Update button clicked');
+                  e.preventDefault();
+                  handleSubmit();
+                }}
                 disabled={createMutation.isPending || updateMutation.isPending}
               >
                 {mode === "create" ? "Create" : "Update"}
