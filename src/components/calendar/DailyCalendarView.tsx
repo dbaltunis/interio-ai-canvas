@@ -82,6 +82,14 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
     return appointments.filter(appointment => {
       // Convert UTC time to user's timezone for date comparison
       const appointmentDate = TimezoneUtils.toTimezone(appointment.start_time, userTimezone);
+      console.log('[DailyCalendarView] Filtering appointment:', {
+        title: appointment.title,
+        utcStartTime: appointment.start_time,
+        userTimezone,
+        convertedDate: appointmentDate,
+        currentDate,
+        isSame: isSameDay(appointmentDate, currentDate)
+      });
       return isSameDay(appointmentDate, currentDate);
     });
   };
@@ -254,6 +262,15 @@ export const DailyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick }
                 // Convert UTC times to user's timezone for display
                 const startTime = TimezoneUtils.toTimezone(event.start_time, userTimezone);
                 const endTime = TimezoneUtils.toTimezone(event.end_time, userTimezone);
+                console.log('[DailyCalendarView] Rendering event:', {
+                  title: event.title,
+                  utcStartTime: event.start_time,
+                  utcEndTime: event.end_time,
+                  userTimezone,
+                  convertedStartTime: startTime,
+                  convertedEndTime: endTime,
+                  startTimeFormatted: format(startTime, 'yyyy-MM-dd HH:mm')
+                });
                 const style = calculateEventStyle(startTime, endTime);
                 
                 if (!style.visible) return null;
