@@ -674,15 +674,15 @@ export const InventorySelectionPanel = ({
       </Dialog>
       </div>
 
-      {/* Category tabs - Hidden as per user request */}
-      <Tabs value={activeCategory} onValueChange={setActiveCategory} className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="hidden">
+      {/* Category tabs */}
+      <Tabs value={activeCategory} onValueChange={setActiveCategory} className="flex-1 flex flex-col overflow-hidden mt-2">
+        <TabsList className="w-full grid grid-cols-3 mb-2">
           {availableTabs.map(({
           key,
           label,
           icon: Icon
-        }) => <TabsTrigger key={key} value={key} className="flex items-center gap-1.5 text-xs">
-              <Icon className="h-3.5 w-3.5" />
+        }) => <TabsTrigger key={key} value={key} className="flex items-center gap-1.5 text-sm">
+              <Icon className="h-4 w-4" />
               {label}
             </TabsTrigger>)}
         </TabsList>

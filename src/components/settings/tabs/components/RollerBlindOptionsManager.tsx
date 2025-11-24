@@ -19,7 +19,7 @@ interface OptionItem extends EnhancedInventoryItem {
 }
 
 export const RollerBlindOptionsManager = () => {
-  const { data: optionsData = [], isLoading } = useEnhancedInventoryByCategory('blind_option');
+  const { data: optionsData = [], isLoading } = useEnhancedInventoryByCategory('treatment_option');
   const createItem = useCreateEnhancedInventoryItem();
   const updateItem = useUpdateEnhancedInventoryItem();
   const deleteItem = useDeleteEnhancedInventoryItem();
@@ -88,7 +88,7 @@ export const RollerBlindOptionsManager = () => {
         name: formData.name.trim(),
         price_per_meter: formData.price,
         description: JSON.stringify(optionDetails),
-        category: 'blind_option' as const,
+        category: 'treatment_option' as const,
         treatment_type: formData.treatment_type,
         quantity: 1,
         active: true,
