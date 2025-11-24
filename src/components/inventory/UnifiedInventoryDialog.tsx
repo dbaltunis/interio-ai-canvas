@@ -303,9 +303,11 @@ export const UnifiedInventoryDialog = ({
       ...formData,
       sku: generatedSku,
       quantity: trackInventory ? formData.quantity : 0,
-      // Ensure empty strings become null for optional fields
+      // Ensure empty strings become null for UUID fields
       product_category: formData.product_category || null,
       price_group: formData.price_group || null,
+      vendor_id: formData.vendor_id || null,
+      collection_id: (formData as any).collection_id || null,
       // Ensure numeric fields are properly set
       cost_price: Number(formData.cost_price) || 0,
       selling_price: Number(formData.selling_price) || 0,
