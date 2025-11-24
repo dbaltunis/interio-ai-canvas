@@ -461,7 +461,8 @@ export const InventorySelectionPanel = ({
     }
     
     // Other blinds need materials (if available) or hardware
-    if (['venetian_blinds', 'vertical_blinds', 'cellular_blinds'].includes(treatmentCategory)) {
+    // Note: cellular_shades and cellular_blinds are the same product type (just different naming)
+    if (['venetian_blinds', 'vertical_blinds', 'cellular_blinds', 'cellular_shades'].includes(treatmentCategory)) {
       return [
         { key: "material", label: "Material", icon: Package },
         { key: "hardware", label: "Hardware", icon: Wrench }
