@@ -214,6 +214,8 @@ export const InventorySelectionPanel = ({
 
   // Map treatment types to their required material subcategories
   const getTreatmentMaterialSubcategories = (): string[] => {
+    console.log('🎯 Getting material subcategories for treatment:', treatmentCategory);
+    
     switch (treatmentCategory) {
       case 'venetian_blinds':
         return ['venetian_slats', 'wood_slats', 'aluminum_slats'];
@@ -221,6 +223,7 @@ export const InventorySelectionPanel = ({
         return ['vertical_slats', 'vertical_vanes'];
       case 'cellular_blinds':
       case 'cellular_shades':
+        console.log('✅ Cellular blind detected - looking for cellular_fabric or honeycomb_fabric');
         return ['cellular_fabric', 'honeycomb_fabric'];
       case 'shutters':
       case 'plantation_shutters':
@@ -230,28 +233,43 @@ export const InventorySelectionPanel = ({
       case 'awning':
         return ['awning_fabric'];
       default:
+        console.log('⚠️ No material subcategories defined for:', treatmentCategory);
         return [];
     }
   };
 
   // Filter inventory by treatment type and category
   const getInventoryByCategory = (category: string) => {
+    console.log('🔍 getInventoryByCategory called:', { category, treatmentCategory, inventoryCount: inventory.length });
+    
     // For fabric category, ALWAYS use treatment-specific fabrics
     if (category === "fabric") {
-      return treatmentFabrics.filter(item => {
+      const filtered = treatmentFabrics.filter(item => {
         const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || item.description?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
         return matchesSearch && matchesVendor && matchesCollection && matchesTags;
       });
+      console.log('📦 Fabric tab filtered:', filtered.length, 'items');
+      return filtered;
     }
 
     // For material category, filter by treatment-specific material subcategories
     if (category === "material") {
       const requiredSubcategories = getTreatmentMaterialSubcategories();
       
-      console.log('🔍 Filtering materials for treatment:', treatmentCategory, 'Required subcategories:', requiredSubcategories);
+      console.log('🔍 Filtering materials - Required subcategories:', requiredSubcategories);
+      console.log('📊 Total inventory items to check:', inventory.length);
+      
+      // Log first few inventory items to see their structure
+      if (inventory.length > 0) {
+        console.log('📋 Sample inventory items:', inventory.slice(0, 3).map(i => ({
+          name: i.name,
+          category: i.category,
+          subcategory: i.subcategory
+        })));
+      }
       
       const filtered = inventory.filter(item => {
         // Must be in material or hard_coverings category
@@ -269,6 +287,13 @@ export const InventorySelectionPanel = ({
         const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
+        
+        if (!matchesCategory && item.category) {
+          console.log('❌ Item excluded - wrong category:', item.name, 'has category:', item.category);
+        }
+        if (matchesCategory && !matchesSubcategory && item.subcategory) {
+          console.log('❌ Item excluded - wrong subcategory:', item.name, 'has subcategory:', item.subcategory, 'need:', requiredSubcategories);
+        }
         
         return matchesCategory && matchesSubcategory && matchesSearch && matchesVendor && matchesCollection && matchesTags;
       });
@@ -296,6 +321,7 @@ export const InventorySelectionPanel = ({
       return filtered;
     }
     
+    console.log('⚠️ Unknown category:', category);
     return [];
   };
 
@@ -480,59 +506,52 @@ export const InventorySelectionPanel = ({
       return [{ key: "fabric", label: "Wallpaper", icon: Palette }];
     }
     
-    // Curtains need fabric + hardware
+    // Curtains need fabric only (hardware assigned in settings)
     if (treatmentCategory === 'curtains') {
       return [
-        { key: "fabric", label: "Fabric", icon: Palette },
-        { key: "hardware", label: "Hardware", icon: Wrench }
+        { key: "fabric", label: "Fabric", icon: Palette }
       ];
     }
     
     // Roman blinds can use fabrics
     if (treatmentCategory === 'roman_blinds') {
       return [
-        { key: "fabric", label: "Fabric", icon: Palette },
-        { key: "hardware", label: "Hardware", icon: Wrench }
+        { key: "fabric", label: "Fabric", icon: Palette }
       ];
     }
     
     // Roller blinds use fabric
     if (treatmentCategory === 'roller_blinds') {
       return [
-        { key: "fabric", label: "Fabric", icon: Palette },
-        { key: "hardware", label: "Hardware", icon: Wrench }
+        { key: "fabric", label: "Fabric", icon: Palette }
       ];
     }
     
     // Panel glide uses fabric
     if (treatmentCategory === 'panel_glide') {
       return [
-        { key: "fabric", label: "Fabric", icon: Palette },
-        { key: "hardware", label: "Hardware", icon: Wrench }
+        { key: "fabric", label: "Fabric", icon: Palette }
       ];
     }
     
-    // Other blinds need materials (if available) or hardware
+    // Other blinds need materials only (hardware assigned in settings)
     // Note: cellular_shades and cellular_blinds are the same product type (just different naming)
     if (['venetian_blinds', 'vertical_blinds', 'cellular_blinds', 'cellular_shades'].includes(treatmentCategory)) {
       return [
-        { key: "material", label: "Material", icon: Package },
-        { key: "hardware", label: "Hardware", icon: Wrench }
+        { key: "material", label: "Material", icon: Package }
       ];
     }
     
     // Shutters
     if (treatmentCategory === 'shutters' || treatmentCategory === 'plantation_shutters') {
       return [
-        { key: "material", label: "Material", icon: Package },
-        { key: "hardware", label: "Hardware", icon: Wrench }
+        { key: "material", label: "Material", icon: Package }
       ];
     }
     
-    // Default: show fabric + hardware
+    // Default: show fabric only
     return [
-      { key: "fabric", label: "Fabric", icon: Palette },
-      { key: "hardware", label: "Hardware", icon: Wrench }
+      { key: "fabric", label: "Fabric", icon: Palette }
     ];
   };
   const availableTabs = getTabsForTreatment();
@@ -728,14 +747,13 @@ export const InventorySelectionPanel = ({
 
       {/* Category tabs */}
       <Tabs value={activeCategory} onValueChange={setActiveCategory} className="flex-1 flex flex-col overflow-hidden mt-2">
-        <TabsList className="w-full grid grid-cols-3 mb-2">
+        <TabsList className="w-full grid" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, minmax(0, 1fr))` }}>
           {availableTabs.map(({
           key,
           label,
           icon: Icon
-        }) => <TabsTrigger key={key} value={key} className="flex items-center gap-1.5 text-sm">
+        }) => <TabsTrigger key={key} value={key} className="flex items-center justify-center gap-1.5 text-sm">
               <Icon className="h-4 w-4" />
-              {label}
             </TabsTrigger>)}
         </TabsList>
 
