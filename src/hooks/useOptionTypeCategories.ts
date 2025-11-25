@@ -136,17 +136,40 @@ export const useToggleOptionTypeVisibility = () => {
   
   return useMutation({
     mutationFn: async ({ id, hidden }: { id: string; hidden: boolean }) => {
-      const { error } = await supabase
+      console.log('🔄 Updating option type visibility:', { id, hidden });
+      
+      const { data, error } = await supabase
         .from('option_type_categories')
         .update({ hidden_by_user: hidden, updated_at: new Date().toISOString() })
-        .eq('id', id);
+        .eq('id', id)
+        .select()
+        .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Failed to update visibility:', error);
+        throw error;
+      }
+      
+      console.log('✅ Visibility updated successfully:', data);
+      return data;
     },
-    onSuccess: (_, variables) => {
-      // Invalidate both visible and hidden queries
-      queryClient.invalidateQueries({ queryKey: ['option-type-categories'] });
-      queryClient.invalidateQueries({ queryKey: ['hidden-option-categories'] });
+    onSuccess: (data, variables) => {
+      console.log('🔄 Invalidating queries after visibility change');
+      
+      // Aggressively invalidate and refetch all related queries
+      queryClient.invalidateQueries({ 
+        queryKey: ['option-type-categories'],
+        refetchType: 'active'
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['hidden-option-categories'],
+        refetchType: 'active'
+      });
+      
+      // Force immediate refetch
+      queryClient.refetchQueries({ 
+        queryKey: ['option-type-categories']
+      });
       
       toast({
         title: variables.hidden ? "Option type hidden" : "Option type shown",
@@ -156,6 +179,7 @@ export const useToggleOptionTypeVisibility = () => {
       });
     },
     onError: (error) => {
+      console.error('❌ Visibility update failed:', error);
       toast({
         title: "Failed to update visibility",
         description: error.message,

@@ -1019,21 +1019,37 @@ export const WindowTreatmentOptionsManager = () => {
                     const currentType = optionTypeCategories.find(opt => opt.type_key === activeOptionType);
                     if (!currentType) return;
                     
+                    console.log('🎯 Hiding option type:', currentType);
+                    
                     try {
-                      await toggleOptionTypeVisibility.mutateAsync({ 
+                      // Wait for mutation to complete
+                      const result = await toggleOptionTypeVisibility.mutateAsync({ 
                         id: currentType.id, 
                         hidden: true 
                       });
                       
-                      // Invalidate hidden categories query
-                      queryClient.invalidateQueries({ queryKey: ['hidden-option-categories'] });
+                      console.log('✅ Hide mutation completed:', result);
+                      
+                      // Force immediate query refresh
+                      await queryClient.refetchQueries({ 
+                        queryKey: ['option-type-categories', activeTreatment],
+                        type: 'active'
+                      });
+                      
+                      console.log('🔄 Queries refetched, switching tabs');
                       
                       // Switch to first available type after hiding
-                      if (optionTypeCategories.length > 1) {
-                        const nextType = optionTypeCategories.find(t => t.type_key !== activeOptionType);
-                        if (nextType) setActiveOptionType(nextType.type_key);
-                      }
+                      setTimeout(() => {
+                        if (optionTypeCategories.length > 1) {
+                          const nextType = optionTypeCategories.find(t => t.type_key !== activeOptionType);
+                          if (nextType) {
+                            console.log('➡️ Switching to:', nextType.type_key);
+                            setActiveOptionType(nextType.type_key);
+                          }
+                        }
+                      }, 100);
                     } catch (error: any) {
+                      console.error('❌ Hide failed:', error);
                       toast({
                         title: "Failed to hide type",
                         description: error.message || "Could not hide option type",
