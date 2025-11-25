@@ -66,7 +66,7 @@ export const defaultMeasurementUnits: MeasurementUnits = {
   length: 'cm',
   area: 'sq_cm', 
   fabric: 'm',
-  currency: 'EUR'
+  currency: 'USD' // Changed from EUR - should never be used if user has settings
 };
 
 export const useBusinessSettings = () => {
@@ -140,7 +140,13 @@ export const useCreateBusinessSettings = () => {
       return data;
     },
     onSuccess: () => {
+      // Invalidate business settings and ALL dependent queries
       queryClient.invalidateQueries({ queryKey: ["business-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["measurement-units"] });
+      queryClient.invalidateQueries({ queryKey: ["currency"] });
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["window-summaries"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
   });
 };
@@ -173,7 +179,13 @@ export const useUpdateBusinessSettings = () => {
       return data;
     },
     onSuccess: () => {
+      // Invalidate business settings and ALL dependent queries
       queryClient.invalidateQueries({ queryKey: ["business-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["measurement-units"] });
+      queryClient.invalidateQueries({ queryKey: ["currency"] });
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["window-summaries"] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
   });
 };

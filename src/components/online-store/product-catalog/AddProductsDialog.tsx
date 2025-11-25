@@ -146,7 +146,7 @@ export const AddProductsDialog = ({ open, onOpenChange, storeId }: AddProductsDi
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Est. price:</span>
                   <span className="font-semibold text-primary">
-                    {formatCurrency(calculation.totalCost, 'NZD')}
+                    {formatCurrency(calculation.totalCost)}
                   </span>
                 </div>
               </div>
