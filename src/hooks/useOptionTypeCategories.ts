@@ -27,6 +27,19 @@ export const useOptionTypeCategories = (treatmentCategory?: string) => {
         throw new Error('User not authenticated');
       }
       
+      console.log('🔍 useOptionTypeCategories - Fetching for user:', user.id);
+      
+      // Get user's account_id (for team members, use parent_account_id)
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('parent_account_id, user_id')
+        .eq('user_id', user.id)
+        .single();
+
+      const accountId = userProfile?.parent_account_id || user.id;
+      
+      console.log('🔍 useOptionTypeCategories - Account ID:', accountId);
+      
       let query = supabase
         .from('option_type_categories')
         .select('*')
@@ -42,6 +55,17 @@ export const useOptionTypeCategories = (treatmentCategory?: string) => {
       const { data, error } = await query;
       if (error) throw error;
       
+      console.log('✅ useOptionTypeCategories - Fetched categories (before account filter):', data?.length || 0);
+      console.log('🔍 useOptionTypeCategories - Unique account IDs:', 
+        [...new Set(data?.map(d => d.account_id))]);
+      
+      // CRITICAL: Filter to only this account's categories + system defaults (account_id is null)
+      const accountFiltered = (data || []).filter(cat => 
+        cat.is_system_default || !cat.account_id || cat.account_id === accountId
+      );
+      
+      console.log('✅ useOptionTypeCategories - After account filter:', accountFiltered.length);
+      
       // Get user's hidden system defaults
       const { data: hiddenCategories } = await supabase
         .from('hidden_option_categories' as any)
@@ -51,13 +75,15 @@ export const useOptionTypeCategories = (treatmentCategory?: string) => {
       const hiddenIds = new Set(hiddenCategories?.map((h: any) => h.option_type_category_id) || []);
       
       // Filter out system defaults that user has hidden
-      const filtered = (data as OptionTypeCategory[]).filter(cat => {
+      const filtered = accountFiltered.filter(cat => {
         // Hide if it's a system default that the user has hidden
         if ((cat.is_system_default || !cat.account_id) && hiddenIds.has(cat.id)) {
           return false;
         }
         return true;
       });
+      
+      console.log('✅ useOptionTypeCategories - Final count:', filtered.length);
       
       return filtered;
     },
