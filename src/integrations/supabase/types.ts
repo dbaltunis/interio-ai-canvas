@@ -7826,6 +7826,48 @@ export type Database = {
           },
         ]
       }
+      template_option_settings: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          template_id: string
+          treatment_option_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          template_id: string
+          treatment_option_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          template_id?: string
+          treatment_option_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_option_settings_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "product_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "template_option_settings_treatment_option_id_fkey"
+            columns: ["treatment_option_id"]
+            isOneToOne: false
+            referencedRelation: "treatment_options"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       template_option_values: {
         Row: {
           created_at: string | null
