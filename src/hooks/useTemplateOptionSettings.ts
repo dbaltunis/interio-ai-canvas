@@ -46,6 +46,22 @@ export const useToggleTemplateOption = () => {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
+      // Get user's org_id
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Get org_id (account owner id)
+      const { data: orgIdResult, error: orgError } = await supabase
+        .rpc('get_user_account_id', { p_user_id: user.id });
+
+      if (orgError) throw orgError;
+      const orgId = orgIdResult;
+
       // Check if setting exists
       const { data: existing } = await supabase
         .from('template_option_settings')
@@ -61,18 +77,25 @@ export const useToggleTemplateOption = () => {
           .update({ is_enabled: isEnabled })
           .eq('id', existing.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating template option setting:', error);
+          throw error;
+        }
       } else {
-        // Create new setting
+        // Create new setting with org_id
         const { error } = await supabase
           .from('template_option_settings')
           .insert({
             template_id: templateId,
             treatment_option_id: treatmentOptionId,
             is_enabled: isEnabled,
+            org_id: orgId,
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error creating template option setting:', error);
+          throw error;
+        }
       }
     },
     onSuccess: (_, variables) => {
