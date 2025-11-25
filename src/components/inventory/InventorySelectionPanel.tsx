@@ -30,6 +30,7 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { supabase } from "@/integrations/supabase/client";
 import { TreatmentCategory, getTreatmentConfig } from "@/utils/treatmentTypeDetection";
 import { useTreatmentSpecificFabrics } from "@/hooks/useTreatmentSpecificFabrics";
+import { getAcceptedSubcategories, getTreatmentPrimaryCategory } from "@/constants/inventorySubcategories";
 import { toast } from "sonner";
 interface InventorySelectionPanelProps {
   treatmentType: string;
@@ -212,30 +213,20 @@ export const InventorySelectionPanel = ({
     }
   };
 
-  // Map treatment types to their required material subcategories
+  // Map treatment types to their required material subcategories using centralized config
   const getTreatmentMaterialSubcategories = (): string[] => {
     console.log('🎯 Getting material subcategories for treatment:', treatmentCategory);
     
-    switch (treatmentCategory) {
-      case 'venetian_blinds':
-        return ['venetian_slats', 'wood_slats', 'aluminum_slats'];
-      case 'vertical_blinds':
-        return ['vertical_slats', 'vertical_vanes'];
-      case 'cellular_blinds':
-      case 'cellular_shades':
-        console.log('✅ Cellular blind detected - looking for cellular_fabric or honeycomb_fabric');
-        return ['cellular_fabric', 'honeycomb_fabric'];
-      case 'shutters':
-      case 'plantation_shutters':
-        return ['shutter_material', 'shutter_panels'];
-      case 'panel_glide':
-        return ['panel_fabric', 'panel_glide_fabric'];
-      case 'awning':
-        return ['awning_fabric'];
-      default:
-        console.log('⚠️ No material subcategories defined for:', treatmentCategory);
-        return [];
+    // Use centralized config instead of hardcoded switch
+    const primaryCategory = getTreatmentPrimaryCategory(treatmentCategory);
+    if (primaryCategory === 'material') {
+      const subcategories = getAcceptedSubcategories(treatmentCategory);
+      console.log('✅ Found material subcategories:', subcategories);
+      return subcategories;
     }
+    
+    console.log('⚠️ Treatment uses fabric, not material');
+    return [];
   };
 
   // Filter inventory by treatment type and category
