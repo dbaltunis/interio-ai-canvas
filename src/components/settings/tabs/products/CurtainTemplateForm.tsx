@@ -34,7 +34,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     curtain_type: template?.curtain_type || "curtain",
     
     // Hidden system_type - auto-generated from curtain_type
-    system_type: (template as any)?.system_type || "",
+    system_type: (template as any)?.system_type || template?.curtain_type || "curtain",
     
     // Heading/Options
     selected_heading_ids: template?.selected_heading_ids || [],
