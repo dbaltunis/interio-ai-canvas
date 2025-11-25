@@ -534,9 +534,15 @@ export const InventorySelectionPanel = ({
       ];
     }
     
-    // Other blinds need materials only (hardware assigned in settings)
-    // Note: cellular_shades and cellular_blinds are the same product type (just different naming)
-    if (['venetian_blinds', 'vertical_blinds', 'cellular_blinds', 'cellular_shades'].includes(treatmentCategory)) {
+    // FIXED: Cellular/honeycomb blinds use FABRIC, not material
+    if (['cellular_blinds', 'cellular_shades'].includes(treatmentCategory)) {
+      return [
+        { key: "fabric", label: "Fabric", icon: Palette }
+      ];
+    }
+    
+    // Venetian and Vertical blinds need materials (slats/vanes)
+    if (['venetian_blinds', 'vertical_blinds'].includes(treatmentCategory)) {
       return [
         { key: "material", label: "Material", icon: Package }
       ];

@@ -157,7 +157,7 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       requiresHeading: false,
       requiresLining: false,
       showPooling: false,
-      inventoryCategory: 'none', // Cellular blinds don't use fabric inventory
+      inventoryCategory: 'cellular_fabric', // FIXED: Cellular blinds DO use fabric inventory
       specificFields: ['cell_size', 'headrail_type', 'control_type', 'mount_type'],
       visualComponent: 'BlindVisualizer',
     },
@@ -168,7 +168,7 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       requiresHeading: false,
       requiresLining: false,
       showPooling: false,
-      inventoryCategory: 'none', // Cellular shades don't use fabric inventory
+      inventoryCategory: 'cellular_fabric', // FIXED: Cellular shades DO use fabric inventory
       specificFields: ['cell_type', 'opacity', 'control_type', 'mount_type'],
       visualComponent: 'BlindVisualizer',
     },

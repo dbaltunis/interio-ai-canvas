@@ -40,6 +40,8 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
         ? ['roller_fabric', 'roller_blind_fabric'] // Support both naming conventions
         : treatmentCategory === 'roman_blinds' || (treatmentCategory === 'blinds' && config.inventoryCategory === 'curtain_fabric')
         ? ['curtain_fabric'] // Roman blinds use curtain fabrics
+        : treatmentCategory === 'cellular_blinds' || treatmentCategory === 'cellular_shades'
+        ? ['cellular_fabric', 'honeycomb_fabric'] // FIXED: Add cellular fabric categories
         : treatmentCategory === 'panel_glide'
         ? ['panel_glide_fabric', 'curtain_fabric']
         : treatmentCategory === 'curtains'
