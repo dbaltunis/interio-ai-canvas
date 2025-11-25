@@ -2,17 +2,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAllTreatmentOptions } from "@/hooks/useTreatmentOptionsManagement";
+import { useTemplateOptionSettings, useToggleTemplateOption } from "@/hooks/useTemplateOptionSettings";
 import { singularToDbValue } from "@/types/treatmentCategories";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface TemplateOptionsManagerProps {
   curtainType: string;
+  templateId?: string;
 }
 
-export const TemplateOptionsManager = ({ curtainType }: TemplateOptionsManagerProps) => {
+export const TemplateOptionsManager = ({ curtainType, templateId }: TemplateOptionsManagerProps) => {
   const navigate = useNavigate();
   
   // Convert singular curtain_type to plural treatment_category
@@ -21,8 +24,28 @@ export const TemplateOptionsManager = ({ curtainType }: TemplateOptionsManagerPr
   // Fetch all treatment options and filter by category
   const { data: allOptions = [], isLoading } = useAllTreatmentOptions();
   
+  // Fetch template option settings
+  const { data: templateSettings = [] } = useTemplateOptionSettings(templateId);
+  const toggleOption = useToggleTemplateOption();
+  
   // Filter options for this specific treatment category
   const categoryOptions = allOptions.filter(opt => opt.treatment_category === treatmentCategory);
+  
+  // Helper to check if option is enabled (default true if no setting exists)
+  const isOptionEnabled = (optionId: string) => {
+    const setting = templateSettings.find(s => s.treatment_option_id === optionId);
+    return setting ? setting.is_enabled : true; // Default to enabled
+  };
+  
+  // Handler for toggling option
+  const handleToggle = (optionId: string, currentEnabled: boolean) => {
+    if (!templateId) return;
+    toggleOption.mutate({
+      templateId,
+      treatmentOptionId: optionId,
+      isEnabled: !currentEnabled,
+    });
+  };
   
   // Map curtain types to option management paths
   const getOptionsPath = () => {
@@ -58,7 +81,10 @@ export const TemplateOptionsManager = ({ curtainType }: TemplateOptionsManagerPr
       <CardHeader>
         <CardTitle>Available Options</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Options configured for this treatment type
+          {templateId 
+            ? "Toggle options on/off to control which appear for this template in quotes"
+            : "Options configured for this treatment type (enable/disable per template after saving)"
+          }
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -81,6 +107,7 @@ export const TemplateOptionsManager = ({ curtainType }: TemplateOptionsManagerPr
               {categoryOptions.map((option) => {
                 const visibleValues = option.option_values?.filter(v => !v.hidden_by_user) || [];
                 const hiddenValues = option.option_values?.filter(v => v.hidden_by_user) || [];
+                const enabled = isOptionEnabled(option.id);
                 
                 return (
                   <AccordionItem key={option.id} value={option.id}>
@@ -96,7 +123,24 @@ export const TemplateOptionsManager = ({ curtainType }: TemplateOptionsManagerPr
                               {hiddenValues.length} hidden
                             </Badge>
                           )}
+                          {!enabled && (
+                            <Badge variant="destructive" className="text-xs">
+                              Disabled
+                            </Badge>
+                          )}
                         </div>
+                        {templateId && (
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            <Label htmlFor={`toggle-${option.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                              {enabled ? 'Enabled' : 'Disabled'}
+                            </Label>
+                            <Switch
+                              id={`toggle-${option.id}`}
+                              checked={enabled}
+                              onCheckedChange={() => handleToggle(option.id, enabled)}
+                            />
+                          </div>
+                        )}
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -136,7 +180,10 @@ export const TemplateOptionsManager = ({ curtainType }: TemplateOptionsManagerPr
                 Manage Options in System Settings
               </Button>
               <p className="text-xs text-muted-foreground mt-2 text-center">
-                Options are automatically available for all templates of this type
+                {templateId 
+                  ? "Use toggles above to enable/disable options for this template. Only enabled options will appear in quotes."
+                  : "Options are automatically available for all templates of this type until customized per template."
+                }
               </p>
             </div>
           </>

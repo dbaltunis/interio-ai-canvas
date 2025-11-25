@@ -270,7 +270,10 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         )}
 
         <TabsContent value="options" className="space-y-4 mt-4">
-          <TemplateOptionsManager curtainType={formData.curtain_type} />
+          <TemplateOptionsManager 
+            curtainType={formData.curtain_type} 
+            templateId={template?.id}
+          />
         </TabsContent>
 
         <TabsContent value="pricing" className="space-y-4 mt-4">

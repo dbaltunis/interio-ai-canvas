@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "./currencyUtils";
 import { useConditionalOptions } from "@/hooks/useConditionalOptions";
+import { useEnabledTemplateOptions } from "@/hooks/useEnabledTemplateOptions";
 import { useMemo } from "react";
 import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
 
@@ -33,6 +34,7 @@ export const TraditionalOptions = ({
   }, [selectedOptions, options, hierarchicalSelections]);
 
   const { isOptionVisible } = useConditionalOptions(templateId, selectedOptionsMap);
+  const { isOptionEnabled } = useEnabledTemplateOptions(templateId);
 
   // Group options by type for better organization
   const groupedOptions = options.reduce((acc: Record<string, any[]>, option) => {
@@ -46,9 +48,11 @@ export const TraditionalOptions = ({
   return (
     <>
       {Object.entries(groupedOptions).map(([optionType, typeOptions]) => {
-        const filteredOptions = (typeOptions as any[]).filter((opt: any) => 
-          isOptionVisible(opt.key || opt.option_type || opt.name || opt.id)
-        );
+        const filteredOptions = (typeOptions as any[]).filter((opt: any) => {
+          const visible = isOptionVisible(opt.key || opt.option_type || opt.name || opt.id);
+          const enabled = isOptionEnabled(opt.id);
+          return visible && enabled;
+        });
         
         if (filteredOptions.length === 0) {
           return null;
