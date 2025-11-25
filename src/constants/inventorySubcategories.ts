@@ -53,12 +53,6 @@ export const TREATMENT_SUBCATEGORIES: Record<TreatmentCategory, {
     description: 'Cellular/honeycomb blind fabrics (all naming variations)'
   },
   
-  cellular_shades: {
-    category: 'fabric',
-    subcategories: ['cellular', 'cellular_fabric', 'honeycomb', 'honeycomb_fabric'],
-    description: 'Cellular/honeycomb shade fabrics (same as cellular_blinds)'
-  },
-  
   panel_glide: {
     category: 'fabric',
     subcategories: ['panel_glide_fabric', 'panel_fabric', 'curtain_fabric', 'panel'],

@@ -215,7 +215,6 @@ export const DynamicTreatmentVisualizer = ({
         return renderRomanBlindVisualization();
       
       case 'cellular_blinds':
-      case 'cellular_shades':
         return (
           <CellularShadeVisualizer
             windowType="standard"

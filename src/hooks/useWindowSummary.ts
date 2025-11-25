@@ -123,8 +123,7 @@ const enrichSummaryForPersistence = (summary: Omit<WindowSummary, "updated_at">)
   const isBlindType = (treatmentCategory === 'roller_blinds' || 
                        treatmentCategory === 'venetian_blinds' ||
                        treatmentCategory === 'vertical_blinds' ||
-                       treatmentCategory === 'cellular_blinds' ||
-                       treatmentCategory === 'cellular_shades') ||
+                       treatmentCategory === 'cellular_blinds') ||
                       (treatmentType?.includes('roller') || 
                        treatmentType?.includes('venetian') ||
                        treatmentType?.includes('vertical') ||

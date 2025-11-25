@@ -148,7 +148,7 @@ export const PricingGridRulesManager = () => {
                   <SelectItem value="vertical_blinds">Vertical Blinds</SelectItem>
                   <SelectItem value="panel_glide">Panel Glide</SelectItem>
                   <SelectItem value="shutters">Shutters</SelectItem>
-                  <SelectItem value="cellular_shades">Cellular Shades</SelectItem>
+                  <SelectItem value="cellular_blinds">Cellular Blinds</SelectItem>
                 </SelectContent>
               </Select>
             </div>
