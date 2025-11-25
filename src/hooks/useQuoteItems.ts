@@ -70,7 +70,7 @@ export const useQuoteItems = (quoteId?: string) => {
           children: item.children || [],
         },
         breakdown: item.breakdown || {},
-        currency: item.currency || "GBP",
+        currency: item.currency || 'USD', // Fallback only - should come from item
         sort_order: index,
       }));
 

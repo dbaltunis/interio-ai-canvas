@@ -156,6 +156,16 @@ export const useQuotationSync = ({
             isWallpaper: treatmentCategory === 'wallpaper'
           });
           
+          // Get currency from business settings measurement_units
+          const getMeasurementCurrency = () => {
+            if (!businessSettings?.measurement_units) return 'USD';
+            const units = typeof businessSettings.measurement_units === 'string' 
+              ? JSON.parse(businessSettings.measurement_units)
+              : businessSettings.measurement_units;
+            return units?.currency || 'USD';
+          };
+          const itemCurrency = getMeasurementCurrency();
+          
           const parentItem = {
             id: window.window_id,
             name: productName,
@@ -164,7 +174,7 @@ export const useQuotationSync = ({
             unit_price: summary.total_cost,
             total: summary.total_cost,
             breakdown,
-            currency: summary.currency || 'GBP',
+            currency: summary.currency || itemCurrency,
             room_name: roomName,
             room_id: roomId,
             surface_name: window.surface_name,
@@ -210,18 +220,28 @@ export const useQuotationSync = ({
               isWallpaper: treatmentCategory === 'wallpaper'
             });
             
+            // Get currency from business settings measurement_units
+            const getMeasurementCurrency = () => {
+              if (!businessSettings?.measurement_units) return 'USD';
+              const units = typeof businessSettings.measurement_units === 'string' 
+                ? JSON.parse(businessSettings.measurement_units)
+                : businessSettings.measurement_units;
+              return units?.currency || 'USD';
+            };
+            const itemCurrency = getMeasurementCurrency();
+            
             parentItem.children.push({
-              id: `${window.window_id}-material`,
-              name: materialLabel,
-              description: productName,
-              quantity: summary.linear_meters || 0,
-              unit: 'm',
-              unit_price: pricePerMetre,
-              total: summary.fabric_cost,
-              image_url: materialImageUrl, // Child shows actual fabric/material from inventory
-              inventory_item_id: materialDetails.inventory_item_id || fabricDetails.inventory_item_id || null, // NEW: Store for tracking
-              isChild: true
-            });
+            id: `${window.window_id}-material`,
+            name: materialLabel,
+            description: productName,
+            quantity: summary.linear_meters || 0,
+            unit: 'm',
+            unit_price: pricePerMetre,
+            total: summary.fabric_cost,
+            image_url: materialImageUrl, // Child shows actual fabric/material from inventory
+            inventory_item_id: materialDetails.inventory_item_id || fabricDetails.inventory_item_id || null, // NEW: Store for tracking
+            isChild: true
+          });
           }
 
           // DETAILED BREAKDOWN - Manufacturing (skip for wallpaper)
@@ -522,7 +542,7 @@ export const useQuotationSync = ({
     let quoteId: string;
 
     if (existingQuote) {
-      // Update existing quote
+      // Update existing quote - PROTECT user-edited fields
       await updateQuote.mutateAsync({
         id: existingQuote.id,
         subtotal: quotationData.subtotal,
@@ -530,6 +550,8 @@ export const useQuotationSync = ({
         total_amount: quotationData.total,
         notes: `Updated with ${quotationData.items.length} items - ${new Date().toISOString()}`,
         updated_at: new Date().toISOString()
+        // DO NOT include company_logo_url, custom_notes, or other user-edited fields
+        // These should only be updated through explicit user actions in the quote editor
       });
       quoteId = existingQuote.id;
       console.log('✅ QuotationSync: Updated quote', existingQuote.quote_number);
@@ -591,11 +613,17 @@ export const useQuotationSync = ({
             image_url: item.image_url,
             hasChildren: item.hasChildren || false,
             children: item.children || [],
-          },
-          breakdown: item.breakdown || {},
-          currency: item.currency || "GBP",
-          sort_order: index,
-        };
+        },
+        breakdown: item.breakdown || {},
+        currency: item.currency || (() => {
+          if (!businessSettings?.measurement_units) return 'USD';
+          const units = typeof businessSettings.measurement_units === 'string' 
+            ? JSON.parse(businessSettings.measurement_units)
+            : businessSettings.measurement_units;
+          return units?.currency || 'USD';
+        })(),
+        sort_order: index,
+      };
       });
 
       // Delete existing items for this quote
