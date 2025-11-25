@@ -161,3 +161,116 @@ export const useToggleOptionTypeVisibility = () => {
     },
   });
 };
+
+export const useGetOptionTypeDeleteInfo = () => {
+  return useMutation({
+    mutationFn: async ({ 
+      typeKey, 
+      treatmentCategory 
+    }: { 
+      typeKey: string; 
+      treatmentCategory: string;
+    }) => {
+      // Get count of treatment_options and their values
+      const { data: treatmentOptions, error: fetchError } = await supabase
+        .from('treatment_options')
+        .select('id')
+        .eq('key', typeKey)
+        .eq('treatment_category', treatmentCategory);
+
+      if (fetchError) throw fetchError;
+
+      if (!treatmentOptions || treatmentOptions.length === 0) {
+        return { optionCount: 0, valueCount: 0 };
+      }
+
+      // Get count of option_values
+      const optionIds = treatmentOptions.map(opt => opt.id);
+      const { count: valueCount, error: countError } = await supabase
+        .from('option_values')
+        .select('*', { count: 'exact', head: true })
+        .in('option_id', optionIds);
+
+      if (countError) throw countError;
+
+      return { 
+        optionCount: treatmentOptions.length,
+        valueCount: valueCount || 0
+      };
+    },
+  });
+};
+
+export const useDeleteOptionTypeCategory = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ 
+      id, 
+      typeKey, 
+      treatmentCategory 
+    }: { 
+      id: string; 
+      typeKey: string; 
+      treatmentCategory: string;
+    }) => {
+      // First, get all treatment_options for this type/category combo
+      const { data: treatmentOptions, error: fetchError } = await supabase
+        .from('treatment_options')
+        .select('id')
+        .eq('key', typeKey)
+        .eq('treatment_category', treatmentCategory);
+
+      if (fetchError) throw fetchError;
+
+      // Delete option_values first (child records)
+      if (treatmentOptions && treatmentOptions.length > 0) {
+        const optionIds = treatmentOptions.map(opt => opt.id);
+        
+        const { error: valuesError } = await supabase
+          .from('option_values')
+          .delete()
+          .in('option_id', optionIds);
+
+        if (valuesError) throw valuesError;
+
+        // Delete treatment_options
+        const { error: optionsError } = await supabase
+          .from('treatment_options')
+          .delete()
+          .in('id', optionIds);
+
+        if (optionsError) throw optionsError;
+      }
+
+      // Finally, delete the option_type_category
+      const { error: categoryError } = await supabase
+        .from('option_type_categories')
+        .delete()
+        .eq('id', id);
+
+      if (categoryError) throw categoryError;
+
+      return { deletedOptions: treatmentOptions?.length || 0 };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['option-type-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
+      queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+      queryClient.invalidateQueries({ queryKey: ['option-values'] });
+      
+      toast({
+        title: "Type deleted from your account",
+        description: `Deleted option type and ${data.deletedOptions} related option(s). Other accounts are not affected.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete failed",
+        description: error.message || "Failed to delete option type.",
+        variant: "destructive",
+      });
+    },
+  });
+};
