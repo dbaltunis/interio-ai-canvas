@@ -109,7 +109,9 @@ export const CalculationBreakdown: React.FC<CalculationBreakdownProps> = ({
     md.leftover_per_panel_cm ?? md.leftover_width_per_panel_cm
   );
 
-  const activeCurrency = currency || summary?.currency || "GBP";
+  // Get currency from business settings if not provided
+  const { units } = useMeasurementUnits();
+  const activeCurrency = currency || summary?.currency || units?.currency || 'USD';
   const hasCostBreakdown = Array.isArray(costBreakdown) && costBreakdown.length > 0;
 
   // Unit-aware formatting helpers

@@ -205,8 +205,8 @@ export const extractWindowMetrics = (summary: AnySummary, surface: AnySurface) =
   const curtainType = md.curtain_type || summary?.curtain_type || "single";
   const curtainCount = curtainType === "pair" ? 2 : 1;
 
-  // Pricing/currency
-  const currency = summary?.currency || "GBP";
+  // Pricing/currency - use summary currency, no hardcoded fallback
+  const currency = summary?.currency || undefined;
   const pricePerMeter =
     pickNumber(
       summary?.price_per_meter,

@@ -109,6 +109,7 @@ export const useEnhancedInventory = () => {
           vendor:vendors!enhanced_inventory_items_vendor_id_fkey(id, name),
           collection:collections!collection_id(id, name)
         `)
+        .eq("user_id", user.id) // CRITICAL: Filter by user_id to prevent data isolation breach
         .eq("active", true)
         .order("created_at", { ascending: false });
 
@@ -134,6 +135,7 @@ export const useEnhancedInventoryByCategory = (category: string) => {
           vendor:vendors!enhanced_inventory_items_vendor_id_fkey(id, name),
           collection:collections!collection_id(id, name)
         `)
+        .eq("user_id", user.id) // CRITICAL: Filter by user_id to prevent data isolation breach
         .eq("category", category)
         .eq("active", true)
         .order("created_at", { ascending: false });

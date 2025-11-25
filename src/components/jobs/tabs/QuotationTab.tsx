@@ -664,7 +664,23 @@ export const QuotationTab = ({
     } : undefined} />
 
       {/* Quotation Items Modal */}
-      <QuotationItemsModal key={`quote-modal-${projectSummaries?.projectTotal}-${quotationData.items?.length}`} isOpen={showQuotationItems} onClose={() => setShowQuotationItems(false)} quotationData={quotationData} currency="GBP" treatments={sourceTreatments} rooms={rooms || []} surfaces={surfaces || []} markupPercentage={markupPercentage} />
+      <QuotationItemsModal 
+        key={`quote-modal-${projectSummaries?.projectTotal}-${quotationData.items?.length}`} 
+        isOpen={showQuotationItems} 
+        onClose={() => setShowQuotationItems(false)} 
+        quotationData={quotationData} 
+        currency={(() => {
+          if (!businessSettings?.measurement_units) return 'USD';
+          const units = typeof businessSettings.measurement_units === 'string' 
+            ? JSON.parse(businessSettings.measurement_units)
+            : businessSettings.measurement_units;
+          return units?.currency || 'USD';
+        })()} 
+        treatments={sourceTreatments} 
+        rooms={rooms || []} 
+        surfaces={surfaces || []} 
+        markupPercentage={markupPercentage} 
+      />
 
       {/* Quote Preview */}
       {isEmptyVersion ? <EmptyQuoteVersionState currentVersion={currentVersion} onAddRoom={() => {
