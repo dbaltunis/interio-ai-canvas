@@ -3,13 +3,10 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Camera, Trash2 } from "lucide-react";
+import { Camera, Trash2, Package } from "lucide-react";
 import { WorkshopRoomSection } from "@/hooks/useWorkshopData";
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
-import { WorksheetVisual } from "@/components/worksheet/WorksheetVisual";
-import { RollerBlindVisual } from "@/components/measurements/visualizers/RollerBlindVisual";
 import { WorkItemPhotoGallery } from "@/components/workroom/components/WorkItemPhotoGallery";
-import { toWorksheetVisualData } from "@/components/workroom/utils/worksheet-visual-adapter";
 
 interface RoomSectionProps {
   section: WorkshopRoomSection;
@@ -147,9 +144,11 @@ export const RoomSection: React.FC<RoomSectionProps> = ({ section }) => {
       <CardContent>
         <div className="space-y-4">
           {section.items.map((item) => {
-            const wsProps = toWorksheetVisualData(item);
-            const treatmentType = item.summary?.treatment_type || item.treatmentType || 'curtains';
-            const isRollerBlind = treatmentType.toLowerCase().includes('roller');
+            // Extract fabric/material image from inventory
+            const fabricImageUrl = item.summary?.fabric?.image_url || 
+                                   item.summary?.material?.image_url || 
+                                   item.summary?.fabric_details?.image_url ||
+                                   item.summary?.material_details?.image_url;
             
             return (
               <div key={item.id} className="workshop-item-card rounded-md border p-3 bg-background">
@@ -158,20 +157,18 @@ export const RoomSection: React.FC<RoomSectionProps> = ({ section }) => {
                   <div className="space-y-2">
                     <div className="text-sm font-medium">{item.name}</div>
                     <WorkItemPhotoGallery itemId={item.id} />
-                    <div className="rounded-lg border overflow-hidden bg-card">
-                      {isRollerBlind ? (
-                        <RollerBlindVisual
-                          windowType={wsProps.windowType}
-                          measurements={wsProps.measurements}
-                          template={wsProps.selectedTemplate}
-                          material={item.summary?.fabric || item.summary?.material}
+                    <div className="rounded-lg border overflow-hidden bg-card h-48 flex items-center justify-center">
+                      {fabricImageUrl ? (
+                        <img 
+                          src={fabricImageUrl} 
+                          alt={item.name}
+                          className="w-full h-full object-cover"
                         />
                       ) : (
-                        <WorksheetVisual
-                          windowType={wsProps.windowType}
-                          measurements={wsProps.measurements}
-                          selectedTemplate={wsProps.selectedTemplate}
-                        />
+                        <div className="text-center text-muted-foreground p-4">
+                          <Package className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                          <p className="text-sm">No image uploaded</p>
+                        </div>
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground">
