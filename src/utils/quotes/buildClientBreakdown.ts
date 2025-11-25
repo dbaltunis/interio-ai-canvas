@@ -14,98 +14,104 @@ export interface ClientBreakdownItem {
 
 /**
  * Helper function to group related options (parent + sub-options)
- * Example: "Headrail Selection" + "Headrail Selection Colour" → "Headrail Selection - STANDARD HEADRAIL, colour: white"
+ * Matches patterns like:
+ * - "headrail_selection" + "headrail_selection_colour" → "Headrail Selection - STANDARD HEADRAIL, colour: white"
+ * - "control_type" + "control_type_colour" + "control_type_length" → "Control Type - Chain, colour: White, length: 500"
  */
 const groupRelatedOptions = (options: any[]): any[] => {
   if (!options || options.length === 0) return [];
   
-  // Map to store grouped options by parent name
-  const groups = new Map<string, any>();
-  const processedIndices = new Set<number>();
+  const grouped = new Map<string, any>();
+  const processed = new Set<string>();
   
-  options.forEach((option, idx) => {
-    if (processedIndices.has(idx)) return;
+  // First pass: identify all unique base option names
+  const baseNames = new Set<string>();
+  options.forEach(option => {
+    const name = (option.name || option.id || '').toLowerCase();
     
-    const optionName = option.name || option.label || '';
-    const optionDescription = option.description || '';
-    const price = Number(option.price || option.cost || option.total_cost || option.unit_price || 0);
-    
-    // Check if this is a sub-option (contains additional attributes like Colour, Length, Chain Side)
-    const isSubOption = /\s+(Colour|Color|Length|Chain Side|Size|Type|Width|Height|Depth|Finish|Material)\s*$/i.test(optionName);
-    
-    if (isSubOption) {
-      // Extract parent name by removing the attribute suffix
-      const parentName = optionName.replace(/\s+(Colour|Color|Length|Chain Side|Size|Type|Width|Height|Depth|Finish|Material)\s*$/i, '').trim();
-      
-      // Find or create parent group
-      if (groups.has(parentName)) {
-        const parent = groups.get(parentName)!;
-        
-        // Extract the sub-attribute description (e.g., "colour: white" from "Headrail selection - colour: white")
-        const subDescription = extractSubDescription(optionDescription, optionName);
-        
-        // Append to parent description
-        if (subDescription) {
-          parent.description = parent.description 
-            ? `${parent.description}, ${subDescription}` 
-            : subDescription;
-        }
-        
-        // Sum prices
-        parent.total_cost = (parent.total_cost || 0) + price;
-        parent.unit_price = (parent.unit_price || 0) + price;
-        
-        processedIndices.add(idx);
-      }
+    // Check if this is a sub-option (has underscore suffix like _colour, _length, etc.)
+    const match = name.match(/^(.+)_(colour|color|length|chain_side|side|size|type|width|height|finish|material)$/);
+    if (match) {
+      baseNames.add(match[1]);
     } else {
-      // This is a parent option - check if we already have it from a previous sub-option
-      if (!groups.has(optionName)) {
-        groups.set(optionName, {
-          id: option.id,
-          name: optionName,
-          label: optionName,
-          description: optionDescription,
-          price,
-          cost: price,
-          total_cost: price,
-          unit_price: price,
-          image_url: option.image_url,
-          details: option.details,
-        });
-      } else {
-        // Merge with existing group
-        const existing = groups.get(optionName)!;
-        existing.total_cost = (existing.total_cost || 0) + price;
-        existing.unit_price = (existing.unit_price || 0) + price;
-      }
-      processedIndices.add(idx);
+      baseNames.add(name);
     }
   });
   
-  return Array.from(groups.values());
-};
-
-/**
- * Extract sub-attribute description from option description
- * Example: "Headrail selection - colour: white" → "colour: white"
- */
-const extractSubDescription = (description: string, optionName: string): string => {
-  if (!description) return '';
+  // Second pass: group options by base name
+  baseNames.forEach(baseName => {
+    const relatedOptions = options.filter(opt => {
+      const name = (opt.name || opt.id || '').toLowerCase();
+      return name === baseName || name.startsWith(baseName + '_');
+    });
+    
+    if (relatedOptions.length === 0) return;
+    
+    // Find the parent (base) option
+    const parent = relatedOptions.find(opt => {
+      const name = (opt.name || opt.id || '').toLowerCase();
+      return name === baseName;
+    });
+    
+    if (!parent) return;
+    
+    // Extract parent description (the main value like "STANDARD HEADRAIL")
+    let parentDesc = parent.description || parent.name || '';
+    // Remove redundant prefix like "headrail_selection: " to get just "STANDARD HEADRAIL"
+    parentDesc = parentDesc.replace(/^[^:]+:\s*/, '').trim();
+    
+    // Collect sub-option descriptions
+    const subDescriptions: string[] = [];
+    let totalCost = Number(parent.total_cost || parent.price || parent.cost || 0);
+    
+    relatedOptions.forEach(opt => {
+      const name = (opt.name || opt.id || '').toLowerCase();
+      if (name !== baseName) {
+        // This is a sub-option
+        const cost = Number(opt.total_cost || opt.price || opt.cost || 0);
+        totalCost += cost;
+        
+        // Extract the sub-attribute (e.g., "colour: white" from "Headrail selection - colour: white")
+        let subDesc = opt.description || '';
+        const colonMatch = subDesc.match(/[-–:]\s*(.+)$/);
+        if (colonMatch) {
+          subDescriptions.push(colonMatch[1].trim());
+        } else if (subDesc) {
+          // Fallback: just use the description
+          subDescriptions.push(subDesc);
+        }
+        
+        processed.add(opt.id || opt.name);
+      }
+    });
+    
+    // Format the display name (convert snake_case to Title Case)
+    const displayName = baseName
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    
+    // Combine descriptions
+    const finalDescription = subDescriptions.length > 0
+      ? `${parentDesc}, ${subDescriptions.join(', ')}`
+      : parentDesc;
+    
+    grouped.set(baseName, {
+      id: parent.id,
+      name: displayName,
+      description: finalDescription,
+      total_cost: totalCost,
+      unit_price: totalCost,
+      quantity: 1,
+      category: 'option',
+      image_url: parent.image_url,
+      details: parent.details,
+    });
+    
+    processed.add(parent.id || parent.name);
+  });
   
-  // Try to extract the attribute part after a dash or colon
-  const dashMatch = description.match(/[-–]\s*(.+)$/);
-  if (dashMatch) return dashMatch[1].trim();
-  
-  // Try to extract just the attribute type and value
-  const attributeMatch = optionName.match(/\s+(Colour|Color|Length|Chain Side|Size|Type|Width|Height|Depth|Finish|Material)\s*$/i);
-  if (attributeMatch) {
-    const attribute = attributeMatch[1].toLowerCase();
-    // Extract value from description
-    const valueMatch = description.match(new RegExp(`${attribute}[:\\s]+(.+?)(?:,|$)`, 'i'));
-    if (valueMatch) return `${attribute}: ${valueMatch[1].trim()}`;
-  }
-  
-  return description;
+  return Array.from(grouped.values());
 };
 
 /**
