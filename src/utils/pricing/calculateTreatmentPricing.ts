@@ -6,7 +6,7 @@ export interface TreatmentPricingInput {
   selectedHeading?: string;
   selectedLining?: string;
   unitsCurrency?: string; // e.g., 'GBP'
-  selectedOptions?: Array<{ name: string; price: number }>; // CRITICAL: Add selected options
+  selectedOptions?: Array<{ name: string; price: number; description?: string; image_url?: string }>; // CRITICAL: Add selected options
   inventoryItems?: any[]; // CRITICAL: Add inventory items to look up heading prices
 }
 
@@ -116,23 +116,21 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
                            templateName.includes('venetian') ||
                            templateName.includes('vertical') ||
                            templateName.includes('cellular') ||
+                           templateName.includes('honeycomb') ||
                            templateName.includes('shutter');
   
   console.log(`🔍 Fabric cost calculation - pricing type: ${pricingType}, isBlind: ${isBlindTreatment}, template: ${template?.name}`);
   
-  if (pricingType === 'per_sqm' && isBlindTreatment) {
-    // Calculate square meters: For blinds, include hems in calculation
-    const blindHeaderHem = template?.blind_header_hem_cm || headerHem || 8;
-    const blindBottomHem = template?.blind_bottom_hem_cm || bottomHem || 8;
-    const blindSideHem = template?.blind_side_hem_cm || 0;
-    
-    const effectiveWidth = widthCm + (blindSideHem * 2);
-    const effectiveHeight = heightCm + blindHeaderHem + blindBottomHem;
-    const squareMetersRaw = (effectiveWidth * effectiveHeight) / 10000;
+  // For blinds, default to per_sqm if no pricing type specified
+  const effectivePricingType = isBlindTreatment && !pricingType ? 'per_sqm' : pricingType;
+  
+  if (effectivePricingType === 'per_sqm' && isBlindTreatment) {
+    // Calculate square meters: For blinds, use actual measurements without hems (hems are internal)
+    const squareMetersRaw = (widthCm * heightCm) / 10000;
     const squareMeters = squareMetersRaw * wasteMultiplier;
     
     fabricCost = squareMeters * pricePerMeter;
-    console.log(`💰 Fabric cost (per_sqm): ${pricePerMeter}/sqm × ${squareMeters.toFixed(2)}sqm = ${fabricCost.toFixed(2)} [${effectiveWidth}cm × ${effectiveHeight}cm with waste ${template?.waste_percent || 0}%]`);
+    console.log(`💰 Fabric cost (per_sqm): ${pricePerMeter}/sqm × ${squareMeters.toFixed(2)}sqm = ${fabricCost.toFixed(2)} [${widthCm}cm × ${heightCm}cm with waste ${template?.waste_percent || 0}%]`);
   } else {
     // Default: linear meter pricing
     fabricCost = linearMeters * pricePerMeter;
@@ -154,15 +152,9 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   
   console.log(`🏭 Manufacturing lookup: machine_price_per_metre=${template?.machine_price_per_metre}, machine_price_per_drop=${template?.machine_price_per_drop}, machine_price_per_panel=${template?.machine_price_per_panel}`);
   
-  if (pricingType === 'per_sqm' && isBlindTreatment) {
+  if (effectivePricingType === 'per_sqm' && isBlindTreatment) {
     // Manufacturing priced per square meter - use same calculation as fabric
-    const blindHeaderHem = template?.blind_header_hem_cm || headerHem || 8;
-    const blindBottomHem = template?.blind_bottom_hem_cm || bottomHem || 8;
-    const blindSideHem = template?.blind_side_hem_cm || 0;
-    
-    const effectiveWidth = widthCm + (blindSideHem * 2);
-    const effectiveHeight = heightCm + blindHeaderHem + blindBottomHem;
-    const squareMetersRaw = (effectiveWidth * effectiveHeight) / 10000;
+    const squareMetersRaw = (widthCm * heightCm) / 10000;
     const squareMeters = squareMetersRaw * wasteMultiplier;
     
     const machinePricePerSqm = template.machine_price_per_metre || 0;
@@ -243,36 +235,58 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
     leftover_width_total_cm: leftoverWidthTotal,
     leftover_per_panel_cm: leftoverPerPanel,
     breakdown: [
-      { 
+      // Fabric with detailed quantity and unit price
+      ...(fabricCost > 0 ? [{
         id: 'fabric',
-        name: 'Fabric', 
+        name: fabricItem?.name || 'Fabric Material',
+        description: effectivePricingType === 'per_sqm' && isBlindTreatment 
+          ? `${((widthCm * heightCm) / 10000 * wasteMultiplier).toFixed(2)} sqm × ${pricePerMeter.toFixed(2)}/sqm`
+          : `${linearMeters.toFixed(2)} m × ${pricePerMeter.toFixed(2)}/m`,
+        quantity: effectivePricingType === 'per_sqm' && isBlindTreatment 
+          ? (widthCm * heightCm) / 10000 * wasteMultiplier
+          : linearMeters,
+        unit: effectivePricingType === 'per_sqm' && isBlindTreatment ? 'sqm' : 'm',
+        unit_price: pricePerMeter,
         total_cost: fabricCost,
-        category: 'fabric'
-      },
-      { 
+        category: 'fabric',
+        image_url: fabricItem?.image_url
+      }] : []),
+      // Lining
+      ...(liningCost > 0 ? [{
         id: 'lining',
-        name: 'Lining', 
+        name: 'Lining',
+        description: liningDetails?.type,
+        quantity: linearMeters,
+        unit: 'm',
+        unit_price: liningDetails?.price_per_metre || 0,
         total_cost: liningCost,
         category: 'lining'
-      },
-      { 
+      }] : []),
+      // Manufacturing
+      ...(manufacturingCost > 0 ? [{
         id: 'manufacturing',
-        name: 'Manufacturing', 
+        name: 'Manufacturing',
         total_cost: manufacturingCost,
         category: 'manufacturing'
-      },
-      { 
-        id: 'options',
-        name: 'Options', 
-        total_cost: optionsCost,
-        category: 'option'
-      },
-      { 
+      }] : []),
+      // Individual options with their prices
+      ...selectedOptions.map((opt, idx) => ({
+        id: `option-${idx}`,
+        name: opt.name || 'Option',
+        description: opt.description,
+        quantity: 1,
+        unit_price: opt.price || 0,
+        total_cost: opt.price || 0,
+        category: 'option',
+        image_url: opt.image_url
+      })),
+      // Heading
+      ...(headingCost > 0 ? [{
         id: 'heading',
-        name: 'Heading', 
+        name: 'Heading',
         total_cost: headingCost,
         category: 'heading'
-      },
+      }] : []),
     ],
   };
 
