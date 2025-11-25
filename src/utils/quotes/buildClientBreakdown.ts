@@ -130,7 +130,17 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
   
   if (hasStructured) {
     console.log('✅ Using structured cost_breakdown from database (%d items)', raw.length);
-    return raw as ClientBreakdownItem[];
+    
+    // Apply grouping logic to existing breakdown items
+    // Separate options from other items
+    const options = raw.filter((item: any) => item.category === 'option');
+    const nonOptions = raw.filter((item: any) => item.category !== 'option');
+    
+    // Group related options
+    const groupedOptions = groupRelatedOptions(options);
+    
+    // Combine and return
+    return [...nonOptions, ...groupedOptions] as ClientBreakdownItem[];
   }
 
   console.log('⚠️ No structured breakdown - building from scratch (THIS SHOULD BE RARE)');
