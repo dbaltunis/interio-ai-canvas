@@ -9,7 +9,8 @@ import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
 import { useConditionalOptions } from "@/hooks/useConditionalOptions";
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
 import { Loader2, Info, Sparkles, ChevronDown } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DynamicRollerBlindFieldsProps {
   measurements: Record<string, any>;
@@ -30,11 +31,51 @@ export const DynamicRollerBlindFields = ({
   onOptionPriceChange,
   selectedOptions = []
 }: DynamicRollerBlindFieldsProps) => {
-  // Query by treatment category (category-based options) instead of template ID
-  const { data: treatmentOptions = [], isLoading } = useTreatmentOptions(
+  // CRITICAL FIX: Query by treatment category AND respect template_option_settings
+  // This ensures only enabled options appear in the measurement worksheet
+  const { data: allOptions = [], isLoading } = useTreatmentOptions(
     treatmentCategory || templateId, 
     treatmentCategory ? 'category' : 'template'
   );
+  
+  // Filter by template_option_settings if templateId is available
+  const [treatmentOptions, setTreatmentOptions] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const filterByTemplateSettings = async () => {
+      if (!templateId || allOptions.length === 0) {
+        setTreatmentOptions(allOptions);
+        return;
+      }
+      
+      // Fetch template_option_settings to see which options are enabled
+      const { data: settings } = await supabase
+        .from('template_option_settings')
+        .select('treatment_option_id, is_enabled')
+        .eq('template_id', templateId);
+      
+      const settingsMap = new Map(
+        settings?.map(s => [s.treatment_option_id, s.is_enabled]) || []
+      );
+      
+      // Filter: only show options that are enabled (default to true if no setting)
+      const enabledOptions = allOptions.filter(opt => {
+        const isEnabled = settingsMap.has(opt.id) ? settingsMap.get(opt.id) : true;
+        return isEnabled;
+      });
+      
+      console.log('🔍 Filtered options by template_option_settings:', {
+        templateId,
+        totalOptions: allOptions.length,
+        enabledOptions: enabledOptions.length,
+        filtered: allOptions.length - enabledOptions.length
+      });
+      
+      setTreatmentOptions(enabledOptions);
+    };
+    
+    filterByTemplateSettings();
+  }, [templateId, allOptions]);
 
   // Use rules engine to determine visibility, required status, and defaults
   const {
