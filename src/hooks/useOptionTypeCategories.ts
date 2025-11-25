@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface OptionTypeCategory {
   id: string;
   user_id: string | null;
+  account_id: string | null;
   treatment_category: string;
   type_key: string;
   type_label: string;
@@ -34,12 +35,9 @@ export const useOptionTypeCategories = (treatmentCategory?: string) => {
         query = query.eq('treatment_category', treatmentCategory);
       }
       
-      // Get system defaults OR user's own option types
-      if (user) {
-        query = query.or(`is_system_default.eq.true,user_id.eq.${user.id}`);
-      } else {
-        query = query.eq('is_system_default', true);
-      }
+      // RLS now handles account isolation automatically
+      // System defaults (account_id IS NULL) are visible to all
+      // Account-specific categories are filtered by RLS
       
       const { data, error } = await query;
       
@@ -55,7 +53,7 @@ export const useCreateOptionTypeCategory = () => {
   const { toast } = useToast();
   
   return useMutation({
-    mutationFn: async (category: Omit<OptionTypeCategory, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'is_system_default' | 'active' | 'sort_order' | 'hidden_by_user'>) => {
+    mutationFn: async (category: Omit<OptionTypeCategory, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'account_id' | 'is_system_default' | 'active' | 'sort_order' | 'hidden_by_user'>) => {
       // Use getSession() instead of getUser() to get the session with auth token
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
@@ -80,9 +78,19 @@ export const useCreateOptionTypeCategory = () => {
       
       const maxSortOrder = existingCategories?.[0]?.sort_order ?? -1;
       
+      // Get user's account_id (owner's user_id or their own if they're the owner)
+      const { data: userProfile } = await supabase
+        .from('user_profiles')
+        .select('parent_account_id, user_id')
+        .eq('user_id', session.user.id)
+        .single();
+
+      const accountId = userProfile?.parent_account_id || session.user.id;
+      
       const insertData = {
         ...category,
         user_id: session.user.id,
+        account_id: accountId,
         is_system_default: false,
         active: true,
         sort_order: maxSortOrder + 1, // Always append at the end

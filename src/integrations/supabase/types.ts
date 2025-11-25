@@ -4857,6 +4857,7 @@ export type Database = {
       }
       option_type_categories: {
         Row: {
+          account_id: string | null
           active: boolean | null
           created_at: string | null
           hidden_by_user: boolean | null
@@ -4870,6 +4871,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          account_id?: string | null
           active?: boolean | null
           created_at?: string | null
           hidden_by_user?: boolean | null
@@ -4883,6 +4885,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          account_id?: string | null
           active?: boolean | null
           created_at?: string | null
           hidden_by_user?: boolean | null
