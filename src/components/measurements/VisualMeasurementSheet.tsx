@@ -28,6 +28,7 @@ import { convertLength } from "@/hooks/useBusinessSettings";
 import { useProjectFabricPools, calculateFabricNeeds, useUpdateProjectFabricPool, PoolUsage } from "@/hooks/useProjectFabricPool";
 import { PoolUsageDisplay } from "./PoolUsageDisplay";
 import { ProjectFabricPoolSummary } from "./ProjectFabricPoolSummary";
+import { ColorSelector } from "./ColorSelector";
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
   onMeasurementChange: (field: string, value: string) => void;
@@ -824,6 +825,18 @@ export const VisualMeasurementSheet = ({
                 </div>}
               </div>)}
               {/* End of curtain visual conditional */}
+              
+              {/* Color Selection - if fabric has color tags */}
+              {selectedFabricItem && selectedFabricItem.tags && selectedFabricItem.tags.length > 0 && (
+                <div className="container-level-1 rounded-lg p-3 mt-2">
+                  <ColorSelector 
+                    colors={selectedFabricItem.tags}
+                    selectedColor={measurements.selected_color}
+                    onColorSelect={(color) => handleInputChange('selected_color', color)}
+                    readOnly={readOnly}
+                  />
+                </div>
+              )}
               
               {/* Fabric & Pricing Calculations Section - Below Visual */}
               {selectedFabricItem && selectedTemplate && <AdaptiveFabricPricingDisplay selectedFabricItem={selectedFabricItem} fabricCalculation={fabricCalculation} template={selectedTemplate} measurements={measurements} treatmentCategory={treatmentCategory} />}
