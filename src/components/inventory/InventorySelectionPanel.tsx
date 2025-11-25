@@ -225,24 +225,44 @@ export const InventorySelectionPanel = ({
       });
     }
 
-    // For other categories, use general inventory
-    const categoryMap: Record<string, string[]> = {
-      hardware: ["treatment_option", "top_system", "hardware", "track", "pole", "motor", "bracket"],
-      material: ["Material", "material", "blind_material", "cellular_fabric", "panel_fabric", "shutter_material"]
+    // For hardware and material categories, filter by exact category/subcategory match
+    const categoryConfig: Record<string, { categories: string[], subcategories?: string[] }> = {
+      hardware: { 
+        categories: ["hardware"],
+        subcategories: ["track", "pole", "motor", "bracket", "hardware_accessories"]
+      },
+      material: { 
+        categories: ["material", "hard_coverings"],
+        subcategories: ["venetian_slats", "vertical_slats", "cellular_fabric", "panel_fabric", "shutter_material"]
+      }
     };
+    
+    const config = categoryConfig[category];
+    if (!config) return [];
     
     console.log('🔍 Filtering inventory for category:', category, 'Treatment:', treatmentCategory);
     const filtered = inventory.filter(item => {
-      const matchesCategory = categoryMap[category]?.some(cat => item.category?.toLowerCase().includes(cat.toLowerCase()));
-      const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      // Match by category field (exact match, case-insensitive)
+      const matchesCategory = config.categories.some(cat => 
+        item.category?.toLowerCase() === cat.toLowerCase()
+      );
+      
+      // If subcategories are specified, also check subcategory field
+      const matchesSubcategory = !config.subcategories || config.subcategories.some(subcat =>
+        item.subcategory?.toLowerCase() === subcat.toLowerCase()
+      );
+      
+      const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                           item.description?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
       const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
       const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
-      return matchesCategory && matchesSearch && matchesVendor && matchesCollection && matchesTags;
+      
+      return matchesCategory && matchesSubcategory && matchesSearch && matchesVendor && matchesCollection && matchesTags;
     });
     
-    console.log(`📦 Found ${filtered.length} items for category "${category}". Item categories:`, 
-      [...new Set(filtered.map(i => i.category))]);
+    console.log(`📦 Found ${filtered.length} items for category "${category}". Categories:`, 
+      [...new Set(filtered.map(i => `${i.category}/${i.subcategory || 'none'}`))]);
     
     return filtered;
   };
