@@ -25,6 +25,16 @@ export interface TreatmentFormData {
 }
 
 export const useTreatmentFormData = (treatmentType: string = "Curtains", windowCovering?: any, existingData?: any) => {
+  // Detect if this is a blind/shutter (not curtain/roman) to avoid unnecessary curtain-specific defaults
+  const isBlindOrShutter = treatmentType.toLowerCase().includes('blind') || 
+                           treatmentType.toLowerCase().includes('shutter') ||
+                           treatmentType.toLowerCase().includes('venetian') ||
+                           treatmentType.toLowerCase().includes('cellular') ||
+                           treatmentType.toLowerCase().includes('honeycomb') ||
+                           treatmentType.toLowerCase().includes('vertical') ||
+                           windowCovering?.category === 'blinds' || 
+                           windowCovering?.category === 'shutters';
+  
   const [formData, setFormData] = useState<TreatmentFormData>({
     product_name: existingData?.product_name || windowCovering?.name || treatmentType || "Curtains",
     rail_width: existingData?.measurements?.rail_width || "",
@@ -34,14 +44,16 @@ export const useTreatmentFormData = (treatmentType: string = "Curtains", windowC
     fabric_type: existingData?.fabric_details?.fabric_type || "",
     fabric_code: existingData?.fabric_details?.fabric_code || "",
     fabric_cost_per_yard: existingData?.fabric_details?.fabric_cost_per_yard || "",
-    fabric_width: existingData?.fabric_details?.fabric_width || "137",
+    fabric_width: existingData?.fabric_details?.fabric_width || (isBlindOrShutter ? "100" : "137"),
     roll_direction: existingData?.fabric_details?.roll_direction || "vertical",
-    heading_fullness: existingData?.fabric_details?.heading_fullness || "2.5",
+    // CRITICAL: Blinds don't use fullness - set to 1.0 (no multiplication)
+    heading_fullness: existingData?.fabric_details?.heading_fullness || (isBlindOrShutter ? "1.0" : "2.5"),
     selected_heading: existingData?.fabric_details?.selected_heading,
-    header_hem: existingData?.measurements?.header_hem || "15",
-    bottom_hem: existingData?.measurements?.bottom_hem || "10",
-    side_hem: existingData?.measurements?.side_hem || "5",
-    seam_hem: existingData?.measurements?.seam_hem || "3",
+    // CRITICAL: Blinds don't use fabric hems - these should be 0 unless explicitly set in template
+    header_hem: existingData?.measurements?.header_hem || (isBlindOrShutter ? "0" : "15"),
+    bottom_hem: existingData?.measurements?.bottom_hem || (isBlindOrShutter ? "0" : "10"),
+    side_hem: existingData?.measurements?.side_hem || (isBlindOrShutter ? "0" : "5"),
+    seam_hem: existingData?.measurements?.seam_hem || (isBlindOrShutter ? "0" : "3"),
     custom_labor_rate: existingData?.custom_labor_rate || "",
     selected_options: existingData?.selected_options || [],
     notes: existingData?.notes || "",
@@ -66,6 +78,15 @@ export const useTreatmentFormData = (treatmentType: string = "Curtains", windowC
   };
 
   const resetForm = () => {
+    const isBlindOrShutter = treatmentType.toLowerCase().includes('blind') || 
+                             treatmentType.toLowerCase().includes('shutter') ||
+                             treatmentType.toLowerCase().includes('venetian') ||
+                             treatmentType.toLowerCase().includes('cellular') ||
+                             treatmentType.toLowerCase().includes('honeycomb') ||
+                             treatmentType.toLowerCase().includes('vertical') ||
+                             windowCovering?.category === 'blinds' || 
+                             windowCovering?.category === 'shutters';
+    
     setFormData({
       product_name: existingData?.product_name || windowCovering?.name || treatmentType || "Curtains",
       rail_width: existingData?.measurements?.rail_width || "",
@@ -75,14 +96,14 @@ export const useTreatmentFormData = (treatmentType: string = "Curtains", windowC
       fabric_type: existingData?.fabric_details?.fabric_type || "",
       fabric_code: existingData?.fabric_details?.fabric_code || "",
       fabric_cost_per_yard: existingData?.fabric_details?.fabric_cost_per_yard || "",
-      fabric_width: existingData?.fabric_details?.fabric_width || "137",
+      fabric_width: existingData?.fabric_details?.fabric_width || (isBlindOrShutter ? "100" : "137"),
       roll_direction: existingData?.fabric_details?.roll_direction || "vertical",
-      heading_fullness: existingData?.fabric_details?.heading_fullness || "2.5",
+      heading_fullness: existingData?.fabric_details?.heading_fullness || (isBlindOrShutter ? "1.0" : "2.5"),
       selected_heading: existingData?.fabric_details?.selected_heading,
-      header_hem: existingData?.measurements?.header_hem || "15",
-      bottom_hem: existingData?.measurements?.bottom_hem || "10",
-      side_hem: existingData?.measurements?.side_hem || "5",
-      seam_hem: existingData?.measurements?.seam_hem || "3",
+      header_hem: existingData?.measurements?.header_hem || (isBlindOrShutter ? "0" : "15"),
+      bottom_hem: existingData?.measurements?.bottom_hem || (isBlindOrShutter ? "0" : "10"),
+      side_hem: existingData?.measurements?.side_hem || (isBlindOrShutter ? "0" : "5"),
+      seam_hem: existingData?.measurements?.seam_hem || (isBlindOrShutter ? "0" : "3"),
       custom_labor_rate: existingData?.custom_labor_rate || "",
       selected_options: existingData?.selected_options || [],
       notes: existingData?.notes || "",

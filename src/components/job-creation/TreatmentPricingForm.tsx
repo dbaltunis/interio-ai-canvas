@@ -45,9 +45,12 @@ export const TreatmentPricingForm = ({
   const { calculateFabricUsage, calculateCosts: calculateCurtainCosts } = useFabricCalculation(formData, options, treatmentTypesData, treatmentType, hierarchicalOptions);
 
   // CRITICAL: Detect treatment category to use correct calculation
+  // Blinds (roller, venetian, cellular, vertical) and shutters use pricing grids, NOT curtain-style fabric calculations
   const isBlindsOrShutters = windowCovering?.category === 'blinds' || windowCovering?.category === 'shutters' || 
                              windowCovering?.treatment_category === 'blinds' || windowCovering?.treatment_category === 'shutters' ||
-                             treatmentType.toLowerCase().includes('blind') || treatmentType.toLowerCase().includes('shutter');
+                             treatmentType.toLowerCase().includes('blind') || treatmentType.toLowerCase().includes('shutter') ||
+                             treatmentType.toLowerCase().includes('venetian') || treatmentType.toLowerCase().includes('cellular') ||
+                             treatmentType.toLowerCase().includes('honeycomb') || treatmentType.toLowerCase().includes('vertical');
   
   // Calculate costs using the correct method based on treatment type
   const costs = React.useMemo(() => {
@@ -350,11 +353,15 @@ export const TreatmentPricingForm = ({
             />
           )}
 
-          <FabricDetailsCard 
-            formData={formData} 
-            onInputChange={handleInputChange}
-            fabricUsage={costs.fabricUsage}
-          />
+          {/* FABRIC DETAILS - Only show for curtains and roman blinds */}
+          {/* Blinds (roller, venetian, cellular, vertical) use pricing grids and material selection instead */}
+          {!isBlindsOrShutters && (
+            <FabricDetailsCard 
+              formData={formData} 
+              onInputChange={handleInputChange}
+              fabricUsage={costs.fabricUsage}
+            />
+          )}
 
           <ImageUploadCard
             images={formData.images}
