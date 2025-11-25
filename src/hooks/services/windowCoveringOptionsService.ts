@@ -9,7 +9,8 @@ export const fetchTraditionalOptions = async (
   templateId: string,
   respectTemplateSettings = true
 ): Promise<WindowCoveringOption[]> => {
-  console.log('fetchTraditionalOptions - Fetching for template:', templateId);
+  console.log('🔍 fetchTraditionalOptions - Fetching for template:', templateId);
+  console.log('🔍 respectTemplateSettings:', respectTemplateSettings);
   
   try {
     // Get the template to find its treatment category
@@ -53,10 +54,18 @@ export const fetchTraditionalOptions = async (
     
     // If we need to respect template settings, fetch them and filter
     if (respectTemplateSettings) {
-      const { data: settings } = await supabase
+      console.log('🔍 Fetching template_option_settings for template:', templateId);
+      const { data: settings, error: settingsError } = await supabase
         .from('template_option_settings')
         .select('treatment_option_id, is_enabled')
         .eq('template_id', templateId);
+      
+      console.log('🔍 Template settings:', {
+        templateId,
+        settingsCount: settings?.length || 0,
+        settings: settings,
+        error: settingsError
+      });
       
       const settingsMap = new Map(
         settings?.map(s => [s.treatment_option_id, s.is_enabled]) || []
@@ -65,10 +74,11 @@ export const fetchTraditionalOptions = async (
       // Filter options based on settings (default to enabled if no setting exists)
       const enabledOptions = options.filter(opt => {
         const isEnabled = settingsMap.has(opt.id) ? settingsMap.get(opt.id) : true;
+        console.log(`🔍 Option "${opt.label}" (${opt.id}): ${isEnabled ? 'ENABLED' : 'DISABLED'}`);
         return isEnabled;
       });
       
-      console.log(`Filtered ${options.length} options to ${enabledOptions.length} enabled options`);
+      console.log(`✅ Filtered ${options.length} options to ${enabledOptions.length} enabled options`);
       
       return enabledOptions.map(mapToWindowCoveringOption);
     }

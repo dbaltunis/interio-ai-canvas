@@ -762,8 +762,8 @@ export const DynamicWindowWorksheet = forwardRef<{
             const width = parseFloat(measurements.rail_width) || 0;
             const height = parseFloat(measurements.drop) || 0;
             
-            // Import blind calculation utility
-            const { calculateBlindCost, calculateShutterCost } = await import('@/utils/blindCostCalculations');
+            // Import blind calculation utility - UNIFIED TO SINGLE CALCULATOR
+            const { calculateBlindCosts, isBlindCategory } = await import('@/components/measurements/dynamic-options/utils/blindCostCalculator');
             
             // CRITICAL: Use fabric first (with pricing grid data), then fall back to material or template
             const materialForCalc = selectedItems.fabric || selectedItems.material || (selectedTemplate ? {
@@ -783,14 +783,13 @@ export const DynamicWindowWorksheet = forwardRef<{
               selectedOptions
             });
             
-            const blindCalc = displayCategory === 'shutters' 
-              ? calculateShutterCost(width, height, selectedTemplate, materialForCalc, selectedOptions || [])
-              : calculateBlindCost(width, height, selectedTemplate, materialForCalc, selectedOptions || []);
+            // Use unified calculator with full measurements data
+            const blindCalc = calculateBlindCosts(width, height, selectedTemplate, materialForCalc, selectedOptions || [], measurements);
             
             fabricCost = blindCalc.fabricCost;
             manufacturingCost = blindCalc.manufacturingCost;
-            linearMeters = blindCalc.linearMeters;
-            hardwareCost = blindCalc.hardwareCost || 0;
+            linearMeters = blindCalc.squareMeters; // Use sqm for blinds
+            hardwareCost = 0; // Hardware included in options
             
             // CRITICAL: Preserve options cost from blind calculation
             blindOptionsCost = blindCalc.optionsCost || 0;
@@ -799,9 +798,16 @@ export const DynamicWindowWorksheet = forwardRef<{
             console.log('💰 Blind calculation result:', {
               fabricCost: blindCalc.fabricCost,
               manufacturingCost: blindCalc.manufacturingCost,
-              hardwareCost: blindCalc.hardwareCost,
               optionsCost: blindOptionsCost,
-              linearMeters: blindCalc.linearMeters,
+              squareMeters: blindCalc.squareMeters,
+              totalCost: blindCalc.totalCost
+            });
+            
+            console.log('💰 Blind calculation result:', {
+              fabricCost: blindCalc.fabricCost,
+              manufacturingCost: blindCalc.manufacturingCost,
+              optionsCost: blindOptionsCost,
+              squareMeters: blindCalc.squareMeters,
               totalCost: blindCalc.totalCost
             });
           } else {
