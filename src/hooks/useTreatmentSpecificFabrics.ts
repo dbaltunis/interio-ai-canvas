@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getTreatmentConfig, TreatmentCategory } from "@/utils/treatmentTypeDetection";
 import { resolveGridForProduct } from "@/utils/pricing/gridResolver";
-import { getAcceptedSubcategories } from "@/constants/inventorySubcategories";
+import { getAcceptedSubcategories, getTreatmentPrimaryCategory } from "@/constants/inventorySubcategories";
 
 export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory) => {
   const config = getTreatmentConfig(treatmentCategory);
@@ -38,14 +38,24 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
 
       // Get accepted subcategories from centralized config
       const categories = getAcceptedSubcategories(treatmentCategory);
+      const primaryCategory = getTreatmentPrimaryCategory(treatmentCategory);
       
-      console.log('🔍 Fetching fabrics for treatment:', treatmentCategory, 'with subcategories:', categories);
+      console.log('🔍 Fetching inventory for treatment:', treatmentCategory, 'category:', primaryCategory, 'with subcategories:', categories);
 
-      const { data, error } = await supabase
+      // Handle treatments that support both fabric and material (e.g., vertical blinds)
+      let query = supabase
         .from("enhanced_inventory_items")
-        .select("*")
-        .eq("category", "fabric")
-        .in("subcategory", categories)
+        .select("*");
+
+      if (primaryCategory === 'both') {
+        // For treatments supporting both, filter by subcategories only (includes both fabric and material)
+        query = query.in("subcategory", categories);
+      } else {
+        // For specific category treatments, filter by both category and subcategories
+        query = query.eq("category", primaryCategory).in("subcategory", categories);
+      }
+
+      const { data, error } = await query
         .eq("active", true)
         .order("name");
 

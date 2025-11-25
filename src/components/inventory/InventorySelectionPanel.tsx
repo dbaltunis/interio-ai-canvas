@@ -246,6 +246,39 @@ export const InventorySelectionPanel = ({
       return filtered;
     }
 
+    // For "both" category (vertical blinds with fabric AND material vanes)
+    if (category === "both") {
+      // Get both fabric items from treatment-specific fabrics
+      const fabricItems = treatmentFabrics.filter(item => {
+        const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
+        const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
+        const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
+        return matchesSearch && matchesVendor && matchesCollection && matchesTags;
+      });
+
+      // Get material items from inventory
+      const requiredSubcategories = getTreatmentMaterialSubcategories();
+      const materialItems = inventory.filter(item => {
+        const matchesCategory = item.category?.toLowerCase() === 'material' || 
+                               item.category?.toLowerCase() === 'hard_coverings';
+        const matchesSubcategory = requiredSubcategories.length === 0 || 
+                                   requiredSubcategories.some(subcat => 
+                                     item.subcategory?.toLowerCase() === subcat.toLowerCase()
+                                   );
+        const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                             item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
+        const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
+        const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
+        
+        return matchesCategory && matchesSubcategory && matchesSearch && matchesVendor && matchesCollection && matchesTags;
+      });
+
+      console.log('📦 Both tab filtered:', fabricItems.length, 'fabric items +', materialItems.length, 'material items');
+      return [...fabricItems, ...materialItems];
+    }
+
     // For material category, filter by treatment-specific material subcategories
     if (category === "material") {
       const requiredSubcategories = getTreatmentMaterialSubcategories();
@@ -532,10 +565,17 @@ export const InventorySelectionPanel = ({
       ];
     }
     
-    // Venetian and Vertical blinds need materials (slats/vanes)
-    if (['venetian_blinds', 'vertical_blinds'].includes(treatmentCategory)) {
+    // Venetian blinds need materials (slats only)
+    if (treatmentCategory === 'venetian_blinds') {
       return [
         { key: "material", label: "Material", icon: Package }
+      ];
+    }
+    
+    // Vertical blinds support BOTH fabric vanes AND material slats
+    if (treatmentCategory === 'vertical_blinds') {
+      return [
+        { key: "both", label: "Fabric & Material", icon: Palette }
       ];
     }
     

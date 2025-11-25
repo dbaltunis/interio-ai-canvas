@@ -6,9 +6,10 @@ When a user selects a treatment template (e.g., "Honeycomb Blind"), the inventor
 
 ## Critical Rules
 
-1. **Category**: Must be either `fabric`, `material`, or `hardware`
+1. **Category**: Must be either `fabric`, `material`, `hardware`, or `both` (for treatments supporting multiple material types)
 2. **Subcategory**: Must match one of the expected values for that treatment type (see table below)
 3. **Both fields must be set correctly** for products to appear in the inventory panel
+4. **Vertical Blinds Special Case**: Vertical blinds use `category: 'both'` because they can have either fabric vanes OR material slats - products should be categorized as either `fabric` with `vertical_fabric` subcategory OR `material` with `vertical_slats`/`vertical_vanes` subcategory
 
 ## Treatment Type → Subcategory Mapping
 
@@ -20,7 +21,7 @@ When a user selects a treatment template (e.g., "Honeycomb Blind"), the inventor
 | **Cellular/Honeycomb Blinds** | `fabric` | `cellular`, `cellular_fabric`, `honeycomb`, `honeycomb_fabric` | All variations accepted |
 | **Panel Glide** | `fabric` | `panel_glide_fabric`, `panel_fabric`, `curtain_fabric` | Can use panel or curtain fabrics |
 | **Venetian Blinds** | `material` | `venetian_slats`, `wood_slats`, `aluminum_slats`, `venetian` | Slat materials |
-| **Vertical Blinds** | `material` | `vertical_slats`, `vertical_vanes`, `vertical` | Vane/slat materials |
+| **Vertical Blinds** | `both` | `vertical_fabric`, `vertical_slats`, `vertical_vanes`, `vertical` | Supports both fabric vanes AND material slats |
 | **Shutters** | `material` | `shutter_material`, `shutter_panels`, `shutter` | Panel materials |
 | **Wallpaper** | `fabric` | `wallcovering` | Uses fabric category for wallpaper |
 
