@@ -272,12 +272,12 @@ export const QuotationTab = ({
   // Project data for LivePreview - MUST be before early returns
   const projectData = useMemo(() => {
     // Get currency from business settings
-    let currency = 'GBP';
+    let currency = 'USD'; // Minimal fallback, should use settings
     try {
       const measurementUnits = businessSettings?.measurement_units ? JSON.parse(businessSettings.measurement_units) : null;
-      currency = measurementUnits?.currency || 'GBP';
+      currency = measurementUnits?.currency || 'USD';
     } catch {
-      currency = 'GBP';
+      currency = 'USD';
     }
 
     // Calculate discount if applicable - check for discount_type, not just amount

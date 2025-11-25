@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Calculator, Ruler } from "lucide-react";
-import { formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { StoreQuoteRequestForm } from "../StoreQuoteRequestForm";
 import { TreatmentPreviewEngine } from "@/components/treatment-visualizers/TreatmentPreviewEngine";
 
@@ -18,6 +18,7 @@ interface SimpleFabricCalculatorProps {
 }
 
 export const SimpleFabricCalculator = ({ product, storeData, onSubmitQuote, onAddToCart }: SimpleFabricCalculatorProps) => {
+  const { formatCurrency } = useFormattedCurrency();
   const [measurements, setMeasurements] = useState({
     railWidth: "",
     drop: "",
@@ -268,11 +269,11 @@ export const SimpleFabricCalculator = ({ product, storeData, onSubmitQuote, onAd
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Fabric Cost ({calculation.totalMeters.toFixed(2)}m)</span>
-                    <span className="font-medium">{formatCurrency(calculation.fabricCost, 'NZD')}</span>
+                    <span className="font-medium">{formatCurrency(calculation.fabricCost)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Make-Up / Labor</span>
-                    <span className="font-medium">{formatCurrency(calculation.laborCost, 'NZD')}</span>
+                    <span className="font-medium">{formatCurrency(calculation.laborCost)}</span>
                   </div>
                 </div>
 
@@ -280,7 +281,7 @@ export const SimpleFabricCalculator = ({ product, storeData, onSubmitQuote, onAd
                   <div className="flex justify-between items-center">
                     <span className="font-semibold">Total Estimated Price:</span>
                     <span className="text-2xl font-bold" style={{ color: 'var(--store-primary)' }}>
-                      {formatCurrency(calculation.totalPrice, 'NZD')}
+                      {formatCurrency(calculation.totalPrice)}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
