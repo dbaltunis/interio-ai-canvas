@@ -7,7 +7,10 @@ import { createOption as createOptionService, updateOption as updateOptionServic
 
 export type { WindowCoveringOption, HierarchicalOption };
 
-export const useWindowCoveringOptions = (windowCoveringId: string | undefined | null | any) => {
+export const useWindowCoveringOptions = (
+  windowCoveringId: string | undefined | null | any,
+  respectTemplateSettings = true
+) => {
   const [options, setOptions] = useState<WindowCoveringOption[]>([]);
   const [hierarchicalOptions, setHierarchicalOptions] = useState<HierarchicalOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,7 +24,7 @@ export const useWindowCoveringOptions = (windowCoveringId: string | undefined | 
                      (windowCoveringId && typeof windowCoveringId === 'object' && windowCoveringId.value !== 'undefined') ? windowCoveringId.value : null;
     
     if (!actualId || actualId === 'undefined') {
-      console.log('useWindowCoveringOptions - No valid window covering ID provided');
+      console.log('useWindowCoveringOptions - No valid template ID provided');
       setOptions([]);
       setHierarchicalOptions([]);
       setIsLoading(false);
@@ -31,11 +34,12 @@ export const useWindowCoveringOptions = (windowCoveringId: string | undefined | 
     setIsLoading(true);
     
     try {
-      console.log('useWindowCoveringOptions - Fetching options for window covering:', actualId);
+      console.log('useWindowCoveringOptions - Fetching options for template:', actualId);
       
       // Fetch both traditional and hierarchical options
+      // Pass the respectTemplateSettings flag to filter based on toggle states
       const [traditionalOptions, hierarchicalData] = await Promise.all([
-        fetchTraditionalOptions(actualId),
+        fetchTraditionalOptions(actualId, respectTemplateSettings),
         fetchHierarchicalOptions(actualId)
       ]);
       
