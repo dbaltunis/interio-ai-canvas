@@ -15,8 +15,8 @@ export interface ClientBreakdownItem {
 /**
  * Helper function to group related options (parent + sub-options)
  * Matches patterns like:
- * - "headrail_selection" + "headrail_selection_colour" → "Headrail Selection - STANDARD HEADRAIL, colour: white"
- * - "control_type" + "control_type_colour" + "control_type_length" → "Control Type - Chain, colour: White, length: 500"
+ * - "Headrail Selection" + "Headrail Selection Colour" → ONE ROW: "Headrail Selection" with description "standard headrail, colour: white"
+ * - "Control Type" + "Control Type Colour" + "Control Type Length" → ONE ROW with combined description
  */
 const groupRelatedOptions = (options: any[]): any[] => {
   if (!options || options.length === 0) return [];
@@ -24,81 +24,71 @@ const groupRelatedOptions = (options: any[]): any[] => {
   const grouped = new Map<string, any>();
   const processed = new Set<string>();
   
-  // First pass: identify all unique base option names
-  const baseNames = new Set<string>();
+  // First pass: identify parent options (base names without attributes)
+  const parentMap = new Map<string, any>();
   options.forEach(option => {
-    const name = (option.name || option.id || '').toLowerCase();
+    const name = (option.name || '').trim();
     
-    // Check if this is a sub-option (has underscore suffix like _colour, _length, etc.)
-    const match = name.match(/^(.+)_(colour|color|length|chain_side|side|size|type|width|height|finish|material)$/);
-    if (match) {
-      baseNames.add(match[1]);
-    } else {
-      baseNames.add(name);
+    // Check if this is a parent (doesn't end with common attribute keywords)
+    const hasAttributeSuffix = /\s+(Colour|Color|Length|Chain Side|Side|Size|Type|Width|Height|Finish|Material|Direction)$/i.test(name);
+    
+    if (!hasAttributeSuffix) {
+      parentMap.set(name.toLowerCase(), {
+        originalName: name,
+        option: option
+      });
     }
   });
   
-  // Second pass: group options by base name
-  baseNames.forEach(baseName => {
+  // Second pass: group sub-options with their parents
+  parentMap.forEach((parentData, parentKey) => {
+    const parent = parentData.option;
+    const parentName = parentData.originalName;
+    
+    // Find all sub-options that start with this parent name
     const relatedOptions = options.filter(opt => {
-      const name = (opt.name || opt.id || '').toLowerCase();
-      return name === baseName || name.startsWith(baseName + '_');
+      const optName = (opt.name || '').trim();
+      return optName.toLowerCase().startsWith(parentKey + ' ') && optName !== parentName;
     });
     
-    if (relatedOptions.length === 0) return;
+    // Extract parent description (the main value like "standard headrail")
+    let parentDesc = (parent.description || '').trim();
+    // Remove redundant prefix if it exists
+    if (parentDesc.toLowerCase().includes(parentKey)) {
+      parentDesc = parentDesc.replace(new RegExp(`^${parentKey}:?\\s*`, 'i'), '').trim();
+    }
     
-    // Find the parent (base) option
-    const parent = relatedOptions.find(opt => {
-      const name = (opt.name || opt.id || '').toLowerCase();
-      return name === baseName;
-    });
-    
-    if (!parent) return;
-    
-    // Extract parent description (the main value like "STANDARD HEADRAIL")
-    let parentDesc = parent.description || parent.name || '';
-    // Remove redundant prefix like "headrail_selection: " to get just "STANDARD HEADRAIL"
-    parentDesc = parentDesc.replace(/^[^:]+:\s*/, '').trim();
-    
-    // Collect sub-option descriptions
+    // Collect sub-option descriptions and sum costs
     const subDescriptions: string[] = [];
-    let totalCost = Number(parent.total_cost || parent.price || parent.cost || 0);
+    let totalCost = Number(parent.total_cost || 0);
     
-    relatedOptions.forEach(opt => {
-      const name = (opt.name || opt.id || '').toLowerCase();
-      if (name !== baseName) {
-        // This is a sub-option
-        const cost = Number(opt.total_cost || opt.price || opt.cost || 0);
-        totalCost += cost;
-        
-        // Extract the sub-attribute (e.g., "colour: white" from "Headrail selection - colour: white")
-        let subDesc = opt.description || '';
-        const colonMatch = subDesc.match(/[-–:]\s*(.+)$/);
-        if (colonMatch) {
-          subDescriptions.push(colonMatch[1].trim());
-        } else if (subDesc) {
-          // Fallback: just use the description
-          subDescriptions.push(subDesc);
-        }
-        
-        processed.add(opt.id || opt.name);
+    relatedOptions.forEach(subOpt => {
+      const subCost = Number(subOpt.total_cost || 0);
+      totalCost += subCost;
+      
+      // Extract the sub-attribute part (e.g., "colour: white" from "headrail selection - colour: white")
+      let subDesc = (subOpt.description || '').trim();
+      
+      // Try to extract after dash or colon
+      const afterDash = subDesc.match(/[-–]\s*(.+)$/);
+      if (afterDash) {
+        subDescriptions.push(afterDash[1].trim());
+      } else if (subDesc && !subDesc.toLowerCase().includes(parentKey)) {
+        // If no dash, use the whole description (unless it repeats parent name)
+        subDescriptions.push(subDesc);
       }
+      
+      processed.add(subOpt.id || subOpt.name);
     });
     
-    // Format the display name (convert snake_case to Title Case)
-    const displayName = baseName
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-    
-    // Combine descriptions
+    // Combine descriptions: parent description + all sub-descriptions
     const finalDescription = subDescriptions.length > 0
       ? `${parentDesc}, ${subDescriptions.join(', ')}`
       : parentDesc;
     
-    grouped.set(baseName, {
+    grouped.set(parentKey, {
       id: parent.id,
-      name: displayName,
+      name: parentName,
       description: finalDescription,
       total_cost: totalCost,
       unit_price: totalCost,
