@@ -29,12 +29,23 @@ export interface TreatmentOption {
 }
 
 export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 'template' | 'category' = 'template') => {
+  console.log('🔍 useTreatmentOptions hook called:', {
+    templateIdOrCategory,
+    queryType,
+    willQuery: !!templateIdOrCategory
+  });
+
   return useQuery({
     queryKey: ['treatment-options', templateIdOrCategory, queryType],
     queryFn: async () => {
+      console.log('🔍 useTreatmentOptions queryFn executing...');
+      
       // Get current user's account_id for data isolation
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!user) {
+        console.log('❌ No user found');
+        return [];
+      }
       
       const { data: profile } = await supabase
         .from('user_profiles')
@@ -43,6 +54,8 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
         .single();
       
       const accountId = profile?.parent_account_id || user.id;
+      
+      console.log('🔍 Account context:', { userId: user.id, accountId });
       
       let query = supabase
         .from('treatment_options')
@@ -56,14 +69,31 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
       if (templateIdOrCategory) {
         if (queryType === 'category') {
           // Query by treatment_category for category-based options
+          console.log('🔍 Querying by treatment_category:', templateIdOrCategory);
           query = query.eq('treatment_category', templateIdOrCategory);
         } else {
           // Query by template_id for template-specific options (legacy)
+          console.log('🔍 Querying by template_id:', templateIdOrCategory);
           query = query.eq('template_id', templateIdOrCategory);
         }
       }
       
       const { data, error } = await query;
+      
+      console.log('🔍 Query result:', {
+        dataCount: data?.length || 0,
+        error: error?.message,
+        data: data?.map(opt => ({
+          id: opt.id,
+          key: opt.key,
+          label: opt.label,
+          treatment_category: opt.treatment_category,
+          template_id: opt.template_id,
+          visible: opt.visible,
+          account_id: opt.account_id,
+          option_values_count: opt.option_values?.length || 0
+        }))
+      });
       
       if (error) throw error;
       
@@ -78,6 +108,8 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
         }
         return true;
       });
+      
+      console.log('✅ Final filtered options count:', filteredData.length);
       
       return filteredData;
     },

@@ -1093,9 +1093,30 @@ export const VisualMeasurementSheet = ({
 
               {/* BLIND-SPECIFIC FIELDS - Dynamic Options */}
               {/* Show dynamic options for all blind and shutter types */}
-              {(treatmentType === 'blinds' || treatmentType === 'roller_blinds' || treatmentType === 'venetian_blinds' || treatmentType === 'roman_blinds' || treatmentType === 'vertical_blinds' || treatmentType === 'cellular_blinds' || treatmentType === 'cellular_shades' || treatmentType === 'panel_glide' || treatmentType === 'plantation_shutters' || treatmentType === 'shutters' || treatmentType === 'awning') && <div className="space-y-3 px-3">
-                  <DynamicRollerBlindFields measurements={measurements} onChange={handleInputChange} templateId={selectedTemplate?.id} treatmentCategory={treatmentType} readOnly={readOnly} onOptionPriceChange={handleOptionPriceChange} selectedOptions={selectedOptions} />
-                </div>}
+              {(treatmentType === 'blinds' || treatmentType === 'roller_blinds' || treatmentType === 'venetian_blinds' || treatmentType === 'roman_blinds' || treatmentType === 'vertical_blinds' || treatmentType === 'cellular_blinds' || treatmentType === 'cellular_shades' || treatmentType === 'panel_glide' || treatmentType === 'plantation_shutters' || treatmentType === 'shutters' || treatmentType === 'awning') && (() => {
+                console.log('📍 Rendering DynamicRollerBlindFields with:', {
+                  treatmentType,
+                  treatmentCategory,
+                  templateId: selectedTemplate?.id,
+                  templateName: selectedTemplate?.name,
+                  templateCurtainType: selectedTemplate?.curtain_type,
+                  selectedTemplateKeys: selectedTemplate ? Object.keys(selectedTemplate) : []
+                });
+                
+                return (
+                  <div className="space-y-3 px-3">
+                    <DynamicRollerBlindFields 
+                      measurements={measurements} 
+                      onChange={handleInputChange} 
+                      templateId={selectedTemplate?.id} 
+                      treatmentCategory={treatmentType} 
+                      readOnly={readOnly} 
+                      onOptionPriceChange={handleOptionPriceChange} 
+                      selectedOptions={selectedOptions} 
+                    />
+                  </div>
+                );
+              })()}
 
               {/* Additional Measurements for Curtain Makers - Hidden as per user request */}
               {/* {treatmentType === 'curtains' && <details className="group">... */}

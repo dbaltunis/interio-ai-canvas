@@ -31,12 +31,27 @@ export const DynamicRollerBlindFields = ({
   onOptionPriceChange,
   selectedOptions = []
 }: DynamicRollerBlindFieldsProps) => {
+  console.log('🚨 DynamicRollerBlindFields - COMPONENT RENDER:', {
+    templateId,
+    treatmentCategory,
+    queryKey: treatmentCategory || templateId,
+    queryType: treatmentCategory ? 'category' : 'template',
+    measurementsKeys: Object.keys(measurements),
+    selectedOptionsCount: selectedOptions.length
+  });
+
   // CRITICAL FIX: Query by treatment category AND respect template_option_settings
   // This ensures only enabled options appear in the measurement worksheet
   const { data: allOptions = [], isLoading } = useTreatmentOptions(
     treatmentCategory || templateId, 
     treatmentCategory ? 'category' : 'template'
   );
+  
+  console.log('🔍 useTreatmentOptions result:', {
+    allOptionsCount: allOptions.length,
+    isLoading,
+    allOptions: allOptions.map(opt => ({ id: opt.id, key: opt.key, label: opt.label, visible: opt.visible }))
+  });
   
   // Filter by template_option_settings if templateId is available
   const [treatmentOptions, setTreatmentOptions] = useState<any[]>([]);
@@ -231,14 +246,39 @@ export const DynamicRollerBlindFields = ({
   }
 
   if (treatmentOptions.length === 0) {
+    console.error('❌ NO OPTIONS AVAILABLE - This is the problem!', {
+      templateId,
+      treatmentCategory,
+      allOptionsCount: allOptions.length,
+      treatmentOptionsCount: treatmentOptions.length,
+      isLoading,
+      message: allOptions.length === 0 
+        ? 'No options fetched from database - check treatment_options table for this category'
+        : 'All options filtered out by template_option_settings - check if all options are disabled'
+    });
+    
     return (
       <div className="p-4 border border-amber-300 bg-amber-50 rounded-lg">
         <p className="text-sm text-amber-800 font-medium">
           No window treatment options configured
         </p>
         <p className="text-xs text-amber-700 mt-1">
-          Please add treatment options in Settings → Window Covering Templates → Treatment Settings tab
+          {allOptions.length === 0 
+            ? `No options found in database for treatment category: "${treatmentCategory}". Please add treatment options in Settings → System Settings → Treatment Settings.`
+            : `All options are disabled for this template. Please enable options in template settings.`
+          }
         </p>
+        <details className="mt-2">
+          <summary className="text-xs text-amber-700 cursor-pointer">Debug Info</summary>
+          <pre className="text-xs text-amber-600 mt-1 overflow-auto">
+            {JSON.stringify({
+              templateId,
+              treatmentCategory,
+              allOptionsCount: allOptions.length,
+              treatmentOptionsCount: treatmentOptions.length
+            }, null, 2)}
+          </pre>
+        </details>
       </div>
     );
   }
