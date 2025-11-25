@@ -23,11 +23,12 @@ export const calculateBlindCosts = (
   measurements?: Record<string, any>
 ): BlindCalculationResult => {
   
-  // Get hem values
-  const headerHem = template?.blind_header_hem_cm || template?.header_allowance || 8;
-  const bottomHem = template?.blind_bottom_hem_cm || template?.bottom_hem || 8;
-  const sideHem = template?.blind_side_hem_cm || 0;
-  const wastePercent = template?.waste_percent || 0;
+  // CRITICAL FIX: Blinds don't use hems or waste - only curtains do
+  // For blinds, use the dimensions as-is without adding allowances
+  const headerHem = 0;
+  const bottomHem = 0;
+  const sideHem = 0;
+  const wastePercent = 0;
   
   // Calculate effective dimensions with hems
   const effectiveWidth = widthCm + (sideHem * 2);

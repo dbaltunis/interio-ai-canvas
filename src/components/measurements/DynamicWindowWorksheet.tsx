@@ -759,8 +759,9 @@ export const DynamicWindowWorksheet = forwardRef<{
             }
           } else if (displayCategory === 'blinds' || displayCategory === 'shutters') {
             // BLIND/SHUTTER CALCULATIONS
-            const width = parseFloat(measurements.rail_width) || 0;
-            const height = parseFloat(measurements.drop) || 0;
+            // CRITICAL FIX: Convert MM to CM before passing to calculator
+            const width = (parseFloat(measurements.rail_width) || 0) / 10;
+            const height = (parseFloat(measurements.drop) || 0) / 10;
             
             // Import blind calculation utility - UNIFIED TO SINGLE CALCULATOR
             const { calculateBlindCosts, isBlindCategory } = await import('@/components/measurements/dynamic-options/utils/blindCostCalculator');
