@@ -19,6 +19,8 @@ import { TreatmentCategory } from "@/utils/treatmentTypeDetection";
 export const TREATMENT_SUBCATEGORIES: Record<TreatmentCategory, {
   category: 'fabric' | 'material' | 'hardware' | 'both';
   subcategories: string[];
+  fabricSubcategories?: string[]; // For 'both' category: fabric-specific subcategories
+  materialSubcategories?: string[]; // For 'both' category: material-specific subcategories
   description: string;
 }> = {
   curtains: {
@@ -71,7 +73,9 @@ export const TREATMENT_SUBCATEGORIES: Record<TreatmentCategory, {
   
   vertical_blinds: {
     category: 'both', // Supports both fabric vanes and material slats
-    subcategories: ['vertical_fabric', 'vertical_slats', 'vertical_vanes', 'vertical'],
+    subcategories: ['vertical_fabric', 'vertical_slats', 'vertical_vanes', 'vertical'], // All combined (for backward compatibility)
+    fabricSubcategories: ['vertical_fabric'], // Fabric vanes only
+    materialSubcategories: ['vertical_slats', 'vertical_vanes', 'vertical'], // Material slats/vanes only
     description: 'Vertical blind vanes (fabric or material)'
   },
   
