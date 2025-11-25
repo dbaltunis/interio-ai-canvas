@@ -34,7 +34,7 @@ export const FabricUsageDisplay = ({ fabricUsage, formData, costs }: FabricUsage
         )}
       </div>
       <div className="text-xs text-blue-600">
-        Based on {formData.fabric_width}{getLengthUnitLabel()} fabric width, {formData.roll_direction} roll direction, {formData.heading_fullness}x fullness
+        Based on {formData.fabric_width}{getLengthUnitLabel()} fabric width, {formData.roll_direction} roll direction{formData.heading_fullness && parseFloat(formData.heading_fullness) > 1 ? `, ${formData.heading_fullness}x fullness` : ''}
       </div>
       
       {/* Seam Information */}
