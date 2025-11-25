@@ -68,10 +68,21 @@ export const calculateBlindCosts = (
     });
   }
   
-  // Calculate manufacturing cost (from template grid or template pricing)
+  // Calculate manufacturing cost - Check FABRIC item for pricing grid first, then template
   let manufacturingCost = 0;
-  if (template?.pricing_type === 'pricing_grid' && template?.pricing_grid_data) {
-    // Template has manufacturing grid
+  
+  // Check if fabric item has pricing grid assigned (new workflow)
+  if (fabricItem?.pricing_grid_data || fabricItem?.resolved_grid_data) {
+    const gridData = fabricItem.pricing_grid_data || fabricItem.resolved_grid_data;
+    manufacturingCost = getPriceFromGrid(gridData, widthCm, heightCm);
+    console.log('✅ Using fabric pricing grid:', {
+      fabricName: fabricItem?.name || 'Unknown',
+      manufacturingCost,
+      widthCm,
+      heightCm
+    });
+  } else if (template?.pricing_type === 'pricing_grid' && template?.pricing_grid_data) {
+    // Fallback: Template has manufacturing grid (legacy)
     manufacturingCost = getPriceFromGrid(template.pricing_grid_data, widthCm, heightCm);
     console.log('✅ Using template manufacturing grid:', {
       manufacturingCost

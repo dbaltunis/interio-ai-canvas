@@ -74,8 +74,13 @@ export const AdaptiveFabricPricingDisplay = ({
     return `${converted.toFixed(1)}${getFabricUnitLabel()}`;
   };
 
-  // Check if this treatment uses pricing grid
-  const usesPricingGrid = template?.pricing_type === 'pricing_grid' && template?.pricing_grid_data;
+  // Check if this treatment uses pricing grid - look at FABRIC item, not template
+  // Templates just specify pricing_type, but the actual grid data comes from fabric
+  const fabricUsesPricingGrid = fabricToUse?.pricing_grid_data || fabricToUse?.resolved_grid_data;
+  const usesPricingGrid = template?.pricing_type === 'pricing_grid' && fabricUsesPricingGrid;
+  
+  // Use fabric's pricing grid data, not template's
+  const gridDataToUse = fabricToUse?.pricing_grid_data || fabricToUse?.resolved_grid_data;
   
   // Check if fabric is sold per sqm
   const isFabricPerSqm = fabricToUse?.price_per_unit === 'sqm';
@@ -90,23 +95,25 @@ export const AdaptiveFabricPricingDisplay = ({
   let gridPrice = 0;
   let gridWidthCm = 0;
   let gridDropCm = 0;
-  if (usesPricingGrid && measurements.rail_width && measurements.drop) {
+  if (usesPricingGrid && gridDataToUse && measurements.rail_width && measurements.drop) {
     // Measurements are in mm from database
     const gridWidthMm = parseFloat(measurements.rail_width);
     const gridDropMm = parseFloat(measurements.drop);
     // Convert mm to cm for grid lookup and display
     gridWidthCm = gridWidthMm / 10;
     gridDropCm = gridDropMm / 10;
-    gridPrice = getPriceFromGrid(template.pricing_grid_data, gridWidthCm, gridDropCm);
+    gridPrice = getPriceFromGrid(gridDataToUse, gridWidthCm, gridDropCm);
     console.log('📊 GRID PRICE DEBUG:', {
       railWidthMm: gridWidthMm,
       dropMm: gridDropMm,
       gridWidthCm,
       gridDropCm,
-      hasGridData: !!template.pricing_grid_data,
-      gridDataStructure: template.pricing_grid_data ? Object.keys(template.pricing_grid_data) : 'NO DATA',
+      hasGridData: !!gridDataToUse,
+      gridDataStructure: gridDataToUse ? Object.keys(gridDataToUse) : 'NO DATA',
       gridPrice,
-      WARNING: gridPrice === 0 ? 'GRID RETURNING ZERO - Check grid data format or dimensions not in grid range' : 'OK'
+      fabricName: fabricToUse?.name || 'NO FABRIC',
+      fabricHasGridData: !!(fabricToUse?.pricing_grid_data || fabricToUse?.resolved_grid_data),
+      WARNING: gridPrice === 0 ? '⚠️ GRID RETURNING ZERO - Check: 1) Is fabric selected? 2) Does fabric have pricing grid assigned? 3) Are dimensions within grid range?' : '✅ Grid price calculated'
     });
   }
 
@@ -172,11 +179,11 @@ export const AdaptiveFabricPricingDisplay = ({
       <div className="container-level-3 rounded-md p-3 space-y-2">
         <div className="flex items-center justify-between">
           <h4 className="font-semibold text-sm">Price</h4>
-          {template?.pricing_grid_data && (
+          {gridDataToUse && (
             <PricingGridPreview 
-              gridData={template.pricing_grid_data}
-              gridName={template.pricing_grid_name}
-              gridCode={template.pricing_grid_code}
+              gridData={gridDataToUse}
+              gridName={fabricToUse?.resolved_grid_name || fabricToUse?.name}
+              gridCode={fabricToUse?.resolved_grid_code}
             />
           )}
         </div>
