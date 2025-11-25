@@ -1,6 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+// Map equivalent treatment categories to handle naming inconsistencies
+const CATEGORY_ALIASES: Record<string, string[]> = {
+  'cellular_shades': ['cellular_shades', 'cellular_blinds'],
+  'cellular_blinds': ['cellular_shades', 'cellular_blinds'],
+  'roller_blinds': ['roller_blinds', 'roller_shades'],
+  'roller_shades': ['roller_blinds', 'roller_shades'],
+  'venetian_blinds': ['venetian_blinds', 'venetian_shades'],
+  'venetian_shades': ['venetian_blinds', 'venetian_shades'],
+  'vertical_blinds': ['vertical_blinds', 'vertical_shades'],
+  'vertical_shades': ['vertical_blinds', 'vertical_shades'],
+};
+
 export interface OptionValue {
   id: string;
   option_id: string;
@@ -29,23 +41,13 @@ export interface TreatmentOption {
 }
 
 export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 'template' | 'category' = 'template') => {
-  console.log('🔍 useTreatmentOptions hook called:', {
-    templateIdOrCategory,
-    queryType,
-    willQuery: !!templateIdOrCategory
-  });
-
   return useQuery({
     queryKey: ['treatment-options', templateIdOrCategory, queryType],
     queryFn: async () => {
-      console.log('🔍 useTreatmentOptions queryFn executing...');
       
       // Get current user's account_id for data isolation
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('❌ No user found');
-        return [];
-      }
+      if (!user) return [];
       
       const { data: profile } = await supabase
         .from('user_profiles')
@@ -54,8 +56,6 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
         .single();
       
       const accountId = profile?.parent_account_id || user.id;
-      
-      console.log('🔍 Account context:', { userId: user.id, accountId });
       
       let query = supabase
         .from('treatment_options')
@@ -70,49 +70,29 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
       // If no specific filter provided, get ALL visible options for this account
       if (templateIdOrCategory) {
         if (queryType === 'category') {
-          console.log('🔍 Querying by treatment_category:', templateIdOrCategory);
-          // Query by treatment_category OR if category is null (universal options)
-          query = query.or(`treatment_category.eq.${templateIdOrCategory},treatment_category.is.null`);
+          // Get all equivalent category names (handles cellular_shades vs cellular_blinds etc)
+          const categories = CATEGORY_ALIASES[templateIdOrCategory] || [templateIdOrCategory];
+          
+          // Build OR condition for all equivalent categories + universal options (null)
+          const orConditions = categories.map(cat => `treatment_category.eq.${cat}`).join(',');
+          query = query.or(`${orConditions},treatment_category.is.null`);
         } else {
-          console.log('🔍 Querying by template_id:', templateIdOrCategory);
           query = query.eq('template_id', templateIdOrCategory);
         }
-      } else {
-        console.log('🔍 Getting ALL visible options for account');
       }
       
       const { data, error } = await query;
       
-      console.log('🔍 Query result:', {
-        dataCount: data?.length || 0,
-        error: error?.message,
-        data: data?.map(opt => ({
-          id: opt.id,
-          key: opt.key,
-          label: opt.label,
-          treatment_category: opt.treatment_category,
-          template_id: opt.template_id,
-          visible: opt.visible,
-          account_id: opt.account_id,
-          option_values_count: opt.option_values?.length || 0
-        }))
-      });
-      
       if (error) throw error;
       
-      // CRITICAL: Filter out ghost/test options (visible=false with no option_values)
+      // Filter out ghost options (visible=false with no option_values)
       const filteredData = (data as TreatmentOption[]).filter(option => {
-        // Always include visible options
         if (option.visible === true) return true;
-        // If not visible, only include if it has option_values (legitimate hidden options)
         if (!option.visible && (!option.option_values || option.option_values.length === 0)) {
-          console.warn(`🚫 Filtering out ghost option: ${option.key} (${option.id}) - visible=false with no values`);
           return false;
         }
         return true;
       });
-      
-      console.log('✅ Final filtered options count:', filteredData.length);
       
       return filteredData;
     },
