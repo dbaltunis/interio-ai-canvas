@@ -1163,8 +1163,8 @@ export const DynamicWindowWorksheet = forwardRef<{
                 price: manufacturingCost || 0,
                 pricingMethod: 'fixed'
               }] : []),
-              // Add fullness ratio
-              ...(fabricCalculation?.fullnessRatio ? [{
+              // Add fullness ratio ONLY for curtain/roman treatments
+              ...((treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && fabricCalculation?.fullnessRatio ? [{
                 name: `Fullness Ratio: ${fabricCalculation.fullnessRatio}x`,
                 price: 0,
                 pricingMethod: 'included'
@@ -1898,8 +1898,8 @@ export const DynamicWindowWorksheet = forwardRef<{
                         price: calculatedCosts.manufacturingCost || 0,
                         pricingMethod: 'fixed'
                       }] : []),
-                      // Add fullness ratio if exists
-                      ...(fabricCalculation?.fullnessRatio ? [{
+                      // Add fullness ratio ONLY for curtain/roman treatments
+                      ...((treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && fabricCalculation?.fullnessRatio ? [{
                         name: `Fullness Ratio: ${fabricCalculation.fullnessRatio}x`,
                         price: 0,
                         pricingMethod: 'included'

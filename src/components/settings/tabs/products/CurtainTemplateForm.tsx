@@ -168,15 +168,19 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     }
   };
 
+  // Determine which tabs to show based on treatment type
+  const isCurtainOrRoman = formData.curtain_type === 'curtain' || formData.curtain_type === 'roman_blind';
+  const visibleTabCount = 3 + (isCurtainOrRoman ? 2 : 0); // Basic + Options + Pricing + (Heading + Manufacturing for curtains/romans)
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className={`grid w-full grid-cols-${visibleTabCount}`}>
           <TabsTrigger value="basic">Basic</TabsTrigger>
-          <TabsTrigger value="heading">Heading</TabsTrigger>
+          {isCurtainOrRoman && <TabsTrigger value="heading">Heading</TabsTrigger>}
           <TabsTrigger value="options">Options</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
-          <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>
+          {isCurtainOrRoman && <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="basic" className="space-y-4 mt-4">
@@ -255,13 +259,15 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
           </Card>
         </TabsContent>
 
-        <TabsContent value="heading" className="space-y-4 mt-4">
-          <HeadingStyleSelector
-            selectedHeadingIds={formData.selected_heading_ids}
-            onSelectionChange={(ids) => handleInputChange("selected_heading_ids", ids)}
-            curtainType={formData.curtain_type}
-          />
-        </TabsContent>
+        {isCurtainOrRoman && (
+          <TabsContent value="heading" className="space-y-4 mt-4">
+            <HeadingStyleSelector
+              selectedHeadingIds={formData.selected_heading_ids}
+              onSelectionChange={(ids) => handleInputChange("selected_heading_ids", ids)}
+              curtainType={formData.curtain_type}
+            />
+          </TabsContent>
+        )}
 
         <TabsContent value="options" className="space-y-4 mt-4">
           <TemplateOptionsManager curtainType={formData.curtain_type} />
@@ -275,12 +281,14 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
           />
         </TabsContent>
 
-        <TabsContent value="manufacturing" className="space-y-4 mt-4">
-          <SimplifiedTemplateFormManufacturing 
-            formData={formData}
-            handleInputChange={handleInputChange}
-          />
-        </TabsContent>
+        {isCurtainOrRoman && (
+          <TabsContent value="manufacturing" className="space-y-4 mt-4">
+            <SimplifiedTemplateFormManufacturing 
+              formData={formData}
+              handleInputChange={handleInputChange}
+            />
+          </TabsContent>
+        )}
       </Tabs>
 
       <div className="flex gap-2 pt-4 border-t">
