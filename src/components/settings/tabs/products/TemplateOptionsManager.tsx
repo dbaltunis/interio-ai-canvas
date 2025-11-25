@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { singularToDbValue } from "@/types/treatmentCategories";
+import { useOptionTypeCategories } from "@/hooks/useOptionTypeCategories";
 
 interface TemplateOptionsManagerProps {
   curtainType: string;
@@ -15,28 +16,12 @@ export const TemplateOptionsManager = ({ curtainType }: TemplateOptionsManagerPr
   // Convert singular curtain_type to plural treatment_category for display
   const treatmentCategory = singularToDbValue(curtainType);
 
+  // Fetch actual option types from database
+  const { data: optionTypes, isLoading } = useOptionTypeCategories(treatmentCategory);
+
   // Map curtain types to option management paths
   const getOptionsPath = () => {
-    // Navigate to System Settings Options tab with the treatment type pre-selected
     return `/settings?tab=system&subtab=options&treatment=${treatmentCategory}`;
-  };
-
-  const getOptionsDescription = () => {
-    switch (curtainType) {
-      case 'roller_blind':
-        return 'Control Types, Fascia Types, Mount Types, Tube Sizes, Bottom Rails, Motor Types';
-      case 'roman_blind':
-        return 'Mount Types, Lift Systems, Chain Options, Valance Options';
-      case 'curtain':
-        return 'Heading Styles (managed in Headings section)';
-      case 'venetian_blind':
-      case 'vertical_blind':
-        return 'Slat/Vane Types, Control Types, Mount Types, Tilt Options';
-      case 'cellular_blind':
-        return 'Cell Sizes, Control Types, Mount Types, Lift Systems';
-      default:
-        return 'Product-specific options';
-    }
   };
 
   return (
@@ -47,9 +32,17 @@ export const TemplateOptionsManager = ({ curtainType }: TemplateOptionsManagerPr
       <CardContent className="space-y-4">
         <div>
           <Label>Options for this treatment type</Label>
-          <p className="text-sm text-muted-foreground mt-1">
-            {getOptionsDescription()}
-          </p>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground mt-1">Loading options...</p>
+          ) : optionTypes && optionTypes.length > 0 ? (
+            <p className="text-sm text-muted-foreground mt-1">
+              {optionTypes.map(opt => opt.type_label).join(', ')}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground mt-1">
+              {curtainType === 'curtain' ? 'Heading Styles (managed in Headings section)' : 'No options configured yet'}
+            </p>
+          )}
         </div>
 
         <Button
