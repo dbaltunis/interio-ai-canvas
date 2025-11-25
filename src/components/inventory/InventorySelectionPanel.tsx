@@ -344,10 +344,10 @@ export const InventorySelectionPanel = ({
               {isSelected && <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />}
               
               {/* Pricing Grid Badge Overlay - Only for fabric */}
-              {category === 'fabric' && item.price_group && (
+              {category === 'fabric' && (item.price_group || item.pricing_grid_id) && (
                 <div className="absolute bottom-1 left-1 right-1">
                   <Badge variant="default" className="text-[9px] px-1.5 py-0.5 h-5 bg-green-600 hover:bg-green-700 text-white w-full justify-center">
-                    ✓ Grid: {item.price_group}
+                    ✓ Grid: {item.price_group || 'Assigned'}
                   </Badge>
                 </div>
               )}
@@ -377,7 +377,7 @@ export const InventorySelectionPanel = ({
                   <span className="text-xs font-semibold">
                     {(() => {
                       // Check if using pricing grid
-                      if (item.price_group) {
+                      if (item.price_group || item.pricing_grid_id) {
                         // Has grid - try to show min price from grid data
                         if (item.pricing_grid_data && Array.isArray(item.pricing_grid_data) && item.pricing_grid_data.length > 0) {
                           const minPrice = Math.min(...item.pricing_grid_data.map((row: any) => parseFloat(row.price || 0)));
@@ -392,8 +392,8 @@ export const InventorySelectionPanel = ({
                     {item.unit && <span className="text-[9px] text-muted-foreground">/{item.unit}</span>}
                   </span>
                   <span className="text-[8px] text-muted-foreground leading-none">
-                    {item.price_group 
-                      ? `Grid: ${item.price_group}` 
+                    {item.price_group || item.pricing_grid_id
+                      ? `Grid: ${item.price_group || 'Assigned'}` 
                       : (item.pricing_method || 'Fixed')}
                   </span>
                 </div>
