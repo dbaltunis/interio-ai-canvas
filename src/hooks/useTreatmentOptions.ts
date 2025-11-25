@@ -25,6 +25,7 @@ export interface TreatmentOption {
   tracks_inventory?: boolean; // Whether this option type should link to inventory
   option_values?: OptionValue[];
   is_system_default?: boolean; // NEW: Track if this is a system default option
+  treatment_category?: string; // The treatment category this option belongs to (e.g., 'roller_blinds')
 }
 
 export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 'template' | 'category' = 'template') => {
