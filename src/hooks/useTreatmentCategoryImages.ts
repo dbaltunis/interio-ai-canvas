@@ -8,7 +8,6 @@ export type TreatmentCategory =
   | 'roman_blinds' 
   | 'venetian_blinds' 
   | 'vertical_blinds' 
-  | 'cellular_shades' 
   | 'cellular_blinds'
   | 'plantation_shutters' 
   | 'shutters' 
@@ -96,7 +95,6 @@ function mapCategoryToTemplateCategory(category: TreatmentCategory): 'blinds' | 
   if (category === 'curtains') return 'curtains';
   if (category === 'roller_blinds' || category === 'roman_blinds' || category === 'venetian_blinds' || category === 'vertical_blinds' || category === 'cellular_blinds') return 'blinds';
   if (category === 'shutters' || category === 'plantation_shutters') return 'shutters';
-  if (category === 'cellular_shades') return 'shades';
   if (category === 'awning') return 'awnings';
   return 'other';
 }

@@ -1,4 +1,4 @@
-export type TreatmentCategory = 'curtains' | 'blinds' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_blinds' | 'cellular_shades' | 'panel_glide' | 'plantation_shutters' | 'shutters' | 'awning' | 'wallpaper';
+export type TreatmentCategory = 'curtains' | 'blinds' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_blinds' | 'panel_glide' | 'plantation_shutters' | 'shutters' | 'awning' | 'wallpaper';
 
 export interface TreatmentConfig {
   requiresFullness: boolean;
@@ -27,7 +27,7 @@ export const detectTreatmentType = (template: any): TreatmentCategory => {
   if (template?.treatment_category) {
     const category = template.treatment_category;
     // Map database categories to internal categories
-    if (category === 'cellular_shades') return 'cellular_shades';
+    if (category === 'cellular_shades') return 'cellular_blinds'; // Convert old naming to new
     if (category === 'wallpaper') return 'wallpaper';
     return category as TreatmentCategory;
   }
@@ -49,7 +49,7 @@ export const detectTreatmentType = (template: any): TreatmentCategory => {
       return 'vertical_blinds';
     }
     if (curtainType === 'cellular_shade' || curtainType === 'cellular_blind' || curtainType === 'cellular' || curtainType.includes('cellular') || curtainType.includes('honeycomb')) {
-      return 'cellular_shades';
+      return 'cellular_blinds';
     }
     if (curtainType === 'panel_glide' || curtainType.includes('panel')) {
       return 'panel_glide';
@@ -73,7 +73,7 @@ export const detectTreatmentType = (template: any): TreatmentCategory => {
   const name = template?.name?.toLowerCase() || '';
   const description = template?.description?.toLowerCase() || '';
   
-  if (name.includes('honeycomb') || name.includes('cellular')) return 'cellular_shades';
+  if (name.includes('honeycomb') || name.includes('cellular')) return 'cellular_blinds';
   if (name.includes('roller') || description.includes('roller blind')) return 'roller_blinds';
   if (name.includes('roman') || description.includes('roman blind')) return 'roman_blinds';
   if (name.includes('venetian')) return 'venetian_blinds';
@@ -157,19 +157,8 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       requiresHeading: false,
       requiresLining: false,
       showPooling: false,
-      inventoryCategory: 'cellular_fabric', // FIXED: Cellular blinds DO use fabric inventory
-      specificFields: ['cell_size', 'headrail_type', 'control_type', 'mount_type'],
-      visualComponent: 'BlindVisualizer',
-    },
-    cellular_shades: {
-      requiresFullness: false,
-      requiresHardwareType: false,
-      requiresFabricOrientation: false,
-      requiresHeading: false,
-      requiresLining: false,
-      showPooling: false,
-      inventoryCategory: 'cellular_fabric', // FIXED: Cellular shades DO use fabric inventory
-      specificFields: ['cell_type', 'opacity', 'control_type', 'mount_type'],
+      inventoryCategory: 'cellular_fabric',
+      specificFields: ['cell_size', 'cell_type', 'opacity', 'headrail_type', 'control_type', 'mount_type'],
       visualComponent: 'BlindVisualizer',
     },
     panel_glide: {
@@ -240,8 +229,7 @@ export const getTreatmentDisplayName = (category: TreatmentCategory): string => 
     roman_blinds: 'Roman Blinds',
     venetian_blinds: 'Venetian Blinds',
     vertical_blinds: 'Vertical Blinds',
-    cellular_blinds: 'Cellular Shades',
-    cellular_shades: 'Honeycomb Shades',
+    cellular_blinds: 'Cellular Blinds',
     panel_glide: 'Panel Glide',
     plantation_shutters: 'Plantation Shutters',
     shutters: 'Shutters',
@@ -295,12 +283,6 @@ export const getMeasurementLabels = (category: TreatmentCategory): MeasurementLa
       heightShort: 'Drop'
     },
     cellular_blinds: {
-      width: 'Headrail Width',
-      height: 'Shade Drop',
-      widthShort: 'Headrail',
-      heightShort: 'Drop'
-    },
-    cellular_shades: {
       width: 'Headrail Width',
       height: 'Shade Drop',
       widthShort: 'Headrail',

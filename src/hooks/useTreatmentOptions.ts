@@ -3,8 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Map equivalent treatment categories to handle naming inconsistencies
 const CATEGORY_ALIASES: Record<string, string[]> = {
-  'cellular_shades': ['cellular_shades', 'cellular_blinds'],
-  'cellular_blinds': ['cellular_shades', 'cellular_blinds'],
   'roller_blinds': ['roller_blinds', 'roller_shades'],
   'roller_shades': ['roller_blinds', 'roller_shades'],
   'venetian_blinds': ['venetian_blinds', 'venetian_shades'],

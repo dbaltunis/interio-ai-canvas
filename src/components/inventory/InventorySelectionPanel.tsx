@@ -559,7 +559,7 @@ export const InventorySelectionPanel = ({
     }
     
     // FIXED: Cellular/honeycomb blinds use FABRIC, not material
-    if (['cellular_blinds', 'cellular_shades'].includes(treatmentCategory)) {
+    if (treatmentCategory === 'cellular_blinds') {
       return [
         { key: "fabric", label: "Fabric", icon: Palette }
       ];
