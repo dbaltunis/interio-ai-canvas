@@ -106,17 +106,26 @@ export const DynamicRollerBlindFields = ({
 
   // Helper to get option values with price info
   const getOptionValues = (option: any) => {
-    if (!option.option_values) return [];
+    if (!option.option_values || option.option_values.length === 0) {
+      console.warn(`⚠️ Option "${option.label}" (${option.key}) has NO values configured`);
+      return [];
+    }
     
     return option.option_values
+      .filter((val: any) => val.extra_data?.visible !== false) // Hide explicitly invisible values
       .sort((a: any, b: any) => a.order_index - b.order_index)
-      .map((val: any) => ({
-        value: val.code,
-        label: val.label,
-        id: val.id,
-        price: val.extra_data?.price || 0,
-        pricingMethod: val.extra_data?.pricing_method || 'fixed'
-      }));
+      .map((val: any) => {
+        // Extract price from either 'price' or 'price_modifier' field
+        const price = val.extra_data?.price ?? val.extra_data?.price_modifier ?? 0;
+        
+        return {
+          value: val.code,
+          label: val.label,
+          id: val.id,
+          price: price,
+          pricingMethod: val.extra_data?.pricing_method || 'fixed'
+        };
+      });
   };
 
   // Helper to calculate price (handles pricing-grid method)
@@ -173,11 +182,23 @@ export const DynamicRollerBlindFields = ({
   useEffect(() => {
     if (treatmentOptions.length === 0) return;
     
-    console.log('🔄 DynamicRollerBlindFields: Initializing options for treatment:', treatmentCategory || templateId);
+    console.log('🔄 DynamicRollerBlindFields: Initializing options:', {
+      treatmentCategory: treatmentCategory || templateId,
+      totalOptions: treatmentOptions.length,
+      optionsBreakdown: treatmentOptions.map(opt => ({
+        key: opt.key,
+        label: opt.label,
+        hasValues: (opt.option_values?.length || 0) > 0,
+        valueCount: opt.option_values?.length || 0
+      }))
+    });
     
     treatmentOptions.forEach(option => {
       const optionValues = getOptionValues(option);
-      if (optionValues.length === 0) return;
+      if (optionValues.length === 0) {
+        console.warn(`⚠️ Skipping option "${option.label}" - no values to select`);
+        return;
+      }
       
       const currentValue = measurements[option.key];
       const defaultValue = optionValues[0];
@@ -291,6 +312,12 @@ export const DynamicRollerBlindFields = ({
   // Filter visible options - exclude conditional options from main list
   const visibleOptions = treatmentOptions
     .filter(opt => {
+      // Skip options with no values configured
+      if (!opt.option_values || opt.option_values.length === 0) {
+        console.warn(`⚠️ Hiding option "${opt.label}" (${opt.key}) - no values configured`);
+        return false;
+      }
+      
       // Skip conditional options - they'll be rendered with their triggers
       if (isConditionalOption(opt.key)) {
         return false;
@@ -307,6 +334,18 @@ export const DynamicRollerBlindFields = ({
     .filter((opt, index, self) => 
       index === self.findIndex(o => o.key === opt.key)
     );
+  
+  // Count options with missing values for diagnostic
+  const optionsWithoutValues = treatmentOptions.filter(opt => 
+    !opt.option_values || opt.option_values.length === 0
+  );
+  
+  if (optionsWithoutValues.length > 0) {
+    console.log('📊 Options without values (won\'t display):', {
+      count: optionsWithoutValues.length,
+      options: optionsWithoutValues.map(o => ({ key: o.key, label: o.label }))
+    });
+  }
 
   // Helper to render a single option field
   const renderOption = (option: any, isConditional: boolean = false) => {
@@ -316,6 +355,12 @@ export const DynamicRollerBlindFields = ({
     }
 
     const optionValues = getOptionValues(option);
+    
+    // Don't render if no values available
+    if (optionValues.length === 0) {
+      return null;
+    }
+    
     const currentValue = measurements[option.key];
     const ruleDefaultValue = getDefaultValue(option.key);
     const defaultValue = ruleDefaultValue || optionValues[0]?.value;
