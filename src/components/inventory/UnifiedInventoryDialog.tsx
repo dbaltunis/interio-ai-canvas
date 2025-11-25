@@ -115,6 +115,7 @@ export const UnifiedInventoryDialog = ({
     image_url: "",
     hardware_finish: "",
     hardware_material: "",
+    pricing_grid_id: null as string | null, // Direct grid assignment
     product_category: null as string | null,
     price_group: null as string | null,
     tags: [] as string[],
@@ -219,13 +220,14 @@ export const UnifiedInventoryDialog = ({
         image_url: item.image_url || "",
         hardware_finish: item.hardware_finish || "",
         hardware_material: item.hardware_material || "",
+        pricing_grid_id: item.pricing_grid_id || null,
         product_category: item.product_category || null,
         price_group: item.price_group || null,
         tags: item.tags || [],
       });
       
       // Detect pricing method from item data
-      if (item.price_group) {
+      if (item.pricing_grid_id || item.price_group) {
         setPricingMethod('grid');
       } else if (item.category === 'fabric' || item.category === 'material') {
         setPricingMethod('linear');
@@ -339,6 +341,7 @@ export const UnifiedInventoryDialog = ({
       sku: generatedSku,
       quantity: trackInventory ? formData.quantity : 0,
       // Ensure empty strings become null for UUID fields
+      pricing_grid_id: formData.pricing_grid_id || null,
       product_category: formData.product_category || null,
       price_group: formData.price_group || null,
       vendor_id: formData.vendor_id || null,
@@ -570,49 +573,38 @@ export const UnifiedInventoryDialog = ({
 
                     {pricingMethod === 'grid' && (
                       <div className="space-y-4 p-4 border rounded-lg">
-                        <div>
-                          <Label>Product Category</Label>
-                          <Select
-                            value={formData.product_category || ''}
-                            onValueChange={(value) => setFormData({ ...formData, product_category: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select blind type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="roller_blinds">Roller Blinds</SelectItem>
-                              <SelectItem value="cellular_blinds">Cellular Blinds</SelectItem>
-                              <SelectItem value="venetian_blinds">Venetian Blinds</SelectItem>
-                              <SelectItem value="vertical_blinds">Vertical Blinds</SelectItem>
-                              <SelectItem value="roman_blinds">Roman Blinds</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Which blind type uses this fabric/material
-                          </p>
-                        </div>
+                        <Alert>
+                          <AlertDescription>
+                            Select which pricing grid to use for this fabric/material. When this item is selected in job creation, prices will be looked up from the assigned grid.
+                          </AlertDescription>
+                        </Alert>
 
                         <div>
                           <Label>Select Pricing Grid</Label>
                           <Select
-                            value={formData.price_group || undefined}
-                            onValueChange={(value) => setFormData({ ...formData, price_group: value === 'none' ? '' : value })}
+                            value={formData.pricing_grid_id || undefined}
+                            onValueChange={(value) => setFormData({ ...formData, pricing_grid_id: value === 'none' ? null : value })}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select grid" />
+                              <SelectValue placeholder="Choose a pricing grid" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="none">None</SelectItem>
                               {pricingGrids.map(grid => (
-                                <SelectItem key={grid.id} value={grid.grid_code || grid.id}>
-                                  {grid.name} {grid.markup_percentage ? `(${grid.markup_percentage}% markup)` : ''}
+                                <SelectItem key={grid.id} value={grid.id}>
+                                  {grid.name} {grid.markup_percentage ? `(+${grid.markup_percentage}% markup)` : ''}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                           {pricingGrids.length === 0 && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              📋 Upload grids in Settings → Pricing Grids
+                            <p className="text-xs text-amber-600 mt-1">
+                              ⚠️ No pricing grids found. Upload grids in Settings → Products → Pricing Grids
+                            </p>
+                          )}
+                          {formData.pricing_grid_id && (
+                            <p className="text-xs text-green-600 mt-1">
+                              ✓ Grid assigned - prices will be calculated automatically during job creation
                             </p>
                           )}
                         </div>

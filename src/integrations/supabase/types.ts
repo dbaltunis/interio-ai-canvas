@@ -2972,6 +2972,7 @@ export type Database = {
           price_per_meter: number | null
           price_per_unit: number | null
           price_per_yard: number | null
+          pricing_grid_id: string | null
           product_category: string | null
           profit_margin_percentage: number | null
           profit_per_unit: number | null
@@ -3052,6 +3053,7 @@ export type Database = {
           price_per_meter?: number | null
           price_per_unit?: number | null
           price_per_yard?: number | null
+          pricing_grid_id?: string | null
           product_category?: string | null
           profit_margin_percentage?: number | null
           profit_per_unit?: number | null
@@ -3132,6 +3134,7 @@ export type Database = {
           price_per_meter?: number | null
           price_per_unit?: number | null
           price_per_yard?: number | null
+          pricing_grid_id?: string | null
           product_category?: string | null
           profit_margin_percentage?: number | null
           profit_per_unit?: number | null
@@ -3171,6 +3174,13 @@ export type Database = {
             columns: ["collection_id"]
             isOneToOne: false
             referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enhanced_inventory_items_pricing_grid_id_fkey"
+            columns: ["pricing_grid_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_grids"
             referencedColumns: ["id"]
           },
           {
