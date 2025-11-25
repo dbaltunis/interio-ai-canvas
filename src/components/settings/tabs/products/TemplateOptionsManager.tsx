@@ -39,7 +39,13 @@ export const TemplateOptionsManager = ({ curtainType, templateId }: TemplateOpti
   
   // Handler for toggling option
   const handleToggle = (optionId: string, currentEnabled: boolean) => {
-    if (!templateId) return;
+    if (!templateId) {
+      console.error('No template ID provided for toggle');
+      return;
+    }
+    
+    console.log('Toggle clicked:', { optionId, currentEnabled, newState: !currentEnabled, templateId });
+    
     toggleOption.mutate({
       templateId,
       treatmentOptionId: optionId,
@@ -137,7 +143,11 @@ export const TemplateOptionsManager = ({ curtainType, templateId }: TemplateOpti
                             <Switch
                               id={`toggle-${option.id}`}
                               checked={enabled}
-                              onCheckedChange={() => handleToggle(option.id, enabled)}
+                              onCheckedChange={() => {
+                                console.log('Switch onCheckedChange called for option:', option.id, 'current:', enabled);
+                                handleToggle(option.id, enabled);
+                              }}
+                              disabled={toggleOption.isPending}
                             />
                           </div>
                         )}
