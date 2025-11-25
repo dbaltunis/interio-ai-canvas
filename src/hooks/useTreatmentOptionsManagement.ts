@@ -164,7 +164,6 @@ export const useAllTreatmentOptions = () => {
           option_values (*)
         `)
         .is('template_id', null)
-        // REMOVED explicit account_id filter - let RLS handle it
         .order('treatment_category', { ascending: true })
         .order('order_index', { ascending: true });
       
@@ -173,19 +172,11 @@ export const useAllTreatmentOptions = () => {
         throw error;
       }
       
-      console.log('✅ useAllTreatmentOptions - Fetched options:', data?.length || 0);
-      console.log('🔍 useAllTreatmentOptions - Unique account IDs in data:', 
-        [...new Set(data?.map(d => d.account_id))]);
+      console.log('✅ useAllTreatmentOptions - Fetched options (RLS filtered):', data?.length || 0);
+      console.log('🔍 useAllTreatmentOptions - Sample options:', 
+        data?.slice(0, 3).map(d => ({ key: d.key, category: d.treatment_category, isSystem: d.is_system_default })));
       
-      // Filter out any cross-account data as defense-in-depth
-      const userAccountId = user.user.id; // Since both test users are account owners
-      const filtered = data?.filter(opt => opt.account_id === userAccountId) || [];
-      
-      if (filtered.length !== data?.length) {
-        console.warn(`⚠️ Filtered out ${(data?.length || 0) - filtered.length} cross-account options`);
-      }
-      
-      return filtered as TreatmentOption[];
+      return data as TreatmentOption[];
     },
   });
 };
