@@ -12,6 +12,14 @@ interface PricingGridPreviewProps {
 export const PricingGridPreview = ({ gridData, gridName, gridCode }: PricingGridPreviewProps) => {
   const { units } = useMeasurementUnits();
   
+  console.log('🔍 PRICING GRID DEBUG:', {
+    gridData,
+    isArray: Array.isArray(gridData),
+    hasWidthColumns: gridData?.widthColumns,
+    hasDropRows: gridData?.dropRows,
+    keys: gridData ? Object.keys(gridData) : []
+  });
+  
   if (!gridData) return null;
 
   const formatPrice = (price: number) => {
