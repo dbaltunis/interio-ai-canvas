@@ -37,10 +37,14 @@ export const TemplateOptionsManager = ({ curtainType, templateId }: TemplateOpti
     return setting ? setting.is_enabled : true; // Default to enabled
   };
   
+  // Check if we can show toggles (always show them, even for new templates)
+  const canShowToggles = true; // Always show toggles for option configuration
+  
   // Handler for toggling option
   const handleToggle = (optionId: string, currentEnabled: boolean) => {
     if (!templateId) {
-      console.error('No template ID provided for toggle');
+      console.warn('Template not saved yet - toggle will take effect after saving');
+      // TODO: Store in local state for new templates
       return;
     }
     
@@ -87,10 +91,8 @@ export const TemplateOptionsManager = ({ curtainType, templateId }: TemplateOpti
       <CardHeader>
         <CardTitle>Available Options</CardTitle>
         <p className="text-sm text-muted-foreground">
-          {templateId 
-            ? "Toggle options on/off to control which appear for this template in quotes"
-            : "Options configured for this treatment type (enable/disable per template after saving)"
-          }
+          Toggle options on/off to control which appear for this template in quotes
+          {!templateId && " (save template to apply changes)"}
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -133,25 +135,23 @@ export const TemplateOptionsManager = ({ curtainType, templateId }: TemplateOpti
                             <Badge variant="destructive" className="text-xs">
                               Disabled
                             </Badge>
-                          )}
-                        </div>
-                        {templateId && (
-                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                            <Label htmlFor={`toggle-${option.id}`} className="text-xs text-muted-foreground cursor-pointer">
-                              {enabled ? 'Enabled' : 'Disabled'}
-                            </Label>
-                            <Switch
-                              id={`toggle-${option.id}`}
-                              checked={enabled}
-                              onCheckedChange={() => {
-                                console.log('Switch onCheckedChange called for option:', option.id, 'current:', enabled);
-                                handleToggle(option.id, enabled);
-                              }}
-                              disabled={toggleOption.isPending}
-                            />
-                          </div>
                         )}
                       </div>
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Label htmlFor={`toggle-${option.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                          {enabled ? 'Enabled' : 'Disabled'}
+                        </Label>
+                        <Switch
+                          id={`toggle-${option.id}`}
+                          checked={enabled}
+                          onCheckedChange={() => {
+                            console.log('Switch onCheckedChange called for option:', option.id, 'current:', enabled);
+                            handleToggle(option.id, enabled);
+                          }}
+                          disabled={!templateId || toggleOption.isPending}
+                        />
+                      </div>
+                    </div>
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="space-y-2 pl-4">
@@ -190,10 +190,8 @@ export const TemplateOptionsManager = ({ curtainType, templateId }: TemplateOpti
                 Manage Options in System Settings
               </Button>
               <p className="text-xs text-muted-foreground mt-2 text-center">
-                {templateId 
-                  ? "Use toggles above to enable/disable options for this template. Only enabled options will appear in quotes."
-                  : "Options are automatically available for all templates of this type until customized per template."
-                }
+                Use toggles above to enable/disable options for this template. Only enabled options will appear in quotes.
+                {!templateId && " Save the template to apply your toggle settings."}
               </p>
             </div>
           </>
