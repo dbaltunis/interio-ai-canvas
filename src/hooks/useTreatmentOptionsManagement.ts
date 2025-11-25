@@ -145,7 +145,7 @@ export const useDeleteOptionValue = () => {
 };
 
 // Get all treatment options for management (category-based, not template-specific)
-// CRITICAL: Only returns options for the current user's account via RLS
+// CRITICAL: Only returns options for the current user's account
 export const useAllTreatmentOptions = () => {
   return useQuery({
     queryKey: ['all-treatment-options'],
@@ -153,10 +153,16 @@ export const useAllTreatmentOptions = () => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return [];
       
-      console.log('🔍 useAllTreatmentOptions - Current user:', user.user.id);
+      // Get current user's account_id
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('user_id, parent_account_id')
+        .eq('user_id', user.user.id)
+        .single();
+      
+      const accountId = profile?.parent_account_id || user.user.id;
       
       // Get all category-based options for THIS ACCOUNT ONLY
-      // RLS policies enforce account isolation automatically
       const { data, error } = await supabase
         .from('treatment_options')
         .select(`
@@ -164,17 +170,11 @@ export const useAllTreatmentOptions = () => {
           option_values (*)
         `)
         .is('template_id', null)
+        .eq('account_id', accountId) // CRITICAL: Account isolation
         .order('treatment_category', { ascending: true })
         .order('order_index', { ascending: true });
       
-      if (error) {
-        console.error('❌ useAllTreatmentOptions - Error fetching options:', error);
-        throw error;
-      }
-      
-      console.log('✅ useAllTreatmentOptions - Fetched options (RLS filtered):', data?.length || 0);
-      console.log('🔍 useAllTreatmentOptions - Sample options:', 
-        data?.slice(0, 3).map(d => ({ key: d.key, category: d.treatment_category, isSystem: d.is_system_default })));
+      if (error) throw error;
       
       return data as TreatmentOption[];
     },

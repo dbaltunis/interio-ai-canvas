@@ -27,16 +27,11 @@ export const useOptionTypeCategories = (treatmentCategory?: string) => {
         throw new Error('User not authenticated');
       }
       
-      console.log('🔍 useOptionTypeCategories - Fetching for user:', user.id);
-      
-      // RLS now handles account isolation - we just query
-      // CRITICAL: Show ALL system defaults + non-hidden user categories
-      // System defaults are filtered later via hidden_option_categories table
       let query = supabase
         .from('option_type_categories')
         .select('*')
         .eq('active', true)
-        .or('is_system_default.eq.true,and(is_system_default.eq.false,hidden_by_user.eq.false)')
+        .eq('hidden_by_user', false) // Filter out user-created hidden items
         .order('sort_order', { ascending: true })
         .order('type_label', { ascending: true });
       
@@ -46,10 +41,6 @@ export const useOptionTypeCategories = (treatmentCategory?: string) => {
       
       const { data, error } = await query;
       if (error) throw error;
-      
-      console.log('✅ useOptionTypeCategories - Fetched categories (RLS filtered):', data?.length || 0);
-      console.log('🔍 useOptionTypeCategories - Categories:', 
-        data?.map(d => ({ key: d.type_key, label: d.type_label, isSystem: d.is_system_default })));
       
       // Get user's hidden system defaults
       const { data: hiddenCategories } = await supabase
@@ -67,8 +58,6 @@ export const useOptionTypeCategories = (treatmentCategory?: string) => {
         }
         return true;
       });
-      
-      console.log('✅ useOptionTypeCategories - Final count (after user hidden filter):', filtered.length);
       
       return filtered;
     },

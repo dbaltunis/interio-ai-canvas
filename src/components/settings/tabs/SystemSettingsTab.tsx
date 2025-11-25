@@ -17,7 +17,7 @@ import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { NumberSequenceSettings } from "@/components/settings/NumberSequenceSettings";
 import { InventoryDeductionSettings } from "@/components/settings/InventoryDeductionSettings";
 import { StatusManagement } from "../user-management/StatusManagement";
-import { WindowTreatmentOptionsManager } from "./components/WindowTreatmentOptionsManager";
+import { RollerBlindOptionsManager } from "./components/RollerBlindOptionsManager";
 import { HeadingManagement } from "./products/HeadingManagement";
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
 import { useSearchParams } from "react-router-dom";
@@ -319,7 +319,7 @@ export const SystemSettingsTab = () => {
       </TabsContent>
 
       <TabsContent value="options">
-        <WindowTreatmentOptionsManager />
+        <RollerBlindOptionsManager />
       </TabsContent>
 
       <TabsContent value="defaults">

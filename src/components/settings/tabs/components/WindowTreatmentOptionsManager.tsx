@@ -53,12 +53,6 @@ export const WindowTreatmentOptionsManager = () => {
   // Fetch option type categories dynamically from database
   const { data: optionTypeCategories = [], isLoading: categoriesLoading } = useOptionTypeCategories(activeTreatment);
   
-  console.log('🔍 WindowTreatmentOptionsManager - Option Type Categories:', {
-    count: optionTypeCategories.length,
-    categories: optionTypeCategories.map(c => ({ key: c.type_key, label: c.type_label })),
-    loading: categoriesLoading,
-  });
-  
   // Fetch hidden option types for restore functionality
   const { data: hiddenCategories = [] } = useQuery({
     queryKey: ['hidden-option-categories', activeTreatment],
@@ -153,7 +147,6 @@ export const WindowTreatmentOptionsManager = () => {
   // Set first option type when categories load
   useEffect(() => {
     if (optionTypeCategories.length > 0 && !activeOptionType) {
-      console.log('🔧 Setting activeOptionType to first category:', optionTypeCategories[0].type_key);
       setActiveOptionType(optionTypeCategories[0].type_key);
     }
   }, [optionTypeCategories, activeOptionType]);
@@ -179,19 +172,9 @@ export const WindowTreatmentOptionsManager = () => {
   });
 
   // Find treatment options for the active treatment category and option type
-  console.log('🔍 WindowTreatmentOptionsManager - Filtering options:', {
-    totalOptions: allTreatmentOptions.length,
-    activeTreatment,
-    activeOptionType,
-    optionsByCategory: allTreatmentOptions.filter(opt => opt.treatment_category === activeTreatment).length,
-    optionsByType: allTreatmentOptions.filter(opt => opt.key === activeOptionType).length,
-  });
-  
   const relevantOptions = allTreatmentOptions.filter((opt: any) => 
     opt.treatment_category === activeTreatment && opt.key === activeOptionType
   );
-  
-  console.log('✅ WindowTreatmentOptionsManager - Filtered to relevantOptions:', relevantOptions.length);
 
   // For display, we'll show all unique option values across all options
   const allOptionValues = relevantOptions.flatMap(opt => opt.option_values || []);

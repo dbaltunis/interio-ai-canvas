@@ -1,11 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ExternalLink, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAllTreatmentOptions } from "@/hooks/useTreatmentOptionsManagement";
 import { singularToDbValue } from "@/types/treatmentCategories";
-import { useOptionTypeCategories } from "@/hooks/useOptionTypeCategories";
-import { useEffect } from "react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface TemplateOptionsManagerProps {
   curtainType: string;
@@ -14,62 +15,132 @@ interface TemplateOptionsManagerProps {
 export const TemplateOptionsManager = ({ curtainType }: TemplateOptionsManagerProps) => {
   const navigate = useNavigate();
   
-  // Convert singular curtain_type to plural treatment_category for display
+  // Convert singular curtain_type to plural treatment_category
   const treatmentCategory = singularToDbValue(curtainType);
-
-  // Fetch actual option types from database
-  const { data: optionTypes, isLoading, error } = useOptionTypeCategories(treatmentCategory);
-
-  useEffect(() => {
-    console.log('🎯 TemplateOptionsManager - Props:', { curtainType, treatmentCategory });
-    console.log('🎯 TemplateOptionsManager - Query state:', { 
-      isLoading, 
-      hasError: !!error,
-      optionCount: optionTypes?.length || 0,
-      options: optionTypes?.map(o => o.type_label)
-    });
-  }, [curtainType, treatmentCategory, isLoading, error, optionTypes]);
-
+  
+  // Fetch all treatment options and filter by category
+  const { data: allOptions = [], isLoading } = useAllTreatmentOptions();
+  
+  // Filter options for this specific treatment category
+  const categoryOptions = allOptions.filter(opt => opt.treatment_category === treatmentCategory);
+  
   // Map curtain types to option management paths
   const getOptionsPath = () => {
-    return `/settings?tab=system&subtab=options&treatment=${treatmentCategory}`;
+    switch (curtainType) {
+      case 'roller_blind':
+      case 'roman_blind':
+      case 'cellular_blind':
+      case 'venetian_blind':
+      case 'vertical_blind':
+        return '/settings?tab=system&subtab=options';
+      case 'curtain':
+        return '/settings?tab=system&subtab=headings';
+      default:
+        return '/settings?tab=system&subtab=options';
+    }
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-muted-foreground">Loading options...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Available Options</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Options configured for this treatment type
+        </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <Label>Options for this treatment type</Label>
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground mt-1">Loading options...</p>
-          ) : error ? (
-            <p className="text-sm text-destructive mt-1">Error loading options</p>
-          ) : optionTypes && optionTypes.length > 0 ? (
-            <p className="text-sm text-muted-foreground mt-1">
-              {optionTypes.map(opt => opt.type_label).join(', ')}
+        {categoryOptions.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">
+              No options configured yet for this treatment type
             </p>
-          ) : (
-            <p className="text-sm text-muted-foreground mt-1">
-              {curtainType === 'curtain' ? 'Heading Styles (managed in Headings section)' : 'No options configured yet'}
-            </p>
-          )}
-        </div>
+            <Button
+              variant="outline"
+              onClick={() => navigate(getOptionsPath())}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Add Options in System Settings
+            </Button>
+          </div>
+        ) : (
+          <>
+            <Accordion type="multiple" className="w-full">
+              {categoryOptions.map((option) => {
+                const visibleValues = option.option_values?.filter(v => !v.hidden_by_user) || [];
+                const hiddenValues = option.option_values?.filter(v => v.hidden_by_user) || [];
+                
+                return (
+                  <AccordionItem key={option.id} value={option.id}>
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{option.label}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {visibleValues.length} option{visibleValues.length !== 1 ? 's' : ''}
+                          </Badge>
+                          {hiddenValues.length > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {hiddenValues.length} hidden
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-2 pl-4">
+                        {visibleValues.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {visibleValues.map((value) => (
+                              <Badge key={value.id} variant="outline" className="text-xs">
+                                {value.label}
+                                {value.extra_data?.price > 0 && (
+                                  <span className="ml-1 text-muted-foreground">
+                                    ${value.extra_data.price.toFixed(2)}
+                                  </span>
+                                )}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            No visible options configured
+                          </p>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
 
-        <Button
-          variant="outline"
-          onClick={() => navigate(getOptionsPath())}
-          className="w-full"
-        >
-          <ExternalLink className="h-4 w-4 mr-2" />
-          Manage Options in System Settings
-        </Button>
-
-        <p className="text-xs text-muted-foreground">
-          Options are configured in System Settings and automatically available for all templates of this type. Your account options are isolated from other accounts.
-        </p>
+            <div className="pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => navigate(getOptionsPath())}
+                className="w-full"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Manage Options in System Settings
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                Options are automatically available for all templates of this type
+              </p>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );
