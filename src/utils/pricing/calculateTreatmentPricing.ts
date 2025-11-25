@@ -40,9 +40,24 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   const { template, measurements, fabricItem, selectedHeading, selectedLining, unitsCurrency, selectedOptions = [], inventoryItems = [] } = input;
 
   console.log('🎯 calculateTreatmentPricing called with:', {
-    template: template ? { id: template.id, name: template.name, pricing_type: template.pricing_type } : null,
-    fabricItem: fabricItem ? { id: fabricItem.id, name: fabricItem.name, selling_price: fabricItem.selling_price, unit_price: fabricItem.unit_price, price_per_meter: fabricItem.price_per_meter } : null,
-    measurements: measurements ? { rail_width: measurements.rail_width, drop: measurements.drop } : null,
+    template: template ? { 
+      id: template.id, 
+      name: template.name, 
+      pricing_type: template.pricing_type,
+      treatment_category: template.treatment_category,
+      category: template.category
+    } : null,
+    fabricItem: fabricItem ? { 
+      id: fabricItem.id, 
+      name: fabricItem.name, 
+      selling_price: fabricItem.selling_price, 
+      unit_price: fabricItem.unit_price, 
+      price_per_meter: fabricItem.price_per_meter 
+    } : null,
+    measurements: measurements ? { 
+      rail_width: measurements.rail_width, 
+      drop: measurements.drop 
+    } : null,
     selectedOptions: selectedOptions.length
   });
 
