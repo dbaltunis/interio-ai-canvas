@@ -5,6 +5,7 @@ import { ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { singularToDbValue } from "@/types/treatmentCategories";
 import { useOptionTypeCategories } from "@/hooks/useOptionTypeCategories";
+import { useEffect } from "react";
 
 interface TemplateOptionsManagerProps {
   curtainType: string;
@@ -17,7 +18,17 @@ export const TemplateOptionsManager = ({ curtainType }: TemplateOptionsManagerPr
   const treatmentCategory = singularToDbValue(curtainType);
 
   // Fetch actual option types from database
-  const { data: optionTypes, isLoading } = useOptionTypeCategories(treatmentCategory);
+  const { data: optionTypes, isLoading, error } = useOptionTypeCategories(treatmentCategory);
+
+  useEffect(() => {
+    console.log('🎯 TemplateOptionsManager - Props:', { curtainType, treatmentCategory });
+    console.log('🎯 TemplateOptionsManager - Query state:', { 
+      isLoading, 
+      hasError: !!error,
+      optionCount: optionTypes?.length || 0,
+      options: optionTypes?.map(o => o.type_label)
+    });
+  }, [curtainType, treatmentCategory, isLoading, error, optionTypes]);
 
   // Map curtain types to option management paths
   const getOptionsPath = () => {
@@ -34,6 +45,8 @@ export const TemplateOptionsManager = ({ curtainType }: TemplateOptionsManagerPr
           <Label>Options for this treatment type</Label>
           {isLoading ? (
             <p className="text-sm text-muted-foreground mt-1">Loading options...</p>
+          ) : error ? (
+            <p className="text-sm text-destructive mt-1">Error loading options</p>
           ) : optionTypes && optionTypes.length > 0 ? (
             <p className="text-sm text-muted-foreground mt-1">
               {optionTypes.map(opt => opt.type_label).join(', ')}
