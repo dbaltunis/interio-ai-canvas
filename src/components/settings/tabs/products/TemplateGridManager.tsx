@@ -13,8 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Textarea } from '@/components/ui/textarea';
 
 interface TemplateGridManagerProps {
-  productType: string;
-  systemType: string;
+  // No props needed - grids are now assigned directly to inventory items
 }
 
 interface PricingGrid {
@@ -23,7 +22,6 @@ interface PricingGrid {
   grid_code: string;
   description: string;
   grid_data: any;
-  price_group: string;
   created_at: string;
 }
 
@@ -33,7 +31,7 @@ interface GridRule {
   price_group: string;
 }
 
-export const TemplateGridManager = ({ productType, systemType }: TemplateGridManagerProps) => {
+export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
   const { toast } = useToast();
   const [grids, setGrids] = useState<PricingGrid[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,44 +45,27 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
   const [csvFile, setCsvFile] = useState<File | null>(null);
 
   useEffect(() => {
-    if (productType && systemType) {
-      loadGrids();
-    }
-  }, [productType, systemType]);
+    loadGrids();
+  }, []);
 
   const loadGrids = async () => {
     try {
       setLoading(true);
       
-      // Find all grids for this product_type + system_type
-      const { data: rules, error: rulesError } = await supabase
-        .from('pricing_grid_rules')
-        .select(`
-          id,
-          grid_id,
-          price_group,
-          pricing_grids (
-            id,
-            name,
-            grid_code,
-            description,
-            grid_data,
-            created_at
-          )
-        `)
-        .eq('product_type', productType)
-        .eq('system_type', systemType)
-        .eq('active', true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
 
-      if (rulesError) throw rulesError;
+      // Load all grids for this user (no product/system type filtering)
+      const { data: gridsList, error } = await supabase
+        .from('pricing_grids')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('active', true)
+        .order('created_at', { ascending: false });
 
-      // Transform the data
-      const gridsList = rules?.map((rule: any) => ({
-        ...rule.pricing_grids,
-        price_group: rule.price_group,
-      })) || [];
+      if (error) throw error;
 
-      setGrids(gridsList);
+      setGrids(gridsList || []);
     } catch (error: any) {
       console.error('Error loading grids:', error);
       toast({
@@ -161,40 +142,23 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
       // Generate grid code from grid name (sanitize for use as code)
       const gridCode = gridName.trim().replace(/\s+/g, '_').toUpperCase();
 
-      // Create the grid
-      const { data: newGrid, error: gridError } = await supabase
+      // Create the grid (no routing rules needed - assigned directly in inventory)
+      const { error: gridError } = await supabase
         .from('pricing_grids')
         .insert([{
           user_id: user.id,
           name: gridName,
           grid_code: gridCode,
-          description: gridDescription || `${productType} ${systemType} - ${gridName}`,
+          description: gridDescription || gridName,
           grid_data: gridData,
           active: true,
-        }])
-        .select()
-        .single();
+        }]);
 
       if (gridError) throw gridError;
 
-      // Create the routing rule
-      const { error: ruleError } = await supabase
-        .from('pricing_grid_rules')
-        .insert([{
-          user_id: user.id,
-          grid_id: newGrid.id,
-          product_type: productType,
-          system_type: systemType,
-          price_group: gridCode, // Use the grid code as the price group
-          active: true,
-          priority: 100,
-        }]);
-
-      if (ruleError) throw ruleError;
-
       toast({
         title: 'Success',
-        description: 'Pricing grid uploaded and connected',
+        description: 'Pricing grid uploaded. Assign it to products in Inventory.',
       });
 
       // Reset form
@@ -217,23 +181,21 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
     }
   };
 
-  const handleDeleteGrid = async (gridId: string, priceGroup: string) => {
-    if (!confirm(`Delete pricing grid for Group ${priceGroup}?`)) return;
+  const handleDeleteGrid = async (gridId: string, gridName: string) => {
+    if (!confirm(`Delete pricing grid "${gridName}"?`)) return;
 
     try {
-      // Delete the rule (grid will be kept but unlinked)
-      const { error: ruleError } = await supabase
-        .from('pricing_grid_rules')
+      // Delete the grid directly
+      const { error } = await supabase
+        .from('pricing_grids')
         .delete()
-        .eq('grid_id', gridId)
-        .eq('product_type', productType)
-        .eq('system_type', systemType);
+        .eq('id', gridId);
 
-      if (ruleError) throw ruleError;
+      if (error) throw error;
 
       toast({
-        title: 'Grid Removed',
-        description: 'Pricing grid has been disconnected',
+        title: 'Grid Deleted',
+        description: 'Pricing grid has been removed',
       });
 
       loadGrids();
@@ -241,7 +203,7 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
       console.error('Error deleting grid:', error);
       toast({
         title: 'Error',
-        description: 'Failed to remove pricing grid',
+        description: 'Failed to delete pricing grid',
         variant: 'destructive',
       });
     }
@@ -270,50 +232,16 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
     });
   };
 
-  if (!productType || !systemType) {
-    return (
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          Please set Product Type and System Type above to manage pricing grids.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-
   return (
     <div className="space-y-6">
       {/* Visual Explanation */}
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
-          <strong>How it works:</strong> Upload CSV pricing grids with custom names. 
-          When creating a job, select a fabric with a matching grid name, and the system will automatically use that pricing grid.
+          <strong>How it works:</strong> Upload CSV pricing grids with custom names/codes. 
+          Then assign specific grids to products in your Inventory. When creating a job, the system will automatically use the assigned pricing grid.
         </AlertDescription>
       </Alert>
-
-      {/* Configuration Summary */}
-      <Card className="border-primary/20">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Grid Configuration
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Product Type:</span>
-              <Badge variant="secondary" className="ml-2">{productType}</Badge>
-            </div>
-            <div>
-              <span className="text-muted-foreground">System Type:</span>
-              <Badge variant="secondary" className="ml-2">{systemType}</Badge>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Grid Status Table */}
       <Card>
@@ -322,7 +250,7 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
             <div>
               <CardTitle>Your Pricing Grids</CardTitle>
               <CardDescription>
-                Grids uploaded for {productType} - {systemType}
+                Upload grids and assign them to products in Inventory
               </CardDescription>
             </div>
             {!showUploadForm && (
@@ -385,7 +313,7 @@ export const TemplateGridManager = ({ productType, systemType }: TemplateGridMan
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteGrid(grid.id, grid.price_group)}
+                        onClick={() => handleDeleteGrid(grid.id, grid.name)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
