@@ -23,11 +23,15 @@ export const useOptionTypeCategories = (treatmentCategory?: string) => {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+      
       let query = supabase
         .from('option_type_categories')
         .select('*')
         .eq('active', true)
-        .eq('hidden_by_user', false) // Filter out hidden items
+        .eq('hidden_by_user', false) // Filter out user-created hidden items
         .order('sort_order', { ascending: true })
         .order('type_label', { ascending: true });
       
@@ -35,14 +39,27 @@ export const useOptionTypeCategories = (treatmentCategory?: string) => {
         query = query.eq('treatment_category', treatmentCategory);
       }
       
-      // RLS now handles account isolation automatically
-      // System defaults (account_id IS NULL) are visible to all
-      // Account-specific categories are filtered by RLS
-      
       const { data, error } = await query;
-      
       if (error) throw error;
-      return data as OptionTypeCategory[];
+      
+      // Get user's hidden system defaults
+      const { data: hiddenCategories } = await supabase
+        .from('hidden_option_categories' as any)
+        .select('option_type_category_id')
+        .eq('user_id', user.id);
+      
+      const hiddenIds = new Set(hiddenCategories?.map((h: any) => h.option_type_category_id) || []);
+      
+      // Filter out system defaults that user has hidden
+      const filtered = (data as OptionTypeCategory[]).filter(cat => {
+        // Hide if it's a system default that the user has hidden
+        if ((cat.is_system_default || !cat.account_id) && hiddenIds.has(cat.id)) {
+          return false;
+        }
+        return true;
+      });
+      
+      return filtered;
     },
     enabled: !!treatmentCategory,
   });
@@ -133,11 +150,56 @@ export const useCreateOptionTypeCategory = () => {
 export const useToggleOptionTypeVisibility = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { data: session } = useQuery({
+    queryKey: ['session'],
+    queryFn: async () => {
+      const { data } = await supabase.auth.getSession();
+      return data.session;
+    },
+  });
   
   return useMutation({
-    mutationFn: async ({ id, hidden }: { id: string; hidden: boolean }) => {
-      console.log('🔄 Updating option type visibility:', { id, hidden });
+    mutationFn: async ({ id, hidden, isSystemDefault }: { id: string; hidden: boolean; isSystemDefault?: boolean }) => {
+      console.log('🔄 Updating option type visibility:', { id, hidden, isSystemDefault });
       
+      if (!session?.user?.id) {
+        throw new Error('User not authenticated');
+      }
+      
+      // For system defaults, use hidden_option_categories table
+      if (isSystemDefault) {
+        if (hidden) {
+          // Add to hidden list
+          const { error } = await supabase
+            .from('hidden_option_categories' as any)
+            .insert({
+              user_id: session.user.id,
+              option_type_category_id: id
+            });
+          
+          if (error && error.code !== '23505') { // Ignore duplicate key errors
+            console.error('❌ Failed to hide system default:', error);
+            throw error;
+          }
+        } else {
+          // Remove from hidden list
+          const { error } = await supabase
+            .from('hidden_option_categories' as any)
+            .delete()
+            .eq('user_id', session.user.id)
+            .eq('option_type_category_id', id);
+          
+          if (error) {
+            console.error('❌ Failed to unhide system default:', error);
+            throw error;
+          }
+        }
+        
+        console.log('✅ System default visibility updated');
+        return { id, hidden };
+      }
+      
+      // For user-created types, update hidden_by_user field
       const { data, error } = await supabase
         .from('option_type_categories')
         .update({ hidden_by_user: hidden, updated_at: new Date().toISOString() })

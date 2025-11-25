@@ -3473,6 +3473,35 @@ export type Database = {
         }
         Relationships: []
       }
+      hidden_option_categories: {
+        Row: {
+          created_at: string
+          id: string
+          option_type_category_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_type_category_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_type_category_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hidden_option_categories_option_type_category_id_fkey"
+            columns: ["option_type_category_id"]
+            isOneToOne: false
+            referencedRelation: "option_type_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integration_settings: {
         Row: {
           account_owner_id: string | null
