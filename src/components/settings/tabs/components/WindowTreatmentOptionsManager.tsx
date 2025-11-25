@@ -1220,24 +1220,19 @@ export const WindowTreatmentOptionsManager = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="fixed">Fixed Price</SelectItem>
-                          <SelectItem value="per-unit">Per Unit</SelectItem>
-                          <SelectItem value="per-meter">Per Meter</SelectItem>
-                          <SelectItem value="per-sqm">Per Square Meter</SelectItem>
-                          <SelectItem value="per-panel">Per Panel</SelectItem>
-                          <SelectItem value="per-drop">Per Drop</SelectItem>
-                          <SelectItem value="percentage">Percentage</SelectItem>
-                          <SelectItem value="pricing-grid">Price Table</SelectItem>
+                          <SelectItem value="per-meter">Per Running Linear Meter</SelectItem>
+                          <SelectItem value="pricing-grid">Pricing Grid</SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground mt-1">
-                        How this option's price is calculated
+                        Fixed: flat price • Per Meter: price × width • Grid: lookup by width × drop
                       </p>
                     </div>
 
                     {formData.pricing_method !== 'pricing-grid' ? (
                       <div className="col-span-2">
                         <Label htmlFor="price">
-                          {formData.pricing_method === 'percentage' ? 'Percentage (%)' : 'Additional Price'}
+                          {formData.pricing_method === 'per-meter' ? 'Price per Linear Meter' : 'Fixed Price'}
                         </Label>
                         <Input
                           id="price"
@@ -1245,8 +1240,13 @@ export const WindowTreatmentOptionsManager = () => {
                           step="0.01"
                           value={formData.price}
                           onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                          placeholder={formData.pricing_method === 'percentage' ? '10' : '0.00'}
+                          placeholder="0.00"
                         />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formData.pricing_method === 'per-meter' 
+                            ? 'Price multiplied by width (in meters)' 
+                            : 'Flat price added to quote'}
+                        </p>
                       </div>
                     ) : (
                       <div className="col-span-2 space-y-3">

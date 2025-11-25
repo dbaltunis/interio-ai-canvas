@@ -510,9 +510,8 @@ export const HierarchicalOptionsManager = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="fixed">Fixed Price</SelectItem>
-                      <SelectItem value="per-unit">Per Unit</SelectItem>
-                      <SelectItem value="per-meter">Per Meter</SelectItem>
-                      <SelectItem value="percentage">Percentage</SelectItem>
+                      <SelectItem value="per-meter">Per Running Linear Meter</SelectItem>
+                      <SelectItem value="pricing-grid">Pricing Grid</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -573,9 +572,8 @@ export const HierarchicalOptionsManager = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="fixed">Fixed Price</SelectItem>
-                      <SelectItem value="per-unit">Per Unit</SelectItem>
-                      <SelectItem value="per-meter">Per Meter</SelectItem>
-                      <SelectItem value="percentage">Percentage</SelectItem>
+                      <SelectItem value="per-meter">Per Running Linear Meter</SelectItem>
+                      <SelectItem value="pricing-grid">Pricing Grid</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
