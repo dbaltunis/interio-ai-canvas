@@ -5,6 +5,7 @@ import { ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { singularToDbValue } from "@/types/treatmentCategories";
 import { useOptionTypeCategories } from "@/hooks/useOptionTypeCategories";
+import { useEffect } from "react";
 
 interface TemplateOptionsManagerProps {
   curtainType: string;
@@ -18,6 +19,16 @@ export const TemplateOptionsManager = ({ curtainType }: TemplateOptionsManagerPr
 
   // Fetch actual option types from database
   const { data: optionTypes, isLoading, error } = useOptionTypeCategories(treatmentCategory);
+
+  useEffect(() => {
+    console.log('🎯 TemplateOptionsManager - Props:', { curtainType, treatmentCategory });
+    console.log('🎯 TemplateOptionsManager - Query state:', { 
+      isLoading, 
+      hasError: !!error,
+      optionCount: optionTypes?.length || 0,
+      options: optionTypes?.map(o => o.type_label)
+    });
+  }, [curtainType, treatmentCategory, isLoading, error, optionTypes]);
 
   // Map curtain types to option management paths
   const getOptionsPath = () => {
