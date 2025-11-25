@@ -1025,7 +1025,8 @@ export const WindowTreatmentOptionsManager = () => {
                       // Wait for mutation to complete
                       const result = await toggleOptionTypeVisibility.mutateAsync({ 
                         id: currentType.id, 
-                        hidden: true 
+                        hidden: true,
+                        isSystemDefault: currentType.is_system_default || !currentType.account_id
                       });
                       
                       console.log('✅ Hide mutation completed:', result);
