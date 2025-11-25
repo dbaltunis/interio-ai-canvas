@@ -212,6 +212,28 @@ export const InventorySelectionPanel = ({
     }
   };
 
+  // Map treatment types to their required material subcategories
+  const getTreatmentMaterialSubcategories = (): string[] => {
+    switch (treatmentCategory) {
+      case 'venetian_blinds':
+        return ['venetian_slats', 'wood_slats', 'aluminum_slats'];
+      case 'vertical_blinds':
+        return ['vertical_slats', 'vertical_vanes'];
+      case 'cellular_blinds':
+      case 'cellular_shades':
+        return ['cellular_fabric', 'honeycomb_fabric'];
+      case 'shutters':
+      case 'plantation_shutters':
+        return ['shutter_material', 'shutter_panels'];
+      case 'panel_glide':
+        return ['panel_fabric', 'panel_glide_fabric'];
+      case 'awning':
+        return ['awning_fabric'];
+      default:
+        return [];
+    }
+  };
+
   // Filter inventory by treatment type and category
   const getInventoryByCategory = (category: string) => {
     // For fabric category, ALWAYS use treatment-specific fabrics
@@ -225,46 +247,56 @@ export const InventorySelectionPanel = ({
       });
     }
 
-    // For hardware and material categories, filter by exact category/subcategory match
-    const categoryConfig: Record<string, { categories: string[], subcategories?: string[] }> = {
-      hardware: { 
-        categories: ["hardware"],
-        subcategories: ["track", "pole", "motor", "bracket", "hardware_accessories"]
-      },
-      material: { 
-        categories: ["material", "hard_coverings"],
-        subcategories: ["venetian_slats", "vertical_slats", "cellular_fabric", "panel_fabric", "shutter_material"]
-      }
-    };
-    
-    const config = categoryConfig[category];
-    if (!config) return [];
-    
-    console.log('🔍 Filtering inventory for category:', category, 'Treatment:', treatmentCategory);
-    const filtered = inventory.filter(item => {
-      // Match by category field (exact match, case-insensitive)
-      const matchesCategory = config.categories.some(cat => 
-        item.category?.toLowerCase() === cat.toLowerCase()
-      );
+    // For material category, filter by treatment-specific material subcategories
+    if (category === "material") {
+      const requiredSubcategories = getTreatmentMaterialSubcategories();
       
-      // If subcategories are specified, also check subcategory field
-      const matchesSubcategory = !config.subcategories || config.subcategories.some(subcat =>
-        item.subcategory?.toLowerCase() === subcat.toLowerCase()
-      );
+      console.log('🔍 Filtering materials for treatment:', treatmentCategory, 'Required subcategories:', requiredSubcategories);
       
-      const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                           item.description?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
-      const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
-      const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
+      const filtered = inventory.filter(item => {
+        // Must be in material or hard_coverings category
+        const matchesCategory = item.category?.toLowerCase() === 'material' || 
+                               item.category?.toLowerCase() === 'hard_coverings';
+        
+        // Must match one of the required subcategories for this treatment
+        const matchesSubcategory = requiredSubcategories.length === 0 || 
+                                   requiredSubcategories.some(subcat => 
+                                     item.subcategory?.toLowerCase() === subcat.toLowerCase()
+                                   );
+        
+        const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                             item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
+        const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
+        const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
+        
+        return matchesCategory && matchesSubcategory && matchesSearch && matchesVendor && matchesCollection && matchesTags;
+      });
       
-      return matchesCategory && matchesSubcategory && matchesSearch && matchesVendor && matchesCollection && matchesTags;
-    });
+      console.log(`📦 Found ${filtered.length} material items. Subcategories:`, 
+        [...new Set(filtered.map(i => i.subcategory || 'none'))]);
+      
+      return filtered;
+    }
+
+    // For hardware category, show all hardware items (not treatment-specific)
+    if (category === "hardware") {
+      const filtered = inventory.filter(item => {
+        const matchesCategory = item.category?.toLowerCase() === 'hardware';
+        const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                             item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
+        const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
+        const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
+        
+        return matchesCategory && matchesSearch && matchesVendor && matchesCollection && matchesTags;
+      });
+      
+      console.log(`📦 Found ${filtered.length} hardware items`);
+      return filtered;
+    }
     
-    console.log(`📦 Found ${filtered.length} items for category "${category}". Categories:`, 
-      [...new Set(filtered.map(i => `${i.category}/${i.subcategory || 'none'}`))]);
-    
-    return filtered;
+    return [];
   };
 
   // Calculate estimated cost for an item
