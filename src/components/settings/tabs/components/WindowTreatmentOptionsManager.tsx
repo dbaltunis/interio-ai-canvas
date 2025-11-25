@@ -941,93 +941,15 @@ export const WindowTreatmentOptionsManager = () => {
               <div className="w-max">{/* wrapper for horizontal scroll */}
               <TabsList className="inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground w-max">
               {optionTypeCategories.map(opt => (
-                <div key={opt.type_key} className="relative group">
-                  <TabsTrigger value={opt.type_key} className={`px-3 ${opt.is_system_default ? 'pr-10' : 'pr-16'}`}>
-                    {opt.type_label}
-                  </TabsTrigger>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      await toggleOptionTypeVisibility.mutateAsync({ 
-                        id: opt.id, 
-                        hidden: true 
-                      });
-                      
-                      // Switch to first available type after hiding
-                      if (optionTypeCategories.length > 1) {
-                        const nextType = optionTypeCategories.find(t => t.type_key !== opt.type_key);
-                        if (nextType) setActiveOptionType(nextType.type_key);
-                      }
-                    }}
-                    className={`absolute ${opt.is_system_default ? 'right-2' : 'right-8'} top-1/2 -translate-y-1/2 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity`}
-                    title="Hide this option type"
-                  >
-                    <EyeOff className="h-3 w-3" />
-                  </Button>
-                  {!opt.is_system_default && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        if (confirm(`Delete "${opt.type_label}" type? This will remove all its options.`)) {
-                          try {
-                            await supabase
-                              .from('option_type_categories')
-                              .delete()
-                              .eq('id', opt.id);
-                            
-                            queryClient.invalidateQueries({ queryKey: ['option-type-categories'] });
-                            toast({
-                              title: "Type deleted",
-                              description: `${opt.type_label} has been deleted.`,
-                            });
-                            
-                            // Switch to first available type
-                            if (optionTypeCategories.length > 1) {
-                              const nextType = optionTypeCategories.find(t => t.type_key !== opt.type_key);
-                              if (nextType) setActiveOptionType(nextType.type_key);
-                            }
-                          } catch (error: any) {
-                            toast({
-                              title: "Delete failed",
-                              description: error.message,
-                              variant: "destructive"
-                            });
-                          }
-                        }
-                      }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Delete this option type"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
+                <TabsTrigger key={opt.type_key} value={opt.type_key} className="px-4">
+                  {opt.type_label}
+                  {opt.is_system_default && (
+                    <Badge variant="secondary" className="ml-2 text-[10px] px-1 py-0">
+                      System
+                    </Badge>
                   )}
-                </div>
+                </TabsTrigger>
               ))}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowCreateOptionTypeDialog(true)}
-                className="ml-2"
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                New Type
-              </Button>
-              {hiddenCategories.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowHiddenOptionsDialog(true)}
-                  className="ml-1"
-                  title={`Show ${hiddenCategories.length} hidden option type(s)`}
-                >
-                  <Eye className="h-3 w-3 mr-1" />
-                  Hidden ({hiddenCategories.length})
-                </Button>
-              )}
               </TabsList>
               </div>
             </ScrollArea>
@@ -1043,7 +965,107 @@ export const WindowTreatmentOptionsManager = () => {
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
+
+            {/* Quick Actions for Types */}
+            <div className="flex items-center gap-2 ml-2 border-l pl-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCreateOptionTypeDialog(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New Type
+              </Button>
+              {hiddenCategories.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowHiddenOptionsDialog(true)}
+                  title={`Show ${hiddenCategories.length} hidden option type(s)`}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Hidden ({hiddenCategories.length})
+                </Button>
+              )}
+            </div>
           </div>
+
+          {/* Option Type Management Bar - Only for Active Type */}
+          {activeOptionType && optionTypeCategories.find(opt => opt.type_key === activeOptionType) && (
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border mt-3">
+              <div className="flex items-center gap-2">
+                <div className="font-medium">
+                  Manage: {optionTypeCategories.find(opt => opt.type_key === activeOptionType)?.type_label}
+                </div>
+                {optionTypeCategories.find(opt => opt.type_key === activeOptionType)?.is_system_default && (
+                  <Badge variant="secondary" className="text-xs">System Default</Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const currentType = optionTypeCategories.find(opt => opt.type_key === activeOptionType);
+                    if (currentType) {
+                      await toggleOptionTypeVisibility.mutateAsync({ 
+                        id: currentType.id, 
+                        hidden: true 
+                      });
+                      
+                      // Switch to first available type after hiding
+                      if (optionTypeCategories.length > 1) {
+                        const nextType = optionTypeCategories.find(t => t.type_key !== activeOptionType);
+                        if (nextType) setActiveOptionType(nextType.type_key);
+                      }
+                    }
+                  }}
+                >
+                  <EyeOff className="h-4 w-4 mr-2" />
+                  Hide Type
+                </Button>
+                
+                {!optionTypeCategories.find(opt => opt.type_key === activeOptionType)?.is_system_default && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={async () => {
+                      const currentType = optionTypeCategories.find(opt => opt.type_key === activeOptionType);
+                      if (currentType && confirm(`Delete "${currentType.type_label}" type? This will remove all its options.`)) {
+                        try {
+                          await supabase
+                            .from('option_type_categories')
+                            .delete()
+                            .eq('id', currentType.id);
+                          
+                          queryClient.invalidateQueries({ queryKey: ['option-type-categories'] });
+                          toast({
+                            title: "Type deleted",
+                            description: `${currentType.type_label} has been deleted.`,
+                          });
+                          
+                          // Switch to first available type
+                          if (optionTypeCategories.length > 1) {
+                            const nextType = optionTypeCategories.find(t => t.type_key !== activeOptionType);
+                            if (nextType) setActiveOptionType(nextType.type_key);
+                          }
+                        } catch (error: any) {
+                          toast({
+                            title: "Delete failed",
+                            description: error.message,
+                            variant: "destructive"
+                          });
+                        }
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Type
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
 
           {optionTypeCategories.map((optType) => {
             const isSystemOnly = matchingTemplates.length > 0 && matchingTemplates.every(t => t.is_system_default);
