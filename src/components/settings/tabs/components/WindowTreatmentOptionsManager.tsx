@@ -15,7 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAllTreatmentOptions, useCreateOptionValue, useUpdateOptionValue, useDeleteOptionValue, useCreateTreatmentOption } from "@/hooks/useTreatmentOptionsManagement";
 import type { TreatmentOption, OptionValue } from "@/hooks/useTreatmentOptions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useOptionTypeCategories, useCreateOptionTypeCategory, useToggleOptionTypeVisibility } from "@/hooks/useOptionTypeCategories";
+import { useOptionTypeCategories, useCreateOptionTypeCategory, useToggleOptionTypeVisibility, useDeleteOptionTypeCategory, useGetOptionTypeDeleteInfo } from "@/hooks/useOptionTypeCategories";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TREATMENT_CATEGORIES, TreatmentCategoryDbValue } from "@/types/treatmentCategories";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
@@ -80,6 +80,8 @@ export const WindowTreatmentOptionsManager = () => {
   const deleteOptionValue = useDeleteOptionValue();
   const createOptionTypeCategory = useCreateOptionTypeCategory();
   const toggleOptionTypeVisibility = useToggleOptionTypeVisibility();
+  const deleteOptionTypeCategory = useDeleteOptionTypeCategory();
+  const getDeleteInfo = useGetOptionTypeDeleteInfo();
   const { toast } = useToast();
   
   // Fetch inventory items for linking
@@ -90,6 +92,8 @@ export const WindowTreatmentOptionsManager = () => {
   const [editingValue, setEditingValue] = useState<OptionValue | null>(null);
   const [showCreateOptionTypeDialog, setShowCreateOptionTypeDialog] = useState(false);
   const [showHiddenOptionsDialog, setShowHiddenOptionsDialog] = useState(false);
+  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
+  const [deleteTypeInfo, setDeleteTypeInfo] = useState<{ id: string; label: string; valueCount: number } | null>(null);
   const [newOptionTypeData, setNewOptionTypeData] = useState({ type_label: '', type_key: '' });
   const [formData, setFormData] = useState({
     name: '',
@@ -1031,33 +1035,30 @@ export const WindowTreatmentOptionsManager = () => {
                     size="sm"
                     onClick={async () => {
                       const currentType = optionTypeCategories.find(opt => opt.type_key === activeOptionType);
-                      if (currentType && confirm(`Delete "${currentType.type_label}" type? This will remove all its options.`)) {
-                        try {
-                          await supabase
-                            .from('option_type_categories')
-                            .delete()
-                            .eq('id', currentType.id);
-                          
-                          queryClient.invalidateQueries({ queryKey: ['option-type-categories'] });
-                          toast({
-                            title: "Type deleted",
-                            description: `${currentType.type_label} has been deleted.`,
-                          });
-                          
-                          // Switch to first available type
-                          if (optionTypeCategories.length > 1) {
-                            const nextType = optionTypeCategories.find(t => t.type_key !== activeOptionType);
-                            if (nextType) setActiveOptionType(nextType.type_key);
-                          }
-                        } catch (error: any) {
-                          toast({
-                            title: "Delete failed",
-                            description: error.message,
-                            variant: "destructive"
-                          });
-                        }
+                      if (!currentType) return;
+
+                      // Get delete info first
+                      try {
+                        const info = await getDeleteInfo.mutateAsync({
+                          typeKey: currentType.type_key,
+                          treatmentCategory: activeTreatment,
+                        });
+
+                        setDeleteTypeInfo({
+                          id: currentType.id,
+                          label: currentType.type_label,
+                          valueCount: info.valueCount,
+                        });
+                        setShowDeleteConfirmDialog(true);
+                      } catch (error: any) {
+                        toast({
+                          title: "Failed to fetch delete info",
+                          description: error.message,
+                          variant: "destructive"
+                        });
                       }
                     }}
+                    disabled={getDeleteInfo.isPending}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Type
@@ -1522,6 +1523,82 @@ export const WindowTreatmentOptionsManager = () => {
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowHiddenOptionsDialog(false)}>
                 Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Type Confirmation Dialog */}
+        <Dialog open={showDeleteConfirmDialog} onOpenChange={setShowDeleteConfirmDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Option Type</DialogTitle>
+              <DialogDescription>
+                This action will permanently delete this option type and all its values from YOUR ACCOUNT ONLY.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {deleteTypeInfo && (
+              <div className="py-4 space-y-4">
+                <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Trash2 className="h-5 w-5 text-destructive" />
+                    </div>
+                    <div className="space-y-2 flex-1">
+                      <p className="font-medium text-sm">
+                        Delete "{deleteTypeInfo.label}" type?
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        This will remove <span className="font-semibold text-foreground">{deleteTypeInfo.valueCount} option value(s)</span> from your account.
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+                        ✓ Only your account data will be deleted<br/>
+                        ✓ Other accounts are not affected<br/>
+                        ✓ System default types cannot be deleted
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowDeleteConfirmDialog(false);
+                  setDeleteTypeInfo(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive"
+                disabled={deleteOptionTypeCategory.isPending}
+                onClick={async () => {
+                  if (!deleteTypeInfo) return;
+                  
+                  const currentType = optionTypeCategories.find(opt => opt.type_key === activeOptionType);
+                  if (!currentType) return;
+
+                  await deleteOptionTypeCategory.mutateAsync({
+                    id: deleteTypeInfo.id,
+                    typeKey: currentType.type_key,
+                    treatmentCategory: activeTreatment,
+                  });
+
+                  setShowDeleteConfirmDialog(false);
+                  setDeleteTypeInfo(null);
+
+                  // Switch to first available type
+                  if (optionTypeCategories.length > 1) {
+                    const nextType = optionTypeCategories.find(t => t.type_key !== activeOptionType);
+                    if (nextType) setActiveOptionType(nextType.type_key);
+                  }
+                }}
+              >
+                {deleteOptionTypeCategory.isPending ? 'Deleting...' : 'Delete Type'}
               </Button>
             </DialogFooter>
           </DialogContent>
