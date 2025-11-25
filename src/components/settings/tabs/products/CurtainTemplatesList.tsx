@@ -315,10 +315,10 @@ export const CurtainTemplatesList = ({ onEdit, highlightedTemplateId }: CurtainT
                     )}
                     <Badge variant="outline">Fullness: {template.fullness_ratio}</Badge>
                     {template.is_railroadable && <Badge variant="outline">Railroadable</Badge>}
+                    <Badge variant="outline">{template.manufacturing_type}</Badge>
                   </>
                 )}
                 
-                <Badge variant="outline">{template.manufacturing_type}</Badge>
                 <Badge variant="outline">Pricing: {template.pricing_type.replace('_', ' ')}</Badge>
               </div>
               
@@ -351,11 +351,6 @@ export const CurtainTemplatesList = ({ onEdit, highlightedTemplateId }: CurtainT
                   {(template as any).stack_allowance && (
                     <div>
                       <span className="font-medium">Stack Allowance:</span> {(template as any).stack_allowance}cm
-                    </div>
-                  )}
-                  {template.waste_percent > 0 && (
-                    <div>
-                      <span className="font-medium">Waste:</span> {template.waste_percent}%
                     </div>
                   )}
                 </div>
