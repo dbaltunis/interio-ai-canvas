@@ -63,19 +63,22 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
           *,
           option_values (*)
         `)
-        .eq('account_id', accountId) // CRITICAL: Filter by account for data isolation
+        .eq('account_id', accountId)
+        .eq('visible', true) // Only get visible options
         .order('order_index');
       
+      // If no specific filter provided, get ALL visible options for this account
       if (templateIdOrCategory) {
         if (queryType === 'category') {
-          // Query by treatment_category for category-based options
           console.log('🔍 Querying by treatment_category:', templateIdOrCategory);
-          query = query.eq('treatment_category', templateIdOrCategory);
+          // Query by treatment_category OR if category is null (universal options)
+          query = query.or(`treatment_category.eq.${templateIdOrCategory},treatment_category.is.null`);
         } else {
-          // Query by template_id for template-specific options (legacy)
           console.log('🔍 Querying by template_id:', templateIdOrCategory);
           query = query.eq('template_id', templateIdOrCategory);
         }
+      } else {
+        console.log('🔍 Getting ALL visible options for account');
       }
       
       const { data, error } = await query;
