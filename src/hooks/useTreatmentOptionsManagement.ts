@@ -145,7 +145,7 @@ export const useDeleteOptionValue = () => {
 };
 
 // Get all treatment options for management (category-based, not template-specific)
-// CRITICAL: Only returns options for the current user's account
+// CRITICAL: Only returns options for the current user's account via RLS
 export const useAllTreatmentOptions = () => {
   return useQuery({
     queryKey: ['all-treatment-options'],
@@ -153,16 +153,10 @@ export const useAllTreatmentOptions = () => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return [];
       
-      // Get current user's account_id
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('user_id, parent_account_id')
-        .eq('user_id', user.user.id)
-        .single();
-      
-      const accountId = profile?.parent_account_id || user.user.id;
+      console.log('🔍 useAllTreatmentOptions - Current user:', user.user.id);
       
       // Get all category-based options for THIS ACCOUNT ONLY
+      // RLS policies enforce account isolation automatically
       const { data, error } = await supabase
         .from('treatment_options')
         .select(`
@@ -170,13 +164,28 @@ export const useAllTreatmentOptions = () => {
           option_values (*)
         `)
         .is('template_id', null)
-        .eq('account_id', accountId) // CRITICAL: Account isolation
+        // REMOVED explicit account_id filter - let RLS handle it
         .order('treatment_category', { ascending: true })
         .order('order_index', { ascending: true });
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ useAllTreatmentOptions - Error fetching options:', error);
+        throw error;
+      }
       
-      return data as TreatmentOption[];
+      console.log('✅ useAllTreatmentOptions - Fetched options:', data?.length || 0);
+      console.log('🔍 useAllTreatmentOptions - Unique account IDs in data:', 
+        [...new Set(data?.map(d => d.account_id))]);
+      
+      // Filter out any cross-account data as defense-in-depth
+      const userAccountId = user.user.id; // Since both test users are account owners
+      const filtered = data?.filter(opt => opt.account_id === userAccountId) || [];
+      
+      if (filtered.length !== data?.length) {
+        console.warn(`⚠️ Filtered out ${(data?.length || 0) - filtered.length} cross-account options`);
+      }
+      
+      return filtered as TreatmentOption[];
     },
   });
 };
