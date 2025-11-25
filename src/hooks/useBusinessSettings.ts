@@ -76,14 +76,29 @@ export const useBusinessSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      // First try to get user's own business settings, prioritizing the latest one with measurement_units
+      // First try to get user's business settings with actual data (company_name not null)
       let { data, error } = await supabase
         .from('business_settings')
         .select('*')
         .eq('user_id', user.id)
+        .not('company_name', 'is', null)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
+
+      // If no settings with data found, fallback to any record
+      if (!data) {
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('business_settings')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        data = fallbackData;
+        error = fallbackError;
+      }
 
       // If no settings found, try to get account owner's settings
       if (!data) {

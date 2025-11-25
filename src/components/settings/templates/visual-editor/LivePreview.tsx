@@ -411,6 +411,11 @@ const LivePreviewBlock = ({
   // Trim and normalize block type to prevent matching issues
   const blockType = (block.type || '').toString().trim().toLowerCase();
   
+  // Handle document-settings block (metadata block - don't render)
+  if (blockType === 'document-settings') {
+    return null;
+  }
+  
   // DEPLOYMENT TEST - Force cache bust v2.0
   console.log('🚀 [LivePreview v2.0] DEPLOYED - Block rendering:', { 
     blockId: block.id,

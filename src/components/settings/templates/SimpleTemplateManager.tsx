@@ -196,6 +196,16 @@ export const SimpleTemplateManager: React.FC = () => {
       return;
     }
 
+    // Check for duplicate template name
+    const duplicateName = templates.some(t => 
+      t.name.toLowerCase() === newTemplateName.trim().toLowerCase()
+    );
+    
+    if (duplicateName) {
+      toast.error('A template with this name already exists. Please choose a different name.');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('quote_templates')
