@@ -60,13 +60,14 @@ export const WindowTreatmentOptionsManager = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
       
+      // RLS handles account isolation, just filter by hidden_by_user and treatment_category
       const { data, error } = await supabase
         .from('option_type_categories')
         .select('*')
         .eq('active', true)
         .eq('hidden_by_user', true)
         .eq('treatment_category', activeTreatment)
-        .eq('user_id', user.id);
+        .order('type_label', { ascending: true });
       
       if (error) throw error;
       return data;
@@ -985,10 +986,14 @@ export const WindowTreatmentOptionsManager = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowHiddenOptionsDialog(true)}
-                  title={`Show ${hiddenCategories.length} hidden option type(s)`}
+                  title={`${hiddenCategories.length} hidden option type${hiddenCategories.length > 1 ? 's' : ''} - click to restore`}
+                  className="relative"
                 >
                   <Eye className="h-4 w-4 mr-2" />
-                  Hidden ({hiddenCategories.length})
+                  Hidden
+                  <Badge variant="secondary" className="ml-2 h-5 min-w-5 flex items-center justify-center px-1.5">
+                    {hiddenCategories.length}
+                  </Badge>
                 </Button>
               )}
             </div>
@@ -1009,24 +1014,45 @@ export const WindowTreatmentOptionsManager = () => {
                 <Button
                   variant="outline"
                   size="sm"
+                  disabled={toggleOptionTypeVisibility.isPending}
                   onClick={async () => {
                     const currentType = optionTypeCategories.find(opt => opt.type_key === activeOptionType);
-                    if (currentType) {
+                    if (!currentType) return;
+                    
+                    try {
                       await toggleOptionTypeVisibility.mutateAsync({ 
                         id: currentType.id, 
                         hidden: true 
                       });
+                      
+                      // Invalidate hidden categories query
+                      queryClient.invalidateQueries({ queryKey: ['hidden-option-categories'] });
                       
                       // Switch to first available type after hiding
                       if (optionTypeCategories.length > 1) {
                         const nextType = optionTypeCategories.find(t => t.type_key !== activeOptionType);
                         if (nextType) setActiveOptionType(nextType.type_key);
                       }
+                    } catch (error: any) {
+                      toast({
+                        title: "Failed to hide type",
+                        description: error.message || "Could not hide option type",
+                        variant: "destructive"
+                      });
                     }
                   }}
                 >
-                  <EyeOff className="h-4 w-4 mr-2" />
-                  Hide Type
+                  {toggleOptionTypeVisibility.isPending ? (
+                    <>
+                      <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Hiding...
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="h-4 w-4 mr-2" />
+                      Hide Type
+                    </>
+                  )}
                 </Button>
                 
                 {!optionTypeCategories.find(opt => opt.type_key === activeOptionType)?.is_system_default && (

@@ -138,18 +138,21 @@ export const useToggleOptionTypeVisibility = () => {
     mutationFn: async ({ id, hidden }: { id: string; hidden: boolean }) => {
       const { error } = await supabase
         .from('option_type_categories')
-        .update({ hidden_by_user: hidden })
+        .update({ hidden_by_user: hidden, updated_at: new Date().toISOString() })
         .eq('id', id);
       
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
+      // Invalidate both visible and hidden queries
       queryClient.invalidateQueries({ queryKey: ['option-type-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['hidden-option-categories'] });
+      
       toast({
         title: variables.hidden ? "Option type hidden" : "Option type shown",
         description: variables.hidden 
-          ? "This option type is now hidden from your view." 
-          : "This option type is now visible.",
+          ? "This option type is now hidden from your view. Click 'Hidden' button to restore it." 
+          : "This option type is now visible in your options.",
       });
     },
     onError: (error) => {
