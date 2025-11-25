@@ -30,11 +30,13 @@ export const useOptionTypeCategories = (treatmentCategory?: string) => {
       console.log('🔍 useOptionTypeCategories - Fetching for user:', user.id);
       
       // RLS now handles account isolation - we just query
+      // CRITICAL: Show ALL system defaults + non-hidden user categories
+      // System defaults are filtered later via hidden_option_categories table
       let query = supabase
         .from('option_type_categories')
         .select('*')
         .eq('active', true)
-        .eq('hidden_by_user', false) // Filter out user-created hidden items
+        .or('is_system_default.eq.true,and(is_system_default.eq.false,hidden_by_user.eq.false)')
         .order('sort_order', { ascending: true })
         .order('type_label', { ascending: true });
       
