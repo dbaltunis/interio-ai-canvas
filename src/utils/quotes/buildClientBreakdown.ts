@@ -110,12 +110,17 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
 
   // Selected Options - These are pre-formatted client-facing options
   // CRITICAL: selected_options is the ONLY source for displaying treatment options in quotes
-  // It contains properly formatted names, descriptions, and prices
-  // DO NOT extract from measurements_details as that contains raw internal data
+  // Filter out options with zero price AND no meaningful selection (avoid clutter)
   if (summary.selected_options && Array.isArray(summary.selected_options)) {
-    summary.selected_options.forEach((option: any, index: number) => {
-      // Try multiple possible price fields
-      const price = Number(option.price || option.cost || option.total_cost || option.unit_price || 0);
+    summary.selected_options
+      .filter((option: any) => {
+        const price = Number(option.price || option.cost || option.total_cost || option.unit_price || 0);
+        // Include option if: it has a price > 0 OR it represents a meaningful selection (not just a default)
+        return price > 0 || (option.description && !option.description.toLowerCase().includes('included'));
+      })
+      .forEach((option: any, index: number) => {
+        // Try multiple possible price fields
+        const price = Number(option.price || option.cost || option.total_cost || option.unit_price || 0);
       
       // Always add options regardless of price - even zero-price options should be visible
       // This ensures clients see all treatment configuration details (mount type, control type, etc.)

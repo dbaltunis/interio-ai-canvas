@@ -235,45 +235,47 @@ export const AdaptiveFabricPricingDisplay = ({
           </div>
         </div>
 
-        {/* Fabric Cost - Simple Display */}
-        <div className="container-level-3 rounded-md p-3 space-y-2">
-          <h4 className="font-semibold text-sm">Fabric Cost</h4>
-          <div className="text-xs space-y-1 text-muted-foreground">
-            <div className="flex justify-between">
-              <span>Dimensions:</span>
-              <span className="font-medium text-foreground">
-                {formatMeasurement(parseFloat(measurements.rail_width) || 0)} × {formatMeasurement(parseFloat(measurements.drop) || 0)}
-              </span>
-            </div>
-            {isFabricPerSqm ? (
-              <>
-                <div className="flex justify-between">
-                  <span>Area:</span>
-                  <span className="font-medium text-foreground">{sqm.toFixed(2)} sqm</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Price per sqm:</span>
-                  <span className="font-medium text-foreground">{formatPrice(fabricToUse.price_per_meter || 0)}</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex justify-between">
-                  <span>Linear Meters:</span>
-                  <span className="font-medium text-foreground">{linearM.toFixed(2)} m</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Price per meter:</span>
-                  <span className="font-medium text-foreground">{formatPrice(fabricToUse.price_per_meter || 0)}</span>
-                </div>
-              </>
-            )}
-            <div className="flex justify-between border-t border-border pt-2 mt-2">
-              <span className="font-medium">Fabric Cost:</span>
-              <span className="font-medium text-foreground text-lg">{formatPrice(fabricCost)}</span>
+        {/* Fabric Cost - Hide for grid-priced blinds (redundant with Cost Summary) */}
+        {!fabricHasGrid && (
+          <div className="container-level-3 rounded-md p-3 space-y-2">
+            <h4 className="font-semibold text-sm">Fabric Cost</h4>
+            <div className="text-xs space-y-1 text-muted-foreground">
+              <div className="flex justify-between">
+                <span>Dimensions:</span>
+                <span className="font-medium text-foreground">
+                  {formatMeasurement(parseFloat(measurements.rail_width) || 0)} × {formatMeasurement(parseFloat(measurements.drop) || 0)}
+                </span>
+              </div>
+              {isFabricPerSqm ? (
+                <>
+                  <div className="flex justify-between">
+                    <span>Area:</span>
+                    <span className="font-medium text-foreground">{sqm.toFixed(2)} sqm</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Price per sqm:</span>
+                    <span className="font-medium text-foreground">{formatPrice(fabricToUse.price_per_meter || 0)}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between">
+                    <span>Linear Meters:</span>
+                    <span className="font-medium text-foreground">{linearM.toFixed(2)} m</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Price per meter:</span>
+                    <span className="font-medium text-foreground">{formatPrice(fabricToUse.price_per_meter || 0)}</span>
+                  </div>
+                </>
+              )}
+              <div className="flex justify-between border-t border-border pt-2 mt-2">
+                <span className="font-medium">Fabric Cost:</span>
+                <span className="font-medium text-foreground text-lg">{formatPrice(fabricCost)}</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     );
   };
