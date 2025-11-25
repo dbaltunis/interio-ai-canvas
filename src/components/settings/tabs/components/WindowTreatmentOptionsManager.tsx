@@ -96,6 +96,7 @@ export const WindowTreatmentOptionsManager = () => {
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
   const [deleteTypeInfo, setDeleteTypeInfo] = useState<{ id: string; label: string; valueCount: number } | null>(null);
   const [newOptionTypeData, setNewOptionTypeData] = useState({ type_label: '', type_key: '' });
+  const [customizeKey, setCustomizeKey] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     value: '',
@@ -619,11 +620,44 @@ export const WindowTreatmentOptionsManager = () => {
     resetForm();
   };
 
+  // Auto-generate key from label
+  const generateKeyFromLabel = (label: string): string => {
+    return label
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s]/g, '') // Remove special characters
+      .replace(/\s+/g, '_'); // Replace spaces with underscores
+  };
+
   const handleCreateOptionType = async () => {
-    if (!newOptionTypeData.type_label.trim() || !newOptionTypeData.type_key.trim()) {
+    if (!newOptionTypeData.type_label.trim()) {
       toast({
-        title: "Required fields",
-        description: "Please enter both type label and type key.",
+        title: "Required field",
+        description: "Please enter an option type label.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Use auto-generated key if not customized
+    const finalKey = customizeKey 
+      ? newOptionTypeData.type_key.trim()
+      : generateKeyFromLabel(newOptionTypeData.type_label);
+
+    if (!finalKey) {
+      toast({
+        title: "Invalid key",
+        description: "Please enter a valid option type label or customize the key.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate custom key format
+    if (customizeKey && !/^[a-z0-9_]+$/.test(finalKey)) {
+      toast({
+        title: "Invalid key format",
+        description: "Key must contain only lowercase letters, numbers, and underscores.",
         variant: "destructive"
       });
       return;
@@ -632,12 +666,13 @@ export const WindowTreatmentOptionsManager = () => {
     try {
       await createOptionTypeCategory.mutateAsync({
         treatment_category: activeTreatment,
-        type_key: newOptionTypeData.type_key.toLowerCase().replace(/\s+/g, '_'),
+        type_key: finalKey,
         type_label: newOptionTypeData.type_label.trim(),
       });
       
       setShowCreateOptionTypeDialog(false);
       setNewOptionTypeData({ type_label: '', type_key: '' });
+      setCustomizeKey(false);
       toast({
         title: "Option type created",
         description: "You can now add values to this option type.",
@@ -1485,24 +1520,47 @@ export const WindowTreatmentOptionsManager = () => {
                 <Input
                   id="type_label"
                   value={newOptionTypeData.type_label}
-                  onChange={(e) => setNewOptionTypeData({ ...newOptionTypeData, type_label: e.target.value })}
+                  onChange={(e) => {
+                    const label = e.target.value;
+                    setNewOptionTypeData({ 
+                      ...newOptionTypeData, 
+                      type_label: label,
+                      // Auto-update key if not customized
+                      type_key: customizeKey ? newOptionTypeData.type_key : generateKeyFromLabel(label)
+                    });
+                  }}
                   placeholder="e.g. Motor Types"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Display name for this option type
+                  Display name shown to users
                 </p>
               </div>
               
               <div>
-                <Label htmlFor="type_key">Option Type Key *</Label>
+                <div className="flex items-center justify-between mb-2">
+                  <Label htmlFor="type_key">Technical Key</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto py-1 px-2 text-xs"
+                    onClick={() => setCustomizeKey(!customizeKey)}
+                  >
+                    {customizeKey ? "Use Auto-Generated" : "Customize"}
+                  </Button>
+                </div>
                 <Input
                   id="type_key"
-                  value={newOptionTypeData.type_key}
+                  value={customizeKey ? newOptionTypeData.type_key : generateKeyFromLabel(newOptionTypeData.type_label)}
                   onChange={(e) => setNewOptionTypeData({ ...newOptionTypeData, type_key: e.target.value })}
-                  placeholder="e.g. motor_type"
+                  placeholder="Auto-generated from label"
+                  readOnly={!customizeKey}
+                  className={!customizeKey ? "bg-muted cursor-not-allowed" : ""}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Technical key (lowercase with underscores)
+                  {customizeKey 
+                    ? "Use lowercase letters, numbers, and underscores only" 
+                    : "Automatically generated from label above"}
                 </p>
               </div>
             </div>
