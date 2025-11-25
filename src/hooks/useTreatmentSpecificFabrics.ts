@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getTreatmentConfig, TreatmentCategory } from "@/utils/treatmentTypeDetection";
 import { resolveGridForProduct } from "@/utils/pricing/gridResolver";
+import { getAcceptedSubcategories } from "@/constants/inventorySubcategories";
 
 export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory) => {
   const config = getTreatmentConfig(treatmentCategory);
@@ -35,20 +36,10 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
         return data || [];
       }
 
-      // Handle both specific and generic treatment categories for fabrics
-      const categories = treatmentCategory === 'roller_blinds' || (treatmentCategory === 'blinds' && config.inventoryCategory === 'roller_blind_fabric')
-        ? ['roller_fabric', 'roller_blind_fabric'] // Support both naming conventions
-        : treatmentCategory === 'roman_blinds' || (treatmentCategory === 'blinds' && config.inventoryCategory === 'curtain_fabric')
-        ? ['curtain_fabric'] // Roman blinds use curtain fabrics
-        : treatmentCategory === 'cellular_blinds' || treatmentCategory === 'cellular_shades'
-        ? ['cellular_fabric', 'honeycomb_fabric'] // FIXED: Add cellular fabric categories
-        : treatmentCategory === 'panel_glide'
-        ? ['panel_glide_fabric', 'curtain_fabric']
-        : treatmentCategory === 'curtains'
-        ? ['curtain_fabric']
-        : [config.inventoryCategory];
+      // Get accepted subcategories from centralized config
+      const categories = getAcceptedSubcategories(treatmentCategory);
       
-      console.log('🔍 Fetching fabrics for treatment:', treatmentCategory, 'with categories:', categories);
+      console.log('🔍 Fetching fabrics for treatment:', treatmentCategory, 'with subcategories:', categories);
 
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
