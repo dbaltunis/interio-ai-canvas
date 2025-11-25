@@ -132,8 +132,18 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
     const options = raw.filter((item: any) => item.category === 'option');
     const nonOptions = raw.filter((item: any) => item.category !== 'option');
     
+    console.log('🔍 BEFORE GROUPING - Total options:', options.length);
+    options.forEach((opt: any) => {
+      console.log('  Option:', opt.name, '| Description:', opt.description, '| Cost:', opt.total_cost);
+    });
+    
     // Group related options
     const groupedOptions = groupRelatedOptions(options);
+    
+    console.log('🔍 AFTER GROUPING - Total grouped options:', groupedOptions.length);
+    groupedOptions.forEach((opt: any) => {
+      console.log('  Grouped:', opt.name, '| Description:', opt.description, '| Cost:', opt.total_cost);
+    });
     
     // Combine and return
     return [...nonOptions, ...groupedOptions] as ClientBreakdownItem[];
