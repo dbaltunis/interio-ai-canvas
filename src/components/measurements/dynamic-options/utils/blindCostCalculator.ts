@@ -38,26 +38,31 @@ export const calculateBlindCosts = (
   const sqmRaw = (effectiveWidth * effectiveHeight) / 10000;
   const squareMeters = sqmRaw * (1 + wastePercent / 100);
   
-  // Get fabric price per sqm - check if fabric has a pricing grid first
+  // Get fabric price per sqm - FABRIC GRIDS ARE FOR FABRIC COST ONLY, NOT MANUFACTURING
   let fabricPricePerSqm = 0;
   let fabricCost = 0;
   
-  // PRIORITY 1: Check if fabric has pricing grid attached (for fabric cost)
-  if (fabricItem?.pricing_grid_data && fabricItem?.resolved_grid_name) {
-    // Fabric has a pricing grid - use it to calculate fabric cost
-    const gridPrice = getPriceFromGrid(fabricItem.pricing_grid_data, widthCm, heightCm);
-    fabricCost = gridPrice; // Grid returns total price for this size
-    fabricPricePerSqm = squareMeters > 0 ? gridPrice / squareMeters : 0;
+  // Check if fabric has pricing grid attached
+  // CRITICAL: Fabric pricing grids contain the TOTAL PRODUCT PRICE (fabric + manufacturing combined)
+  // NOT just fabric cost alone. So when a fabric has a pricing grid, we use it for TOTAL cost
+  const fabricHasPricingGrid = fabricItem?.pricing_grid_data && fabricItem?.resolved_grid_name;
+  
+  if (fabricHasPricingGrid) {
+    // Fabric pricing grid contains TOTAL PRODUCT PRICE (not just fabric)
+    // This is the complete price for the blind including material and manufacturing
+    const totalGridPrice = getPriceFromGrid(fabricItem.pricing_grid_data, widthCm, heightCm);
+    fabricCost = totalGridPrice; // This is the TOTAL cost, not just fabric
+    fabricPricePerSqm = squareMeters > 0 ? totalGridPrice / squareMeters : 0;
     
-    console.log('✅ Using fabric pricing grid:', {
+    console.log('✅ Fabric has pricing grid (TOTAL PRODUCT PRICE):', {
       gridName: fabricItem.resolved_grid_name,
       gridCode: fabricItem.resolved_grid_code,
       dimensions: `${widthCm}cm × ${heightCm}cm`,
-      gridPrice,
-      fabricCost
+      totalGridPrice,
+      note: 'This grid price includes both fabric and manufacturing - DO NOT add manufacturing cost separately'
     });
   } else {
-    // PRIORITY 2: Use per-unit pricing for fabric
+    // No grid - use per-unit pricing for fabric only
     fabricPricePerSqm = fabricItem?.selling_price || fabricItem?.price_per_meter || fabricItem?.unit_price || 0;
     fabricCost = squareMeters * fabricPricePerSqm;
     
@@ -68,21 +73,16 @@ export const calculateBlindCosts = (
     });
   }
   
-  // Calculate manufacturing cost - Check FABRIC item for pricing grid first, then template
+  // Calculate manufacturing cost - ONLY if fabric doesn't have a pricing grid
+  // CRITICAL: If fabric has pricing grid, it already includes manufacturing - DON'T add it again!
   let manufacturingCost = 0;
   
-  // Check if fabric item has pricing grid assigned (new workflow)
-  if (fabricItem?.pricing_grid_data || fabricItem?.resolved_grid_data) {
-    const gridData = fabricItem.pricing_grid_data || fabricItem.resolved_grid_data;
-    manufacturingCost = getPriceFromGrid(gridData, widthCm, heightCm);
-    console.log('✅ Using fabric pricing grid:', {
-      fabricName: fabricItem?.name || 'Unknown',
-      manufacturingCost,
-      widthCm,
-      heightCm
-    });
+  if (fabricHasPricingGrid) {
+    // Fabric pricing grid includes manufacturing - manufacturing cost is ZERO
+    manufacturingCost = 0;
+    console.log('ℹ️ Manufacturing cost = 0 (already included in fabric grid price)');
   } else if (template?.pricing_type === 'pricing_grid' && template?.pricing_grid_data) {
-    // Fallback: Template has manufacturing grid (legacy)
+    // Template has separate manufacturing grid (use when fabric doesn't have grid)
     manufacturingCost = getPriceFromGrid(template.pricing_grid_data, widthCm, heightCm);
     console.log('✅ Using template manufacturing grid:', {
       manufacturingCost
