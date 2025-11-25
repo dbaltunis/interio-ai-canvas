@@ -72,7 +72,7 @@ export const SimplifiedTemplateFormPricing = ({
         {formData.pricing_type === "pricing_grid" && (
           <TemplateGridManager
             productType={formData.curtain_type || ""}
-            systemType={formData.system_type || ""}
+            systemType={formData.system_type || formData.curtain_type || ""}
           />
         )}
 
