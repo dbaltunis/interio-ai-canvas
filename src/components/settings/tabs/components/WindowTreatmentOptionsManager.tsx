@@ -87,7 +87,20 @@ export const WindowTreatmentOptionsManager = () => {
   
   // Fetch inventory items for linking
   const { data: inventoryItems = [] } = useEnhancedInventory();
-  const { categories: inventoryCategories } = useInventoryCategories();
+  
+  // Derive categories from actual inventory items instead of inventory_categories table
+  const inventoryCategoriesFromItems = useMemo(() => {
+    const uniqueCategories = [...new Set(
+      inventoryItems
+        .filter(item => item.category) // Only items with categories
+        .map(item => item.category)
+    )].sort();
+    
+    return uniqueCategories.map(cat => ({ 
+      id: cat, 
+      name: cat 
+    }));
+  }, [inventoryItems]);
   
   const [isCreating, setIsCreating] = useState(false);
   const [editingValue, setEditingValue] = useState<OptionValue | null>(null);
@@ -746,12 +759,9 @@ export const WindowTreatmentOptionsManager = () => {
   const filteredInventoryItems = useMemo(() => {
     let filtered = inventoryItems.filter(item => item.active);
     
-    // Filter by category if selected
+    // Filter by category if selected (using category name directly)
     if (selectedInventoryCategoryId) {
-      const selectedCategory = inventoryCategories.find(cat => cat.id === selectedInventoryCategoryId);
-      if (selectedCategory) {
-        filtered = filtered.filter(item => item.category === selectedCategory.name);
-      }
+      filtered = filtered.filter(item => item.category === selectedInventoryCategoryId);
     }
     
     // Filter by search query
@@ -765,7 +775,7 @@ export const WindowTreatmentOptionsManager = () => {
     }
     
     return filtered;
-  }, [inventoryItems, inventorySearchQuery, selectedInventoryCategoryId, inventoryCategories]);
+  }, [inventoryItems, inventorySearchQuery, selectedInventoryCategoryId]);
 
   const selectedInventoryItem = inventoryItems.find(item => item.id === formData.inventory_item_id);
 
@@ -781,23 +791,33 @@ export const WindowTreatmentOptionsManager = () => {
           .replace(/^_+|_+$/g, '')
           .replace(/_+/g, '_');
         
+        // Auto-fill price from inventory item (try selling_price first, then cost_price)
+        const autoPrice = selectedItem.selling_price || selectedItem.cost_price || 0;
+        
         setFormData({
           ...formData,
           inventory_item_id: itemId,
           // Always update with selected item data
           name: selectedItem.name,
           value: autoValue,
-          // Update price from inventory item (try price_per_unit, then selling_price, then cost_price)
-          price: selectedItem.price_per_unit || selectedItem.selling_price || selectedItem.cost_price || 0,
-          // Set pricing method to fixed
+          // Auto-fill price - user can still change it after selection
+          price: autoPrice,
+          // Set pricing method to fixed by default
           pricing_method: 'fixed',
         });
         
-        const priceValue = selectedItem.price_per_unit || selectedItem.selling_price || selectedItem.cost_price || 0;
-        toast({
-          title: "Inventory item linked",
-          description: `Fields updated with "${selectedItem.name}" - £${priceValue.toFixed(2)}`,
-        });
+        if (autoPrice > 0) {
+          toast({
+            title: "Inventory item linked",
+            description: `Auto-filled with "${selectedItem.name}" - $${autoPrice.toFixed(2)}. You can adjust the price if needed.`,
+          });
+        } else {
+          toast({
+            title: "Inventory item linked",
+            description: `"${selectedItem.name}" has no price in inventory. Please set the price below.`,
+            variant: "default",
+          });
+        }
       }
     } else {
       // Just clear the inventory link
@@ -1260,7 +1280,7 @@ export const WindowTreatmentOptionsManager = () => {
                     )}
 
                     <div className="col-span-2">
-                      <Label htmlFor="inventory">Link to Inventory</Label>
+                      <Label htmlFor="inventory">Link to Inventory (Optional)</Label>
                       <Button
                         type="button"
                         variant="outline"
@@ -1278,7 +1298,7 @@ export const WindowTreatmentOptionsManager = () => {
                         <Search className="h-4 w-4 text-muted-foreground" />
                       </Button>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Link this option to inventory for automatic stock tracking
+                        Selecting an item auto-fills the name and price. Price is stored in THIS option, not inventory.
                       </p>
                     </div>
 
@@ -1729,7 +1749,7 @@ export const WindowTreatmentOptionsManager = () => {
                 </div>
 
                 {/* Category Filter */}
-                {inventoryCategories.length > 0 && (
+                {inventoryCategoriesFromItems.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     <Button
                       variant={!selectedInventoryCategoryId ? "default" : "outline"}
@@ -1738,15 +1758,13 @@ export const WindowTreatmentOptionsManager = () => {
                     >
                       All
                     </Button>
-                    {inventoryCategories.map((category) => (
+                    {inventoryCategoriesFromItems.map((category) => (
                       <Button
                         key={category.id}
                         variant={selectedInventoryCategoryId === category.id ? "default" : "outline"}
                         size="sm"
                         onClick={() => setSelectedInventoryCategoryId(category.id)}
-                        className="gap-2"
                       >
-                        {category.icon && <span>{category.icon}</span>}
                         {category.name}
                       </Button>
                     ))}
