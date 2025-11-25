@@ -65,10 +65,7 @@ export const SortableOptionItem = ({
           <GripVertical className="h-5 w-5 text-muted-foreground" />
         </div>
 
-        <div 
-          className="flex-1 cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => onEdit(value)}
-        >
+        <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             {hasSubOptions && (
               <Button
@@ -76,7 +73,7 @@ export const SortableOptionItem = ({
                 size="sm"
                 className="h-6 w-6 p-0"
                 onClick={(e) => {
-                  e.stopPropagation(); // Prevent triggering edit
+                  e.stopPropagation();
                   const newExpanded = new Set(expandedOptions);
                   if (isExpanded) {
                     newExpanded.delete(value.id);
@@ -154,50 +151,81 @@ export const SortableOptionItem = ({
             {hasSubOptions && ` • ${value.extra_data.sub_options.length} sub-categories`}
           </div>
         </div>
-        <div className="flex items-center gap-3 ml-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-4 ml-auto" onClick={(e) => e.stopPropagation()}>
           {value.inventory_item_id && (
             <InventoryStockBadge itemId={value.inventory_item_id} />
           )}
-          <div className="flex gap-1 md:gap-2">
-            {/* Delete Button - Destructive action */}
+          <div className="flex gap-3">
+            {/* Edit Button - Primary action */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 px-3"
+                    onClick={() => onEdit(value)}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Edit option details
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Toggle Visibility Button */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 px-3"
+                    onClick={() => onToggleVisibility(value)}
+                  >
+                    {value.hidden_by_user ? (
+                      <>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Show
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="h-4 w-4 mr-2" />
+                        Hide
+                      </>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {value.hidden_by_user ? "Show in setup" : "Hide from setup"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Delete Button - Destructive action, separated */}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div>
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className={`h-9 w-9 md:h-8 md:w-8 ${isSystemDefault ? "opacity-50 cursor-not-allowed" : ""}`}
+                      variant="destructive"
+                      size="sm"
+                      className={`h-9 px-3 ${isSystemDefault ? "opacity-50 cursor-not-allowed" : ""}`}
                       onClick={() => onDelete(value)}
                       disabled={isSystemDefault}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
                     </Button>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
                   {isSystemDefault 
                     ? "Cannot delete system defaults. Use hide instead." 
-                    : "Delete option"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            {/* Toggle Visibility Button - Placed last to avoid accidental clicks */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 md:h-8 md:w-8"
-                    onClick={() => onToggleVisibility(value)}
-                  >
-                    {value.hidden_by_user ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {value.hidden_by_user ? "Show in setup" : "Hide from setup"}
+                    : "Delete option permanently"}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
