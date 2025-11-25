@@ -1302,7 +1302,14 @@ export const DynamicWindowWorksheet = forwardRef<{
               id: selectedItems.material.id,
               name: selectedItems.material.name,
               selling_price: selectedItems.material.selling_price || selectedItems.material.unit_price,
-              image_url: selectedItems.material.image_url
+              image_url: selectedItems.material.image_url,
+              // UNIVERSAL: Preserve pricing grid data for ALL SaaS clients
+              pricing_grid_data: selectedItems.material.pricing_grid_data,
+              resolved_grid_name: selectedItems.material.resolved_grid_name,
+              resolved_grid_code: selectedItems.material.resolved_grid_code,
+              resolved_grid_id: selectedItems.material.resolved_grid_id,
+              price_group: selectedItems.material.price_group,
+              product_category: selectedItems.material.product_category
             } : (
               (displayCategory === 'blinds' || displayCategory === 'shutters') && selectedTemplate
                 ? {
