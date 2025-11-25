@@ -14,6 +14,8 @@ export interface WindowCoveringOption {
   active: boolean;
   sort_order: number;
   pricing_method?: string;
+  key?: string; // Treatment option key
+  option_values?: any[]; // Associated option values from database
 }
 
 export interface SubSubCategory {
