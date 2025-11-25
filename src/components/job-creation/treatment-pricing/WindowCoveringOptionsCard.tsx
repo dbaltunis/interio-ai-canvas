@@ -27,6 +27,17 @@ export const WindowCoveringOptionsCard = ({
   const { units } = useMeasurementUnits();
   const { hierarchicalSelections, handleHierarchicalSelection } = useHierarchicalSelections(hierarchicalOptions);
 
+  // Diagnostic logging for cellular blinds options
+  console.log('🔧 WindowCoveringOptionsCard - Rendering with:', {
+    windowCoveringName: windowCovering?.name,
+    templateId: windowCovering?.id,
+    treatmentCategory: windowCovering?.treatment_category || windowCovering?.category,
+    optionsCount: options?.length || 0,
+    hierarchicalOptionsCount: hierarchicalOptions?.length || 0,
+    optionsLoading,
+    hasWindowCovering: !!windowCovering
+  });
+
   const handleHierarchicalSelectionWrapper = (categoryId: string, subcategoryId: string, value: string) => {
     handleHierarchicalSelection(categoryId, subcategoryId, value, onOptionToggle);
   };
@@ -54,6 +65,11 @@ export const WindowCoveringOptionsCard = ({
   const hasHierarchicalOptions = hierarchicalOptions && hierarchicalOptions.length > 0;
 
   if (!hasTraditionalOptions && !hasHierarchicalOptions) {
+    console.log('⚠️ WindowCoveringOptionsCard - No options to display');
+    console.log('   This may mean:');
+    console.log('   1. No options are configured for this treatment type');
+    console.log('   2. All options are disabled in template settings');
+    console.log('   3. Options query returned empty results');
     return null;
   }
 
