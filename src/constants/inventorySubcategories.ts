@@ -17,7 +17,7 @@ import { TreatmentCategory } from "@/utils/treatmentTypeDetection";
  * Maps treatment categories to their accepted inventory subcategories
  */
 export const TREATMENT_SUBCATEGORIES: Record<TreatmentCategory, {
-  category: 'fabric' | 'material' | 'hardware';
+  category: 'fabric' | 'material' | 'hardware' | 'both';
   subcategories: string[];
   description: string;
 }> = {
@@ -70,9 +70,9 @@ export const TREATMENT_SUBCATEGORIES: Record<TreatmentCategory, {
   },
   
   vertical_blinds: {
-    category: 'material',
-    subcategories: ['vertical_slats', 'vertical_vanes', 'vertical'],
-    description: 'Vertical blind vanes/slats'
+    category: 'both', // Supports both fabric vanes and material slats
+    subcategories: ['vertical_fabric', 'vertical_slats', 'vertical_vanes', 'vertical'],
+    description: 'Vertical blind vanes (fabric or material)'
   },
   
   shutters: {
@@ -110,7 +110,7 @@ export const getAcceptedSubcategories = (treatmentCategory: TreatmentCategory): 
 /**
  * Get the primary category (fabric/material) for a treatment type
  */
-export const getTreatmentPrimaryCategory = (treatmentCategory: TreatmentCategory): 'fabric' | 'material' | 'hardware' => {
+export const getTreatmentPrimaryCategory = (treatmentCategory: TreatmentCategory): 'fabric' | 'material' | 'hardware' | 'both' => {
   return TREATMENT_SUBCATEGORIES[treatmentCategory]?.category || 'fabric';
 };
 
