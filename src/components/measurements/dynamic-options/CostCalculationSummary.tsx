@@ -121,8 +121,11 @@ export const CostCalculationSummary = ({
 
   // Use proper treatment detection instead of template.treatment_category
   const treatmentCategory = detectTreatmentType(template);
-  const width = safeParseFloat(measurements.rail_width, 0);
-  const height = safeParseFloat(measurements.drop, 0);
+  // CRITICAL FIX: Convert MM to CM for blind calculations
+  const widthMM = safeParseFloat(measurements.rail_width, 0);
+  const heightMM = safeParseFloat(measurements.drop, 0);
+  const width = widthMM / 10; // Convert MM to CM
+  const height = heightMM / 10; // Convert MM to CM
 
   console.log('🔍 CostCalculationSummary Debug:', {
     treatmentCategory,
@@ -368,7 +371,6 @@ export const CostCalculationSummary = ({
               <div className="text-card-foreground font-medium">Template: {template.name}</div>
               <div>Method: {template.pricing_type}</div>
               <div>Area: {blindCosts.squareMeters.toFixed(2)} sqm</div>
-              {template.waste_percent > 0 && <div>Waste: {template.waste_percent}%</div>}
             </div>
 
             {selectedOptions && selectedOptions.length > 0 && (

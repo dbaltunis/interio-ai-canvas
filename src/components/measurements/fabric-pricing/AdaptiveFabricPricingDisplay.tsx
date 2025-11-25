@@ -9,6 +9,7 @@ import { convertLength } from "@/hooks/useBusinessSettings";
 import { PoolUsageDisplay } from "../PoolUsageDisplay";
 import { PoolUsage } from "@/hooks/useProjectFabricPool";
 import { detectTreatmentType, getMeasurementLabels } from "@/utils/treatmentTypeDetection";
+import { PricingGridPreview } from "../PricingGridPreview";
 
 interface AdaptiveFabricPricingDisplayProps {
   selectedFabricItem: any;
@@ -97,12 +98,15 @@ export const AdaptiveFabricPricingDisplay = ({
     gridWidthCm = gridWidthMm / 10;
     gridDropCm = gridDropMm / 10;
     gridPrice = getPriceFromGrid(template.pricing_grid_data, gridWidthCm, gridDropCm);
-    console.log('📊 GRID PRICE (Simplified Display):', {
+    console.log('📊 GRID PRICE DEBUG:', {
       railWidthMm: gridWidthMm,
       dropMm: gridDropMm,
       gridWidthCm,
       gridDropCm,
-      gridPrice
+      hasGridData: !!template.pricing_grid_data,
+      gridDataStructure: template.pricing_grid_data ? Object.keys(template.pricing_grid_data) : 'NO DATA',
+      gridPrice,
+      WARNING: gridPrice === 0 ? 'GRID RETURNING ZERO - Check grid data format or dimensions not in grid range' : 'OK'
     });
   }
 
@@ -166,7 +170,16 @@ export const AdaptiveFabricPricingDisplay = ({
 
       {/* Grid Price - Simple Display */}
       <div className="container-level-3 rounded-md p-3 space-y-2">
-        <h4 className="font-semibold text-sm">Price</h4>
+        <div className="flex items-center justify-between">
+          <h4 className="font-semibold text-sm">Price</h4>
+          {template?.pricing_grid_data && (
+            <PricingGridPreview 
+              gridData={template.pricing_grid_data}
+              gridName={template.pricing_grid_name}
+              gridCode={template.pricing_grid_code}
+            />
+          )}
+        </div>
         <div className="text-xs space-y-1 text-muted-foreground">
             <div className="flex justify-between">
               <span>Dimensions:</span>
