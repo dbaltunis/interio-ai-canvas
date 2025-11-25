@@ -838,11 +838,11 @@ export const VisualMeasurementSheet = ({
                 </div>
               )}
               
-              {/* Fabric & Pricing Calculations Section - Below Visual */}
-              {selectedFabricItem && selectedTemplate && <AdaptiveFabricPricingDisplay selectedFabricItem={selectedFabricItem} fabricCalculation={fabricCalculation} template={selectedTemplate} measurements={measurements} treatmentCategory={treatmentCategory} />}
+              {/* Fabric & Pricing Calculations Section - Below Visual - Only for curtains/romans with fabric calculations */}
+              {(treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && selectedFabricItem && selectedTemplate && <AdaptiveFabricPricingDisplay selectedFabricItem={selectedFabricItem} fabricCalculation={fabricCalculation} template={selectedTemplate} measurements={measurements} treatmentCategory={treatmentCategory} />}
               
-              {/* Fabric Rotation Toggle - Moved from Curtain Configuration */}
-              {treatmentCategory === 'curtains' && selectedFabricItem && measurements.rail_width && measurements.drop && <div className="container-level-1 rounded-lg p-3 mt-2">
+              {/* Fabric Rotation Toggle - Moved from Curtain Configuration - Only for curtains/romans */}
+              {(treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && selectedFabricItem && measurements.rail_width && measurements.drop && <div className="container-level-1 rounded-lg p-3 mt-2">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <Label className="text-sm font-semibold text-card-foreground cursor-pointer">
@@ -959,8 +959,8 @@ export const VisualMeasurementSheet = ({
               </div>}
               {/* End Essential Measurements */}
 
-              {/* Curtain Configuration - Panel Setup (Only for curtains) */}
-              {treatmentCategory === 'curtains' && <div className="container-level-1 rounded-lg p-3">
+              {/* Curtain Configuration - Panel Setup (Only for curtains, NOT for any blinds) */}
+              {(treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && <div className="container-level-1 rounded-lg p-3">
               
               
               <div className="space-y-2">
@@ -1073,8 +1073,8 @@ export const VisualMeasurementSheet = ({
             </div>}
 
 
-              {/* CURTAIN-SPECIFIC FIELDS - Dynamic Options from Template */}
-              {treatmentType === 'curtains' && <div className="space-y-3 px-3">
+              {/* CURTAIN-SPECIFIC FIELDS - Dynamic Options from Template - Only for curtains/romans */}
+              {(treatmentType === 'curtains' || treatmentType === 'roman_blinds') && <div className="space-y-3 px-3">
                   <DynamicCurtainOptions 
                     measurements={measurements} 
                     onChange={onMeasurementChange} 
