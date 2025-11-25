@@ -40,8 +40,6 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'team' | 'messages'>('team');
-  const [messageInput, setMessageInput] = useState('');
-  const [showAccountUsers, setShowAccountUsers] = useState(true);
   const { data: teamMembers = [] } = useTeamMembers();
   const { data: currentUserProfile } = useCurrentUserProfile();
   const updateUserProfile = useUpdateUserProfile();
@@ -67,20 +65,6 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
       console.error('Failed to save theme preference:', error);
     }
   };
-  const toggleActive = useMutation({
-    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({ is_active })
-        .eq('user_id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['team-members'] });
-      queryClient.invalidateQueries({ queryKey: ['user-presence'] });
-      queryClient.invalidateQueries({ queryKey: ['team-presence'] });
-    },
-  });
 
   // Lock background scroll when panel is open
   useEffect(() => {
@@ -574,50 +558,6 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                             </motion.div>
                           )}
 
-                          {/* Account Users - manage status */}
-                          {otherTeamMembers.length > 0 && (
-                            <div className="pt-4 border-t border-border">
-                              <div className="flex items-center justify-between mb-3">
-                                <p className="text-muted-foreground text-sm font-medium">Team Management</p>
-                                <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground" onClick={() => setShowAccountUsers((s) => !s)}>
-                                  {showAccountUsers ? 'Hide' : 'Show'}
-                                </Button>
-                              </div>
-                              {showAccountUsers && (
-                                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                                  {otherTeamMembers.map((m) => (
-                                  <div key={m.id} className="flex items-center justify-between p-3 rounded-lg glass-morphism border border-border">
-                                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                                      <Avatar className="h-8 w-8 shrink-0">
-                                        <AvatarImage src={m.avatar_url} />
-                                        <AvatarFallback className="bg-muted text-foreground text-xs">
-                                          {m.name?.charAt(0) || 'U'}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-medium text-foreground truncate max-w-[180px]">{m.name}</p>
-                                        <p className="text-xs text-muted-foreground truncate max-w-[180px]">{m.role}</p>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <Badge variant={m.active ? 'default' : 'outline'} className="text-xs">
-                                        {m.active ? 'Active' : 'Inactive'}
-                                      </Badge>
-                                      <Switch
-                                        checked={!!m.active}
-                                        onCheckedChange={(checked) => toggleActive.mutate({ id: m.id, is_active: checked })}
-                                        aria-label={`Set ${m.name} ${m.active ? 'inactive' : 'active'}`}
-                                      />
-                                    </div>
-                                  </div>
-                                  ))}
-                                  {otherTeamMembers.length === 0 && (
-                                    <p className="text-xs text-muted-foreground">No other team members found.</p>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
                           </div>
                         </ScrollArea>
                       </div>
