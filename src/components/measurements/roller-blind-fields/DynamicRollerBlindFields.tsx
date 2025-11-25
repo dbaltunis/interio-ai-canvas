@@ -31,27 +31,12 @@ export const DynamicRollerBlindFields = ({
   onOptionPriceChange,
   selectedOptions = []
 }: DynamicRollerBlindFieldsProps) => {
-  console.log('🚨 DynamicRollerBlindFields - COMPONENT RENDER:', {
-    templateId,
-    treatmentCategory,
-    queryKey: treatmentCategory || templateId,
-    queryType: treatmentCategory ? 'category' : 'template',
-    measurementsKeys: Object.keys(measurements),
-    selectedOptionsCount: selectedOptions.length
-  });
 
-  // CRITICAL FIX: Query by treatment category AND respect template_option_settings
-  // This ensures only enabled options appear in the measurement worksheet
+  // Query by treatment category to get all available options
   const { data: allOptions = [], isLoading } = useTreatmentOptions(
     treatmentCategory || templateId, 
     treatmentCategory ? 'category' : 'template'
   );
-  
-  console.log('🔍 useTreatmentOptions result:', {
-    allOptionsCount: allOptions.length,
-    isLoading,
-    allOptions: allOptions.map(opt => ({ id: opt.id, key: opt.key, label: opt.label, visible: opt.visible }))
-  });
   
   // Filter by template_option_settings if templateId is available
   const [treatmentOptions, setTreatmentOptions] = useState<any[]>([]);
@@ -77,13 +62,6 @@ export const DynamicRollerBlindFields = ({
       const enabledOptions = allOptions.filter(opt => {
         const isEnabled = settingsMap.has(opt.id) ? settingsMap.get(opt.id) : true;
         return isEnabled;
-      });
-      
-      console.log('🔍 Filtered options by template_option_settings:', {
-        templateId,
-        totalOptions: allOptions.length,
-        enabledOptions: enabledOptions.length,
-        filtered: allOptions.length - enabledOptions.length
       });
       
       setTreatmentOptions(enabledOptions);
