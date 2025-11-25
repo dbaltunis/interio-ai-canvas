@@ -81,8 +81,9 @@ export interface EnhancedInventoryItem {
   metadata?: Json;
   show_in_quote?: boolean;
   
-  // Pricing grid
-  price_group?: string | null;
+  // Pricing grid - direct assignment (simpler than routing)
+  pricing_grid_id?: string | null;
+  price_group?: string | null; // Legacy field, will be deprecated
   product_category?: string | null;
   
   // Tags for categorization and search
