@@ -58,12 +58,22 @@ export const DynamicRollerBlindFields = ({
         settings?.map(s => [s.treatment_option_id, s.is_enabled]) || []
       );
       
-      // Filter: only show options that are enabled (default to true if no setting)
+      // CRITICAL FIX: Only show options that have explicit template settings AND are enabled
+      // If no template setting exists, the option is NOT associated with this template - don't show it
       const enabledOptions = allOptions.filter(opt => {
-        const isEnabled = settingsMap.has(opt.id) ? settingsMap.get(opt.id) : true;
+        if (!settingsMap.has(opt.id)) {
+          // No template_option_settings entry = this option is not configured for this template
+          console.log(`❌ Hiding option "${opt.label}" - no template setting found`);
+          return false;
+        }
+        const isEnabled = settingsMap.get(opt.id);
+        if (!isEnabled) {
+          console.log(`❌ Hiding option "${opt.label}" - disabled in template settings`);
+        }
         return isEnabled;
       });
       
+      console.log(`✅ Showing ${enabledOptions.length} enabled options out of ${allOptions.length} total`);
       setTreatmentOptions(enabledOptions);
     };
     
