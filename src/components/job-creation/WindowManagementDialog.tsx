@@ -162,6 +162,9 @@ export const WindowManagementDialog = ({
           price_per_meter: costSummary.price_per_meter || treatmentData.fabric_details?.fabric_cost_per_yard || 0,
           fabric_details: treatmentData.fabric_details || {},
           
+          // Material details (for blinds/shutters) - UNIVERSAL: includes pricing grid data
+          material_details: treatmentData.material_details || treatmentData.fabric_details || {},
+          
           // Treatment info
           treatment_type: selectedTreatmentType,
           treatment_category: treatmentData.window_covering?.category || 'curtains',

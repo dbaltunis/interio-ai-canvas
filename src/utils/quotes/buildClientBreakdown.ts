@@ -56,9 +56,20 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
     materialDetails?.unit_price
   ) || 0;
   
-  // For blinds/shutters using pricing grids, combine fabric + manufacturing into single "Fabric Material" line
-  const usePricingGrid = isBlindsOrShutters && fabricCost > 0 && manufacturingCost > 0;
-  const combinedMaterialCost = usePricingGrid ? fabricCost + manufacturingCost : fabricCost;
+  // UNIVERSAL RULE FOR ALL SAAS CLIENTS: Check if fabric/material has pricing grid
+  // When fabric has pricing grid, fabricCost = TOTAL price and manufacturingCost = 0
+  const hasFabricPricingGrid = materialDetails?.pricing_grid_data || materialDetails?.resolved_grid_data;
+  const usePricingGrid = isBlindsOrShutters && hasFabricPricingGrid;
+  const combinedMaterialCost = fabricCost; // fabricCost already includes everything when grid is used
+  
+  console.log('🔍 buildClientBreakdown pricing grid check:', {
+    isBlindsOrShutters,
+    hasFabricPricingGrid,
+    usePricingGrid,
+    fabricCost,
+    manufacturingCost,
+    combinedMaterialCost
+  });
   
   if (combinedMaterialCost > 0 || linearMeters > 0) {
     const sqm = linearMeters * (Number(summary.widths_required) || 1) / 10000; // Convert cm to sqm
@@ -139,8 +150,8 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
     });
   }
 
-  // Manufacturing/Assembly - only show separately if NOT using pricing grid
-  // (pricing grid combines fabric + manufacturing into single "Fabric Material" line)
+  // Manufacturing/Assembly - UNIVERSAL RULE: only show if NOT using fabric pricing grid
+  // When fabric has pricing grid, manufacturingCost is already included in fabricCost
   if (!usePricingGrid && manufacturingCost > 0) {
     items.push({
       id: 'manufacturing',
