@@ -7856,7 +7856,7 @@ export type Database = {
             foreignKeyName: "template_option_settings_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
-            referencedRelation: "product_templates"
+            referencedRelation: "curtain_templates"
             referencedColumns: ["id"]
           },
           {
