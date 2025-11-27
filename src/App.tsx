@@ -4,8 +4,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { toast } from "@/hooks/use-toast";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { PersistQueryClientProvider, createLocalStoragePersister, persistOptions } from "@/lib/queryPersistence";
 import { lazy, Suspense } from 'react';
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
@@ -20,6 +21,7 @@ import { ThemeDarkSync } from "./components/system/ThemeDarkSync";
 import { InteractionUnlockGuard } from "./components/system/InteractionUnlockGuard";
 import { LoadingState } from "./components/ui/loading-state";
 import { ProjectInventoryTrackingHandler } from "./components/projects/ProjectInventoryTrackingHandler";
+import { SyncIndicator } from "./components/system/SyncIndicator";
 import "@/styles/theme.css";
 
 // Lazy load all route components for better code splitting
@@ -44,7 +46,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (was cacheTime)
       refetchOnWindowFocus: false,
       retry: (failureCount, error) => {
         // Don't retry on 4xx errors
@@ -56,6 +58,15 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Create persister for localStorage caching
+const persister = createLocalStoragePersister();
+
+// Configure persistence options
+const persistConfig = {
+  ...persistOptions,
+  persister,
+};
 
 // Navigation observer component
 function NavObserver() {
@@ -119,8 +130,15 @@ const App = () => {
 
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider 
+        client={queryClient} 
+        persistOptions={persistConfig}
+        onSuccess={() => {
+          console.log('✅ React Query cache restored from localStorage');
+        }}
+      >
             <TooltipProvider>
+            <SyncIndicator />
             {/* Ensure custom themes also apply the dark class */}
             <ThemeProvider
               attribute="class"
@@ -286,7 +304,7 @@ const App = () => {
                  </BrowserRouter>
               </ThemeProvider>
             </TooltipProvider>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
       </ErrorBoundary>
     );
   };
