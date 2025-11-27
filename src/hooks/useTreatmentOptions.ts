@@ -34,7 +34,6 @@ export interface TreatmentOption {
   validation?: any;
   tracks_inventory?: boolean; // Whether this option type should link to inventory
   option_values?: OptionValue[];
-  is_system_default?: boolean; // NEW: Track if this is a system default option
   treatment_category?: string; // The treatment category this option belongs to (e.g., 'roller_blinds')
 }
 

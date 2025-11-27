@@ -44,7 +44,7 @@ export const WindowTreatmentOptionsManager = () => {
         .from('curtain_templates')
         .select('*')
         .eq('active', true)
-        .or(`user_id.eq.${user.user.id},is_system_default.eq.true`);
+        .eq('user_id', user.user.id);
       if (error) throw error;
       return data;
     },
@@ -339,20 +339,6 @@ export const WindowTreatmentOptionsManager = () => {
   };
 
   const handleDelete = async (value: OptionValue) => {
-    // Check if this is a system default
-    const parentOption = relevantOptions.find(opt => 
-      opt.option_values?.some(v => v.code === value.code)
-    );
-    
-    if (parentOption?.is_system_default) {
-      toast({
-        title: "Cannot delete system default",
-        description: "System default options cannot be deleted. Use the hide button to hide them from your setup.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     if (confirm('Are you sure you want to delete this option from all templates?')) {
       try {
         // Delete this value from all templates
@@ -1001,11 +987,6 @@ export const WindowTreatmentOptionsManager = () => {
               {optionTypeCategories.map(opt => (
                 <TabsTrigger key={opt.type_key} value={opt.type_key} className="px-4">
                   {opt.type_label}
-                  {opt.is_system_default && (
-                    <Badge variant="secondary" className="ml-2 text-[10px] px-1 py-0">
-                      System
-                    </Badge>
-                  )}
                 </TabsTrigger>
               ))}
               </TabsList>
@@ -1059,9 +1040,6 @@ export const WindowTreatmentOptionsManager = () => {
                 <div className="font-medium">
                   Manage: {optionTypeCategories.find(opt => opt.type_key === activeOptionType)?.type_label}
                 </div>
-                {optionTypeCategories.find(opt => opt.type_key === activeOptionType)?.is_system_default && (
-                  <Badge variant="secondary" className="text-xs">System Default</Badge>
-                )}
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -1078,8 +1056,7 @@ export const WindowTreatmentOptionsManager = () => {
                       // Wait for mutation to complete
                       const result = await toggleOptionTypeVisibility.mutateAsync({ 
                         id: currentType.id, 
-                        hidden: true,
-                        isSystemDefault: currentType.is_system_default || !currentType.account_id
+                        hidden: true
                       });
                       
                       console.log('✅ Hide mutation completed:', result);
@@ -1125,9 +1102,8 @@ export const WindowTreatmentOptionsManager = () => {
                   )}
                 </Button>
                 
-                {!optionTypeCategories.find(opt => opt.type_key === activeOptionType)?.is_system_default && (
-                  <Button
-                    variant="destructive"
+                <Button
+                  variant="destructive"
                     size="sm"
                     onClick={async () => {
                       const currentType = optionTypeCategories.find(opt => opt.type_key === activeOptionType);
@@ -1159,7 +1135,6 @@ export const WindowTreatmentOptionsManager = () => {
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Type
                   </Button>
-                )}
               </div>
             </div>
           )}

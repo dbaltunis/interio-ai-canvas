@@ -46,12 +46,6 @@ export const SortableOptionItem = ({
 
   const hasSubOptions = value.extra_data?.sub_options?.length > 0;
   const isExpanded = expandedOptions.has(value.id);
-  
-  // Check if this option is a system default
-  const parentOption = relevantOptions.find(opt => 
-    opt.option_values?.some(v => v.code === value.code)
-  );
-  const isSystemDefault = parentOption?.is_system_default || false;
 
   return (
     <div ref={setNodeRef} style={style} className={`border rounded-lg ${value.hidden_by_user ? 'opacity-60 bg-muted/30' : ''}`}>
@@ -87,13 +81,6 @@ export const SortableOptionItem = ({
               </Button>
             )}
             <div className="font-medium uppercase">{value.label}</div>
-            
-            {/* System Default Badge */}
-            {isSystemDefault && (
-              <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
-                System Default
-              </Badge>
-            )}
             
             {/* Visibility Indicator */}
             {value.extra_data?.visible === false ? (
@@ -213,9 +200,8 @@ export const SortableOptionItem = ({
                     <Button
                       variant="destructive"
                       size="sm"
-                      className={`h-9 px-3 ${isSystemDefault ? "opacity-50 cursor-not-allowed" : ""}`}
+                      className="h-9 px-3"
                       onClick={() => onDelete(value)}
-                      disabled={isSystemDefault}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete
@@ -223,9 +209,7 @@ export const SortableOptionItem = ({
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {isSystemDefault 
-                    ? "Cannot delete system defaults. Use hide instead." 
-                    : "Delete option permanently"}
+                  Delete option permanently
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
