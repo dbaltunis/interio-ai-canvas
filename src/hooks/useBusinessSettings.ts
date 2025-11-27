@@ -1,6 +1,8 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { settingsCacheService, CACHE_KEYS } from "@/services/settingsCacheService";
+import { toast } from "sonner";
 
 // Define the business settings interface directly since tables don't exist
 export interface FeatureFlags {
@@ -73,6 +75,7 @@ export const useBusinessSettings = () => {
   return useQuery({
     queryKey: ["business-settings"],
     queryFn: async () => {
+      console.log('🔍 Fetching business settings from Supabase...');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
@@ -98,6 +101,12 @@ export const useBusinessSettings = () => {
         
         data = fallbackData;
         error = fallbackError;
+      }
+
+      // Cache the settings for instant future loads
+      if (data) {
+        settingsCacheService.set(CACHE_KEYS.BUSINESS_SETTINGS, data);
+        console.log('✅ Cached business settings to localStorage');
       }
 
       // If no settings found, try to get account owner's settings

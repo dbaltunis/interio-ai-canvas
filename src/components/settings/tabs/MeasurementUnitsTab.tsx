@@ -19,6 +19,7 @@ import {
 import { SettingsInheritanceInfo } from "../SettingsInheritanceInfo";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { SettingsFooter } from "../SettingsFooter";
 
 export const MeasurementUnitsTab = () => {
   const {
@@ -132,6 +133,8 @@ export const MeasurementUnitsTab = () => {
           </div>
         </CardContent>
       </Card>
+      
+      <SettingsFooter />
     </div>
   );
 };
