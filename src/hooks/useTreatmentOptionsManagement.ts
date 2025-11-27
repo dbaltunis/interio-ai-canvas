@@ -15,7 +15,6 @@ export const useCreateTreatmentOption = () => {
       visible?: boolean;
       order_index?: number;
       treatment_category: string;
-      is_system_default?: boolean;
     }) => {
       // Get current user's account_id
       const { data: { user } } = await supabase.auth.getUser();
@@ -41,9 +40,9 @@ export const useCreateTreatmentOption = () => {
         .single();
       
       if (error) {
-        // Handle unique constraint violation gracefully
-        if (error.code === '23505' && error.message.includes('treatment_options_category_key_unique')) {
-          throw new Error(`This treatment option already exists for ${data.treatment_category}`);
+        // Handle unique constraint violation gracefully (updated constraint name)
+        if (error.code === '23505' && error.message.includes('treatment_options_account_category_key_unique')) {
+          throw new Error(`You already have a "${data.label}" option for ${data.treatment_category}`);
         }
         throw error;
       }

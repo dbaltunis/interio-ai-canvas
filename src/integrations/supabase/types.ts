@@ -7705,6 +7705,45 @@ export type Database = {
         }
         Relationships: []
       }
+      system_default_options: {
+        Row: {
+          created_at: string | null
+          default_values: Json | null
+          description: string | null
+          id: string
+          input_type: string
+          key: string
+          label: string
+          sort_order: number | null
+          treatment_category: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_values?: Json | null
+          description?: string | null
+          id?: string
+          input_type?: string
+          key: string
+          label: string
+          sort_order?: number | null
+          treatment_category: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          default_values?: Json | null
+          description?: string | null
+          id?: string
+          input_type?: string
+          key?: string
+          label?: string
+          sort_order?: number | null
+          treatment_category?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           appointment_id: string | null
@@ -8022,7 +8061,6 @@ export type Database = {
           created_at: string | null
           id: string
           input_type: Database["public"]["Enums"]["option_input_type"]
-          is_system_default: boolean | null
           key: string
           label: string
           order_index: number | null
@@ -8044,7 +8082,6 @@ export type Database = {
           created_at?: string | null
           id?: string
           input_type: Database["public"]["Enums"]["option_input_type"]
-          is_system_default?: boolean | null
           key: string
           label: string
           order_index?: number | null
@@ -8066,7 +8103,6 @@ export type Database = {
           created_at?: string | null
           id?: string
           input_type?: Database["public"]["Enums"]["option_input_type"]
-          is_system_default?: boolean | null
           key?: string
           label?: string
           order_index?: number | null
@@ -9576,6 +9612,10 @@ export type Database = {
           reminder_type_param?: string
         }
         Returns: string
+      }
+      seed_account_options: {
+        Args: { target_account_id: string }
+        Returns: number
       }
       seed_default_window_types: {
         Args: { account_owner_id: string }
