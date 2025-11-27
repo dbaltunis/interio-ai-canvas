@@ -252,7 +252,6 @@ export const WindowTreatmentOptionsManager = () => {
               visible: true,
               order_index: 0,
               treatment_category: activeTreatment,
-              is_system_default: false,
             });
           } catch (error: any) {
             // If duplicate key error, refetch and use existing option
@@ -471,7 +470,6 @@ export const WindowTreatmentOptionsManager = () => {
             visible: true,
             order_index: 0,
             treatment_category: activeTreatment,
-            is_system_default: false,
             required: false,
           });
         } catch (error: any) {
