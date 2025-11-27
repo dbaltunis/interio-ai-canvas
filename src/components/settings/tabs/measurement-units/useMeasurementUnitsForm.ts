@@ -63,6 +63,10 @@ export const useMeasurementUnitsForm = () => {
     try {
       const measurementUnitsJson = JSON.stringify(units);
       
+      // Update cache immediately for instant feedback
+      settingsCacheService.set(CACHE_KEYS.MEASUREMENT_UNITS, units);
+      console.log('💾 Cached measurement units:', units);
+      
       if (businessSettings) {
         await updateSettings.mutateAsync({
           id: businessSettings.id,
@@ -74,16 +78,13 @@ export const useMeasurementUnitsForm = () => {
         });
       }
       
-      // Update cache immediately for instant display
-      settingsCacheService.set(CACHE_KEYS.MEASUREMENT_UNITS, units);
-      
       // Force refetch to ensure fresh data
       await queryClient.refetchQueries({ queryKey: ["business-settings"] });
       
-      console.log('✅ Saved measurement units:', units);
+      console.log('✅ Saved measurement units to database:', units);
       toast.success("Measurement units updated successfully");
     } catch (error) {
-      console.error("Failed to save measurement units:", error);
+      console.error("❌ Failed to save measurement units:", error);
       toast.error("Failed to save measurement units");
     }
   };
