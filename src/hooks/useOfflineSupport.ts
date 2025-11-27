@@ -36,6 +36,7 @@ export const useOfflineSupport = () => {
   }, [queryClient]);
 
   const queueOfflineOperation = (type: 'create' | 'update' | 'delete', table: string, data: any) => {
+    console.log(`📝 Queuing offline operation: ${type} on ${table}`);
     offlineQueueService.queueOperation(type, table, data);
     setQueueStatus(offlineQueueService.getQueueStatus());
   };

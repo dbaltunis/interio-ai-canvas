@@ -20,6 +20,7 @@ import { SettingsInheritanceInfo } from "../SettingsInheritanceInfo";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { SettingsFooter } from "../SettingsFooter";
+import { MeasurementUnitsLoadingSkeleton } from "./measurement-units/MeasurementUnitsLoadingSkeleton";
 
 export const MeasurementUnitsTab = () => {
   const {
@@ -38,11 +39,7 @@ export const MeasurementUnitsTab = () => {
   const isInheritingSettings = isTeamMember && businessSettings?.user_id !== profile?.user_id;
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-lg">Loading measurement units...</div>
-      </div>
-    );
+    return <MeasurementUnitsLoadingSkeleton />;
   }
 
   const lengthOptions = units.system === 'metric' ? metricLengthOptions : imperialLengthOptions;
