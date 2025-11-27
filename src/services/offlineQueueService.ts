@@ -13,6 +13,8 @@ interface OfflineCache {
   appointments: any[];
   calendars: any[];
   accounts: any[];
+  business_settings: any[];
+  user_preferences: any[];
   lastUpdated: number;
 }
 
@@ -22,6 +24,8 @@ class OfflineQueueService {
     appointments: [],
     calendars: [],
     accounts: [],
+    business_settings: [],
+    user_preferences: [],
     lastUpdated: 0
   };
   private readonly STORAGE_KEY = 'caldav_offline_queue';
@@ -112,21 +116,15 @@ class OfflineQueueService {
 
     switch (type) {
       case 'create':
-        if (table === 'appointments') {
-          await supabase.from('appointments').insert(data);
-        }
+        await supabase.from(table as any).insert(data);
         break;
       
       case 'update':
-        if (table === 'appointments') {
-          await supabase.from('appointments').update(data).eq('id', data.id);
-        }
+        await supabase.from(table as any).update(data).eq('id', data.id);
         break;
       
       case 'delete':
-        if (table === 'appointments') {
-          await supabase.from('appointments').delete().eq('id', data.id);
-        }
+        await supabase.from(table as any).delete().eq('id', data.id);
         break;
     }
   }
