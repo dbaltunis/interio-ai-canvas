@@ -9426,8 +9426,6 @@ export type Database = {
         Args: { owner_id: string; team_member_id: string }
         Returns: Json
       }
-      create_comprehensive_blind_templates: { Args: never; Returns: undefined }
-      create_system_blind_templates: { Args: never; Returns: undefined }
       current_user_has_permission: {
         Args: { permission_name: string }
         Returns: boolean
@@ -9612,8 +9610,6 @@ export type Database = {
         Args: { account_owner_id: string }
         Returns: number
       }
-      seed_roller_blind_defaults: { Args: never; Returns: undefined }
-      seed_system_option_types: { Args: never; Returns: undefined }
       sync_inventory_usage: { Args: { p_user_id: string }; Returns: undefined }
       sync_user_role_from_profile: { Args: never; Returns: undefined }
       trigger_automation_workflow: {
