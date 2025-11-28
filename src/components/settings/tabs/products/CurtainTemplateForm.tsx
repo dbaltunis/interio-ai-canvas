@@ -95,6 +95,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     } catch (error: any) {
       toast({
         title: "Upload failed",
+        description: error.message || "Failed to upload image",
         variant: "destructive",
       });
     }
@@ -160,7 +161,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
       onClose();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Failed to save template",
+        description: error.message || "An error occurred",
         variant: "destructive",
       });
     } finally {

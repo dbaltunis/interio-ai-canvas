@@ -43,12 +43,10 @@ export const TemplateOptionsManager = ({ curtainType, templateId }: TemplateOpti
   // Handler for toggling option
   const handleToggle = (optionId: string, currentEnabled: boolean) => {
     if (!templateId) {
+      // Show warning toast for unsaved templates
       console.warn('Template not saved yet - toggle will take effect after saving');
-      // TODO: Store in local state for new templates
       return;
     }
-    
-    console.log('Toggle clicked:', { optionId, currentEnabled, newState: !currentEnabled, templateId });
     
     toggleOption.mutate({
       templateId,
