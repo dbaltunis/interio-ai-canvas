@@ -49,14 +49,22 @@ export const HeadingStyleSelector = ({
             {headingStyles.map((heading) => (
               <div
                 key={heading.id}
-                className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer"
+                className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer"
                 onClick={() => handleToggle(heading.id)}
               >
                 <Checkbox
                   checked={selectedHeadingIds.includes(heading.id)}
                   onCheckedChange={() => handleToggle(heading.id)}
+                  className="mt-1"
                 />
-                <div className="flex-1">
+                {heading.image_url && (
+                  <img 
+                    src={heading.image_url} 
+                    alt={heading.name}
+                    className="w-12 h-12 object-cover rounded"
+                  />
+                )}
+                <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm">{heading.name}</div>
                   {heading.cost_price && (
                     <Badge variant="outline" className="text-xs mt-1">

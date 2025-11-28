@@ -4948,7 +4948,6 @@ export type Database = {
           hidden_by_user: boolean | null
           id: string
           inventory_item_id: string | null
-          is_system_default: boolean | null
           label: string
           option_id: string
           order_index: number | null
@@ -4964,7 +4963,6 @@ export type Database = {
           hidden_by_user?: boolean | null
           id?: string
           inventory_item_id?: string | null
-          is_system_default?: boolean | null
           label: string
           option_id: string
           order_index?: number | null
@@ -4980,7 +4978,6 @@ export type Database = {
           hidden_by_user?: boolean | null
           id?: string
           inventory_item_id?: string | null
-          is_system_default?: boolean | null
           label?: string
           option_id?: string
           order_index?: number | null
