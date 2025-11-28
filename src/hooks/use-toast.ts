@@ -8,7 +8,7 @@ import type {
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 3000 // 3 seconds for success toasts
-const ERROR_TOAST_REMOVE_DELAY = 7000 // 7 seconds for error toasts
+const ERROR_TOAST_REMOVE_DELAY = 15000 // 15 seconds for error toasts - readable duration
 
 type ToasterToast = ToastProps & {
   id: string
@@ -145,13 +145,16 @@ type Toast = Omit<ToasterToast, "id">
 function toast({ ...props }: Toast) {
   const id = genId()
 
-  // Filter out silent notifications unless they're errors
+  // Determine if this is an error toast
   const isError = props.variant === "destructive" || 
                   props.title?.toString().toLowerCase().includes("error") ||
                   props.title?.toString().toLowerCase().includes("failed");
   
-  // Don't show silent notifications unless they're errors
-  if (props.importance === 'silent' && !isError) {
+  // Default to silent for non-error toasts unless explicitly marked as important
+  const effectiveImportance = props.importance || (isError ? 'important' : 'silent');
+  
+  // Don't show silent notifications
+  if (effectiveImportance === 'silent') {
     return {
       id: id,
       dismiss: () => {},
@@ -166,9 +169,9 @@ function toast({ ...props }: Toast) {
     })
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
   
-  // Error toasts don't auto-dismiss, important ones show longer
+  // Error toasts show longer (15s), important success toasts show 4s
   const delay = isError ? ERROR_TOAST_REMOVE_DELAY : 
-                props.importance === 'important' ? 4000 : 
+                effectiveImportance === 'important' ? 4000 : 
                 TOAST_REMOVE_DELAY;
   
   let timeout: ReturnType<typeof setTimeout> | null = null;

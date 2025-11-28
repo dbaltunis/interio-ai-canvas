@@ -40,12 +40,7 @@ export const CostVisibilitySettings = () => {
       <CardHeader>
         <div className="flex items-center gap-2">
           <Lock className="h-5 w-5" />
-          <div>
-            <CardTitle>Vendor Cost Visibility</CardTitle>
-            <CardDescription>
-              Control who can see vendor pricing information
-            </CardDescription>
-          </div>
+          <CardTitle>Vendor Cost Visibility</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">

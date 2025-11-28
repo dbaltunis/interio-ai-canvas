@@ -26,9 +26,6 @@ export const WindowCoveringsTab = () => {
       <Card>
         <CardHeader>
           <CardTitle>Window Coverings Management</CardTitle>
-          <CardDescription>
-            Configure templates, headings, options, and defaults for your window treatments
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

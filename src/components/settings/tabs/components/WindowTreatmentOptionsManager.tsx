@@ -230,6 +230,7 @@ export const WindowTreatmentOptionsManager = () => {
         toast({
           title: "Option updated",
           description: "The option value has been updated.",
+          importance: 'silent'
         });
       } else {
         // Check if this option category already exists
@@ -310,6 +311,7 @@ export const WindowTreatmentOptionsManager = () => {
         toast({
           title: "Option created",
           description: `New option value has been added.`,
+          importance: 'silent'
         });
       }
       resetForm();
@@ -351,6 +353,7 @@ export const WindowTreatmentOptionsManager = () => {
         toast({
           title: "Option deleted",
           description: "The option has been removed from all templates.",
+          importance: 'silent'
         });
       } catch (error) {
         console.error('Error deleting option:', error);
@@ -916,13 +919,10 @@ export const WindowTreatmentOptionsManager = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Window Treatment Options</CardTitle>
-        <CardDescription>
-          Manage configuration options for all window treatment types (blinds, shutters, awnings)
-        </CardDescription>
-      </CardHeader>
+      <Card>
+        <CardHeader>
+          <CardTitle>Window Treatment Options</CardTitle>
+        </CardHeader>
       <CardContent>
         {/* Treatment Type Selection */}
         <div className="mb-6">

@@ -171,15 +171,10 @@ export const InventoryCategoriesManager = () => {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <FolderTree className="h-5 w-5" />
-              Inventory Categories
-            </CardTitle>
-            <CardDescription>
-              Organize your inventory with hierarchical categories and subcategories
-            </CardDescription>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <FolderTree className="h-5 w-5" />
+            Inventory Categories
+          </CardTitle>
           <Button onClick={() => setShowDialog(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Category
