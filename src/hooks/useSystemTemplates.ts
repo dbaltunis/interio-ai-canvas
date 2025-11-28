@@ -11,7 +11,6 @@ export interface SystemTemplate {
   unit_price: number | null;
   pricing_type: string;
   manufacturing_type: string;
-  is_system_default: boolean;
 }
 
 export const useSystemTemplates = () => {
@@ -20,8 +19,7 @@ export const useSystemTemplates = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('curtain_templates')
-        .select('id, name, description, treatment_category, curtain_type, unit_price, pricing_type, manufacturing_type, is_system_default')
-        .eq('is_system_default', true)
+        .select('id, name, description, treatment_category, curtain_type, unit_price, pricing_type, manufacturing_type')
         .eq('active', true)
         .order('treatment_category, name');
       
@@ -57,14 +55,13 @@ export const useCloneSystemTemplate = () => {
       
       if (fetchError) throw fetchError;
       
-      // Clone the template with system pricing
+      // Clone the template
       const { data: clonedTemplate, error } = await supabase
         .from('curtain_templates')
         .insert({
           ...template,
           id: undefined, // Let database generate new ID
           user_id: user.id,
-          is_system_default: false,
           name: `${template.name} (Custom)`,
           unit_price: template.unit_price,
           created_at: undefined,
