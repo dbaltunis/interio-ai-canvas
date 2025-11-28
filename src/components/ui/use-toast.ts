@@ -2,7 +2,7 @@
 import { useToast, toast } from "@/hooks/use-toast";
 
 // Helper function to show success toast (only for important events)
-export const showSuccessToast = (title: string, description?: string, importance: 'silent' | 'normal' | 'important' = 'normal') => {
+export const showSuccessToast = (title: string, description?: string, importance: 'silent' | 'normal' | 'important' = 'silent') => {
   toast({
     title,
     description,

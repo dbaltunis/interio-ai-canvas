@@ -136,9 +136,6 @@ export const BulkPermissionManager = () => {
           <Users className="h-5 w-5" />
           Bulk Permission Management
         </CardTitle>
-        <CardDescription>
-          Apply permissions to multiple users at once
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Role Filter */}

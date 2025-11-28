@@ -100,7 +100,6 @@ export const CalculationEngineTab = () => {
             <Calculator className="h-5 w-5 text-brand-primary" />
             Global Calculation Settings
           </CardTitle>
-          <CardDescription>Base settings that affect all calculations</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-3 gap-4">

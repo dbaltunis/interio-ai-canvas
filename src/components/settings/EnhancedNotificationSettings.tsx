@@ -137,9 +137,6 @@ export const EnhancedNotificationSettings = () => {
             <User className="h-5 w-5" />
             Personal Notification Preferences
           </CardTitle>
-          <CardDescription>
-            Configure your personal settings for receiving appointment notifications
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Phone Number */}

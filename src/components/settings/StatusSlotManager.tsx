@@ -160,12 +160,7 @@ export const StatusSlotManager = () => {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Status Workflow (10 Slots)</CardTitle>
-            <CardDescription>
-              Configure your job statuses in a predictable 10-slot workflow. Each slot represents a stage in your process.
-            </CardDescription>
-          </div>
+          <CardTitle>Status Workflow (10 Slots)</CardTitle>
           {hasNoStatuses && (
             <Button onClick={handleUseTemplate}>
               Use Recommended Template
