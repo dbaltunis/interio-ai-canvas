@@ -2226,7 +2226,6 @@ export type Database = {
           image_url: string | null
           is_railroadable: boolean | null
           is_store_visible: boolean | null
-          is_system_default: boolean | null
           lining_types: Json | null
           machine_drop_height_prices: Json | null
           machine_price_per_drop: number | null
@@ -2302,7 +2301,6 @@ export type Database = {
           image_url?: string | null
           is_railroadable?: boolean | null
           is_store_visible?: boolean | null
-          is_system_default?: boolean | null
           lining_types?: Json | null
           machine_drop_height_prices?: Json | null
           machine_price_per_drop?: number | null
@@ -2378,7 +2376,6 @@ export type Database = {
           image_url?: string | null
           is_railroadable?: boolean | null
           is_store_visible?: boolean | null
-          is_system_default?: boolean | null
           lining_types?: Json | null
           machine_drop_height_prices?: Json | null
           machine_price_per_drop?: number | null
@@ -4901,7 +4898,6 @@ export type Database = {
           created_at: string | null
           hidden_by_user: boolean | null
           id: string
-          is_system_default: boolean | null
           sort_order: number | null
           treatment_category: string
           type_key: string
@@ -4915,7 +4911,6 @@ export type Database = {
           created_at?: string | null
           hidden_by_user?: boolean | null
           id?: string
-          is_system_default?: boolean | null
           sort_order?: number | null
           treatment_category: string
           type_key: string
@@ -4929,7 +4924,6 @@ export type Database = {
           created_at?: string | null
           hidden_by_user?: boolean | null
           id?: string
-          is_system_default?: boolean | null
           sort_order?: number | null
           treatment_category?: string
           type_key?: string
