@@ -95,17 +95,7 @@ export const SortableOptionItem = ({
               </Badge>
             )}
             
-            {value.extra_data?.pricing_method === 'pricing-grid' ? (
-              <Badge variant="secondary" className="text-xs">
-                Price Table
-              </Badge>
-            ) : value.extra_data?.price && value.extra_data.price > 0 ? (
-              <Badge variant="secondary" className="text-xs">
-                {value.extra_data?.pricing_method === 'percentage' 
-                  ? `${value.extra_data.price}%`
-                  : `+$${value.extra_data.price.toFixed(2)}`}
-              </Badge>
-            ) : null}
+            {/* Pricing Method Badge - Always show if exists */}
             {value.extra_data?.pricing_method && value.extra_data.pricing_method !== 'fixed' && (
               <Badge variant="outline" className="text-xs">
                 {value.extra_data.pricing_method === 'per-unit' ? 'Per Unit' :
@@ -118,6 +108,19 @@ export const SortableOptionItem = ({
                  value.extra_data.pricing_method}
               </Badge>
             )}
+            
+            {/* Price Badge - Show separately */}
+            {value.extra_data?.pricing_method === 'pricing-grid' ? (
+              <Badge variant="secondary" className="text-xs">
+                Price Table
+              </Badge>
+            ) : value.extra_data?.price && value.extra_data.price > 0 ? (
+              <Badge variant="secondary" className="text-xs">
+                {value.extra_data?.pricing_method === 'percentage' 
+                  ? `${value.extra_data.price}%`
+                  : `+$${value.extra_data.price.toFixed(2)}`}
+              </Badge>
+            ) : null}
             {value.inventory_item_id && (
               <Badge variant="outline" className="flex items-center gap-1 text-xs">
                 <Package className="h-3 w-3" />
