@@ -1140,23 +1140,18 @@ export const WindowTreatmentOptionsManager = () => {
           )}
 
           {optionTypeCategories.map((optType) => {
-            const isSystemOnly = matchingTemplates.length > 0 && matchingTemplates.every(t => t.is_system_default);
+            // Remove system default check - all templates are now account-specific
             
             return (
               <TabsContent key={optType.type_key} value={optType.type_key} className="space-y-4">
                 <div className="flex justify-between items-center">
                   <p className="text-sm text-muted-foreground">
-                    {isSystemOnly 
-                      ? `Viewing system ${optType.type_label.toLowerCase()} (clone template to customize)`
-                      : `Add ${optType.type_label.toLowerCase()} for ${getTreatmentLabel(activeTreatment).toLowerCase()}`
-                    }
+                    Add {optType.type_label.toLowerCase()} for {getTreatmentLabel(activeTreatment).toLowerCase()}
                   </p>
-                  {!isSystemOnly && (
-                    <Button onClick={() => handleAddOption(optType.type_key)}>
+                  <Button onClick={() => handleAddOption(optType.type_key)}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Option
                     </Button>
-                  )}
                 </div>
 
               {/* Create/Edit Form */}

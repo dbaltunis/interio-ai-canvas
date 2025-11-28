@@ -33,14 +33,14 @@ export const fetchTraditionalOptions = async (
         option_values (
           id,
           label,
-          value,
+          code,
           extra_data,
-          sort_order,
+          order_index,
           hidden_by_user
         )
       `)
       .eq('treatment_category', template.curtain_type)
-      .order('sort_order', { ascending: true });
+      .order('order_index', { ascending: true });
     
     if (optionsError) {
       console.error('Error fetching options:', optionsError);

@@ -9,7 +9,6 @@ export interface OptionTypeCategory {
   treatment_category: string;
   type_key: string;
   type_label: string;
-  is_system_default: boolean;
   active: boolean;
   sort_order: number;
   hidden_by_user: boolean;
@@ -52,8 +51,8 @@ export const useOptionTypeCategories = (treatmentCategory?: string) => {
       
       // Filter out system defaults that user has hidden
       const filtered = (data as OptionTypeCategory[]).filter(cat => {
-        // Hide if it's a system default that the user has hidden
-        if ((cat.is_system_default || !cat.account_id) && hiddenIds.has(cat.id)) {
+        // Hide if it's a system default (no account_id) that the user has hidden
+        if (!cat.account_id && hiddenIds.has(cat.id)) {
           return false;
         }
         return true;
@@ -70,7 +69,7 @@ export const useCreateOptionTypeCategory = () => {
   const { toast } = useToast();
   
   return useMutation({
-    mutationFn: async (category: Omit<OptionTypeCategory, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'account_id' | 'is_system_default' | 'active' | 'sort_order' | 'hidden_by_user'>) => {
+    mutationFn: async (category: Omit<OptionTypeCategory, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'account_id' | 'active' | 'sort_order' | 'hidden_by_user'>) => {
       // Use getSession() instead of getUser() to get the session with auth token
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
@@ -108,7 +107,6 @@ export const useCreateOptionTypeCategory = () => {
         ...category,
         user_id: session.user.id,
         account_id: accountId,
-        is_system_default: false,
         active: true,
         sort_order: maxSortOrder + 1, // Always append at the end
         hidden_by_user: false,
@@ -166,7 +164,7 @@ export const useToggleOptionTypeVisibility = () => {
         throw new Error('User not authenticated');
       }
       
-      // For system defaults, use hidden_option_categories table
+      // For system defaults (no account_id), use hidden_option_categories table
       if (isSystemDefault) {
         if (hidden) {
           // Add to hidden list
