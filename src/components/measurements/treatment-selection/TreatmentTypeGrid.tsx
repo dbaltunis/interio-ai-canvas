@@ -6,7 +6,7 @@ import { useTemplateImageResolver } from "@/hooks/useTemplateImageResolver";
 interface TreatmentType {
   id: string;
   name: string;
-  curtain_type: string;
+  treatment_category?: string;
   fullness_ratio: number;
   pricing_type: string;
   heading_name?: string;
@@ -29,7 +29,7 @@ const TreatmentCard = ({ treatment, isSelected, selectedCardRef }: {
 }) => {
   const { imageUrl } = useTemplateImageResolver({
     templateId: treatment.id,
-    treatmentCategory: treatment.curtain_type,
+    treatmentCategory: treatment.treatment_category,
     templateImageUrl: treatment.image_url,
     displayImageUrl: treatment.display_image_url
   });
@@ -86,7 +86,7 @@ export const TreatmentTypeGrid = ({
   // Filter treatments based on search query
   const filteredTreatments = treatments.filter(treatment =>
     treatment.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    treatment.curtain_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (treatment.treatment_category || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
     (treatment.heading_name || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -101,9 +101,9 @@ export const TreatmentTypeGrid = ({
     }
   }, [selectedId]);
 
-  // Group treatments by curtain type for better organization
+  // Group treatments by treatment category for better organization
   const groupedTreatments = filteredTreatments.reduce((acc, treatment) => {
-    const category = treatment.curtain_type || "Other";
+    const category = treatment.treatment_category || "Other";
     if (!acc[category]) {
       acc[category] = [];
     }

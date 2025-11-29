@@ -210,7 +210,7 @@ export const FixedWindowCoveringSelector = ({
                           <CardContent className="pt-0">
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               <Badge variant="secondary" className="text-xs">
-                                {covering.curtain_type}
+                                {covering.treatment_category}
                               </Badge>
                               <span>•</span>
                               <span>

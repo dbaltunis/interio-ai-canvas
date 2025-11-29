@@ -31,10 +31,10 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
     name: template?.name || "",
     description: template?.description || "",
     image_url: (template as any)?.image_url || "",
-    curtain_type: template?.curtain_type || "curtain",
+    treatment_category: template?.treatment_category || "curtains",
     
-    // Hidden system_type - auto-generated from curtain_type
-    system_type: (template as any)?.system_type || template?.curtain_type || "curtain",
+    // Hidden system_type - auto-generated from treatment_category
+    system_type: (template as any)?.system_type || template?.treatment_category || "curtains",
     
     // Heading/Options
     selected_heading_ids: template?.selected_heading_ids || [],
@@ -121,8 +121,8 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
         name: formData.name,
         description: formData.description,
         image_url: formData.image_url,
-        curtain_type: formData.curtain_type,
-        system_type: formData.system_type || formData.curtain_type,
+        treatment_category: formData.treatment_category,
+        system_type: formData.system_type || formData.treatment_category,
         selected_heading_ids: formData.selected_heading_ids,
         offers_hand_finished: formData.offers_hand_finished,
         pricing_type: formData.pricing_type,
@@ -171,7 +171,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
   };
 
   // Determine which tabs to show based on treatment type
-  const isCurtainOrRoman = formData.curtain_type === 'curtain' || formData.curtain_type === 'roman_blind';
+  const isCurtainOrRoman = formData.treatment_category === 'curtains' || formData.treatment_category === 'roman_blinds';
   const visibleTabCount = 3 + (isCurtainOrRoman ? 2 : 0); // Basic + Options + Pricing + (Heading + Manufacturing for curtains/romans)
 
   return (
@@ -244,13 +244,13 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
 
               <div>
                 <Label>Type</Label>
-                <Select value={formData.curtain_type} onValueChange={(value) => handleInputChange("curtain_type", value)}>
+                <Select value={formData.treatment_category} onValueChange={(value) => handleInputChange("treatment_category", value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.values(TREATMENT_CATEGORIES).map((category) => (
-                      <SelectItem key={category.singular} value={category.singular}>
+                      <SelectItem key={category.db_value} value={category.db_value}>
                         {category.display_name}
                       </SelectItem>
                     ))}
@@ -266,14 +266,14 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
             <HeadingStyleSelector
               selectedHeadingIds={formData.selected_heading_ids}
               onSelectionChange={(ids) => handleInputChange("selected_heading_ids", ids)}
-              curtainType={formData.curtain_type}
+              curtainType={formData.treatment_category}
             />
           </TabsContent>
         )}
 
         <TabsContent value="options" className="space-y-4 mt-4">
           <TemplateOptionsManager 
-            curtainType={formData.curtain_type} 
+            curtainType={formData.treatment_category} 
             templateId={template?.id}
           />
         </TabsContent>

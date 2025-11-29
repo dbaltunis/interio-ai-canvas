@@ -130,7 +130,6 @@ export const CostCalculationSummary = ({
   console.log('🔍 CostCalculationSummary Debug:', {
     treatmentCategory,
     templateName: template.name,
-    curtainType: template.curtain_type,
     width,
     height,
     isBlind: isBlindCategory(treatmentCategory, template.name),
