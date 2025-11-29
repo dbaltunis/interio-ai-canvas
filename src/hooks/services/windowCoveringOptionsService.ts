@@ -13,6 +13,22 @@ export const fetchTraditionalOptions = async (
   console.log('🔍 respectTemplateSettings:', respectTemplateSettings);
   
   try {
+    // Get current user's account_id for data isolation
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.log('⚠️ No authenticated user');
+      return [];
+    }
+    
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('user_id, parent_account_id')
+      .eq('user_id', user.id)
+      .single();
+    
+    const accountId = profile?.parent_account_id || user.id;
+    console.log('🔐 Using account_id for filtering:', accountId);
+    
     // Get the template to find its treatment category
     const { data: template, error: templateError } = await supabase
       .from('curtain_templates')
@@ -25,7 +41,7 @@ export const fetchTraditionalOptions = async (
       return [];
     }
     
-    // Query treatment_options for this category
+    // Query treatment_options for this category AND account
     const { data: options, error: optionsError } = await supabase
       .from('treatment_options')
       .select(`
@@ -40,6 +56,7 @@ export const fetchTraditionalOptions = async (
         )
       `)
       .eq('treatment_category', template.treatment_category)
+      .eq('account_id', accountId)  // 🔐 CRITICAL: Filter by account_id for data isolation
       .order('order_index', { ascending: true });
     
     if (optionsError) {
