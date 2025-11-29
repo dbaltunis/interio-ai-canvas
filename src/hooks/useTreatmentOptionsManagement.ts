@@ -46,6 +46,27 @@ export const useCreateTreatmentOption = () => {
         }
         throw error;
       }
+      
+      // Auto-sync: Create matching option_type_category for Options Manager
+      const categoryInsert = await supabase
+        .from('option_type_categories')
+        .insert({
+          account_id: accountId,
+          type_key: data.key,
+          type_label: data.label,
+          treatment_category: data.treatment_category,
+          sort_order: data.order_index || 999,
+        })
+        .select()
+        .single();
+      
+      // Silently ignore duplicate key errors (option_type_category already exists)
+      if (!categoryInsert.error || categoryInsert.error.code === '23505') {
+        queryClient.invalidateQueries({ queryKey: ['option-type-categories'] });
+      } else {
+        console.error('Failed to create option_type_category:', categoryInsert.error);
+      }
+      
       return option;
     },
     onSuccess: () => {
