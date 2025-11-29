@@ -36,6 +36,17 @@ export const TraditionalOptions = ({
   const { isOptionVisible } = useConditionalOptions(templateId, selectedOptionsMap);
   const { isOptionEnabled } = useEnabledTemplateOptions(templateId);
 
+  // Build set of disabled option keys (to catch duplicates)
+  const disabledKeys = useMemo(() => {
+    const keys = new Set<string>();
+    options.forEach(opt => {
+      if (opt.key && !isOptionEnabled(opt.id)) {
+        keys.add(opt.key);
+      }
+    });
+    return keys;
+  }, [options, isOptionEnabled]);
+
   // Group options by type for better organization
   const groupedOptions = options.reduce((acc: Record<string, any[]>, option) => {
     if (!acc[option.option_type]) {
@@ -49,6 +60,11 @@ export const TraditionalOptions = ({
     <>
       {Object.entries(groupedOptions).map(([optionType, typeOptions]) => {
         const filteredOptions = (typeOptions as any[]).filter((opt: any) => {
+          // Hide if option key is disabled (catches all duplicates with same key)
+          if (opt.key && disabledKeys.has(opt.key)) {
+            return false;
+          }
+          
           const visible = isOptionVisible(opt.key || opt.option_type || opt.name || opt.id);
           const enabled = isOptionEnabled(opt.id);
           return visible && enabled;
