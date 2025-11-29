@@ -7,19 +7,15 @@ import { ExternalLink, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAllTreatmentOptions } from "@/hooks/useTreatmentOptionsManagement";
 import { useTemplateOptionSettings, useToggleTemplateOption } from "@/hooks/useTemplateOptionSettings";
-import { singularToDbValue } from "@/types/treatmentCategories";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface TemplateOptionsManagerProps {
-  curtainType: string;
+  treatmentCategory: string;
   templateId?: string;
 }
 
-export const TemplateOptionsManager = ({ curtainType, templateId }: TemplateOptionsManagerProps) => {
+export const TemplateOptionsManager = ({ treatmentCategory, templateId }: TemplateOptionsManagerProps) => {
   const navigate = useNavigate();
-  
-  // Convert singular curtain_type to plural treatment_category
-  const treatmentCategory = singularToDbValue(curtainType);
   
   // Fetch all treatment options and filter by category
   const { data: allOptions = [], isLoading } = useAllTreatmentOptions();
@@ -55,16 +51,16 @@ export const TemplateOptionsManager = ({ curtainType, templateId }: TemplateOpti
     });
   };
   
-  // Map curtain types to option management paths
+  // Map treatment categories to option management paths
   const getOptionsPath = () => {
-    switch (curtainType) {
-      case 'roller_blind':
-      case 'roman_blind':
-      case 'cellular_blind':
-      case 'venetian_blind':
-      case 'vertical_blind':
+    switch (treatmentCategory) {
+      case 'roller_blinds':
+      case 'roman_blinds':
+      case 'cellular_blinds':
+      case 'venetian_blinds':
+      case 'vertical_blinds':
         return '/settings?tab=system&subtab=options';
-      case 'curtain':
+      case 'curtains':
         return '/settings?tab=system&subtab=headings';
       default:
         return '/settings?tab=system&subtab=options';
