@@ -8,26 +8,23 @@ import { useTemplateOptionSettings } from "./useTemplateOptionSettings";
 export const useEnabledTemplateOptions = (templateId?: string) => {
   const { data: templateSettings = [] } = useTemplateOptionSettings(templateId);
 
-  const enabledOptionIds = useMemo(() => {
-    if (!templateId || templateSettings.length === 0) {
-      return null; // No filtering - all options enabled
-    }
-
-    // Only include options that are explicitly enabled
+  // Blacklist approach: only store explicitly disabled options
+  // Options without records are enabled by default
+  const disabledOptionIds = useMemo(() => {
     return new Set(
       templateSettings
-        .filter(setting => setting.is_enabled)
+        .filter(setting => !setting.is_enabled)
         .map(setting => setting.treatment_option_id)
     );
-  }, [templateId, templateSettings]);
+  }, [templateSettings]);
 
   const isOptionEnabled = (optionId: string) => {
-    if (!enabledOptionIds) return true; // No filtering
-    return enabledOptionIds.has(optionId);
+    // If NOT in disabled set, it's enabled
+    return !disabledOptionIds.has(optionId);
   };
 
   return {
-    enabledOptionIds,
+    disabledOptionIds,
     isOptionEnabled,
     hasSettings: templateSettings.length > 0,
   };
