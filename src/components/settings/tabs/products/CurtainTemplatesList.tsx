@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import { useCurtainTemplates, useDeleteCurtainTemplate, useCreateCurtainTemplate, useUpdateCurtainTemplate, CurtainTemplate } from "@/hooks/useCurtainTemplates";
 import { useHeadingInventory } from "@/hooks/useHeadingInventory";
-import { getDisplayNameFromSingular } from "@/types/treatmentCategories";
+import { getDisplayName } from "@/types/treatmentCategories";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 
@@ -295,10 +295,10 @@ export const CurtainTemplatesList = ({ onEdit, highlightedTemplateId }: CurtainT
           <CardContent>
             <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">{getDisplayNameFromSingular(template.curtain_type)}</Badge>
+                <Badge variant="secondary">{getDisplayName(template.treatment_category || 'curtains')}</Badge>
                 
                 {/* Curtain-specific badges */}
-                {template.curtain_type === 'curtain' && (
+                {template.treatment_category === 'curtains' && (
                   <>
                     {(template as any).panel_configuration && (
                       <Badge variant="outline">{(template as any).panel_configuration}</Badge>
@@ -323,7 +323,7 @@ export const CurtainTemplatesList = ({ onEdit, highlightedTemplateId }: CurtainT
               </div>
               
               {/* Curtain-specific details */}
-              {template.curtain_type === 'curtain' && (
+              {template.treatment_category === 'curtains' && (
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="font-medium">Returns:</span> L:{template.return_left}cm R:{template.return_right}cm
@@ -341,7 +341,7 @@ export const CurtainTemplatesList = ({ onEdit, highlightedTemplateId }: CurtainT
               )}
               
               {/* Blind/Shutter-specific details */}
-              {template.curtain_type !== 'curtain' && (
+              {template.treatment_category !== 'curtains' && (
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   {(template as any).bracket_deduction && (
                     <div>

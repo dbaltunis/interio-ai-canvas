@@ -273,7 +273,7 @@ export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormPr
 
         <TabsContent value="options" className="space-y-4 mt-4">
           <TemplateOptionsManager 
-            curtainType={formData.treatment_category} 
+            treatmentCategory={formData.treatment_category} 
             templateId={template?.id}
           />
         </TabsContent>
