@@ -78,7 +78,7 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
     
     // Add returns and overlap to the flat finished width
     const returnAllowance = (template.return_left || 7.5) + (template.return_right || 7.5);
-    const panelConfig = (template as any).panel_configuration || template.curtain_type;
+    const panelConfig = (template as any).panel_configuration || 'single';
     const overlapAllowance = panelConfig === 'pair' ? (template.overlap || 10) : 0;
     
     // Add extra fabric if specified
@@ -182,7 +182,7 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
       case 'per_panel':
         // Fixed price per panel - doesn't scale with fabric complexity
         const pricePerPanel = template.machine_price_per_panel || 180;
-        const panelConfig = (template as any).panel_configuration || template.curtain_type;
+        const panelConfig = (template as any).panel_configuration || 'single';
         const panelCount = panelConfig === 'pair' ? 2 : 1;
         makeUpPrice = panelCount * pricePerPanel;
         break;
@@ -195,7 +195,7 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
       makeUpPrice += railWidth * template.heading_upcharge_per_metre;
     }
     if (template.heading_upcharge_per_curtain) {
-      const panelConfig = (template as any).panel_configuration || template.curtain_type;
+      const panelConfig = (template as any).panel_configuration || 'single';
       const curtainCount = panelConfig === 'pair' ? 2 : 1;
       makeUpPrice += template.heading_upcharge_per_curtain * curtainCount;
     }
@@ -227,7 +227,7 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
         explanation: `${dropsRequired} drops × £${template.machine_price_per_drop || 30} per drop`
       };
     } else if (template.pricing_type === 'per_panel') {
-      const panelConfig = (template as any).panel_configuration || template.curtain_type;
+      const panelConfig = (template as any).panel_configuration || 'single';
       const panelCount = panelConfig === 'pair' ? 2 : 1;
       calculationDetails = {
         panelCount,
@@ -321,7 +321,7 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
               <h4 className="font-medium">{selectedTemplate.name}</h4>
               <p className="text-sm text-muted-foreground">{selectedTemplate.description}</p>
               <div className="flex gap-2 mt-2">
-                <Badge variant="secondary">{selectedTemplate.curtain_type}</Badge>
+                <Badge variant="secondary">{selectedTemplate.treatment_category}</Badge>
                 <Badge variant="outline">{selectedTemplate.heading_name}</Badge>
                 <Badge variant="outline">Fullness: {selectedTemplate.fullness_ratio}</Badge>
               </div>

@@ -40,10 +40,10 @@ export const ImprovedTreatmentSelector = ({
   const filteredTemplates = curtainTemplates.filter(template => {
     if (visualKey === 'room_wall') {
       // For room wall: show only wallpapers and wall coverings
-      return template.curtain_type === 'wallpaper';
+      return template.treatment_category === 'wallpapers';
     } else {
       // For standard windows: show all window treatments (exclude wallpaper)
-      return template.curtain_type !== 'wallpaper';
+      return template.treatment_category !== 'wallpapers';
     }
   });
 

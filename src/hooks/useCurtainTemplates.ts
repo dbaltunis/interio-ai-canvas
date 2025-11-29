@@ -12,8 +12,7 @@ export interface CurtainTemplate {
   image_url?: string; // Custom template image
   display_image_url?: string; // Display image for quotes/worksheets
   
-  // Curtain Type
-  curtain_type: string;
+  // Panel Configuration
   panel_configuration?: 'single' | 'pair';
   
   // Heading Style
