@@ -18,7 +18,7 @@ export const MeasurementVisualCore = ({
   const { units } = useMeasurementUnits();
 
   // Extract values with fallbacks
-  const curtainType = treatmentData?.template?.curtain_type || measurements.curtain_type || "pair";
+  const panelConfiguration = treatmentData?.template?.panel_configuration || measurements.panel_configuration || "pair";
   const curtainSide = measurements.curtain_side || "left";
   const hardwareType = treatmentData?.template?.compatible_hardware?.[0]?.toLowerCase() || measurements.hardware_type || "rod";
   const poolingOption = measurements.pooling_option || "above_floor";
@@ -166,7 +166,7 @@ export const MeasurementVisualCore = ({
       )}
 
       {/* Curtain Panels */}
-      {curtainType === "pair" ? (
+      {panelConfiguration === "pair" ? (
         <>
           {/* Left Panel */}
           <div className={`absolute ${hardwareType === "track" ? "top-4" : "top-16"} left-14 w-8 ${getCurtainBottomPosition()} bg-primary/80 rounded-sm shadow-lg`}>

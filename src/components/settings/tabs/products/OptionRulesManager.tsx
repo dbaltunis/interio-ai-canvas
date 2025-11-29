@@ -25,7 +25,7 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('curtain_templates')
-        .select('treatment_category, curtain_type, user_id, name')
+        .select('treatment_category, user_id, name')
         .eq('id', templateId)
         .single();
       
@@ -50,15 +50,15 @@ export const OptionRulesManager = ({ templateId }: OptionRulesManagerProps) => {
     templateError 
   });
   
-  // Use treatment_category to query options instead of template_id
+  // Use treatment_category to query options
   const { data: options = [], isLoading: optionsLoading } = useTreatmentOptions(
-    template?.treatment_category || template?.curtain_type, 
+    template?.treatment_category, 
     'category'
   );
   
   console.log('🎯 Options for rules:', { 
     optionsCount: options.length, 
-    category: template?.treatment_category || template?.curtain_type,
+    category: template?.treatment_category,
     optionsLoading 
   });
   const createRule = useCreateOptionRule();

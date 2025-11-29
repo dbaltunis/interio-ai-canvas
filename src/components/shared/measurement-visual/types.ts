@@ -19,7 +19,8 @@ export interface TreatmentData {
   template?: {
     id: string;
     name: string;
-    curtain_type: string;
+    treatment_category?: string;
+    panel_configuration?: string;
     fullness_ratio: number;
     header_allowance: number;
     bottom_hem: number;

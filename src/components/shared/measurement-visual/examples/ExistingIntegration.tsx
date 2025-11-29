@@ -69,7 +69,8 @@ export const ExampleVisualMeasurementReplacement = ({
     template: selectedTemplate ? {
       id: selectedTemplate.id,
       name: selectedTemplate.name,
-      curtain_type: selectedTemplate.curtain_type,
+      treatment_category: selectedTemplate.treatment_category,
+      panel_configuration: selectedTemplate.panel_configuration,
       fullness_ratio: selectedTemplate.fullness_ratio,
       header_allowance: selectedTemplate.header_allowance,
       bottom_hem: selectedTemplate.bottom_hem,
@@ -200,7 +201,7 @@ export const useVisualMeasurementAdapter = (originalProps: any) => {
         template: {
           id: originalProps.selectedTemplate.id,
           name: originalProps.selectedTemplate.name,
-          curtain_type: originalProps.selectedTemplate.curtain_type || 'pair',
+          panel_configuration: originalProps.selectedTemplate.panel_configuration || 'pair',
           fullness_ratio: originalProps.selectedTemplate.fullness_ratio || 2.0,
           header_allowance: originalProps.selectedTemplate.header_allowance || 8,
           bottom_hem: originalProps.selectedTemplate.bottom_hem || 8,

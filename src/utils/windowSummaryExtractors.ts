@@ -201,9 +201,9 @@ export const extractWindowMetrics = (summary: AnySummary, surface: AnySurface) =
   const wastePercent =
     pickNumber(md.waste_percent, summary?.waste_percent) ?? 0;
 
-  // Treatment structure
-  const curtainType = md.curtain_type || summary?.curtain_type || "single";
-  const curtainCount = curtainType === "pair" ? 2 : 1;
+  // Treatment structure - panel_configuration determines if pair or single
+  const panelConfiguration = md.panel_configuration || summary?.panel_configuration || "single";
+  const curtainCount = panelConfiguration === "pair" ? 2 : 1;
 
   // Pricing/currency - use summary currency, no hardcoded fallback
   const currency = summary?.currency || undefined;
@@ -248,7 +248,7 @@ export const extractWindowMetrics = (summary: AnySummary, surface: AnySurface) =
       vRepeat,
       hRepeat,
       wastePercent,
-      curtainType,
+      panelConfiguration,
       curtainCount,
       currency,
       pricePerMeter,
@@ -276,7 +276,7 @@ export const extractWindowMetrics = (summary: AnySummary, surface: AnySurface) =
     vRepeat,
     hRepeat,
     wastePercent,
-    curtainType,
+    panelConfiguration,
     curtainCount,
     currency,
     pricePerMeter,

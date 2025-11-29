@@ -35,7 +35,7 @@ export const transformWorksheetData = (
     template: selectedTemplate ? {
       id: selectedTemplate.id?.toString() || "template-1",
       name: selectedTemplate.name || "Custom Template",
-      curtain_type: selectedTemplate.curtain_type || "pair",
+      panel_configuration: selectedTemplate.panel_configuration || "pair",
       fullness_ratio: selectedTemplate.fullness_ratio || 2.0,
       header_allowance: selectedTemplate.header_allowance || 8,
       bottom_hem: selectedTemplate.bottom_hem || 8,

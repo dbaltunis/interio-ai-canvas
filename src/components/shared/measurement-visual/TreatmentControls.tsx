@@ -35,7 +35,7 @@ export const TreatmentControls = ({
         template: {
           id: template.id,
           name: template.name,
-          curtain_type: template.curtain_type,
+          panel_configuration: template.panel_configuration,
           fullness_ratio: template.fullness_ratio,
           header_allowance: template.header_allowance,
           bottom_hem: template.bottom_hem,
@@ -127,7 +127,7 @@ export const TreatmentControls = ({
         <div className="p-2 bg-muted rounded-lg space-y-1">
           <h4 className="font-medium text-sm">Template Details</h4>
           <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
-            <div>Type: {treatmentData.template.curtain_type}</div>
+            <div>Type: {treatmentData.template.panel_configuration}</div>
             <div>Fullness: {treatmentData.template.fullness_ratio}x</div>
             <div>Header: {treatmentData.template.header_allowance}cm</div>
             <div>Bottom Hem: {treatmentData.template.bottom_hem}cm</div>
