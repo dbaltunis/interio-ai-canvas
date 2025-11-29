@@ -177,9 +177,24 @@ export const useCreateCurtainTemplate = () => {
 
   return useMutation({
     mutationFn: async (template: Omit<CurtainTemplate, "id" | "user_id" | "created_at" | "updated_at">) => {
+      // Get current user's account_id
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+      
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('user_id, parent_account_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      const accountId = profile?.parent_account_id || user.id;
+      
       const { data, error } = await supabase
         .from("curtain_templates" as any)
-        .insert([template])
+        .insert([{
+          ...template,
+          user_id: accountId,
+        }])
         .select()
         .single();
 
