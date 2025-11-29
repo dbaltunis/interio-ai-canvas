@@ -80,7 +80,7 @@ export const useFabricCalculator = ({
       const requiredWidth = width * fullnessRatio;
       
       // Calculate curtain count
-      const curtainCount = template.curtain_type === 'pair' ? 2 : 1;
+      const curtainCount = template.panel_configuration === 'pair' ? 2 : 1;
       
       // Add side hems to width calculation
       const totalSideHems = sideHems * 2 * curtainCount;
@@ -144,7 +144,7 @@ export const useFabricCalculator = ({
         returnLeft,
         returnRight,
         curtainCount,
-        curtainType: template.curtain_type,
+        curtainType: template.panel_configuration || 'pair',
         totalWidthWithAllowances,
         dropPerWidthMeters
       };

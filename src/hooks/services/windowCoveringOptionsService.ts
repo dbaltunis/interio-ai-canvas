@@ -16,7 +16,7 @@ export const fetchTraditionalOptions = async (
     // Get the template to find its treatment category
     const { data: template, error: templateError } = await supabase
       .from('curtain_templates')
-      .select('curtain_type')
+      .select('treatment_category')
       .eq('id', templateId)
       .single();
     
@@ -39,7 +39,7 @@ export const fetchTraditionalOptions = async (
           hidden_by_user
         )
       `)
-      .eq('treatment_category', template.curtain_type)
+      .eq('treatment_category', template.treatment_category)
       .order('order_index', { ascending: true });
     
     if (optionsError) {
@@ -48,7 +48,7 @@ export const fetchTraditionalOptions = async (
     }
     
     if (!options || options.length === 0) {
-      console.log('No options found for template category:', template.curtain_type);
+      console.log('No options found for template category:', template.treatment_category);
       return [];
     }
     

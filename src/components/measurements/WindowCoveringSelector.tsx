@@ -35,13 +35,13 @@ export const WindowCoveringSelector = ({
 
   const filteredCoverings = curtainTemplates.filter(covering =>
     covering.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    covering.curtain_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    covering.treatment_category.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (covering.heading_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
     (covering.pricing_type || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const groupedCoverings = filteredCoverings.reduce((acc, covering) => {
-    const category = covering.curtain_type || "Uncategorized";
+    const category = covering.treatment_category || "Uncategorized";
     if (!acc[category]) {
       acc[category] = [];
     }
@@ -83,7 +83,7 @@ export const WindowCoveringSelector = ({
             <div className="flex items-center gap-2 flex-1 text-left">
               <span className="font-medium">{selectedCovering.name}</span>
               <Badge variant="secondary" className="text-xs">
-                {selectedCovering.curtain_type}
+                {selectedCovering.treatment_category}
               </Badge>
             </div>
           ) : (
@@ -190,7 +190,7 @@ export const WindowCoveringSelector = ({
                           <CardContent className="pt-0">
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               <Badge variant="secondary" className="text-xs">
-                                {covering.curtain_type}
+                                {covering.treatment_category}
                               </Badge>
                               <span>•</span>
                               <span>

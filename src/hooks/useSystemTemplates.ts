@@ -7,7 +7,6 @@ export interface SystemTemplate {
   name: string;
   description: string | null;
   treatment_category: string | null;
-  curtain_type: string | null;
   unit_price: number | null;
   pricing_type: string;
   manufacturing_type: string;
@@ -19,7 +18,7 @@ export const useSystemTemplates = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('curtain_templates')
-        .select('id, name, description, treatment_category, curtain_type, unit_price, pricing_type, manufacturing_type')
+        .select('id, name, description, treatment_category, unit_price, pricing_type, manufacturing_type')
         .eq('active', true)
         .order('treatment_category, name');
       

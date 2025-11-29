@@ -48,7 +48,7 @@ export const useWorkroomSync = ({
             window_id: window.window_id,
             room_name: room?.name || 'Unassigned Room',
             surface_name: window.surface_name || 'Window',
-            treatment_type: window.summary.template_details?.curtain_type || 'curtains',
+            treatment_type: window.summary.template_details?.treatment_category || 'curtains',
             fabric_details: window.summary.fabric_details,
             measurements: {
               rail_width: window.summary.measurements_details?.rail_width_cm || window.summary.measurements_details?.rail_width,

@@ -67,7 +67,8 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   const pooling = parseFloat(measurements?.pooling_amount || '0');
 
   // Manufacturing allowances from template
-  const curtainCount = template?.curtain_type === 'pair' ? 2 : 1;
+  const panelConfiguration = template?.panel_configuration || 'pair';
+  const curtainCount = panelConfiguration === 'pair' ? 2 : 1;
   const sideHems = template?.side_hems || 0;
   const totalSideHems = sideHems * 2 * curtainCount;
   const returnLeft = template?.return_left || 0;

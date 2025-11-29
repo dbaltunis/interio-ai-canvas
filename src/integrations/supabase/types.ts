@@ -2198,7 +2198,6 @@ export type Database = {
           compatible_hardware: string[] | null
           complexity_pricing_tiers: Json | null
           created_at: string
-          curtain_type: string
           description: string | null
           display_image_url: string | null
           drop_height_ranges: Json | null
@@ -2273,7 +2272,6 @@ export type Database = {
           compatible_hardware?: string[] | null
           complexity_pricing_tiers?: Json | null
           created_at?: string
-          curtain_type?: string
           description?: string | null
           display_image_url?: string | null
           drop_height_ranges?: Json | null
@@ -2348,7 +2346,6 @@ export type Database = {
           compatible_hardware?: string[] | null
           complexity_pricing_tiers?: Json | null
           created_at?: string
-          curtain_type?: string
           description?: string | null
           display_image_url?: string | null
           drop_height_ranges?: Json | null
