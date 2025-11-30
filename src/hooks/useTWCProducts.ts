@@ -41,7 +41,22 @@ export const useTWCProducts = () => {
         throw new Error("Failed to fetch TWC products");
       }
 
-      return data.data as TWCProduct[];
+      // Handle the data structure - could be array or object
+      const productsData = data.data;
+      
+      // If it's already an array, return it
+      if (Array.isArray(productsData)) {
+        return productsData as TWCProduct[];
+      }
+      
+      // If it's an object with products array, extract it
+      if (productsData && typeof productsData === 'object' && Array.isArray((productsData as any).products)) {
+        return (productsData as any).products as TWCProduct[];
+      }
+      
+      // If we got here, return empty array to prevent crashes
+      console.warn('Unexpected TWC products data structure:', productsData);
+      return [];
     },
     staleTime: 30 * 60 * 1000, // 30 minutes
     gcTime: 60 * 60 * 1000, // 1 hour
