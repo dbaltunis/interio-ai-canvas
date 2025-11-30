@@ -4,10 +4,19 @@ import { toast } from "sonner";
 
 export interface TWCProduct {
   itemNumber: string;
-  itemName: string;
-  productType: string;
+  description: string;
   questions?: TWCQuestion[];
-  fabricsAndColours?: TWCFabricColor[];
+  fabricsAndColours?: {
+    itemName?: string;
+    itemNumber?: string;
+    itemMaterials?: Array<{
+      material: string;
+      colours: Array<{
+        colour: string;
+        pricingGroup: string | null;
+      }>;
+    }>;
+  };
 }
 
 export interface TWCQuestion {
@@ -41,41 +50,14 @@ export const useTWCProducts = () => {
         throw new Error("Failed to fetch TWC products");
       }
 
-      // Log the raw response to understand the structure
-      console.log('TWC API Response:', data);
-      console.log('TWC data.data type:', typeof data.data);
-      console.log('TWC data.data:', data.data);
+      // The response structure is: { success: true, data: { data: [...] } }
+      const productsData = data.data?.data;
       
-      // Handle the data structure - could be array or object
-      const productsData = data.data;
-      
-      // If it's already an array, return it
       if (Array.isArray(productsData)) {
-        console.log('Products data is array, length:', productsData.length);
         return productsData as TWCProduct[];
       }
       
-      // If it's an object with products array, extract it
-      if (productsData && typeof productsData === 'object' && Array.isArray((productsData as any).products)) {
-        console.log('Products data has products array, length:', (productsData as any).products.length);
-        return (productsData as any).products as TWCProduct[];
-      }
-      
-      // Try to find any array property in the response
-      if (productsData && typeof productsData === 'object') {
-        const keys = Object.keys(productsData);
-        console.log('Available keys in productsData:', keys);
-        
-        for (const key of keys) {
-          if (Array.isArray((productsData as any)[key])) {
-            console.log(`Found array at key "${key}", length:`, (productsData as any)[key].length);
-            return (productsData as any)[key] as TWCProduct[];
-          }
-        }
-      }
-      
-      // If we got here, return empty array to prevent crashes
-      console.warn('Unexpected TWC products data structure:', productsData);
+      console.warn('Unexpected TWC products data structure:', data);
       return [];
     },
     staleTime: 30 * 60 * 1000, // 30 minutes

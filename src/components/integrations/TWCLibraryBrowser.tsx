@@ -22,13 +22,17 @@ export const TWCLibraryBrowser = () => {
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [productTypeFilter, setProductTypeFilter] = useState<string>("all");
 
-  // Get unique product types for filter
+  // Get unique product types from description (extract type from description)
   const productTypes = useMemo(() => {
     if (!products || !Array.isArray(products)) return [];
     const types = new Set(
       products
-        .filter(p => p && p.productType)
-        .map(p => p.productType)
+        .filter(p => p && p.description)
+        .map(p => {
+          // Extract type from description (text before first parenthesis or full text)
+          const match = p.description.match(/^([^(]+)/);
+          return match ? match[1].trim() : p.description;
+        })
     );
     return Array.from(types).sort();
   }, [products]);
@@ -39,17 +43,18 @@ export const TWCLibraryBrowser = () => {
 
     return products.filter(product => {
       // Skip products with missing required fields
-      if (!product || !product.itemName || !product.itemNumber || !product.productType) {
+      if (!product || !product.description || !product.itemNumber) {
         return false;
       }
 
+      const productType = product.description.match(/^([^(]+)/)?.[1]?.trim() || product.description;
+
       const matchesSearch = 
-        product.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.itemNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.productType.toLowerCase().includes(searchQuery.toLowerCase());
+        product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.itemNumber.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesType = 
-        productTypeFilter === "all" || product.productType === productTypeFilter;
+        productTypeFilter === "all" || productType === productTypeFilter;
 
       return matchesSearch && matchesType;
     });
@@ -207,13 +212,13 @@ export const TWCLibraryBrowser = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
-                          <h4 className="font-medium text-sm mb-1">{product.itemName}</h4>
+                          <h4 className="font-medium text-sm mb-1">{product.description}</h4>
                           <p className="text-xs text-muted-foreground">
                             Item #: {product.itemNumber}
                           </p>
                         </div>
                         <Badge variant="outline" className="shrink-0">
-                          {product.productType}
+                          {product.description.match(/^([^(]+)/)?.[1]?.trim() || "Product"}
                         </Badge>
                       </div>
 
@@ -225,11 +230,11 @@ export const TWCLibraryBrowser = () => {
                             <span className="font-medium">{product.questions.length} configurable</span>
                           </div>
                         )}
-                        {product.fabricsAndColours && product.fabricsAndColours.length > 0 && (
+                        {product.fabricsAndColours?.itemMaterials && product.fabricsAndColours.itemMaterials.length > 0 && (
                           <div className="text-xs">
                             <span className="text-muted-foreground">Materials: </span>
                             <span className="font-medium">
-                              {product.fabricsAndColours.length} fabrics/colours
+                              {product.fabricsAndColours.itemMaterials.length} material options
                             </span>
                           </div>
                         )}
