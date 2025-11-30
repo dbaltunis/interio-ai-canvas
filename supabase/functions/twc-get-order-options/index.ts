@@ -52,7 +52,16 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const { api_url, api_key } = integration.api_credentials;
-    const { itemNumber } = await req.json() as GetOptionsRequest;
+    
+    // Handle optional request body
+    let itemNumber: string | undefined;
+    try {
+      const body = await req.json() as GetOptionsRequest;
+      itemNumber = body.itemNumber;
+    } catch (e) {
+      // No body provided, fetch all products
+      itemNumber = undefined;
+    }
 
     console.log('Fetching TWC order options:', { itemNumber });
 
