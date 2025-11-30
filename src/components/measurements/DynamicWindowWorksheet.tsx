@@ -390,10 +390,11 @@ export const DynamicWindowWorksheet = forwardRef<{
           const storedDrop = measurementsDetails.drop || existingWindowSummary.drop;
           
           // Only convert and display if value exists and is > 0
+          // CRITICAL: Database stores in MM, convert from MM to user's preferred unit
           if (storedRailWidth && storedRailWidth > 0) {
             restoredMeasurements.rail_width = convertLength(
               storedRailWidth, 
-              'cm', 
+              'mm', 
               units.length
             ).toString();
           } else {
@@ -403,7 +404,7 @@ export const DynamicWindowWorksheet = forwardRef<{
           if (storedDrop && storedDrop > 0) {
             restoredMeasurements.drop = convertLength(
               storedDrop, 
-              'cm', 
+              'mm', 
               units.length
             ).toString();
           } else {
