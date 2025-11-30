@@ -2,13 +2,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Zap, CreditCard, MessageSquare, Calendar, Package, Building, Database, AlertCircle, CheckCircle2, Globe } from "lucide-react";
+import { Mail, Zap, CreditCard, MessageSquare, Calendar, Package, Building, Database, AlertCircle, CheckCircle2, Globe, Truck } from "lucide-react";
 import { SendGridIntegrationTab } from "./SendGridIntegrationTab";
 import { GoogleCalendarTab } from "./GoogleCalendarTab";
 import { TIGPIMIntegrationTab } from "@/components/integrations/TIGPIMIntegrationTab";
 import { MYOBExoIntegrationTab } from "@/components/integrations/MYOBExoIntegrationTab";
 import { RFMSIntegrationTab } from "@/components/integrations/RFMSIntegrationTab";
 import { TwilioIntegrationTab } from "@/components/integrations/TwilioIntegrationTab";
+import { TWCIntegrationTab } from "@/components/integrations/TWCIntegrationTab";
 import { WebsiteAPIIntegrationTab } from "@/components/integrations/WebsiteAPIIntegrationTab";
 import { ShopifySetupTab } from "@/components/library/shopify/ShopifySetupTab";
 import { ShopifyStatusManagementTab } from "./ShopifyStatusManagementTab";
@@ -92,6 +93,10 @@ export const IntegrationsTab = () => {
             <Globe className="h-4 w-4" />
             Website API
           </TabsTrigger>
+          <TabsTrigger value="suppliers" className="flex items-center gap-2">
+            <Truck className="h-4 w-4" />
+            Suppliers
+          </TabsTrigger>
           {shopifyIntegration && (
             <TabsTrigger value="shopify" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
@@ -147,6 +152,10 @@ export const IntegrationsTab = () => {
 
         <TabsContent value="website">
           <WebsiteAPIIntegrationTab integration={getIntegrationByType('website_api') as any} />
+        </TabsContent>
+
+        <TabsContent value="suppliers">
+          <TWCIntegrationTab />
         </TabsContent>
 
         {shopifyIntegration && (

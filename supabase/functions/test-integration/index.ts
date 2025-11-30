@@ -32,6 +32,9 @@ const handler = async (req: Request): Promise<Response> => {
       case 'sendgrid':
         testResult = await testSendGridConnection(integration);
         break;
+      case 'twc':
+        testResult = await testTWCConnection(integration);
+        break;
       default:
         testResult = {
           success: false,
@@ -179,6 +182,52 @@ async function testSendGridConnection(integration: any) {
     return {
       success: false,
       message: `SendGrid test failed: ${error.message}`
+    };
+  }
+}
+
+async function testTWCConnection(integration: any) {
+  try {
+    const { api_url, api_key } = integration.api_credentials;
+
+    if (!api_url || !api_key) {
+      return {
+        success: false,
+        message: 'Missing TWC API URL or API Key'
+      };
+    }
+
+    console.log('Testing TWC connection:', api_url);
+
+    // Test TWC API by calling GetOrderOptions without itemNumber (gets all options)
+    const testUrl = `${api_url}/api/TwcPublic/GetOrderOptions?api_key=${api_key}`;
+    const response = await fetch(testUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      return {
+        success: false,
+        message: `TWC connection failed: ${response.status} ${response.statusText}`
+      };
+    }
+
+    const data = await response.json();
+    console.log('TWC API response:', data);
+
+    return {
+      success: true,
+      message: `Successfully connected to TWC Online Ordering API`
+    };
+
+  } catch (error: any) {
+    console.error('TWC test error:', error);
+    return {
+      success: false,
+      message: `TWC test failed: ${error.message}`
     };
   }
 }

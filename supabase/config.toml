@@ -92,3 +92,9 @@ verify_jwt = true
 
 [functions.get-admin-accounts]
 verify_jwt = true
+
+[functions.twc-get-order-options]
+verify_jwt = true
+
+[functions.twc-submit-order]
+verify_jwt = true
