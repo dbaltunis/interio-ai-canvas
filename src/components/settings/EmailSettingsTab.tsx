@@ -9,6 +9,8 @@ import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettin
 import { useToast } from "@/hooks/use-toast";
 import { TestEmailButton } from "@/components/email-setup/TestEmailButton";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
+import { EmailTemplatesList } from "@/components/email-templates/EmailTemplatesList";
+import { Separator } from "@/components/ui/separator";
 
 export const EmailSettingsTab = () => {
   const { data: emailSettings, isLoading } = useEmailSettings();
@@ -160,6 +162,19 @@ export const EmailSettingsTab = () => {
               <TestEmailButton variant="outline" />
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Email Templates Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Email Templates</CardTitle>
+          <CardDescription>
+            Customize email templates for quotes, bookings, and reminders
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <EmailTemplatesList />
         </CardContent>
       </Card>
     </div>
