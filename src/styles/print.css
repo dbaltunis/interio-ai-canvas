@@ -7,11 +7,14 @@
   
   /* Show only the printable quote area */
   #quote-live-preview,
-  #quote-live-preview * {
+  #quote-live-preview *,
+  .workshop-printable,
+  .workshop-printable * {
     visibility: visible;
   }
   
-  #quote-live-preview {
+  #quote-live-preview,
+  .workshop-printable {
     position: absolute;
     left: 0;
     top: 0;
@@ -92,7 +95,9 @@
   #quote-live-preview,
   #quote-live-preview *,
   .quote-preview-container,
-  .quote-preview-container * {
+  .quote-preview-container *,
+  .workshop-printable,
+  .workshop-printable * {
     background-color: #ffffff !important;
     color: #000000 !important;
     border-color: transparent !important;
@@ -100,7 +105,8 @@
 
   /* Remove all borders and grid patterns */
   #quote-live-preview *,
-  .quote-preview-container * {
+  .quote-preview-container *,
+  .workshop-printable * {
     background-image: none !important;
     border: none !important;
     box-shadow: none !important;

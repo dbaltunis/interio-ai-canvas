@@ -19,8 +19,21 @@ export const useMeasurementUnits = () => {
   };
 
   const formatLength = (value: number): string => {
-    // Convert from cm (internal storage) to user's preferred unit
+    // DEPRECATED: Assumes value is in CM
+    // Use formatLengthFromMM for MM values or formatLengthFromCM for CM values
     const converted = convertLength(value, 'cm', units.length);
+    return formatMeasurement(converted, units.length);
+  };
+
+  const formatLengthFromMM = (valueMM: number): string => {
+    // Convert from MM (database standard) to user's preferred unit
+    const converted = convertLength(valueMM, 'mm', units.length);
+    return formatMeasurement(converted, units.length);
+  };
+
+  const formatLengthFromCM = (valueCM: number): string => {
+    // Convert from CM to user's preferred unit
+    const converted = convertLength(valueCM, 'cm', units.length);
     return formatMeasurement(converted, units.length);
   };
 
@@ -61,6 +74,8 @@ export const useMeasurementUnits = () => {
     units,
     convertToUserUnit,
     formatLength,
+    formatLengthFromMM,
+    formatLengthFromCM,
     formatArea, 
     formatFabric,
     getLengthUnitLabel,
