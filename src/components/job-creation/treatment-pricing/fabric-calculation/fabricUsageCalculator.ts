@@ -55,8 +55,20 @@ export const calculateFabricUsage = (
     treatmentTemplatesCount: treatmentTypesData?.length
   });
   
-  const railWidth = parseFloat(formData.rail_width) || 0;
-  let drop = parseFloat(formData.drop) || 0;
+  // CRITICAL FIX: formData stores measurements in MM (database standard)
+  // Convert to CM for fabric calculations (fabric industry standard)
+  const railWidthMM = parseFloat(formData.rail_width) || 0;
+  const dropMM = parseFloat(formData.drop) || 0;
+  const railWidth = railWidthMM / 10; // Convert MM to CM
+  let drop = dropMM / 10; // Convert MM to CM
+  
+  console.log('📏 Unit conversion in fabricUsageCalculator:', {
+    railWidthMM,
+    dropMM,
+    railWidthCM: railWidth,
+    dropCM: drop,
+    note: 'Database stores MM, fabric calculations use CM'
+  });
   
   // Get the treatment template
   const selectedTemplate = treatmentTypesData.find(
