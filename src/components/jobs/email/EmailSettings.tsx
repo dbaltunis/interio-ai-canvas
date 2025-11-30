@@ -127,28 +127,14 @@ export const EmailSettings = () => {
         {/* SendGrid Premium Card */}
         <Card className="border-border bg-background">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
-                  <Mail className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm">Custom Domain (Optional Premium)</h3>
-                  <p className="text-xs text-muted-foreground">Use your own SendGrid for custom branding and unlimited sending</p>
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                <Mail className="h-5 w-5 text-muted-foreground" />
               </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => { 
-                  const url = new URL(window.location.href);
-                  url.pathname = '/';
-                  url.search = 'tab=settings&subtab=integrations';
-                  window.location.href = url.toString();
-                }}
-              >
-                Setup SendGrid
-              </Button>
+              <div>
+                <h3 className="font-semibold text-sm">Custom Domain (Optional Premium)</h3>
+                <p className="text-xs text-muted-foreground">Use your own SendGrid for custom branding and unlimited sending. Configure in Settings → Integrations.</p>
+              </div>
             </div>
           </CardContent>
         </Card>
