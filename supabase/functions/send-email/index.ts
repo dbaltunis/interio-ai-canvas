@@ -597,7 +597,7 @@ const handler = async (req: Request): Promise<Response> => {
       }));
 
       const { error: resendError } = await resend.emails.send({
-        from: `${fromName} <onboarding@resend.dev>`,
+        from: `${fromName} <${fromEmail}>`,
         to: [to],
         subject: subject,
         html: contentWithSignature,
