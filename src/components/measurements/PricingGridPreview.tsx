@@ -76,7 +76,7 @@ export const PricingGridPreview = ({ gridData, gridName, gridCode }: PricingGrid
               </table>
             </div>
           ) : gridData.widthColumns && gridData.dropRows ? (
-            // Full 2D grid (width × drop) - using widthColumns and dropRows format
+            // Format A: Full 2D grid using widthColumns and dropRows
             <div className="overflow-x-auto">
               <table className="min-w-full border-collapse text-xs">
                 <thead>
@@ -96,6 +96,36 @@ export const PricingGridPreview = ({ gridData, gridName, gridCode }: PricingGrid
                         {dropRow.drop}cm
                       </td>
                       {dropRow.prices.map((price: number, widthIndex: number) => (
+                        <td key={widthIndex} className="border border-border p-2 text-center">
+                          {price ? formatPrice(price) : '-'}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : gridData.widthRanges && gridData.dropRanges && gridData.prices ? (
+            // Format B: Full 2D grid using widthRanges, dropRanges, and prices array
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-collapse text-xs">
+                <thead>
+                  <tr>
+                    <th className="border border-border bg-muted p-2 sticky left-0 z-10">Width / Drop (cm)</th>
+                    {gridData.widthRanges.map((width: string, index: number) => (
+                      <th key={index} className="border border-border bg-muted p-2 min-w-[80px]">
+                        {width}cm
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {gridData.dropRanges.map((drop: string, dropIndex: number) => (
+                    <tr key={dropIndex}>
+                      <td className="border border-border bg-muted p-2 font-medium sticky left-0 z-10">
+                        {drop}cm
+                      </td>
+                      {gridData.prices[dropIndex]?.map((price: number, widthIndex: number) => (
                         <td key={widthIndex} className="border border-border p-2 text-center">
                           {price ? formatPrice(price) : '-'}
                         </td>
