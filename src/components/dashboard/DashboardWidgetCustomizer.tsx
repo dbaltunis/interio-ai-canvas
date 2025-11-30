@@ -92,14 +92,7 @@ export const DashboardWidgetCustomizer = ({
 
   // Check integration statuses
   const { integration: shopifyIntegration, isLoading: isLoadingShopify } = useShopifyIntegrationReal();
-  // Check for Shopify connection using available properties
-  const isShopifyConnected = shopifyIntegration 
-    ? (!!shopifyIntegration.shop_domain && (
-        'active' in shopifyIntegration ? shopifyIntegration.active :
-        'is_connected' in shopifyIntegration ? (shopifyIntegration as any).is_connected : 
-        false
-      ))
-    : false;
+  const isShopifyConnected = !!shopifyIntegration?.is_connected;
 
   const { data: hasOnlineStore, isLoading: isLoadingStore } = useQuery({
     queryKey: ['has-online-store'],
