@@ -284,17 +284,23 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
                       📏 Critical Measurements - Verify Before Installing
                     </h4>
                     <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div className="bg-white p-2 rounded">
-                        <div className="text-xs text-muted-foreground">Width</div>
-                        <div className="text-lg font-bold">{item.measurements?.width ?? "—"} {item.measurements?.unit}</div>
+                      <div className="bg-white p-3 rounded border border-yellow-300">
+                        <div className="text-xs text-muted-foreground uppercase tracking-wide">Width</div>
+                        <div className="text-2xl font-bold mt-1">
+                          {item.measurements?.width ?? "—"}
+                          <span className="text-base ml-1 font-normal">{item.measurements?.unit ?? ""}</span>
+                        </div>
                       </div>
-                      <div className="bg-white p-2 rounded">
-                        <div className="text-xs text-muted-foreground">Height/Drop</div>
-                        <div className="text-lg font-bold">{item.measurements?.drop ?? item.measurements?.height ?? "—"} {item.measurements?.unit}</div>
+                      <div className="bg-white p-3 rounded border border-yellow-300">
+                        <div className="text-xs text-muted-foreground uppercase tracking-wide">Height/Drop</div>
+                        <div className="text-2xl font-bold mt-1">
+                          {item.measurements?.drop ?? item.measurements?.height ?? "—"}
+                          <span className="text-base ml-1 font-normal">{item.measurements?.unit ?? ""}</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="mt-2 text-xs text-yellow-900 font-medium">
-                      ⚠️ Measure on-site before drilling - walls may not be perfectly square
+                    <div className="mt-3 text-xs text-yellow-900 font-medium bg-yellow-100 p-2 rounded">
+                      ⚠️ <span className="font-bold">ALWAYS</span> verify measurements on-site before drilling - walls may not be square!
                     </div>
                   </div>
                   
