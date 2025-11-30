@@ -201,8 +201,9 @@ export const buildClientBreakdown = (
     
     if (usesPricingGrid) {
       // Grid pricing - show dimensions lookup
-      const widthCm = summary.rail_width || summary.wall_width || 0;
-      const heightCm = summary.drop || summary.wall_height || 0;
+      // CRITICAL: Database stores rail_width/drop in MM, convert to CM for display
+      const widthCm = (summary.rail_width || summary.wall_width || 0) / 10;
+      const heightCm = (summary.drop || summary.wall_height || 0) / 10;
       description = `Grid: ${widthCm}cm × ${heightCm}cm`;
       pricingLabel = 'Pricing Grid';
     } else if (pricingMethod === 'per_width') {
