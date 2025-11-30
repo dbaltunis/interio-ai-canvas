@@ -61,106 +61,94 @@ export const EmailSettingsTab = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            <Mail className="h-5 w-5 text-blue-600" />
-          </div>
-          <div>
-            <CardTitle>Email Settings</CardTitle>
-            <CardDescription>
-              Configure your sender information for outgoing emails
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-6">
+      {/* Simple header */}
+      <div>
+        <h2 className="text-2xl font-semibold mb-1">Email Settings</h2>
+        <p className="text-muted-foreground">Configure your sender information for outgoing emails</p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Sender Information</CardTitle>
+          <CardDescription>
+            This is how your emails will appear to clients
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="from_name">From Name *</Label>
+                <Input
+                  id="from_name"
+                  placeholder="Your Business Name"
+                  value={formData.from_name}
+                  onChange={(e) => setFormData({ ...formData, from_name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="from_email">From Email *</Label>
+                <Input
+                  id="from_email"
+                  type="email"
+                  placeholder="noreply@yourdomain.com"
+                  value={formData.from_email}
+                  onChange={(e) => setFormData({ ...formData, from_email: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="from_email">From Email *</Label>
+              <Label htmlFor="reply_to_email">Reply-To Email (Optional)</Label>
               <Input
-                id="from_email"
+                id="reply_to_email"
                 type="email"
-                placeholder="your-email@yourdomain.com"
-                value={formData.from_email}
-                onChange={(e) => setFormData({ ...formData, from_email: e.target.value })}
-                required
+                placeholder="support@yourdomain.com"
+                value={formData.reply_to_email}
+                onChange={(e) => setFormData({ ...formData, reply_to_email: e.target.value })}
               />
-              <p className="text-xs text-gray-500">
-                This email must be verified in your SendGrid account
+              <p className="text-xs text-muted-foreground">
+                Where replies should be sent (defaults to From Email)
               </p>
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="from_name">From Name *</Label>
-              <Input
-                id="from_name"
-                placeholder="Your Business Name"
-                value={formData.from_name}
-                onChange={(e) => setFormData({ ...formData, from_name: e.target.value })}
-                required
+              <Label htmlFor="signature">Email Signature (Optional)</Label>
+              <Textarea
+                id="signature"
+                placeholder="Best regards,&#10;Your Name&#10;Your Business"
+                value={formData.signature}
+                onChange={(e) => setFormData({ ...formData, signature: e.target.value })}
+                rows={4}
               />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="reply_to_email">Reply-To Email</Label>
-            <Input
-              id="reply_to_email"
-              type="email"
-              placeholder="replies@yourdomain.com"
-              value={formData.reply_to_email}
-              onChange={(e) => setFormData({ ...formData, reply_to_email: e.target.value })}
-            />
-            <p className="text-xs text-gray-500">
-              Optional. If left empty, replies will go to the From Email
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="signature">Email Signature</Label>
-            <Textarea
-              id="signature"
-              placeholder="Best regards,&#10;Your Name&#10;Your Business"
-              value={formData.signature}
-              onChange={(e) => setFormData({ ...formData, signature: e.target.value })}
-              rows={4}
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <Button 
-              type="submit" 
-              disabled={updateEmailSettings.isPending}
-              className="flex-1"
-            >
-              {updateEmailSettings.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Email Settings
-                </>
-              )}
-            </Button>
-            <TestEmailButton variant="outline" />
-          </div>
-        </form>
-
-        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <h4 className="font-medium text-yellow-800 mb-2">Important Notes:</h4>
-          <ul className="text-sm text-yellow-700 space-y-1">
-            <li>• Your "From Email" must be verified in SendGrid as a Sender Identity</li>
-            <li>• Configure SendGrid integration in the Integrations tab first</li>
-            <li>• Test your email settings by sending a test email</li>
-          </ul>
-        </div>
-      </CardContent>
-    </Card>
+            <div className="flex gap-2">
+              <Button 
+                type="submit" 
+                disabled={updateEmailSettings.isPending}
+              >
+                {updateEmailSettings.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Settings
+                  </>
+                )}
+              </Button>
+              <TestEmailButton variant="outline" />
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
