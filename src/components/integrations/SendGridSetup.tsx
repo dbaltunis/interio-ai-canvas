@@ -244,35 +244,6 @@ export const SendGridSetup = () => {
               )}
             </Button>
 
-            {/* What This Does */}
-            <div className="space-y-3">
-              <Separator />
-              <div>
-                <h4 className="font-medium mb-2">What this integration provides:</h4>
-                <ul className="space-y-1 text-sm text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    Email delivery through SendGrid's infrastructure
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    Real-time delivery tracking and analytics
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    Open and click tracking for emails
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    Bounce and spam report handling
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    Webhook integration for real-time updates
-                  </li>
-                </ul>
-              </div>
-            </div>
           </>
         ) : (
           <>

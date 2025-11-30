@@ -31,48 +31,8 @@ export const useSendEmail = () => {
       const user = session.user;
       console.log("Authenticated user:", user.id);
 
-      // Pre-flight validations
-      console.log("Running pre-flight validations...");
-
-      // Check SendGrid integration first
-      const { data: integration, error: integrationError } = await supabase
-        .from('integration_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('integration_type', 'sendgrid')
-        .eq('active', true)
-        .maybeSingle();
-
-      if (integrationError) {
-        console.error("Integration check failed:", integrationError);
-        throw new Error('Failed to check SendGrid integration');
-      }
-
-      if (!integration) {
-        console.error("No active SendGrid integration found");
-        throw new Error('Please configure your SendGrid integration first. Go to Settings > Integrations to set up email sending.');
-      }
-
-      console.log("SendGrid integration verified");
-
-      // Check if user has email settings configured
-      const { data: emailSettings, error: settingsError } = await supabase
-        .from('email_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (settingsError) {
-        console.error("Email settings check failed:", settingsError);
-        throw new Error('Failed to check email settings');
-      }
-
-      if (!emailSettings || !emailSettings.from_email) {
-        console.error("No email settings found");
-        throw new Error('Email settings required: Please configure your verified sender email address in Settings → Email Settings. Your sender email must be verified in SendGrid.');
-      }
-
-      console.log("Email settings verified:", emailSettings.from_email);
+      // Validate email content
+      console.log("Validating email content...");
 
       // Validate email content
       if (!emailData.to || !emailData.subject || !emailData.content) {
@@ -234,16 +194,8 @@ export const useSendEmail = () => {
       console.error("=== SEND EMAIL MUTATION ERROR ===");
       console.error("Error details:", error);
       
-      // Check for specific error types and provide helpful messages
+      // Provide helpful error message
       let errorMessage = error.message || "Failed to send email";
-      
-      if (error.message?.includes('verified Sender Identity') || error.message?.includes('verified in SendGrid')) {
-        errorMessage = "Your sender email address is not verified in SendGrid. Please verify your email address in your SendGrid account before sending emails.";
-      } else if (error.message?.includes('Email settings required')) {
-        errorMessage = "Please configure your email settings in Settings → Email Settings with a verified sender address.";
-      } else if (error.message?.includes('SendGrid integration')) {
-        errorMessage = "Please configure your SendGrid integration in Settings → Integrations first.";
-      }
       
       toast({
         title: "Email Failed",
