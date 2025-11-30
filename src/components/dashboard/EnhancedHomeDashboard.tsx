@@ -235,13 +235,12 @@ export const EnhancedHomeDashboard = () => {
       {/* E-Commerce Gateway Widget - HIDDEN FOR NOW, KEEPING CODE */}
       {/* <ECommerceGatewayWidget /> */}
 
-      {/* Dynamic Widgets Grid - Improved layout with auto-fit */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 auto-rows-fr">
+      {/* Dynamic Widgets Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {enabledWidgets.map((widget) => {
-          // Improved size classes with better responsive behavior
           const sizeClasses = {
             small: "col-span-1",
-            medium: "col-span-1 lg:col-span-2 2xl:col-span-2",
+            medium: "col-span-1 xl:col-span-2",
             large: "col-span-full"
           };
           
@@ -283,14 +282,9 @@ export const EnhancedHomeDashboard = () => {
           };
 
           return (
-            <div 
-              key={widget.id} 
-              className={`${sizeClasses[widget.size]} flex flex-col`}
-            >
+            <div key={widget.id} className={sizeClasses[widget.size]}>
               <Suspense fallback={<WidgetSkeleton />}>
-                <div className="h-full flex flex-col">
-                  {renderWidget()}
-                </div>
+                {renderWidget()}
               </Suspense>
             </div>
           );
