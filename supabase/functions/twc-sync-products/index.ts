@@ -19,8 +19,8 @@ interface TWCFabricColor {
 
 interface TWCProduct {
   itemNumber: string;
-  itemName: string;
-  productType: string;
+  description: string; // TWC uses 'description' not 'itemName'
+  productType?: string;
   questions?: TWCQuestion[];
   fabricsAndColours?: TWCFabricColor[];
 }
@@ -88,28 +88,33 @@ const handler = async (req: Request): Promise<Response> => {
     };
 
     // Prepare inventory items for batch insert
-    const inventoryItems = products.map(product => ({
-      user_id: user.id,
-      name: product.itemName,
-      sku: product.itemNumber,
-      category: mapCategory(product.productType),
-      subcategory: product.productType,
-      supplier: 'TWC',
-      active: true,
-      show_in_quote: true,
-      description: `${product.productType} - Imported from TWC`,
-      metadata: {
-        twc_item_number: product.itemNumber,
-        twc_item_name: product.itemName,
-        twc_product_type: product.productType,
-        twc_questions: product.questions || [],
-        twc_fabrics_and_colours: product.fabricsAndColours || [],
-        imported_at: new Date().toISOString(),
-      },
-      // Default pricing - user can update later
-      cost_price: 0,
-      selling_price: 0,
-    }));
+    const inventoryItems = products.map(product => {
+      // Extract product type from description (e.g., "Venetian Blinds (Item 1234)" -> "Venetian Blinds")
+      const productType = product.productType || product.description.split('(')[0].trim();
+      
+      return {
+        user_id: user.id,
+        name: product.description,
+        sku: product.itemNumber,
+        category: mapCategory(productType),
+        subcategory: productType,
+        supplier: 'TWC',
+        active: true,
+        show_in_quote: true,
+        description: `${productType} - Imported from TWC`,
+        metadata: {
+          twc_item_number: product.itemNumber,
+          twc_description: product.description,
+          twc_product_type: productType,
+          twc_questions: product.questions || [],
+          twc_fabrics_and_colours: product.fabricsAndColours || [],
+          imported_at: new Date().toISOString(),
+        },
+        // Default pricing - user can update later
+        cost_price: 0,
+        selling_price: 0,
+      };
+    });
 
     // Batch insert products
     const { data: insertedItems, error: insertError } = await supabaseClient
