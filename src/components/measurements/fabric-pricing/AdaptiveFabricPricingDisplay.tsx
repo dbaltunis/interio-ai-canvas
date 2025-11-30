@@ -79,7 +79,8 @@ export const AdaptiveFabricPricingDisplay = ({
   // Check if this treatment uses pricing grid - look at FABRIC item, not template
   // Templates just specify pricing_type, but the actual grid data comes from fabric
   const fabricUsesPricingGrid = fabricToUse?.pricing_grid_data || fabricToUse?.resolved_grid_data;
-  const usesPricingGrid = template?.pricing_type === 'pricing_grid' && fabricUsesPricingGrid;
+  // ✅ FIX: If fabric HAS a pricing grid, USE IT - regardless of template setting
+  const usesPricingGrid = fabricUsesPricingGrid; // Fabric grid takes priority
   
   // Use fabric's pricing grid data, not template's
   const gridDataToUse = fabricToUse?.pricing_grid_data || fabricToUse?.resolved_grid_data;
@@ -105,6 +106,20 @@ export const AdaptiveFabricPricingDisplay = ({
     gridWidthCm = gridWidthMm / 10;
     gridDropCm = gridDropMm / 10;
     gridPrice = getPriceFromGrid(gridDataToUse, gridWidthCm, gridDropCm);
+    
+    // ✅ IMPROVED ERROR HANDLING: If grid returns 0, log helpful diagnostic
+    if (gridPrice === 0) {
+      console.error('⚠️ GRID PRICE IS ZERO - Check:', {
+        gridData: gridDataToUse,
+        dimensions: `${gridWidthCm}cm × ${gridDropCm}cm`,
+        possibleReasons: [
+          '1. Dimensions outside grid range',
+          '2. Grid data format incorrect',
+          '3. Fabric pricing grid not properly assigned'
+        ]
+      });
+    }
+    
     console.log('📊 GRID PRICE DEBUG:', {
       railWidthMm: gridWidthMm,
       dropMm: gridDropMm,
@@ -603,10 +618,11 @@ export const AdaptiveFabricPricingDisplay = ({
                 || template?.pricing_method 
                 || 'per_metre';
               
+              const isByWidth = pricingMethod === 'per_width';
               const isByDrop = pricingMethod === 'per_drop';
               const isByPanel = pricingMethod === 'per_panel';
               const isBySqm = pricingMethod === 'per_sqm' || template?.pricing_type === 'per_sqm';
-              const isByMetre = pricingMethod === 'per_metre' || !pricingMethod;
+              const isByMetre = pricingMethod === 'per_metre' && !isByWidth && !isByDrop && !isByPanel && !isBySqm;
               
               // ✅ Detect horizontal/railroaded fabric early for use throughout
               const isHorizontal = fabricCalculation.fabricRotated === true || 
@@ -696,6 +712,15 @@ export const AdaptiveFabricPricingDisplay = ({
                 unitSuffix = ' panel(s)';
                 calculationText = `${quantity.toFixed(0)} panels × ${formatPrice(pricePerUnit)}/panel`;
                 calculationBreakdown = `${quantity} panel(s) [${measurements.curtain_type || 'single'}] × ${formatPrice(pricePerUnit)}/panel = ${formatPrice(totalCost)}`;
+              } else if (isByWidth) {
+                // Per width calculation - charge per fabric width needed
+                pricePerUnit = fabricCalculation.pricePerMeter || selectedFabricItem?.selling_price || 0;
+                quantity = fabricCalculation.widthsRequired || 1;
+                totalCost = quantity * pricePerUnit;
+                unitLabel = 'Widths Required';
+                unitSuffix = ' width(s)';
+                calculationText = `${quantity.toFixed(0)} width(s) × ${formatPrice(pricePerUnit)}/width`;
+                calculationBreakdown = `${quantity} fabric width(s) needed × ${formatPrice(pricePerUnit)}/width = ${formatPrice(totalCost)}`;
               } else {
                 // Linear meter calculation (default)
                 // ✅ FIX: For horizontal/railroaded fabric, show required WIDTH to order
@@ -821,6 +846,7 @@ export const AdaptiveFabricPricingDisplay = ({
                       {isBySqm ? 'Per Square Meter' : 
                        isByDrop ? 'Per Drop' : 
                        isByPanel ? 'Per Panel' : 
+                       isByWidth ? 'Per Width' :
                        'Per Linear Meter'}
                     </span>
                   </div>

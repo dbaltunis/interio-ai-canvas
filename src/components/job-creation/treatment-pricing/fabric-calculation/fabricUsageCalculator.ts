@@ -55,19 +55,16 @@ export const calculateFabricUsage = (
     treatmentTemplatesCount: treatmentTypesData?.length
   });
   
-  // CRITICAL FIX: formData stores measurements in MM (database standard)
-  // Convert to CM for fabric calculations (fabric industry standard)
-  const railWidthMM = parseFloat(formData.rail_width) || 0;
-  const dropMM = parseFloat(formData.drop) || 0;
-  const railWidth = railWidthMM / 10; // Convert MM to CM
-  let drop = dropMM / 10; // Convert MM to CM
+  // ✅ CRITICAL FIX: VisualMeasurementSheet already converts user's unit to CM
+  // So formData.rail_width and formData.drop are ALREADY in CM, not MM
+  // DO NOT divide by 10 again - that creates 10x calculation errors!
+  const railWidth = parseFloat(formData.rail_width) || 0; // Already CM
+  let drop = parseFloat(formData.drop) || 0; // Already CM
   
-  console.log('📏 Unit conversion in fabricUsageCalculator:', {
-    railWidthMM,
-    dropMM,
+  console.log('📏 Fabric calculator input (values already converted to CM by VisualMeasurementSheet):', {
     railWidthCM: railWidth,
     dropCM: drop,
-    note: 'Database stores MM, fabric calculations use CM'
+    note: 'VisualMeasurementSheet converts user unit → CM before passing here'
   });
   
   // Get the treatment template
