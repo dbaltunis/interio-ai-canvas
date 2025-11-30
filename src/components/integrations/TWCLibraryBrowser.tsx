@@ -83,7 +83,7 @@ export const TWCLibraryBrowser = () => {
 
     const productsToImport = products.filter(p => selectedProducts.has(p.itemNumber));
     importProducts.mutate(productsToImport, {
-      onSuccess: () => {
+      onSuccess: (data) => {
         // Clear selections after successful import
         setSelectedProducts(new Set());
       },

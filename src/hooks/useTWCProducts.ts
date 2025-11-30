@@ -83,15 +83,18 @@ export const useImportTWCProducts = () => {
       queryClient.invalidateQueries({ queryKey: ["curtain-templates"] });
       
       const summary = [
-        `✓ ${data.imported} products imported to Inventory`,
-        `✓ ${data.templates_created} templates created in Settings → My Templates`,
-        data.options_created > 0 ? `✓ ${data.options_created} options configured` : null,
-        data.materials_created > 0 ? `✓ ${data.materials_created} material variants added` : null,
+        `✓ ${data.imported} product${data.imported !== 1 ? 's' : ''} added to Inventory`,
+        data.templates_created > 0 
+          ? `✓ ${data.templates_created} template${data.templates_created !== 1 ? 's' : ''} created → Settings → My Templates`
+          : '⚠️ No templates created (check edge function logs)',
+        data.materials_created > 0 
+          ? `✓ ${data.materials_created} material variant${data.materials_created !== 1 ? 's' : ''} added`
+          : null,
       ].filter(Boolean).join('\n');
 
       toast.success('TWC Import Complete', {
         description: summary,
-        duration: 6000,
+        duration: 8000,
       });
     },
     onError: (error) => {
