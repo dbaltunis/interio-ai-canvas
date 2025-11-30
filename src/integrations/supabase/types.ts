@@ -9615,6 +9615,10 @@ export type Database = {
         Args: { target_account_id: string }
         Returns: number
       }
+      seed_default_email_templates: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       seed_default_window_types: {
         Args: { account_owner_id: string }
         Returns: number
