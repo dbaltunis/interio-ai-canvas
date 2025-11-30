@@ -180,7 +180,6 @@ const handler = async (req: Request): Promise<Response> => {
         category: categoryMapping.category,
         subcategory: categoryMapping.subcategory,
         supplier: 'TWC',
-        twc_item_number: product.itemNumber,
         active: true,
         show_in_quote: true,
         description: `${productType} - Imported from TWC`,
