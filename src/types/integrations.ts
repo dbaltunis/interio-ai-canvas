@@ -119,7 +119,22 @@ export interface SendGridIntegration extends BaseIntegration {
   };
 }
 
-export type IntegrationType = TIGPIMIntegration | MYOBExoIntegration | RFMSIntegration | ZohoCRMIntegration | GoogleCalendarIntegration | TwilioIntegration | SendGridIntegration;
+export interface TWCIntegration extends BaseIntegration {
+  integration_type: 'twc';
+  api_credentials: {
+    api_url: string;
+    api_key: string;
+    environment: 'staging' | 'production';
+  };
+  configuration: {
+    auto_sync_options: boolean;
+    sync_fabrics: boolean;
+    sync_colors: boolean;
+    default_item_mapping: Record<string, string>;
+  };
+}
+
+export type IntegrationType = TIGPIMIntegration | MYOBExoIntegration | RFMSIntegration | ZohoCRMIntegration | GoogleCalendarIntegration | TwilioIntegration | SendGridIntegration | TWCIntegration;
 
 export interface IntegrationSyncLog {
   id: string;
