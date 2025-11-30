@@ -26,6 +26,7 @@ export const EmailCampaigns = () => {
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
 
   const handleNewCampaign = () => {
+    console.log("🔴 New Campaign button clicked!");
     toast({
       title: "Coming Soon",
       description: "Campaign creation feature is currently in development.",
@@ -33,6 +34,7 @@ export const EmailCampaigns = () => {
   };
 
   const handleUseTemplate = (templateName: string) => {
+    console.log("🔴 Use Template button clicked:", templateName);
     toast({
       title: "Coming Soon",
       description: `${templateName} template will be available soon.`,
@@ -40,6 +42,7 @@ export const EmailCampaigns = () => {
   };
 
   const handleViewCampaign = (campaignId: string) => {
+    console.log("🔴 View Campaign button clicked:", campaignId);
     toast({
       title: "Coming Soon",
       description: "Campaign preview feature is currently in development.",
@@ -47,6 +50,7 @@ export const EmailCampaigns = () => {
   };
 
   const handleEditCampaign = (campaignId: string) => {
+    console.log("🔴 Edit Campaign button clicked:", campaignId);
     toast({
       title: "Coming Soon",
       description: "Campaign editing feature is currently in development.",
@@ -54,6 +58,7 @@ export const EmailCampaigns = () => {
   };
 
   const handleDuplicateCampaign = (campaignId: string, campaignName: string) => {
+    console.log("🔴 Duplicate Campaign button clicked:", campaignId);
     toast({
       title: "Campaign Duplicated",
       description: `"${campaignName}" has been duplicated successfully.`,
@@ -61,6 +66,7 @@ export const EmailCampaigns = () => {
   };
 
   const handleDeleteCampaign = (campaignId: string) => {
+    console.log("🔴 Delete Campaign button clicked:", campaignId);
     setSelectedCampaign(campaignId);
     setDeleteDialogOpen(true);
   };
