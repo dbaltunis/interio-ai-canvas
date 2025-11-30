@@ -1,3 +1,4 @@
+import { MeasurementUnits, defaultMeasurementUnits, convertLength } from '@/hooks/useBusinessSettings';
 
 export interface ClientBreakdownItem {
   id?: string;
@@ -108,8 +109,14 @@ const groupRelatedOptions = (options: any[]): any[] => {
  * Build a client-facing cost breakdown from a saved window summary.
  * - Uses structured summary.cost_breakdown if already shaped
  * - Otherwise, derives Fabric, Lining, and Manufacturing lines from summary fields
+ * 
+ * @param summary - Window summary data
+ * @param units - Optional measurement units for display (defaults to metric)
  */
-export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
+export const buildClientBreakdown = (
+  summary: any,
+  units: MeasurementUnits = defaultMeasurementUnits
+): ClientBreakdownItem[] => {
   if (!summary) return [];
 
   console.log('🔍 buildClientBreakdown called with summary:', {
@@ -184,14 +191,22 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
   });
   
   if (combinedMaterialCost > 0 || linearMeters > 0) {
-    const sqm = linearMeters * (Number(summary.widths_required) || 1) / 10000; // Convert cm to sqm
+    // Convert area to user's preferred unit
+    const sqmInternal = linearMeters * (Number(summary.widths_required) || 1) / 10000; // Internal: cm to sqm
+    const areaInUserUnit = convertLength(sqmInternal, 'sq_m', units.area);
+    
+    const areaUnitLabel = units.area === 'sq_feet' ? 'sq ft' : 
+                          units.area === 'sq_inches' ? 'sq in' : 
+                          units.area === 'sq_m' ? 'sqm' : 
+                          units.area === 'sq_cm' ? 'sq cm' : units.area;
+    
     items.push({
       id: 'fabric',
       name: 'Fabric Material',
-      description: `${sqm.toFixed(2)} sqm × ${(combinedMaterialCost / sqm).toFixed(2)}/sqm`,
-      quantity: sqm,
-      unit: 'sqm',
-      unit_price: combinedMaterialCost / sqm,
+      description: `${areaInUserUnit.toFixed(2)} ${areaUnitLabel} × ${(combinedMaterialCost / areaInUserUnit).toFixed(2)}/${areaUnitLabel}`,
+      quantity: areaInUserUnit,
+      unit: areaUnitLabel,
+      unit_price: combinedMaterialCost / areaInUserUnit,
       total_cost: combinedMaterialCost,
       image_url: materialDetails?.image_url || summary.fabric_details?.image_url || null,
       category: 'fabric',
@@ -205,12 +220,21 @@ export const buildClientBreakdown = (summary: any): ClientBreakdownItem[] => {
 
   // Lining line (optional)
   if (Number(summary.lining_cost) > 0) {
+    // Convert length to user's preferred fabric unit
+    const linearMetersInternal = Number(summary.linear_meters) || 0;
+    const lengthInUserUnit = convertLength(linearMetersInternal, 'm', units.fabric);
+    
+    const fabricUnitLabel = units.fabric === 'yards' ? 'yd' : 
+                            units.fabric === 'inches' ? 'in' : 
+                            units.fabric === 'm' ? 'm' : 
+                            units.fabric === 'cm' ? 'cm' : units.fabric;
+    
     items.push({
       id: 'lining',
       name: summary.lining_details?.type || 'Lining',
       description: summary.lining_details?.type,
-      quantity: Number(summary.linear_meters) || 0,
-      unit: 'm',
+      quantity: lengthInUserUnit,
+      unit: fabricUnitLabel,
       unit_price: Number(summary.lining_details?.price_per_metre ?? summary.lining_details?.price_per_meter) || undefined,
       total_cost: Number(summary.lining_cost) || 0,
       image_url: summary.lining_details?.image_url || null,
