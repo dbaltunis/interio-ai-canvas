@@ -84,12 +84,16 @@ export function WindowSummaryCard({
     summary?.treatment_category ||
     'curtains';
 
-  // Unit helpers - measurements are already in cm, just format them
-  const { formatLength } = useMeasurementUnits();
-  const fmtMeasurement = (cm?: number) => {
-    if (cm === undefined || cm === null) return undefined;
-    const numValue = Number(cm);
-    return isNaN(numValue) ? undefined : formatLength(numValue);
+  // Unit helpers - CRITICAL: measurements from windows_summary are in MM, not CM!
+  const { units, convertToUserUnit, getLengthUnitLabel } = useMeasurementUnits();
+  const fmtMeasurement = (mm?: number) => {
+    if (mm === undefined || mm === null) return undefined;
+    const numValue = Number(mm);
+    if (isNaN(numValue)) return undefined;
+    // Convert from MM to user's preferred unit
+    const converted = convertToUserUnit(numValue, 'mm');
+    const unitLabel = getLengthUnitLabel();
+    return `${converted.toFixed(2)} ${unitLabel}`;
   };
 
   // Simplified logging - reduce console noise

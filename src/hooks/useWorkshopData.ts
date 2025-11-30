@@ -142,13 +142,15 @@ export const useWorkshopData = (projectId?: string) => {
     };
 
     (surfaces || []).forEach((s: any) => {
-      // CRITICAL: Database stores measurements in MM, not inches
-      const widthMM = typeof s.width === "number" ? s.width : undefined;
-      const heightMM = typeof s.height === "number" ? s.height : undefined;
+      const summary = summaryMap.get(s.id);
+      
+      // CRITICAL: Prioritize windows_summary measurements (entered by user in measurement worksheet)
+      // These are stored in MM and represent the actual measured values
+      const widthMM = summary?.rail_width || summary?.measurements_details?.rail_width || s.width;
+      const heightMM = summary?.drop || summary?.measurements_details?.drop || s.height;
+      
       const width = widthMM !== undefined ? Math.round(convertToUserUnit(widthMM, "mm") * 100) / 100 : undefined;
       const height = heightMM !== undefined ? Math.round(convertToUserUnit(heightMM, "mm") * 100) / 100 : undefined;
-
-      const summary = summaryMap.get(s.id);
       
       console.log(`🔍 Workshop Item for ${s.name}:`, {
         surfaceId: s.id,
@@ -221,6 +223,7 @@ export const useWorkshopData = (projectId?: string) => {
         showImage: true,
       };
 
+      // CRITICAL: Extract drop from summary or calculated height
       const item: WorkshopRoomItem = {
         id: s.id,
         name: s.name || "Window",
@@ -230,7 +233,7 @@ export const useWorkshopData = (projectId?: string) => {
         measurements: {
           width,
           height,
-          drop: summary?.drop || summary?.measurements_details?.drop,
+          drop: height, // Use the same converted height value
           pooling: summary?.measurements_details?.pooling || summary?.pooling_amount,
           unit: (width || height) ? getLengthUnitLabel() : undefined,
         },
