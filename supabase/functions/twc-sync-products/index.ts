@@ -74,8 +74,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Importing ${products.length} TWC products for user ${user.id}`);
 
-    // Map category based on TWC product type
-    const mapCategory = (productType: string): string => {
+    // Map category based on TWC product type with null safety
+    const mapCategory = (productType: string | undefined | null): string => {
+      if (!productType || typeof productType !== 'string') {
+        console.warn('Invalid productType provided to mapCategory:', productType);
+        return 'blinds_other';
+      }
+      
       const lowerType = productType.toLowerCase();
       if (lowerType.includes('venetian')) return 'blinds_venetian';
       if (lowerType.includes('roller')) return 'blinds_roller';
@@ -89,13 +94,23 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Prepare inventory items for batch insert
     const inventoryItems = products.map(product => {
-      // Extract product type from description (e.g., "Venetian Blinds (Item 1234)" -> "Venetian Blinds")
-      const productType = product.productType || product.description.split('(')[0].trim();
+      // Safe extraction of product type with multiple fallbacks
+      let productType = 'Unknown Product';
+      
+      if (product.productType) {
+        productType = product.productType;
+      } else if (product.description) {
+        // Try to extract from description (e.g., "Venetian Blinds (Item 1234)" -> "Venetian Blinds")
+        const descParts = product.description.split('(');
+        productType = descParts[0]?.trim() || product.description;
+      }
+      
+      const productName = product.description || product.itemNumber || 'TWC Product';
       
       return {
         user_id: user.id,
-        name: product.description,
-        sku: product.itemNumber,
+        name: productName,
+        sku: product.itemNumber || 'TWC-' + Date.now(),
         category: mapCategory(productType),
         subcategory: productType,
         supplier: 'TWC',
