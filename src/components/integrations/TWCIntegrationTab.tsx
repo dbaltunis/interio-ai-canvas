@@ -10,7 +10,6 @@ import { useIntegrations } from "@/hooks/useIntegrations";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import twcLogo from "@/assets/twc-logo.png";
-import { TWCLibraryBrowser } from "./TWCLibraryBrowser";
 
 export const TWCIntegrationTab = () => {
   const { integrations, createIntegration, updateIntegration, testConnection } = useIntegrations();
@@ -356,20 +355,15 @@ export const TWCIntegrationTab = () => {
                 </div>
               </div>
               <div>
-                <h4 className="font-medium">Submit Orders from Quotes</h4>
+                <h4 className="font-medium">Browse Product Library</h4>
                 <p className="text-sm text-muted-foreground">
-                  Once configured, use the "Send to TWC" button on your quotes to automatically submit orders.
+                  After setup, go to Settings → Products → Suppliers to browse and import TWC products.
                 </p>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* TWC Library Browser - Only show when integration is active */}
-      {twcIntegration?.active && (
-        <TWCLibraryBrowser />
-      )}
     </div>
   );
 };

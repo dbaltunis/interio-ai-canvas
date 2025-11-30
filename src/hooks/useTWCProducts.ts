@@ -25,6 +25,12 @@ export const useTWCProducts = () => {
   return useQuery({
     queryKey: ["twc-products"],
     queryFn: async () => {
+      // Verify user is authenticated before making API call
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Please log in to access TWC products");
+      }
+
       const { data, error } = await supabase.functions.invoke("twc-get-order-options", {
         body: {}, // Send empty body to fetch all products
       });
@@ -39,6 +45,7 @@ export const useTWCProducts = () => {
     },
     staleTime: 30 * 60 * 1000, // 30 minutes
     gcTime: 60 * 60 * 1000, // 1 hour
+    retry: 1, // Don't retry auth failures multiple times
   });
 };
 
