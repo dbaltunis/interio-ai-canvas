@@ -272,6 +272,12 @@ const handler = async (req: Request): Promise<Response> => {
         
         if (product.questions && product.questions.length > 0) {
           for (const question of product.questions) {
+            // Skip invalid questions
+            if (!question.question || typeof question.question !== 'string') {
+              console.warn('Skipping invalid question:', question);
+              continue;
+            }
+            
             // Map TWC question to treatment option key
             const optionKey = question.question.toLowerCase()
               .replace(/\s+/g, '_')
