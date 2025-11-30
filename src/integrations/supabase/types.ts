@@ -6314,6 +6314,10 @@ export type Database = {
           tax_rate: number | null
           template_custom_data: Json | null
           total_amount: number | null
+          twc_order_id: string | null
+          twc_order_status: string | null
+          twc_response: Json | null
+          twc_submitted_at: string | null
           updated_at: string
           user_id: string
           valid_until: string | null
@@ -6344,6 +6348,10 @@ export type Database = {
           tax_rate?: number | null
           template_custom_data?: Json | null
           total_amount?: number | null
+          twc_order_id?: string | null
+          twc_order_status?: string | null
+          twc_response?: Json | null
+          twc_submitted_at?: string | null
           updated_at?: string
           user_id: string
           valid_until?: string | null
@@ -6374,6 +6382,10 @@ export type Database = {
           tax_rate?: number | null
           template_custom_data?: Json | null
           total_amount?: number | null
+          twc_order_id?: string | null
+          twc_order_status?: string | null
+          twc_response?: Json | null
+          twc_submitted_at?: string | null
           updated_at?: string
           user_id?: string
           valid_until?: string | null

@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard, Sparkles } from "lucide-react";
+import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard, Sparkles, Package } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
@@ -28,6 +28,7 @@ import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 import { generateQuotePDF, generateQuotePDFBlob } from '@/utils/generateQuotePDF';
 import { InlineDiscountPanel } from "@/components/jobs/quotation/InlineDiscountPanel";
 import { useQuoteDiscount } from "@/hooks/useQuoteDiscount";
+import { TWCSubmitDialog } from "@/components/integrations/TWCSubmitDialog";
 interface QuotationTabProps {
   projectId: string;
   quoteId?: string;
@@ -57,6 +58,7 @@ export const QuotationTab = ({
   const [showQuotationItems, setShowQuotationItems] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
+  const [isTWCSubmitDialogOpen, setIsTWCSubmitDialogOpen] = useState(false);
   const {
     data: projects
   } = useProjects();
@@ -489,6 +491,14 @@ export const QuotationTab = ({
       setIsSendingEmail(false);
     }
   };
+  // Check if quote contains TWC products
+  const hasTWCProducts = useMemo(() => {
+    return quotationData.items?.some((item: any) => 
+      item.metadata?.twc_item_number || 
+      item.supplier === 'TWC'
+    ) || false;
+  }, [quotationData.items]);
+
   const getOrCreateQuoteId = async (): Promise<string | null> => {
     // If we already have a quoteId, use it
     if (quoteId) return quoteId;
@@ -624,6 +634,19 @@ export const QuotationTab = ({
               Payment
             </Button>
 
+            {/* TWC Submit Button - Only show if quote has TWC products */}
+            {hasTWCProducts && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsTWCSubmitDialogOpen(true)}
+                className="h-9 px-4 border-blue-500 text-blue-600 hover:bg-blue-50"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Submit to TWC
+              </Button>
+            )}
+
           </div>
         </div>
 
@@ -721,6 +744,17 @@ export const QuotationTab = ({
       {/* Email Modal */}
       <EmailQuoteModal isOpen={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} project={project} client={client} onSend={handleSendEmail} isSending={isSendingEmail} quotePreview={<LivePreview blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} showDetailedBreakdown={templateSettings.showDetailedBreakdown} showImages={templateSettings.showImages} />} />
 
+      {/* TWC Submit Dialog */}
+      {hasTWCProducts && quoteId && (
+        <TWCSubmitDialog
+          open={isTWCSubmitDialogOpen}
+          onOpenChange={setIsTWCSubmitDialogOpen}
+          quoteId={quoteId}
+          quotationData={quotationData}
+          projectData={project}
+          clientData={client}
+        />
+      )}
 
     </div>;
 };

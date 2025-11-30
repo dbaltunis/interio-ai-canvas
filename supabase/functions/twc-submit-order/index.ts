@@ -42,30 +42,49 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get user
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) {
+    // Get user from auth header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('Missing authorization header');
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Missing authorization header' }),
         { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.error('Auth error:', authError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized', details: authError?.message }),
+        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      );
+    }
+    
+    console.log('User authenticated:', user.id);
+
+    // Get account owner ID
+    const { data: profile } = await supabaseClient
+      .from('user_profiles')
+      .select('parent_account_id')
+      .eq('user_id', user.id)
+      .single();
+    
+    const accountOwnerId = profile?.parent_account_id || user.id;
+    console.log('Account owner ID:', accountOwnerId);
 
     // Get TWC integration settings
     const { data: integration, error: integrationError } = await supabaseClient
       .from('integration_settings')
       .select('api_credentials')
-      .eq('user_id', user.id)
+      .eq('user_id', accountOwnerId)
       .eq('integration_type', 'twc')
       .eq('active', true)
       .single();
