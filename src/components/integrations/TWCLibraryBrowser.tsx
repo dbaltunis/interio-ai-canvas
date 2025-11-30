@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TWCImportedProducts } from "./TWCImportedProducts";
 
 export const TWCLibraryBrowser = () => {
   const { data: products, isLoading, error } = useTWCProducts();
@@ -119,17 +120,22 @@ export const TWCLibraryBrowser = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Package className="h-5 w-5" />
-          TWC Product Library
-        </CardTitle>
-        <CardDescription>
-          Browse and import products from TWC's catalog into your inventory
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="space-y-6">
+      {/* My TWC Products Section */}
+      <TWCImportedProducts />
+
+      {/* Browse TWC Catalog Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Browse TWC Catalog
+          </CardTitle>
+          <CardDescription>
+            Select products from TWC's catalog to import into your inventory
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
         {/* Search and Filter Bar */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
@@ -253,5 +259,6 @@ export const TWCLibraryBrowser = () => {
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 };

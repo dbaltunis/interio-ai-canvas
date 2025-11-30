@@ -66,6 +66,29 @@ export const useTWCProducts = () => {
   });
 };
 
+export const useTWCImportedProducts = () => {
+  return useQuery({
+    queryKey: ["twc-imported-products"],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Please log in to view imported products");
+
+      const { data, error } = await supabase
+        .from("enhanced_inventory_items")
+        .select(`
+          *,
+          templates:curtain_templates(id, name, pricing_grid_data)
+        `)
+        .eq("supplier", "TWC")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 10 * 1000, // 10 seconds - refresh often to show updates
+  });
+};
+
 export const useImportTWCProducts = () => {
   const queryClient = useQueryClient();
 
@@ -80,16 +103,18 @@ export const useImportTWCProducts = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["enhanced-inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["twc-imported-products"] });
       queryClient.invalidateQueries({ queryKey: ["curtain-templates"] });
       
       const summary = [
         `✓ ${data.imported} product${data.imported !== 1 ? 's' : ''} added to Inventory`,
         data.templates_created > 0 
-          ? `✓ ${data.templates_created} template${data.templates_created !== 1 ? 's' : ''} created → Settings → My Templates`
-          : '⚠️ No templates created (check edge function logs)',
+          ? `✓ ${data.templates_created} template${data.templates_created !== 1 ? 's' : ''} created`
+          : '⚠️ No templates created (check logs)',
         data.materials_created > 0 
           ? `✓ ${data.materials_created} material variant${data.materials_created !== 1 ? 's' : ''} added`
           : null,
+        '\n📍 View imported products in "My TWC Products" section above',
       ].filter(Boolean).join('\n');
 
       toast.success('TWC Import Complete', {

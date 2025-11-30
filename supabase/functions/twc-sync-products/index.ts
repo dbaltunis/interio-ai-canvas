@@ -102,22 +102,59 @@ const handler = async (req: Request): Promise<Response> => {
       return 'roller_blinds'; // Safe fallback
     };
 
-    // Map category for inventory classification
-    const mapCategory = (productType: string | undefined | null): string => {
-      if (!productType || typeof productType !== 'string') {
-        console.warn('Invalid productType provided to mapCategory:', productType);
-        return 'blinds_other';
+    // Map category for inventory classification using VALID categories from INVENTORY_CATEGORY_GUIDE.md
+    const mapCategory = (description: string | undefined | null): { category: string, subcategory: string } => {
+      if (!description || typeof description !== 'string') {
+        console.warn('Invalid description provided to mapCategory');
+        return { category: 'material', subcategory: 'blind_material' };
       }
       
-      const lowerType = productType.toLowerCase();
-      if (lowerType.includes('venetian')) return 'blinds_venetian';
-      if (lowerType.includes('roller')) return 'blinds_roller';
-      if (lowerType.includes('vertical')) return 'blinds_vertical';
-      if (lowerType.includes('cellular') || lowerType.includes('honeycomb')) return 'blinds_cellular';
-      if (lowerType.includes('roman')) return 'roman_blinds';
-      if (lowerType.includes('shutter')) return 'shutters';
-      if (lowerType.includes('awning')) return 'awnings';
-      return 'blinds_other';
+      const lowerDesc = description.toLowerCase();
+      
+      // Venetian/Aluminium/Wood = material with venetian_slats subcategory
+      if (lowerDesc.includes('aluminium') || lowerDesc.includes('aluminum') || 
+          lowerDesc.includes('wood') || lowerDesc.includes('venetian') ||
+          lowerDesc.includes('slat')) {
+        return { category: 'material', subcategory: 'venetian_slats' };
+      }
+      
+      // Roller = fabric with roller_fabric subcategory
+      if (lowerDesc.includes('roller')) {
+        return { category: 'fabric', subcategory: 'roller_fabric' };
+      }
+      
+      // Vertical = material with vertical_slats subcategory
+      if (lowerDesc.includes('vertical')) {
+        return { category: 'material', subcategory: 'vertical_slats' };
+      }
+      
+      // Cellular/Honeycomb = fabric with cellular subcategory
+      if (lowerDesc.includes('cellular') || lowerDesc.includes('honeycomb')) {
+        return { category: 'fabric', subcategory: 'cellular' };
+      }
+      
+      // Roman = fabric with roman_fabric subcategory
+      if (lowerDesc.includes('roman')) {
+        return { category: 'fabric', subcategory: 'roman_fabric' };
+      }
+      
+      // Shutters = material with shutter_material
+      if (lowerDesc.includes('shutter')) {
+        return { category: 'material', subcategory: 'shutter_material' };
+      }
+      
+      // Awning = fabric with awning_fabric
+      if (lowerDesc.includes('awning')) {
+        return { category: 'fabric', subcategory: 'awning_fabric' };
+      }
+      
+      // Curtain = fabric with curtain_fabric
+      if (lowerDesc.includes('curtain')) {
+        return { category: 'fabric', subcategory: 'curtain_fabric' };
+      }
+      
+      // Default: material with blind_material (safe for most blinds)
+      return { category: 'material', subcategory: 'blind_material' };
     };
 
     // Prepare inventory items for batch insert
@@ -134,14 +171,16 @@ const handler = async (req: Request): Promise<Response> => {
       }
       
       const productName = product.description || product.itemNumber || 'TWC Product';
+      const categoryMapping = mapCategory(product.description);
       
       return {
         user_id: user.id,
         name: productName,
         sku: product.itemNumber || 'TWC-' + Date.now(),
-        category: mapCategory(productType),
-        subcategory: productType,
+        category: categoryMapping.category,
+        subcategory: categoryMapping.subcategory,
         supplier: 'TWC',
+        twc_item_number: product.itemNumber,
         active: true,
         show_in_quote: true,
         description: `${productType} - Imported from TWC`,
@@ -296,14 +335,15 @@ const handler = async (req: Request): Promise<Response> => {
           for (const material of product.fabricsAndColours.itemMaterials) {
             if (material.colours && material.colours.length > 0) {
               for (const colour of material.colours) {
+                const materialCategoryMapping = mapCategory(material.material);
                 const { error: materialError } = await supabaseClient
                   .from('enhanced_inventory_items')
                   .insert({
                     user_id: user.id,
                     name: `${parentItem.name} - ${material.material} - ${colour.colour}`,
                     sku: `${parentItem.sku}-${material.material}-${colour.colour}`.replace(/\s+/g, '-'),
-                    category: parentItem.category,
-                    subcategory: material.material,
+                    category: materialCategoryMapping.category,
+                    subcategory: materialCategoryMapping.subcategory,
                     supplier: 'TWC',
                     active: true,
                     show_in_quote: true,
