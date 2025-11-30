@@ -10,6 +10,7 @@ import { useIntegrations } from "@/hooks/useIntegrations";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import twcLogo from "@/assets/twc-logo.png";
+import { TWCLibraryBrowser } from "./TWCLibraryBrowser";
 
 export const TWCIntegrationTab = () => {
   const { integrations, createIntegration, updateIntegration, testConnection } = useIntegrations();
@@ -364,6 +365,11 @@ export const TWCIntegrationTab = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* TWC Library Browser - Only show when integration is active */}
+      {twcIntegration?.active && (
+        <TWCLibraryBrowser />
+      )}
     </div>
   );
 };
