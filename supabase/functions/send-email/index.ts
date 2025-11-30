@@ -371,8 +371,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Get user's email settings with signature
-    let fromEmail = "darius@curtainscalculator.com";
-    let fromName = "Darius from Curtains Calculator";
+    let fromEmail = "noreply@interioapp.com";
+    let fromName = "InterioApp";
     let emailSettings = null;
     let useCustomSendGrid = false;
     let sendGridApiKey = null;
