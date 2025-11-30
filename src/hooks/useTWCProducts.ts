@@ -25,7 +25,9 @@ export const useTWCProducts = () => {
   return useQuery({
     queryKey: ["twc-products"],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("twc-get-order-options");
+      const { data, error } = await supabase.functions.invoke("twc-get-order-options", {
+        body: {}, // Send empty body to fetch all products
+      });
 
       if (error) throw error;
       
