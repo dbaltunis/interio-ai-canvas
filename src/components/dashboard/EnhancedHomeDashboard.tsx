@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense } from "react";
+import { useState, useMemo, lazy, Suspense, useEffect } from "react";
 import { useKPIConfig } from "@/hooks/useKPIConfig";
 import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { WelcomeHeader } from "./WelcomeHeader";
@@ -12,6 +12,7 @@ import { ShopifyIntegrationDialog } from "@/components/library/ShopifyIntegratio
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users, FileText, DollarSign, Mail, MousePointerClick, Clock, CalendarCheck } from "lucide-react";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { disableShopifyWidgets } from "@/utils/disableShopifyWidgets";
 
 // Lazy load non-critical widgets for better initial load performance
 const UpcomingEventsWidget = lazy(() => import("./UpcomingEventsWidget").then(m => ({ default: m.UpcomingEventsWidget })));
@@ -49,6 +50,17 @@ export const EnhancedHomeDashboard = () => {
   // Use batched queries for better performance
   const { criticalStats, secondaryStats, hasOnlineStore } = useBatchedDashboardQueries();
   
+  const { data: emailKPIs } = useEmailKPIs();
+  const { integration: shopifyIntegration } = useShopifyIntegrationReal();
+  const isShopifyConnected = !!shopifyIntegration?.is_connected;
+
+  // One-time cleanup: disable Shopify widgets if Shopify isn't connected
+  useEffect(() => {
+    if (!isShopifyConnected) {
+      disableShopifyWidgets();
+    }
+  }, [isShopifyConnected]);
+  
   // Combine stats from both queries
   const stats = useMemo(() => {
     if (!criticalStats.data) return null;
@@ -62,10 +74,6 @@ export const EnhancedHomeDashboard = () => {
     };
   }, [criticalStats.data, secondaryStats.data]);
   
-  const { data: emailKPIs } = useEmailKPIs();
-  const { integration: shopifyIntegration } = useShopifyIntegrationReal();
-  const isShopifyConnected = !!shopifyIntegration?.is_connected;
-  
   // Permission checks for widgets and KPIs
   const canViewCalendar = useHasPermission('view_calendar');
   const canViewShopify = useHasPermission('view_shopify');
@@ -74,15 +82,6 @@ export const EnhancedHomeDashboard = () => {
   const canViewPrimaryKPIs = useHasPermission('view_primary_kpis');
   const canViewEmailKPIs = useHasPermission('view_email_kpis');
   const canViewRevenueKPIs = useHasPermission('view_revenue_kpis');
-
-  // Debug logging for Shopify permission
-  console.log('[Dashboard] Shopify Permission Check:', {
-    canViewShopify,
-    type: typeof canViewShopify,
-    isTrue: canViewShopify === true,
-    isFalse: canViewShopify === false,
-    isUndefined: canViewShopify === undefined
-  });
 
   // Filter enabled widgets by permissions AND integration type
   const enabledWidgets = useMemo(() => {
@@ -120,6 +119,16 @@ export const EnhancedHomeDashboard = () => {
     
     return filtered;
   }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, isShopifyConnected, hasOnlineStore.data, hasOnlineStore.isLoading]);
+
+  // Debug logging for Shopify status
+  console.log('[Dashboard] Integration Status:', {
+    canViewShopify,
+    isShopifyConnected,
+    hasOnlineStore: hasOnlineStore.data,
+    totalEnabledWidgets: getEnabledWidgets().length,
+    displayedWidgets: enabledWidgets.length,
+    filteredOutCount: getEnabledWidgets().length - enabledWidgets.length
+  });
 
   // Prepare KPI data for primary metrics
   const primaryKPIs = [
