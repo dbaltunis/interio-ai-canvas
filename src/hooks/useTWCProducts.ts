@@ -73,17 +73,35 @@ export const useTWCImportedProducts = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Please log in to view imported products");
 
-      const { data, error } = await supabase
+      // First get TWC inventory items
+      const { data: items, error: itemsError } = await supabase
         .from("enhanced_inventory_items")
-        .select(`
-          *,
-          templates:curtain_templates(id, name, pricing_grid_data)
-        `)
+        .select("*")
         .eq("supplier", "TWC")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data || [];
+      if (itemsError) throw itemsError;
+
+      // Then get templates for these items by matching on name/description
+      // (There's no direct FK relationship between inventory and templates)
+      const itemIds = items?.map(i => i.id) || [];
+      const { data: templates, error: templatesError } = await supabase
+        .from("curtain_templates")
+        .select("id, name, pricing_grid_data, description")
+        .ilike("description", "%TWC%");
+
+      if (templatesError) console.warn("Could not fetch templates:", templatesError);
+
+      // Merge templates into items based on name matching
+      const enrichedItems = items?.map(item => ({
+        ...item,
+        templates: templates?.filter(t => 
+          t.name === item.name || 
+          t.description?.includes(item.name)
+        ) || []
+      })) || [];
+
+      return enrichedItems;
     },
     staleTime: 10 * 1000, // 10 seconds - refresh often to show updates
   });
