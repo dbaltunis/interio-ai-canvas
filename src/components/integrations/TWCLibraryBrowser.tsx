@@ -24,16 +24,25 @@ export const TWCLibraryBrowser = () => {
 
   // Get unique product types for filter
   const productTypes = useMemo(() => {
-    if (!products) return [];
-    const types = new Set(products.map(p => p.productType));
+    if (!products || !Array.isArray(products)) return [];
+    const types = new Set(
+      products
+        .filter(p => p && p.productType)
+        .map(p => p.productType)
+    );
     return Array.from(types).sort();
   }, [products]);
 
   // Filter products based on search and product type
   const filteredProducts = useMemo(() => {
-    if (!products) return [];
+    if (!products || !Array.isArray(products)) return [];
 
     return products.filter(product => {
+      // Skip products with missing required fields
+      if (!product || !product.itemName || !product.itemNumber || !product.productType) {
+        return false;
+      }
+
       const matchesSearch = 
         product.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.itemNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
