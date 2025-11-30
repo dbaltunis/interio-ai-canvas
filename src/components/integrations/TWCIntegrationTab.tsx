@@ -9,6 +9,7 @@ import { Truck, Check, AlertCircle, Eye, EyeOff, Package, RefreshCw } from "luci
 import { useIntegrations } from "@/hooks/useIntegrations";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import twcLogo from "@/assets/twc-logo.png";
 
 export const TWCIntegrationTab = () => {
   const { integrations, createIntegration, updateIntegration, testConnection } = useIntegrations();
@@ -111,9 +112,7 @@ export const TWCIntegrationTab = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Truck className="h-5 w-5 text-blue-600" />
-              </div>
+              <img src={twcLogo} alt="TWC Logo" className="h-12 w-12 rounded-lg" />
               <div>
                 <CardTitle className="text-lg">TWC Online Ordering</CardTitle>
                 <CardDescription>
