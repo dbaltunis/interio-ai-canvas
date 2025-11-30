@@ -39,7 +39,7 @@ export const TWCImportedProducts = () => {
           {importedProducts.map((product: any) => {
             const hasTemplate = product.templates && product.templates.length > 0;
             const hasPricing = hasTemplate && product.templates[0]?.pricing_grid_data;
-            const twcItemNumber = product.twc_item_number || product.metadata?.twc_item_number;
+            const twcItemNumber = product.metadata?.twc_item_number || product.sku;
 
             return (
               <Card key={product.id} className="bg-background">

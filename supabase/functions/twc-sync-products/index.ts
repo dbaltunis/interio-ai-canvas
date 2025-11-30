@@ -201,7 +201,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: insertedItems, error: insertError } = await supabaseClient
       .from('enhanced_inventory_items')
       .insert(inventoryItems)
-      .select();
+      .select('id, user_id, name, sku, category, subcategory, supplier, active, show_in_quote, description, metadata, cost_price, selling_price, created_at');
 
     if (insertError) {
       console.error('Error inserting TWC products:', insertError);
@@ -253,7 +253,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: insertedTemplates, error: templateError } = await supabaseClient
       .from('curtain_templates')
       .insert(templates)
-      .select();
+      .select('id, user_id, name, treatment_category, pricing_type, pricing_grid_data, system_type, active, description, created_at');
 
     if (templateError) {
       console.error('Error creating templates:', templateError);
