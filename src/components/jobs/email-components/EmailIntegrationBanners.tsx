@@ -17,80 +17,48 @@ export const EmailIntegrationBanners = ({
   const { data: userRole } = useUserRole();
   const isAccountOwner = userRole?.isOwner || false;
 
-  // For team members, show a simple ready-to-use banner
+  // Team members - simple banner
   if (!isAccountOwner) {
-    if (hasEmailSettings) {
-      return (
-        <Card className="border-green-200 bg-green-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="font-medium text-green-800">Email Service Ready</p>
-                <p className="text-sm text-green-700">Your company email is configured with 500 emails/month included. Advanced tracking (opens, clicks, engagement) is active.</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    } else {
+    if (!hasEmailSettings) {
       return (
         <Card className="border-amber-200 bg-amber-50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-amber-600" />
-              <div>
-                <p className="font-medium text-amber-800">Email Settings Needed</p>
-                <p className="text-sm text-amber-700">Your account owner needs to configure sender email settings. Email service is ready - just needs personalization.</p>
-              </div>
+              <p className="text-sm text-amber-800">
+                <span className="font-medium">Setup Required:</span> Your account owner needs to configure email settings.
+              </p>
             </div>
           </CardContent>
         </Card>
       );
     }
+    return null; // Don't show banner for team members with configured email
   }
 
-  // Account owners see the setup banners
-  return (
-    <>
-      {/* Email Settings Banner - Only thing that's required */}
-      {!hasEmailSettings ? (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="h-5 w-5 text-yellow-600" />
-                <div>
-                  <p className="font-medium text-yellow-800">Configure Email Settings</p>
-                  <p className="text-sm text-yellow-700">Set up your sender name and email to start sending. Email service is already active (500/month included).</p>
-                </div>
-              </div>
-              <Button onClick={onEmailSettingsClick} className="bg-yellow-600 hover:bg-yellow-700">
-                <Settings className="h-4 w-4 mr-2" />
-                Configure
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="border-green-200 bg-green-50">
-          <CardContent className="p-4">
+  // Account owners - setup prompt if not configured
+  if (!hasEmailSettings) {
+    return (
+      <Card className="border-blue-200 bg-blue-50">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <div className="flex-1">
-                <p className="font-medium text-green-800">Email Service Ready</p>
-                <p className="text-sm text-green-700">
-                  You can send up to 500 emails per month with advanced tracking (opens, clicks, time spent). 
-                  {hasSendGridIntegration 
-                    ? " Using your custom SendGrid account for unlimited sending."
-                    : " Want unlimited? Upgrade to custom SendGrid in Settings."
-                  }
-                </p>
+              <Mail className="h-5 w-5 text-blue-600" />
+              <div>
+                <p className="font-medium text-blue-900">Quick Setup Required</p>
+                <p className="text-sm text-blue-700">Configure sender details to start sending emails (1 min)</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-    </>
-  );
+            <Button onClick={onEmailSettingsClick} className="bg-blue-600 hover:bg-blue-700 flex-shrink-0">
+              <Settings className="h-4 w-4 mr-2" />
+              Set Up
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Don't show banner if everything is configured
+  return null;
 };
