@@ -10,7 +10,6 @@ import { AINotificationToast } from '../collaboration/AINotificationToast';
 import { Button } from '@/components/ui/button';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
-import { useMaterialQueueCount } from '@/hooks/useMaterialQueueCount';
 import { useHasPermission } from '@/hooks/usePermissions';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,7 +23,6 @@ import {
   Menu,
   X,
   MessageCircle,
-  ShoppingCart,
   Store
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -42,7 +40,6 @@ const navItems = [
   { id: "calendar", label: "Calendar", icon: Calendar, tourId: "calendar-tab", permission: "view_calendar" },
   { id: "inventory", label: "Library", icon: Package, tourId: "library-tab", permission: "view_inventory" },
   { id: "online-store", label: "Store", icon: Store, tourId: "online-store-tab", permission: "has_online_store" },
-  { id: "ordering-hub", label: "Purchasing", icon: ShoppingCart, tourId: "ordering-hub-tab", badge: true, permission: "view_inventory" },
 ];
 
 export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderProps) => {
@@ -53,7 +50,6 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   
   const { activeUsers, currentUser } = useUserPresence();
   const { conversations } = useDirectMessages();
-  const { data: queueCount } = useMaterialQueueCount();
   
   // Permission checks - these return undefined while loading
   const canViewJobs = useHasPermission('view_jobs');
@@ -169,7 +165,6 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
             ) : (
               visibleNavItems.map((item) => {
                 const Icon = item.icon;
-                const showBadge = item.badge && queueCount && queueCount > 0;
                 
                 return (
                   <button
@@ -188,14 +183,6 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                       activeTab === item.id && "scale-110"
                     )} />
                     <span className={cn(activeTab === item.id && "font-semibold")}>{item.label}</span>
-                    {showBadge && (
-                      <Badge 
-                        variant="destructive" 
-                        className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]"
-                      >
-                        {queueCount}
-                      </Badge>
-                    )}
                   </button>
                 );
               })
