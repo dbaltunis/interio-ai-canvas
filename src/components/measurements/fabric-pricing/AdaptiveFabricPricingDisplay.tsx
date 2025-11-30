@@ -433,20 +433,20 @@ export const AdaptiveFabricPricingDisplay = ({
                 </div>
                 <div className="flex justify-between pl-2 text-muted-foreground/70">
                   <span>Rail Width × Fullness:</span>
-                  <span>{formatMeasurement((parseFloat(measurements.rail_width) || 0) * (parseFloat(measurements.heading_fullness) || 1))}</span>
+                  <span>{formatMeasurement((parseFloat(measurements.rail_width) || 0) * (parseFloat(measurements.heading_fullness) || 1), 'mm')}</span>
                 </div>
                 <div className="flex justify-between pl-2 text-muted-foreground/70">
                   <span>Side Hems:</span>
-                  <span>{formatMeasurement(fabricCalculation.totalSideHems || 0)}</span>
+                  <span>{formatMeasurement(fabricCalculation.totalSideHems || 0, 'cm')}</span>
                 </div>
                 <div className="flex justify-between pl-2 text-muted-foreground/70">
                   <span>Returns (L+R):</span>
-                  <span>{formatMeasurement(fabricCalculation.returns || 0)}</span>
+                  <span>{formatMeasurement(fabricCalculation.returns || 0, 'cm')}</span>
                 </div>
                 {fabricCalculation.seamsRequired > 0 && (
                   <div className="flex justify-between pl-2 text-muted-foreground/70">
                     <span>Seam Allowances:</span>
-                    <span>{formatMeasurement((fabricCalculation.seamsRequired || 0) * (parseFloat(measurements.seam_hems) || 1) * 2)} ({fabricCalculation.seamsRequired} seam(s) × 2)</span>
+                    <span>{formatMeasurement((fabricCalculation.seamsRequired || 0) * (parseFloat(measurements.seam_hems) || 1) * 2, 'cm')} ({fabricCalculation.seamsRequired} seam(s) × 2)</span>
                   </div>
                 )}
                 <div className="flex justify-between pl-2 pt-1 border-t border-border/20">
@@ -553,31 +553,31 @@ export const AdaptiveFabricPricingDisplay = ({
           <div className="text-xs space-y-1 text-muted-foreground">
             <div className="flex justify-between">
               <span>Drop Height:</span>
-              <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.drop || 0)}</span>
+              <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.drop || 0, 'cm')}</span>
             </div>
             <div className="flex justify-between">
               <span>Header Hem:</span>
-              <span className="font-medium text-foreground">+{formatMeasurement(fabricCalculation.headerHem || 0)}</span>
+              <span className="font-medium text-foreground">+{formatMeasurement(fabricCalculation.headerHem || 0, 'cm')}</span>
             </div>
             <div className="flex justify-between">
               <span>Bottom Hem:</span>
-              <span className="font-medium text-foreground">+{formatMeasurement(fabricCalculation.bottomHem || 0)}</span>
+              <span className="font-medium text-foreground">+{formatMeasurement(fabricCalculation.bottomHem || 0, 'cm')}</span>
             </div>
             {(fabricCalculation.pooling || 0) > 0 && (
               <div className="flex justify-between">
                 <span>Pooling:</span>
-                <span className="font-medium text-foreground">+{formatMeasurement(fabricCalculation.pooling)}</span>
+                <span className="font-medium text-foreground">+{formatMeasurement(fabricCalculation.pooling, 'cm')}</span>
               </div>
             )}
             {(fabricCalculation.totalSeamAllowance || 0) > 0 && (
               <div className="flex justify-between">
                 <span>Seam Allowance:</span>
-                <span className="font-medium text-foreground">+{formatMeasurement(fabricCalculation.totalSeamAllowance || 0)}</span>
+                <span className="font-medium text-foreground">+{formatMeasurement(fabricCalculation.totalSeamAllowance || 0, 'cm')}</span>
               </div>
             )}
             <div className="flex justify-between border-t border-border pt-1 mt-1">
               <span>Total Drop:</span>
-              <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalDrop || 0)}</span>
+              <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalDrop || 0, 'cm')}</span>
             </div>
             {(fabricCalculation.wastePercent || 0) > 0 && (
               <div className="flex justify-between">
