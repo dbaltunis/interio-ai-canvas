@@ -255,45 +255,70 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Finished Measurements */}
-                  <div>
-                    <h4 className="font-semibold mb-2">Finished Measurements</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                      <div>
-                        <span className="font-medium">Rail Width:</span><br />
-                        {item.measurements?.width ?? "—"} {item.measurements?.unit}
+                  <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                    <h4 className="font-semibold mb-3 text-blue-900">📐 Finished Measurements</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="bg-white p-2 rounded border border-blue-200">
+                        <div className="text-xs text-muted-foreground uppercase">Rail Width</div>
+                        <div className="text-lg font-bold mt-0.5">
+                          {item.measurements?.width ?? "—"}
+                          <span className="text-sm ml-1 font-normal">{item.measurements?.unit ?? ""}</span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="font-medium">Drop:</span><br />
-                        {item.measurements?.drop ?? "—"} {item.measurements?.unit}
+                      <div className="bg-white p-2 rounded border border-blue-200">
+                        <div className="text-xs text-muted-foreground uppercase">Drop</div>
+                        <div className="text-lg font-bold mt-0.5">
+                          {item.measurements?.drop ?? "—"}
+                          <span className="text-sm ml-1 font-normal">{item.measurements?.unit ?? ""}</span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="font-medium">Pooling:</span><br />
-                        {item.measurements?.pooling ?? 0} {item.measurements?.unit}
+                      <div className="bg-white p-2 rounded border border-blue-200">
+                        <div className="text-xs text-muted-foreground uppercase">Pooling</div>
+                        <div className="text-lg font-bold mt-0.5">
+                          {item.measurements?.pooling ?? 0}
+                          <span className="text-sm ml-1 font-normal">{item.measurements?.unit ?? ""}</span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="font-medium">Total Drop:</span><br />
-                        {((item.measurements?.drop ?? 0) + (item.measurements?.pooling ?? 0)).toFixed(1)} {item.measurements?.unit}
+                      <div className="bg-white p-2 rounded border border-blue-200">
+                        <div className="text-xs text-muted-foreground uppercase">Total Drop</div>
+                        <div className="text-lg font-bold mt-0.5">
+                          {((item.measurements?.drop ?? 0) + (item.measurements?.pooling ?? 0)).toFixed(1)}
+                          <span className="text-sm ml-1 font-normal">{item.measurements?.unit ?? ""}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                   
                   {/* Hem Allowances */}
-                  {item.hems && (
+                  {item.hems && (item.hems.header > 0 || item.hems.bottom > 0 || item.hems.side > 0) && (
                     <div className="border-t pt-4">
-                      <h4 className="font-semibold mb-2">Hem Allowances</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                        <div>
-                          <span className="font-medium">Header:</span> {item.hems.header} cm
+                      <h4 className="font-semibold mb-3 text-purple-900">✂️ Hem Allowances</h4>
+                      <div className="bg-purple-50 p-3 rounded border border-purple-200">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                          {item.hems.header > 0 && (
+                            <div className="bg-white p-2 rounded">
+                              <span className="font-medium text-purple-700">Header:</span> {item.hems.header} cm
+                            </div>
+                          )}
+                          {item.hems.bottom > 0 && (
+                            <div className="bg-white p-2 rounded">
+                              <span className="font-medium text-purple-700">Bottom:</span> {item.hems.bottom} cm
+                            </div>
+                          )}
+                          {item.hems.side > 0 && (
+                            <div className="bg-white p-2 rounded">
+                              <span className="font-medium text-purple-700">Side:</span> {item.hems.side} cm each
+                            </div>
+                          )}
+                          {item.hems.seam && item.hems.seam > 0 && (
+                            <div className="bg-white p-2 rounded">
+                              <span className="font-medium text-purple-700">Seam:</span> {item.hems.seam} cm
+                            </div>
+                          )}
                         </div>
-                        <div>
-                          <span className="font-medium">Bottom:</span> {item.hems.bottom} cm
-                        </div>
-                        <div>
-                          <span className="font-medium">Side:</span> {item.hems.side} cm
-                        </div>
-                        {item.hems.seam && (
-                          <div>
-                            <span className="font-medium">Seam:</span> {item.hems.seam} cm
+                        {!item.hems.header && !item.hems.bottom && !item.hems.side && (
+                          <div className="text-xs text-muted-foreground italic">
+                            No hem specifications available from template settings
                           </div>
                         )}
                       </div>
