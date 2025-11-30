@@ -87,6 +87,15 @@ const Index = () => {
 
   const handleTabChange = (tabId: string) => {
     console.warn('[NAV] Index: handleTabChange called with:', tabId);
+    
+    // Feature flag: redirect ordering-hub to dashboard if purchasing is disabled
+    if (tabId === 'ordering-hub' && !FEATURE_FLAGS.PURCHASING_ENABLED) {
+      console.warn('[FEATURE FLAG] Purchasing disabled, redirecting to dashboard');
+      setSearchParams({ tab: 'dashboard' }, { replace: true });
+      sessionStorage.setItem('active_tab', 'dashboard');
+      return;
+    }
+    
     setSearchParams({ tab: tabId }, { replace: true });
     sessionStorage.setItem('active_tab', tabId);
   };
@@ -156,11 +165,13 @@ const Index = () => {
           </Suspense>
         );
       case "ordering-hub":
-        // Feature flag: redirect to dashboard if purchasing is disabled
+        // Feature flag: show dashboard if purchasing is disabled
         if (!FEATURE_FLAGS.PURCHASING_ENABLED) {
-          console.warn('[FEATURE FLAG] Purchasing disabled, redirecting to dashboard');
-          setSearchParams({ tab: 'dashboard' }, { replace: true });
-          return null;
+          return (
+            <Suspense fallback={<DashboardSkeleton />}>
+              <Dashboard />
+            </Suspense>
+          );
         }
         return (
           <ComponentWrapper>
