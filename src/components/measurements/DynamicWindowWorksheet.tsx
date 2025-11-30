@@ -27,6 +27,27 @@ import { detectTreatmentType, getTreatmentConfig, TreatmentCategory } from "@/ut
 import { calculateWallpaperCost } from "@/utils/wallpaperCalculations";
 import { MeasurementWorksheetSkeleton } from "./skeleton/MeasurementWorksheetSkeleton";
 
+/**
+ * CRITICAL MEASUREMENT UNIT STANDARD
+ * ===================================
+ * ALL measurements in windows_summary table are stored in MILLIMETERS (MM).
+ * This is the universal internal standard across the entire application.
+ * 
+ * CONVERSION FLOW:
+ * 1. INPUT: User enters measurement in their preferred unit (mm/cm/inches/feet)
+ * 2. SAVE: Convert from user unit → MM, store in database
+ * 3. LOAD: Read MM from database → convert to user's preferred unit for display
+ * 4. DISPLAY: All components receive MM values and convert to display unit
+ * 
+ * VALIDATION:
+ * - Typical window dimensions: 500-3000mm (width/height)
+ * - Values < 100mm trigger warnings (likely unit conversion error)
+ * - Values stored as null for zero/empty inputs
+ * 
+ * See: src/types/measurements.ts for type definitions and conversion utilities
+ * See: UNIT_STANDARD.md for comprehensive documentation
+ */
+
 interface DynamicWindowWorksheetProps {
   clientId?: string;
   projectId?: string;
@@ -1187,10 +1208,24 @@ export const DynamicWindowWorksheet = forwardRef<{
             
             // CRITICAL: Store dimensions in MM (database standard), save null instead of 0 for empty values
             rail_width: measurements.rail_width && parseFloat(measurements.rail_width) > 0 
-              ? convertLength(parseFloat(measurements.rail_width), units.length, 'mm') 
+              ? (() => {
+                  const valueMM = convertLength(parseFloat(measurements.rail_width), units.length, 'mm');
+                  // Validation: warn if value seems unreasonably small (likely unit error)
+                  if (valueMM < 100) {
+                    console.warn('⚠️ Rail width seems very small for MM:', valueMM, 'mm. Expected typical range: 500-3000mm');
+                  }
+                  return valueMM;
+                })()
               : null,
             drop: measurements.drop && parseFloat(measurements.drop) > 0 
-              ? convertLength(parseFloat(measurements.drop), units.length, 'mm') 
+              ? (() => {
+                  const valueMM = convertLength(parseFloat(measurements.drop), units.length, 'mm');
+                  // Validation: warn if value seems unreasonably small (likely unit error)
+                  if (valueMM < 100) {
+                    console.warn('⚠️ Drop height seems very small for MM:', valueMM, 'mm. Expected typical range: 500-3000mm');
+                  }
+                  return valueMM;
+                })()
               : null,
             
             total_cost: finalTotalCost,
@@ -1356,10 +1391,24 @@ export const DynamicWindowWorksheet = forwardRef<{
               
               // CRITICAL: Store dimensions in MM (database standard), save null instead of 0 for empty values
               rail_width: measurements.rail_width && parseFloat(measurements.rail_width) > 0 
-                ? convertLength(parseFloat(measurements.rail_width), units.length, 'mm') 
+                ? (() => {
+                    const valueMM = convertLength(parseFloat(measurements.rail_width), units.length, 'mm');
+                    // Validation: warn if value seems unreasonably small (likely unit error)
+                    if (valueMM < 100) {
+                      console.warn('⚠️ Rail width seems very small for MM:', valueMM, 'mm. Expected typical range: 500-3000mm');
+                    }
+                    return valueMM;
+                  })()
                 : null,
               drop: measurements.drop && parseFloat(measurements.drop) > 0 
-                ? convertLength(parseFloat(measurements.drop), units.length, 'mm') 
+                ? (() => {
+                    const valueMM = convertLength(parseFloat(measurements.drop), units.length, 'mm');
+                    // Validation: warn if value seems unreasonably small (likely unit error)
+                    if (valueMM < 100) {
+                      console.warn('⚠️ Drop height seems very small for MM:', valueMM, 'mm. Expected typical range: 500-3000mm');
+                    }
+                    return valueMM;
+                  })()
                 : null,
               wall_width_cm: measurements.wall_width ? parseFloat(measurements.wall_width) : 0,
               wall_height_cm: measurements.wall_height ? parseFloat(measurements.wall_height) : 0,
