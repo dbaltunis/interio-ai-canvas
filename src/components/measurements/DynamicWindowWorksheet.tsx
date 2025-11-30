@@ -1184,12 +1184,12 @@ export const DynamicWindowWorksheet = forwardRef<{
               }] : [])
             ],
             
-            // PHASE 2: Add dimensions - STORE IN CM, save null instead of 0 for empty values
+            // CRITICAL: Store dimensions in MM (database standard), save null instead of 0 for empty values
             rail_width: measurements.rail_width && parseFloat(measurements.rail_width) > 0 
-              ? convertLength(parseFloat(measurements.rail_width), units.length, 'cm') 
+              ? convertLength(parseFloat(measurements.rail_width), units.length, 'mm') 
               : null,
             drop: measurements.drop && parseFloat(measurements.drop) > 0 
-              ? convertLength(parseFloat(measurements.drop), units.length, 'cm') 
+              ? convertLength(parseFloat(measurements.drop), units.length, 'mm') 
               : null,
             
             total_cost: finalTotalCost,
@@ -1353,12 +1353,12 @@ export const DynamicWindowWorksheet = forwardRef<{
               return_right: measurements.return_right || selectedTemplate?.return_right || 0,
               waste_percent: measurements.waste_percent || selectedTemplate?.waste_percent || 5,
               
-              // PHASE 2: Convert to cm but save null instead of 0 for empty values
+              // CRITICAL: Store dimensions in MM (database standard), save null instead of 0 for empty values
               rail_width: measurements.rail_width && parseFloat(measurements.rail_width) > 0 
-                ? convertLength(parseFloat(measurements.rail_width), units.length, 'cm') 
+                ? convertLength(parseFloat(measurements.rail_width), units.length, 'mm') 
                 : null,
               drop: measurements.drop && parseFloat(measurements.drop) > 0 
-                ? convertLength(parseFloat(measurements.drop), units.length, 'cm') 
+                ? convertLength(parseFloat(measurements.drop), units.length, 'mm') 
                 : null,
               wall_width_cm: measurements.wall_width ? parseFloat(measurements.wall_width) : 0,
               wall_height_cm: measurements.wall_height ? parseFloat(measurements.wall_height) : 0,
