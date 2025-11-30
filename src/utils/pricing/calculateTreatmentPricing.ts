@@ -1,7 +1,24 @@
 
+/**
+ * Calculate treatment pricing with fabric costs, lining, manufacturing, and options
+ * 
+ * CRITICAL MEASUREMENT UNIT EXPECTATION:
+ * This function expects measurements to already be converted to CENTIMETERS (CM).
+ * 
+ * Conversion flow:
+ * 1. Database stores: MILLIMETERS (MM) - universal standard
+ * 2. Form state: User's preferred unit (mm/cm/inches/feet)
+ * 3. THIS FUNCTION: Expects CENTIMETERS (CM) for calculations
+ * 4. Caller responsibility: Convert measurements to CM before calling
+ * 
+ * The VisualMeasurementSheet component handles this conversion automatically
+ * before passing measurements to fabric calculators and this function.
+ * 
+ * @param input.measurements - Expected in CM (rail_width, drop, pooling_amount)
+ */
 export interface TreatmentPricingInput {
   template: any;
-  measurements: any; // expects keys: rail_width/measurement_a, drop/measurement_b, pooling_amount
+  measurements: any; // CRITICAL: expects CM values (rail_width, drop, pooling_amount in CM)
   fabricItem: any; // inventory item or fallback object
   selectedHeading?: string;
   selectedLining?: string;
@@ -62,6 +79,8 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   });
 
   // Measurements (cm)
+  // CRITICAL: These values are expected to already be in CM
+  // Conversion from database MM to CM happens in VisualMeasurementSheet
   const widthCm = parseFloat(measurements?.rail_width || measurements?.measurement_a || '0');
   const heightCm = parseFloat(measurements?.drop || measurements?.measurement_b || '0');
   const pooling = parseFloat(measurements?.pooling_amount || '0');

@@ -92,15 +92,16 @@ export const extractWindowMetrics = (summary: AnySummary, surface: AnySurface) =
   const md = parseMeasurementsDetails(summary);
 
   // Core measurements (cm) with alternate keys + unit normalization
+  // CRITICAL: Database stores in MM, normalizeToCm handles MM → CM conversion
   const railWidthCm =
     pickLengthFromMd(md, ["rail_width_cm", "rail_width", "width_cm", "width"]) ??
-    normalizeToCm(summary?.rail_width, (summary as any)?.unit || (summary as any)?.measurement_unit) ??
+    normalizeToCm(summary?.rail_width, "mm") ?? // CRITICAL: Specify MM unit hint for database values
     // Last resort: surface; often stored in inches in some datasets
     normalizeToCm(surface?.rail_width ?? surface?.width, (surface as any)?.unit || "in");
 
   const dropCm =
     pickLengthFromMd(md, ["drop_cm", "drop", "height_cm", "height"]) ??
-    normalizeToCm(summary?.drop, (summary as any)?.unit || (summary as any)?.measurement_unit) ??
+    normalizeToCm(summary?.drop, "mm") ?? // CRITICAL: Specify MM unit hint for database values
     normalizeToCm(surface?.drop ?? surface?.height, (surface as any)?.unit || "in");
 
   const pooling =
