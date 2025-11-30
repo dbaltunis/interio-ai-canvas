@@ -80,10 +80,26 @@ export const useImportTWCProducts = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["enhanced-inventory"] });
-      toast.success(`Successfully imported ${data.imported} TWC products`);
+      queryClient.invalidateQueries({ queryKey: ["curtain-templates"] });
+      
+      const summary = [
+        `✓ ${data.imported} products imported to Inventory`,
+        `✓ ${data.templates_created} templates created in Settings → My Templates`,
+        data.options_created > 0 ? `✓ ${data.options_created} options configured` : null,
+        data.materials_created > 0 ? `✓ ${data.materials_created} material variants added` : null,
+      ].filter(Boolean).join('\n');
+
+      toast.success('TWC Import Complete', {
+        description: summary,
+        duration: 6000,
+      });
     },
     onError: (error) => {
-      toast.error(`Failed to import products: ${error.message}`);
+      const errorMessage = error.message || 'Unknown error occurred';
+      toast.error('Import Failed', {
+        description: `Could not import TWC products: ${errorMessage}`,
+        duration: 6000,
+      });
     },
   });
 };
