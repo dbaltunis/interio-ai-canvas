@@ -51,8 +51,9 @@ export const useWorkroomSync = ({
             treatment_type: window.summary.template_details?.treatment_category || 'curtains',
             fabric_details: window.summary.fabric_details,
             measurements: {
-              rail_width: window.summary.measurements_details?.rail_width_cm || window.summary.measurements_details?.rail_width,
-              drop: window.summary.measurements_details?.drop_cm || window.summary.measurements_details?.drop,
+              // CRITICAL: Database stores rail_width and drop in MM (database standard)
+              rail_width: window.summary.rail_width || window.summary.measurements_details?.rail_width,
+              drop: window.summary.drop || window.summary.measurements_details?.drop,
               window_width: window.summary.measurements_details?.window_width,
               window_height: window.summary.measurements_details?.window_height,
             },
