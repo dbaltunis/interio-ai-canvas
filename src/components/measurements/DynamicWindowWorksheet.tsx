@@ -1205,7 +1205,13 @@ export const DynamicWindowWorksheet = forwardRef<{
                   ? linearMeters * (fabricCalculation.horizontalPiecesNeeded || 1) 
                   : linearMeters,
                 unit: 'm',
-                unit_price: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0
+                unit_price: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0,
+                // CRITICAL: Save pricing method for correct quote display terminology
+                pricing_method: selectedTemplate?.pricing_type || 'per_metre',
+                // Save additional context for quote display
+                widths_required: fabricCalculation?.widthsRequired,
+                fabric_orientation: fabricCalculation?.fabricOrientation,
+                uses_pricing_grid: !!(selectedItems.fabric?.pricing_grid_data || selectedItems.material?.pricing_grid_data)
               }] : []),
               // Lining
               ...(finalLiningCost > 0 ? [{
