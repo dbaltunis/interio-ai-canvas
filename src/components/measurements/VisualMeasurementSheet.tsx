@@ -1104,7 +1104,7 @@ export const VisualMeasurementSheet = ({
 
               {/* BLIND-SPECIFIC FIELDS - Dynamic Options */}
               {/* Show dynamic options for all blind and shutter types */}
-              {(treatmentType === 'blinds' || treatmentType === 'roller_blinds' || treatmentType === 'venetian_blinds' || treatmentType === 'roman_blinds' || treatmentType === 'vertical_blinds' || treatmentType === 'cellular_blinds' || treatmentType === 'panel_glide' || treatmentType === 'plantation_shutters' || treatmentType === 'shutters' || treatmentType === 'awning') && (() => {
+              {(treatmentType === 'blinds' || treatmentType === 'roller_blinds' || treatmentType === 'venetian_blinds' || treatmentType === 'vertical_blinds' || treatmentType === 'cellular_blinds' || treatmentType === 'panel_glide' || treatmentType === 'plantation_shutters' || treatmentType === 'shutters' || treatmentType === 'awning') && (() => {
                 console.log('📍 Rendering DynamicRollerBlindFields with:', {
                   treatmentType,
                   treatmentCategory,
