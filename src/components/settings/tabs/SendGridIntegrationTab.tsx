@@ -50,6 +50,8 @@ export const SendGridIntegrationTab = () => {
           </div>
         </CardContent>
       </Card>
+
+      <EmailSetupStatusCard />
       
       {/* Premium Feature Card */}
       <Card className="border-blue-200">

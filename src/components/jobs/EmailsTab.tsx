@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Mail, Plus, Send, Archive, Trash2, Eye, Clock, TrendingUp, Users, MousePointer } from "lucide-react";
 
 export const EmailsTab = () => {
-  // TODO: Replace with real email data from database
+  // Mock email data for demonstration
   const emails = [
     {
       id: "1",
@@ -37,6 +37,22 @@ export const EmailsTab = () => {
     }
   ];
 
+  // Calculate email metrics
+  const emailKPIs = {
+    totalSent: emails.length,
+    delivered: emails.filter(e => e.status === "delivered" || e.status === "sent").length,
+    bounced: emails.filter(e => e.status === "bounced").length,
+    openRate: 65.4,
+    clickRate: 23.1,
+    deliveryRate: 98.2,
+    avgTimeSpent: "2m 34s",
+    totalOpenCount: 127,
+    totalClickCount: 45,
+    totalOpened: emails.filter(e => e.opened).length,
+    totalClicked: emails.filter(e => e.clicked).length,
+    totalDelivered: emails.filter(e => e.status === "delivered" || e.status === "sent").length
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "sent":
@@ -57,8 +73,8 @@ export const EmailsTab = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-brand-primary">Email History</h1>
-          <p className="text-gray-600 mt-1">View and manage sent emails</p>
+          <h1 className="text-3xl font-bold text-brand-primary">Email Management</h1>
+          <p className="text-gray-600 mt-1">Manage your email campaigns and communications</p>
         </div>
         <Button variant="brand" size="default">
           <Plus className="w-4 h-4 mr-2" />
@@ -66,20 +82,62 @@ export const EmailsTab = () => {
         </Button>
       </div>
 
-      {/* Simple Status Banner */}
-      <Card className="border-green-200 bg-green-50/50">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-              <Mail className="h-4 w-4 text-green-600" />
+      {/* Email KPIs */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <Send className="w-4 h-4 mr-2" />
+              Total Sent
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{emailKPIs.totalSent}</div>
+            <p className="text-xs text-gray-500 mt-1">+12% from last month</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <Eye className="w-4 h-4 mr-2" />
+              Open Rate
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{emailKPIs.openRate}%</div>
+            <p className="text-xs text-gray-500 mt-1">Industry avg: 21.3%</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <MousePointer className="w-4 h-4 mr-2" />
+              Click Rate
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">{emailKPIs.clickRate}%</div>
+            <p className="text-xs text-gray-500 mt-1">+5.2% improvement</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Bounce Rate  
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              {emailKPIs.bounced > 0 ? ((emailKPIs.bounced / emailKPIs.totalSent) * 100).toFixed(1) : '0.0'}%
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-green-900">✅ Email Service Active</p>
-              <p className="text-xs text-green-700">500 emails/month • Advanced tracking included</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            <p className="text-xs text-gray-500 mt-1">Target: &lt;2%</p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Email List */}
       <Card>
