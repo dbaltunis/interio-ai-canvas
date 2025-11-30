@@ -8,11 +8,13 @@ import { Mail, Save, Loader2 } from "lucide-react";
 import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettings";
 import { useToast } from "@/hooks/use-toast";
 import { TestEmailButton } from "@/components/email-setup/TestEmailButton";
+import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 
 export const EmailSettingsTab = () => {
   const { data: emailSettings, isLoading } = useEmailSettings();
   const updateEmailSettings = useUpdateEmailSettings();
   const { toast } = useToast();
+  const { hasSendGridIntegration } = useIntegrationStatus();
 
   const [formData, setFormData] = useState({
     from_email: emailSettings?.from_email || "",
@@ -90,15 +92,26 @@ export const EmailSettingsTab = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="from_email">From Email *</Label>
+                <Label htmlFor="from_email">
+                  From Email * 
+                  {!hasSendGridIntegration && (
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">(Shared Service)</span>
+                  )}
+                </Label>
                 <Input
                   id="from_email"
                   type="email"
-                  placeholder="noreply@yourdomain.com"
-                  value={formData.from_email}
+                  placeholder="noreply@interioapp.com"
+                  value={hasSendGridIntegration ? formData.from_email : "noreply@interioapp.com"}
                   onChange={(e) => setFormData({ ...formData, from_email: e.target.value })}
+                  disabled={!hasSendGridIntegration}
                   required
                 />
+                {!hasSendGridIntegration && (
+                  <p className="text-xs text-muted-foreground">
+                    Using shared email service. Configure custom SendGrid for branded sending.
+                  </p>
+                )}
               </div>
             </div>
 
