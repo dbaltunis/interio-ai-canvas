@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Package, FileText, Wrench, Mail, Calendar, Clock, MoreHorizontal, Copy, Archive, Trash2 } from "lucide-react";
+import { ArrowLeft, User, Package, FileText, Wrench, Mail, Clock, MoreHorizontal, Copy, Archive, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +32,6 @@ import { QuotationTab } from "./tabs/QuotationTab";
 import { ProjectMaterialsTab } from "./ProjectMaterialsTab";
 import { WorkroomTab } from "./tabs/WorkroomTab";
 import { EmailsTab } from "./tabs/EmailsTab";
-import { CalendarTab } from "./tabs/CalendarTab";
 import { JobStatusDropdown } from "./JobStatusDropdown";
 import { JobSkeleton } from "./JobSkeleton";
 import { JobNotFound } from "./JobNotFound";
@@ -669,7 +668,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     { id: "workroom", label: "Workroom", mobileLabel: "Work", icon: Wrench },
     { id: "materials", label: "Materials", mobileLabel: "Materials", icon: Package },
     { id: "emails", label: "Emails", mobileLabel: "Emails", icon: Mail },
-    { id: "calendar", label: "Calendar", mobileLabel: "Calendar", icon: Calendar },
   ];
 
   const mainTabs = allTabs.slice(0, 3);
@@ -918,12 +916,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               <TabsContent value="emails" className="mt-0">
                 <div className="modern-card p-3 sm:p-6">
                   <EmailsTab projectId={jobId} />
-                </div>
-              </TabsContent>
-
-              <TabsContent value="calendar" className="mt-0">
-                <div className="modern-card p-6">
-                  <CalendarTab projectId={jobId} />
                 </div>
               </TabsContent>
             </div>
