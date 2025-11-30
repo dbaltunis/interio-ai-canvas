@@ -17,7 +17,6 @@ import { useProjects } from "@/hooks/useProjects";
 import { formatCurrency } from "@/utils/currency";
 import { useTreatmentMaterialsStatus } from "@/hooks/useProjectMaterialsStatus";
 import { MaterialsStatusBadge } from "./MaterialsStatusBadge";
-import { FEATURE_FLAGS } from "@/config/featureFlags";
 
 interface ProjectMaterialsTabProps {
   projectId: string;
@@ -148,19 +147,14 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
         description += `. ${skippedCount} item(s) skipped (missing inventory reference)`;
       }
       
-      const toastConfig: any = {
+      toast.success("✓ Materials sent to Purchasing!", {
         description,
-        duration: 10000
-      };
-      
-      if (FEATURE_FLAGS.PURCHASING_ENABLED) {
-        toastConfig.action = {
+        action: {
           label: "View in Purchasing →",
           onClick: () => navigate('/?tab=ordering-hub')
-        };
-      }
-      
-      toast.success("✓ Materials sent to Purchasing!", toastConfig);
+        },
+        duration: 10000
+      });
       
       // Clear selection
       setSelectedMaterials(new Set());
@@ -339,16 +333,14 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
           <Info className="h-4 w-4 text-green-600 dark:text-green-400" />
           <AlertDescription className="text-green-900 dark:text-green-100">
             <span className="font-medium">{sentMaterials.length} material{sentMaterials.length !== 1 ? 's' : ''}</span> from this project {sentMaterials.length === 1 ? 'has' : 'have'} been sent to purchasing
-            {FEATURE_FLAGS.PURCHASING_ENABLED && (
-              <Button
-                variant="link"
-                size="sm"
-                className="ml-2 h-auto p-0 text-green-700 dark:text-green-300"
-                onClick={() => navigate('/?tab=ordering-hub')}
-              >
-                View in Purchasing →
-              </Button>
-            )}
+            <Button
+              variant="link"
+              size="sm"
+              className="ml-2 h-auto p-0 text-green-700 dark:text-green-300"
+              onClick={() => navigate('/?tab=ordering-hub')}
+            >
+              View in Purchasing →
+            </Button>
           </AlertDescription>
         </Alert>
       )}
@@ -359,16 +351,14 @@ export function ProjectMaterialsTab({ projectId }: ProjectMaterialsTabProps) {
           <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <AlertDescription className="text-blue-900 dark:text-blue-100">
             <span className="font-medium">{materialsInQueue} material{materialsInQueue !== 1 ? 's' : ''}</span> from this project are in the purchasing queue
-            {FEATURE_FLAGS.PURCHASING_ENABLED && (
-              <Button
-                variant="link"
-                size="sm"
-                onClick={() => navigate('/?tab=ordering-hub')}
-                className="ml-2 p-0 h-auto text-blue-600 dark:text-blue-400"
-              >
-                View in Purchasing →
-              </Button>
-            )}
+            <Button
+              variant="link"
+              size="sm"
+              onClick={() => navigate('/?tab=ordering-hub')}
+              className="ml-2 p-0 h-auto text-blue-600 dark:text-blue-400"
+            >
+              View in Purchasing →
+            </Button>
           </AlertDescription>
         </Alert>
       )}

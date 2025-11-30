@@ -4,7 +4,6 @@ import { CheckCircle2, Clock, ShoppingCart, Package, AlertCircle } from "lucide-
 import { useMaterialQueue } from "@/hooks/useMaterialQueue";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { FEATURE_FLAGS } from "@/config/featureFlags";
 
 interface MaterialsWorkflowStatusProps {
   projectId: string;
@@ -17,8 +16,7 @@ export const MaterialsWorkflowStatus = ({ projectId }: MaterialsWorkflowStatusPr
   const projectQueueItems = queueItems?.filter(item => item.project_id === projectId) || [];
   const hasPendingMaterials = projectQueueItems.length > 0;
   
-  // Hide component if purchasing feature is disabled
-  if (!FEATURE_FLAGS.PURCHASING_ENABLED || !hasPendingMaterials) {
+  if (!hasPendingMaterials) {
     return null;
   }
   
@@ -53,16 +51,14 @@ export const MaterialsWorkflowStatus = ({ projectId }: MaterialsWorkflowStatusPr
                 </div>
               )}
             </div>
-            {FEATURE_FLAGS.PURCHASING_ENABLED && (
-              <Button
-                variant="link"
-                size="sm"
-                onClick={() => navigate('/?tab=ordering-hub')}
-                className="mt-2 p-0 h-auto text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-              >
-                Go to Purchasing Hub →
-              </Button>
-            )}
+            <Button
+              variant="link"
+              size="sm"
+              onClick={() => navigate('/?tab=ordering-hub')}
+              className="mt-2 p-0 h-auto text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+            >
+              Go to Purchasing Hub →
+            </Button>
           </div>
         </div>
       </CardContent>

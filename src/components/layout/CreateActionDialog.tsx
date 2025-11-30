@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Users, FolderOpen, Calendar, Plus, Settings, MessageCircle, ShoppingCart, Package } from "lucide-react";
-import { FEATURE_FLAGS } from "@/config/featureFlags";
 
 interface CreateActionDialogProps {
   open: boolean;
@@ -122,35 +121,31 @@ export const CreateActionDialog = ({
             </div>
           </Button>
           
-          {FEATURE_FLAGS.PURCHASING_ENABLED && (
-            <>
-              <Separator className="my-2" />
-              
-              <Button
-                onClick={() => handleAction("purchasing")}
-                variant="outline"
-                className="h-16 justify-start gap-4 text-left"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 relative">
-                  <ShoppingCart className="h-5 w-5 text-primary" />
-                  {queueCount && queueCount > 0 && (
-                    <Badge 
-                      variant="destructive" 
-                      className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[9px]"
-                    >
-                      {queueCount}
-                    </Badge>
-                  )}
-                </div>
-                <div>
-                  <div className="font-semibold">Material Purchasing</div>
-                  <div className="text-sm text-muted-foreground">Manage orders & suppliers</div>
-                </div>
-              </Button>
-              
-              <Separator className="my-2" />
-            </>
-          )}
+          <Separator className="my-2" />
+          
+          <Button
+            onClick={() => handleAction("purchasing")}
+            variant="outline"
+            className="h-16 justify-start gap-4 text-left"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 relative">
+              <ShoppingCart className="h-5 w-5 text-primary" />
+              {queueCount && queueCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[9px]"
+                >
+                  {queueCount}
+                </Badge>
+              )}
+            </div>
+            <div>
+              <div className="font-semibold">Material Purchasing</div>
+              <div className="text-sm text-muted-foreground">Manage orders & suppliers</div>
+            </div>
+          </Button>
+          
+          <Separator className="my-2" />
           
           <Button
             onClick={() => handleAction("team")}

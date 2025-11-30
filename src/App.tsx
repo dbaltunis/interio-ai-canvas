@@ -21,7 +21,6 @@ import { InteractionUnlockGuard } from "./components/system/InteractionUnlockGua
 import { LoadingState } from "./components/ui/loading-state";
 import { ProjectInventoryTrackingHandler } from "./components/projects/ProjectInventoryTrackingHandler";
 import { SyncIndicator } from "./components/system/SyncIndicator";
-import { FEATURE_FLAGS } from "@/config/featureFlags";
 import "@/styles/theme.css";
 
 // Lazy load all route components for better code splitting
@@ -200,15 +199,13 @@ const App = () => {
                 } />
 
                 {/* Purchasing page - requires purchasing permission */}
-                {FEATURE_FLAGS.PURCHASING_ENABLED && (
-                  <Route path="/purchasing" element={
-                    <ProtectedRoute>
-                      <ErrorBoundary>
-                        <Purchasing />
-                      </ErrorBoundary>
-                    </ProtectedRoute>
-                  } />
-                )}
+                <Route path="/purchasing" element={
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <Purchasing />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                } />
 
                 {/* Admin Bug Management - admin only */}
                 <Route path="/admin/bugs" element={

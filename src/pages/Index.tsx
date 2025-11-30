@@ -8,7 +8,6 @@ import { AIBackground } from "@/components/common/AIBackground";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { OrderingHubPage } from "@/components/ordering/OrderingHubPage";
-import { FEATURE_FLAGS } from "@/config/featureFlags";
 
 
 // Lazy load heavy components with proper error handling
@@ -87,15 +86,6 @@ const Index = () => {
 
   const handleTabChange = (tabId: string) => {
     console.warn('[NAV] Index: handleTabChange called with:', tabId);
-    
-    // Feature flag: redirect ordering-hub to dashboard if purchasing is disabled
-    if (tabId === 'ordering-hub' && !FEATURE_FLAGS.PURCHASING_ENABLED) {
-      console.warn('[FEATURE FLAG] Purchasing disabled, redirecting to dashboard');
-      setSearchParams({ tab: 'dashboard' }, { replace: true });
-      sessionStorage.setItem('active_tab', 'dashboard');
-      return;
-    }
-    
     setSearchParams({ tab: tabId }, { replace: true });
     sessionStorage.setItem('active_tab', tabId);
   };
@@ -165,14 +155,6 @@ const Index = () => {
           </Suspense>
         );
       case "ordering-hub":
-        // Feature flag: show dashboard if purchasing is disabled
-        if (!FEATURE_FLAGS.PURCHASING_ENABLED) {
-          return (
-            <Suspense fallback={<DashboardSkeleton />}>
-              <Dashboard />
-            </Suspense>
-          );
-        }
         return (
           <ComponentWrapper>
             <OrderingHubPage />
