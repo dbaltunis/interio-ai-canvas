@@ -74,21 +74,32 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Importing ${products.length} TWC products for user ${user.id}`);
 
-    // Map TWC product type to treatment_category for templates
-    const mapTreatmentCategory = (productType: string | undefined | null): string => {
-      if (!productType || typeof productType !== 'string') {
-        return 'blinds_other';
+    // Map TWC product description to treatment_category for templates
+    const mapTreatmentCategory = (description: string | undefined | null): string => {
+      if (!description || typeof description !== 'string') {
+        return 'roller_blinds'; // Safe default
       }
       
-      const lowerType = productType.toLowerCase();
-      if (lowerType.includes('venetian')) return 'venetian_blinds';
-      if (lowerType.includes('roller')) return 'roller_blinds';
-      if (lowerType.includes('vertical')) return 'vertical_blinds';
-      if (lowerType.includes('cellular') || lowerType.includes('honeycomb')) return 'cellular_blinds';
-      if (lowerType.includes('roman')) return 'roman_blinds';
-      if (lowerType.includes('shutter')) return 'shutters';
-      if (lowerType.includes('awning')) return 'awnings';
-      return 'blinds_other';
+      const lowerDesc = description.toLowerCase();
+      
+      // Venetian detection - aluminium, wood, slats = venetian
+      if (lowerDesc.includes('aluminium') || lowerDesc.includes('aluminum') || 
+          lowerDesc.includes('wood') || lowerDesc.includes('venetian') ||
+          lowerDesc.includes('slat')) {
+        return 'venetian_blinds';
+      }
+      
+      // Other types - order matters for specificity
+      if (lowerDesc.includes('roller')) return 'roller_blinds';
+      if (lowerDesc.includes('vertical')) return 'vertical_blinds';
+      if (lowerDesc.includes('cellular') || lowerDesc.includes('honeycomb')) return 'cellular_blinds';
+      if (lowerDesc.includes('roman')) return 'roman_blinds';
+      if (lowerDesc.includes('shutter')) return 'shutters';
+      if (lowerDesc.includes('awning')) return 'awning'; // Fixed: was 'awnings'
+      if (lowerDesc.includes('panel')) return 'panel_glide';
+      if (lowerDesc.includes('curtain')) return 'curtains';
+      
+      return 'roller_blinds'; // Safe fallback
     };
 
     // Map category for inventory classification
@@ -182,7 +193,7 @@ const handler = async (req: Request): Promise<Response> => {
       return {
         user_id: user.id,
         name: item.name,
-        treatment_category: mapTreatmentCategory(productType),
+        treatment_category: mapTreatmentCategory(product.description),
         pricing_type: 'pricing_grid', // Default to grid pricing
         pricing_grid_data: null, // User will configure this later
         system_type: productType,
