@@ -71,6 +71,14 @@ export const defaultMeasurementUnits: MeasurementUnits = {
   currency: 'USD' // Changed from EUR - should never be used if user has settings
 };
 
+export const defaultImperialMeasurementUnits: MeasurementUnits = {
+  system: 'imperial',
+  length: 'inches',
+  area: 'sq_feet',
+  fabric: 'yards',
+  currency: 'USD'
+};
+
 export const useBusinessSettings = () => {
   return useQuery({
     queryKey: ["business-settings"],
@@ -216,7 +224,38 @@ export const useUpdateBusinessSettings = () => {
 
 // Utility functions for unit conversion
 export const convertLength = (value: number, fromUnit: string, toUnit: string): number => {
-  // Convert everything to mm first, then to target unit
+  // Handle area conversions separately (convert to sq_mm base, then to target)
+  const isAreaUnit = (unit: string) => unit.startsWith('sq_');
+  
+  if (isAreaUnit(fromUnit) || isAreaUnit(toUnit)) {
+    // Convert to sq_mm first, then to target area unit
+    const toSqMm = (val: number, unit: string): number => {
+      switch (unit) {
+        case 'sq_mm': return val;
+        case 'sq_cm': return val * 100; // 1 cm² = 100 mm²
+        case 'sq_m': return val * 1_000_000; // 1 m² = 1,000,000 mm²
+        case 'sq_inches': return val * 645.16; // 1 in² = 645.16 mm²
+        case 'sq_feet': return val * 92903.04; // 1 ft² = 92,903.04 mm²
+        default: return val;
+      }
+    };
+
+    const fromSqMm = (val: number, unit: string): number => {
+      switch (unit) {
+        case 'sq_mm': return val;
+        case 'sq_cm': return val / 100;
+        case 'sq_m': return val / 1_000_000;
+        case 'sq_inches': return val / 645.16;
+        case 'sq_feet': return val / 92903.04;
+        default: return val;
+      }
+    };
+
+    const sqMmValue = toSqMm(value, fromUnit);
+    return fromSqMm(sqMmValue, toUnit);
+  }
+  
+  // Linear conversions - convert everything to mm first, then to target unit
   const toMm = (val: number, unit: string): number => {
     switch (unit) {
       case 'mm': return val;
@@ -224,6 +263,7 @@ export const convertLength = (value: number, fromUnit: string, toUnit: string): 
       case 'm': return val * 1000;
       case 'inches': return val * 25.4;
       case 'feet': return val * 304.8;
+      case 'yards': return val * 914.4; // 1 yard = 914.4 mm
       default: return val;
     }
   };
@@ -235,6 +275,7 @@ export const convertLength = (value: number, fromUnit: string, toUnit: string): 
       case 'm': return val / 1000;
       case 'inches': return val / 25.4;
       case 'feet': return val / 304.8;
+      case 'yards': return val / 914.4; // 1 yard = 914.4 mm
       default: return val;
     }
   };
