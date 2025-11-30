@@ -82,7 +82,12 @@ export const TWCLibraryBrowser = () => {
     if (!products || selectedProducts.size === 0) return;
 
     const productsToImport = products.filter(p => selectedProducts.has(p.itemNumber));
-    importProducts.mutate(productsToImport);
+    importProducts.mutate(productsToImport, {
+      onSuccess: () => {
+        // Clear selections after successful import
+        setSelectedProducts(new Set());
+      },
+    });
   };
 
   if (isLoading) {
