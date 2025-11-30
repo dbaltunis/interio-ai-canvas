@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -29,13 +29,10 @@ import { useFormattedDate } from "@/hooks/useFormattedDate";
 import { ProjectDetailsTab } from "./tabs/ProjectDetailsTab";
 import { RoomsTab } from "./tabs/RoomsTab";
 import { QuotationTab } from "./tabs/QuotationTab";
-import { ProjectMaterialsTab } from "./ProjectMaterialsTab";
 import { WorkroomTab } from "./tabs/WorkroomTab";
 import { JobStatusDropdown } from "./JobStatusDropdown";
 import { JobSkeleton } from "./JobSkeleton";
 import { JobNotFound } from "./JobNotFound";
-import { useProjectMaterialsUsage } from "@/hooks/useProjectMaterialsUsage";
-import { useTreatmentMaterialsStatus } from "@/hooks/useProjectMaterialsStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { useJobDuplicates } from "@/hooks/useJobDuplicates";
 import { DuplicateJobIndicator } from "./DuplicateJobIndicator";
@@ -64,25 +61,12 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const { data: duplicates } = useJobDuplicates(jobId);
   const { data: currentQuotes } = useQuotes(jobId);
 
-  // Fetch materials data for badge indicators
-  const { data: treatmentMaterials = [] } = useProjectMaterialsUsage(jobId);
-  const { data: materialStatusMap = {} } = useTreatmentMaterialsStatus(jobId);
-
   // Use defensive loading and state management
   const project = projects?.find(p => p.id === jobId);
   const client = project?.client_id ? clients?.find(c => c.id === project.client_id) : null;
   
   // Format dates using user preferences
   const { formattedDate: formattedCreatedDate } = useFormattedDate(project?.created_at, false);
-  
-  // Calculate unprocessed materials count
-  const unprocessedMaterialsCount = useMemo(() => {
-    return treatmentMaterials.filter(material => {
-      const materialId = `${material.itemId}-${material.surfaceId}`;
-      const status = materialStatusMap[materialId];
-      return !status || status === 'not_processed';
-    }).length;
-  }, [treatmentMaterials, materialStatusMap]);
   
   // Show loading skeleton while data is being fetched
   if (!projects || projects.length === 0) {
@@ -665,7 +649,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     { id: "rooms", label: "Project", mobileLabel: "Project", icon: Package },
     { id: "quotation", label: "Quote", mobileLabel: "Quote", icon: FileText },
     { id: "workroom", label: "Workroom", mobileLabel: "Work", icon: Wrench },
-    { id: "materials", label: "Materials", mobileLabel: "Materials", icon: Package },
   ];
 
   const mainTabs = allTabs.slice(0, 3);
@@ -759,7 +742,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 {allTabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
-                  const isMaterialsTab = tab.id === "materials";
                   
                   return (
                     <Button
@@ -774,14 +756,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                     >
                       <Icon className="h-4 w-4" />
                       <span>{tab.label}</span>
-                      {isMaterialsTab && unprocessedMaterialsCount > 0 && (
-                        <Badge 
-                          variant="secondary" 
-                          className="ml-1 h-5 min-w-5 px-1.5 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 text-xs font-semibold"
-                        >
-                          {unprocessedMaterialsCount}
-                        </Badge>
-                      )}
                     </Button>
                   );
                 })}
@@ -821,14 +795,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                     >
                       <MoreHorizontal className="h-4 w-4" />
                       <span>More</span>
-                      {unprocessedMaterialsCount > 0 && (
-                        <Badge 
-                          variant="secondary" 
-                          className="ml-1 h-5 min-w-5 px-1.5 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 text-[10px] font-semibold"
-                        >
-                          {unprocessedMaterialsCount}
-                        </Badge>
-                      )}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-52">
@@ -845,14 +811,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                         >
                           <Icon className="h-4 w-4" />
                           <span>{tab.label}</span>
-                          {tab.id === "materials" && unprocessedMaterialsCount > 0 && (
-                            <Badge 
-                              variant="secondary" 
-                              className="ml-auto h-5 min-w-5 px-1.5 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 text-xs font-semibold"
-                            >
-                              {unprocessedMaterialsCount}
-                            </Badge>
-                          )}
                         </DropdownMenuItem>
                       );
                     })}
@@ -896,12 +854,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 <div className="modern-card p-2 sm:p-4 lg:p-6">
                   <QuotationTab projectId={jobId} quoteId={typeof currentQuotes != 'undefined' && currentQuotes.length > 0 ? currentQuotes[0].id : '0'}/>
                   {/*<QuotationTab projectId={jobId} />*/}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="materials" className="mt-0">
-                <div className="modern-card p-6">
-                  <ProjectMaterialsTab projectId={jobId} />
                 </div>
               </TabsContent>
 
