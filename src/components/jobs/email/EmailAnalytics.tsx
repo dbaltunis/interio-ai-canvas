@@ -20,11 +20,12 @@ export const EmailAnalytics = () => {
 
   // Calculate real KPIs from actual data
   const totalEmails = emails.length;
-  const deliveredEmails = emails.filter(e => e.status === 'delivered').length;
-  const sentEmails = emails.filter(e => ['sent', 'delivered'].includes(e.status)).length;
+  // Count emails that successfully reached recipients (delivered or opened)
+  const deliveredEmails = emails.filter(e => ['delivered', 'opened', 'clicked'].includes(e.status)).length;
+  const sentEmails = emails.filter(e => ['sent', 'delivered', 'opened', 'clicked'].includes(e.status)).length;
   const bouncedEmails = emails.filter(e => ['bounced', 'failed'].includes(e.status)).length;
-  const openedEmails = emails.filter(e => e.open_count > 0).length;
-  const clickedEmails = emails.filter(e => e.click_count > 0).length;
+  const openedEmails = emails.filter(e => (e.open_count || 0) > 0).length;
+  const clickedEmails = emails.filter(e => (e.click_count || 0) > 0).length;
   const totalOpens = emails.reduce((sum, e) => sum + (e.open_count || 0), 0);
   const totalClicks = emails.reduce((sum, e) => sum + (e.click_count || 0), 0);
 
@@ -53,7 +54,7 @@ export const EmailAnalytics = () => {
   ];
 
   const statusData = [
-    { name: 'Delivered', value: deliveredEmails, color: '#10B981' },
+    { name: 'Delivered/Opened', value: deliveredEmails, color: '#10B981' },
     { name: 'Bounced/Failed', value: bouncedEmails, color: '#EF4444' },
     { name: 'Queued', value: emails.filter(e => e.status === 'queued').length, color: '#F59E0B' },
     { name: 'Sent', value: emails.filter(e => e.status === 'sent').length, color: '#3B82F6' },
@@ -414,7 +415,7 @@ export const EmailAnalytics = () => {
             <CardContent>
               <div className="space-y-3">
                 {emails
-                  .filter(email => email.status === 'delivered')
+                  .filter(email => ['delivered', 'opened', 'clicked'].includes(email.status))
                   .sort((a, b) => (b.open_count || 0) - (a.open_count || 0))
                   .slice(0, 5)
                   .map((email, index) => (
@@ -445,7 +446,7 @@ export const EmailAnalytics = () => {
                       </div>
                     </div>
                   ))}
-                {emails.filter(email => email.status === 'delivered').length === 0 && (
+                {emails.filter(email => ['delivered', 'opened', 'clicked'].includes(email.status)).length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Mail className="h-12 w-12 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">No delivered emails yet</p>
@@ -453,7 +454,7 @@ export const EmailAnalytics = () => {
                   </div>
                 )}
               </div>
-              {showExplanations && emails.filter(e => e.status === 'delivered').length > 0 && (
+              {showExplanations && emails.filter(e => ['delivered', 'opened', 'clicked'].includes(e.status)).length > 0 && (
                 <div className="mt-3 text-xs text-muted-foreground p-2 bg-muted/30 rounded">
                   <strong>Learn from success:</strong> Look at what these high-performing emails have in common 
                   (subject lines, content, timing) and replicate it!
