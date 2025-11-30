@@ -142,10 +142,11 @@ export const useWorkshopData = (projectId?: string) => {
     };
 
     (surfaces || []).forEach((s: any) => {
-      const widthIn = typeof s.width === "number" ? s.width : undefined;
-      const heightIn = typeof s.height === "number" ? s.height : undefined;
-      const width = widthIn !== undefined ? Math.round(convertToUserUnit(widthIn, "inches") * 100) / 100 : undefined;
-      const height = heightIn !== undefined ? Math.round(convertToUserUnit(heightIn, "inches") * 100) / 100 : undefined;
+      // CRITICAL: Database stores measurements in MM, not inches
+      const widthMM = typeof s.width === "number" ? s.width : undefined;
+      const heightMM = typeof s.height === "number" ? s.height : undefined;
+      const width = widthMM !== undefined ? Math.round(convertToUserUnit(widthMM, "mm") * 100) / 100 : undefined;
+      const height = heightMM !== undefined ? Math.round(convertToUserUnit(heightMM, "mm") * 100) / 100 : undefined;
 
       const summary = summaryMap.get(s.id);
       
@@ -178,11 +179,12 @@ export const useWorkshopData = (projectId?: string) => {
         leftover: summary?.measurements_details?.leftover || 0,
       };
       
+      // Derive hem values from template settings - no hardcoded fallbacks
       const hems = {
-        header: summary?.measurements_details?.header_hem || summary?.template_details?.header_allowance || 15,
-        bottom: summary?.measurements_details?.bottom_hem || summary?.template_details?.bottom_hem || 10,
-        side: summary?.measurements_details?.side_hem || summary?.template_details?.side_hems || 5,
-        seam: summary?.measurements_details?.seam_hem || summary?.template_details?.seam_hems || 3,
+        header: summary?.measurements_details?.header_hem || summary?.template_details?.header_allowance || 0,
+        bottom: summary?.measurements_details?.bottom_hem || summary?.template_details?.bottom_hem || 0,
+        side: summary?.measurements_details?.side_hem || summary?.template_details?.side_hems || 0,
+        seam: summary?.measurements_details?.seam_hem || summary?.template_details?.seam_hems || 0,
       };
       
       const fullness = {
