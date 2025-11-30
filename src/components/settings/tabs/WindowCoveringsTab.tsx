@@ -7,7 +7,8 @@ import { HeadingInventoryManager } from "./components/HeadingInventoryManager";
 import { WindowTreatmentOptionsManager } from "./components/WindowTreatmentOptionsManager";
 import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
 import { OptionsArchitectureGuide } from "./components/OptionsArchitectureGuide";
-import { Layers, Settings, Sliders, Library, HelpCircle } from "lucide-react";
+import { TWCLibraryBrowser } from "@/components/integrations/TWCLibraryBrowser";
+import { Layers, Settings, Sliders, Library, HelpCircle, Truck } from "lucide-react";
 
 export const WindowCoveringsTab = () => {
   const [activeTab, setActiveTab] = useState("templates");
@@ -29,7 +30,7 @@ export const WindowCoveringsTab = () => {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="templates" className="data-[state=active]:bg-primary/10">
                 <Layers className="h-4 w-4 mr-2" />
                 My Templates
@@ -37,6 +38,10 @@ export const WindowCoveringsTab = () => {
               <TabsTrigger value="system-library" className="data-[state=active]:bg-primary/10">
                 <Library className="h-4 w-4 mr-2" />
                 Template Library
+              </TabsTrigger>
+              <TabsTrigger value="suppliers" className="data-[state=active]:bg-primary/10">
+                <Truck className="h-4 w-4 mr-2" />
+                Suppliers
               </TabsTrigger>
               <TabsTrigger value="headings" className="data-[state=active]:bg-primary/10">
                 <Layers className="h-4 w-4 mr-2" />
@@ -62,6 +67,10 @@ export const WindowCoveringsTab = () => {
 
             <TabsContent value="system-library" className="mt-6">
               <SystemTemplatesLibrary onTemplateCloned={handleTemplateCloned} />
+            </TabsContent>
+
+            <TabsContent value="suppliers" className="mt-6">
+              <TWCLibraryBrowser />
             </TabsContent>
 
             <TabsContent value="headings" className="mt-6">
