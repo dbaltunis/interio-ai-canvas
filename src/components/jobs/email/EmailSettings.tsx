@@ -275,19 +275,6 @@ export const EmailSettings = () => {
               size="lg"
               className="flex-1 md:flex-initial"
             />
-            <Button 
-              variant="outline"
-              size="lg"
-              onClick={() => { 
-                const url = new URL(window.location.href);
-                url.pathname = '/';
-                url.search = 'tab=settings&subtab=integrations';
-                window.location.href = url.toString();
-              }}
-              className="w-full md:w-auto"
-            >
-              Go to Full Email Settings
-            </Button>
           </div>
         </CardContent>
       </Card>
