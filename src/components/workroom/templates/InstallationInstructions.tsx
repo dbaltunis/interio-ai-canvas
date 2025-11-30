@@ -13,12 +13,14 @@ interface InstallationInstructionsProps {
   data: WorkshopData;
   orientation?: 'portrait' | 'landscape';
   projectId?: string;
+  isPrintMode?: boolean;
 }
 
 export const InstallationInstructions: React.FC<InstallationInstructionsProps> = ({ 
   data, 
   orientation = 'portrait',
-  projectId
+  projectId,
+  isPrintMode = false
 }) => {
   console.log('🔍 [InstallationInstructions] projectId:', projectId);
   
@@ -86,45 +88,47 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Installation Instructions</CardTitle>
-          <div className="flex items-center gap-2 no-print">
-            {lastSaved && (
-              <div className="text-xs text-muted-foreground flex items-center gap-1">
-                <CheckCircle className="h-3 w-3 text-green-500" />
-                Saved {lastSaved.toLocaleTimeString()}
-              </div>
-            )}
-            {hasOverrides && (
+          {!isPrintMode && (
+            <div className="flex items-center gap-2 no-print">
+              {lastSaved && (
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3 text-green-500" />
+                  Saved {lastSaved.toLocaleTimeString()}
+                </div>
+              )}
+              {hasOverrides && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleReset}
+                  className="h-8"
+                >
+                  <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                  Reset
+                </Button>
+              )}
               <Button
-                variant="ghost"
+                variant="default"
                 size="sm"
-                onClick={handleReset}
+                onClick={handleSaveNotes}
+                disabled={isSaving || !projectId}
+                className="h-8"
+                title={!projectId ? "Project ID required to save notes" : isSaving ? "Saving..." : "Click to save all notes"}
+              >
+                <Save className="h-3.5 w-3.5 mr-1" />
+                {isSaving ? "Saving..." : "Save Notes"}
+              </Button>
+              <Button
+                variant={editing ? "default" : "outline"}
+                size="sm"
+                onClick={() => setEditing(!editing)}
                 className="h-8"
               >
-                <RotateCcw className="h-3.5 w-3.5 mr-1" />
-                Reset
+                <Pencil className="h-3.5 w-3.5 mr-1" />
+                {editing ? "Done" : "Edit"}
               </Button>
-            )}
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleSaveNotes}
-              disabled={isSaving || !projectId}
-              className="h-8"
-              title={!projectId ? "Project ID required to save notes" : isSaving ? "Saving..." : "Click to save all notes"}
-            >
-              <Save className="h-3.5 w-3.5 mr-1" />
-              {isSaving ? "Saving..." : "Save Notes"}
-            </Button>
-            <Button
-              variant={editing ? "default" : "outline"}
-              size="sm"
-              onClick={() => setEditing(!editing)}
-              className="h-8"
-            >
-              <Pencil className="h-3.5 w-3.5 mr-1" />
-              {editing ? "Done" : "Edit"}
-            </Button>
-          </div>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -194,39 +198,41 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
       </Card>
       
       {/* Pre-Installation Checklist */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardHeader>
-          <CardTitle className="text-blue-900">Pre-Installation Checklist</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-start gap-2">
-              <Checkbox className="mt-0.5" />
-              <span>All hardware present and correct</span>
+      {!isPrintMode && (
+        <Card className="bg-blue-50 border-blue-200 no-print">
+          <CardHeader>
+            <CardTitle className="text-blue-900">Pre-Installation Checklist</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="flex items-start gap-2">
+                <Checkbox className="mt-0.5" />
+                <span>All hardware present and correct</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Checkbox className="mt-0.5" />
+                <span>Measurements verified on-site</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Checkbox className="mt-0.5" />
+                <span>Walls/ceiling suitable for mounting</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Checkbox className="mt-0.5" />
+                <span>All tools and equipment ready</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Checkbox className="mt-0.5" />
+                <span>Client contacted about arrival</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Checkbox className="mt-0.5" />
+                <span>Protection sheets for floors/furniture</span>
+              </div>
             </div>
-            <div className="flex items-start gap-2">
-              <Checkbox className="mt-0.5" />
-              <span>Measurements verified on-site</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <Checkbox className="mt-0.5" />
-              <span>Walls/ceiling suitable for mounting</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <Checkbox className="mt-0.5" />
-              <span>All tools and equipment ready</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <Checkbox className="mt-0.5" />
-              <span>Client contacted about arrival</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <Checkbox className="mt-0.5" />
-              <span>Protection sheets for floors/furniture</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Required Tools */}
       <Card className="bg-gray-50">
@@ -267,11 +273,13 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <Checkbox
-                        checked={isComplete}
-                        onCheckedChange={() => toggleItemComplete(item.id)}
-                        className="no-print"
-                      />
+                      {!isPrintMode && (
+                        <Checkbox
+                          checked={isComplete}
+                          onCheckedChange={() => toggleItemComplete(item.id)}
+                          className="no-print"
+                        />
+                      )}
                       {item.name} - {item.treatmentType}
                       {isComplete && <CheckCircle2 className="h-5 w-5 text-green-500" />}
                     </CardTitle>
@@ -366,12 +374,18 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
                   {/* Installation Notes */}
                   <div className="border-t pt-4">
                     <h4 className="font-semibold mb-2">Installation Notes</h4>
-                    <Textarea 
-                      placeholder="Add installation instructions..."
-                      className="text-sm min-h-[60px]"
-                      value={itemNotes[item.id] || ""}
-                      onChange={(e) => setItemNote(item.id, e.target.value)}
-                    />
+                    {isPrintMode ? (
+                      <div className="text-sm min-h-[60px] p-2 bg-muted/30 rounded whitespace-pre-wrap">
+                        {itemNotes[item.id] || "No installation notes"}
+                      </div>
+                    ) : (
+                      <Textarea 
+                        placeholder="Add installation instructions..."
+                        className="text-sm min-h-[60px]"
+                        value={itemNotes[item.id] || ""}
+                        onChange={(e) => setItemNote(item.id, e.target.value)}
+                      />
+                    )}
                   </div>
                   
                   {/* Photo Upload Sections */}

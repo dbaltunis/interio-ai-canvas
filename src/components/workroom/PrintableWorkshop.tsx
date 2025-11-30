@@ -41,6 +41,7 @@ export const PrintableWorkshop = React.forwardRef<HTMLDivElement, PrintableWorks
           blocks={blocks}
           projectId={projectId}
           orientation={orientation}
+          isPrintMode={true}
         />
       </div>
     );
