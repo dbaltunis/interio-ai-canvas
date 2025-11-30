@@ -4,8 +4,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
-import { TestTube, Send, CheckCircle, AlertCircle } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { TestTube, Send, CheckCircle, AlertCircle, ChevronDown, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEmailSettings } from "@/hooks/useEmailSettings";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ export const TestEmailButton = ({ variant = "outline", size = "default", classNa
   const [isSending, setIsSending] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [testEmail, setTestEmail] = useState('');
+  const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const [customSubject, setCustomSubject] = useState('Test Email from Your App');
   const [customMessage, setCustomMessage] = useState(`
     <h2>Test Email Successful!</h2>
@@ -99,6 +100,7 @@ export const TestEmailButton = ({ variant = "outline", size = "default", classNa
       // Reset form when dialog closes
       setTestResult(null);
       setTestEmail('');
+      setIsCustomizeOpen(false);
       setCustomSubject('Test Email from Your App');
       setCustomMessage(`
         <h2>Test Email Successful!</h2>
@@ -114,9 +116,6 @@ export const TestEmailButton = ({ variant = "outline", size = "default", classNa
     }
   };
 
-  // Pre-fill with user's email if available
-  const defaultTestEmail = emailSettings?.from_email || '';
-
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
@@ -130,101 +129,103 @@ export const TestEmailButton = ({ variant = "outline", size = "default", classNa
           Send Test Email
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Send Test Email</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <TestTube className="h-5 w-5" />
+            Send Test Email
+          </DialogTitle>
           <DialogDescription>
-            Test your email configuration by sending a sample email.
+            Verify your email configuration is working
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
-          {/* Current Configuration */}
-          {emailSettings && (
-            <Card>
-              <CardContent className="p-4">
-                <h4 className="font-medium mb-2">Current Email Settings</h4>
-                <div className="text-sm space-y-1">
-                  <div><strong>From:</strong> {emailSettings.from_name} &lt;{emailSettings.from_email}&gt;</div>
-                  {emailSettings.reply_to_email && (
-                    <div><strong>Reply-To:</strong> {emailSettings.reply_to_email}</div>
-                  )}
-                  {emailSettings.signature && (
-                    <div><strong>Signature:</strong> Configured</div>
+          {/* Success/Error State - Prominent Display */}
+          {testResult && (
+            <div className={`rounded-lg p-4 ${testResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+              <div className={`flex items-start gap-3 ${testResult.success ? 'text-green-900' : 'text-red-900'}`}>
+                {testResult.success ? (
+                  <CheckCircle className="h-6 w-6 flex-shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="h-6 w-6 flex-shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1">
+                  <p className="font-semibold text-base">
+                    {testResult.success ? 'Email Sent Successfully!' : 'Email Failed'}
+                  </p>
+                  <p className="text-sm mt-1">{testResult.message}</p>
+                  {testResult.success && (
+                    <p className="text-xs mt-2 opacity-75">Check your inbox in a few moments</p>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
-          {/* Test Email Form */}
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="test_email">Send Test Email To</Label>
-              <Input
-                id="test_email"
-                type="email"
-                placeholder="recipient@example.com"
-                value={testEmail}
-                onChange={(e) => setTestEmail(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Enter the email address where you want to receive the test email
+          {/* Primary Email Input */}
+          <div>
+            <Label htmlFor="test_email">Email Address</Label>
+            <Input
+              id="test_email"
+              type="email"
+              placeholder="your@email.com"
+              value={testEmail}
+              onChange={(e) => setTestEmail(e.target.value)}
+              className="mt-1.5"
+            />
+            {emailSettings?.from_name && (
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Sending from: {emailSettings.from_name}
               </p>
-            </div>
-
-            <div>
-              <Label htmlFor="test_subject">Subject</Label>
-              <Input
-                id="test_subject"
-                value={customSubject}
-                onChange={(e) => setCustomSubject(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="test_message">Message (HTML)</Label>
-              <Textarea
-                id="test_message"
-                value={customMessage}
-                onChange={(e) => setCustomMessage(e.target.value)}
-                rows={8}
-                className="font-mono text-sm"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                You can use HTML tags for formatting
-              </p>
-            </div>
+            )}
           </div>
 
-          {/* Test Result */}
-          {testResult && (
-            <Card>
-              <CardContent className="p-4">
-                <div className={`flex items-center gap-2 ${testResult.success ? 'text-green-700' : 'text-red-700'}`}>
-                  {testResult.success ? (
-                    <CheckCircle className="h-4 w-4" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4" />
-                  )}
-                  <span className="font-medium">
-                    {testResult.success ? 'Success!' : 'Failed'}
-                  </span>
-                </div>
-                <p className="text-sm mt-1">{testResult.message}</p>
-              </CardContent>
-            </Card>
-          )}
+          {/* Collapsible Advanced Options */}
+          <Collapsible open={isCustomizeOpen} onOpenChange={setIsCustomizeOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-full justify-between px-0 h-auto py-2 text-sm text-muted-foreground hover:text-foreground">
+                <span>Customize Message (optional)</span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${isCustomizeOpen ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-3 pt-2">
+              <div>
+                <Label htmlFor="test_subject" className="text-xs">Subject</Label>
+                <Input
+                  id="test_subject"
+                  value={customSubject}
+                  onChange={(e) => setCustomSubject(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="test_message" className="text-xs">Message (HTML)</Label>
+                <Textarea
+                  id="test_message"
+                  value={customMessage}
+                  onChange={(e) => setCustomMessage(e.target.value)}
+                  rows={6}
+                  className="font-mono text-xs mt-1"
+                />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Actions */}
-          <div className="flex gap-2 pt-4">
+          <div className="flex gap-2 pt-2">
             <Button
               onClick={sendTestEmail}
               disabled={isSending || !testEmail.trim()}
               className="flex-1"
+              size="lg"
             >
               {isSending ? (
-                "Sending..."
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Sending...
+                </>
               ) : (
                 <>
                   <Send className="h-4 w-4 mr-2" />
@@ -232,7 +233,7 @@ export const TestEmailButton = ({ variant = "outline", size = "default", classNa
                 </>
               )}
             </Button>
-            <Button variant="outline" onClick={() => setOpen(false)}>
+            <Button variant="outline" onClick={() => setOpen(false)} size="lg">
               Close
             </Button>
           </div>
