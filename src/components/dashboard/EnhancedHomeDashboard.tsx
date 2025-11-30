@@ -281,10 +281,15 @@ export const EnhancedHomeDashboard = () => {
             }
           };
 
+          const widgetContent = renderWidget();
+          
+          // Don't render container if widget returns null
+          if (!widgetContent) return null;
+
           return (
             <div key={widget.id} className={sizeClasses[widget.size]}>
               <Suspense fallback={<WidgetSkeleton />}>
-                {renderWidget()}
+                {widgetContent}
               </Suspense>
             </div>
           );

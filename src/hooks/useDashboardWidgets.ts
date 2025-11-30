@@ -14,12 +14,12 @@ export interface DashboardWidget {
 }
 
 const DEFAULT_WIDGETS: DashboardWidget[] = [
-  // Shopify Widgets
+  // Shopify Widgets - Disabled by default, only enable when Shopify is connected
   {
     id: "shopify",
     name: "E-Commerce Integration",
     description: "Shopify store connection and analytics",
-    enabled: true,
+    enabled: false,
     order: 1,
     category: "integrations",
     size: "medium",
@@ -30,7 +30,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     id: "shopify-orders",
     name: "Shopify Store Performance",
     description: "Recent orders and store analytics",
-    enabled: true,
+    enabled: false,
     order: 2,
     category: "integrations",
     size: "large",
@@ -41,7 +41,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     id: "shopify-products",
     name: "Product Sync Status",
     description: "Sync products between Shopify and InterioApp",
-    enabled: true,
+    enabled: false,
     order: 3,
     category: "integrations",
     size: "small",
@@ -52,7 +52,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     id: "shopify-categories",
     name: "Product Categories",
     description: "Product breakdown by category",
-    enabled: true,
+    enabled: false,
     order: 4,
     category: "integrations",
     size: "small",
