@@ -39,7 +39,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: integration, error: integrationError } = await supabaseClient
       .from('integration_settings')
       .select('api_credentials')
-      .eq('user_id', user.id)
+      .eq('account_owner_id', user.id)
       .eq('integration_type', 'twc')
       .eq('active', true)
       .single();
