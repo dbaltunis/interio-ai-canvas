@@ -61,10 +61,12 @@ export const AdaptiveFabricPricingDisplay = ({
     return `${symbol}${price.toFixed(2)}`;
   };
 
-  // CRITICAL: Format measurement - measurements are stored in MM internally
-  const formatMeasurement = (valueInMm: number) => {
-    // Convert from mm to user's preferred unit
-    const converted = convertLength(valueInMm, 'mm', units.length);
+  // CRITICAL: Format measurement with explicit source unit
+  // fabricCalculation values are in CM, raw measurements are in MM
+  const formatMeasurement = (value: number, sourceUnit: 'mm' | 'cm' = 'mm') => {
+    // Convert source to MM first, then to user's preferred unit
+    const valueMm = sourceUnit === 'cm' ? value * 10 : value;
+    const converted = convertLength(valueMm, 'mm', units.length);
     return `${converted.toFixed(1)}${getLengthUnitLabel()}`;
   };
 
@@ -465,7 +467,12 @@ export const AdaptiveFabricPricingDisplay = ({
                 </div>
                 <div className="flex justify-between pl-2">
                   <span>Rail Width:</span>
-                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.railWidth || measurements.rail_width || 0)}</span>
+                  <span className="font-medium text-foreground">
+                    {fabricCalculation.railWidth 
+                      ? formatMeasurement(fabricCalculation.railWidth, 'cm')  // fabricCalculation stores in CM
+                      : formatMeasurement(measurements.rail_width || 0, 'mm')  // raw measurements are in MM
+                    }
+                  </span>
                 </div>
                 <div className="flex justify-between pl-2">
                   <span>Fullness:</span>
@@ -473,20 +480,24 @@ export const AdaptiveFabricPricingDisplay = ({
                 </div>
                 <div className="flex justify-between pl-2">
                   <span>Returns (L+R):</span>
-                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.returns || 0)}</span>
+                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.returns || 0, 'cm')}</span>
                 </div>
                 <div className="flex justify-between pl-2">
                   <span>Side Hems:</span>
-                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalSideHems || 0)}</span>
+                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalSideHems || 0, 'cm')}</span>
                 </div>
                 <div className="flex justify-between border-t border-border/30 pt-2 mt-2">
                   <span className="font-medium">Total Width:</span>
                   <span className="font-medium text-foreground">
-                    {formatMeasurement(
-                      ((fabricCalculation.railWidth || measurements.rail_width || 0) * (fabricCalculation.fullnessRatio || measurements.heading_fullness || 1)) +
-                      (fabricCalculation.returns || 0) +
-                      (fabricCalculation.totalSideHems || 0)
-                    )}
+                    {(() => {
+                      // All fabricCalculation values are in CM, raw measurements are in MM
+                      const railWidthCM = fabricCalculation.railWidth || ((measurements.rail_width || 0) / 10);
+                      const fullness = fabricCalculation.fullnessRatio || measurements.heading_fullness || 1;
+                      const returnsCM = fabricCalculation.returns || 0;
+                      const sideHemsCM = fabricCalculation.totalSideHems || 0;
+                      const totalCM = (railWidthCM * fullness) + returnsCM + sideHemsCM;
+                      return formatMeasurement(totalCM, 'cm');
+                    })()}
                   </span>
                 </div>
                 
@@ -497,7 +508,12 @@ export const AdaptiveFabricPricingDisplay = ({
                 </div>
                 <div className="flex justify-between pl-2">
                   <span>Drop Height:</span>
-                  <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.drop || measurements.drop || 0)}</span>
+                  <span className="font-medium text-foreground">
+                    {fabricCalculation.drop 
+                      ? formatMeasurement(fabricCalculation.drop, 'cm')  // fabricCalculation stores in CM
+                      : formatMeasurement(measurements.drop || 0, 'mm')  // raw measurements are in MM
+                    }
+                  </span>
                 </div>
                 {fabricCalculation.horizontalPiecesNeeded && fabricCalculation.horizontalPiecesNeeded > 1 && (
                   <>

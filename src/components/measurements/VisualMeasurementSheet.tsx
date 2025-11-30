@@ -851,11 +851,22 @@ export const VisualMeasurementSheet = ({
                       <div className="text-xs text-muted-foreground mt-1 space-y-1">
                       {(() => {
                       const fabricWidthCm = selectedFabricItem.fabric_width || 137;
-                      const drop = parseFloat(measurements.drop) || 0;
+                      // CRITICAL FIX: measurements.drop is in MM (database standard)
+                      // Convert to CM for fabric rotation calculation
+                      const dropMM = parseFloat(measurements.drop) || 0;
+                      const drop = dropMM / 10; // Convert MM to CM
                       const headerHem = parseFloat(measurements.header_allowance_cm) || 8;
                       const bottomHem = parseFloat(measurements.bottom_hem_cm) || 15;
                       const pooling = parseFloat(measurements.pooling_amount_cm) || 0;
                       const totalDrop = drop + headerHem + bottomHem + pooling;
+                      
+                      console.log('🔄 Fabric rotation calculation:', {
+                        dropMM,
+                        dropCM: drop,
+                        totalDropCM: totalDrop,
+                        fabricWidthCm,
+                        note: 'Converted MM to CM for display'
+                      });
 
                       const fabricRotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
                       const willNeedMultiplePieces = totalDrop > fabricWidthCm;
