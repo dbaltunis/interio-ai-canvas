@@ -9,7 +9,7 @@ import { useEmailCampaigns } from "@/hooks/useEmailCampaigns";
 import { format } from "date-fns";
 
 export const EmailCampaigns = () => {
-  const { data: campaigns = [] } = useEmailCampaigns();
+  const { data: campaigns = [], isLoading, error } = useEmailCampaigns();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -29,6 +29,35 @@ export const EmailCampaigns = () => {
     }
   };
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="flex items-center gap-3">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <div className="text-lg text-muted-foreground">Loading campaigns...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Send className="mx-auto h-12 w-12 text-destructive mb-4" />
+          <h3 className="text-lg font-medium text-destructive mb-2">Error Loading Campaigns</h3>
+          <p className="text-muted-foreground max-w-md">
+            Unable to load your email campaigns. Please try refreshing the page.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -39,7 +68,7 @@ export const EmailCampaigns = () => {
             Create and manage bulk email campaigns
           </p>
         </div>
-        <Button className="bg-brand-primary hover:bg-brand-accent text-white">
+        <Button className="bg-primary hover:bg-primary/90">
           <Plus className="h-4 w-4 mr-2" />
           New Campaign
         </Button>
@@ -60,7 +89,7 @@ export const EmailCampaigns = () => {
               <p className="text-sm text-muted-foreground mb-3">
                 Send updates and news to all your clients
               </p>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="w-full">
                 Use Template
               </Button>
             </div>
@@ -73,7 +102,7 @@ export const EmailCampaigns = () => {
               <p className="text-sm text-muted-foreground mb-3">
                 Follow up on quotes and project updates
               </p>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="w-full">
                 Use Template
               </Button>
             </div>
@@ -86,7 +115,7 @@ export const EmailCampaigns = () => {
               <p className="text-sm text-muted-foreground mb-3">
                 Promote special offers and services
               </p>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="w-full">
                 Use Template
               </Button>
             </div>
@@ -100,12 +129,14 @@ export const EmailCampaigns = () => {
           <CardTitle>All Campaigns</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          {campaigns.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
+          {!campaigns || campaigns.length === 0 ? (
+            <div className="text-center py-12 px-6">
               <Send className="mx-auto h-12 w-12 mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium mb-2">No campaigns yet</h3>
-              <p className="text-muted-foreground mb-4">Create your first email campaign to get started.</p>
-              <Button className="bg-brand-primary hover:bg-brand-accent text-white">
+              <h3 className="text-lg font-medium text-foreground mb-2">No campaigns yet</h3>
+              <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+                Create your first email campaign to get started. Use one of the templates above or create a custom campaign.
+              </p>
+              <Button className="bg-primary hover:bg-primary/90">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Campaign
               </Button>
@@ -125,39 +156,39 @@ export const EmailCampaigns = () => {
               <TableBody>
                 {campaigns.map((campaign) => (
                   <TableRow key={campaign.id} className="hover:bg-muted/50">
-                  <TableCell>
-                    <div className="font-medium text-foreground">{campaign.name}</div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-muted-foreground">{campaign.subject}</span>
-                  </TableCell>
                     <TableCell>
-                      <Badge className={`${getStatusColor(campaign.status)} border-0`} variant="secondary">
-                        {campaign.status}
+                      <div className="font-medium text-foreground">{campaign?.name || 'Untitled Campaign'}</div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">{campaign?.subject || 'No subject'}</span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`${getStatusColor(campaign?.status || 'draft')} border-0`} variant="secondary">
+                        {campaign?.status || 'draft'}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-gray-600">{campaign.recipient_count || 0}</span>
+                      <span className="text-sm text-muted-foreground">{campaign?.recipient_count || 0}</span>
                     </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-muted-foreground">
-                      {format(new Date(campaign.created_at), 'MMM d, yyyy')}
-                    </span>
-                  </TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-1">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <span className="text-sm text-muted-foreground">
+                        {campaign?.created_at ? format(new Date(campaign.created_at), 'MMM d, yyyy') : '-'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="View campaign">
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {campaign.status === 'draft' && (
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        {campaign?.status === 'draft' && (
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Edit campaign">
                             <Edit className="h-4 w-4" />
                           </Button>
                         )}
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Duplicate campaign">
                           <Copy className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" title="Delete campaign">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
