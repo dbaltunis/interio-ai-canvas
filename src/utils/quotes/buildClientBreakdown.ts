@@ -191,22 +191,63 @@ export const buildClientBreakdown = (
   });
   
   if (combinedMaterialCost > 0 || linearMeters > 0) {
-    // Convert area to user's preferred unit
-    const sqmInternal = linearMeters * (Number(summary.widths_required) || 1) / 10000; // Internal: cm to sqm
-    const areaInUserUnit = convertLength(sqmInternal, 'sq_m', units.area);
+    // CRITICAL: Check if using pricing grid - if so, show grid pricing terminology
+    const usesPricingGrid = summary.uses_pricing_grid || hasFabricPricingGrid;
+    const pricingMethod = summary.pricing_method || summary.pricing_type || 'per_metre';
     
-    const areaUnitLabel = units.area === 'sq_feet' ? 'sq ft' : 
-                          units.area === 'sq_inches' ? 'sq in' : 
-                          units.area === 'sq_m' ? 'sqm' : 
-                          units.area === 'sq_cm' ? 'sq cm' : units.area;
+    // Build description based on pricing method
+    let description = '';
+    let pricingLabel = '';
+    
+    if (usesPricingGrid) {
+      // Grid pricing - show dimensions lookup
+      const widthCm = summary.rail_width || summary.wall_width || 0;
+      const heightCm = summary.drop || summary.wall_height || 0;
+      description = `Grid: ${widthCm}cm × ${heightCm}cm`;
+      pricingLabel = 'Pricing Grid';
+    } else if (pricingMethod === 'per_width') {
+      // Per width pricing
+      const widthsRequired = Number(summary.widths_required) || 1;
+      description = `${widthsRequired} width(s) × ${(combinedMaterialCost / widthsRequired).toFixed(2)}/width`;
+      pricingLabel = 'Per Width';
+    } else if (pricingMethod === 'per_drop') {
+      // Per drop pricing
+      const quantity = Number(summary.quantity) || 1;
+      description = `${quantity} drop(s) × ${(combinedMaterialCost / quantity).toFixed(2)}/drop`;
+      pricingLabel = 'Per Drop';
+    } else if (pricingMethod === 'per_panel') {
+      // Per panel pricing
+      const quantity = Number(summary.quantity) || 1;
+      description = `${quantity} panel(s) × ${(combinedMaterialCost / quantity).toFixed(2)}/panel`;
+      pricingLabel = 'Per Panel';
+    } else if (pricingMethod === 'per_sqm') {
+      // Per square meter pricing
+      const sqmInternal = linearMeters * (Number(summary.widths_required) || 1) / 10000;
+      const areaInUserUnit = convertLength(sqmInternal, 'sq_m', units.area);
+      const areaUnitLabel = units.area === 'sq_feet' ? 'sq ft' : 
+                            units.area === 'sq_inches' ? 'sq in' : 
+                            units.area === 'sq_m' ? 'sqm' : 
+                            units.area === 'sq_cm' ? 'sq cm' : units.area;
+      description = `${areaInUserUnit.toFixed(2)} ${areaUnitLabel} × ${(combinedMaterialCost / areaInUserUnit).toFixed(2)}/${areaUnitLabel}`;
+      pricingLabel = 'Per Square Meter';
+    } else {
+      // Default: Per linear meter/yard
+      const lengthInUserUnit = convertLength(linearMeters, 'm', units.fabric);
+      const fabricUnitLabel = units.fabric === 'yards' ? 'yd' : 
+                              units.fabric === 'inches' ? 'in' : 
+                              units.fabric === 'm' ? 'm' : 
+                              units.fabric === 'cm' ? 'cm' : units.fabric;
+      description = `${lengthInUserUnit.toFixed(2)} ${fabricUnitLabel} × ${(combinedMaterialCost / lengthInUserUnit).toFixed(2)}/${fabricUnitLabel}`;
+      pricingLabel = 'Per Linear Meter';
+    }
     
     items.push({
       id: 'fabric',
-      name: 'Fabric Material',
-      description: `${areaInUserUnit.toFixed(2)} ${areaUnitLabel} × ${(combinedMaterialCost / areaInUserUnit).toFixed(2)}/${areaUnitLabel}`,
-      quantity: areaInUserUnit,
-      unit: areaUnitLabel,
-      unit_price: combinedMaterialCost / areaInUserUnit,
+      name: `Fabric Material (${pricingLabel})`,
+      description: description,
+      quantity: 1,
+      unit: '',
+      unit_price: combinedMaterialCost,
       total_cost: combinedMaterialCost,
       image_url: materialDetails?.image_url || summary.fabric_details?.image_url || null,
       category: 'fabric',
@@ -214,6 +255,8 @@ export const buildClientBreakdown = (
         widths_required: summary.widths_required,
         linear_meters: linearMeters,
         price_per_meter: pricePerMeter,
+        pricing_method: pricingMethod,
+        pricing_label: pricingLabel
       },
     });
   }
