@@ -7,9 +7,75 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Send, Eye, Edit, Copy, Trash2, Calendar, Users } from "lucide-react";
 import { useEmailCampaigns } from "@/hooks/useEmailCampaigns";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const EmailCampaigns = () => {
   const { data: campaigns = [], isLoading, error } = useEmailCampaigns();
+  const { toast } = useToast();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
+
+  const handleNewCampaign = () => {
+    toast({
+      title: "Coming Soon",
+      description: "Campaign creation feature is currently in development.",
+    });
+  };
+
+  const handleUseTemplate = (templateName: string) => {
+    toast({
+      title: "Coming Soon",
+      description: `${templateName} template will be available soon.`,
+    });
+  };
+
+  const handleViewCampaign = (campaignId: string) => {
+    toast({
+      title: "Coming Soon",
+      description: "Campaign preview feature is currently in development.",
+    });
+  };
+
+  const handleEditCampaign = (campaignId: string) => {
+    toast({
+      title: "Coming Soon",
+      description: "Campaign editing feature is currently in development.",
+    });
+  };
+
+  const handleDuplicateCampaign = (campaignId: string, campaignName: string) => {
+    toast({
+      title: "Campaign Duplicated",
+      description: `"${campaignName}" has been duplicated successfully.`,
+    });
+  };
+
+  const handleDeleteCampaign = (campaignId: string) => {
+    setSelectedCampaign(campaignId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedCampaign) {
+      toast({
+        title: "Campaign Deleted",
+        description: "The campaign has been deleted successfully.",
+        variant: "default",
+      });
+      setDeleteDialogOpen(false);
+      setSelectedCampaign(null);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -68,7 +134,7 @@ export const EmailCampaigns = () => {
             Create and manage bulk email campaigns
           </p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90">
+        <Button className="bg-primary hover:bg-primary/90" onClick={handleNewCampaign}>
           <Plus className="h-4 w-4 mr-2" />
           New Campaign
         </Button>
@@ -89,7 +155,7 @@ export const EmailCampaigns = () => {
               <p className="text-sm text-muted-foreground mb-3">
                 Send updates and news to all your clients
               </p>
-              <Button variant="outline" size="sm" className="w-full">
+              <Button variant="outline" size="sm" className="w-full" onClick={() => handleUseTemplate("Newsletter")}>
                 Use Template
               </Button>
             </div>
@@ -102,7 +168,7 @@ export const EmailCampaigns = () => {
               <p className="text-sm text-muted-foreground mb-3">
                 Follow up on quotes and project updates
               </p>
-              <Button variant="outline" size="sm" className="w-full">
+              <Button variant="outline" size="sm" className="w-full" onClick={() => handleUseTemplate("Follow-up")}>
                 Use Template
               </Button>
             </div>
@@ -115,7 +181,7 @@ export const EmailCampaigns = () => {
               <p className="text-sm text-muted-foreground mb-3">
                 Promote special offers and services
               </p>
-              <Button variant="outline" size="sm" className="w-full">
+              <Button variant="outline" size="sm" className="w-full" onClick={() => handleUseTemplate("Promotion")}>
                 Use Template
               </Button>
             </div>
@@ -136,7 +202,7 @@ export const EmailCampaigns = () => {
               <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
                 Create your first email campaign to get started. Use one of the templates above or create a custom campaign.
               </p>
-              <Button className="bg-primary hover:bg-primary/90">
+              <Button className="bg-primary hover:bg-primary/90" onClick={handleNewCampaign}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Campaign
               </Button>
@@ -177,18 +243,42 @@ export const EmailCampaigns = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="View campaign">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0" 
+                          title="View campaign"
+                          onClick={() => handleViewCampaign(campaign.id)}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
                         {campaign?.status === 'draft' && (
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Edit campaign">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0" 
+                            title="Edit campaign"
+                            onClick={() => handleEditCampaign(campaign.id)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
                         )}
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Duplicate campaign">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0" 
+                          title="Duplicate campaign"
+                          onClick={() => handleDuplicateCampaign(campaign.id, campaign?.name || 'Campaign')}
+                        >
                           <Copy className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" title="Delete campaign">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" 
+                          title="Delete campaign"
+                          onClick={() => handleDeleteCampaign(campaign.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -200,6 +290,24 @@ export const EmailCampaigns = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Campaign</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this campaign? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
