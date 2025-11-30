@@ -14,12 +14,14 @@ interface FittingInstructionsProps {
   data: WorkshopData;
   orientation?: 'portrait' | 'landscape';
   projectId?: string;
+  isPrintMode?: boolean;
 }
 
 export const FittingInstructions: React.FC<FittingInstructionsProps> = ({ 
   data, 
   orientation = 'portrait',
-  projectId
+  projectId,
+  isPrintMode = false
 }) => {
   console.log('🔍 [FittingInstructions] projectId:', projectId);
   
@@ -87,45 +89,47 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Fitting Instructions</CardTitle>
-          <div className="flex items-center gap-2 no-print">
-            {lastSaved && (
-              <div className="text-xs text-muted-foreground flex items-center gap-1">
-                <CheckCircle className="h-3 w-3 text-green-500" />
-                Saved {lastSaved.toLocaleTimeString()}
-              </div>
-            )}
-            {hasOverrides && (
+          {!isPrintMode && (
+            <div className="flex items-center gap-2 no-print">
+              {lastSaved && (
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3 text-green-500" />
+                  Saved {lastSaved.toLocaleTimeString()}
+                </div>
+              )}
+              {hasOverrides && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleReset}
+                  className="h-8"
+                >
+                  <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                  Reset
+                </Button>
+              )}
               <Button
-                variant="ghost"
+                variant="default"
                 size="sm"
-                onClick={handleReset}
+                onClick={handleSaveNotes}
+                disabled={isSaving || !projectId}
+                className="h-8"
+                title={!projectId ? "Project ID required to save notes" : isSaving ? "Saving..." : "Click to save all notes"}
+              >
+                <Save className="h-3.5 w-3.5 mr-1" />
+                {isSaving ? "Saving..." : "Save Notes"}
+              </Button>
+              <Button
+                variant={editing ? "default" : "outline"}
+                size="sm"
+                onClick={() => setEditing(!editing)}
                 className="h-8"
               >
-                <RotateCcw className="h-3.5 w-3.5 mr-1" />
-                Reset
+                <Pencil className="h-3.5 w-3.5 mr-1" />
+                {editing ? "Done" : "Edit"}
               </Button>
-            )}
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleSaveNotes}
-              disabled={isSaving || !projectId}
-              className="h-8"
-              title={!projectId ? "Project ID required to save notes" : isSaving ? "Saving..." : "Click to save all notes"}
-            >
-              <Save className="h-3.5 w-3.5 mr-1" />
-              {isSaving ? "Saving..." : "Save Notes"}
-            </Button>
-            <Button
-              variant={editing ? "default" : "outline"}
-              size="sm"
-              onClick={() => setEditing(!editing)}
-              className="h-8"
-            >
-              <Pencil className="h-3.5 w-3.5 mr-1" />
-              {editing ? "Done" : "Edit"}
-            </Button>
-          </div>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -195,39 +199,41 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
       </Card>
       
       {/* Pre-Fitting Checklist */}
-      <Card className="bg-purple-50 border-purple-200">
-        <CardHeader>
-          <CardTitle className="text-purple-900">Pre-Fitting Checklist</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-start gap-2">
-              <Checkbox className="mt-0.5" />
-              <span>All items steamed and pressed</span>
+      {!isPrintMode && (
+        <Card className="bg-purple-50 border-purple-200 no-print">
+          <CardHeader>
+            <CardTitle className="text-purple-900">Pre-Fitting Checklist</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="flex items-start gap-2">
+                <Checkbox className="mt-0.5" />
+                <span>All items steamed and pressed</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Checkbox className="mt-0.5" />
+                <span>Hardware installed and secure</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Checkbox className="mt-0.5" />
+                <span>Seams aligned and pressed</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Checkbox className="mt-0.5" />
+                <span>Hems measured and straight</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Checkbox className="mt-0.5" />
+                <span>Lining hangs evenly</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Checkbox className="mt-0.5" />
+                <span>Client present for final approval</span>
+              </div>
             </div>
-            <div className="flex items-start gap-2">
-              <Checkbox className="mt-0.5" />
-              <span>Hardware installed and secure</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <Checkbox className="mt-0.5" />
-              <span>Seams aligned and pressed</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <Checkbox className="mt-0.5" />
-              <span>Hems measured and straight</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <Checkbox className="mt-0.5" />
-              <span>Lining hangs evenly</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <Checkbox className="mt-0.5" />
-              <span>Client present for final approval</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Fitting Items by Room */}
       {data.rooms.map((room, roomIndex) => (
@@ -243,11 +249,13 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <Checkbox
-                        checked={isComplete}
-                        onCheckedChange={() => toggleItemComplete(item.id)}
-                        className="no-print"
-                      />
+                      {!isPrintMode && (
+                        <Checkbox
+                          checked={isComplete}
+                          onCheckedChange={() => toggleItemComplete(item.id)}
+                          className="no-print"
+                        />
+                      )}
                       {item.name} - {item.treatmentType}
                       {isComplete && <CheckCircle2 className="h-5 w-5 text-green-500" />}
                     </CardTitle>
@@ -430,43 +438,43 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
                     <div className="bg-green-50 p-3 rounded space-y-2">
                       <div className="grid grid-cols-1 gap-2 text-sm">
                         <div className="flex items-start gap-2 p-2 bg-white rounded">
-                          <Checkbox className="mt-0.5" />
+                          {!isPrintMode && <Checkbox className="mt-0.5 no-print" />}
                           <div>
                             <span className="font-medium">Steam Treatment:</span> Remove all transport creases with steamer
                           </div>
                         </div>
                         <div className="flex items-start gap-2 p-2 bg-white rounded">
-                          <Checkbox className="mt-0.5" />
+                          {!isPrintMode && <Checkbox className="mt-0.5 no-print" />}
                           <div>
                             <span className="font-medium">Hardware Check:</span> Verify rails/tracks are secure and level
                           </div>
                         </div>
                         <div className="flex items-start gap-2 p-2 bg-white rounded">
-                          <Checkbox className="mt-0.5" />
+                          {!isPrintMode && <Checkbox className="mt-0.5 no-print" />}
                           <div>
                             <span className="font-medium">Drop Measurement:</span> Check pooling matches specification ({item.measurements?.pooling || 0}{item.measurements?.unit})
                           </div>
                         </div>
                         <div className="flex items-start gap-2 p-2 bg-white rounded">
-                          <Checkbox className="mt-0.5" />
+                          {!isPrintMode && <Checkbox className="mt-0.5 no-print" />}
                           <div>
                             <span className="font-medium">Seam Alignment:</span> Ensure all seams match pattern and are hidden in folds
                           </div>
                         </div>
                         <div className="flex items-start gap-2 p-2 bg-white rounded">
-                          <Checkbox className="mt-0.5" />
+                          {!isPrintMode && <Checkbox className="mt-0.5 no-print" />}
                           <div>
                             <span className="font-medium">Lining Check:</span> Verify lining hangs straight and doesn't show from front
                           </div>
                         </div>
                         <div className="flex items-start gap-2 p-2 bg-white rounded">
-                          <Checkbox className="mt-0.5" />
+                          {!isPrintMode && <Checkbox className="mt-0.5 no-print" />}
                           <div>
                             <span className="font-medium">Function Test:</span> Test opening/closing - should glide smoothly
                           </div>
                         </div>
                         <div className="flex items-start gap-2 p-2 bg-white rounded">
-                          <Checkbox className="mt-0.5" />
+                          {!isPrintMode && <Checkbox className="mt-0.5 no-print" />}
                           <div>
                             <span className="font-medium">Client Approval:</span> Walk through with client before leaving
                           </div>
@@ -478,12 +486,18 @@ export const FittingInstructions: React.FC<FittingInstructionsProps> = ({
                   {/* Special Instructions */}
                   <div className="border-t pt-4">
                     <h4 className="font-semibold mb-2">Special Instructions</h4>
-                    <Textarea 
-                      placeholder="Add special fitting instructions..."
-                      className="text-sm min-h-[60px]"
-                      value={itemNotes[item.id] || ""}
-                      onChange={(e) => setItemNote(item.id, e.target.value)}
-                    />
+                    {isPrintMode ? (
+                      <div className="text-sm min-h-[60px] p-2 bg-muted/30 rounded whitespace-pre-wrap">
+                        {itemNotes[item.id] || "No special instructions"}
+                      </div>
+                    ) : (
+                      <Textarea 
+                        placeholder="Add special fitting instructions..."
+                        className="text-sm min-h-[60px]"
+                        value={itemNotes[item.id] || ""}
+                        onChange={(e) => setItemNote(item.id, e.target.value)}
+                      />
+                    )}
                   </div>
                   
                   {/* Photo Upload Sections */}

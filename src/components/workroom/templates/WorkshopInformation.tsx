@@ -14,12 +14,13 @@ interface WorkshopInformationProps {
   data: WorkshopData;
   orientation?: 'portrait' | 'landscape';
   projectId?: string;
+  isPrintMode?: boolean;
 }
 
-export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, orientation = 'portrait', projectId }) => {
+export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, orientation = 'portrait', projectId, isPrintMode = false }) => {
   // Use landscape layout for landscape orientation
   if (orientation === 'landscape') {
-    return <WorkshopInformationLandscape data={data} projectId={projectId} />;
+    return <WorkshopInformationLandscape data={data} projectId={projectId} isPrintMode={isPrintMode} />;
   }
 
   console.log('🔍 [WorkshopInformation] projectId:', projectId);
@@ -117,25 +118,27 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <CardTitle className="text-lg">Workshop Information</CardTitle>
-          <div className="flex items-center gap-2">
-            {lastSaved && (
-              <div className="text-xs text-muted-foreground flex items-center gap-1">
-                <CheckCircle className="h-3 w-3 text-green-500" />
-                Saved {lastSaved.toLocaleTimeString()}
-              </div>
-            )}
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleSaveNotes}
-              disabled={isSaving || !projectId}
-              className="h-8"
-              title={!projectId ? "Project ID required to save notes" : "Save all notes"}
-            >
-              <Save className="h-3.5 w-3.5 mr-1" />
-              {isSaving ? "Saving..." : "Save Notes"}
-            </Button>
-          </div>
+          {!isPrintMode && (
+            <div className="flex items-center gap-2 no-print">
+              {lastSaved && (
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3 text-green-500" />
+                  Saved {lastSaved.toLocaleTimeString()}
+                </div>
+              )}
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleSaveNotes}
+                disabled={isSaving || !projectId}
+                className="h-8"
+                title={!projectId ? "Project ID required to save notes" : "Save all notes"}
+              >
+                <Save className="h-3.5 w-3.5 mr-1" />
+                {isSaving ? "Saving..." : "Save Notes"}
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
@@ -168,12 +171,18 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
             <CardTitle className="text-base">📝 Production Notes</CardTitle>
           </CardHeader>
           <CardContent>
-            <Textarea 
-              placeholder="Add general production instructions for this order..."
-              className="text-sm min-h-[80px] bg-white"
-              value={productionNotes}
-              onChange={(e) => setProductionNotes(e.target.value)}
-            />
+            {isPrintMode ? (
+              <div className="text-sm whitespace-pre-wrap min-h-[80px] p-3 bg-white rounded border">
+                {productionNotes || "No production notes"}
+              </div>
+            ) : (
+              <Textarea 
+                placeholder="Add general production instructions for this order..."
+                className="text-sm min-h-[80px] bg-white"
+                value={productionNotes}
+                onChange={(e) => setProductionNotes(e.target.value)}
+              />
+            )}
           </CardContent>
         </Card>
       )}
@@ -298,12 +307,18 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
                           </div>
                         )}
                         
-                        <Textarea 
-                          placeholder="Special instructions..."
-                          className="text-[10px] min-h-[60px] resize-none"
-                          value={itemNotes[item.id] || ""}
-                          onChange={(e) => setItemNote(item.id, e.target.value)}
-                        />
+                        {isPrintMode ? (
+                          <div className="text-[10px] min-h-[60px] p-2 bg-muted/30 rounded whitespace-pre-wrap">
+                            {itemNotes[item.id] || "No notes"}
+                          </div>
+                        ) : (
+                          <Textarea 
+                            placeholder="Special instructions..."
+                            className="text-[10px] min-h-[60px] resize-none"
+                            value={itemNotes[item.id] || ""}
+                            onChange={(e) => setItemNote(item.id, e.target.value)}
+                          />
+                        )}
                       </td>
                     </tr>
                   ))}

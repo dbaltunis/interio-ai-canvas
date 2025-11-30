@@ -9,9 +9,10 @@ import { useWorkshopNotes } from "@/hooks/useWorkshopNotes";
 interface WorkshopInformationLandscapeProps {
   data: WorkshopData;
   projectId?: string;
+  isPrintMode?: boolean;
 }
 
-export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscapeProps> = ({ data, projectId }) => {
+export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscapeProps> = ({ data, projectId, isPrintMode = false }) => {
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
   
@@ -98,38 +99,40 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
             <h1 className="text-2xl font-bold tracking-tight">WORK ORDER</h1>
             <div className="text-xs text-gray-600 mt-0.5">Manufacturing Instructions</div>
           </div>
-          <div className="flex items-center gap-2 no-print">
-            {hasOverrides && (
+          {!isPrintMode && (
+            <div className="flex items-center gap-2 no-print">
+              {hasOverrides && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleReset}
+                  className="h-7 text-xs"
+                >
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  Reset
+                </Button>
+              )}
               <Button
-                variant="ghost"
+                variant={editing ? "default" : "outline"}
                 size="sm"
-                onClick={handleReset}
+                onClick={editing ? handleSaveAndClose : () => setEditing(true)}
+                disabled={isSaving}
                 className="h-7 text-xs"
               >
-                <RotateCcw className="h-3 w-3 mr-1" />
-                Reset
+                {editing ? (
+                  <>
+                    <Save className="h-3 w-3 mr-1" />
+                    {isSaving ? "Saving..." : "Save & Done"}
+                  </>
+                ) : (
+                  <>
+                    <Pencil className="h-3 w-3 mr-1" />
+                    Edit
+                  </>
+                )}
               </Button>
-            )}
-            <Button
-              variant={editing ? "default" : "outline"}
-              size="sm"
-              onClick={editing ? handleSaveAndClose : () => setEditing(true)}
-              disabled={isSaving}
-              className="h-7 text-xs"
-            >
-              {editing ? (
-                <>
-                  <Save className="h-3 w-3 mr-1" />
-                  {isSaving ? "Saving..." : "Save & Done"}
-                </>
-              ) : (
-                <>
-                  <Pencil className="h-3 w-3 mr-1" />
-                  Edit
-                </>
-              )}
-            </Button>
-          </div>
+            </div>
+          )}
         </div>
         
         {/* Header info */}
@@ -274,17 +277,17 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                       )}
                       <div className="text-[9px] mt-2 pt-2 border-t border-gray-200">
                         <div className="font-medium text-gray-700 mb-1">Notes:</div>
-                        {editing ? (
+                        {isPrintMode || !editing ? (
+                          <div className="text-gray-600 italic min-h-[20px]">
+                            {getItemNote(item.id, item.notes) || "No notes"}
+                          </div>
+                        ) : (
                           <Textarea
                             value={getItemNote(item.id, item.notes)}
                             onChange={(e) => setItemNote(item.id, e.target.value)}
                             className="text-[9px] min-h-[40px] w-full"
                             placeholder="Add manufacturing notes for this item..."
                           />
-                        ) : (
-                          <div className="text-gray-600 italic min-h-[20px]">
-                            {getItemNote(item.id, item.notes) || "No notes"}
-                          </div>
                         )}
                       </div>
                     </div>
@@ -299,21 +302,21 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
       {/* Production Notes Section */}
       <div className="border-t pt-3 mt-4">
         <h3 className="text-xs font-bold uppercase tracking-wide mb-2">Production Notes</h3>
-        {editing ? (
+        {isPrintMode || !editing ? (
+          <div className="bg-gray-50 rounded p-3 min-h-[60px] text-xs text-gray-600">
+            {productionNotes ? (
+              <p className="whitespace-pre-wrap">{productionNotes}</p>
+            ) : (
+              <p className="italic">No additional production notes.</p>
+            )}
+          </div>
+        ) : (
           <Textarea
             value={productionNotes}
             onChange={(e) => setProductionNotes(e.target.value)}
             className="text-xs min-h-[80px] w-full"
             placeholder="Add general manufacturing instructions, special handling notes, or additional details..."
           />
-        ) : (
-          <div className="bg-gray-50 rounded p-3 min-h-[60px] text-xs text-gray-600">
-            {productionNotes ? (
-              <p className="whitespace-pre-wrap">{productionNotes}</p>
-            ) : (
-              <p className="italic">No additional production notes. Click Edit to add instructions.</p>
-            )}
-          </div>
         )}
       </div>
 
