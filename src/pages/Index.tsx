@@ -8,43 +8,187 @@ import { AIBackground } from "@/components/common/AIBackground";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { OrderingHubPage } from "@/components/ordering/OrderingHubPage";
+import { Button } from "@/components/ui/button";
 
 
 // Lazy load heavy components with proper error handling
 const Dashboard = lazy(() => 
-  import("@/components/dashboard/Dashboard").catch(() => ({ default: () => <div>Error loading Dashboard</div> }))
+  import("@/components/dashboard/Dashboard").catch((error) => {
+    console.error('❌ Failed to load Dashboard:', error);
+    return { 
+      default: () => (
+        <div className="p-6 text-center space-y-3">
+          <p className="text-destructive">Failed to load Dashboard</p>
+          <p className="text-sm text-muted-foreground">{error?.message}</p>
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      )
+    };
+  })
 );
 const MyTasksPage = lazy(() => 
-  import("@/pages/MyTasksPage").then(m => ({ default: m.MyTasksPage })).catch(() => ({ default: () => <div>Error loading Tasks</div> }))
+  import("@/pages/MyTasksPage").then(m => ({ default: m.MyTasksPage })).catch((error) => {
+    console.error('❌ Failed to load Tasks:', error);
+    return { 
+      default: () => (
+        <div className="p-6 text-center space-y-3">
+          <p className="text-destructive">Failed to load Tasks</p>
+          <p className="text-sm text-muted-foreground">{error?.message}</p>
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      )
+    };
+  })
 );
 const OnlineStorePage = lazy(() =>
-  import("@/pages/OnlineStore").catch(() => ({ default: () => <div>Error loading Online Store</div> }))
+  import("@/pages/OnlineStore").catch((error) => {
+    console.error('❌ Failed to load Online Store:', error);
+    return { 
+      default: () => (
+        <div className="p-6 text-center space-y-3">
+          <p className="text-destructive">Failed to load Online Store</p>
+          <p className="text-sm text-muted-foreground">{error?.message}</p>
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      )
+    };
+  })
 );
 const JobsPage = lazy(() => 
-  import("@/components/jobs/JobsPage").catch(() => ({ default: () => <div>Error loading Jobs</div> }))
+  import("@/components/jobs/JobsPage").catch((error) => {
+    console.error('❌ Failed to load Jobs:', error);
+    return { 
+      default: () => (
+        <div className="p-6 text-center space-y-3">
+          <p className="text-destructive">Failed to load Jobs</p>
+          <p className="text-sm text-muted-foreground">{error?.message}</p>
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      )
+    };
+  })
 );
 const LibraryPage = lazy(() => 
-  import("@/components/library/LibraryPage").catch(() => ({ default: () => <div>Error loading Library</div> }))
+  import("@/components/library/LibraryPage").catch((error) => {
+    console.error('❌ Failed to load Library:', error);
+    return { 
+      default: () => (
+        <div className="p-6 text-center space-y-3">
+          <p className="text-destructive">Failed to load Library</p>
+          <p className="text-sm text-muted-foreground">{error?.message}</p>
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      )
+    };
+  })
 );
 const ClientManagement = lazy(() => 
   import("@/components/jobs/ClientManagement").then(module => ({
     default: (props: any) => <module.default {...props} />
-  })).catch(() => ({ default: () => <div>Error loading Clients</div> }))
+  })).catch((error) => {
+    console.error('❌ Failed to load Clients:', error);
+    return { 
+      default: () => (
+        <div className="p-6 text-center space-y-3">
+          <p className="text-destructive">Failed to load Clients</p>
+          <p className="text-sm text-muted-foreground">{error?.message}</p>
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      )
+    };
+  })
 );
 const EmailManagement = lazy(() => 
-  import("@/components/jobs/EmailManagement").catch(() => ({ default: () => <div>Error loading Emails</div> }))
+  import("@/components/jobs/EmailManagement").catch((error) => {
+    console.error('❌ Failed to load EmailManagement:', error);
+    return { 
+      default: () => (
+        <div className="p-6 text-center space-y-3">
+          <p className="text-destructive">Failed to load Emails</p>
+          <p className="text-sm text-muted-foreground">{error?.message}</p>
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      )
+    };
+  })
 );
 const CalendarView = lazy(() => 
-  import("@/components/calendar/CalendarView").catch(() => ({ default: () => <div>Error loading Calendar</div> }))
+  import("@/components/calendar/CalendarView").catch((error) => {
+    console.error('❌ Failed to load Calendar:', error);
+    return { 
+      default: () => (
+        <div className="p-6 text-center space-y-3">
+          <p className="text-destructive">Failed to load Calendar</p>
+          <p className="text-sm text-muted-foreground">{error?.message}</p>
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      )
+    };
+  })
 );
 const MobileSettings = lazy(() => 
-  import("@/pages/MobileSettings").catch(() => ({ default: () => <div>Error loading Settings</div> }))
+  import("@/pages/MobileSettings").catch((error) => {
+    console.error('❌ Failed to load Settings:', error);
+    return { 
+      default: () => (
+        <div className="p-6 text-center space-y-3">
+          <p className="text-destructive">Failed to load Settings</p>
+          <p className="text-sm text-muted-foreground">{error?.message}</p>
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      )
+    };
+  })
 );
 const MeasurementWizardDemo = lazy(() => 
-  import("@/components/measurement-wizard/MeasurementWizardDemo").catch(() => ({ default: () => <div>Error loading Measurement Wizard</div> }))
+  import("@/components/measurement-wizard/MeasurementWizardDemo").catch((error) => {
+    console.error('❌ Failed to load Measurement Wizard:', error);
+    return { 
+      default: () => (
+        <div className="p-6 text-center space-y-3">
+          <p className="text-destructive">Failed to load Measurement Wizard</p>
+          <p className="text-sm text-muted-foreground">{error?.message}</p>
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      )
+    };
+  })
 );
 const BugReportsPage = lazy(() =>
-  import("@/pages/BugReportsPage").catch(() => ({ default: () => <div>Error loading Bug Reports</div> }))
+  import("@/pages/BugReportsPage").catch((error) => {
+    console.error('❌ Failed to load Bug Reports:', error);
+    return { 
+      default: () => (
+        <div className="p-6 text-center space-y-3">
+          <p className="text-destructive">Failed to load Bug Reports</p>
+          <p className="text-sm text-muted-foreground">{error?.message}</p>
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      )
+    };
+  })
 );
 
 // Skeleton loading components
