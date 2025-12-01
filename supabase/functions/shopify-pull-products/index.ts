@@ -128,7 +128,7 @@ serve(async (req) => {
 
           // Check if product exists by SKU
           const { data: existing } = await supabase
-            .from('inventory')
+            .from('enhanced_inventory_items')
             .select('id')
             .eq('user_id', userId)
             .eq('sku', inventoryItem.sku)
@@ -137,7 +137,7 @@ serve(async (req) => {
           if (existing) {
             // Update existing product
             const { error: updateError } = await supabase
-              .from('inventory')
+              .from('enhanced_inventory_items')
               .update(inventoryItem)
               .eq('id', existing.id);
 
@@ -150,7 +150,7 @@ serve(async (req) => {
           } else {
             // Insert new product
             const { error: insertError } = await supabase
-              .from('inventory')
+              .from('enhanced_inventory_items')
               .insert(inventoryItem);
 
             if (insertError) {
