@@ -1206,8 +1206,23 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       <Card className="bg-card border-border shadow-lg">
         <CardContent className="space-y-6 p-6 bg-card">
           {/* Basic Setup */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Window type and room dropdowns removed as requested */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Window Type Selector */}
+            <div>
+              <Label htmlFor="windowType">Window Type</Label>
+              <Select value={windowType} onValueChange={setWindowType} disabled={readOnly}>
+                <SelectTrigger id="windowType" className="bg-background">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {WINDOW_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* Window Covering Selector */}
             <div>
