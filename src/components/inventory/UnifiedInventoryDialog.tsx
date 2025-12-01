@@ -163,8 +163,19 @@ export const UnifiedInventoryDialog = ({
       { value: "venetian", label: "Venetian Blinds" },
       { value: "vertical", label: "Vertical Blinds" }
     ],
-    hardware: [],
-    wallcovering: [],
+    hardware: [
+      { value: "rod", label: "Rods/Poles" },
+      { value: "track", label: "Tracks" },
+      { value: "motor", label: "Motors" },
+      { value: "bracket", label: "Brackets" },
+      { value: "accessory", label: "Accessories" }
+    ],
+    wallcovering: [
+      { value: "wallpaper", label: "Wallpaper" },
+      { value: "vinyl", label: "Vinyl" },
+      { value: "mural", label: "Murals" },
+      { value: "other_wallcovering", label: "Other" }
+    ],
     service: [
       { value: "installation", label: "Installation Services" },
       { value: "fitting", label: "Fitting Services" },
