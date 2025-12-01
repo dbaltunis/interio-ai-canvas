@@ -43,7 +43,6 @@ const ROLE_PERMISSIONS = {
     'view_inventory', 'manage_inventory',
     'view_window_treatments', 'manage_window_treatments',
     'view_analytics',
-    'view_shopify',
     'view_emails',
     'view_profile'
   ],
@@ -183,7 +182,12 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
                 <SelectValue placeholder="Select a role..." />
               </SelectTrigger>
               <SelectContent className="z-[9999] bg-popover border border-border shadow-lg">
-                <SelectItem value="Admin">Admin</SelectItem>
+                <SelectItem value="Admin">
+                  <div className="flex flex-col">
+                    <span className="font-medium">Admin</span>
+                    <span className="text-xs text-muted-foreground">Can view store revenue, sales data, and manage Shopify</span>
+                  </div>
+                </SelectItem>
                 <SelectItem value="Manager">Manager</SelectItem>
                 <SelectItem value="Staff">Staff</SelectItem>
               </SelectContent>
