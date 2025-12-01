@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -57,7 +58,7 @@ const handler = async (req: Request): Promise<Response> => {
       emailSettings = settings;
     }
 
-    // Get SendGrid integration settings
+    // Check for custom SendGrid integration first
     let sendgridApiKey = null;
     if (userId) {
       const { data: integration } = await supabase
@@ -74,18 +75,9 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // Fall back to environment variable if no user-specific API key
-    if (!sendgridApiKey) {
-      sendgridApiKey = Deno.env.get('SENDGRID_API_KEY');
-    }
-
-    if (!sendgridApiKey) {
-      throw new Error('SendGrid API key not configured. Please set up SendGrid integration first.');
-    }
-
-    // Set up email details
-    const fromEmail = emailSettings?.from_email || 'test@yourdomain.com';
-    const fromName = emailSettings?.from_name || 'Test Email System';
+    // Set up email details - use defaults for shared service
+    const fromEmail = emailSettings?.from_email || 'noreply@interioapp.com';
+    const fromName = emailSettings?.from_name || 'Interior App';
     const replyToEmail = emailSettings?.reply_to_email || fromEmail;
 
     // Enhanced test email content
@@ -119,8 +111,8 @@ const handler = async (req: Request): Promise<Response> => {
           <ul>
             <li><strong>From:</strong> ${fromName} &lt;${fromEmail}&gt;</li>
             <li><strong>Reply-To:</strong> ${replyToEmail}</li>
-            <li><strong>SendGrid API:</strong> <span class="status-badge">✅ Connected</span></li>
-            <li><strong>Email Settings:</strong> <span class="status-badge">✅ Configured</span></li>
+            <li><strong>Email Service:</strong> <span class="status-badge">✅ ${sendgridApiKey ? 'Custom SendGrid' : 'Shared Service'}</span></li>
+            <li><strong>Email Settings:</strong> <span class="status-badge">✅ ${emailSettings ? 'Configured' : 'Using Defaults'}</span></li>
           </ul>
           
           ${emailSettings?.signature ? `
@@ -139,62 +131,77 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    // Send email via SendGrid
-    const sendGridResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${sendgridApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        personalizations: [
-          {
-            to: [{ email: to_email }],
-            subject: `[TEST] ${subject}`,
-          }
-        ],
-        from: {
-          email: fromEmail,
-          name: fromName,
-        },
-        reply_to: {
-          email: replyToEmail,
-        },
-        content: [
-          {
-            type: 'text/html',
-            value: enhancedMessage,
-          }
-        ],
-        tracking_settings: {
-          click_tracking: { enable: true },
-          open_tracking: { enable: true },
-        },
-        categories: ['test-email'],
-      }),
-    });
-
-    if (!sendGridResponse.ok) {
-      const errorText = await sendGridResponse.text();
-      console.error('SendGrid API error:', errorText);
+    // Try SendGrid first if custom integration exists
+    if (sendgridApiKey) {
+      console.log('Using custom SendGrid integration');
       
-      // Parse SendGrid error for better user feedback
-      try {
-        const errorData = JSON.parse(errorText);
-        if (errorData.errors && errorData.errors.length > 0) {
-          const firstError = errorData.errors[0];
-          if (firstError.message.includes('sender identity')) {
-            throw new Error(`Sender email verification required: ${fromEmail} must be verified in SendGrid. Go to SendGrid > Settings > Sender Authentication to verify your email.`);
-          }
-          throw new Error(`SendGrid error: ${firstError.message}`);
-        }
-      } catch (parseError) {
-        // If we can't parse the error, use the raw response
-        throw new Error(`SendGrid API error (${sendGridResponse.status}): ${errorText}`);
-      }
-    }
+      const sendGridResponse = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sendgridApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          personalizations: [
+            {
+              to: [{ email: to_email }],
+              subject: `[TEST] ${subject}`,
+            }
+          ],
+          from: {
+            email: fromEmail,
+            name: fromName,
+          },
+          reply_to: {
+            email: replyToEmail,
+          },
+          content: [
+            {
+              type: 'text/html',
+              value: enhancedMessage,
+            }
+          ],
+          tracking_settings: {
+            click_tracking: { enable: true },
+            open_tracking: { enable: true },
+          },
+          categories: ['test-email'],
+        }),
+      });
 
-    console.log('Test email sent successfully to:', to_email);
+      if (!sendGridResponse.ok) {
+        const errorText = await sendGridResponse.text();
+        console.error('SendGrid API error:', errorText);
+        throw new Error(`SendGrid error: ${errorText}`);
+      }
+
+      console.log('Test email sent via SendGrid to:', to_email);
+    } else {
+      // Use shared Resend service (default for all users)
+      console.log('Using shared Resend service');
+      
+      const resendApiKey = Deno.env.get('RESEND_API_KEY');
+      if (!resendApiKey) {
+        throw new Error('Email service not configured. Please contact support.');
+      }
+
+      const resend = new Resend(resendApiKey);
+      
+      const { data: emailResult, error: emailError } = await resend.emails.send({
+        from: `${fromName} <noreply@interioapp.com>`,
+        to: [to_email],
+        subject: `[TEST] ${subject}`,
+        html: enhancedMessage,
+        reply_to: replyToEmail !== 'noreply@interioapp.com' ? replyToEmail : undefined,
+      });
+
+      if (emailError) {
+        console.error('Resend API error:', emailError);
+        throw new Error(`Email service error: ${emailError.message}`);
+      }
+
+      console.log('Test email sent via Resend to:', to_email, 'ID:', emailResult?.id);
+    }
 
     return new Response(
       JSON.stringify({ 
@@ -202,6 +209,7 @@ const handler = async (req: Request): Promise<Response> => {
         message: `Test email sent successfully to ${to_email}`,
         from: `${fromName} <${fromEmail}>`,
         subject: `[TEST] ${subject}`,
+        service: sendgridApiKey ? 'sendgrid' : 'resend',
         timestamp: new Date().toISOString()
       }),
       {

@@ -28,9 +28,9 @@ export const TestEmailButton = ({ variant = "outline", size = "default", classNa
     <p>This is a test email to verify your email configuration is working correctly.</p>
     <p>If you're receiving this email, it means:</p>
     <ul>
-      <li>✅ SendGrid integration is active</li>
-      <li>✅ Your sender email is verified</li>
-      <li>✅ Email settings are configured properly</li>
+      <li>✅ Email service is active</li>
+      <li>✅ Email delivery is working</li>
+      <li>✅ Configuration is correct</li>
     </ul>
     <p>You can now confidently send emails to your customers.</p>
   `);
@@ -107,9 +107,9 @@ export const TestEmailButton = ({ variant = "outline", size = "default", classNa
         <p>This is a test email to verify your email configuration is working correctly.</p>
         <p>If you're receiving this email, it means:</p>
         <ul>
-          <li>✅ SendGrid integration is active</li>
-          <li>✅ Your sender email is verified</li>
-          <li>✅ Email settings are configured properly</li>
+          <li>✅ Email service is active</li>
+          <li>✅ Email delivery is working</li>
+          <li>✅ Configuration is correct</li>
         </ul>
         <p>You can now confidently send emails to your customers.</p>
       `);
@@ -123,7 +123,6 @@ export const TestEmailButton = ({ variant = "outline", size = "default", classNa
           variant={variant} 
           size={size} 
           className={className}
-          disabled={!emailSettings?.from_email}
         >
           <TestTube className="h-4 w-4 mr-2" />
           Send Test Email
