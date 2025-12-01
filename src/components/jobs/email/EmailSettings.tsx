@@ -66,15 +66,23 @@ export const EmailSettings = () => {
 
   const handleSave = async () => {
     // Basic validation - only check required fields
-    if (!formData.from_email.trim() || !formData.from_name.trim()) {
-      console.error("From email and from name are required");
+    if (!formData.from_name.trim()) {
+      console.error("From name is required");
+      return;
+    }
+
+    // Use shared service email if no SendGrid integration
+    const fromEmail = hasSendGridIntegration ? formData.from_email.trim() : "noreply@interioapp.com";
+
+    if (!fromEmail) {
+      console.error("From email is required");
       return;
     }
 
     try {
-      console.log("Saving email settings:", formData);
+      console.log("Saving email settings:", { ...formData, from_email: fromEmail });
       await updateEmailSettings.mutateAsync({
-        from_email: formData.from_email.trim(),
+        from_email: fromEmail,
         from_name: formData.from_name.trim(),
         reply_to_email: formData.reply_to_email.trim() || undefined,
         signature: formData.signature.trim() || undefined,
@@ -215,16 +223,22 @@ export const EmailSettings = () => {
               <Input
                 id="from_email"
                 type="email"
-                value={formData.from_email}
+                value={hasSendGridIntegration ? formData.from_email : "noreply@interioapp.com"}
                 onChange={(e) => {
-                  setFormData(prev => ({ ...prev, from_email: e.target.value }));
-                  if (formErrors.from_email) {
-                    setFormErrors(prev => ({ ...prev, from_email: '' }));
+                  if (hasSendGridIntegration) {
+                    setFormData(prev => ({ ...prev, from_email: e.target.value }));
+                    if (formErrors.from_email) {
+                      setFormErrors(prev => ({ ...prev, from_email: '' }));
+                    }
                   }
                 }}
-                placeholder="noreply@yourbusiness.com"
-                className={formErrors.from_email ? "border-red-500" : ""}
+                placeholder="noreply@interioapp.com"
+                disabled={!hasSendGridIntegration}
+                className={`${formErrors.from_email ? "border-red-500" : ""} ${!hasSendGridIntegration ? "bg-muted" : ""}`}
               />
+              {!hasSendGridIntegration && (
+                <p className="text-xs text-muted-foreground">Using shared email service. Configure SendGrid for custom domain.</p>
+              )}
               {formErrors.from_email && (
                 <p className="text-sm text-red-500">{formErrors.from_email}</p>
               )}
