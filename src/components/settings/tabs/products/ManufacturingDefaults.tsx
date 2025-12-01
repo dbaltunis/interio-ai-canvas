@@ -55,25 +55,56 @@ export const ManufacturingDefaults = () => {
 
       const { data, error } = await supabase
         .from('business_settings')
-        .select('*')
+        .select('pricing_settings')
         .eq('user_id', user.id)
         .single();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading defaults:', error);
+        toast({
+          title: "Error Loading Settings",
+          description: "Could not load manufacturing defaults. Using default values.",
+          variant: "destructive"
+        });
         return;
       }
 
       if (data?.pricing_settings) {
-        const settings = typeof data.pricing_settings === 'string' 
-          ? JSON.parse(data.pricing_settings)
-          : data.pricing_settings;
-        if (settings?.manufacturing_defaults) {
-          setDefaults({ ...defaults, ...settings.manufacturing_defaults });
+        try {
+          const settings = typeof data.pricing_settings === 'string' 
+            ? JSON.parse(data.pricing_settings)
+            : data.pricing_settings;
+          
+          // Validate settings is a proper object (detect corruption like char arrays)
+          if (typeof settings !== 'object' || settings === null || '0' in settings || Array.isArray(settings)) {
+            console.error('Corrupted pricing_settings detected:', settings);
+            toast({
+              title: "Settings Data Corrupted",
+              description: "Your settings appear corrupted. Please save to reset them.",
+              variant: "destructive"
+            });
+            return;
+          }
+          
+          if (settings?.manufacturing_defaults) {
+            setDefaults(prev => ({ ...prev, ...settings.manufacturing_defaults }));
+          }
+        } catch (parseError) {
+          console.error('Error parsing pricing_settings:', parseError);
+          toast({
+            title: "Settings Parse Error",
+            description: "Could not read settings. Please save to reset them.",
+            variant: "destructive"
+          });
         }
       }
     } catch (error) {
       console.error('Error loading manufacturing defaults:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load manufacturing defaults.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -85,19 +116,47 @@ export const ManufacturingDefaults = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // First check if record exists
-      const { data: existing } = await supabase
+      // First fetch existing pricing_settings to MERGE (not overwrite!)
+      const { data: existing, error: fetchError } = await supabase
         .from('business_settings')
-        .select('id')
+        .select('id, pricing_settings')
         .eq('user_id', user.id)
         .single();
 
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+
+      // Parse existing settings safely
+      let existingSettings: Record<string, any> = {};
+      if (existing?.pricing_settings) {
+        try {
+          const parsed = typeof existing.pricing_settings === 'string'
+            ? JSON.parse(existing.pricing_settings)
+            : existing.pricing_settings;
+          
+          // Only use if it's a valid object (not corrupted)
+          if (typeof parsed === 'object' && parsed !== null && !('0' in parsed) && !Array.isArray(parsed)) {
+            existingSettings = parsed;
+          }
+        } catch {
+          // If parsing fails, start fresh
+          console.warn('Could not parse existing pricing_settings, starting fresh');
+        }
+      }
+
+      // Merge manufacturing_defaults into existing settings
+      const mergedSettings = {
+        ...existingSettings,
+        manufacturing_defaults: defaults
+      };
+
       if (existing) {
-        // Update existing record
+        // Update existing record with merged settings
         const { error } = await supabase
           .from('business_settings')
           .update({
-            pricing_settings: { manufacturing_defaults: defaults } as any,
+            pricing_settings: mergedSettings as any,
             updated_at: new Date().toISOString()
           })
           .eq('user_id', user.id);
@@ -109,14 +168,14 @@ export const ManufacturingDefaults = () => {
           .from('business_settings')
           .insert({
             user_id: user.id,
-            pricing_settings: { manufacturing_defaults: defaults } as any,
+            pricing_settings: mergedSettings as any,
           });
         
         if (error) throw error;
       }
 
       toast({
-        title: "Settings Saved",
+        title: "✅ Settings Saved",
         description: "Manufacturing defaults have been updated successfully."
       });
     } catch (error) {
