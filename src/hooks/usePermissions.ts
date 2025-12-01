@@ -116,7 +116,6 @@ export const useUserPermissions = () => {
           'view_inventory', 'manage_inventory',
           'view_window_treatments', 'manage_window_treatments',
           'view_analytics', 'view_settings',
-          'view_shopify',
           'view_emails',
           'view_profile'
         ],

@@ -9,6 +9,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 export const ShopifyAnalyticsCard = () => {
   const { data: analytics, isLoading } = useShopifyAnalytics();
@@ -18,6 +19,7 @@ export const ShopifyAnalyticsCard = () => {
   const [isSyncingExport, setIsSyncingExport] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const canManageShopify = useHasPermission('manage_shopify');
 
   // Get product sync stats
   const { data: productStats } = useQuery({
@@ -175,15 +177,17 @@ export const ShopifyAnalyticsCard = () => {
               {analytics.shop_domain} • Last synced {timeSinceSync < 60 ? `${timeSinceSync}m` : `${Math.floor(timeSinceSync / 60)}h`} ago
             </CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => syncAnalytics.mutate()}
-            disabled={syncAnalytics.isPending}
-            title="Refresh analytics data"
-          >
-            <RefreshCw className={`h-4 w-4 ${syncAnalytics.isPending ? 'animate-spin' : ''}`} />
-          </Button>
+          {canManageShopify && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => syncAnalytics.mutate()}
+              disabled={syncAnalytics.isPending}
+              title="Refresh analytics data"
+            >
+              <RefreshCw className={`h-4 w-4 ${syncAnalytics.isPending ? 'animate-spin' : ''}`} />
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="flex-1 space-y-4">
@@ -222,30 +226,32 @@ export const ShopifyAnalyticsCard = () => {
             </div>
           )}
 
-          <div className="flex gap-1.5">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleProductSync('pull')}
-              disabled={isSyncingImport || isSyncingExport}
-              className="flex-1 gap-1 h-8 px-2"
-              title="Import products from Shopify to InterioApp"
-            >
-              <ArrowDownLeft className={`h-3 w-3 shrink-0 ${isSyncingImport ? 'animate-spin' : ''}`} />
-              <span className="text-[10px] truncate">Import</span>
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleProductSync('push')}
-              disabled={isSyncingImport || isSyncingExport || (productStats?.totalProducts || 0) === 0}
-              className="flex-1 gap-1 h-8 px-2"
-              title="Export InterioApp products to Shopify"
-            >
-              <ArrowUpRight className={`h-3 w-3 shrink-0 ${isSyncingExport ? 'animate-spin' : ''}`} />
-              <span className="text-[10px] truncate">Export</span>
-            </Button>
-          </div>
+          {canManageShopify && (
+            <div className="flex gap-1.5">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleProductSync('pull')}
+                disabled={isSyncingImport || isSyncingExport}
+                className="flex-1 gap-1 h-8 px-2"
+                title="Import products from Shopify to InterioApp"
+              >
+                <ArrowDownLeft className={`h-3 w-3 shrink-0 ${isSyncingImport ? 'animate-spin' : ''}`} />
+                <span className="text-[10px] truncate">Import</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleProductSync('push')}
+                disabled={isSyncingImport || isSyncingExport || (productStats?.totalProducts || 0) === 0}
+                className="flex-1 gap-1 h-8 px-2"
+                title="Export InterioApp products to Shopify"
+              >
+                <ArrowUpRight className={`h-3 w-3 shrink-0 ${isSyncingExport ? 'animate-spin' : ''}`} />
+                <span className="text-[10px] truncate">Export</span>
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Analytics Grid - Responsive */}

@@ -33,7 +33,6 @@ const ROLE_PERMISSIONS = {
     'view_inventory', 'manage_inventory',
     'view_window_treatments', 'manage_window_treatments',
     'view_analytics',
-    'view_shopify',
     'view_emails',
     'view_profile'
   ],
@@ -193,7 +192,7 @@ export const InviteDialog = ({ open, onOpenChange }: InviteDialogProps) => {
                 <SelectItem value="Admin">
                   <div className="flex flex-col">
                     <span className="font-medium">Admin</span>
-                    <span className="text-xs text-muted-foreground">Full access except user management</span>
+                    <span className="text-xs text-muted-foreground">Can view store revenue, sales data, and manage Shopify</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="Manager">

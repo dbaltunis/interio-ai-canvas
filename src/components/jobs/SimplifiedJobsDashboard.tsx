@@ -22,6 +22,7 @@ import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { ShopifyConnectionCTA } from "@/components/dashboard/ShopifyConnectionCTA";
 import { ShopifyAnalyticsCard } from "@/components/dashboard/ShopifyAnalyticsCard";
 import { ShopifyIntegrationDialog } from "@/components/library/ShopifyIntegrationDialog";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 export const SimplifiedJobsDashboard = () => {
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
@@ -30,6 +31,7 @@ export const SimplifiedJobsDashboard = () => {
   const { data: stats } = useDashboardStats();
   const { data: clients = [] } = useClients();
   const { integration, isLoading: isLoadingIntegration } = useShopifyIntegrationReal();
+  const canViewShopify = useHasPermission('view_shopify');
 
   // Calculate metrics based on projects (not quotes)
   const totalProjects = projects.length;
@@ -48,8 +50,8 @@ export const SimplifiedJobsDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Shopify Integration */}
-      {!isLoadingIntegration && (
+      {/* Shopify Integration - Only visible to users with view_shopify permission */}
+      {!isLoadingIntegration && canViewShopify && (
         integration?.shop_domain ? (
           <ShopifyAnalyticsCard />
         ) : (
