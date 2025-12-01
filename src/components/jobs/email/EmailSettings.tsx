@@ -13,8 +13,10 @@ import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { useState, useEffect } from "react";
 import { EmailSetupStatusCard } from "@/components/email-setup/EmailSetupStatusCard";
 import { TestEmailButton } from "@/components/email-setup/TestEmailButton";
+import { EmailSetupWizard } from "@/components/email-setup/EmailSetupWizard";
 
 export const EmailSettings = () => {
+  const [wizardOpen, setWizardOpen] = useState(false);
   const { data: emailSettings } = useEmailSettings();
   const { hasSendGridIntegration, integrationData } = useIntegrationStatus();
   const updateEmailSettings = useUpdateEmailSettings();
@@ -146,6 +148,7 @@ export const EmailSettings = () => {
           <Button 
             className="flex-1 bg-primary text-white hover:bg-primary/90"
             size="lg"
+            onClick={() => setWizardOpen(true)}
           >
             <Mail className="h-4 w-4 mr-2" />
             Start Setup Wizard
@@ -163,6 +166,13 @@ export const EmailSettings = () => {
           </Button>
         </div>
       )}
+
+      {/* Email Setup Wizard Dialog */}
+      <EmailSetupWizard 
+        open={wizardOpen} 
+        onOpenChange={setWizardOpen}
+        onComplete={() => setWizardOpen(false)}
+      />
 
       {/* Sender Information - Primary Focus */}
       <Card id="sender-form">
