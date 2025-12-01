@@ -101,3 +101,9 @@ verify_jwt = true
 
 [functions.twc-sync-products]
 verify_jwt = true
+
+[functions.send-test-email]
+verify_jwt = true
+
+[functions.send-invitation]
+verify_jwt = true

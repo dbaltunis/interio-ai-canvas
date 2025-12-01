@@ -7,19 +7,22 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Settings, Mail, Key, Bell, Shield, Check, X, AlertTriangle } from "lucide-react";
+import { Settings, Mail, Key, Bell, Shield, Check, X, AlertTriangle, Loader2 } from "lucide-react";
 import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettings";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { useState, useEffect } from "react";
 import { EmailSetupStatusCard } from "@/components/email-setup/EmailSetupStatusCard";
 import { TestEmailButton } from "@/components/email-setup/TestEmailButton";
 import { EmailSetupWizard } from "@/components/email-setup/EmailSetupWizard";
+import { useToast } from "@/hooks/use-toast";
 
 export const EmailSettings = () => {
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const { data: emailSettings } = useEmailSettings();
   const { hasSendGridIntegration, integrationData } = useIntegrationStatus();
   const updateEmailSettings = useUpdateEmailSettings();
+  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     from_email: "",
@@ -65,19 +68,20 @@ export const EmailSettings = () => {
   };
 
   const handleSave = async () => {
+    setSaveSuccess(false);
+    
     // Basic validation - only check required fields
     if (!formData.from_name.trim()) {
-      console.error("From name is required");
+      toast({
+        title: "Missing Information",
+        description: "Please enter your business name.",
+        variant: "destructive"
+      });
       return;
     }
 
     // Use shared service email if no SendGrid integration
     const fromEmail = hasSendGridIntegration ? formData.from_email.trim() : "noreply@interioapp.com";
-
-    if (!fromEmail) {
-      console.error("From email is required");
-      return;
-    }
 
     try {
       console.log("Saving email settings:", { ...formData, from_email: fromEmail });
@@ -88,9 +92,22 @@ export const EmailSettings = () => {
         signature: formData.signature.trim() || undefined,
         active: formData.active
       });
-      console.log("Email settings saved successfully");
+      
+      setSaveSuccess(true);
+      toast({
+        title: "Settings Saved",
+        description: `Emails will be sent from "${formData.from_name.trim()}"`,
+      });
+      
+      // Clear success indicator after 3 seconds
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error("Failed to update email settings:", error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save email settings. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -285,20 +302,37 @@ export const EmailSettings = () => {
             <Label htmlFor="active">Active email settings</Label>
           </div>
 
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-3 flex-wrap items-center">
             <Button 
               onClick={handleSave}
               disabled={updateEmailSettings.isPending}
               size="lg"
-              className="flex-1 md:flex-initial"
+              className={`flex-1 md:flex-initial ${saveSuccess ? 'bg-green-600 hover:bg-green-700' : ''}`}
             >
-              {updateEmailSettings.isPending ? "Saving..." : "Save Settings"}
+              {updateEmailSettings.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : saveSuccess ? (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Saved!
+                </>
+              ) : (
+                "Save Settings"
+              )}
             </Button>
             <TestEmailButton 
               variant="outline"
               size="lg"
               className="flex-1 md:flex-initial"
             />
+            {saveSuccess && (
+              <span className="text-sm text-green-600 font-medium">
+                ✓ Ready to send emails
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>
