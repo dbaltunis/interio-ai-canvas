@@ -74,7 +74,15 @@ export const useUpdateEmailSettings = () => {
         throw new Error('from_email and from_name are required');
       }
 
-      // Check if settings already exist
+      // Get the account owner ID for RLS policy compliance
+      const { data: accountOwnerId } = await supabase.rpc('get_account_owner', { 
+        user_id_param: user.id 
+      });
+      
+      const effectiveAccountOwnerId = accountOwnerId || user.id;
+      console.log('Using account_owner_id:', effectiveAccountOwnerId);
+
+      // Check if settings already exist for this user
       const { data: existingSettings } = await supabase
         .from('email_settings')
         .select('id')
@@ -103,12 +111,13 @@ export const useUpdateEmailSettings = () => {
         if (error) throw error;
         result = data;
       } else {
-        // Create new settings
-        console.log('Creating new email settings');
+        // Create new settings - must include account_owner_id for RLS
+        console.log('Creating new email settings with account_owner_id:', effectiveAccountOwnerId);
         const { data, error } = await supabase
           .from('email_settings')
           .insert({
             user_id: user.id,
+            account_owner_id: effectiveAccountOwnerId,
             from_email: settings.from_email,
             from_name: settings.from_name,
             reply_to_email: settings.reply_to_email || null,
