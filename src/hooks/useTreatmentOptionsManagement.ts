@@ -170,8 +170,13 @@ export const useAllTreatmentOptions = () => {
   return useQuery({
     queryKey: ['all-treatment-options'],
     queryFn: async () => {
+      console.log('🔄 useAllTreatmentOptions: Starting query...');
+      
       const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return [];
+      if (!user.user) {
+        console.log('❌ useAllTreatmentOptions: No authenticated user');
+        return [];
+      }
       
       // Get current user's account_id
       const { data: profile } = await supabase
@@ -181,6 +186,7 @@ export const useAllTreatmentOptions = () => {
         .single();
       
       const accountId = profile?.parent_account_id || user.user.id;
+      console.log('🔐 useAllTreatmentOptions: Account ID:', accountId);
       
       // Get all category-based options for THIS ACCOUNT ONLY
       const { data, error } = await supabase
@@ -194,7 +200,13 @@ export const useAllTreatmentOptions = () => {
         .order('treatment_category', { ascending: true })
         .order('order_index', { ascending: true });
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ useAllTreatmentOptions: Query error:', error);
+        throw error;
+      }
+      
+      console.log('✅ useAllTreatmentOptions: Found', data?.length || 0, 'options');
+      console.log('📊 Categories:', [...new Set((data || []).map(o => o.treatment_category))]);
       
       return data as TreatmentOption[];
     },

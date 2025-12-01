@@ -18,14 +18,30 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId }: Templa
   const navigate = useNavigate();
   
   // Fetch all treatment options and filter by category
-  const { data: allOptions = [], isLoading } = useAllTreatmentOptions();
+  const { data: allOptions = [], isLoading, error } = useAllTreatmentOptions();
   
   // Fetch template option settings
   const { data: templateSettings = [] } = useTemplateOptionSettings(templateId);
   const toggleOption = useToggleTemplateOption();
   
+  // Debug logging
+  console.log('🎯 TemplateOptionsManager:', {
+    treatmentCategory,
+    templateId,
+    isLoading,
+    error: error?.message,
+    allOptionsCount: allOptions.length,
+    allOptionsCategories: [...new Set(allOptions.map(o => o.treatment_category))],
+  });
+  
   // Filter options for this specific treatment category
   const categoryOptions = allOptions.filter(opt => opt.treatment_category === treatmentCategory);
+  
+  console.log('🔍 Filtered categoryOptions:', {
+    treatmentCategory,
+    categoryOptionsCount: categoryOptions.length,
+    categoryOptions: categoryOptions.map(o => ({ key: o.key, label: o.label, category: o.treatment_category })),
+  });
   
   // Helper to check if option is enabled (default true if no setting exists)
   const isOptionEnabled = (optionId: string) => {
