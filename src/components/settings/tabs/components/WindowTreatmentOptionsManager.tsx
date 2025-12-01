@@ -233,12 +233,44 @@ export const WindowTreatmentOptionsManager = () => {
           importance: 'silent'
         });
       } else {
-        // Check if this option category already exists
+        const valueCode = formData.value.trim().toLowerCase().replace(/\s+/g, '_');
+        
+        // First, check locally if this option category already exists
         let treatmentOption = allTreatmentOptions.find(
           (opt: any) => opt.treatment_category === activeTreatment && opt.key === activeOptionType
         );
 
-        // Create option category if it doesn't exist
+        // If not found locally, try to fetch from database directly (handles stale cache)
+        if (!treatmentOption) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: profile } = await supabase
+              .from('user_profiles')
+              .select('user_id, parent_account_id')
+              .eq('user_id', user.id)
+              .single();
+            
+            const accountId = profile?.parent_account_id || user.id;
+            
+            // Direct database check for existing treatment option
+            const { data: existingOption } = await supabase
+              .from('treatment_options')
+              .select(`*, option_values (*)`)
+              .eq('account_id', accountId)
+              .eq('treatment_category', activeTreatment)
+              .eq('key', activeOptionType)
+              .is('template_id', null)
+              .maybeSingle();
+            
+            if (existingOption) {
+              treatmentOption = existingOption;
+              // Refresh the cache since we found data the cache was missing
+              queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
+            }
+          }
+        }
+
+        // Create option category if it still doesn't exist
         if (!treatmentOption) {
           const optionTypeConfig = optionTypeCategories.find(
             opt => opt.type_key === activeOptionType
@@ -255,52 +287,112 @@ export const WindowTreatmentOptionsManager = () => {
               treatment_category: activeTreatment,
             });
           } catch (error: any) {
-            // If duplicate key error, refetch and use existing option
-            if (error.message.includes('already exists')) {
+            // If duplicate key error, refetch from database and use existing option
+            if (error.message.includes('already exists') || error.code === '23505') {
               await queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
-              toast({
-                title: "Option Already Exists",
-                description: "This treatment option already exists. Refreshing data...",
-              });
-              return;
+              
+              // Try one more time to fetch the existing option
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                const { data: profile } = await supabase
+                  .from('user_profiles')
+                  .select('user_id, parent_account_id')
+                  .eq('user_id', user.id)
+                  .single();
+                
+                const accountId = profile?.parent_account_id || user.id;
+                
+                const { data: existingOption } = await supabase
+                  .from('treatment_options')
+                  .select(`*, option_values (*)`)
+                  .eq('account_id', accountId)
+                  .eq('treatment_category', activeTreatment)
+                  .eq('key', activeOptionType)
+                  .is('template_id', null)
+                  .maybeSingle();
+                
+                if (existingOption) {
+                  treatmentOption = existingOption;
+                } else {
+                  toast({
+                    title: "Error",
+                    description: "Could not find or create option category. Please refresh and try again.",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+              }
+            } else {
+              throw error;
             }
-            throw error;
           }
         }
 
-        // Check if this value already exists
-        const uniqueOptionValues = treatmentOption?.option_values || [];
-        const valueCode = formData.value.trim().toLowerCase().replace(/\s+/g, '_');
-        const existingValue = uniqueOptionValues.find(v => v.code === valueCode);
+        // Check if this value already exists - both locally and in database
+        const localValues = treatmentOption?.option_values || [];
+        let existingValue = localValues.find(v => v.code === valueCode);
+        
+        // Also check database directly for existing value (handles cache staleness)
+        if (!existingValue && treatmentOption) {
+          const { data: dbValue } = await supabase
+            .from('option_values')
+            .select('*')
+            .eq('option_id', treatmentOption.id)
+            .eq('code', valueCode)
+            .maybeSingle();
+          
+          if (dbValue) {
+            existingValue = dbValue;
+          }
+        }
         
         if (existingValue) {
           setIsCreating(false);
           setEditingValue(null);
           resetForm();
           
+          // Refresh data to show the existing value
+          await queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
+          
           toast({
-            title: "Duplicate value",
-            description: "This value already exists. Please use a different value or edit the existing one.",
-            variant: "destructive"
+            title: "Value Already Exists",
+            description: `"${formData.name}" already exists. The list has been refreshed - you can now edit the existing value.`,
+            variant: "default"
           });
           return;
         }
 
         // Now create the value for this option
-        await createOptionValue.mutateAsync({
-          option_id: treatmentOption.id,
-          code: valueCode,
-          label: formData.name.trim(),
-          order_index: uniqueOptionValues.length,
-          extra_data: { 
-            price: Number(formData.price) || 0,
-            pricing_method: formData.pricing_method,
-            pricing_grid_data: formData.pricing_grid_data,
-            pricing_grid_type: formData.pricing_grid_type,
-            sub_options: formData.sub_options
-          },
-          inventory_item_id: formData.inventory_item_id || null,
-        });
+        try {
+          await createOptionValue.mutateAsync({
+            option_id: treatmentOption.id,
+            code: valueCode,
+            label: formData.name.trim(),
+            order_index: localValues.length,
+            extra_data: { 
+              price: Number(formData.price) || 0,
+              pricing_method: formData.pricing_method,
+              pricing_grid_data: formData.pricing_grid_data,
+              pricing_grid_type: formData.pricing_grid_type,
+              sub_options: formData.sub_options
+            },
+            inventory_item_id: formData.inventory_item_id || null,
+          });
+        } catch (valueError: any) {
+          // Handle duplicate value error from database constraint
+          if (valueError.code === '23505' || valueError.message?.includes('duplicate')) {
+            await queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
+            toast({
+              title: "Value Already Exists",
+              description: `"${formData.name}" already exists in the database. Refreshing to show current data.`,
+              variant: "default"
+            });
+            setIsCreating(false);
+            resetForm();
+            return;
+          }
+          throw valueError;
+        }
 
         // Invalidate queries to refetch the updated data
         queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
