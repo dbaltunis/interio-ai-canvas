@@ -86,11 +86,11 @@ serve(async (req) => {
           pricing_method: 'per_unit' as const,
           reorder_point: 10,
           reorder_quantity: 50,
-          images: product.images?.map((img: any) => img.src) || [],
+          image_url: product.images?.[0]?.src || null,
         };
 
         const { error: syncError } = await supabase
-          .from('inventory')
+          .from('enhanced_inventory_items')
           .upsert(inventoryItem, {
             onConflict: 'user_id,sku',
           });
