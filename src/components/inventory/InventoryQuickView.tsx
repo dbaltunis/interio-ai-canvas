@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Package, DollarSign, Ruler, Store } from "lucide-react";
-import { EditInventoryDialog } from "./EditInventoryDialog";
+import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
 import { useState } from "react";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { COLOR_PALETTE } from "@/constants/inventoryCategories";
@@ -19,13 +19,20 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
   const { formatCurrency } = useFormattedCurrency();
 
   const handleEditClick = () => {
-    setShowEditDialog(true);
-    onOpenChange(false);
+    onOpenChange(false); // Close quick view first
+    // Small delay to allow quick view to close before opening edit dialog
+    setTimeout(() => {
+      setShowEditDialog(true);
+    }, 100);
   };
 
   const handleEditSuccess = () => {
     setShowEditDialog(false);
     onSuccess?.();
+  };
+
+  const handleEditDialogClose = (open: boolean) => {
+    setShowEditDialog(open);
   };
 
   // Get color information
@@ -199,12 +206,16 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
-      <EditInventoryDialog
-        item={item}
-        trigger={<></>}
-        onSuccess={handleEditSuccess}
-      />
+      {/* Edit Dialog - controlled externally */}
+      {showEditDialog && (
+        <UnifiedInventoryDialog
+          open={showEditDialog}
+          onOpenChange={handleEditDialogClose}
+          mode="edit"
+          item={item}
+          onSuccess={handleEditSuccess}
+        />
+      )}
     </>
   );
 };

@@ -199,7 +199,39 @@ export const useWorkshopData = (projectId?: string) => {
         hardware: summary?.heading_details?.hardware || undefined,
       };
       
-      const options = (summary?.selected_options || []).map((opt: any) => ({
+      // Filter options to only show those relevant to selected control type
+      // For example, if Control Type = Motorised, don't show Chain options
+      const selectedOptions = summary?.selected_options || [];
+      const controlTypeSelection = selectedOptions.find((opt: any) => 
+        opt.optionKey === 'control_type' || opt.option_key === 'control_type'
+      );
+      const selectedControlValue = controlTypeSelection?.value || controlTypeSelection?.selected_value;
+      
+      // Filter out options that are sub-options of a different control type
+      const filteredOptions = selectedOptions.filter((opt: any) => {
+        const optKey = opt.optionKey || opt.option_key || '';
+        const parentKey = opt.parent_option_key || opt.parentOptionKey;
+        
+        // If this option has a parent (e.g., chain_length has parent control_type)
+        if (parentKey === 'control_type' && selectedControlValue) {
+          // Only include if the option matches the selected control type
+          // e.g., chain options only show if control_type is 'chain'
+          const optionCategory = opt.category?.toLowerCase() || optKey.toLowerCase();
+          const selectedValue = selectedControlValue.toLowerCase();
+          
+          // Chain-related options only show for chain control type
+          if (optionCategory.includes('chain') && !selectedValue.includes('chain')) {
+            return false;
+          }
+          // Motor-related options only show for motorised control type
+          if (optionCategory.includes('motor') && !selectedValue.includes('motor')) {
+            return false;
+          }
+        }
+        return true;
+      });
+      
+      const options = filteredOptions.map((opt: any) => ({
         name: opt.name || opt.option_name || 'Option',
         optionKey: opt.optionKey || opt.option_key || '',
         price: opt.price || 0,
