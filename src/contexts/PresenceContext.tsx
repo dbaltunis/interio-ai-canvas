@@ -33,8 +33,13 @@ export const PresenceProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState<string>('');
 
-  // Use cached team presence data instead of making separate RPC calls
-  const { data: teamPresence = [], isLoading } = useTeamPresence();
+  // Use cached team presence data with error resilience
+  const { data: teamPresence = [], isLoading, error } = useTeamPresence();
+  
+  // Log presence errors but don't crash the app
+  if (error) {
+    console.warn('Presence system unavailable:', error);
+  }
   
   // Transform team presence data to UserPresence format
   const activeUsers: UserPresence[] = teamPresence.map(profile => ({

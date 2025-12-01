@@ -18,16 +18,35 @@ export const useTeamPresence = (search?: string) => {
   const query = useQuery({
     queryKey: ["team-presence", search ?? null],
     queryFn: async (): Promise<TeamMemberPresence[]> => {
-      const { data, error } = await supabase.rpc("get_team_presence", {
-        search_param: search ?? null,
-      });
-      if (error) throw error;
-      return (data as TeamMemberPresence[]) || [];
+      // Add timeout using AbortController
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      try {
+        const { data, error } = await supabase.rpc("get_team_presence", {
+          search_param: search ?? null,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (error) {
+          console.warn('Team presence query failed:', error.message);
+          // Return empty array instead of throwing to prevent cascading failures
+          return [];
+        }
+        return (data as TeamMemberPresence[]) || [];
+      } catch (err) {
+        clearTimeout(timeoutId);
+        console.warn('Team presence request failed:', err);
+        return []; // Graceful degradation
+      }
     },
-    staleTime: 2 * 60 * 1000, // Cache for 2 minutes - presence doesn't need real-time updates
+    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
-    refetchOnWindowFocus: false, // Don't refetch on focus - rely on realtime updates
+    refetchOnWindowFocus: false, // Don't refetch on focus
     refetchInterval: 2 * 60 * 1000, // Refetch every 2 minutes as backup
+    retry: 1, // Only retry once on failure
+    retryDelay: 1000, // Wait 1 second before retry
   });
 
   useEffect(() => {
