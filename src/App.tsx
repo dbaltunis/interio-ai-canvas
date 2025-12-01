@@ -14,6 +14,7 @@ import { SystemOwnerRoute } from "./components/auth/SystemOwnerRoute";
 import { AuthPage } from "./components/auth/AuthPage";
 import { ErrorBoundary } from "./components/performance/ErrorBoundary";
 import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
+import { PresenceProvider } from "./contexts/PresenceContext";
 import { BugReportDialog } from "@/components/bug-report/BugReportDialog";
 import { ThemeProvider } from "next-themes";
 import { ThemeDarkSync } from "./components/system/ThemeDarkSync";
@@ -140,8 +141,9 @@ const App = () => {
               <BrowserRouter>
                 <NavObserver />
                 <AuthProvider>
-                  <EmailRealtimeProvider>
-                  <BugReportDialog />
+                  <PresenceProvider>
+                    <EmailRealtimeProvider>
+                      <BugReportDialog />
                   <Suspense fallback={<></>}>
                   <Routes>
                 {/* Public store routes */}
@@ -282,9 +284,10 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               </Suspense>
-                   </EmailRealtimeProvider>
-                   <ProjectInventoryTrackingHandler />
-                   </AuthProvider>
+                    </EmailRealtimeProvider>
+                  </PresenceProvider>
+                  <ProjectInventoryTrackingHandler />
+                </AuthProvider>
                  </BrowserRouter>
               </ThemeProvider>
             </TooltipProvider>
