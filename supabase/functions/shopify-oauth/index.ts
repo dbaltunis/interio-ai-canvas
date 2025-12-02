@@ -63,10 +63,11 @@ serve(async (req) => {
 
     const shopData = await shopResponse.json()
 
-    // Update integration with access token
+    // Update integration with access token and mark as connected
     const { error } = await supabase
       .from('shopify_integrations')
       .update({
+        is_connected: true,
         sync_status: 'idle',
         sync_log: [{
           action: 'OAuth completed',
