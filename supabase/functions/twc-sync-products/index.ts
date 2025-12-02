@@ -89,6 +89,22 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Importing ${products.length} TWC products for user ${user.id}`);
 
+    // Check for existing TWC products to prevent duplicates
+    const existingSkus = new Set<string>();
+    const { data: existingProducts } = await supabaseClient
+      .from('enhanced_inventory_items')
+      .select('sku')
+      .eq('user_id', user.id)
+      .eq('supplier', 'TWC');
+    
+    if (existingProducts) {
+      existingProducts.forEach(p => existingSkus.add(p.sku));
+    }
+    
+    // Filter out products that already exist
+    const newProducts = products.filter(p => !existingSkus.has(p.itemNumber));
+    console.log(`Filtered to ${newProducts.length} new products (${products.length - newProducts.length} duplicates skipped)`);
+
     // Map TWC product description to treatment_category for templates
     const mapTreatmentCategory = (description: string | undefined | null): string => {
       if (!description || typeof description !== 'string') {
@@ -172,8 +188,8 @@ const handler = async (req: Request): Promise<Response> => {
       return { category: 'material', subcategory: 'blind_material' };
     };
 
-    // Prepare inventory items for batch insert
-    const inventoryItems = products.map(product => {
+    // Prepare inventory items for batch insert (only new products)
+    const inventoryItems = newProducts.map(product => {
       // Safe extraction of product type with multiple fallbacks
       let productType = 'Unknown Product';
       
@@ -231,9 +247,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Successfully imported ${insertedItems?.length || 0} inventory items`);
 
-    // Phase 2: Create templates for each imported product
+    // Phase 2: Create templates for each imported product with inventory_item_id link
     const templates = insertedItems?.map((item, index) => {
-      const product = products[index];
+      const product = newProducts[index];
       let productType = 'Unknown Product';
       
       if (product.productType) {
@@ -250,6 +266,7 @@ const handler = async (req: Request): Promise<Response> => {
         pricing_type: 'pricing_grid', // Default to grid pricing
         pricing_grid_data: null, // User will configure this later
         system_type: productType,
+        inventory_item_id: item.id, // Link template to inventory item
         active: true,
         description: `TWC Template: ${item.name}`,
         // Default values for required fields

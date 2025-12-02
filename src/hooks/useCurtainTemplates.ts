@@ -11,6 +11,7 @@ export interface CurtainTemplate {
   treatment_category?: 'curtains' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_shades' | 'plantation_shutters' | 'shutters' | 'panel_glide' | 'awning';
   image_url?: string; // Custom template image
   display_image_url?: string; // Display image for quotes/worksheets
+  inventory_item_id?: string; // Link to TWC/inventory product
   
   // Panel Configuration
   panel_configuration?: 'single' | 'pair';
@@ -145,7 +146,26 @@ export const useCurtainTemplates = () => {
       
       // Enrich templates with pricing grid data if applicable
       const templates = (data as unknown) as CurtainTemplate[];
-      const enrichedTemplates = await enrichTemplatesWithGrids(templates);
+      
+      // Auto-link pricing grids from inventory items for templates with inventory_item_id
+      const templatesWithInventoryPricing = await Promise.all(templates.map(async (template) => {
+        if (template.inventory_item_id && !template.pricing_grid_data) {
+          const { data: inventoryItem } = await supabase
+            .from('enhanced_inventory_items')
+            .select('metadata')
+            .eq('id', template.inventory_item_id)
+            .single();
+          
+          const metadata = inventoryItem?.metadata as Record<string, any> | null;
+          if (metadata?.pricing_grid_data) {
+            console.log(`📊 [useCurtainTemplates] Auto-linked pricing grid from inventory for template: ${template.name}`);
+            return { ...template, pricing_grid_data: metadata.pricing_grid_data };
+          }
+        }
+        return template;
+      }));
+      
+      const enrichedTemplates = await enrichTemplatesWithGrids(templatesWithInventoryPricing);
       
       console.log(`🎯 [useCurtainTemplates] Enriched ${enrichedTemplates.filter(t => t.pricing_grid_data).length} templates with pricing grids`);
       
