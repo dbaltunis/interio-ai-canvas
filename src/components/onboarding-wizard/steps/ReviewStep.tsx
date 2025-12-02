@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Circle, AlertCircle, Rocket, Download } from 'lucide-react';
+import { CheckCircle2, Circle, AlertCircle, Rocket, Download, Loader2, PartyPopper } from 'lucide-react';
 import type { OnboardingData } from '@/hooks/useOnboardingWizard';
+
 interface ReviewStepProps {
   data: OnboardingData;
   completionStatus: Record<string, boolean>;
-  onComplete: () => void;
+  onComplete: () => Promise<void> | void;
 }
 const SECTION_LABELS: Record<string, {
   label: string;
@@ -78,10 +80,49 @@ export const ReviewStep = ({
   completionStatus,
   onComplete
 }: ReviewStepProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  
   const completedCount = Object.values(completionStatus).filter(Boolean).length;
   const totalSections = Object.keys(SECTION_LABELS).length;
   const requiredSections = Object.entries(SECTION_LABELS).filter(([_, config]) => config.required).map(([key]) => key);
   const allRequiredComplete = requiredSections.every(key => completionStatus[key]);
+
+  const handleComplete = async () => {
+    if (isSubmitting || isCompleted) return;
+    setIsSubmitting(true);
+    try {
+      await onComplete();
+      setIsCompleted(true);
+    } catch (error) {
+      console.error('Error completing setup:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isCompleted) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20">
+          <CardContent className="pt-6">
+            <div className="text-center py-8">
+              <PartyPopper className="h-16 w-16 text-green-600 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-green-800 dark:text-green-200 mb-2">
+                Setup Complete!
+              </h2>
+              <p className="text-green-700 dark:text-green-300 mb-4">
+                Thank you for completing the onboarding. Our team will review your submission and be in touch shortly.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                A confirmation email has been sent to your administrator.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   return <div className="space-y-6">
       {/* Summary Card */}
       <Card>
@@ -154,11 +195,24 @@ export const ReviewStep = ({
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            <Button size="lg" className="flex-1" onClick={onComplete} disabled={!allRequiredComplete}>
-              <Rocket className="h-4 w-4 mr-2" />
-              Apply Settings & Complete Setup
+            <Button 
+              size="lg" 
+              className="flex-1" 
+              onClick={handleComplete} 
+              disabled={!allRequiredComplete || isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Completing Setup...
+                </>
+              ) : (
+                <>
+                  <Rocket className="h-4 w-4 mr-2" />
+                  Apply Settings & Complete Setup
+                </>
+              )}
             </Button>
-            
           </div>
 
           {!allRequiredComplete && <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-sm">
