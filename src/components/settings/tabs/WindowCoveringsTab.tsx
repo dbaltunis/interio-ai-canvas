@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CurtainTemplatesManager } from "./products/CurtainTemplatesManager";
@@ -10,9 +10,28 @@ import { OptionsArchitectureGuide } from "./components/OptionsArchitectureGuide"
 import { TWCLibraryBrowser } from "@/components/integrations/TWCLibraryBrowser";
 import { Layers, Settings, Sliders, Library, HelpCircle, Truck } from "lucide-react";
 
-export const WindowCoveringsTab = () => {
-  const [activeTab, setActiveTab] = useState("templates");
+interface CreateTemplateData {
+  name: string;
+  category: string;
+  description: string;
+  inventoryItemId: string;
+}
+
+interface WindowCoveringsTabProps {
+  createTemplateData?: CreateTemplateData | null;
+  onTemplateCreated?: () => void;
+}
+
+export const WindowCoveringsTab = ({ createTemplateData, onTemplateCreated }: WindowCoveringsTabProps) => {
+  const [activeTab, setActiveTab] = useState(createTemplateData ? "templates" : "templates");
   const [highlightedTemplateId, setHighlightedTemplateId] = useState<string | null>(null);
+
+  // Auto-switch to templates tab when createTemplateData is provided
+  useEffect(() => {
+    if (createTemplateData) {
+      setActiveTab("templates");
+    }
+  }, [createTemplateData]);
 
   const handleTemplateCloned = (templateId: string) => {
     setActiveTab("templates");
@@ -62,7 +81,11 @@ export const WindowCoveringsTab = () => {
             </TabsList>
 
             <TabsContent value="templates" className="mt-6">
-              <CurtainTemplatesManager highlightedTemplateId={highlightedTemplateId} />
+              <CurtainTemplatesManager 
+                highlightedTemplateId={highlightedTemplateId}
+                createTemplateData={createTemplateData}
+                onTemplateCreated={onTemplateCreated}
+              />
             </TabsContent>
 
             <TabsContent value="system-library" className="mt-6">
