@@ -26,6 +26,7 @@ import "@/styles/theme.css";
 
 // Lazy load all route components for better code splitting
 const NotFound = lazy(() => import("./pages/NotFound"));
+const OnboardingWizard = lazy(() => import("./pages/OnboardingWizard"));
 const Index = lazy(() => import("./pages/Index"));
 const Settings = lazy(() => import("./pages/Settings"));
 const AcceptInvitation = lazy(() => import("./pages/AcceptInvitation"));
@@ -153,6 +154,13 @@ const App = () => {
                   </ErrorBoundary>
                 } />
                 
+                {/* Onboarding Wizard - public route */}
+                <Route path="/onboarding-checklist" element={
+                  <ErrorBoundary>
+                    <OnboardingWizard />
+                  </ErrorBoundary>
+                } />
+
                 {/* Public booking routes */}
                 <Route path="/book/:slug" element={
                   <ErrorBoundary>
