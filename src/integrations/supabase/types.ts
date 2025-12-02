@@ -7141,6 +7141,13 @@ export type Database = {
             referencedRelation: "online_stores"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "store_category_settings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "public_store_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       store_inquiries: {
@@ -7207,6 +7214,13 @@ export type Database = {
             referencedRelation: "online_stores"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "store_inquiries_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "public_store_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       store_orders: {
@@ -7261,6 +7275,13 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "online_stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "public_store_info"
             referencedColumns: ["id"]
           },
         ]
@@ -7357,6 +7378,13 @@ export type Database = {
             referencedRelation: "online_stores"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "store_pages_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "public_store_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       store_product_visibility: {
@@ -7415,6 +7443,13 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "online_stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_product_visibility_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "public_store_info"
             referencedColumns: ["id"]
           },
           {
@@ -9416,6 +9451,65 @@ export type Database = {
           user_id: string | null
         }
         Relationships: []
+      }
+      public_store_info: {
+        Row: {
+          accent_color: string | null
+          created_at: string | null
+          font_family: string | null
+          id: string | null
+          is_published: boolean | null
+          logo_url: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          seo_description: string | null
+          seo_title: string | null
+          store_name: string | null
+          store_slug: string | null
+          template_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          created_at?: string | null
+          font_family?: string | null
+          id?: string | null
+          is_published?: boolean | null
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          store_name?: string | null
+          store_slug?: string | null
+          template_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          created_at?: string | null
+          font_family?: string | null
+          id?: string | null
+          is_published?: boolean | null
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          store_name?: string | null
+          store_slug?: string | null
+          template_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_stores_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "store_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_presence_view: {
         Row: {
