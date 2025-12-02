@@ -230,15 +230,13 @@ export const useOnboardingWizard = () => {
     setState(prev => ({ ...prev, isSaving: true }));
 
     try {
-      const updateData: Record<string, any> = {
-        user_id: user.id,
-        [section]: sectionData,
-        updated_at: new Date().toISOString(),
-      };
-
       const { error } = await supabase
         .from('onboarding_progress')
-        .upsert(updateData, { onConflict: 'user_id' });
+        .upsert({
+          user_id: user.id,
+          [section]: sectionData,
+          updated_at: new Date().toISOString(),
+        } as any, { onConflict: 'user_id' });
 
       if (error) throw error;
 
