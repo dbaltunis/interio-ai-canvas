@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -122,6 +122,9 @@ export const UnifiedInventoryDialog = ({
   });
   
   const [customColors, setCustomColors] = useState<Array<{ name: string; value: string; hex: string }>>([]);
+  
+  // Track which item we've initialized to prevent re-initialization on cache updates
+  const initializedItemId = useRef<string | null>(null);
 
   // Load custom colors from localStorage
   useEffect(() => {
@@ -186,9 +189,12 @@ export const UnifiedInventoryDialog = ({
   const subcategories = SUBCATEGORIES[formData.category] || [];
   const isFabric = formData.category === "fabric";
 
-  // Load data on mount
+  // Load data on mount - only initialize once per item
   useEffect(() => {
     if (mode === "create" && open) {
+      // Reset the initialized item tracking for create mode
+      initializedItemId.current = null;
+      
       const savedDraft = localStorage.getItem(STORAGE_KEY);
       if (savedDraft) {
         try {
@@ -206,7 +212,15 @@ export const UnifiedInventoryDialog = ({
           subcategory: initialSubcategory || prev.subcategory,
         }));
       }
-    } else if (mode === "edit" && item) {
+    } else if (mode === "edit" && item && open) {
+      // Only initialize form if this is a different item than we already loaded
+      // This prevents resetting form data when query cache updates after save
+      if (initializedItemId.current === item.id) {
+        return; // Already initialized this item, don't reset
+      }
+      
+      initializedItemId.current = item.id;
+      
       setFormData({
         name: item.name || "",
         description: item.description || "",
@@ -248,7 +262,12 @@ export const UnifiedInventoryDialog = ({
       
       setTrackInventory(item.quantity > 0);
     }
-  }, [mode, item, open]);
+    
+    // Reset tracking when dialog closes
+    if (!open) {
+      initializedItemId.current = null;
+    }
+  }, [mode, item?.id, open, initialCategory, initialSubcategory]);
 
   // Auto-save draft
   const saveDraft = useCallback(() => {
