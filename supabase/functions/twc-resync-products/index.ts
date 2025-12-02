@@ -119,9 +119,8 @@ serve(async (req) => {
           label: questionData.label,
           input_type: 'select',
           order_index: 100 + optionsCreated,
-          is_required: questionData.isRequired,
-          is_enabled: true,
-          metadata: { source: 'twc_import' }
+          required: questionData.isRequired,
+          visible: true
         })
         .select('id')
         .single();

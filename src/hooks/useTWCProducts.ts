@@ -73,18 +73,17 @@ export const useTWCImportedProducts = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Please log in to view imported products");
 
-      // First get TWC inventory items
+      // Get only parent TWC products (those with twc_questions in metadata)
       const { data: items, error: itemsError } = await supabase
         .from("enhanced_inventory_items")
         .select("*")
         .eq("supplier", "TWC")
+        .not("metadata->twc_questions", "is", null)
         .order("created_at", { ascending: false });
 
       if (itemsError) throw itemsError;
 
-      // Then get templates for these items by matching on name/description
-      // (There's no direct FK relationship between inventory and templates)
-      const itemIds = items?.map(i => i.id) || [];
+      // Get templates for these items
       const { data: templates, error: templatesError } = await supabase
         .from("curtain_templates")
         .select("id, name, pricing_grid_data, description")
@@ -103,7 +102,7 @@ export const useTWCImportedProducts = () => {
 
       return enrichedItems;
     },
-    staleTime: 10 * 1000, // 10 seconds - refresh often to show updates
+    staleTime: 10 * 1000,
   });
 };
 
@@ -155,7 +154,12 @@ export const useResyncTWCProducts = () => {
 
   return useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke("twc-resync-products");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.functions.invoke("twc-resync-products", {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
 
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || "Re-sync failed");
@@ -181,5 +185,28 @@ export const useResyncTWCProducts = () => {
         duration: 5000,
       });
     },
+  });
+};
+
+export const useDeleteTWCProduct = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (productId: string) => {
+      const { error } = await supabase
+        .from('enhanced_inventory_items')
+        .delete()
+        .eq('id', productId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['twc-imported-products'] });
+      queryClient.invalidateQueries({ queryKey: ['enhanced-inventory'] });
+      toast.success('Product deleted');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete: ${error.message}`);
+    }
   });
 };
