@@ -319,7 +319,7 @@ export const UnifiedInventoryDialog = ({
 
       console.log('🔗 Public URL:', publicUrl);
 
-      setFormData({ ...formData, image_url: publicUrl });
+      setFormData(prev => ({ ...prev, image_url: publicUrl }));
       console.log('✅ FormData updated with image_url');
       toast({ title: "Image uploaded successfully" });
     } catch (error: any) {
@@ -330,7 +330,7 @@ export const UnifiedInventoryDialog = ({
     }
   };
 
-  const removeImage = () => setFormData({ ...formData, image_url: "" });
+  const removeImage = () => setFormData(prev => ({ ...prev, image_url: "" }));
 
   // Profit calculations
   const profitPerUnit = formData.selling_price - formData.cost_price;
@@ -465,7 +465,7 @@ export const UnifiedInventoryDialog = ({
                   <Label>Category</Label>
                   <Select
                     value={formData.category}
-                    onValueChange={(value) => setFormData({ ...formData, category: value, subcategory: "" })}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, category: value, subcategory: "" }))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
@@ -483,7 +483,7 @@ export const UnifiedInventoryDialog = ({
                     <Label>Subcategory</Label>
                     <Select
                       value={formData.subcategory}
-                      onValueChange={(value) => setFormData({ ...formData, subcategory: value })}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, subcategory: value }))}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select subcategory" />
@@ -522,7 +522,7 @@ export const UnifiedInventoryDialog = ({
                       <Input
                         id="name"
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                         placeholder="e.g., Luxury Velvet Navy"
                         required
                       />
@@ -533,7 +533,7 @@ export const UnifiedInventoryDialog = ({
                       <Input
                         id="sku"
                         value={formData.sku}
-                        onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                        onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
                         placeholder="e.g., LVN-001"
                       />
                       <p className="text-xs text-muted-foreground mt-1">Auto-generated if left blank. Shared across color variants.</p>
@@ -544,7 +544,7 @@ export const UnifiedInventoryDialog = ({
                       <Textarea
                         id="description"
                         value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                         placeholder="Product description..."
                         rows={3}
                       />
@@ -555,7 +555,7 @@ export const UnifiedInventoryDialog = ({
                       <Input
                         id="tags"
                         value={formData.tags.join(', ')}
-                        onChange={(e) => setFormData({ ...formData, tags: e.target.value.split(',').map(t => t.trim()).filter(t => t) })}
+                        onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value.split(',').map(t => t.trim()).filter(t => t) }))}
                         placeholder="e.g., plain, linen, luxury"
                       />
                     </div>
@@ -572,8 +572,10 @@ export const UnifiedInventoryDialog = ({
                             ...COLOR_PALETTE.map(c => c.value),
                             ...customColors.map(c => c.value)
                           ];
-                          const nonColorTags = formData.tags.filter(tag => !allColorValues.includes(tag));
-                          setFormData({ ...formData, tags: [...nonColorTags, ...colors] });
+                          setFormData(prev => {
+                            const nonColorTags = prev.tags.filter(tag => !allColorValues.includes(tag));
+                            return { ...prev, tags: [...nonColorTags, ...colors] };
+                          });
                         }}
                         customColors={customColors}
                         onCustomColorsChange={handleCustomColorsChange}
@@ -638,7 +640,7 @@ export const UnifiedInventoryDialog = ({
                           <Label>Select Pricing Grid</Label>
                           <Select
                             value={formData.pricing_grid_id || undefined}
-                            onValueChange={(value) => setFormData({ ...formData, pricing_grid_id: value === 'none' ? null : value })}
+                            onValueChange={(value) => setFormData(prev => ({ ...prev, pricing_grid_id: value === 'none' ? null : value }))}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Choose a pricing grid" />
@@ -675,7 +677,7 @@ export const UnifiedInventoryDialog = ({
                               type="number"
                               step="0.01"
                               value={formData.cost_price || ""}
-                              onChange={(e) => setFormData({ ...formData, cost_price: parseFloat(e.target.value) || 0 })}
+                              onChange={(e) => setFormData(prev => ({ ...prev, cost_price: parseFloat(e.target.value) || 0 }))}
                               placeholder="20.00"
                             />
                           </div>
@@ -686,7 +688,7 @@ export const UnifiedInventoryDialog = ({
                               type="number"
                               step="0.01"
                               value={formData.selling_price || ""}
-                              onChange={(e) => setFormData({ ...formData, selling_price: parseFloat(e.target.value) || 0 })}
+                              onChange={(e) => setFormData(prev => ({ ...prev, selling_price: parseFloat(e.target.value) || 0 }))}
                               placeholder="40.00"
                             />
                           </div>
@@ -720,7 +722,7 @@ export const UnifiedInventoryDialog = ({
                             <Label>Unit</Label>
                             <Select 
                               value={formData.unit} 
-                              onValueChange={(value) => setFormData({ ...formData, unit: value })}
+                              onValueChange={(value) => setFormData(prev => ({ ...prev, unit: value }))}
                             >
                               <SelectTrigger>
                                 <SelectValue />
@@ -739,7 +741,7 @@ export const UnifiedInventoryDialog = ({
                               type="number"
                               step="0.01"
                               value={formData.cost_price || ""}
-                              onChange={(e) => setFormData({ ...formData, cost_price: parseFloat(e.target.value) || 0 })}
+                              onChange={(e) => setFormData(prev => ({ ...prev, cost_price: parseFloat(e.target.value) || 0 }))}
                               placeholder="20.00"
                             />
                           </div>
@@ -750,7 +752,7 @@ export const UnifiedInventoryDialog = ({
                               type="number"
                               step="0.01"
                               value={formData.selling_price || ""}
-                              onChange={(e) => setFormData({ ...formData, selling_price: parseFloat(e.target.value) || 0 })}
+                              onChange={(e) => setFormData(prev => ({ ...prev, selling_price: parseFloat(e.target.value) || 0 }))}
                               placeholder="40.00"
                             />
                           </div>
@@ -794,7 +796,7 @@ export const UnifiedInventoryDialog = ({
                           type="number"
                           step="0.1"
                           value={formData.fabric_width || ""}
-                          onChange={(e) => setFormData({ ...formData, fabric_width: parseFloat(e.target.value) || 0 })}
+                          onChange={(e) => setFormData(prev => ({ ...prev, fabric_width: parseFloat(e.target.value) || 0 }))}
                           placeholder="140"
                         />
                       </div>
@@ -803,7 +805,7 @@ export const UnifiedInventoryDialog = ({
                         <Label>Composition</Label>
                         <Input
                           value={formData.fabric_composition}
-                          onChange={(e) => setFormData({ ...formData, fabric_composition: e.target.value })}
+                          onChange={(e) => setFormData(prev => ({ ...prev, fabric_composition: e.target.value }))}
                           placeholder="e.g., 100% Polyester"
                         />
                       </div>
@@ -812,7 +814,7 @@ export const UnifiedInventoryDialog = ({
                         <Label>Collection</Label>
                         <Input
                           value={formData.collection_name}
-                          onChange={(e) => setFormData({ ...formData, collection_name: e.target.value })}
+                          onChange={(e) => setFormData(prev => ({ ...prev, collection_name: e.target.value }))}
                           placeholder="Collection name"
                         />
                       </div>
@@ -823,7 +825,7 @@ export const UnifiedInventoryDialog = ({
                           type="number"
                           step="0.1"
                           value={formData.pattern_repeat_vertical || ""}
-                          onChange={(e) => setFormData({ ...formData, pattern_repeat_vertical: parseFloat(e.target.value) || 0 })}
+                          onChange={(e) => setFormData(prev => ({ ...prev, pattern_repeat_vertical: parseFloat(e.target.value) || 0 }))}
                           placeholder="0"
                         />
                       </div>
@@ -834,7 +836,7 @@ export const UnifiedInventoryDialog = ({
                           type="number"
                           step="0.1"
                           value={formData.pattern_repeat_horizontal || ""}
-                          onChange={(e) => setFormData({ ...formData, pattern_repeat_horizontal: parseFloat(e.target.value) || 0 })}
+                          onChange={(e) => setFormData(prev => ({ ...prev, pattern_repeat_horizontal: parseFloat(e.target.value) || 0 }))}
                           placeholder="0"
                         />
                       </div>
@@ -899,7 +901,7 @@ export const UnifiedInventoryDialog = ({
                         <Label>Vendor</Label>
                         <Select 
                           value={formData.vendor_id} 
-                          onValueChange={(value) => setFormData({ ...formData, vendor_id: value })}
+                          onValueChange={(value) => setFormData(prev => ({ ...prev, vendor_id: value }))}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select vendor" />
@@ -918,7 +920,7 @@ export const UnifiedInventoryDialog = ({
                         <Label>Storage Location</Label>
                         <Input
                           value={formData.location}
-                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                          onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                           placeholder="e.g., Warehouse A"
                         />
                       </div>
@@ -940,7 +942,7 @@ export const UnifiedInventoryDialog = ({
                           <Input
                             type="number"
                             value={formData.quantity}
-                            onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
+                            onChange={(e) => setFormData(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
                             placeholder="100"
                           />
                         </div>
@@ -950,7 +952,7 @@ export const UnifiedInventoryDialog = ({
                           <Input
                             type="number"
                             value={formData.reorder_point}
-                            onChange={(e) => setFormData({ ...formData, reorder_point: parseInt(e.target.value) || 0 })}
+                            onChange={(e) => setFormData(prev => ({ ...prev, reorder_point: parseInt(e.target.value) || 0 }))}
                             placeholder="5"
                           />
                         </div>
