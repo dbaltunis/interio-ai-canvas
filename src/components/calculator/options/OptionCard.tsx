@@ -1,10 +1,8 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { WindowCoveringOption } from "@/hooks/useWindowCoveringOptions";
 import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
 import { QuantityInput } from "./QuantityInput";
-import { useState } from "react";
 
 interface OptionCardProps {
   option: WindowCoveringOption;
@@ -12,14 +10,48 @@ interface OptionCardProps {
   onToggle: () => void;
   quantity?: number;
   onQuantityChange?: (quantity: number) => void;
+  currency?: string;
 }
+
+const formatPricingDisplay = (price: number, method: string, currency: string): string => {
+  let methodLabel = '';
+  switch (method) {
+    case 'per-meter':
+    case 'per-metre':
+    case 'per-linear-meter':
+      methodLabel = '/m';
+      break;
+    case 'per-sqm':
+    case 'per-square-meter':
+      methodLabel = '/sqm';
+      break;
+    case 'per-drop':
+      methodLabel = '/drop';
+      break;
+    case 'per-panel':
+      methodLabel = '/panel';
+      break;
+    case 'per-width':
+      methodLabel = '/width';
+      break;
+    case 'percentage':
+      methodLabel = '%';
+      break;
+    default:
+      methodLabel = '';
+  }
+  
+  const currencySymbol = currency === 'NZD' ? 'NZ$' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : currency;
+  return `${currencySymbol}${price.toFixed(2)}${methodLabel}`;
+};
 
 export const OptionCard = ({ 
   option, 
   isSelected, 
   onToggle, 
   quantity = 1,
-  onQuantityChange 
+  onQuantityChange,
+  currency = 'NZD'
 }: OptionCardProps) => {
   const price = getOptionPrice(option);
   const pricingMethod = getOptionPricingMethod(option);
@@ -55,7 +87,7 @@ export const OptionCard = ({
             </div>
             <div className="flex gap-2">
               <Badge variant="outline" className="text-xs">
-                £{price} {pricingMethod}
+                {formatPricingDisplay(price, pricingMethod, currency)}
               </Badge>
               {option.is_required && (
                 <Badge variant="destructive" className="text-xs">Required</Badge>

@@ -16,14 +16,48 @@ interface HierarchicalOptionCardProps {
   onToggle: () => void;
   quantity?: number;
   onQuantityChange?: (quantity: number) => void;
+  currency?: string;
 }
+
+const formatPricingDisplay = (price: number, method: string, currency: string): string => {
+  let methodLabel = '';
+  switch (method) {
+    case 'per-meter':
+    case 'per-metre':
+    case 'per-linear-meter':
+      methodLabel = '/m';
+      break;
+    case 'per-sqm':
+    case 'per-square-meter':
+      methodLabel = '/sqm';
+      break;
+    case 'per-drop':
+      methodLabel = '/drop';
+      break;
+    case 'per-panel':
+      methodLabel = '/panel';
+      break;
+    case 'per-width':
+      methodLabel = '/width';
+      break;
+    case 'percentage':
+      methodLabel = '%';
+      break;
+    default:
+      methodLabel = '';
+  }
+  
+  const currencySymbol = currency === 'NZD' ? 'NZ$' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : currency;
+  return `${currencySymbol}${price.toFixed(2)}${methodLabel}`;
+};
 
 export const HierarchicalOptionCard = ({ 
   option, 
   isSelected, 
   onToggle,
   quantity = 1,
-  onQuantityChange 
+  onQuantityChange,
+  currency = 'NZD'
 }: HierarchicalOptionCardProps) => {
   const price = getOptionPrice(option);
   const pricingMethod = getOptionPricingMethod(option);
@@ -57,7 +91,7 @@ export const HierarchicalOptionCard = ({
               )}
             </div>
             <Badge variant="outline" className="text-xs">
-              £{price} {pricingMethod}
+              {formatPricingDisplay(price, pricingMethod, currency)}
             </Badge>
           </div>
         </Label>
