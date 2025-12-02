@@ -50,6 +50,8 @@ export const DynamicCurtainOptions = ({
 }: DynamicCurtainOptionsProps) => {
   const [availableRings, setAvailableRings] = useState<EyeletRing[]>([]);
   const [treatmentOptionSelections, setTreatmentOptionSelections] = useState<Record<string, string>>({});
+  // Track which sub-category is selected for cascading dropdowns
+  const [subCategorySelections, setSubCategorySelections] = useState<Record<string, string>>({});
   
   // Early returns MUST come before hooks to prevent violations
   if (!template) {
@@ -758,64 +760,113 @@ export const DynamicCurtainOptions = ({
               </div>
             </div>
 
-            {/* Sub-options - Nested under selected option (indented) - only show when parent selected */}
+            {/* Sub-options - Cascading: First select category, then select item */}
             {selectedValueId && subOptions && subOptions.length > 0 && (
               <div className="ml-4 space-y-3">
-                {subOptions.map((subOption: any) => {
-                  // Check if sub-option has condition
-                  if (subOption.condition) {
-                    const conditionKey = Object.keys(subOption.condition)[0];
-                    const requiredValue = subOption.condition[conditionKey];
-                    const actualValue = treatmentOptionSelections[`${option.key}_${conditionKey}`];
-                    
-                    // Skip rendering if condition not met
-                    if (actualValue !== requiredValue) {
-                      return null;
-                    }
-                  }
-                  
-                  return (
-                  <div key={subOption.id} className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">{subOption.label}</span>
-                    <div className="w-64">
-                      <Select
-                        value={treatmentOptionSelections[`${option.key}_${subOption.key}`] || ''}
-                        onValueChange={(choiceValue) => {
-                          handleTreatmentOptionChange(`${option.key}_${subOption.key}`, choiceValue);
-                          
-                          if (onOptionPriceChange) {
-                            const choice = subOption.choices?.find((c: any) => c.value === choiceValue);
-                            if (choice) {
-                              const displayLabel = `${option.label} - ${subOption.label}: ${choice.label}`;
-                              const pricingMethod = choice.pricing_method || subOption.pricing_method || 'per-meter';
-                              onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel, pricingMethod);
+                {/* Step 1: Category selector - choose between sub-option types (e.g., Tracks OR Rods) */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Select Type</span>
+                  <div className="w-64">
+                    <Select
+                      value={subCategorySelections[option.key] || ''}
+                      onValueChange={(categoryKey) => {
+                        setSubCategorySelections(prev => ({ ...prev, [option.key]: categoryKey }));
+                        // Clear previous item selection when category changes
+                        const prevCategory = subCategorySelections[option.key];
+                        if (prevCategory && prevCategory !== categoryKey) {
+                          handleTreatmentOptionChange(`${option.key}_${prevCategory}`, '');
+                        }
+                      }}
+                      disabled={readOnly}
+                    >
+                      <SelectTrigger className="bg-background border-input">
+                        <SelectValue placeholder="Select type..." />
+                      </SelectTrigger>
+                      <SelectContent className="z-[9999] bg-popover border-border shadow-lg" position="popper" sideOffset={5} align="end">
+                        {subOptions.map((subOption: any) => {
+                          // Check if sub-option has condition
+                          if (subOption.condition) {
+                            const conditionKey = Object.keys(subOption.condition)[0];
+                            const requiredValue = subOption.condition[conditionKey];
+                            const actualValue = treatmentOptionSelections[`${option.key}_${conditionKey}`];
+                            if (actualValue !== requiredValue) {
+                              return null;
                             }
                           }
-                        }}
-                        disabled={readOnly}
-                      >
-                        <SelectTrigger className="bg-background border-input">
-                          <SelectValue placeholder="Select..." />
-                        </SelectTrigger>
-                        <SelectContent className="z-[9999] bg-popover border-border shadow-lg" position="popper" sideOffset={5} align="end">
-                          {subOption.choices.map((choice: any) => (
-                            <SelectItem key={choice.id} value={choice.value}>
-                              <div className="flex items-center justify-between gap-4 w-full">
-                                <span>{choice.label}</span>
-                                {choice.price > 0 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    +{formatCurrency(choice.price)}
-                                  </Badge>
-                                )}
-                              </div>
+                          return (
+                            <SelectItem key={subOption.id} value={subOption.key}>
+                              {subOption.label}
                             </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
                   </div>
+                </div>
+
+                {/* Step 2: Item selector - shows ONLY when category is selected */}
+                {subCategorySelections[option.key] && (() => {
+                  const selectedSubOption = subOptions.find((so: any) => so.key === subCategorySelections[option.key]);
+                  if (!selectedSubOption || !selectedSubOption.choices) return null;
+                  
+                  return (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">{selectedSubOption.label}</span>
+                      <div className="w-64">
+                        <Select
+                          value={treatmentOptionSelections[`${option.key}_${selectedSubOption.key}`] || ''}
+                          onValueChange={(choiceValue) => {
+                            handleTreatmentOptionChange(`${option.key}_${selectedSubOption.key}`, choiceValue);
+                            
+                            const choice = selectedSubOption.choices?.find((c: any) => c.value === choiceValue);
+                            if (choice) {
+                              const displayLabel = `${option.label} - ${selectedSubOption.label}: ${choice.label}`;
+                              const pricingMethod = choice.pricing_method || selectedSubOption.pricing_method || 'per-unit';
+                              const price = choice.price || 0;
+                              
+                              // Update option price
+                              if (onOptionPriceChange) {
+                                onOptionPriceChange(`${option.key}_${selectedSubOption.key}`, price, displayLabel, pricingMethod);
+                              }
+                              
+                              // CRITICAL: Also update selectedOptions for Cost Summary display
+                              if (onSelectedOptionsChange) {
+                                const updatedOptions = selectedOptions.filter(opt => 
+                                  !opt.name.startsWith(`${option.label} - ${selectedSubOption.label}`)
+                                );
+                                updatedOptions.push({
+                                  name: displayLabel,
+                                  price: price,
+                                  pricingMethod
+                                });
+                                onSelectedOptionsChange(updatedOptions);
+                              }
+                            }
+                          }}
+                          disabled={readOnly}
+                        >
+                          <SelectTrigger className="bg-background border-input">
+                            <SelectValue placeholder="Select..." />
+                          </SelectTrigger>
+                          <SelectContent className="z-[9999] bg-popover border-border shadow-lg" position="popper" sideOffset={5} align="end">
+                            {selectedSubOption.choices.map((choice: any) => (
+                              <SelectItem key={choice.id} value={choice.value}>
+                                <div className="flex items-center justify-between gap-4 w-full">
+                                  <span>{choice.label}</span>
+                                  {choice.price > 0 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{formatCurrency(choice.price)}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                   );
-                })}
+                })()}
               </div>
             )}
           </div>
