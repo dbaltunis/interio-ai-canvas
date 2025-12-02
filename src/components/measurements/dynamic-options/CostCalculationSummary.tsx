@@ -10,6 +10,7 @@ import { safeParseFloat } from "@/utils/costCalculationErrors";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
+import { getPricingMethodLabel } from "@/utils/pricingMethodLabels";
 
 // Simple SVG icons
 const FabricSwatchIcon = ({ className }: { className?: string }) => (
@@ -613,8 +614,8 @@ export const CostCalculationSummary = ({
               <div className="flex flex-col">
                 <span className="text-card-foreground font-medium">{option.name}</span>
                 {option.pricingMethod && (
-                  <span className="text-xs text-muted-foreground capitalize">
-                    {option.pricingMethod.replace(/-/g, ' ')}
+                  <span className="text-xs text-muted-foreground">
+                    {getPricingMethodLabel(option.pricingMethod)}
                   </span>
                 )}
               </div>
