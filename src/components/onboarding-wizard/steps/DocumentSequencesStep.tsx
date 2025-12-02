@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FileText, Hash } from 'lucide-react';
@@ -17,7 +17,17 @@ export const DocumentSequencesStep = ({ data, updateSection }: StepProps) => {
     updateSection('document_sequences', { ...sequences, [field]: value });
   };
 
+  // Match app's EntityType: 'draft' | 'quote' | 'order' | 'invoice' | 'job'
   const documents = [
+    {
+      id: 'draft',
+      label: 'Drafts',
+      prefixField: 'draft_prefix',
+      startField: 'draft_start',
+      prefixDefault: 'DRF-',
+      startDefault: 1,
+      description: 'e.g., DRF-0001',
+    },
     {
       id: 'quote',
       label: 'Quotes',
@@ -28,6 +38,15 @@ export const DocumentSequencesStep = ({ data, updateSection }: StepProps) => {
       description: 'e.g., QT-0001',
     },
     {
+      id: 'order',
+      label: 'Orders',
+      prefixField: 'order_prefix',
+      startField: 'order_start',
+      prefixDefault: 'ORD-',
+      startDefault: 1,
+      description: 'e.g., ORD-0001',
+    },
+    {
       id: 'invoice',
       label: 'Invoices',
       prefixField: 'invoice_prefix',
@@ -35,15 +54,6 @@ export const DocumentSequencesStep = ({ data, updateSection }: StepProps) => {
       prefixDefault: 'INV-',
       startDefault: 1,
       description: 'e.g., INV-0001',
-    },
-    {
-      id: 'work_order',
-      label: 'Work Orders',
-      prefixField: 'work_order_prefix',
-      startField: 'work_order_start',
-      prefixDefault: 'WO-',
-      startDefault: 1,
-      description: 'e.g., WO-0001',
     },
     {
       id: 'job',
@@ -63,12 +73,9 @@ export const DocumentSequencesStep = ({ data, updateSection }: StepProps) => {
           <FileText className="h-5 w-5 text-primary" />
           Document Number Sequences
         </CardTitle>
-        <CardDescription>
-          Set up prefixes and starting numbers for your documents.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {documents.map((doc) => (
             <div key={doc.id} className="border rounded-lg p-4 space-y-4">
               <div className="flex items-center justify-between">
@@ -92,7 +99,7 @@ export const DocumentSequencesStep = ({ data, updateSection }: StepProps) => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor={doc.startField} className="text-sm">
-                    Starting Number
+                    Start #
                   </Label>
                   <div className="relative">
                     <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -110,10 +117,6 @@ export const DocumentSequencesStep = ({ data, updateSection }: StepProps) => {
               </div>
             </div>
           ))}
-        </div>
-
-        <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
-          <strong>Tip:</strong> If you're migrating from another system, set the starting number to continue from your last document number.
         </div>
       </CardContent>
     </Card>

@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -34,16 +34,12 @@ export const QuotationSettingsStep = ({ data, updateSection }: StepProps) => {
           <FileText className="h-5 w-5 text-primary" />
           Quotation Settings
         </CardTitle>
-        <CardDescription>
-          Configure default settings for your quotes and proposals.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Quote Validity */}
         <div className="space-y-2">
           <Label htmlFor="validity_days" className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            Quote Validity Period
+            Quote Validity
           </Label>
           <div className="flex items-center gap-2 max-w-xs">
             <Input
@@ -56,16 +52,12 @@ export const QuotationSettingsStep = ({ data, updateSection }: StepProps) => {
             />
             <span className="text-sm text-muted-foreground whitespace-nowrap">days</span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Quotes will show an expiry date based on this period
-          </p>
         </div>
 
-        {/* Quote Style */}
         <div className="space-y-4">
           <Label className="flex items-center gap-2">
             <FileCheck className="h-4 w-4 text-muted-foreground" />
-            Quote Display Style
+            Display Style
           </Label>
           <RadioGroup
             value={settings.quote_style || 'detailed'}
@@ -77,7 +69,7 @@ export const QuotationSettingsStep = ({ data, updateSection }: StepProps) => {
               <Label htmlFor="detailed" className="cursor-pointer flex-1">
                 <div className="font-medium">Detailed</div>
                 <div className="text-sm text-muted-foreground">
-                  Show full breakdown with measurements, options, and individual line items
+                  Full breakdown with measurements and line items
                 </div>
               </Label>
             </div>
@@ -86,14 +78,13 @@ export const QuotationSettingsStep = ({ data, updateSection }: StepProps) => {
               <Label htmlFor="summary" className="cursor-pointer flex-1">
                 <div className="font-medium">Summary</div>
                 <div className="text-sm text-muted-foreground">
-                  Show summarized totals per room or window covering type
+                  Summarized totals per room or type
                 </div>
               </Label>
             </div>
           </RadioGroup>
         </div>
 
-        {/* Terms & Conditions */}
         <div className="space-y-2">
           <Label htmlFor="terms">Terms & Conditions</Label>
           <Textarea
@@ -104,13 +95,6 @@ export const QuotationSettingsStep = ({ data, updateSection }: StepProps) => {
             onChange={(e) => handleChange('terms_conditions', e.target.value)}
             className="font-mono text-sm"
           />
-          <p className="text-xs text-muted-foreground">
-            These terms will appear on all quotes and invoices
-          </p>
-        </div>
-
-        <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
-          <strong>Note:</strong> Individual quotes can have custom terms that override these defaults.
         </div>
       </CardContent>
     </Card>

@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Building2, Mail, Phone, MapPin, User } from 'lucide-react';
@@ -24,12 +24,8 @@ export const CompanyInfoStep = ({ data, updateSection }: StepProps) => {
           <Building2 className="h-5 w-5 text-primary" />
           Company Information
         </CardTitle>
-        <CardDescription>
-          Enter your business details. These will appear on quotes and invoices.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Business Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="company_name">
@@ -53,7 +49,6 @@ export const CompanyInfoStep = ({ data, updateSection }: StepProps) => {
           </div>
         </div>
 
-        {/* Address */}
         <div className="space-y-4">
           <h3 className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
             <MapPin className="h-4 w-4" />
@@ -110,7 +105,6 @@ export const CompanyInfoStep = ({ data, updateSection }: StepProps) => {
           </div>
         </div>
 
-        {/* Contact Person */}
         <div className="space-y-4">
           <h3 className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
             <User className="h-4 w-4" />

@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Factory, Ruler, Percent } from 'lucide-react';
@@ -14,7 +14,6 @@ export const ManufacturingStep = ({ data, updateSection }: StepProps) => {
   const settings = data.manufacturing_settings || {};
   const windowCoverings = data.window_coverings || {};
 
-  // Check if curtains or roman blinds are enabled
   const showManufacturing = windowCoverings.curtains || windowCoverings.roman_blinds;
 
   const handleChange = (field: string, value: number) => {
@@ -29,17 +28,11 @@ export const ManufacturingStep = ({ data, updateSection }: StepProps) => {
             <Factory className="h-5 w-5 text-primary" />
             Manufacturing Settings
           </CardTitle>
-          <CardDescription>
-            Manufacturing settings are only applicable for Curtains and Roman Blinds.
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
             <Factory className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No manufacturing settings needed.</p>
-            <p className="text-sm mt-2">
-              Enable Curtains or Roman Blinds in the previous step to configure manufacturing defaults.
-            </p>
+            <p>Enable Curtains or Roman Blinds to configure manufacturing defaults.</p>
           </div>
         </CardContent>
       </Card>
@@ -53,12 +46,8 @@ export const ManufacturingStep = ({ data, updateSection }: StepProps) => {
           <Factory className="h-5 w-5 text-primary" />
           Manufacturing Settings
         </CardTitle>
-        <CardDescription>
-          Set default manufacturing allowances for curtains and roman blinds.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Hem Allowances */}
         <div className="space-y-4">
           <h3 className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
             <Ruler className="h-4 w-4" />
@@ -66,7 +55,7 @@ export const ManufacturingStep = ({ data, updateSection }: StepProps) => {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="header_cm">Header Height</Label>
+              <Label htmlFor="header_cm">Header</Label>
               <div className="relative">
                 <Input
                   id="header_cm"
@@ -98,7 +87,7 @@ export const ManufacturingStep = ({ data, updateSection }: StepProps) => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="side_hems_cm">Side Hems (each)</Label>
+              <Label htmlFor="side_hems_cm">Side Hems</Label>
               <div className="relative">
                 <Input
                   id="side_hems_cm"
@@ -116,7 +105,6 @@ export const ManufacturingStep = ({ data, updateSection }: StepProps) => {
           </div>
         </div>
 
-        {/* Returns & Seams */}
         <div className="space-y-4">
           <h3 className="text-sm font-medium text-muted-foreground">Returns & Seams</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -137,7 +125,7 @@ export const ManufacturingStep = ({ data, updateSection }: StepProps) => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="seams">Seams Allowance</Label>
+              <Label htmlFor="seams">Seams</Label>
               <div className="relative">
                 <Input
                   id="seams"
@@ -155,11 +143,10 @@ export const ManufacturingStep = ({ data, updateSection }: StepProps) => {
           </div>
         </div>
 
-        {/* Waste Percentage */}
         <div className="space-y-4">
           <h3 className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
             <Percent className="h-4 w-4" />
-            Fabric Waste
+            Waste
           </h3>
           <div className="max-w-xs space-y-2">
             <Label htmlFor="waste_percentage">Waste Allowance</Label>
@@ -177,14 +164,7 @@ export const ManufacturingStep = ({ data, updateSection }: StepProps) => {
                 %
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Additional fabric allowance for cutting waste
-            </p>
           </div>
-        </div>
-
-        <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
-          <strong>Note:</strong> These are default values. They can be overridden per template or per quote.
         </div>
       </CardContent>
     </Card>
