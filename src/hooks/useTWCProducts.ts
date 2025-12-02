@@ -149,3 +149,37 @@ export const useImportTWCProducts = () => {
     },
   });
 };
+
+export const useResyncTWCProducts = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("twc-resync-products");
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Re-sync failed");
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["treatment-options"] });
+      queryClient.invalidateQueries({ queryKey: ["twc-imported-products"] });
+      queryClient.invalidateQueries({ queryKey: ["option-values"] });
+      
+      const summary = data.options_created > 0 || data.values_created > 0
+        ? `Created ${data.options_created} options with ${data.values_created} values`
+        : `All ${data.options_skipped} options already exist`;
+
+      toast.success('TWC Options Synced', {
+        description: summary,
+        duration: 5000,
+      });
+    },
+    onError: (error) => {
+      toast.error('Re-sync Failed', {
+        description: error.message || 'Could not re-sync TWC options',
+        duration: 5000,
+      });
+    },
+  });
+};
