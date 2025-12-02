@@ -4748,33 +4748,75 @@ export type Database = {
           completed_steps: string[] | null
           created_at: string | null
           current_step: number | null
+          document_sequences: Json | null
+          email_templates: Json | null
           has_completed_welcome: boolean | null
           has_seen_product_tour: boolean | null
+          integrations_config: Json | null
+          inventory_data: Json | null
+          manufacturing_settings: Json | null
           preferences: Json | null
+          pricing_grids: Json | null
+          quotation_settings: Json | null
+          regional_settings: Json | null
+          stock_management: Json | null
           updated_at: string | null
+          uploaded_files: Json | null
           user_id: string
+          users_permissions: Json | null
+          window_coverings: Json | null
+          wizard_completed: boolean | null
+          wizard_completed_at: string | null
         }
         Insert: {
           company_info?: Json | null
           completed_steps?: string[] | null
           created_at?: string | null
           current_step?: number | null
+          document_sequences?: Json | null
+          email_templates?: Json | null
           has_completed_welcome?: boolean | null
           has_seen_product_tour?: boolean | null
+          integrations_config?: Json | null
+          inventory_data?: Json | null
+          manufacturing_settings?: Json | null
           preferences?: Json | null
+          pricing_grids?: Json | null
+          quotation_settings?: Json | null
+          regional_settings?: Json | null
+          stock_management?: Json | null
           updated_at?: string | null
+          uploaded_files?: Json | null
           user_id: string
+          users_permissions?: Json | null
+          window_coverings?: Json | null
+          wizard_completed?: boolean | null
+          wizard_completed_at?: string | null
         }
         Update: {
           company_info?: Json | null
           completed_steps?: string[] | null
           created_at?: string | null
           current_step?: number | null
+          document_sequences?: Json | null
+          email_templates?: Json | null
           has_completed_welcome?: boolean | null
           has_seen_product_tour?: boolean | null
+          integrations_config?: Json | null
+          inventory_data?: Json | null
+          manufacturing_settings?: Json | null
           preferences?: Json | null
+          pricing_grids?: Json | null
+          quotation_settings?: Json | null
+          regional_settings?: Json | null
+          stock_management?: Json | null
           updated_at?: string | null
+          uploaded_files?: Json | null
           user_id?: string
+          users_permissions?: Json | null
+          window_coverings?: Json | null
+          wizard_completed?: boolean | null
+          wizard_completed_at?: string | null
         }
         Relationships: []
       }
