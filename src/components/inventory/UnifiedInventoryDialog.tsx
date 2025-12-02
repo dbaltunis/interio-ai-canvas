@@ -399,6 +399,31 @@ export const UnifiedInventoryDialog = ({
         console.log('📤 Calling update mutation...');
         const result = await updateMutation.mutateAsync({ id: item.id, ...itemData });
         console.log('✅ Update mutation result:', result);
+        
+        // Update form state with DB result to prevent stale data on reopen
+        setFormData(prev => ({
+          ...prev,
+          name: result.name || "",
+          description: result.description || "",
+          sku: result.sku || "",
+          category: result.category || "fabric",
+          subcategory: result.subcategory || "",
+          quantity: result.quantity || 0,
+          unit: result.unit || "meters",
+          cost_price: result.cost_price || 0,
+          selling_price: result.selling_price || 0,
+          reorder_point: result.reorder_point || 0,
+          location: result.location || "",
+          vendor_id: result.vendor_id || "",
+          image_url: result.image_url || "",
+          color: result.color || "",
+          tags: result.tags || [],
+          active: result.active ?? true,
+        }));
+        
+        // Update tracking to prevent useEffect from overwriting
+        initializedItemId.current = result.id;
+        
         toast({ title: "Item updated successfully" });
       }
       onSuccess?.();
