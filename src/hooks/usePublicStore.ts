@@ -5,10 +5,28 @@ export const usePublicStore = (storeSlug: string) => {
   return useQuery({
     queryKey: ['public-store', storeSlug],
     queryFn: async () => {
+      // SECURITY: Only select safe columns - exclude stripe_account_id, paypal_account_id, google_analytics_id
       const { data, error } = await supabase
         .from('online_stores')
         .select(`
-          *,
+          id,
+          user_id,
+          store_name,
+          store_slug,
+          logo_url,
+          primary_color,
+          secondary_color,
+          accent_color,
+          font_family,
+          template_id,
+          custom_domain,
+          domain_verified,
+          is_published,
+          seo_title,
+          seo_description,
+          payment_provider,
+          created_at,
+          updated_at,
           template:store_templates(*)
         `)
         .eq('store_slug', storeSlug)
