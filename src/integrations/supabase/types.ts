@@ -2223,6 +2223,7 @@ export type Database = {
           horizontal_repeat: number | null
           id: string
           image_url: string | null
+          inventory_item_id: string | null
           is_railroadable: boolean | null
           is_store_visible: boolean | null
           lining_types: Json | null
@@ -2297,6 +2298,7 @@ export type Database = {
           horizontal_repeat?: number | null
           id?: string
           image_url?: string | null
+          inventory_item_id?: string | null
           is_railroadable?: boolean | null
           is_store_visible?: boolean | null
           lining_types?: Json | null
@@ -2371,6 +2373,7 @@ export type Database = {
           horizontal_repeat?: number | null
           id?: string
           image_url?: string | null
+          inventory_item_id?: string | null
           is_railroadable?: boolean | null
           is_store_visible?: boolean | null
           lining_types?: Json | null
@@ -2409,7 +2412,15 @@ export type Database = {
           vertical_repeat?: number | null
           waste_percent?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "curtain_templates_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       custom_options: {
         Row: {

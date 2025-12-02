@@ -44,6 +44,9 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
     // Hidden system_type - auto-generated from treatment_category
     system_type: (template as any)?.system_type || template?.treatment_category || "curtains",
     
+    // Inventory item link for TWC products
+    inventory_item_id: (template as any)?.inventory_item_id || prefilledData?.inventoryItemId || null,
+    
     // Heading/Options
     selected_heading_ids: template?.selected_heading_ids || [],
     
@@ -131,6 +134,7 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
         image_url: formData.image_url,
         treatment_category: formData.treatment_category,
         system_type: formData.system_type || formData.treatment_category,
+        inventory_item_id: formData.inventory_item_id || null,
         selected_heading_ids: formData.selected_heading_ids,
         offers_hand_finished: formData.offers_hand_finished,
         pricing_type: formData.pricing_type,
