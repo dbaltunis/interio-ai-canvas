@@ -11,10 +11,11 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { Loader2, AlertCircle } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
-import { getOptionPrice } from "@/utils/optionDataAdapter";
+import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
 import type { EyeletRing } from "@/hooks/useEyeletRings";
 import { validateTreatmentOptions } from "@/utils/treatmentOptionValidation";
 import { ValidationAlert } from "@/components/shared/ValidationAlert";
+import { useEnabledTemplateOptions } from "@/hooks/useEnabledTemplateOptions";
 
 interface DynamicCurtainOptionsProps {
   measurements: Record<string, any>;
@@ -63,6 +64,9 @@ export const DynamicCurtainOptions = ({
   const { units } = useMeasurementUnits();
   const { data: inventory = [], isLoading: headingsLoading } = useEnhancedInventory();
   const { data: treatmentOptions = [], isLoading: treatmentOptionsLoading } = useTreatmentOptions('curtains', 'category');
+  
+  // Get template option settings to filter hidden options
+  const { isOptionEnabled } = useEnabledTemplateOptions(template?.id);
   
   // Initialize treatmentOptionSelections from saved measurements
   useEffect(() => {
@@ -673,15 +677,47 @@ export const DynamicCurtainOptions = ({
         </div>
       )}
 
-      {/* Dynamic Treatment Options from Database */}
+      {/* Dynamic Treatment Options from Database - Filtered by template settings */}
       {treatmentOptions.length > 0 && treatmentOptions.map(option => {
+        // Filter: check visibility AND template-level enabled setting
         if (!option.visible || !option.option_values || option.option_values.length === 0) {
+          return null;
+        }
+        
+        // Check if option is enabled in template settings
+        if (!isOptionEnabled(option.id)) {
           return null;
         }
 
         const selectedValueId = treatmentOptionSelections[option.key] || measurements[`treatment_option_${option.key}`];
         const selectedValue = option.option_values.find(v => v.id === selectedValueId);
         const subOptions = selectedValue?.extra_data?.sub_options;
+        
+        // Format pricing label with method
+        const formatPriceWithMethod = (value: any) => {
+          const price = getOptionPrice(value);
+          const method = getOptionPricingMethod(value);
+          let methodLabel = '';
+          switch (method) {
+            case 'per-meter':
+            case 'per-metre':
+            case 'per-linear-meter':
+              methodLabel = '/m';
+              break;
+            case 'per-sqm':
+              methodLabel = '/sqm';
+              break;
+            case 'per-drop':
+              methodLabel = '/drop';
+              break;
+            case 'per-width':
+              methodLabel = '/width';
+              break;
+            default:
+              methodLabel = '';
+          }
+          return price > 0 ? `${formatCurrency(price)}${methodLabel}` : null;
+        };
 
         return (
           <div key={option.id} className="space-y-3">
@@ -703,14 +739,14 @@ export const DynamicCurtainOptions = ({
                     sideOffset={5}
                   >
                     {option.option_values.map(value => {
-                      const price = getOptionPrice(value);
+                      const priceLabel = formatPriceWithMethod(value);
                       return (
                         <SelectItem key={value.id} value={value.id}>
                           <div className="flex items-center justify-between w-full gap-4">
                             <span>{value.label}</span>
-                            {price > 0 && (
+                            {priceLabel && (
                               <Badge variant="outline" className="text-xs">
-                                {formatCurrency(price)}
+                                {priceLabel}
                               </Badge>
                             )}
                           </div>
@@ -722,8 +758,8 @@ export const DynamicCurtainOptions = ({
               </div>
             </div>
 
-            {/* Sub-options - Nested under selected option (indented) */}
-            {subOptions && subOptions.length > 0 && (
+            {/* Sub-options - Nested under selected option (indented) - only show when parent selected */}
+            {selectedValueId && subOptions && subOptions.length > 0 && (
               <div className="ml-4 space-y-3">
                 {subOptions.map((subOption: any) => {
                   // Check if sub-option has condition
