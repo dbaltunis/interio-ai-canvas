@@ -68,7 +68,11 @@ serve(async (req) => {
       const treatmentCategory = mapCategoryToTreatment(item.category);
       
       for (const q of questions) {
+        // Use the question name as the key
         const key = generateKey(q.name);
+        
+        // Skip questions with no options
+        if (!q.options || q.options.length === 0) continue;
         
         if (!uniqueQuestions.has(key)) {
           uniqueQuestions.set(key, {
@@ -95,7 +99,7 @@ serve(async (req) => {
 
     // Process each unique question
     for (const [key, questionData] of uniqueQuestions) {
-      // Check if treatment_option already exists
+      // Check if treatment_option already exists for this account
       const { data: existingOption } = await supabase
         .from('treatment_options')
         .select('id')
@@ -104,12 +108,12 @@ serve(async (req) => {
         .maybeSingle();
 
       if (existingOption) {
-        console.log(`Option "${key}" already exists, skipping`);
+        console.log(`Option "${key}" already exists for account, skipping`);
         optionsSkipped++;
         continue;
       }
 
-      // Create treatment_option
+      // Create treatment_option with account_id
       const { data: newOption, error: optionError } = await supabase
         .from('treatment_options')
         .insert({
@@ -136,6 +140,10 @@ serve(async (req) => {
       // Create option_values for each answer choice
       for (let i = 0; i < questionData.options.length; i++) {
         const optionValue = questionData.options[i];
+        
+        // Skip empty options
+        if (!optionValue || optionValue.trim() === '') continue;
+        
         const valueKey = generateKey(optionValue);
 
         const { error: valueError } = await supabase
@@ -189,6 +197,8 @@ function generateKey(name: string): string {
     .toLowerCase()
     .replace(/\s+/g, '_')
     .replace(/[^a-z0-9_]/g, '')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '')
     .substring(0, 50);
 }
 
@@ -202,6 +212,9 @@ function mapCategoryToTreatment(category: string): string {
   if (categoryLower.includes('curtain')) return 'curtains';
   if (categoryLower.includes('roman')) return 'roman_blinds';
   if (categoryLower.includes('shutter')) return 'shutters';
+  if (categoryLower.includes('awning')) return 'awnings';
+  if (categoryLower.includes('panel')) return 'panel_glides';
   
+  // Default to blinds for most TWC products
   return 'blinds';
 }
