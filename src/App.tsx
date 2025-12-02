@@ -42,6 +42,7 @@ const Documentation = lazy(() => import("./pages/Documentation"));
 const OnlineStore = lazy(() => import("./pages/OnlineStore"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
 const AdminAccountManagement = lazy(() => import("./pages/AdminAccountManagement"));
+const OnboardingSubmissions = lazy(() => import("./pages/OnboardingSubmissions"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -240,6 +241,15 @@ const App = () => {
                   <SystemOwnerRoute>
                     <ErrorBoundary>
                       <AdminAccountManagement />
+                    </ErrorBoundary>
+                  </SystemOwnerRoute>
+                } />
+
+                {/* Admin Onboarding Submissions */}
+                <Route path="/admin/onboarding-submissions" element={
+                  <SystemOwnerRoute>
+                    <ErrorBoundary>
+                      <OnboardingSubmissions />
                     </ErrorBoundary>
                   </SystemOwnerRoute>
                 } />

@@ -316,13 +316,28 @@ export const useOnboardingWizard = () => {
 
       if (error) throw error;
 
+      // Send notification to admin
+      try {
+        await supabase.functions.invoke('onboarding-complete-notification', {
+          body: {
+            company_name: state.data.company_info?.company_name,
+            contact_email: state.data.company_info?.email,
+            contact_person: state.data.company_info?.contact_person,
+            user_id: user.id,
+          },
+        });
+      } catch (notifyErr) {
+        console.error('Failed to send notification:', notifyErr);
+        // Don't fail the completion if notification fails
+      }
+
       setState(prev => ({ ...prev, wizardCompleted: true }));
-      toast.success('Onboarding completed!');
+      toast.success('Onboarding completed! Our team will be in touch shortly.');
     } catch (err) {
       console.error('Error completing wizard:', err);
       toast.error('Failed to complete onboarding');
     }
-  }, [user?.id]);
+  }, [user?.id, state.data.company_info]);
 
   return {
     ...state,
