@@ -122,7 +122,7 @@ export const WindowTreatmentOptionsManager = () => {
       id: string;
       label: string;
       key: string;
-      choices: Array<{ id: string; label: string; value: string; price: number; inventory_item_id?: string }>;
+      choices: Array<{ id: string; label: string; value: string; price: number; pricing_method?: string; inventory_item_id?: string }>;
     }>
   });
   const [showInventoryDialog, setShowInventoryDialog] = useState(false);
@@ -881,8 +881,8 @@ export const WindowTreatmentOptionsManager = () => {
           value: autoValue,
           // Auto-fill price - user can still change it after selection
           price: autoPrice,
-          // Set pricing method to fixed by default
-          pricing_method: 'fixed',
+          // Preserve existing pricing_method if already set, otherwise default to 'fixed'
+          pricing_method: formData.pricing_method || 'fixed',
         });
         
         if (autoPrice > 0) {
@@ -987,6 +987,211 @@ export const WindowTreatmentOptionsManager = () => {
       title: "Template downloaded",
       description: "Use this CSV template to format your pricing data",
     });
+  };
+
+  // Export full option data as CSV
+  const handleExportOptionsCSV = () => {
+    if (uniqueOptionValues.length === 0) {
+      toast({
+        title: "No options to export",
+        description: "Add some options first before exporting.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const optType = optionTypeCategories.find(opt => opt.type_key === activeOptionType);
+    const headers = ['label', 'code', 'price', 'pricing_method', 'sub_options'];
+    const rows = uniqueOptionValues.map(val => {
+      const price = val.extra_data?.price || 0;
+      const pricingMethod = val.extra_data?.pricing_method || 'fixed';
+      const subOptions = val.extra_data?.sub_options ? JSON.stringify(val.extra_data.sub_options) : '';
+      return [
+        `"${val.label.replace(/"/g, '""')}"`,
+        `"${val.code}"`,
+        price,
+        `"${pricingMethod}"`,
+        `"${subOptions.replace(/"/g, '""')}"`
+      ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${activeTreatment}_${activeOptionType}_options.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Options exported",
+      description: `Exported ${uniqueOptionValues.length} options to CSV`,
+    });
+  };
+
+  // Import full option data from CSV
+  const handleImportOptionsCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const text = e.target?.result as string;
+        const lines = text.split('\n').filter(line => line.trim());
+        
+        if (lines.length < 2) {
+          toast({
+            title: "Import failed",
+            description: "CSV file must have a header row and at least one data row",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Parse header to determine columns
+        const headerRow = lines[0].toLowerCase();
+        const hasLabel = headerRow.includes('label');
+        const hasCode = headerRow.includes('code');
+        const hasPrice = headerRow.includes('price');
+        const hasPricingMethod = headerRow.includes('pricing_method');
+
+        if (!hasLabel && !hasCode) {
+          toast({
+            title: "Invalid CSV format",
+            description: "CSV must have 'label' or 'code' column",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
+        const labelIdx = headers.findIndex(h => h === 'label');
+        const codeIdx = headers.findIndex(h => h === 'code');
+        const priceIdx = headers.findIndex(h => h === 'price');
+        const pricingMethodIdx = headers.findIndex(h => h === 'pricing_method');
+        const subOptionsIdx = headers.findIndex(h => h === 'sub_options');
+
+        // Get or create treatment option for this category
+        let treatmentOption = allTreatmentOptions.find(
+          (opt: any) => opt.treatment_category === activeTreatment && opt.key === activeOptionType
+        );
+
+        if (!treatmentOption) {
+          const optionTypeConfig = optionTypeCategories.find(opt => opt.type_key === activeOptionType);
+          treatmentOption = await createTreatmentOption.mutateAsync({
+            key: activeOptionType,
+            label: optionTypeConfig?.type_label || activeOptionType,
+            input_type: 'select',
+            required: false,
+            visible: true,
+            order_index: 0,
+            treatment_category: activeTreatment,
+          });
+        }
+
+        let importedCount = 0;
+        
+        // Parse data rows (skip header)
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          // Simple CSV parse (handles quoted values)
+          const values: string[] = [];
+          let current = '';
+          let inQuotes = false;
+          
+          for (let j = 0; j < line.length; j++) {
+            const char = line[j];
+            if (char === '"') {
+              if (inQuotes && line[j + 1] === '"') {
+                current += '"';
+                j++;
+              } else {
+                inQuotes = !inQuotes;
+              }
+            } else if (char === ',' && !inQuotes) {
+              values.push(current.trim());
+              current = '';
+            } else {
+              current += char;
+            }
+          }
+          values.push(current.trim());
+
+          const label = labelIdx >= 0 ? values[labelIdx]?.replace(/^"|"$/g, '') : '';
+          const code = codeIdx >= 0 ? values[codeIdx]?.replace(/^"|"$/g, '') : label.toLowerCase().replace(/\s+/g, '_');
+          const price = priceIdx >= 0 ? parseFloat(values[priceIdx]) || 0 : 0;
+          const pricingMethod = pricingMethodIdx >= 0 ? values[pricingMethodIdx]?.replace(/^"|"$/g, '') || 'fixed' : 'fixed';
+          
+          let subOptions = [];
+          if (subOptionsIdx >= 0 && values[subOptionsIdx]) {
+            try {
+              const subOptionsStr = values[subOptionsIdx].replace(/^"|"$/g, '').replace(/""/g, '"');
+              if (subOptionsStr) {
+                subOptions = JSON.parse(subOptionsStr);
+              }
+            } catch {
+              // Invalid JSON, skip sub_options
+            }
+          }
+
+          if (!label && !code) continue;
+
+          // Check if already exists
+          const existingVal = treatmentOption?.option_values?.find(v => v.code === code);
+          if (existingVal) {
+            // Update existing
+            await updateOptionValue.mutateAsync({
+              id: existingVal.id,
+              updates: {
+                label: label || existingVal.label,
+                extra_data: {
+                  price,
+                  pricing_method: pricingMethod,
+                  sub_options: subOptions.length > 0 ? subOptions : existingVal.extra_data?.sub_options
+                }
+              }
+            });
+          } else {
+            // Create new
+            await createOptionValue.mutateAsync({
+              option_id: treatmentOption.id,
+              code,
+              label: label || code,
+              order_index: (treatmentOption?.option_values?.length || 0) + importedCount,
+              extra_data: {
+                price,
+                pricing_method: pricingMethod,
+                sub_options: subOptions
+              }
+            });
+          }
+          importedCount++;
+        }
+
+        queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+        queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
+
+        toast({
+          title: "Import successful",
+          description: `Imported ${importedCount} options`,
+        });
+      } catch (error: any) {
+        console.error('CSV import error:', error);
+        toast({
+          title: "Import failed",
+          description: error.message || "Failed to parse CSV file",
+          variant: "destructive"
+        });
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
   };
 
   const getTreatmentLabel = (category: TreatmentCategoryDbValue) => {
@@ -1240,10 +1445,31 @@ export const WindowTreatmentOptionsManager = () => {
                   <p className="text-sm text-muted-foreground">
                     Add {optType.type_label.toLowerCase()} for {getTreatmentLabel(activeTreatment).toLowerCase()}
                   </p>
-                  <Button onClick={() => handleAddOption(optType.type_key)}>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={handleExportOptionsCSV}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                    </Button>
+                    <label htmlFor="import-options-csv" className="cursor-pointer">
+                      <Button variant="outline" size="sm" asChild>
+                        <span>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Import
+                        </span>
+                      </Button>
+                      <input
+                        id="import-options-csv"
+                        type="file"
+                        accept=".csv"
+                        className="hidden"
+                        onChange={handleImportOptionsCSV}
+                      />
+                    </label>
+                    <Button onClick={() => handleAddOption(optType.type_key)}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Option
                     </Button>
+                  </div>
                 </div>
 
               {/* Create/Edit Form */}
@@ -1435,7 +1661,7 @@ export const WindowTreatmentOptionsManager = () => {
                               
                               return (
                                 <div key={choice.id} className="space-y-1">
-                                  <div className="grid grid-cols-[1fr,1fr,auto,auto] gap-2">
+                                  <div className="grid grid-cols-[1fr,80px,1fr,auto] gap-2">
                                     <Input
                                       placeholder="Label (e.g. Red)"
                                       value={choice.label}
@@ -1446,11 +1672,29 @@ export const WindowTreatmentOptionsManager = () => {
                                         setFormData({ ...formData, sub_options: newSubOptions });
                                       }}
                                     />
+                                    <Select
+                                      value={choice.pricing_method || 'fixed'}
+                                      onValueChange={(val) => {
+                                        const newSubOptions = [...formData.sub_options];
+                                        newSubOptions[subIdx].choices[choiceIdx].pricing_method = val;
+                                        setFormData({ ...formData, sub_options: newSubOptions });
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-9">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="fixed">Fixed</SelectItem>
+                                        <SelectItem value="per-meter">Per m</SelectItem>
+                                        <SelectItem value="per-sqm">Per m²</SelectItem>
+                                        <SelectItem value="per-unit">Per Unit</SelectItem>
+                                      </SelectContent>
+                                    </Select>
                                     <div className="relative">
                                       <Input
                                         type="number"
                                         step="0.01"
-                                        placeholder={linkedInventoryItem ? "From inventory" : "Extra price"}
+                                        placeholder={linkedInventoryItem ? "From inventory" : "Price"}
                                         value={displayPrice}
                                         onChange={(e) => {
                                           if (!linkedInventoryItem) {
@@ -1463,16 +1707,10 @@ export const WindowTreatmentOptionsManager = () => {
                                         className={linkedInventoryItem ? 'bg-muted cursor-not-allowed' : ''}
                                       />
                                       {linkedInventoryItem && (
-                                        <>
-                                          <Badge variant="secondary" className="absolute -top-2 -right-2 text-xs">
-                                            <LinkIcon className="h-3 w-3 mr-1" />
-                                            Inventory
-                                          </Badge>
-                                          <div className="text-xs text-muted-foreground mt-1">
-                                            Price from: {linkedInventoryItem.name}
-                                            {displayPrice > 0 ? ` • $${displayPrice.toFixed(2)}` : ' • No price set in inventory'}
-                                          </div>
-                                        </>
+                                        <Badge variant="secondary" className="absolute -top-2 -right-2 text-xs">
+                                          <LinkIcon className="h-3 w-3 mr-1" />
+                                          Inv
+                                        </Badge>
                                       )}
                                     </div>
                                     <Button
@@ -1508,7 +1746,8 @@ export const WindowTreatmentOptionsManager = () => {
                                     id: crypto.randomUUID(),
                                     label: '',
                                     value: '',
-                                    price: 0
+                                    price: 0,
+                                    pricing_method: 'fixed'
                                   });
                                   setFormData({ ...formData, sub_options: newSubOptions });
                                 }}

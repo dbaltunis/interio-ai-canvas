@@ -7,6 +7,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { OptionValue, TreatmentOption } from "@/hooks/useTreatmentOptions";
 import { InventoryStockBadge } from "./InventoryStockBadge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { getPricingMethodSuffix } from "@/utils/pricingMethodLabels";
 
 interface SortableOptionItemProps {
   value: OptionValue;
@@ -227,12 +228,15 @@ export const SortableOptionItem = ({
             <div key={subOption.id} className="p-2 bg-background rounded border">
               <div className="font-medium text-sm mb-1">{subOption.label}</div>
               <div className="flex flex-wrap gap-1">
-                {subOption.choices?.map((choice: any) => (
-                  <Badge key={choice.id} variant="outline" className="text-xs">
-                    {choice.label}
-                    {choice.price > 0 && ` +$${choice.price.toFixed(2)}`}
-                  </Badge>
-                ))}
+                {subOption.choices?.map((choice: any) => {
+                  const suffix = getPricingMethodSuffix(choice.pricing_method);
+                  return (
+                    <Badge key={choice.id} variant="outline" className="text-xs">
+                      {choice.label}
+                      {choice.price > 0 && ` $${choice.price.toFixed(2)}${suffix}`}
+                    </Badge>
+                  );
+                })}
               </div>
             </div>
           ))}
