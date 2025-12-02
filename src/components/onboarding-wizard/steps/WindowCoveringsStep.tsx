@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,22 +12,25 @@ interface StepProps {
 }
 
 const WINDOW_COVERING_TYPES = [
-  { id: 'curtains', label: 'Curtains', icon: '🪟', hasPricingMethod: true },
-  { id: 'roman_blinds', label: 'Roman Blinds', icon: '📐', hasPricingMethod: true },
-  { id: 'roller_blinds', label: 'Roller Blinds', icon: '🔲', hasPricingMethod: true },
-  { id: 'venetian_blinds', label: 'Venetian Blinds', icon: '📊', hasPricingMethod: true },
-  { id: 'cellular_blinds', label: 'Cellular / Honeycomb', icon: '🐝', hasPricingMethod: true },
-  { id: 'vertical_blinds', label: 'Vertical Blinds', icon: '📏', hasPricingMethod: true },
-  { id: 'shutters', label: 'Shutters', icon: '🚪', hasPricingMethod: true },
-  { id: 'awnings', label: 'Awnings', icon: '⛱️', hasPricingMethod: true },
+  { id: 'curtains', label: 'Curtains', icon: '🪟', pricingOptions: ['per_linear_meter', 'per_width', 'per_drop', 'flat'] },
+  { id: 'roman_blinds', label: 'Roman Blinds', icon: '📐', pricingOptions: ['per_linear_meter', 'per_width', 'per_drop', 'flat'] },
+  { id: 'roller_blinds', label: 'Roller Blinds', icon: '🔲', pricingOptions: ['grid', 'flat'] },
+  { id: 'venetian_blinds', label: 'Venetian Blinds', icon: '📊', pricingOptions: ['grid', 'flat'] },
+  { id: 'cellular_blinds', label: 'Cellular / Honeycomb', icon: '🐝', pricingOptions: ['grid', 'flat'] },
+  { id: 'vertical_blinds', label: 'Vertical Blinds', icon: '📏', pricingOptions: ['grid', 'flat'] },
+  { id: 'shutters', label: 'Shutters', icon: '🚪', pricingOptions: ['grid', 'flat'] },
+  { id: 'awning', label: 'Awnings', icon: '⛱️', pricingOptions: ['grid', 'flat'] },
+  { id: 'panel_glide', label: 'Panel Glide', icon: '🎚️', pricingOptions: ['grid', 'flat'] },
+  { id: 'wallpaper', label: 'Wallpaper', icon: '🎨', pricingOptions: ['per_linear_meter', 'flat'] },
 ];
 
-const PRICING_METHODS = [
-  { value: 'grid', label: 'Pricing Grid' },
-  { value: 'per_meter', label: 'Per Linear Meter' },
-  { value: 'per_sqm', label: 'Per Square Meter' },
-  { value: 'fixed', label: 'Fixed Price' },
-];
+const PRICING_METHOD_LABELS: Record<string, string> = {
+  grid: 'Pricing Grid',
+  flat: 'Flat Price',
+  per_linear_meter: 'Per Linear Meter',
+  per_width: 'Per Width',
+  per_drop: 'Per Drop',
+};
 
 export const WindowCoveringsStep = ({ data, updateSection }: StepProps) => {
   const windowCoverings = data.window_coverings || {};
@@ -51,14 +54,12 @@ export const WindowCoveringsStep = ({ data, updateSection }: StepProps) => {
           <Blinds className="h-5 w-5 text-primary" />
           Window Covering Types
         </CardTitle>
-        <CardDescription>
-          Select the window treatments you offer and their pricing methods.
-        </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {WINDOW_COVERING_TYPES.map((type) => {
             const isEnabled = windowCoverings[type.id as keyof typeof windowCoverings] || false;
+            const defaultPricing = type.pricingOptions[0];
             
             return (
               <div
@@ -67,51 +68,38 @@ export const WindowCoveringsStep = ({ data, updateSection }: StepProps) => {
                   isEnabled ? 'border-primary bg-primary/5' : 'border-border'
                 }`}
               >
-                <div className="flex items-start gap-4">
+                <div className="flex items-center gap-4">
                   <Checkbox
                     id={type.id}
                     checked={isEnabled as boolean}
                     onCheckedChange={(checked) => handleToggle(type.id, checked as boolean)}
                   />
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{type.icon}</span>
-                      <Label htmlFor={type.id} className="font-medium cursor-pointer">
-                        {type.label}
-                      </Label>
-                    </div>
-                    
-                    {isEnabled && type.hasPricingMethod && (
-                      <div className="flex items-center gap-3 pt-2">
-                        <Label className="text-sm text-muted-foreground whitespace-nowrap">
-                          Pricing Method:
-                        </Label>
-                        <Select
-                          value={pricingMethods[type.id] || 'grid'}
-                          onValueChange={(value) => handlePricingMethodChange(type.id, value)}
-                        >
-                          <SelectTrigger className="w-48">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {PRICING_METHODS.map((method) => (
-                              <SelectItem key={method.value} value={method.value}>
-                                {method.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                  </div>
+                  <span className="text-xl">{type.icon}</span>
+                  <Label htmlFor={type.id} className="font-medium cursor-pointer flex-1">
+                    {type.label}
+                  </Label>
+                  
+                  {isEnabled && (
+                    <Select
+                      value={pricingMethods[type.id] || defaultPricing}
+                      onValueChange={(value) => handlePricingMethodChange(type.id, value)}
+                    >
+                      <SelectTrigger className="w-44">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {type.pricingOptions.map((method) => (
+                          <SelectItem key={method} value={method}>
+                            {PRICING_METHOD_LABELS[method]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
             );
           })}
-        </div>
-
-        <div className="mt-6 bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
-          <strong>Tip:</strong> You can enable/disable window covering types later in Settings → Templates.
         </div>
       </CardContent>
     </Card>

@@ -25,14 +25,22 @@ export interface OnboardingData {
     timezone?: string;
   };
   document_sequences: {
+    draft_prefix?: string;
+    draft_start?: number;
     quote_prefix?: string;
     quote_start?: number;
+    order_prefix?: string;
+    order_start?: number;
     invoice_prefix?: string;
     invoice_start?: number;
-    work_order_prefix?: string;
-    work_order_start?: number;
     job_prefix?: string;
     job_start?: number;
+  };
+  status_automations: {
+    statuses?: Array<{ id: string; name: string; color: string; isDefault?: boolean }>;
+    automations?: Record<string, string[]>;
+    deduction_status?: string;
+    reversal_status?: string;
   };
   inventory_data: {
     fabrics_csv?: string;
@@ -110,6 +118,7 @@ const STEPS = [
   'company_info',
   'regional_settings',
   'document_sequences',
+  'status_automations',
   'inventory_data',
   'pricing_grids',
   'window_coverings',
@@ -125,7 +134,8 @@ const STEPS = [
 const defaultData: OnboardingData = {
   company_info: {},
   regional_settings: { measurement_units: 'metric', currency: 'USD', date_format: 'DD/MM/YYYY' },
-  document_sequences: { quote_prefix: 'QT-', invoice_prefix: 'INV-', work_order_prefix: 'WO-', job_prefix: 'JOB-' },
+  document_sequences: { draft_prefix: 'DRF-', quote_prefix: 'QT-', order_prefix: 'ORD-', invoice_prefix: 'INV-', job_prefix: 'JOB-' },
+  status_automations: { statuses: [], automations: {}, deduction_status: 'in_progress', reversal_status: 'cancelled' },
   inventory_data: {},
   pricing_grids: { grids: [] },
   window_coverings: {},
@@ -169,19 +179,21 @@ export const useOnboardingWizard = () => {
         }
 
         if (data) {
+          const dbData = data as any;
           const loadedData: OnboardingData = {
-            company_info: (data.company_info as OnboardingData['company_info']) || defaultData.company_info,
-            regional_settings: (data.regional_settings as OnboardingData['regional_settings']) || defaultData.regional_settings,
-            document_sequences: (data.document_sequences as OnboardingData['document_sequences']) || defaultData.document_sequences,
-            inventory_data: (data.inventory_data as OnboardingData['inventory_data']) || defaultData.inventory_data,
-            pricing_grids: (data.pricing_grids as OnboardingData['pricing_grids']) || defaultData.pricing_grids,
-            window_coverings: (data.window_coverings as OnboardingData['window_coverings']) || defaultData.window_coverings,
-            manufacturing_settings: (data.manufacturing_settings as OnboardingData['manufacturing_settings']) || defaultData.manufacturing_settings,
-            stock_management: (data.stock_management as OnboardingData['stock_management']) || defaultData.stock_management,
-            email_templates: (data.email_templates as OnboardingData['email_templates']) || defaultData.email_templates,
-            quotation_settings: (data.quotation_settings as OnboardingData['quotation_settings']) || defaultData.quotation_settings,
-            integrations_config: (data.integrations_config as OnboardingData['integrations_config']) || defaultData.integrations_config,
-            users_permissions: (data.users_permissions as OnboardingData['users_permissions']) || defaultData.users_permissions,
+            company_info: (dbData.company_info as OnboardingData['company_info']) || defaultData.company_info,
+            regional_settings: (dbData.regional_settings as OnboardingData['regional_settings']) || defaultData.regional_settings,
+            document_sequences: (dbData.document_sequences as OnboardingData['document_sequences']) || defaultData.document_sequences,
+            status_automations: (dbData.status_automations as OnboardingData['status_automations']) || defaultData.status_automations,
+            inventory_data: (dbData.inventory_data as OnboardingData['inventory_data']) || defaultData.inventory_data,
+            pricing_grids: (dbData.pricing_grids as OnboardingData['pricing_grids']) || defaultData.pricing_grids,
+            window_coverings: (dbData.window_coverings as OnboardingData['window_coverings']) || defaultData.window_coverings,
+            manufacturing_settings: (dbData.manufacturing_settings as OnboardingData['manufacturing_settings']) || defaultData.manufacturing_settings,
+            stock_management: (dbData.stock_management as OnboardingData['stock_management']) || defaultData.stock_management,
+            email_templates: (dbData.email_templates as OnboardingData['email_templates']) || defaultData.email_templates,
+            quotation_settings: (dbData.quotation_settings as OnboardingData['quotation_settings']) || defaultData.quotation_settings,
+            integrations_config: (dbData.integrations_config as OnboardingData['integrations_config']) || defaultData.integrations_config,
+            users_permissions: (dbData.users_permissions as OnboardingData['users_permissions']) || defaultData.users_permissions,
           };
 
           setState(prev => ({

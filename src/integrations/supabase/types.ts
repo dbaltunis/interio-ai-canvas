@@ -4759,6 +4759,7 @@ export type Database = {
           pricing_grids: Json | null
           quotation_settings: Json | null
           regional_settings: Json | null
+          status_automations: Json | null
           stock_management: Json | null
           updated_at: string | null
           uploaded_files: Json | null
@@ -4784,6 +4785,7 @@ export type Database = {
           pricing_grids?: Json | null
           quotation_settings?: Json | null
           regional_settings?: Json | null
+          status_automations?: Json | null
           stock_management?: Json | null
           updated_at?: string | null
           uploaded_files?: Json | null
@@ -4809,6 +4811,7 @@ export type Database = {
           pricing_grids?: Json | null
           quotation_settings?: Json | null
           regional_settings?: Json | null
+          status_automations?: Json | null
           stock_management?: Json | null
           updated_at?: string | null
           uploaded_files?: Json | null
