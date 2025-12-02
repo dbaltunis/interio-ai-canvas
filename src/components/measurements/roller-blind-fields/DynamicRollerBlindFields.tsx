@@ -19,7 +19,8 @@ interface DynamicRollerBlindFieldsProps {
   treatmentCategory?: string;
   readOnly?: boolean;
   onOptionPriceChange?: (optionKey: string, price: number, label: string, pricingMethod?: string, pricingGridData?: any) => void;
-  selectedOptions?: Array<{ name: string; price: number }>;
+  selectedOptions?: Array<{ name: string; price: number; pricingMethod?: string }>;
+  onSelectedOptionsChange?: (options: Array<{ name: string; price: number; pricingMethod?: string }>) => void;
 }
 
 export const DynamicRollerBlindFields = ({ 
@@ -29,8 +30,11 @@ export const DynamicRollerBlindFields = ({
   treatmentCategory,
   readOnly = false,
   onOptionPriceChange,
-  selectedOptions = []
+  selectedOptions = [],
+  onSelectedOptionsChange
 }: DynamicRollerBlindFieldsProps) => {
+  // Track which sub-category is selected for cascading dropdowns
+  const [subCategorySelections, setSubCategorySelections] = useState<Record<string, string>>({});
 
   // Query by treatment category to get all available options
   const { data: allOptions = [], isLoading } = useTreatmentOptions(
@@ -463,106 +467,95 @@ export const DynamicRollerBlindFields = ({
                 console.log('✅✅✅ RENDERING SUB-OPTIONS:', subOptions);
                 
                 return (
-                  <div className="ml-4 mt-2 space-y-2 pl-3 border-l-2 border-muted">
-                    {subOptions.map((subOption: any) => {
-                      // Auto-select sub-option if only one choice or no current value
-                      const subOptionKey = `${option.key}_${subOption.key}`;
-                      const currentSubValue = measurements[subOptionKey];
-                      const shouldAutoSelectSub = !currentSubValue || (subOption.choices && subOption.choices.length === 1);
-                      
-                      if (shouldAutoSelectSub && subOption.choices && subOption.choices.length > 0) {
-                        const firstChoice = subOption.choices[0];
-                        
-                        // Only auto-select if not already set
-                        if (!currentSubValue) {
-                          console.log(`  🎯 Auto-selecting sub-option ${subOptionKey} = ${firstChoice.value} (only one: ${subOption.choices.length === 1})`);
-                          
-                          // Use setTimeout to avoid state updates during render
-                          setTimeout(() => {
-                            onChange(subOptionKey, firstChoice.value);
-                            
-                            if (onOptionPriceChange && firstChoice) {
-                              const displayLabel = `${option.label} - ${subOption.label}: ${firstChoice.label}`;
-                              // Sub-options use their own pricing (fixed) and do NOT inherit parent's pricing method/grid
-                              onOptionPriceChange(subOptionKey, firstChoice.price || 0, displayLabel, 'fixed', undefined);
-                            }
-                          }, 0);
-                        }
-                      }
+                  <div className="ml-4 mt-2 space-y-3 pl-3 border-l-2 border-muted">
+                    {/* Step 1: Category selector - choose between sub-option types */}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium text-foreground">Select Type</Label>
+                      <Select
+                        value={subCategorySelections[option.key] || ''}
+                        onValueChange={(categoryKey) => {
+                          setSubCategorySelections(prev => ({ ...prev, [option.key]: categoryKey }));
+                          // Clear previous item selection when category changes
+                          const prevCategory = subCategorySelections[option.key];
+                          if (prevCategory && prevCategory !== categoryKey) {
+                            onChange(`${option.key}_${prevCategory}`, '');
+                          }
+                        }}
+                        disabled={readOnly}
+                      >
+                        <SelectTrigger className="bg-background border-input">
+                          <SelectValue placeholder="Select type..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border-border z-50">
+                          {subOptions.map((subOption: any) => (
+                            <SelectItem key={subOption.id} value={subOption.key}>
+                              {subOption.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Step 2: Item selector - shows ONLY when category is selected */}
+                    {subCategorySelections[option.key] && (() => {
+                      const selectedSubOption = subOptions.find((so: any) => so.key === subCategorySelections[option.key]);
+                      if (!selectedSubOption || !selectedSubOption.choices) return null;
                       
                       return (
-                      <div key={subOption.id} className="space-y-1.5">
-                        <Label className="text-sm font-medium text-foreground">
-                          {subOption.label}
-                        </Label>
-                        <Select
-                          value={measurements[`${option.key}_${subOption.key}`] || ''}
-                          onValueChange={(choiceValue) => {
-                            console.log('🎨🎨🎨 SUB-OPTION SELECTED:', {
-                              optionKey: option.key,
-                              subOptionKey: subOption.key,
-                              choiceValue,
-                              hasOnOptionPriceChange: !!onOptionPriceChange
-                            });
-                            
-                            onChange(`${option.key}_${subOption.key}`, choiceValue);
-                            
-                            // Also track pricing if available
-                            if (onOptionPriceChange) {
-                              const choice = subOption.choices?.find((c: any) => c.value === choiceValue);
-                              console.log('🎨 Found choice:', choice);
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium text-foreground">{selectedSubOption.label}</Label>
+                          <Select
+                            value={measurements[`${option.key}_${selectedSubOption.key}`] || ''}
+                            onValueChange={(choiceValue) => {
+                              onChange(`${option.key}_${selectedSubOption.key}`, choiceValue);
                               
+                              const choice = selectedSubOption.choices?.find((c: any) => c.value === choiceValue);
                               if (choice) {
-                                // Use a clear label showing parent option + sub-option
-                                const displayLabel = `${option.label} - ${subOption.label}: ${choice.label}`;
-                                // Sub-options use their own pricing (fixed) and do NOT inherit parent's pricing method/grid
+                                const displayLabel = `${option.label} - ${selectedSubOption.label}: ${choice.label}`;
+                                const price = choice.price || 0;
                                 
-                                console.log('🎨 Calling onOptionPriceChange:', {
-                                  key: `${option.key}_${subOption.key}`,
-                                  price: choice.price || 0,
-                                  displayLabel,
-                                  pricingMethod: 'fixed',
-                                  hasPricingGridData: false
-                                });
+                                // Update option price
+                                if (onOptionPriceChange) {
+                                  onOptionPriceChange(`${option.key}_${selectedSubOption.key}`, price, displayLabel, 'fixed', undefined);
+                                }
                                 
-                                onOptionPriceChange(`${option.key}_${subOption.key}`, choice.price || 0, displayLabel, 'fixed', undefined);
-                              } else {
-                                console.log('❌ No choice found for value:', choiceValue);
+                                // CRITICAL: Also update selectedOptions for Cost Summary display
+                                if (onSelectedOptionsChange) {
+                                  const updatedOptions = selectedOptions.filter(opt => 
+                                    !opt.name.startsWith(`${option.label} - ${selectedSubOption.label}`)
+                                  );
+                                  updatedOptions.push({
+                                    name: displayLabel,
+                                    price: price,
+                                    pricingMethod: 'fixed'
+                                  });
+                                  onSelectedOptionsChange(updatedOptions);
+                                }
                               }
-                            } else {
-                              console.log('❌ onOptionPriceChange is not defined');
-                            }
-                          }}
-                          disabled={readOnly}
-                        >
-                          <SelectTrigger className="bg-background border-input">
-                            <SelectValue placeholder={`Select ${subOption.label.toLowerCase()}`} />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover border-border z-50">
-                            {subOption.choices?.map((choice: any) => {
-                              // Sub-options always use fixed pricing
-                              const pricingMethod = 'fixed';
-                              
-                              return (
+                            }}
+                            disabled={readOnly}
+                          >
+                            <SelectTrigger className="bg-background border-input">
+                              <SelectValue placeholder={`Select ${selectedSubOption.label.toLowerCase()}`} />
+                            </SelectTrigger>
+                            <SelectContent className="bg-popover border-border z-50">
+                              {selectedSubOption.choices?.map((choice: any) => (
                                 <SelectItem key={choice.id} value={choice.value}>
                                   <div className="flex items-center justify-between gap-2 w-full">
                                     <span className="flex-1">{choice.label}</span>
-                                    <div className="flex items-center gap-2 flex-shrink-0">
-                                      {choice.price > 0 && (
-                                        <Badge variant="outline" className="text-xs">
-                                          +${choice.price.toFixed(2)}
-                                        </Badge>
-                                      )}
-                                    </div>
+                                    {choice.price > 0 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        +${choice.price.toFixed(2)}
+                                      </Badge>
+                                    )}
                                   </div>
                                 </SelectItem>
-                              );
-                            })}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    );
-                    })}
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })()}
