@@ -5,6 +5,7 @@ import { WizardNavigation } from '@/components/onboarding-wizard/WizardNavigatio
 import { CompanyInfoStep } from '@/components/onboarding-wizard/steps/CompanyInfoStep';
 import { RegionalSettingsStep } from '@/components/onboarding-wizard/steps/RegionalSettingsStep';
 import { DocumentSequencesStep } from '@/components/onboarding-wizard/steps/DocumentSequencesStep';
+import { StatusAutomationsStep } from '@/components/onboarding-wizard/steps/StatusAutomationsStep';
 import { InventoryDataStep } from '@/components/onboarding-wizard/steps/InventoryDataStep';
 import { PricingGridsStep } from '@/components/onboarding-wizard/steps/PricingGridsStep';
 import { WindowCoveringsStep } from '@/components/onboarding-wizard/steps/WindowCoveringsStep';
@@ -47,6 +48,8 @@ const OnboardingWizard = () => {
         return <RegionalSettingsStep {...stepProps} />;
       case 'document_sequences':
         return <DocumentSequencesStep {...stepProps} />;
+      case 'status_automations':
+        return <StatusAutomationsStep {...stepProps} />;
       case 'inventory_data':
         return <InventoryDataStep {...stepProps} />;
       case 'pricing_grids':
