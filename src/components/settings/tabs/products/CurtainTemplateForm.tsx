@@ -16,22 +16,30 @@ import { SimplifiedTemplateFormManufacturing } from "./SimplifiedTemplateFormMan
 import { HeadingStyleSelector } from "./HeadingStyleSelector";
 import { TemplateOptionsManager } from "./TemplateOptionsManager";
 
+interface PrefilledData {
+  name: string;
+  category: string;
+  description: string;
+  inventoryItemId: string;
+}
+
 interface CurtainTemplateFormProps {
   template?: CurtainTemplate;
   onClose: () => void;
+  prefilledData?: PrefilledData | null;
 }
 
-export const CurtainTemplateForm = ({ template, onClose }: CurtainTemplateFormProps) => {
+export const CurtainTemplateForm = ({ template, onClose, prefilledData }: CurtainTemplateFormProps) => {
   const { toast } = useToast();
   const createTemplate = useCreateCurtainTemplate();
   const updateTemplate = useUpdateCurtainTemplate();
   const [isSaving, setIsSaving] = useState(false);
   
   const [formData, setFormData] = useState({
-    name: template?.name || "",
-    description: template?.description || "",
+    name: template?.name || prefilledData?.name || "",
+    description: template?.description || prefilledData?.description || "",
     image_url: (template as any)?.image_url || "",
-    treatment_category: template?.treatment_category || "curtains",
+    treatment_category: template?.treatment_category || prefilledData?.category || "curtains",
     
     // Hidden system_type - auto-generated from treatment_category
     system_type: (template as any)?.system_type || template?.treatment_category || "curtains",

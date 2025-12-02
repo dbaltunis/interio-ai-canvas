@@ -20,14 +20,51 @@ import { SecurityPrivacyTab } from "./tabs/SecurityPrivacyTab";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useLocation, useNavigate } from "react-router-dom";
+
+interface CreateTemplateData {
+  name: string;
+  category: string;
+  description: string;
+  inventoryItemId: string;
+}
+
+interface LocationState {
+  activeTab?: string;
+  createTemplate?: CreateTemplateData;
+  editTemplateId?: string;
+}
+
 export const SettingsView = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showInteractiveDemo, setShowInteractiveDemo] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const locationState = location.state as LocationState | null;
 
-  // Read initial tab from URL parameters
+  // Read initial tab from URL parameters or location state
   const urlParams = new URLSearchParams(window.location.search);
   const sectionParam = urlParams.get('section');
-  const [activeTab, setActiveTab] = useState(sectionParam || "personal");
+  
+  // Determine initial tab - location state takes precedence
+  const getInitialTab = () => {
+    if (locationState?.createTemplate || locationState?.activeTab === 'templates' || locationState?.editTemplateId) {
+      return "window-coverings";
+    }
+    return sectionParam || "personal";
+  };
+  
+  const [activeTab, setActiveTab] = useState(getInitialTab());
+  const [createTemplateData, setCreateTemplateData] = useState<CreateTemplateData | null>(
+    locationState?.createTemplate || null
+  );
+
+  // Clear location state after reading to prevent re-triggering on refresh
+  useEffect(() => {
+    if (locationState) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, []);
 
   // Permission checks
   const canViewSettings = useHasPermission('view_settings');
@@ -155,7 +192,10 @@ export const SettingsView = () => {
         {canViewWindowTreatments && <TabsContent value="window-coverings" className="animate-fade-in">
             <Card className="hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
-                <WindowCoveringsTab />
+                <WindowCoveringsTab 
+                  createTemplateData={createTemplateData}
+                  onTemplateCreated={() => setCreateTemplateData(null)}
+                />
               </CardContent>
             </Card>
           </TabsContent>}

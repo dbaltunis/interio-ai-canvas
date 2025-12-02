@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { CurtainTemplateForm } from "./CurtainTemplateForm";
@@ -6,25 +6,53 @@ import { CurtainTemplatesList } from "./CurtainTemplatesList";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 
-interface CurtainTemplatesManagerProps {
-  highlightedTemplateId?: string | null;
+interface CreateTemplateData {
+  name: string;
+  category: string;
+  description: string;
+  inventoryItemId: string;
 }
 
-export const CurtainTemplatesManager = ({ highlightedTemplateId }: CurtainTemplatesManagerProps) => {
+interface CurtainTemplatesManagerProps {
+  highlightedTemplateId?: string | null;
+  createTemplateData?: CreateTemplateData | null;
+  onTemplateCreated?: () => void;
+}
+
+export const CurtainTemplatesManager = ({ 
+  highlightedTemplateId,
+  createTemplateData,
+  onTemplateCreated
+}: CurtainTemplatesManagerProps) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<CurtainTemplate | null>(null);
+  const [prefilledData, setPrefilledData] = useState<CreateTemplateData | null>(null);
+
+  // Auto-open form when createTemplateData is provided
+  useEffect(() => {
+    if (createTemplateData) {
+      setEditingTemplate(null);
+      setPrefilledData(createTemplateData);
+      setIsFormOpen(true);
+    }
+  }, [createTemplateData]);
+
   const handleAddTemplate = () => {
     console.log("Add Template button clicked");
     setEditingTemplate(null);
+    setPrefilledData(null);
     setIsFormOpen(true);
   };
   const handleEditTemplate = (template: CurtainTemplate) => {
     setEditingTemplate(template);
+    setPrefilledData(null);
     setIsFormOpen(true);
   };
   const handleCloseForm = () => {
     setIsFormOpen(false);
     setEditingTemplate(null);
+    setPrefilledData(null);
+    onTemplateCreated?.();
   };
   return <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -50,7 +78,11 @@ export const CurtainTemplatesManager = ({ highlightedTemplateId }: CurtainTempla
               {editingTemplate ? "Update the window covering template configuration" : "Create a new template for curtains, blinds, shutters or other window coverings"}
             </SheetDescription>
           </SheetHeader>
-          <CurtainTemplateForm template={editingTemplate} onClose={handleCloseForm} />
+          <CurtainTemplateForm 
+            template={editingTemplate} 
+            onClose={handleCloseForm}
+            prefilledData={prefilledData}
+          />
         </SheetContent>
       </Sheet>
     </div>;
