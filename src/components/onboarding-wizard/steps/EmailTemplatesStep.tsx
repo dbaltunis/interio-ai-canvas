@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -90,14 +90,10 @@ export const EmailTemplatesStep = ({ data, updateSection }: StepProps) => {
           <Mail className="h-5 w-5 text-primary" />
           Email Templates
         </CardTitle>
-        <CardDescription>
-          Customize the emails sent to your clients. Use variables to personalize messages.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Variables Reference */}
-        <div className="p-4 border rounded-lg bg-muted/30">
-          <h4 className="text-sm font-medium mb-2">Available Variables</h4>
+        <div className="p-3 border rounded-lg bg-muted/30">
+          <h4 className="text-sm font-medium mb-2">Variables</h4>
           <div className="flex flex-wrap gap-2">
             {EMAIL_VARIABLES.map((v) => (
               <code
@@ -111,12 +107,11 @@ export const EmailTemplatesStep = ({ data, updateSection }: StepProps) => {
           </div>
         </div>
 
-        {/* Template Tabs */}
         <Tabs defaultValue="quote_sent" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="quote_sent" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              Quote Sent
+              Quote
             </TabsTrigger>
             <TabsTrigger value="invoice" className="flex items-center gap-2">
               <Receipt className="h-4 w-4" />
@@ -131,7 +126,7 @@ export const EmailTemplatesStep = ({ data, updateSection }: StepProps) => {
           {['quote_sent', 'invoice', 'reminder'].map((templateType) => (
             <TabsContent key={templateType} value={templateType} className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label>Subject Line</Label>
+                <Label>Subject</Label>
                 <Input
                   placeholder="Email subject..."
                   value={getTemplateValue(templateType, 'subject')}
@@ -139,7 +134,7 @@ export const EmailTemplatesStep = ({ data, updateSection }: StepProps) => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Email Body</Label>
+                <Label>Body</Label>
                 <Textarea
                   placeholder="Email content..."
                   rows={10}
@@ -151,10 +146,6 @@ export const EmailTemplatesStep = ({ data, updateSection }: StepProps) => {
             </TabsContent>
           ))}
         </Tabs>
-
-        <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
-          <strong>Tip:</strong> You can edit these templates anytime in Settings → Email Templates.
-        </div>
       </CardContent>
     </Card>
   );

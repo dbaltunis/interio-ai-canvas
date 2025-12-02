@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -13,10 +13,10 @@ interface StepProps {
 }
 
 const ROLES = [
-  { value: 'admin', label: 'Admin', description: 'Full access to all features' },
-  { value: 'manager', label: 'Manager', description: 'Can manage jobs, quotes, and team' },
-  { value: 'staff', label: 'Staff', description: 'Basic access to assigned work' },
-  { value: 'installer', label: 'Installer', description: 'Access to work orders and schedules' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'manager', label: 'Manager' },
+  { value: 'staff', label: 'Staff' },
+  { value: 'installer', label: 'Installer' },
 ];
 
 export const UsersPermissionsStep = ({ data, updateSection }: StepProps) => {
@@ -46,37 +46,23 @@ export const UsersPermissionsStep = ({ data, updateSection }: StepProps) => {
           <Users className="h-5 w-5 text-primary" />
           Team Members
         </CardTitle>
-        <CardDescription>
-          Add team members who will use the system. Invitations will be sent when you complete setup.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Role Descriptions */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {ROLES.map((role) => (
-            <div key={role.value} className="p-3 border rounded-lg bg-muted/30">
-              <div className="font-medium text-sm">{role.label}</div>
-              <div className="text-xs text-muted-foreground">{role.description}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Users List */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label className="font-medium">Team Members to Invite</Label>
+            <Label className="font-medium">Team Members</Label>
             <Button variant="outline" size="sm" onClick={addUser}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Member
+              Add
             </Button>
           </div>
 
           {users.length === 0 ? (
             <div className="text-center py-8 border-2 border-dashed rounded-lg">
               <UserPlus className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">No team members added yet</p>
+              <p className="text-sm text-muted-foreground">No team members added</p>
               <Button variant="link" onClick={addUser} className="mt-2">
-                Add your first team member
+                Add team member
               </Button>
             </div>
           ) : (
@@ -84,41 +70,32 @@ export const UsersPermissionsStep = ({ data, updateSection }: StepProps) => {
               {users.map((user: any, index: number) => (
                 <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Name</Label>
-                      <Input
-                        placeholder="John Smith"
-                        value={user.name}
-                        onChange={(e) => updateUser(index, 'name', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Email</Label>
-                      <Input
-                        type="email"
-                        placeholder="john@company.com"
-                        value={user.email}
-                        onChange={(e) => updateUser(index, 'email', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Role</Label>
-                      <Select
-                        value={user.role}
-                        onValueChange={(value) => updateUser(index, 'role', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ROLES.map((role) => (
-                            <SelectItem key={role.value} value={role.value}>
-                              {role.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <Input
+                      placeholder="Name"
+                      value={user.name}
+                      onChange={(e) => updateUser(index, 'name', e.target.value)}
+                    />
+                    <Input
+                      type="email"
+                      placeholder="Email"
+                      value={user.email}
+                      onChange={(e) => updateUser(index, 'email', e.target.value)}
+                    />
+                    <Select
+                      value={user.role}
+                      onValueChange={(value) => updateUser(index, 'role', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLES.map((role) => (
+                          <SelectItem key={role.value} value={role.value}>
+                            {role.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <Button
                     variant="ghost"
@@ -132,11 +109,6 @@ export const UsersPermissionsStep = ({ data, updateSection }: StepProps) => {
               ))}
             </div>
           )}
-        </div>
-
-        <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
-          <strong>Note:</strong> Team members will receive email invitations to join your account.
-          You can add more users later in Settings → Team.
         </div>
       </CardContent>
     </Card>

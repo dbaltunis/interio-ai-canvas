@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -59,12 +59,8 @@ export const RegionalSettingsStep = ({ data, updateSection }: StepProps) => {
           <Globe className="h-5 w-5 text-primary" />
           Regional Settings
         </CardTitle>
-        <CardDescription>
-          Configure measurement units, currency, and date formats for your region.
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
-        {/* Measurement Units */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Ruler className="h-4 w-4 text-muted-foreground" />
@@ -79,20 +75,19 @@ export const RegionalSettingsStep = ({ data, updateSection }: StepProps) => {
               <RadioGroupItem value="metric" id="metric" />
               <Label htmlFor="metric" className="cursor-pointer flex-1">
                 <div className="font-medium">Metric</div>
-                <div className="text-sm text-muted-foreground">Millimeters, centimeters, meters</div>
+                <div className="text-sm text-muted-foreground">mm, cm, m</div>
               </Label>
             </div>
             <div className="flex items-center space-x-3 border rounded-lg p-4 cursor-pointer hover:bg-accent">
               <RadioGroupItem value="imperial" id="imperial" />
               <Label htmlFor="imperial" className="cursor-pointer flex-1">
                 <div className="font-medium">Imperial</div>
-                <div className="text-sm text-muted-foreground">Inches, feet, yards</div>
+                <div className="text-sm text-muted-foreground">in, ft, yd</div>
               </Label>
             </div>
           </RadioGroup>
         </div>
 
-        {/* Currency */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -118,7 +113,6 @@ export const RegionalSettingsStep = ({ data, updateSection }: StepProps) => {
           </Select>
         </div>
 
-        {/* Date Format */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -141,7 +135,6 @@ export const RegionalSettingsStep = ({ data, updateSection }: StepProps) => {
           </Select>
         </div>
 
-        {/* Timezone */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
