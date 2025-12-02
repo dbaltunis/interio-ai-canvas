@@ -11,10 +11,12 @@ export const SimplifiedTemplateFormManufacturing = ({
   formData, 
   handleInputChange 
 }: SimplifiedTemplateFormManufacturingProps) => {
-  const isCurtain = formData.curtain_type === 'curtain';
+  const treatmentCategory = formData.treatment_category || formData.curtain_type;
+  const isCurtain = treatmentCategory === 'curtains' || treatmentCategory === 'curtain';
+  const isRoman = treatmentCategory === 'roman_blinds' || treatmentCategory === 'roman_blind';
   
   // Only show manufacturing for curtains/romans - not for blinds
-  if (!isCurtain && formData.curtain_type !== 'roman_blind') {
+  if (!isCurtain && !isRoman) {
     return null;
   }
   

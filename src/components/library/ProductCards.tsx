@@ -125,6 +125,11 @@ export const ProductCards = ({
               </div>
             )}
             <div className="absolute top-2 right-2 flex gap-2">
+              {fabric.supplier === 'TWC' && (
+                <Badge className="bg-blue-600 text-white">
+                  TWC
+                </Badge>
+              )}
               <Badge className={`${stockStatus.color} text-white`}>
                 {stockStatus.status}
               </Badge>
@@ -223,6 +228,11 @@ export const ProductCards = ({
               </div>
             )}
             <div className="absolute top-2 right-2 flex gap-2">
+              {hardware.supplier === 'TWC' && (
+                <Badge className="bg-blue-600 text-white">
+                  TWC
+                </Badge>
+              )}
               <Badge className={`${stockStatus.color} text-white`}>
                 {stockStatus.status}
               </Badge>

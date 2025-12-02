@@ -17,8 +17,11 @@ export const HeadingStyleSelector = ({
 }: HeadingStyleSelectorProps) => {
   const { data: headingStyles = [] } = useHeadingInventory();
 
-  // Only show for curtains/romans
-  if (curtainType !== 'curtain' && curtainType !== 'roman_blind') {
+  // Only show for curtains/romans - support both singular and plural values
+  const isCurtain = curtainType === 'curtain' || curtainType === 'curtains';
+  const isRoman = curtainType === 'roman_blind' || curtainType === 'roman_blinds';
+  
+  if (!isCurtain && !isRoman) {
     return null;
   }
 

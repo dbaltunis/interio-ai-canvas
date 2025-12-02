@@ -63,6 +63,21 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log('User authenticated:', user.id);
 
+    // Get user's account_id (for team members, use parent_account_id)
+    const { data: userProfile, error: profileError } = await supabaseClient
+      .from('user_profiles')
+      .select('user_id, parent_account_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError) {
+      console.error('Error fetching user profile:', profileError);
+    }
+
+    // Use parent_account_id if exists, otherwise use user_id (account owner)
+    const accountId = userProfile?.parent_account_id || user.id;
+    console.log('Using account_id:', accountId);
+
     const { products } = await req.json() as SyncRequest;
 
     if (!products || products.length === 0) {
@@ -283,16 +298,35 @@ const handler = async (req: Request): Promise<Response> => {
               .replace(/\s+/g, '_')
               .replace(/[^a-z0-9_]/g, '');
 
-            // Create treatment option
+            // Map TWC question type to valid input_type enum
+            const mapInputType = (twcType: string | undefined): string => {
+              switch (twcType?.toLowerCase()) {
+                case 'dropdown':
+                case 'select':
+                  return 'select';
+                case 'checkbox':
+                  return 'checkbox';
+                case 'radio':
+                  return 'radio';
+                case 'text':
+                  return 'text';
+                case 'number':
+                  return 'number';
+                default:
+                  return 'select';
+              }
+            };
+
+            // Create treatment option with correct column names
             const { data: option, error: optionError } = await supabaseClient
               .from('treatment_options')
               .insert({
+                account_id: accountId,
                 treatment_category: template.treatment_category,
                 key: optionKey,
                 label: question.question,
-                description: `TWC Option: ${question.question}`,
-                option_type: question.questionType || 'select',
-                display_order: 0,
+                input_type: mapInputType(question.questionType),
+                order_index: 0,
               })
               .select()
               .single();
@@ -305,11 +339,11 @@ const handler = async (req: Request): Promise<Response> => {
             // Create option values from answers
             if (option && question.answers && question.answers.length > 0) {
               const optionValues = question.answers.map((answer, idx) => ({
+                account_id: accountId,
                 option_id: option.id,
-                value: answer,
+                code: answer.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
                 label: answer,
-                display_order: idx,
-                additional_cost: 0,
+                order_index: idx,
               }));
 
               const { error: valuesError } = await supabaseClient
