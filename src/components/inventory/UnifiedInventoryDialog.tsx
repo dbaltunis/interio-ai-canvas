@@ -346,6 +346,7 @@ export const UnifiedInventoryDialog = ({
   // Form submission
   const handleSubmit = async (e?: React.FormEvent) => {
     console.log('🟡 handleSubmit called');
+    console.log('📋 Current formData at submit time:', JSON.stringify(formData, null, 2));
     e?.preventDefault();
 
     // Validate required fields
