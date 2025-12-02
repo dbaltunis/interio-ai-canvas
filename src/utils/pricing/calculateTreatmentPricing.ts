@@ -23,7 +23,7 @@ export interface TreatmentPricingInput {
   selectedHeading?: string;
   selectedLining?: string;
   unitsCurrency?: string; // e.g., 'GBP'
-  selectedOptions?: Array<{ name: string; price: number; description?: string; image_url?: string }>; // CRITICAL: Add selected options
+  selectedOptions?: Array<{ name: string; price: number; description?: string; image_url?: string; pricing_method?: string; extra_data?: any }>; // CRITICAL: Add selected options with pricing method
   inventoryItems?: any[]; // CRITICAL: Add inventory items to look up heading prices
 }
 
@@ -209,9 +209,63 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
     console.log(`💰 Manufacturing cost (standard): ${manufacturingCost.toFixed(2)}`);
   }
 
-  // Options cost - sum all selected option prices
-  const optionsCost = selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0);
-  console.log(`🎛️ Options cost: ${selectedOptions.length} options = £${optionsCost}`, selectedOptions);
+  // Options cost - apply pricing method for each option
+  let optionsCost = 0;
+  const optionBreakdown: Array<{ name: string; price: number; method: string; calculated: number }> = [];
+  
+  selectedOptions.forEach(opt => {
+    const basePrice = opt.price || 0;
+    const pricingMethod = opt.pricing_method || opt.extra_data?.pricing_method || 'per-unit';
+    let calculatedPrice = basePrice;
+    
+    // Apply pricing method calculation
+    switch (pricingMethod) {
+      case 'per-meter':
+      case 'per-metre':
+      case 'per-linear-meter':
+        // Calculate based on rail width in meters
+        calculatedPrice = basePrice * (widthCm / 100);
+        break;
+      case 'per-sqm':
+      case 'per-square-meter':
+        // Calculate based on square meters
+        calculatedPrice = basePrice * ((widthCm * heightCm) / 10000);
+        break;
+      case 'per-drop':
+        // Calculate based on drop in meters
+        calculatedPrice = basePrice * (heightCm / 100);
+        break;
+      case 'per-panel':
+        // Calculate based on number of panels/curtains
+        calculatedPrice = basePrice * curtainCount;
+        break;
+      case 'per-width':
+        // Calculate based on number of widths
+        calculatedPrice = basePrice * widthsRequired;
+        break;
+      case 'percentage':
+        // Calculate as percentage of fabric cost
+        calculatedPrice = fabricCost * (basePrice / 100);
+        break;
+      case 'fixed':
+      case 'per-unit':
+      case 'per-item':
+      default:
+        // Fixed price, no calculation needed
+        calculatedPrice = basePrice;
+        break;
+    }
+    
+    optionsCost += calculatedPrice;
+    optionBreakdown.push({
+      name: opt.name || 'Option',
+      price: basePrice,
+      method: pricingMethod,
+      calculated: calculatedPrice
+    });
+  });
+  
+  console.log(`🎛️ Options cost: ${selectedOptions.length} options = £${optionsCost.toFixed(2)}`, optionBreakdown);
 
   // Heading cost - calculate upcharge for heading
   let headingCost = 0;
@@ -304,17 +358,53 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
         total_cost: manufacturingCost,
         category: 'manufacturing'
       }] : []),
-      // Individual options with their prices
-      ...selectedOptions.map((opt, idx) => ({
-        id: `option-${idx}`,
-        name: opt.name || 'Option',
-        description: opt.description,
-        quantity: 1,
-        unit_price: opt.price || 0,
-        total_cost: opt.price || 0,
-        category: 'option',
-        image_url: opt.image_url
-      })),
+      // Individual options with calculated prices based on pricing method
+      ...optionBreakdown.map((opt, idx) => {
+        const originalOpt = selectedOptions[idx];
+        const pricingMethod = originalOpt?.pricing_method || originalOpt?.extra_data?.pricing_method || 'per-unit';
+        let quantityDisplay = 1;
+        let unitDisplay = 'unit';
+        
+        // Determine quantity and unit based on pricing method
+        switch (pricingMethod) {
+          case 'per-meter':
+          case 'per-metre':
+          case 'per-linear-meter':
+            quantityDisplay = widthCm / 100;
+            unitDisplay = 'm';
+            break;
+          case 'per-sqm':
+          case 'per-square-meter':
+            quantityDisplay = (widthCm * heightCm) / 10000;
+            unitDisplay = 'sqm';
+            break;
+          case 'per-drop':
+            quantityDisplay = heightCm / 100;
+            unitDisplay = 'm';
+            break;
+          case 'per-panel':
+            quantityDisplay = curtainCount;
+            unitDisplay = 'panel';
+            break;
+          case 'per-width':
+            quantityDisplay = widthsRequired;
+            unitDisplay = 'width';
+            break;
+        }
+        
+        return {
+          id: `option-${idx}`,
+          name: opt.name,
+          description: originalOpt?.description,
+          quantity: quantityDisplay,
+          unit: unitDisplay,
+          unit_price: opt.price,
+          total_cost: opt.calculated,
+          category: 'option',
+          image_url: originalOpt?.image_url,
+          pricing_method: pricingMethod
+        };
+      }),
       // Heading
       ...(headingCost > 0 ? [{
         id: 'heading',

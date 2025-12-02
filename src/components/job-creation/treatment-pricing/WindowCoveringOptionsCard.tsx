@@ -2,10 +2,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { HierarchicalOption } from "@/hooks/useWindowCoveringOptions";
-import { TraditionalOptions } from "./window-covering-options/TraditionalOptions";
+import { CascadingTraditionalOptions } from "./window-covering-options/CascadingTraditionalOptions";
 import { HierarchicalOptions } from "./window-covering-options/HierarchicalOptions";
 import { useHierarchicalSelections } from "./window-covering-options/useHierarchicalSelections";
 import { OptionCardSkeleton } from "@/components/shared/SkeletonLoader";
+import { useCallback } from "react";
 
 interface WindowCoveringOptionsCardProps {
   options: any[];
@@ -30,6 +31,18 @@ export const WindowCoveringOptionsCard = ({
   const handleHierarchicalSelectionWrapper = (categoryId: string, subcategoryId: string, value: string) => {
     handleHierarchicalSelection(categoryId, subcategoryId, value, onOptionToggle);
   };
+
+  // Handle cascading single-selection: deselect previous, select new
+  const handleCascadingSelect = useCallback((optionType: string, newOptionId: string | null, previousOptionId: string | null) => {
+    // Deselect previous option for this type if exists
+    if (previousOptionId && selectedOptions.includes(previousOptionId)) {
+      onOptionToggle(previousOptionId);
+    }
+    // Select new option if provided
+    if (newOptionId && !selectedOptions.includes(newOptionId)) {
+      onOptionToggle(newOptionId);
+    }
+  }, [selectedOptions, onOptionToggle]);
 
   if (optionsLoading) {
     return (
@@ -64,12 +77,12 @@ export const WindowCoveringOptionsCard = ({
         <p className="text-sm text-muted-foreground">Available options for {windowCovering?.name}</p>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Traditional Options */}
+        {/* Traditional Options - Now using cascading single-selection */}
         {hasTraditionalOptions && (
-          <TraditionalOptions 
+          <CascadingTraditionalOptions 
             options={options}
             selectedOptions={selectedOptions}
-            onOptionToggle={onOptionToggle}
+            onOptionSelect={handleCascadingSelect}
             currency={units.currency}
             hierarchicalSelections={hierarchicalSelections}
             templateId={windowCovering?.curtain_template_id}
