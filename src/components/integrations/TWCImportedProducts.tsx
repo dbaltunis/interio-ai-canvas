@@ -1,11 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle, Package, Loader2 } from "lucide-react";
-import { useTWCImportedProducts } from "@/hooks/useTWCProducts";
+import { CheckCircle2, AlertCircle, Package, Loader2, RefreshCw } from "lucide-react";
+import { useTWCImportedProducts, useResyncTWCProducts } from "@/hooks/useTWCProducts";
 
 export const TWCImportedProducts = () => {
   const { data: importedProducts, isLoading } = useTWCImportedProducts();
+  const resyncMutation = useResyncTWCProducts();
 
   if (isLoading) {
     return (
@@ -21,8 +22,12 @@ export const TWCImportedProducts = () => {
   }
 
   if (!importedProducts || importedProducts.length === 0) {
-    return null; // Don't show section if no products imported yet
+    return null;
   }
+
+  const handleResync = () => {
+    resyncMutation.mutate();
+  };
 
   return (
     <Card className="mb-6 border-primary/20 bg-primary/5">
@@ -33,6 +38,25 @@ export const TWCImportedProducts = () => {
             <h3 className="font-semibold text-lg">My TWC Products</h3>
             <Badge variant="secondary">{importedProducts.length} imported</Badge>
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleResync}
+            disabled={resyncMutation.isPending}
+            className="gap-1.5"
+          >
+            {resyncMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Re-syncing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4" />
+                Re-sync Options
+              </>
+            )}
+          </Button>
         </div>
 
         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
@@ -40,6 +64,7 @@ export const TWCImportedProducts = () => {
             const hasTemplate = product.templates && product.templates.length > 0;
             const hasPricing = hasTemplate && product.templates[0]?.pricing_grid_data;
             const twcItemNumber = product.metadata?.twc_item_number || product.sku;
+            const hasOptions = product.metadata?.twc_questions?.length > 0;
 
             return (
               <Card key={product.id} className="bg-background">
@@ -84,6 +109,17 @@ export const TWCImportedProducts = () => {
                             <span className="text-amber-600">No Pricing</span>
                           </div>
                         )}
+                        {hasOptions ? (
+                          <div className="flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3 text-blue-600" />
+                            <span className="text-blue-600">Options Available</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">No Options</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -113,7 +149,7 @@ export const TWCImportedProducts = () => {
         </div>
 
         <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-          💡 Configure pricing and templates to use TWC products in quotes
+          💡 Click "Re-sync Options" to create treatment options from TWC product data
         </div>
       </CardContent>
     </Card>
