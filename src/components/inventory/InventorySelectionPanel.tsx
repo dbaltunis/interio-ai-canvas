@@ -592,6 +592,14 @@ export const InventorySelectionPanel = ({
     ];
   };
   const availableTabs = getTabsForTreatment();
+
+  // Sync activeCategory with first available tab when treatment changes
+  useEffect(() => {
+    if (availableTabs.length > 0 && !availableTabs.some(tab => tab.key === activeCategory)) {
+      setActiveCategory(availableTabs[0].key);
+    }
+  }, [treatmentCategory, availableTabs.length]);
+
   return <div className={`h-full flex flex-col ${className}`}>
       <div className="flex gap-2 items-center animate-fade-in">
         <div className="relative flex-1">
@@ -809,12 +817,12 @@ export const InventorySelectionPanel = ({
                   <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
                   <p className="text-sm">
                     {treatmentCategory === 'wallpaper' && key === 'fabric' 
-                      ? 'No wallpaper items found. Add items with category "wallcovering" in inventory.'
-                      : ['venetian_blinds', 'vertical_blinds', 'cellular_blinds', 'shutters', 'plantation_shutters'].includes(treatmentCategory) && key === 'material'
-                      ? `No ${label.toLowerCase()} found. Add items with category "${treatmentConfig.inventoryCategory}" in inventory.`
+                      ? 'No wallpaper items found. Add items with subcategory "wallcovering" or "wallpaper" in inventory.'
+                      : key === 'material'
+                      ? `No ${label.toLowerCase()} found. Add items with category "material" and subcategory "${getAcceptedSubcategories(treatmentCategory).join('" or "')}" in inventory.`
                       : key === 'hardware'
                       ? 'No hardware found. Add items with category "treatment_option", "top_system", "track", or "pole" in inventory.'
-                      : `No ${label.toLowerCase()} items found`}
+                      : `No ${label.toLowerCase()} items found. Add items with subcategory "${getAcceptedSubcategories(treatmentCategory).join('" or "')}" in inventory.`}
                   </p>
                   {searchTerm && <p className="text-xs mt-1">Try different search terms</p>}
                 </div>}
