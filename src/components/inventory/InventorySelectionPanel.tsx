@@ -280,22 +280,21 @@ export const InventorySelectionPanel = ({
     }
 
     // For material category, filter by treatment-specific material subcategories
+    // CRITICAL FIX: Use enriched materials from treatmentFabrics (which now includes materials with pricing grids)
     if (category === "material") {
       const requiredSubcategories = getTreatmentMaterialSubcategories();
       
       console.log('🔍 Filtering materials - Required subcategories:', requiredSubcategories);
-      console.log('📊 Total inventory items to check:', inventory.length);
+      console.log('📊 treatmentFabrics count:', treatmentFabrics.length, '| Raw inventory count:', inventory.length);
       
-      // Log first few inventory items to see their structure
-      if (inventory.length > 0) {
-        console.log('📋 Sample inventory items:', inventory.slice(0, 3).map(i => ({
-          name: i.name,
-          category: i.category,
-          subcategory: i.subcategory
-        })));
-      }
+      // CRITICAL: Use treatmentFabrics if available (already enriched with pricing grids)
+      // treatmentFabrics now includes materials for material-based treatments
+      const sourceData = treatmentFabrics.length > 0 ? treatmentFabrics : inventory;
+      const dataSource = treatmentFabrics.length > 0 ? 'treatmentFabrics (enriched)' : 'raw inventory';
       
-      const filtered = inventory.filter(item => {
+      console.log('📦 Using data source:', dataSource);
+      
+      const filtered = sourceData.filter(item => {
         // Must be in material or hard_coverings category
         const matchesCategory = item.category?.toLowerCase() === 'material' || 
                                item.category?.toLowerCase() === 'hard_coverings';
@@ -312,17 +311,12 @@ export const InventorySelectionPanel = ({
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
         
-        if (!matchesCategory && item.category) {
-          console.log('❌ Item excluded - wrong category:', item.name, 'has category:', item.category);
-        }
-        if (matchesCategory && !matchesSubcategory && item.subcategory) {
-          console.log('❌ Item excluded - wrong subcategory:', item.name, 'has subcategory:', item.subcategory, 'need:', requiredSubcategories);
-        }
-        
         return matchesCategory && matchesSubcategory && matchesSearch && matchesVendor && matchesCollection && matchesTags;
       });
       
-      console.log(`📦 Found ${filtered.length} material items. Subcategories:`, 
+      // Log enrichment status
+      const enrichedCount = filtered.filter(i => i.pricing_grid_data || i.resolved_grid_id).length;
+      console.log(`📦 Found ${filtered.length} material items (${enrichedCount} with pricing grids). Subcategories:`, 
         [...new Set(filtered.map(i => i.subcategory || 'none'))]);
       
       return filtered;
