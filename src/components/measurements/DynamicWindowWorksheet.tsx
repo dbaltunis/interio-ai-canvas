@@ -2030,10 +2030,10 @@ export const DynamicWindowWorksheet = forwardRef<{
                     // Calculate costs for curtains
                     if (!selectedTemplate || !fabricCalculation || treatmentCategory === 'wallpaper') {
                       return (
-                        <CostCalculationSummary
+                      <CostCalculationSummary
                           template={selectedTemplate} 
                           measurements={measurements} 
-                          selectedFabric={selectedItems.fabric} 
+                          selectedFabric={selectedItems.fabric || selectedItems.material} 
                           selectedLining={selectedLining} 
                           selectedHeading={selectedHeading} 
                           inventory={[]} 
@@ -2185,7 +2185,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                       <CostCalculationSummary
                         template={selectedTemplate} 
                         measurements={measurements} 
-                        selectedFabric={selectedItems.fabric} 
+                        selectedFabric={selectedItems.fabric || selectedItems.material} 
                         selectedLining={selectedLining} 
                         selectedHeading={selectedHeading} 
                         inventory={[]} 
