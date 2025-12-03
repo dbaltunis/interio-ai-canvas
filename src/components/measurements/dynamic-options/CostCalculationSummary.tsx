@@ -287,7 +287,7 @@ export const CostCalculationSummary = ({
             </div>
           )}
 
-          {/* Paid Options */}
+          {/* Paid Options - Filter out treatment-inappropriate options */}
           {blindCosts.optionsCost > 0 && (
             <div className="py-1.5 border-b border-border/50">
               <div className="flex items-center justify-between mb-2">
@@ -299,7 +299,14 @@ export const CostCalculationSummary = ({
               </div>
               <div className="pl-6 space-y-1.5">
                 {selectedOptions
-                  .filter(opt => (opt.price && opt.price > 0) || (opt.pricingMethod === 'pricing-grid' && opt.pricingGridData))
+                  .filter(opt => {
+                    // Filter out lining options for blind treatments
+                    const isLiningOption = opt.name?.toLowerCase().includes('lining');
+                    const isBlindTreatment = isBlindCategory(treatmentCategory, template.name);
+                    if (isLiningOption && isBlindTreatment) return false;
+                    
+                    return (opt.price && opt.price > 0) || (opt.pricingMethod === 'pricing-grid' && opt.pricingGridData);
+                  })
                   .map((option, index) => {
                     // Calculate actual price for this option based on method
                     let displayPrice = option.price || 0;
@@ -378,7 +385,15 @@ export const CostCalculationSummary = ({
               <div className="mt-3 pt-2 border-t border-border/30">
                 <div className="font-medium text-card-foreground mb-1.5">Selected Options:</div>
                 <div className="space-y-1">
-                  {selectedOptions.map((option, index) => (
+                  {selectedOptions
+                    .filter(opt => {
+                      // Filter out lining options for blind treatments
+                      const isLiningOption = opt.name?.toLowerCase().includes('lining');
+                      const isBlindTreatment = isBlindCategory(treatmentCategory, template.name);
+                      if (isLiningOption && isBlindTreatment) return false;
+                      return true;
+                    })
+                    .map((option, index) => (
                     <div key={index} className="flex items-center justify-between">
                       <span>• {option.name}</span>
                       <span className="font-medium text-card-foreground">
