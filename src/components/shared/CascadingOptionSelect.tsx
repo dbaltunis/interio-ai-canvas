@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
@@ -81,21 +81,37 @@ export const CascadingOptionSelect = ({
   required = false
 }: CascadingOptionSelectProps) => {
   const selectedOption = options.find(opt => opt.id === selectedId);
+  const hasAutoSelected = useRef<string | null>(null);
+  const optionsKey = options.map(o => o.id).join(',');
+  
+  // Memoize onSelect to prevent stale closures
+  const stableOnSelect = useCallback((newId: string | null, prevId: string | null) => {
+    onSelect(newId, prevId);
+  }, [onSelect]);
+  
+  // Reset auto-selection tracking when options change
+  useEffect(() => {
+    hasAutoSelected.current = null;
+  }, [optionsKey]);
   
   // Auto-select if only one option and nothing selected
   useEffect(() => {
-    if (options.length === 1 && !selectedId) {
+    if (options.length === 1 && !selectedId && hasAutoSelected.current !== options[0].id) {
       console.log(`✅ Auto-selecting single option for ${label}:`, options[0].name);
-      onSelect(options[0].id, null);
+      hasAutoSelected.current = options[0].id;
+      // Use setTimeout to avoid state updates during render
+      setTimeout(() => {
+        stableOnSelect(options[0].id, null);
+      }, 0);
     }
-  }, [options.length, selectedId, label, onSelect]);
+  }, [options, selectedId, label, stableOnSelect, optionsKey]);
   
   const handleValueChange = (value: string) => {
     const previousId = selectedId;
     if (value === "__none__") {
-      onSelect(null, previousId);
+      stableOnSelect(null, previousId);
     } else {
-      onSelect(value, previousId);
+      stableOnSelect(value, previousId);
     }
   };
 

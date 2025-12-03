@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useEffect, useRef } from "react";
 import { useConditionalOptions } from "@/hooks/useConditionalOptions";
 import { useEnabledTemplateOptions } from "@/hooks/useEnabledTemplateOptions";
 import { CascadingOptionSelector } from "./CascadingOptionSelector";
@@ -20,6 +20,8 @@ export const CascadingTraditionalOptions = ({
   hierarchicalSelections,
   templateId
 }: CascadingTraditionalOptionsProps) => {
+  const autoSelectedTypes = useRef<Set<string>>(new Set());
+
   // Build map of selected option types
   const selectedOptionsMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -57,6 +59,19 @@ export const CascadingTraditionalOptions = ({
     }, {} as Record<string, any[]>);
   }, [options]);
 
+  // Get filtered options for a type
+  const getFilteredOptionsForType = useCallback((optionType: string) => {
+    const typeOptions = groupedOptions[optionType] || [];
+    return typeOptions.filter((opt: any) => {
+      if (opt.key && disabledKeys.has(opt.key)) {
+        return false;
+      }
+      const visible = isOptionVisible(opt.key || opt.option_type || opt.name || opt.id);
+      const enabled = isOptionEnabled(opt.id);
+      return visible && enabled;
+    });
+  }, [groupedOptions, disabledKeys, isOptionVisible, isOptionEnabled]);
+
   // Get currently selected option ID for a given type
   const getSelectedForType = useCallback((optionType: string): string | null => {
     const typeOptions = groupedOptions[optionType] || [];
@@ -67,6 +82,35 @@ export const CascadingTraditionalOptions = ({
     }
     return null;
   }, [groupedOptions, selectedOptions]);
+
+  // Auto-select single options for each type
+  useEffect(() => {
+    Object.keys(groupedOptions).forEach(optionType => {
+      // Skip if already auto-selected this type
+      if (autoSelectedTypes.current.has(optionType)) return;
+      
+      const filteredOptions = getFilteredOptionsForType(optionType);
+      const currentSelection = getSelectedForType(optionType);
+      
+      // Auto-select if single option and none selected
+      if (filteredOptions.length === 1 && !currentSelection) {
+        console.log(`✅ Auto-selecting single traditional option for ${optionType}:`, filteredOptions[0].name);
+        autoSelectedTypes.current.add(optionType);
+        // Use setTimeout to avoid state updates during render
+        setTimeout(() => {
+          onOptionSelect(optionType, filteredOptions[0].id, null);
+        }, 0);
+      }
+    });
+  }, [groupedOptions, getFilteredOptionsForType, getSelectedForType, onOptionSelect]);
+
+  // Reset auto-selection tracking when options change
+  useEffect(() => {
+    const optionIds = options.map(o => o.id).join(',');
+    return () => {
+      autoSelectedTypes.current.clear();
+    };
+  }, [options.length]);
 
   // Handle selection change for a type
   const handleSelect = useCallback((optionType: string, newOptionId: string | null) => {
