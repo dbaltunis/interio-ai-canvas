@@ -1,4 +1,4 @@
-import React from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
@@ -14,39 +14,39 @@ interface AddInventoryDialogProps {
 export const AddInventoryDialog = ({ trigger, onSuccess, initialCategory, initialSubcategory }: AddInventoryDialogProps) => {
   const [open, setOpen] = usePersistedDialogState('add_inventory');
 
-  const handleTriggerClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setOpen(true);
-  };
-
-  // Clone trigger and merge click handlers
+  // Render trigger with wrapper that captures clicks before they bubble to Card
   const renderTrigger = () => {
     if (!trigger) {
       return (
-        <Button onClick={handleTriggerClick}>
+        <Button 
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setOpen(true);
+          }}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Item
         </Button>
       );
     }
 
-    // Get original onClick if it exists
-    const originalElement = trigger as React.ReactElement;
-    const originalOnClick = originalElement.props?.onClick;
-
-    return React.cloneElement(originalElement, {
-      onClick: (e: React.MouseEvent) => {
-        // Call original onClick first (for stopPropagation etc)
-        if (originalOnClick) {
-          originalOnClick(e);
-        }
-        // Then open the dialog
-        e.stopPropagation();
-        e.preventDefault();
-        setOpen(true);
-      }
-    });
+    // Wrap trigger in a span that captures clicks BEFORE they bubble to Card
+    return (
+      <span 
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          setOpen(true);
+        }}
+        onClickCapture={(e) => {
+          e.stopPropagation();
+        }}
+        className="inline-flex"
+      >
+        {trigger}
+      </span>
+    );
   };
 
   return (
