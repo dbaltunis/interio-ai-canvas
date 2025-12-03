@@ -453,19 +453,11 @@ export const UnifiedInventoryDialog = ({
     }
   };
 
-  // Event isolation handler to prevent clicks from bubbling to parent Card
-  const stopPropagationHandler = (e: React.MouseEvent | React.PointerEvent) => {
-    e.stopPropagation();
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         className="max-w-4xl max-h-[90vh] overflow-y-auto"
         onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onFocusOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Add New Inventory Item" : "Edit Inventory Item"}</DialogTitle>
@@ -474,12 +466,7 @@ export const UnifiedInventoryDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <form 
-          onSubmit={handleSubmit}
-          onClick={stopPropagationHandler}
-          onPointerDown={stopPropagationHandler}
-          onMouseDown={stopPropagationHandler}
-        >
+        <form onSubmit={handleSubmit}>
           {/* Category Selection */}
           <Card className="mb-4">
             <CardContent className="pt-6">
@@ -524,12 +511,7 @@ export const UnifiedInventoryDialog = ({
           </Card>
 
           {formData.subcategory && (
-            <Tabs 
-              value={activeTab} 
-              onValueChange={setActiveTab}
-              onClick={stopPropagationHandler}
-              onPointerDown={stopPropagationHandler}
-            >
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>
                 <TabsTrigger value="pricing_method">Pricing</TabsTrigger>
