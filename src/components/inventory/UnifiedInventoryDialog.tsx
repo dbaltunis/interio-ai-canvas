@@ -24,7 +24,6 @@ import { usePricingGrids } from "@/hooks/usePricingGrids";
 import { ColorSelector } from "./ColorSelector";
 import { ColorSlatPreview, getColorHex } from "./ColorSlatPreview";
 import { COLOR_PALETTE } from "@/constants/inventoryCategories";
-import { useInventoryMaterialOptions } from "@/hooks/useInventoryMaterialOptions";
 
 const STORAGE_KEY = "inventory_draft_data";
 
@@ -61,7 +60,6 @@ export const UnifiedInventoryDialog = ({
   const { data: businessSettings } = useBusinessSettings();
   const { data: userPreferences } = useUserPreferences();
   const { data: pricingGrids = [] } = usePricingGrids();
-  const { data: materialOptions } = useInventoryMaterialOptions();
 
   // Get user's measurement units and currency
   const measurementUnits = businessSettings?.measurement_units 
@@ -899,67 +897,17 @@ export const UnifiedInventoryDialog = ({
                   </Card>
                 )}
 
-                {/* Blind Materials Details */}
+                {/* Blind Materials Details - Product Preview Only */}
                 {formData.category === 'material' && (
                   <Card>
                     <CardHeader>
-                      <CardTitle>Material Specifications</CardTitle>
+                      <CardTitle>Product Preview</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Slat width and material type are configured via template options during quote creation
+                      </p>
                     </CardHeader>
-                    <CardContent className="grid gap-4 md:grid-cols-2">
+                    <CardContent>
                       <div>
-                        <Label>{formData.subcategory === 'vertical' ? 'Vane Width' : 'Slat Width'}</Label>
-                        <Select
-                          value={String(formData.specifications?.slat_width || "")}
-                          onValueChange={(value) => setFormData(prev => ({ 
-                            ...prev, 
-                            specifications: { ...prev.specifications, slat_width: parseFloat(value) || 0 }
-                          }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select width" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {formData.subcategory === 'vertical' ? (
-                              (materialOptions?.vaneWidths || []).map(opt => (
-                                <SelectItem key={opt.code} value={opt.code.replace('mm', '')}>{opt.label}</SelectItem>
-                              ))
-                            ) : (
-                              (materialOptions?.slatWidths || []).map(opt => (
-                                <SelectItem key={opt.code} value={opt.code.replace('mm', '')}>{opt.label}</SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label>Material Type</Label>
-                        <Select
-                          value={formData.specifications?.material_type || ""}
-                          onValueChange={(value) => setFormData(prev => ({ 
-                            ...prev, 
-                            specifications: { ...prev.specifications, material_type: value }
-                          }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select material" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {formData.subcategory === 'vertical' ? (
-                              (materialOptions?.verticalMaterials || []).map(opt => (
-                                <SelectItem key={opt.code} value={opt.code}>{opt.label}</SelectItem>
-                              ))
-                            ) : (
-                              (materialOptions?.venetianMaterials || []).map(opt => (
-                                <SelectItem key={opt.code} value={opt.code}>{opt.label}</SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-
-                      <div className="md:col-span-2">
                         <Label>Product Preview</Label>
                         <div className="space-y-3">
                           {/* Auto-generated slat/vane preview from colors */}
