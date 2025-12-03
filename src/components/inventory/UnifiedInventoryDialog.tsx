@@ -22,6 +22,7 @@ import { useBusinessSettings, defaultMeasurementUnits } from "@/hooks/useBusines
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { usePricingGrids } from "@/hooks/usePricingGrids";
 import { ColorSelector } from "./ColorSelector";
+import { ColorSlatPreview, getColorHex } from "./ColorSlatPreview";
 import { COLOR_PALETTE } from "@/constants/inventoryCategories";
 
 const STORAGE_KEY = "inventory_draft_data";
@@ -942,18 +943,6 @@ export const UnifiedInventoryDialog = ({
                       </div>
 
                       <div>
-                        <Label>Finish</Label>
-                        <Input
-                          value={formData.specifications?.finish || ""}
-                          onChange={(e) => setFormData(prev => ({ 
-                            ...prev, 
-                            specifications: { ...prev.specifications, finish: e.target.value }
-                          }))}
-                          placeholder="e.g., Matte White"
-                        />
-                      </div>
-
-                      <div>
                         <Label>Light Filtering</Label>
                         <Select
                           value={formData.specifications?.light_filtering || ""}
@@ -975,23 +964,50 @@ export const UnifiedInventoryDialog = ({
                       </div>
 
                       <div className="md:col-span-2">
-                        <Label>Product Image</Label>
-                        {formData.image_url ? (
-                          <div className="relative">
-                            <img src={formData.image_url} alt="Product" className="w-full h-32 object-cover rounded-md border" />
-                            <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2" onClick={removeImage}>
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div>
-                            <Button type="button" variant="outline" onClick={() => document.getElementById('image-upload')?.click()} disabled={uploadingImage}>
-                              <Upload className="h-4 w-4 mr-2" />
-                              {uploadingImage ? 'Uploading...' : 'Upload Image'}
-                            </Button>
-                            <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                          </div>
-                        )}
+                        <Label>Product Preview</Label>
+                        <div className="space-y-3">
+                          {/* Auto-generated slat preview from colors */}
+                          {(() => {
+                            const materialSelectedColors = formData.tags.filter(tag => 
+                              COLOR_PALETTE.some(c => c.value === tag) || customColors.some(c => c.value === tag)
+                            );
+                            if (materialSelectedColors.length > 0 && !formData.image_url) {
+                              return (
+                                <div className="space-y-2">
+                                  <ColorSlatPreview 
+                                    hexColor={getColorHex(materialSelectedColors[0], [...COLOR_PALETTE], customColors)}
+                                    slatWidth={formData.specifications?.slat_width || 50}
+                                    materialType={formData.specifications?.material_type}
+                                    showLabel
+                                    size="lg"
+                                  />
+                                  <p className="text-xs text-muted-foreground text-center">
+                                    Auto-generated from first selected color
+                                  </p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
+                          
+                          {/* Uploaded image */}
+                          {formData.image_url ? (
+                            <div className="relative">
+                              <img src={formData.image_url} alt="Product" className="w-full h-32 object-cover rounded-md border" />
+                              <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2" onClick={removeImage}>
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div>
+                              <Button type="button" variant="outline" onClick={() => document.getElementById('image-upload')?.click()} disabled={uploadingImage}>
+                                <Upload className="h-4 w-4 mr-2" />
+                                {uploadingImage ? 'Uploading...' : formData.tags.some(tag => COLOR_PALETTE.some(c => c.value === tag) || customColors.some(c => c.value === tag)) ? 'Override with Custom Image' : 'Upload Image'}
+                              </Button>
+                              <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

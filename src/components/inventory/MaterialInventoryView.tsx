@@ -17,6 +17,8 @@ import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QRCodeDisplay } from "./QRCodeDisplay";
 import { InventoryQuickView } from "./InventoryQuickView";
+import { ColorSlatPreview, getColorHex } from "./ColorSlatPreview";
+import { COLOR_PALETTE } from "@/constants/inventoryCategories";
 import {
   Dialog,
   DialogContent,
@@ -196,7 +198,7 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
                             onCheckedChange={(checked) => selectItem(item.id, checked === true)}
                             onClick={(e) => e.stopPropagation()}
                           />
-                          {item.image_url && (
+                          {item.image_url ? (
                             <img 
                               src={item.image_url} 
                               alt={item.name}
@@ -206,7 +208,21 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
                                 setPreviewImage({ url: item.image_url!, title: item.name });
                               }}
                             />
-                          )}
+                          ) : item.category === 'material' && item.tags?.some((tag: string) => 
+                            COLOR_PALETTE.some(c => c.value === tag)
+                          ) ? (
+                            <ColorSlatPreview 
+                              hexColor={getColorHex(
+                                item.tags.find((tag: string) => COLOR_PALETTE.some(c => c.value === tag)) || '',
+                                [...COLOR_PALETTE],
+                                []
+                              )}
+                              slatWidth={(item.specifications as Record<string, any>)?.slat_width}
+                              materialType={(item.specifications as Record<string, any>)?.material_type}
+                              size="sm"
+                              className="w-16 h-16"
+                            />
+                          ) : null}
                           <div className="flex-1">
                             <h3 className="font-semibold">{item.name}</h3>
                             <p className="text-sm text-muted-foreground">{item.sku}</p>

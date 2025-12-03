@@ -5,6 +5,7 @@ import { Edit, Package, DollarSign, Ruler, Store } from "lucide-react";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
 import { useState } from "react";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
+import { ColorSlatPreview, getColorHex } from "./ColorSlatPreview";
 import { COLOR_PALETTE } from "@/constants/inventoryCategories";
 
 interface InventoryQuickViewProps {
@@ -55,8 +56,8 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* Large Image */}
-            {item.image_url && (
+            {/* Large Image or Auto-generated Preview */}
+            {item.image_url ? (
               <div className="aspect-video rounded-lg overflow-hidden bg-muted">
                 <img 
                   src={item.image_url} 
@@ -65,7 +66,17 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
                   className="w-full h-full object-contain"
                 />
               </div>
-            )}
+            ) : item.category === 'material' && itemColors.length > 0 ? (
+              <div className="aspect-video rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                <ColorSlatPreview 
+                  hexColor={getColorHex(itemColors[0], [...COLOR_PALETTE], [])}
+                  slatWidth={(item.specifications as Record<string, any>)?.slat_width}
+                  materialType={(item.specifications as Record<string, any>)?.material_type}
+                  size="lg"
+                  showLabel
+                />
+              </div>
+            ) : null}
 
             {/* Basic Info Grid */}
             <div className="grid grid-cols-2 gap-4">
