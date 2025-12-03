@@ -67,6 +67,10 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
     const rotationValue = values[23]?.replace(/^"|"$/g, '').toLowerCase();
     const canRotate = rotationValue === 'yes' || rotationValue === 'true' || rotationValue === '1';
     
+    // Parse colors column (index 5) - comma-separated colors that go into tags
+    const colorsRaw = values[5]?.replace(/^"|"$/g, '') || '';
+    const colorValues = colorsRaw.split(',').map(c => c.trim().toLowerCase()).filter(c => c);
+    
     const item: any = {
       category: 'fabric',
       name: values[0]?.replace(/^"|"$/g, ''),
@@ -74,7 +78,7 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
       description: values[2]?.replace(/^"|"$/g, ''),
       subcategory: values[3]?.replace(/^"|"$/g, ''),
       product_category: values[4]?.replace(/^"|"$/g, ''),
-      tags: values[5]?.replace(/^"|"$/g, '').split(',').map(t => t.trim()).filter(t => t) || [],
+      tags: colorValues, // Colors go directly into tags for ColorSelector
       supplier: values[7]?.replace(/^"|"$/g, ''),
       collection_name: values[8]?.replace(/^"|"$/g, ''),
       location: values[9]?.replace(/^"|"$/g, ''),
@@ -87,12 +91,11 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
       fabric_width: parseFloat(values[16]) || null,
       fabric_composition: values[17]?.replace(/^"|"$/g, ''),
       fabric_grade: values[18]?.replace(/^"|"$/g, ''),
-      color: values[19]?.replace(/^"|"$/g, ''),
-      pattern_repeat_vertical: parseFloat(values[20]) || null,
-      pattern_repeat_horizontal: parseFloat(values[21]) || null,
-      image_url: values[24]?.replace(/^"|"$/g, ''),
+      pattern_repeat_vertical: parseFloat(values[19]) || null,
+      pattern_repeat_horizontal: parseFloat(values[20]) || null,
+      image_url: values[23]?.replace(/^"|"$/g, ''),
       metadata: {
-        maxLength: parseFloat(values[22]) || null,
+        maxLength: parseFloat(values[21]) || null,
         rotationAllowance: canRotate,
         priceGroup: values[15]?.replace(/^"|"$/g, '') || null,
       },
@@ -228,12 +231,18 @@ export const parseWallpaperCSV = (csvData: string): ValidationResult => {
     const trackInventoryValue = values[5]?.replace(/^"|"$/g, '').toLowerCase();
     const shouldTrack = trackInventoryValue === 'yes' || trackInventoryValue === 'true' || trackInventoryValue === '1';
     
+    // Parse tags and colors - colors (index 20) go into tags for ColorSelector
+    const tagsRaw = values[4]?.replace(/^"|"$/g, '') || '';
+    const baseTags = tagsRaw.split(',').map(t => t.trim()).filter(t => t);
+    const colorsRaw = values[20]?.replace(/^"|"$/g, '') || '';
+    const colorValues = colorsRaw.split(',').map(c => c.trim().toLowerCase()).filter(c => c);
+    
     const item: any = {
       name: values[0]?.replace(/^"|"$/g, ''),
       sku: values[1]?.replace(/^"|"$/g, ''),
       description: values[2]?.replace(/^"|"$/g, ''),
       subcategory: values[3]?.replace(/^"|"$/g, ''),
-      tags: values[4]?.replace(/^"|"$/g, '').split(',').map(t => t.trim()).filter(t => t) || [],
+      tags: [...baseTags, ...colorValues], // Merge tags and colors
       supplier: values[6]?.replace(/^"|"$/g, ''),
       collection_name: values[7]?.replace(/^"|"$/g, ''),
       location: values[8]?.replace(/^"|"$/g, ''),
@@ -246,7 +255,6 @@ export const parseWallpaperCSV = (csvData: string): ValidationResult => {
       roll_length: parseFloat(values[16]) || null,
       pattern_repeat_vertical: parseFloat(values[17]) || null,
       pattern_repeat_horizontal: parseFloat(values[18]) || null,
-      color: values[20]?.replace(/^"|"$/g, ''),
       metadata: {
         coverage_per_roll: parseFloat(values[19]) || null,
         material_type: values[21]?.replace(/^"|"$/g, ''),
@@ -301,12 +309,18 @@ export const parseTrimmingsCSV = (csvData: string): ValidationResult => {
     const trackInventoryValue = values[5]?.replace(/^"|"$/g, '').toLowerCase();
     const shouldTrack = trackInventoryValue === 'yes' || trackInventoryValue === 'true' || trackInventoryValue === '1';
     
+    // Parse tags and colors - colors (index 16) go into tags for ColorSelector
+    const tagsRaw = values[4]?.replace(/^"|"$/g, '') || '';
+    const baseTags = tagsRaw.split(',').map(t => t.trim()).filter(t => t);
+    const colorsRaw = values[16]?.replace(/^"|"$/g, '') || '';
+    const colorValues = colorsRaw.split(',').map(c => c.trim().toLowerCase()).filter(c => c);
+    
     const item: any = {
       name: values[0]?.replace(/^"|"$/g, ''),
       sku: values[1]?.replace(/^"|"$/g, ''),
       description: values[2]?.replace(/^"|"$/g, ''),
       subcategory: values[3]?.replace(/^"|"$/g, ''),
-      tags: values[4]?.replace(/^"|"$/g, '').split(',').map(t => t.trim()).filter(t => t) || [],
+      tags: [...baseTags, ...colorValues], // Merge tags and colors
       quantity: shouldTrack ? (parseFloat(values[6]) || 0) : null,
       unit: values[7]?.replace(/^"|"$/g, '') || 'meters',
       cost_price: parseFloat(values[8]) || 0,
@@ -315,7 +329,6 @@ export const parseTrimmingsCSV = (csvData: string): ValidationResult => {
       collection_name: values[12]?.replace(/^"|"$/g, ''),
       location: values[13]?.replace(/^"|"$/g, ''),
       reorder_point: shouldTrack ? (parseFloat(values[14]) || 0) : null,
-      color: values[16]?.replace(/^"|"$/g, ''),
       unit_price: parseFloat(values[18]) || null,
       metadata: {
         trimming_width: parseFloat(values[15]) || null,
@@ -348,19 +361,50 @@ export const parseTrimmingsCSV = (csvData: string): ValidationResult => {
   return { valid, invalid };
 };
 
+// Helper to extract colors from tags (colors are lowercase color names)
+const KNOWN_COLORS = [
+  'white', 'ivory', 'cream', 'beige', 'natural', 'sand', 'taupe', 'grey', 'gray', 'charcoal', 
+  'black', 'navy', 'blue', 'teal', 'turquoise', 'green', 'sage', 'moss', 'olive', 'emerald',
+  'gold', 'silver', 'champagne', 'bronze', 'copper', 'burgundy', 'wine', 'plum', 'crimson',
+  'red', 'pink', 'coral', 'orange', 'yellow', 'brown', 'chocolate', 'walnut', 'pearl',
+  'custom', 'light-grey', 'ocean-blue', 'soft-white', 'antique-gold', 'navy-white', 
+  'forest-sand', 'burgundy-cream'
+];
+
+const extractColorsFromTags = (tags: string[] | undefined): { colors: string[], nonColorTags: string[] } => {
+  if (!tags || !Array.isArray(tags)) return { colors: [], nonColorTags: [] };
+  
+  const colors: string[] = [];
+  const nonColorTags: string[] = [];
+  
+  tags.forEach(tag => {
+    const lowerTag = tag.toLowerCase();
+    // Check if tag is a known color or looks like a color (contains hyphen like "navy-white")
+    if (KNOWN_COLORS.includes(lowerTag) || lowerTag.includes('-')) {
+      colors.push(lowerTag);
+    } else {
+      nonColorTags.push(tag);
+    }
+  });
+  
+  return { colors, nonColorTags };
+};
+
 // EXPORT FUNCTIONS
 export const exportCategoryInventory = (items: any[], category: string): string => {
   if (category === 'fabrics') {
     const headers = [
-      'name', 'sku', 'description', 'subcategory', 'product_category', 'tags', 'track_inventory',
+      'name', 'sku', 'description', 'subcategory', 'product_category', 'colors', 'track_inventory',
       'supplier', 'collection_name', 'location', 'quantity', 'unit', 'reorder_point', 'cost_price', 'selling_price', 'price_group',
-      'fabric_width', 'fabric_composition', 'fabric_grade', 'color', 'pattern_repeat_vertical',
+      'fabric_width', 'fabric_composition', 'fabric_grade', 'pattern_repeat_vertical',
       'pattern_repeat_horizontal', 'max_length', 'rotation_allowance', 'image_url'
     ];
     
     const rows = items.map(item => {
       const isTracked = item.quantity != null ? 'yes' : 'no';
-      const tags = Array.isArray(item.tags) ? item.tags.join(',') : '';
+      // Extract colors from tags for export
+      const { colors } = extractColorsFromTags(item.tags);
+      const colorsStr = colors.join(',');
       
       return [
         `"${item.name || ''}"`,
@@ -368,7 +412,7 @@ export const exportCategoryInventory = (items: any[], category: string): string 
         `"${item.description || ''}"`,
         `"${item.subcategory || ''}"`,
         `"${item.product_category || ''}"`,
-        `"${tags}"`,
+        `"${colorsStr}"`,
         isTracked,
         `"${item.supplier || ''}"`,
         `"${item.collection_name || ''}"`,
@@ -382,7 +426,6 @@ export const exportCategoryInventory = (items: any[], category: string): string 
         item.fabric_width || '',
         `"${item.fabric_composition || ''}"`,
         `"${item.fabric_grade || ''}"`,
-        `"${item.color || ''}"`,
         item.pattern_repeat_vertical || '',
         item.pattern_repeat_horizontal || '',
         (item as any).metadata?.maxLength || '',
@@ -440,19 +483,22 @@ export const exportCategoryInventory = (items: any[], category: string): string 
       'name', 'sku', 'description', 'subcategory', 'tags', 'track_inventory',
       'supplier', 'collection_name', 'location', 'quantity', 'unit', 'reorder_point', 'cost_price', 'selling_price', 'price_group',
       'roll_width', 'roll_length', 'pattern_repeat_vertical', 'pattern_repeat_horizontal', 'coverage_per_roll',
-      'color', 'material_type', 'washability', 'fire_rating', 'image_url'
+      'colors', 'material_type', 'washability', 'fire_rating', 'image_url'
     ];
     
     const rows = items.map(item => {
       const isTracked = item.quantity != null ? 'yes' : 'no';
-      const tags = Array.isArray(item.tags) ? item.tags.join(',') : '';
+      // Extract colors and non-color tags separately
+      const { colors, nonColorTags } = extractColorsFromTags(item.tags);
+      const tagsStr = nonColorTags.join(',');
+      const colorsStr = colors.join(',');
       
       return [
         `"${item.name || ''}"`,
         `"${item.sku || ''}"`,
         `"${item.description || ''}"`,
         `"${item.subcategory || ''}"`,
-        `"${tags}"`,
+        `"${tagsStr}"`,
         isTracked,
         `"${item.supplier || ''}"`,
         `"${item.collection_name || ''}"`,
@@ -468,7 +514,7 @@ export const exportCategoryInventory = (items: any[], category: string): string 
         item.pattern_repeat_vertical || '',
         item.pattern_repeat_horizontal || '',
         (item as any).metadata?.coverage_per_roll || '',
-        `"${item.color || ''}"`,
+        `"${colorsStr}"`,
         `"${(item as any).metadata?.material_type || ''}"`,
         `"${(item as any).metadata?.washability || ''}"`,
         `"${(item as any).metadata?.fire_rating || ''}"`,
@@ -483,19 +529,22 @@ export const exportCategoryInventory = (items: any[], category: string): string 
     const headers = [
       'name', 'sku', 'description', 'subcategory', 'tags', 'track_inventory',
       'quantity', 'unit', 'cost_price', 'selling_price', 'supplier', 'vendor_name', 'collection_name',
-      'location', 'reorder_point', 'trimming_width', 'color', 'material_composition', 'price_per_meter'
+      'location', 'reorder_point', 'trimming_width', 'colors', 'material_composition', 'price_per_meter'
     ];
     
     const rows = items.map(item => {
       const isTracked = item.quantity != null ? 'yes' : 'no';
-      const tags = Array.isArray(item.tags) ? item.tags.join(',') : '';
+      // Extract colors and non-color tags separately
+      const { colors, nonColorTags } = extractColorsFromTags(item.tags);
+      const tagsStr = nonColorTags.join(',');
+      const colorsStr = colors.join(',');
       
       return [
         `"${item.name || ''}"`,
         `"${item.sku || ''}"`,
         `"${item.description || ''}"`,
         `"${item.subcategory || ''}"`,
-        `"${tags}"`,
+        `"${tagsStr}"`,
         isTracked,
         item.quantity ?? 0,
         `"${item.unit || 'meters'}"`,
@@ -507,7 +556,7 @@ export const exportCategoryInventory = (items: any[], category: string): string 
         `"${item.location || ''}"`,
         item.reorder_point ?? 0,
         (item as any).metadata?.trimming_width || '',
-        `"${item.color || ''}"`,
+        `"${colorsStr}"`,
         `"${(item as any).metadata?.material_composition || ''}"`,
         item.unit_price || item.selling_price || 0
       ].join(',');

@@ -346,6 +346,13 @@ export const InventoryImportExport = () => {
           case 'compatibility tags':
             item.compatibility_tags = value ? value.split(';').filter(tag => tag.trim()) : [];
             break;
+          case 'colors':
+            // Split comma-separated colors and add to tags array for ColorSelector
+            if (value) {
+              const colors = value.split(',').map(c => c.trim().toLowerCase()).filter(c => c);
+              item.tags = [...(item.tags || []), ...colors];
+            }
+            break;
         }
       });
 
