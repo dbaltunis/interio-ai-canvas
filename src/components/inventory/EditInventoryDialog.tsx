@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
+import { usePersistedDialogState } from "@/hooks/usePersistedDialogState";
 
 interface EditInventoryDialogProps {
   item: any;
@@ -10,7 +10,7 @@ interface EditInventoryDialogProps {
 }
 
 export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryDialogProps) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = usePersistedDialogState(`edit_inventory_${item?.id}`);
 
   return (
     <>

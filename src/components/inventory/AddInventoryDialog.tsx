@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
+import { usePersistedDialogState } from "@/hooks/usePersistedDialogState";
 
 interface AddInventoryDialogProps {
   trigger?: React.ReactNode;
@@ -11,7 +11,7 @@ interface AddInventoryDialogProps {
 }
 
 export const AddInventoryDialog = ({ trigger, onSuccess, initialCategory, initialSubcategory }: AddInventoryDialogProps) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = usePersistedDialogState('add_inventory');
 
   return (
     <>
