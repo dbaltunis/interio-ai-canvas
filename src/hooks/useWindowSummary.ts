@@ -85,7 +85,7 @@ export const useWindowSummary = (windowId: string | undefined) => {
       return data as WindowSummary | null;
     },
     enabled: !!windowId,
-    staleTime: 30000, // Cache for 30 seconds to reduce refetches
+    staleTime: 5000, // Cache for 5 seconds - ensures fresh data after saves
   });
 };
 
