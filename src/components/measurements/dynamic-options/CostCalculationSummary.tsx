@@ -621,22 +621,45 @@ export const CostCalculationSummary = ({
           </div>
         )}
 
-        {/* Individual Options - Show ALL options regardless of price */}
+        {/* Individual Options - Show calculated prices based on pricing method */}
         {selectedOptions && selectedOptions.length > 0 && selectedOptions.map((option, idx) => {
-          const optionPrice = option.price || 0;
+          const basePrice = option.price || 0;
+          
+          // Calculate actual price based on pricing method
+          let calculatedPrice = basePrice;
+          let pricingDetails = '';
+          
+          // Get dimensions from measurements for calculation
+          const widthCm = safeParseFloat(measurements?.rail_width, 0) / 10 || 
+                          safeParseFloat(measurements?.width, 0);
+          const heightCm = safeParseFloat(measurements?.drop, 0) / 10 || 
+                           safeParseFloat(measurements?.height, 0);
+          const linearMeters = fabricCalculation?.linearMeters || (widthCm / 100);
+          
+          if (option.pricingMethod === 'per-meter' && basePrice > 0) {
+            calculatedPrice = basePrice * linearMeters;
+            pricingDetails = `${basePrice.toFixed(2)}/m × ${linearMeters.toFixed(2)}m`;
+          } else if (option.pricingMethod === 'per-sqm' && basePrice > 0) {
+            const sqm = (widthCm * heightCm) / 10000;
+            calculatedPrice = basePrice * sqm;
+            pricingDetails = `${basePrice.toFixed(2)}/sqm × ${sqm.toFixed(2)}sqm`;
+          } else if (option.pricingMethod === 'pricing-grid' && option.pricingGridData) {
+            calculatedPrice = getPriceFromGrid(option.pricingGridData, widthCm, heightCm);
+            pricingDetails = `Grid lookup`;
+          }
           
           return (
             <div key={idx} className="flex justify-between py-1.5 border-b border-border/50">
               <div className="flex flex-col">
                 <span className="text-card-foreground font-medium">{option.name}</span>
-                {option.pricingMethod && (
+                {pricingDetails && calculatedPrice > 0 && (
                   <span className="text-xs text-muted-foreground">
-                    {getPricingMethodLabel(option.pricingMethod)}
+                    {pricingDetails}
                   </span>
                 )}
               </div>
               <span className="font-semibold text-card-foreground">
-                {optionPrice > 0 ? formatPrice(optionPrice) : <span className="text-muted-foreground text-sm">Included</span>}
+                {calculatedPrice > 0 ? formatPrice(calculatedPrice) : <span className="text-muted-foreground text-sm">Included</span>}
               </span>
             </div>
           );
