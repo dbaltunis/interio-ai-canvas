@@ -11,7 +11,9 @@ interface EditInventoryDialogProps {
 }
 
 export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryDialogProps) => {
-  const [open, setOpen] = usePersistedDialogState(`edit_inventory_${item?.id}`);
+  // Use stable key to prevent dialog state issues during re-renders
+  const itemId = item?.id ?? 'new';
+  const [open, setOpen] = usePersistedDialogState(`edit_inventory_${itemId}`);
 
   // Render trigger with wrapper that captures clicks before they bubble to Card
   const renderTrigger = () => {
