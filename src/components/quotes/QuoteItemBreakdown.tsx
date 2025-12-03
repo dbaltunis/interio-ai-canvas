@@ -1,12 +1,14 @@
 import React from "react";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
+import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
 import type { ClientBreakdownItem } from "@/utils/quotes/buildClientBreakdown";
 
 interface QuoteItemBreakdownProps {
   breakdown: ClientBreakdownItem[];
+  showImages?: boolean;
 }
 
-const QuoteItemBreakdown: React.FC<QuoteItemBreakdownProps> = ({ breakdown }) => {
+const QuoteItemBreakdown: React.FC<QuoteItemBreakdownProps> = ({ breakdown, showImages = false }) => {
   const { formatCurrency } = useFormattedCurrency();
 
   if (!Array.isArray(breakdown) || breakdown.length === 0) return null;
@@ -17,8 +19,19 @@ const QuoteItemBreakdown: React.FC<QuoteItemBreakdownProps> = ({ breakdown }) =>
         const itemCost = Number(item.total_cost) || 0;
         
         return (
-          <div key={item.id || `${item.category || 'row'}-${idx}`} className="flex items-start justify-between text-sm">
-            <div className="pr-2">
+          <div key={item.id || `${item.category || 'row'}-${idx}`} className="flex items-start justify-between text-sm gap-2">
+            {/* Optional image/color swatch */}
+            {showImages && (
+              <ProductImageWithColorFallback
+                imageUrl={item.image_url}
+                color={item.color}
+                productName={item.name || 'Item'}
+                category={item.category}
+                size={32}
+                rounded="sm"
+              />
+            )}
+            <div className="flex-1 pr-2">
               <div className="font-medium text-foreground">{item.name || item.category || 'Item'}</div>
               {item.description && (
                 <div className="text-xs text-muted-foreground">{item.description}</div>

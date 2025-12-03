@@ -33,6 +33,7 @@ import { useTreatmentSpecificFabrics } from "@/hooks/useTreatmentSpecificFabrics
 import { getAcceptedSubcategories, getTreatmentPrimaryCategory } from "@/constants/inventorySubcategories";
 import { toast } from "sonner";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
+import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
 interface InventorySelectionPanelProps {
   treatmentType: string;
   selectedItems: {
@@ -407,46 +408,22 @@ export const InventorySelectionPanel = ({
     >
         <CardContent className="p-2">
           <div className="flex flex-col space-y-2">
-            {/* Image or Color Swatch */}
-            <div className="aspect-square w-full bg-muted border border-border rounded overflow-hidden relative">
-              {imageUrl ? (
-                <img 
-                  src={imageUrl} 
-                  alt={item.name} 
-                  className="w-full h-full object-cover" 
-                  onError={e => {
-                    e.currentTarget.style.display = 'none';
-                    // Show fallback on error
-                    const parent = e.currentTarget.parentElement;
-                    if (parent) {
-                      const fallback = parent.querySelector('.image-fallback');
-                      if (fallback) (fallback as HTMLElement).style.display = 'flex';
-                    }
-                  }} 
-                />
-              ) : null}
-              {/* Fallback - Color swatch or icon */}
-              <div 
-                className={`image-fallback absolute inset-0 flex items-center justify-center ${imageUrl ? 'hidden' : ''}`}
-                style={item.color ? { 
-                  backgroundColor: item.color.startsWith('#') ? item.color : 
-                    (item.color.match(/^[0-9a-fA-F]{6}$/) ? `#${item.color}` : undefined)
-                } : undefined}
-              >
-                {!item.color && (
-                  <Package className="h-8 w-8 text-muted-foreground/50" />
-                )}
-                {item.color && (
-                  <span className="text-xs font-medium text-white drop-shadow-md bg-black/30 px-1.5 py-0.5 rounded">
-                    {item.color}
-                  </span>
-                )}
-              </div>
-              {isSelected && <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />}
+            {/* Image or Color Swatch - Using universal component */}
+            <div className="aspect-square w-full relative">
+              <ProductImageWithColorFallback
+                imageUrl={imageUrl}
+                color={item.color}
+                productName={item.name}
+                category={category}
+                className="w-full h-full"
+                size={200}
+                showColorName={true}
+              />
+              {isSelected && <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full z-10" />}
               
               {/* Pricing Grid Badge Overlay - Only for fabric */}
               {category === 'fabric' && (item.price_group || item.pricing_grid_id) && (
-                <div className="absolute bottom-1 left-1 right-1">
+                <div className="absolute bottom-1 left-1 right-1 z-10">
                   <Badge variant="default" className="text-[9px] px-1.5 py-0.5 h-5 bg-green-600 hover:bg-green-700 text-white w-full justify-center">
                     ✓ Grid: {item.price_group || 'Assigned'}
                   </Badge>
@@ -472,15 +449,14 @@ export const InventorySelectionPanel = ({
                     </div>}
                 </div>}
               
-              {/* Color indicator (small swatch next to name if color exists) */}
-              {item.color && !imageUrl && (
+              {/* Color indicator (small swatch next to name) */}
+              {item.color && (
                 <div className="flex items-center gap-1.5 pt-0.5">
-                  <div 
-                    className="w-3 h-3 rounded-full border border-border shadow-sm shrink-0" 
-                    style={{ 
-                      backgroundColor: item.color.startsWith('#') ? item.color : 
-                        (item.color.match(/^[0-9a-fA-F]{6}$/) ? `#${item.color}` : undefined)
-                    }}
+                  <ProductImageWithColorFallback
+                    color={item.color}
+                    productName={item.name}
+                    size={12}
+                    rounded="full"
                   />
                   <span className="text-[9px] text-muted-foreground truncate">{item.color}</span>
                 </div>

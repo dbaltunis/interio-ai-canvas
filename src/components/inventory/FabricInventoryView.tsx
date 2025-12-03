@@ -28,6 +28,7 @@ import { QRCodeDisplay } from "./QRCodeDisplay";
 import { useInventoryLeftovers } from "@/hooks/useInventoryLeftovers";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InventoryQuickView } from "./InventoryQuickView";
+import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
 
 interface FabricInventoryViewProps {
   searchQuery: string;
@@ -236,18 +237,15 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
                         if (item.image_url) setPreviewImage({ url: item.image_url, title: item.name });
                       }}
                     >
-                      {item.image_url ? (
-                        <img 
-                          src={item.image_url} 
-                          alt={item.name}
-                          crossOrigin="anonymous"
-                          className="object-cover w-full h-full group-hover:scale-105 transition-transform"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Home className="h-12 w-12 text-muted-foreground" />
-                        </div>
-                      )}
+                      <ProductImageWithColorFallback
+                        imageUrl={item.image_url}
+                        color={item.color}
+                        productName={item.name}
+                        category="fabric"
+                        className="w-full h-full group-hover:scale-105 transition-transform"
+                        size={200}
+                        rounded="none"
+                      />
                       <div className="absolute top-2 right-2 flex gap-1">
                         <EditInventoryDialog 
                           item={item}
