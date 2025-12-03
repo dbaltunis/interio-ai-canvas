@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bug, BookOpen, FileText, List, Upload, X } from "lucide-react";
+import { LifeBuoy, BookOpen, FileText, List, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,10 +27,21 @@ import { WhatsNewDialog } from "@/components/version/WhatsNewDialog";
 
 interface BugReportDialogProps {
   className?: string;
+  /** If true, hides the floating trigger button (for use when triggered externally) */
+  hideTrigger?: boolean;
+  /** Controlled open state */
+  open?: boolean;
+  /** Controlled open change handler */
+  onOpenChange?: (open: boolean) => void;
 }
 
-export const BugReportDialog = ({ className }: BugReportDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const BugReportDialog = ({ 
+  className, 
+  hideTrigger = false,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange 
+}: BugReportDialogProps) => {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [showBugForm, setShowBugForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,6 +56,14 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
   
   const { toast } = useToast();
   const location = useLocation();
+  
+  // Support controlled and uncontrolled modes
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? controlledOnOpenChange! : setInternalOpen;
+  
+  // Hide on onboarding pages
+  const isOnboardingPage = location.pathname.includes('onboarding');
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files) return;
@@ -199,25 +218,30 @@ export const BugReportDialog = ({ className }: BugReportDialogProps) => {
 
   const version = "v2.0";
 
+  // Don't render floating button on onboarding pages or if trigger is hidden
+  const showFloatingButton = !hideTrigger && !isOnboardingPage;
+
   return (
     <>
       <Dialog open={open} onOpenChange={(isOpen) => {
         setOpen(isOpen);
         if (!isOpen) setShowBugForm(false);
       }}>
-        <DialogTrigger asChild>
-          <div className={`fixed bottom-20 md:bottom-6 right-6 z-40 ${className}`}>
-            <Button
-              className="h-auto px-3 py-2 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 flex flex-col items-center gap-0.5 bg-warning text-warning-foreground hover:bg-warning/90"
-              title="Help & Support"
-            >
-              <Bug className="h-5 w-5" />
-              <span className="text-[10px] font-normal opacity-90">
-                {version}
-              </span>
-            </Button>
-          </div>
-        </DialogTrigger>
+        {showFloatingButton && (
+          <DialogTrigger asChild>
+            <div className={`fixed bottom-20 md:bottom-6 right-6 z-40 ${className}`}>
+              <Button
+                className="h-auto px-3 py-2 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 flex flex-col items-center gap-0.5 bg-primary text-primary-foreground hover:bg-primary/90"
+                title="Help & Support"
+              >
+                <LifeBuoy className="h-5 w-5" />
+                <span className="text-[10px] font-normal opacity-90">
+                  {version}
+                </span>
+              </Button>
+            </div>
+          </DialogTrigger>
+        )}
 
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           {!showBugForm ? (

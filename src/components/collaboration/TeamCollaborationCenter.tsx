@@ -13,10 +13,11 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useCurrentUserProfile, useUpdateUserProfile } from '@/hooks/useUserProfile';
 import { useTheme } from 'next-themes';
 import { useCompactMode } from '@/hooks/useCompactMode';
-import { Users, MessageCircle, Zap, Circle, Send, X, Edit, Check, Settings, LogOut, Sun, Moon, Palette } from 'lucide-react';
+import { Users, MessageCircle, Zap, Circle, Send, X, Edit, Check, Settings, LogOut, Sun, Moon, Palette, LifeBuoy } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useNavigate } from 'react-router-dom';
 import { DirectMessageDialog } from './DirectMessageDialog';
+import { BugReportDialog } from '@/components/bug-report/BugReportDialog';
 import { cn } from '@/lib/utils';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { Switch } from '@/components/ui/switch';
@@ -47,6 +48,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const { compact, toggleCompact } = useCompactMode();
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+  const [supportDialogOpen, setSupportDialogOpen] = useState(false);
 
   const quickStatusOptions = [
     { icon: Clock, text: "Available", color: "bg-green-500" },
@@ -336,6 +338,21 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                            </Tooltip>
                           
                           <div className="h-4 w-px bg-border mx-1" />
+                          
+                          {/* Support */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSupportDialogOpen(true)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <LifeBuoy className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Support</TooltipContent>
+                          </Tooltip>
                           
                           {/* Settings */}
                           <Tooltip>
@@ -702,6 +719,13 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
           }
         }}
         selectedUserId={selectedUserId}
+      />
+      
+      {/* Support Dialog */}
+      <BugReportDialog 
+        hideTrigger
+        open={supportDialogOpen}
+        onOpenChange={setSupportDialogOpen}
       />
     </>
   , document.body);
