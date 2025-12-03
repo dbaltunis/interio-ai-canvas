@@ -1702,7 +1702,6 @@ export const DynamicWindowWorksheet = forwardRef<{
           .from('windows_summary')
           .upsert({
             window_id: surfaceId,
-            // ✅ REMOVED user_id - doesn't exist in windows_summary table
             fabric_type: item.name,
             fabric_details: {
               id: item.id,
@@ -1713,19 +1712,65 @@ export const DynamicWindowWorksheet = forwardRef<{
               selling_price: item.selling_price || item.unit_price,
               category: item.category,
               image_url: item.image_url,
+              // CRITICAL: Preserve pricing grid data
+              pricing_grid_data: item.pricing_grid_data,
+              resolved_grid_name: item.resolved_grid_name,
+              resolved_grid_id: item.resolved_grid_id,
+              price_group: item.price_group,
             } as any
           }, { onConflict: 'window_id' });
           
         if (!error) {
-          console.log('✅ Fabric name saved to windows_summary:', item.name);
-          // Invalidate queries to update the header description field
+          console.log('✅ Fabric saved to windows_summary:', item.name);
+          queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surfaceId] });
+          queryClient.invalidateQueries({ queryKey: ['window-summary', surfaceId] });
+        }
+      } catch (error) {
+        console.error('❌ Error saving fabric:', error);
+      }
+    }
+    
+    // ✅ IMMEDIATE SAVE: Save material selection for blinds/shutters with pricing grid data
+    if (category === 'material' && surfaceId && item) {
+      try {
+        console.log('💾 Saving material with pricing grid:', {
+          name: item.name,
+          pricing_grid_data: item.pricing_grid_data ? 'present' : 'missing',
+          resolved_grid_name: item.resolved_grid_name
+        });
+        
+        const { error } = await supabase
+          .from('windows_summary')
+          .upsert({
+            window_id: surfaceId,
+            selected_material_id: item.id,
+            material_details: {
+              id: item.id,
+              name: item.name,
+              selling_price: item.selling_price || item.unit_price,
+              cost_price: item.cost_price,
+              image_url: item.image_url,
+              category: item.category,
+              subcategory: item.subcategory,
+              // CRITICAL: Include ALL pricing grid data for calculation
+              pricing_grid_data: item.pricing_grid_data,
+              resolved_grid_name: item.resolved_grid_name,
+              resolved_grid_code: item.resolved_grid_code,
+              resolved_grid_id: item.resolved_grid_id,
+              price_group: item.price_group,
+              product_category: item.product_category,
+            } as any
+          }, { onConflict: 'window_id' });
+          
+        if (!error) {
+          console.log('✅ Material with pricing grid saved:', item.name);
           queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surfaceId] });
           queryClient.invalidateQueries({ queryKey: ['window-summary', surfaceId] });
         } else {
-          console.error('❌ Failed to save fabric name:', error);
+          console.error('❌ Failed to save material:', error);
         }
       } catch (error) {
-        console.error('❌ Error saving fabric name:', error);
+        console.error('❌ Error saving material:', error);
       }
     }
   };

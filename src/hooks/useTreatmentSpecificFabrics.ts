@@ -39,13 +39,48 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
         
         // Enrich materials with pricing grid data
         const enrichedMaterials = await Promise.all((data || []).map(async (material) => {
-          // If material has price_group, try to resolve pricing grid
+          // CRITICAL FIX: Check for BOTH price_group AND pricing_grid_id
+          // Some materials have direct pricing_grid_id without price_group
+          
+          // Method 1: Direct pricing_grid_id (highest priority)
+          if (material.pricing_grid_id) {
+            try {
+              console.log('🔗 Fetching direct grid for material:', {
+                materialName: material.name,
+                pricingGridId: material.pricing_grid_id
+              });
+              
+              const { data: gridData, error } = await supabase
+                .from('pricing_grids')
+                .select('*')
+                .eq('id', material.pricing_grid_id)
+                .eq('active', true)
+                .single();
+              
+              if (gridData && !error) {
+                console.log('✅ Direct grid found for material:', material.name, gridData.name);
+                return {
+                  ...material,
+                  pricing_grid_data: gridData.grid_data,
+                  resolved_grid_name: gridData.name,
+                  resolved_grid_code: gridData.grid_code,
+                  resolved_grid_id: gridData.id
+                };
+              } else {
+                console.log('⚠️ Direct grid not found or inactive:', material.pricing_grid_id);
+              }
+            } catch (error) {
+              console.error('Error fetching direct grid for material:', material.name, error);
+            }
+          }
+          
+          // Method 2: Via price_group (resolve through pricing rules)
           if (material.price_group) {
             try {
               // CRITICAL: For materials, use treatment category as product_type if product_category not set
               const productType = material.product_category || treatmentCategory;
               
-              console.log('🔗 Resolving grid for material:', {
+              console.log('🔗 Resolving grid via price_group for material:', {
                 materialName: material.name,
                 priceGroup: material.price_group,
                 productType,
@@ -60,7 +95,7 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
               });
               
               if (gridResult.gridId) {
-                console.log('✅ Grid resolved for material:', material.name, gridResult.gridName);
+                console.log('✅ Grid resolved via price_group for material:', material.name, gridResult.gridName);
                 return {
                   ...material,
                   pricing_grid_data: gridResult.gridData,
@@ -69,12 +104,13 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
                   resolved_grid_id: gridResult.gridId
                 };
               } else {
-                console.log('⚠️ No grid found for material:', material.name);
+                console.log('⚠️ No grid found via price_group for material:', material.name);
               }
             } catch (error) {
               console.error('Error enriching material with grid:', material.name, error);
             }
           }
+          
           return material;
         }));
         
@@ -163,7 +199,40 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
       
       // Enrich fabrics/materials with pricing grid data
       const enrichedItems = await Promise.all((data || []).map(async (item) => {
-        // If item has price_group, try to resolve pricing grid
+        // CRITICAL FIX: Check for BOTH pricing_grid_id AND price_group
+        // Some items have direct pricing_grid_id without price_group
+        
+        // Method 1: Direct pricing_grid_id (highest priority)
+        if (item.pricing_grid_id) {
+          try {
+            console.log('🔗 Fetching direct grid for item:', {
+              itemName: item.name,
+              pricingGridId: item.pricing_grid_id
+            });
+            
+            const { data: gridData, error } = await supabase
+              .from('pricing_grids')
+              .select('*')
+              .eq('id', item.pricing_grid_id)
+              .eq('active', true)
+              .single();
+            
+            if (gridData && !error) {
+              console.log('✅ Direct grid found for item:', item.name, gridData.name);
+              return {
+                ...item,
+                pricing_grid_data: gridData.grid_data,
+                resolved_grid_name: gridData.name,
+                resolved_grid_code: gridData.grid_code,
+                resolved_grid_id: gridData.id
+              };
+            }
+          } catch (error) {
+            console.error('Error fetching direct grid for item:', item.name, error);
+          }
+        }
+        
+        // Method 2: Via price_group (resolve through pricing rules)
         if (item.price_group) {
           try {
             // Use product_category if set, otherwise use treatment category
@@ -189,6 +258,7 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
             console.error('Error enriching item with grid:', item.name, error);
           }
         }
+        
         return item;
       }));
       
