@@ -35,6 +35,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { SignatureCanvas } from './SignatureCanvas';
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { QuoteItemImage } from "@/components/quotes/QuoteItemImage";
+import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
 import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { useQuoteCustomData } from "@/hooks/useQuoteCustomData";
@@ -1360,19 +1361,14 @@ const LivePreviewBlock = ({
                             }}>
                               <td style={{ padding: '3px 6px 3px 20px', fontSize: '12px', color: '#666', fontWeight: '400', backgroundColor: '#ffffff' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  {showImages && breakdownItem.image_url && (
-                                    <img 
-                                      src={breakdownItem.image_url} 
-                                      alt={breakdownItem.name || 'Component'}
-                                      className="print-image"
-                                      style={{ 
-                                        width: '25px', 
-                                        height: '25px', 
-                                        objectFit: 'cover', 
-                                        borderRadius: '2px',
-                                        border: isPrintMode ? 'none' : '1px solid #ddd',
-                                        flexShrink: 0
-                                      }}
+                                  {showImages && (breakdownItem.image_url || breakdownItem.color) && (
+                                    <ProductImageWithColorFallback
+                                      imageUrl={breakdownItem.image_url}
+                                      color={breakdownItem.color}
+                                      productName={breakdownItem.name || 'Component'}
+                                      size={25}
+                                      rounded="sm"
+                                      category={breakdownItem.category}
                                     />
                                   )}
                                   <span>{breakdownItem.name}</span>

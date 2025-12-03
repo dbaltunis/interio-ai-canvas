@@ -45,12 +45,14 @@ export const useQuotationSync = ({
     surfaceCount: number;
     totalCost: number;
     windowCosts: Record<string, number>;
+    breakdownHash?: string;
   }>({
     treatmentCount: 0,
     roomCount: 0,
     surfaceCount: 0,
     totalCost: 0,
-    windowCosts: {}
+    windowCosts: {},
+    breakdownHash: ''
   });
 
   // Build quotation items from current project data
@@ -188,7 +190,7 @@ export const useQuotationSync = ({
           // Do NOT build children from scratch - prevents duplicate fabric lines
           if (hasStructuredBreakdown) {
             console.log('[BREAKDOWN] Using structured breakdown directly (prevents duplicates)');
-            // Convert breakdown items to children format
+            // Convert breakdown items to children format - INCLUDE color for fallback display
             parentItem.children = breakdown.map((item: any, idx: number) => ({
               id: `${window.window_id}-${item.id || item.category}-${idx}`,
               name: item.name || item.category,
@@ -198,6 +200,7 @@ export const useQuotationSync = ({
               unit_price: item.unit_price || 0,
               total: item.total_cost || 0,
               image_url: item.image_url || null,
+              color: item.color || null, // CRITICAL: Pass color for fallback display
               category: item.category,
               isChild: true
             }));
@@ -239,6 +242,7 @@ export const useQuotationSync = ({
             unit_price: pricePerMetre,
             total: summary.fabric_cost,
             image_url: materialImageUrl, // Child shows actual fabric/material from inventory
+            color: materialDetails.color || fabricDetails.color || null, // CRITICAL: Pass color for fallback
             inventory_item_id: materialDetails.inventory_item_id || fabricDetails.inventory_item_id || null, // NEW: Store for tracking
             isChild: true
           });
@@ -275,6 +279,7 @@ export const useQuotationSync = ({
               unit_price: liningPricePerMetre,
               total: summary.lining_cost,
               image_url: liningDetails.image_url || null,
+              color: liningDetails.color || null, // CRITICAL: Pass color for fallback
               isChild: true
             });
           }
@@ -521,6 +526,18 @@ export const useQuotationSync = ({
       id => Math.abs((currentWindowCosts[id] || 0) - (prevWindowCosts[id] || 0)) > 0.01
     );
 
+    // CRITICAL: Also check if breakdown items have changed (options, types, etc.)
+    // This catches changes where total stays same but options changed
+    const currentBreakdownHash = (projectSummaries?.windows || [])
+      .map(w => {
+        const breakdown = w.summary?.cost_breakdown || [];
+        const selectedOpts = w.summary?.selected_options || [];
+        return JSON.stringify({ breakdown, selectedOpts });
+      })
+      .join('|');
+    
+    const breakdownChanged = currentBreakdownHash !== previousDataRef.current.breakdownHash;
+
     // Check if data has changed
     const hasChanges = 
       currentData.treatmentCount !== previousDataRef.current.treatmentCount ||
@@ -528,7 +545,8 @@ export const useQuotationSync = ({
       currentData.surfaceCount !== previousDataRef.current.surfaceCount ||
       Math.abs(currentData.totalCost - previousDataRef.current.totalCost) > 0.01 ||
       windowIdsChanged ||
-      windowValuesChanged;
+      windowValuesChanged ||
+      breakdownChanged;
 
     if (!hasChanges) {
       return; // No changes detected
@@ -648,8 +666,16 @@ export const useQuotationSync = ({
       console.error("Failed to save quote items:", error);
     }
 
-    // Update reference data including window costs
-    previousDataRef.current = currentData;
+    // Update reference data including window costs and breakdown hash
+    previousDataRef.current = {
+      ...currentData,
+      breakdownHash: (projectSummaries?.windows || [])
+        .map(w => JSON.stringify({ 
+          breakdown: w.summary?.cost_breakdown || [], 
+          selectedOpts: w.summary?.selected_options || [] 
+        }))
+        .join('|')
+    };
   };
 
   // Monitor changes and sync with immediate + debounced pattern
