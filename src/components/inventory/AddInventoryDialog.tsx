@@ -16,21 +16,42 @@ export const AddInventoryDialog = ({ trigger, onSuccess, initialCategory, initia
 
   const handleTriggerClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     setOpen(true);
   };
 
-  return (
-    <>
-      {trigger ? (
-        React.cloneElement(trigger as React.ReactElement, {
-          onClick: handleTriggerClick
-        })
-      ) : (
+  // Clone trigger and merge click handlers
+  const renderTrigger = () => {
+    if (!trigger) {
+      return (
         <Button onClick={handleTriggerClick}>
           <Plus className="h-4 w-4 mr-2" />
           Add Item
         </Button>
-      )}
+      );
+    }
+
+    // Get original onClick if it exists
+    const originalElement = trigger as React.ReactElement;
+    const originalOnClick = originalElement.props?.onClick;
+
+    return React.cloneElement(originalElement, {
+      onClick: (e: React.MouseEvent) => {
+        // Call original onClick first (for stopPropagation etc)
+        if (originalOnClick) {
+          originalOnClick(e);
+        }
+        // Then open the dialog
+        e.stopPropagation();
+        e.preventDefault();
+        setOpen(true);
+      }
+    });
+  };
+
+  return (
+    <>
+      {renderTrigger()}
       
       <UnifiedInventoryDialog
         open={open}
