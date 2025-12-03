@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Eye, Grid } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { getUnitLabel } from "@/utils/measurementFormatters";
 
 interface PricingGridPreviewProps {
   gridData: any;
@@ -61,14 +62,14 @@ export const PricingGridPreview = ({ gridData, gridName, gridCode }: PricingGrid
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-muted">
-                    <th className="border border-border p-2 text-left">Width (cm)</th>
+                    <th className="border border-border p-2 text-left">Width ({getUnitLabel(units.length)})</th>
                     <th className="border border-border p-2 text-left">Price</th>
                   </tr>
                 </thead>
                 <tbody>
                   {gridData.map((entry: any, index: number) => (
                     <tr key={index}>
-                      <td className="border border-border p-2">{entry.width}cm</td>
+                      <td className="border border-border p-2">{entry.width}{getUnitLabel(units.length)}</td>
                       <td className="border border-border p-2 font-medium">{formatPrice(parseFloat(entry.price))}</td>
                     </tr>
                   ))}
@@ -81,10 +82,10 @@ export const PricingGridPreview = ({ gridData, gridName, gridCode }: PricingGrid
               <table className="min-w-full border-collapse text-xs">
                 <thead>
                   <tr>
-                    <th className="border border-border bg-muted p-2 sticky left-0 z-10">Width / Drop (cm)</th>
+                    <th className="border border-border bg-muted p-2 sticky left-0 z-10">Width / Drop ({getUnitLabel(units.length)})</th>
                     {gridData.widthColumns.map((width: number) => (
                       <th key={width} className="border border-border bg-muted p-2 min-w-[80px]">
-                        {width}cm
+                        {width}{getUnitLabel(units.length)}
                       </th>
                     ))}
                   </tr>
@@ -93,7 +94,7 @@ export const PricingGridPreview = ({ gridData, gridName, gridCode }: PricingGrid
                   {gridData.dropRows.map((dropRow: any) => (
                     <tr key={dropRow.drop}>
                       <td className="border border-border bg-muted p-2 font-medium sticky left-0 z-10">
-                        {dropRow.drop}cm
+                        {dropRow.drop}{getUnitLabel(units.length)}
                       </td>
                       {dropRow.prices.map((price: number, widthIndex: number) => (
                         <td key={widthIndex} className="border border-border p-2 text-center">
@@ -111,10 +112,10 @@ export const PricingGridPreview = ({ gridData, gridName, gridCode }: PricingGrid
               <table className="min-w-full border-collapse text-xs">
                 <thead>
                   <tr>
-                    <th className="border border-border bg-muted p-2 sticky left-0 z-10">Width / Drop (cm)</th>
+                    <th className="border border-border bg-muted p-2 sticky left-0 z-10">Width / Drop ({getUnitLabel(units.length)})</th>
                     {gridData.widthRanges.map((width: string, index: number) => (
                       <th key={index} className="border border-border bg-muted p-2 min-w-[80px]">
-                        {width}cm
+                        {width}{getUnitLabel(units.length)}
                       </th>
                     ))}
                   </tr>
@@ -123,7 +124,7 @@ export const PricingGridPreview = ({ gridData, gridName, gridCode }: PricingGrid
                   {gridData.dropRanges.map((drop: string, dropIndex: number) => (
                     <tr key={dropIndex}>
                       <td className="border border-border bg-muted p-2 font-medium sticky left-0 z-10">
-                        {drop}cm
+                        {drop}{getUnitLabel(units.length)}
                       </td>
                       {gridData.prices[dropIndex]?.map((price: number, widthIndex: number) => (
                         <td key={widthIndex} className="border border-border p-2 text-center">
