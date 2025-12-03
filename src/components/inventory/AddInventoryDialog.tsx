@@ -1,3 +1,4 @@
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
@@ -13,12 +14,19 @@ interface AddInventoryDialogProps {
 export const AddInventoryDialog = ({ trigger, onSuccess, initialCategory, initialSubcategory }: AddInventoryDialogProps) => {
   const [open, setOpen] = usePersistedDialogState('add_inventory');
 
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpen(true);
+  };
+
   return (
     <>
       {trigger ? (
-        <div onClick={() => setOpen(true)}>{trigger}</div>
+        React.cloneElement(trigger as React.ReactElement, {
+          onClick: handleTriggerClick
+        })
       ) : (
-        <Button onClick={() => setOpen(true)}>
+        <Button onClick={handleTriggerClick}>
           <Plus className="h-4 w-4 mr-2" />
           Add Item
         </Button>

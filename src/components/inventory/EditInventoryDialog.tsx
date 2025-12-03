@@ -1,3 +1,4 @@
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
@@ -12,12 +13,19 @@ interface EditInventoryDialogProps {
 export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryDialogProps) => {
   const [open, setOpen] = usePersistedDialogState(`edit_inventory_${item?.id}`);
 
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpen(true);
+  };
+
   return (
     <>
       {trigger ? (
-        <div onClick={() => setOpen(true)}>{trigger}</div>
+        React.cloneElement(trigger as React.ReactElement, {
+          onClick: handleTriggerClick
+        })
       ) : (
-        <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+        <Button variant="outline" size="sm" onClick={handleTriggerClick}>
           <Edit className="h-4 w-4" />
         </Button>
       )}
