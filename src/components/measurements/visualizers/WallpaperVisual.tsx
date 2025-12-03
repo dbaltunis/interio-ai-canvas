@@ -7,6 +7,7 @@ import { Ruler, Maximize2, Info, ChevronDown, DollarSign } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { calculateWallpaperCost } from "@/utils/wallpaperCalculations";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -159,19 +160,19 @@ export const WallpaperVisual = ({
                   <polygon points="50,25 56,22 56,28" fill="#3b82f6" />
                   <polygon points="350,25 344,22 344,28" fill="#3b82f6" />
                   <text x="200" y="18" textAnchor="middle" fill="#3b82f6" fontSize="12" fontWeight="bold">
-                    {wallWidth}cm
+                    {formatFromCM(wallWidth, units.length)}
                   </text>
                   <line x1="375" y1="40" x2="375" y2="280" stroke="#3b82f6" strokeWidth="1.5" />
                   <polygon points="375,40 372,46 378,46" fill="#3b82f6" />
                   <polygon points="375,280 372,274 378,274" fill="#3b82f6" />
                   <text x="390" y="160" textAnchor="start" fill="#3b82f6" fontSize="12" fontWeight="bold">
-                    {wallHeight}cm
+                    {formatFromCM(wallHeight, units.length)}
                   </text>
                   {patternRepeat > 0 && selectedWallpaper && (
                     <>
                       <line x1="55" y1="40" x2="55" y2={40 + (patternRepeat * 240 / wallHeight)} stroke="#f59e0b" strokeWidth="2" strokeDasharray="4,4" />
                       <text x="60" y={40 + (patternRepeat * 240 / wallHeight) / 2} fill="#f59e0b" fontSize="10" fontWeight="bold">
-                        {patternRepeat}cm repeat
+                        {formatFromCM(patternRepeat, units.length)} repeat
                       </text>
                     </>
                   )}
@@ -190,7 +191,7 @@ export const WallpaperVisual = ({
                              calculation.soldBy === 'per_sqm' ? 'Sold per m²' : 'Sold per Meter'}
                           </Badge>
                           <span className="text-xs font-medium">
-                            {calculation.stripsNeeded} strips × {calculation.lengthPerStripCm.toFixed(1)}cm = {calculation.totalMeters.toFixed(2)}m
+                            {calculation.stripsNeeded} strips × {formatFromCM(calculation.lengthPerStripCm, units.length)} = {calculation.totalMeters.toFixed(2)}m
                             {calculation.soldBy === 'per_roll' && ` (${calculation.rollsNeeded} roll${calculation.rollsNeeded > 1 ? 's' : ''})`}
                           </span>
                         </div>
@@ -203,16 +204,16 @@ export const WallpaperVisual = ({
                           <strong>Detailed Calculation:</strong>
                         </p>
                         <p className="text-muted-foreground leading-relaxed ml-2">
-                          • Wall height: {wallHeight}cm
+                          • Wall height: {formatFromCM(wallHeight, units.length)}
                           {patternRepeat > 0 && matchType !== 'none' && matchType !== 'random' && (
-                            <> + Pattern repeat: {patternRepeat}cm</>
+                            <> + Pattern repeat: {formatFromCM(patternRepeat, units.length)}</>
                           )}
                         </p>
                         <p className="text-muted-foreground leading-relaxed ml-2">
-                          • Strip length: {calculation.lengthPerStripCm.toFixed(1)}cm ({calculation.lengthPerStripM.toFixed(2)}m)
+                          • Strip length: {formatFromCM(calculation.lengthPerStripCm, units.length)} ({calculation.lengthPerStripM.toFixed(2)}m)
                         </p>
                         <p className="text-muted-foreground leading-relaxed ml-2">
-                          • Strips needed: {calculation.stripsNeeded} (wall width {wallWidth}cm ÷ roll width {rollWidth}cm)
+                          • Strips needed: {calculation.stripsNeeded} (wall width {formatFromCM(wallWidth, units.length)} ÷ roll width {formatFromCM(rollWidth, units.length)})
                         </p>
                         <p className="font-medium ml-2">
                           = Total: {calculation.totalMeters.toFixed(2)}m
@@ -254,7 +255,7 @@ export const WallpaperVisual = ({
           </h3>
           <div className="space-y-3">
             <div>
-              <Label htmlFor="wall_width">Wall Width (cm)</Label>
+              <Label htmlFor="wall_width">Wall Width ({getUnitLabel(units.length)})</Label>
               <Input
                 id="wall_width"
                 type="number"
@@ -265,7 +266,7 @@ export const WallpaperVisual = ({
               />
             </div>
             <div>
-              <Label htmlFor="wall_height">Wall Height (cm)</Label>
+              <Label htmlFor="wall_height">Wall Height ({getUnitLabel(units.length)})</Label>
               <Input
                 id="wall_height"
                 type="number"
@@ -314,12 +315,12 @@ export const WallpaperVisual = ({
               <div className="grid grid-cols-2 gap-2 text-sm pb-3 border-b">
                 <div>
                   <span className="text-muted-foreground">Roll Size:</span>
-                  <p className="font-medium">{rollWidth}cm × {rollLength}m</p>
+                  <p className="font-medium">{formatFromCM(rollWidth, units.length)} × {rollLength}m</p>
                 </div>
                 {patternRepeat > 0 && (
                   <div>
                     <span className="text-muted-foreground">Pattern Repeat:</span>
-                    <p className="font-medium">{patternRepeat}cm ({matchType})</p>
+                    <p className="font-medium">{formatFromCM(patternRepeat, units.length)} ({matchType})</p>
                   </div>
                 )}
               </div>
@@ -335,7 +336,7 @@ export const WallpaperVisual = ({
                           <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
-                          <p>Wall width ({wallWidth}cm) ÷ Roll width ({rollWidth}cm) = {calculation.stripsNeeded} strips</p>
+                          <p>Wall width ({formatFromCM(wallWidth, units.length)}) ÷ Roll width ({formatFromCM(rollWidth, units.length)}) = {calculation.stripsNeeded} strips</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -354,21 +355,21 @@ export const WallpaperVisual = ({
                         <TooltipContent className="max-w-xs">
                           <div className="space-y-1">
                             <p className="font-semibold text-xs mb-1">Using entered wall height:</p>
-                            <span className="block">• Wall height: {wallHeight}cm</span>
+                            <span className="block">• Wall height: {formatFromCM(wallHeight, units.length)}</span>
                             {patternRepeat > 0 && matchType !== 'none' && matchType !== 'random' && (
                               <>
-                                <span className="block">• Pattern repeat: +{patternRepeat}cm</span>
+                                <span className="block">• Pattern repeat: +{formatFromCM(patternRepeat, units.length)}</span>
                                 <span className="block">• Pattern repeats in strip: {calculation.patternRepeatsInStrip}</span>
                               </>
                             )}
-                            <span className="block font-semibold pt-1">= {calculation.lengthPerStripCm}cm ({calculation.lengthPerStripM}m)</span>
+                            <span className="block font-semibold pt-1">= {formatFromCM(calculation.lengthPerStripCm, units.length)} ({calculation.lengthPerStripM}m)</span>
                           </div>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
                   <p className="text-2xl font-bold">{calculation.lengthPerStripM}m</p>
-                  <p className="text-xs text-muted-foreground">({calculation.lengthPerStripCm}cm)</p>
+                  <p className="text-xs text-muted-foreground">({formatFromCM(calculation.lengthPerStripCm, units.length)})</p>
                 </div>
 
                 <div className="space-y-1">
@@ -411,7 +412,7 @@ export const WallpaperVisual = ({
                           <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
-                          <p>Roll length ({rollLength}m = {rollLength * 100}cm) ÷ Strip length ({calculation.lengthPerStripCm}cm) = {calculation.stripsPerRoll} complete strips</p>
+                          <p>Roll length ({rollLength}m = {formatFromCM(rollLength * 100, units.length)}) ÷ Strip length ({formatFromCM(calculation.lengthPerStripCm, units.length)}) = {calculation.stripsPerRoll} complete strips</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>

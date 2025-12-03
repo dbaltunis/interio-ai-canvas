@@ -29,6 +29,8 @@ import { useInventoryLeftovers } from "@/hooks/useInventoryLeftovers";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InventoryQuickView } from "./InventoryQuickView";
 import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 
 interface FabricInventoryViewProps {
   searchQuery: string;
@@ -56,6 +58,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
   const { data: inventory, refetch } = useEnhancedInventory();
   const { toast } = useToast();
   const { formatCurrency: formatPrice } = useFormattedCurrency();
+  const { units } = useMeasurementUnits();
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pricingGrids, setPricingGrids] = useState<Array<{ id: string; grid_code: string | null; name: string }>>([]);
@@ -288,7 +291,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
                         {item.fabric_width && (
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Width:</span>
-                            <span className="font-medium">{item.fabric_width}cm</span>
+                            <span className="font-medium">{formatFromCM(item.fabric_width, units.length)}</span>
                           </div>
                         )}
                         <div className="flex justify-between text-sm">
@@ -419,7 +422,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
                           <td className="px-2 py-1 text-xs font-medium">{item.name}</td>
                           <td className="px-2 py-1 text-xs text-muted-foreground">{item.sku || '-'}</td>
                           <td className="px-2 py-1 text-xs">{item.supplier || '-'}</td>
-                          <td className="px-2 py-1 text-xs">{item.fabric_width ? `${item.fabric_width}cm` : '-'}</td>
+                          <td className="px-2 py-1 text-xs">{item.fabric_width ? formatFromCM(item.fabric_width, units.length) : '-'}</td>
                           <td className="px-2 py-1 text-xs font-medium">
                             {item.pricing_grid_id ? (
                               <span className="text-primary">Grid</span>
