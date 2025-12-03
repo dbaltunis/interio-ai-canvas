@@ -400,7 +400,7 @@ export const DynamicCurtainOptions = ({
       
       {availableHeadings.length > 0 && (
         <div className="space-y-3">
-          <h4 className="font-medium text-foreground">Heading Type</h4>
+          <h4 className={`font-medium ${!measurements.selected_heading && availableHeadings.length > 1 ? 'text-destructive' : 'text-foreground'}`}>Heading Type</h4>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Select Type</span>
             <div className="w-64">
@@ -409,8 +409,8 @@ export const DynamicCurtainOptions = ({
                 onValueChange={handleHeadingChange}
                 disabled={readOnly}
               >
-                <SelectTrigger className="bg-background border-input">
-                  <SelectValue placeholder="Select..." />
+                <SelectTrigger className={`bg-background border-input ${!measurements.selected_heading && availableHeadings.length > 1 ? 'border-destructive ring-1 ring-destructive/30' : ''}`}>
+                  <SelectValue placeholder={!measurements.selected_heading && availableHeadings.length > 1 ? "⚠️ Select..." : "Select..."} />
                 </SelectTrigger>
                 <SelectContent 
                   className="z-[9999] bg-popover border-border shadow-lg max-h-[300px]"
@@ -524,11 +524,10 @@ export const DynamicCurtainOptions = ({
         </div>
       )}
 
-        {/* Lining Type - Top Level Category - Only show if not in treatment options */}
         {template.lining_types && template.lining_types.length > 0 && 
           !treatmentOptions.some(opt => opt.key === 'lining_type' && opt.visible) && (
           <div className="space-y-3">
-          <h4 className="font-medium text-foreground">Lining Type</h4>
+          <h4 className={`font-medium ${!measurements.selected_lining && template.lining_types.length > 1 ? 'text-destructive' : 'text-foreground'}`}>Lining Type</h4>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Select Lining</span>
             <div className="w-64">
@@ -536,8 +535,8 @@ export const DynamicCurtainOptions = ({
                 value={measurements.selected_lining || ''}
                 onValueChange={handleLiningChange}
               >
-                <SelectTrigger className="bg-background border-input">
-                  <SelectValue placeholder="Select..." />
+                <SelectTrigger className={`bg-background border-input ${!measurements.selected_lining && template.lining_types.length > 1 ? 'border-destructive ring-1 ring-destructive/30' : ''}`}>
+                  <SelectValue placeholder={!measurements.selected_lining && template.lining_types.length > 1 ? "⚠️ Select..." : "Select..."} />
                 </SelectTrigger>
                 <SelectContent 
                   className="z-[9999] bg-popover border-border shadow-lg"
@@ -695,6 +694,23 @@ export const DynamicCurtainOptions = ({
         const selectedValue = option.option_values.find(v => v.id === selectedValueId);
         const subOptions = selectedValue?.extra_data?.sub_options;
         
+        // Auto-select if only one option value exists
+        const hasOnlyOneOption = option.option_values.length === 1;
+        const shouldAutoSelect = hasOnlyOneOption && !selectedValueId;
+        
+        // Trigger auto-selection for single options
+        if (shouldAutoSelect) {
+          const singleOption = option.option_values[0];
+          // Use setTimeout to avoid state update during render
+          setTimeout(() => {
+            console.log(`✅ Auto-selecting single option for ${option.label}:`, singleOption.label);
+            handleTreatmentOptionChange(option.key, singleOption.id);
+          }, 0);
+        }
+        
+        // Show red indicator if multiple options but none selected
+        const showRequiredIndicator = !selectedValueId && option.option_values.length > 1;
+        
         // Format pricing label with method
         const formatPriceWithMethod = (value: any) => {
           const price = getOptionPrice(value);
@@ -723,17 +739,20 @@ export const DynamicCurtainOptions = ({
 
         return (
           <div key={option.id} className="space-y-3">
-            <h4 className="font-medium text-foreground">{option.label}</h4>
+            <h4 className={`font-medium ${showRequiredIndicator ? 'text-destructive' : 'text-foreground'}`}>{option.label}</h4>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Select {option.label}</span>
               <div className="w-64">
                 <Select
                   value={selectedValueId || ''}
-                  onValueChange={(value) => handleTreatmentOptionChange(option.key, value)}
+                  onValueChange={(value) => {
+                    console.log(`🔥 Treatment option change: ${option.key} = ${value}`);
+                    handleTreatmentOptionChange(option.key, value);
+                  }}
                   disabled={readOnly}
                 >
-                  <SelectTrigger className="bg-background border-input">
-                    <SelectValue placeholder="Select..." />
+                  <SelectTrigger className={`bg-background border-input ${showRequiredIndicator ? 'border-destructive ring-1 ring-destructive/30' : ''}`}>
+                    <SelectValue placeholder={showRequiredIndicator ? "⚠️ Select..." : "Select..."} />
                   </SelectTrigger>
                   <SelectContent 
                     className="bg-popover border-border z-50"
@@ -761,15 +780,41 @@ export const DynamicCurtainOptions = ({
             </div>
 
             {/* Sub-options - Cascading: First select category, then select item */}
-            {selectedValueId && subOptions && subOptions.length > 0 && (
+            {selectedValueId && subOptions && subOptions.length > 0 && (() => {
+              // Auto-select sub-category if only one exists
+              const currentSubCategory = subCategorySelections[option.key];
+              const visibleSubOptions = subOptions.filter((subOption: any) => {
+                if (subOption.condition) {
+                  const conditionKey = Object.keys(subOption.condition)[0];
+                  const requiredValue = subOption.condition[conditionKey];
+                  const actualValue = treatmentOptionSelections[`${option.key}_${conditionKey}`];
+                  if (actualValue !== requiredValue) {
+                    return false;
+                  }
+                }
+                return true;
+              });
+              
+              // Auto-select if only one sub-option category
+              if (visibleSubOptions.length === 1 && !currentSubCategory) {
+                setTimeout(() => {
+                  console.log(`✅ Auto-selecting single sub-category for ${option.label}:`, visibleSubOptions[0].label);
+                  setSubCategorySelections(prev => ({ ...prev, [option.key]: visibleSubOptions[0].key }));
+                }, 0);
+              }
+              
+              const showSubCategoryIndicator = !currentSubCategory && visibleSubOptions.length > 1;
+              
+              return (
               <div className="ml-4 space-y-3">
                 {/* Step 1: Category selector - choose between sub-option types (e.g., Tracks OR Rods) */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Select Type</span>
+                  <span className={`text-sm ${showSubCategoryIndicator ? 'text-destructive' : 'text-muted-foreground'}`}>Select Type</span>
                   <div className="w-64">
                     <Select
-                      value={subCategorySelections[option.key] || ''}
+                      value={currentSubCategory || ''}
                       onValueChange={(categoryKey) => {
+                        console.log(`🔥 Sub-category change: ${option.key} type = ${categoryKey}`);
                         setSubCategorySelections(prev => ({ ...prev, [option.key]: categoryKey }));
                         // Clear previous item selection when category changes
                         const prevCategory = subCategorySelections[option.key];
@@ -779,43 +824,62 @@ export const DynamicCurtainOptions = ({
                       }}
                       disabled={readOnly}
                     >
-                      <SelectTrigger className="bg-background border-input">
-                        <SelectValue placeholder="Select type..." />
+                      <SelectTrigger className={`bg-background border-input ${showSubCategoryIndicator ? 'border-destructive ring-1 ring-destructive/30' : ''}`}>
+                        <SelectValue placeholder={showSubCategoryIndicator ? "⚠️ Select type..." : "Select type..."} />
                       </SelectTrigger>
                       <SelectContent className="z-[9999] bg-popover border-border shadow-lg" position="popper" sideOffset={5} align="end">
-                        {subOptions.map((subOption: any) => {
-                          // Check if sub-option has condition
-                          if (subOption.condition) {
-                            const conditionKey = Object.keys(subOption.condition)[0];
-                            const requiredValue = subOption.condition[conditionKey];
-                            const actualValue = treatmentOptionSelections[`${option.key}_${conditionKey}`];
-                            if (actualValue !== requiredValue) {
-                              return null;
-                            }
-                          }
-                          return (
-                            <SelectItem key={subOption.id} value={subOption.key}>
-                              {subOption.label}
-                            </SelectItem>
-                          );
-                        })}
+                        {visibleSubOptions.map((subOption: any) => (
+                          <SelectItem key={subOption.id} value={subOption.key}>
+                            {subOption.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
                 {/* Step 2: Item selector - shows ONLY when category is selected */}
-                {subCategorySelections[option.key] && (() => {
-                  const selectedSubOption = subOptions.find((so: any) => so.key === subCategorySelections[option.key]);
+                {currentSubCategory && (() => {
+                  const selectedSubOption = subOptions.find((so: any) => so.key === currentSubCategory);
                   if (!selectedSubOption || !selectedSubOption.choices) return null;
+                  
+                  const currentItemSelection = treatmentOptionSelections[`${option.key}_${selectedSubOption.key}`];
+                  
+                  // Auto-select if only one choice
+                  if (selectedSubOption.choices.length === 1 && !currentItemSelection) {
+                    const singleChoice = selectedSubOption.choices[0];
+                    setTimeout(() => {
+                      console.log(`✅ Auto-selecting single choice for ${selectedSubOption.label}:`, singleChoice.label);
+                      handleTreatmentOptionChange(`${option.key}_${selectedSubOption.key}`, singleChoice.value);
+                      
+                      const displayLabel = `${option.label} - ${selectedSubOption.label}: ${singleChoice.label}`;
+                      const pricingMethod = singleChoice.pricing_method || selectedSubOption.pricing_method || 'per-unit';
+                      const price = singleChoice.price || 0;
+                      
+                      if (onOptionPriceChange) {
+                        onOptionPriceChange(`${option.key}_${selectedSubOption.key}`, price, displayLabel, pricingMethod);
+                      }
+                      
+                      if (onSelectedOptionsChange) {
+                        const updatedOptions = selectedOptions.filter(opt => 
+                          !opt.name.startsWith(`${option.label} - ${selectedSubOption.label}`)
+                        );
+                        updatedOptions.push({ name: displayLabel, price, pricingMethod });
+                        onSelectedOptionsChange(updatedOptions);
+                      }
+                    }, 0);
+                  }
+                  
+                  const showItemIndicator = !currentItemSelection && selectedSubOption.choices.length > 1;
                   
                   return (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">{selectedSubOption.label}</span>
+                      <span className={`text-sm ${showItemIndicator ? 'text-destructive' : 'text-muted-foreground'}`}>{selectedSubOption.label}</span>
                       <div className="w-64">
                         <Select
-                          value={treatmentOptionSelections[`${option.key}_${selectedSubOption.key}`] || ''}
+                          value={currentItemSelection || ''}
                           onValueChange={(choiceValue) => {
+                            console.log(`🔥 Choice selection: ${option.key}_${selectedSubOption.key} = ${choiceValue}`);
                             handleTreatmentOptionChange(`${option.key}_${selectedSubOption.key}`, choiceValue);
                             
                             const choice = selectedSubOption.choices?.find((c: any) => c.value === choiceValue);
@@ -845,8 +909,8 @@ export const DynamicCurtainOptions = ({
                           }}
                           disabled={readOnly}
                         >
-                          <SelectTrigger className="bg-background border-input">
-                            <SelectValue placeholder="Select..." />
+                          <SelectTrigger className={`bg-background border-input ${showItemIndicator ? 'border-destructive ring-1 ring-destructive/30' : ''}`}>
+                            <SelectValue placeholder={showItemIndicator ? "⚠️ Select..." : "Select..."} />
                           </SelectTrigger>
                           <SelectContent className="z-[9999] bg-popover border-border shadow-lg" position="popper" sideOffset={5} align="end">
                             {selectedSubOption.choices.map((choice: any) => (
@@ -868,7 +932,8 @@ export const DynamicCurtainOptions = ({
                   );
                 })()}
               </div>
-            )}
+              );
+            })()}
           </div>
         );
       })}

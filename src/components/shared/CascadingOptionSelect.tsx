@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
+import { cn } from "@/lib/utils";
 
 interface OptionItem {
   id: string;
@@ -27,6 +29,7 @@ interface CascadingOptionSelectProps {
   currency: string;
   placeholder?: string;
   disabled?: boolean;
+  required?: boolean;
 }
 
 const formatPricingLabel = (option: OptionItem, currency: string): string => {
@@ -74,9 +77,18 @@ export const CascadingOptionSelect = ({
   onSelect,
   currency,
   placeholder,
-  disabled = false
+  disabled = false,
+  required = false
 }: CascadingOptionSelectProps) => {
   const selectedOption = options.find(opt => opt.id === selectedId);
+  
+  // Auto-select if only one option and nothing selected
+  useEffect(() => {
+    if (options.length === 1 && !selectedId) {
+      console.log(`✅ Auto-selecting single option for ${label}:`, options[0].name);
+      onSelect(options[0].id, null);
+    }
+  }, [options.length, selectedId, label, onSelect]);
   
   const handleValueChange = (value: string) => {
     const previousId = selectedId;
@@ -87,15 +99,24 @@ export const CascadingOptionSelect = ({
     }
   };
 
+  // Show red indicator if required, has multiple options, and none selected
+  const showRequiredIndicator = !selectedId && options.length > 1;
+
   return (
     <div className="grid grid-cols-[180px_1fr] gap-4 items-center">
-      <h5 className="font-medium text-foreground capitalize">{label}</h5>
+      <h5 className={cn(
+        "font-medium capitalize",
+        showRequiredIndicator ? "text-destructive" : "text-foreground"
+      )}>{label}</h5>
       <Select
         value={selectedId || "__none__"}
         onValueChange={handleValueChange}
         disabled={disabled}
       >
-        <SelectTrigger className="bg-background">
+        <SelectTrigger className={cn(
+          "bg-background",
+          showRequiredIndicator && "border-destructive ring-1 ring-destructive/30"
+        )}>
           <SelectValue>
             {selectedOption ? (
               <div className="flex items-center justify-between w-full">
@@ -105,7 +126,9 @@ export const CascadingOptionSelect = ({
                 </Badge>
               </div>
             ) : (
-              <span className="text-muted-foreground">{placeholder || `Select ${label}`}</span>
+              <span className={cn(
+                showRequiredIndicator ? "text-destructive" : "text-muted-foreground"
+              )}>{placeholder || `Select ${label}`}</span>
             )}
           </SelectValue>
         </SelectTrigger>
