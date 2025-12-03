@@ -13,7 +13,76 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Blinds that don't use fabric (venetian, vertical, cellular) return empty
+      // Check if this is a material-based treatment (venetian, vertical, shutters)
+      const primaryCategory = getTreatmentPrimaryCategory(treatmentCategory);
+      
+      // CRITICAL FIX: Handle material-based treatments that have inventoryCategory === 'none'
+      // These treatments USE materials but aren't configured in inventoryCategory
+      if (treatmentConfig.inventoryCategory === 'none' && primaryCategory === 'material') {
+        console.log('🔍 Material-based treatment detected:', treatmentCategory);
+        
+        // Get material subcategories for this treatment
+        const subcategories = getAcceptedSubcategories(treatmentCategory);
+        console.log('📋 Fetching materials with subcategories:', subcategories);
+        
+        const { data, error } = await supabase
+          .from("enhanced_inventory_items")
+          .select("*")
+          .or("category.eq.material,category.eq.hard_coverings")
+          .in("subcategory", subcategories)
+          .eq("active", true)
+          .order("name");
+
+        if (error) throw error;
+        
+        console.log('✅ Found material items:', data?.length || 0);
+        
+        // Enrich materials with pricing grid data
+        const enrichedMaterials = await Promise.all((data || []).map(async (material) => {
+          // If material has price_group, try to resolve pricing grid
+          if (material.price_group) {
+            try {
+              // CRITICAL: For materials, use treatment category as product_type if product_category not set
+              const productType = material.product_category || treatmentCategory;
+              
+              console.log('🔗 Resolving grid for material:', {
+                materialName: material.name,
+                priceGroup: material.price_group,
+                productType,
+                originalProductCategory: material.product_category
+              });
+              
+              const gridResult = await resolveGridForProduct({
+                productType,
+                systemType: material.system_type,
+                fabricPriceGroup: material.price_group,
+                userId: user.id
+              });
+              
+              if (gridResult.gridId) {
+                console.log('✅ Grid resolved for material:', material.name, gridResult.gridName);
+                return {
+                  ...material,
+                  pricing_grid_data: gridResult.gridData,
+                  resolved_grid_name: gridResult.gridName,
+                  resolved_grid_code: gridResult.gridCode,
+                  resolved_grid_id: gridResult.gridId
+                };
+              } else {
+                console.log('⚠️ No grid found for material:', material.name);
+              }
+            } catch (error) {
+              console.error('Error enriching material with grid:', material.name, error);
+            }
+          }
+          return material;
+        }));
+        
+        console.log('✅ Enriched materials with grids:', enrichedMaterials.filter((m: any) => m.pricing_grid_data).length);
+        return enrichedMaterials;
+      }
+      
+      // Original logic: Return empty for treatments that truly don't need inventory
       if (treatmentConfig.inventoryCategory === 'none') {
         console.log('🔍 Treatment does not use fabric inventory:', treatmentCategory);
         return [];
@@ -38,7 +107,6 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
 
       // Get accepted subcategories from centralized config
       const subcategoryConfig = TREATMENT_SUBCATEGORIES[treatmentCategory];
-      const primaryCategory = getTreatmentPrimaryCategory(treatmentCategory);
       
       console.log('🔍 Fetching inventory for treatment:', treatmentCategory, 'category:', primaryCategory);
 
@@ -93,21 +161,24 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
 
       if (error) throw error;
       
-      // Enrich fabrics with pricing grid data
-      const enrichedFabrics = await Promise.all((data || []).map(async (fabric) => {
-        // If fabric has price_group and product_category, resolve its pricing grid
-        if (fabric.price_group && fabric.product_category) {
+      // Enrich fabrics/materials with pricing grid data
+      const enrichedItems = await Promise.all((data || []).map(async (item) => {
+        // If item has price_group, try to resolve pricing grid
+        if (item.price_group) {
           try {
+            // Use product_category if set, otherwise use treatment category
+            const productType = item.product_category || treatmentCategory;
+            
             const gridResult = await resolveGridForProduct({
-              productType: fabric.product_category,
-              systemType: undefined,
-              fabricPriceGroup: fabric.price_group,
+              productType,
+              systemType: item.system_type,
+              fabricPriceGroup: item.price_group,
               userId: user.id
             });
             
             if (gridResult.gridId) {
               return {
-                ...fabric,
+                ...item,
                 pricing_grid_data: gridResult.gridData,
                 resolved_grid_name: gridResult.gridName,
                 resolved_grid_code: gridResult.gridCode,
@@ -115,14 +186,14 @@ export const useTreatmentSpecificFabrics = (treatmentCategory: TreatmentCategory
               };
             }
           } catch (error) {
-            console.error('Error enriching fabric with grid:', fabric.name, error);
+            console.error('Error enriching item with grid:', item.name, error);
           }
         }
-        return fabric;
+        return item;
       }));
       
-      console.log('✅ Enriched fabrics with grids:', enrichedFabrics.filter((f: any) => f.pricing_grid_data).length);
-      return enrichedFabrics;
+      console.log('✅ Enriched items with grids:', enrichedItems.filter((f: any) => f.pricing_grid_data).length);
+      return enrichedItems;
     },
     enabled: !!treatmentCategory,
   });
