@@ -1,6 +1,39 @@
 // Inventory Category Definitions
 // Single source of truth for all inventory categories and subcategories
 
+// ============= CSV IMPORT VALIDATION CONSTANTS =============
+// These MUST match the UI dropdown values exactly
+
+export const VALID_FABRIC_SUBCATEGORIES = [
+  'curtain_fabric', 'roller_fabric', 'cellular', 'vertical_fabric', 
+  'awning_fabric', 'lining_fabric', 'sheer_fabric', 'furniture_fabric',
+  'roman_fabric', 'panel_glide_fabric', 'upholstery_fabric'
+] as const;
+
+export const VALID_MATERIAL_SUBCATEGORIES = [
+  'venetian', 'vertical'
+] as const;
+
+export const VALID_HARDWARE_SUBCATEGORIES = [
+  'rod', 'track', 'motor', 'bracket', 'accessory'
+] as const;
+
+export const VALID_WALLCOVERING_SUBCATEGORIES = [
+  'wallpaper', 'vinyl', 'mural', 'other_wallcovering'
+] as const;
+
+export const VALID_SERVICE_SUBCATEGORIES = [
+  'installation', 'fitting', 'other_service'
+] as const;
+
+export const VALID_PRODUCT_CATEGORIES = [
+  'roller_blinds', 'venetian_blinds', 'vertical_blinds', 'roman_blinds',
+  'cellular_blinds', 'curtains', 'shutters', 'plantation_shutters',
+  'panel_glide', 'panel_blinds', 'awning', 'wallpaper', 'other'
+] as const;
+
+// ============= UI CATEGORY DEFINITIONS =============
+
 export const INVENTORY_CATEGORIES = {
   // Fabrics (used for both curtains and Roman blinds)
   fabrics: {
