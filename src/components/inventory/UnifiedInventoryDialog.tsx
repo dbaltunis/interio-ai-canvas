@@ -906,17 +906,34 @@ export const UnifiedInventoryDialog = ({
                     </CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-2">
                       <div>
-                        <Label>Slat/Vane Width (mm)</Label>
-                        <Input
-                          type="number"
-                          step="1"
-                          value={formData.specifications?.slat_width || ""}
-                          onChange={(e) => setFormData(prev => ({ 
+                        <Label>{formData.subcategory === 'vertical' ? 'Vane Width' : 'Slat Width'}</Label>
+                        <Select
+                          value={String(formData.specifications?.slat_width || "")}
+                          onValueChange={(value) => setFormData(prev => ({ 
                             ...prev, 
-                            specifications: { ...prev.specifications, slat_width: parseFloat(e.target.value) || 0 }
+                            specifications: { ...prev.specifications, slat_width: parseFloat(value) || 0 }
                           }))}
-                          placeholder="e.g., 50"
-                        />
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select width" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {formData.subcategory === 'vertical' ? (
+                              <>
+                                <SelectItem value="89">89mm (3.5")</SelectItem>
+                                <SelectItem value="127">127mm (5")</SelectItem>
+                              </>
+                            ) : (
+                              <>
+                                <SelectItem value="16">16mm</SelectItem>
+                                <SelectItem value="25">25mm (1")</SelectItem>
+                                <SelectItem value="35">35mm</SelectItem>
+                                <SelectItem value="50">50mm (2")</SelectItem>
+                                <SelectItem value="63">63mm (2.5")</SelectItem>
+                              </>
+                            )}
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       <div>
@@ -932,12 +949,19 @@ export const UnifiedInventoryDialog = ({
                             <SelectValue placeholder="Select material" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="aluminum">Aluminum</SelectItem>
-                            <SelectItem value="wood">Wood</SelectItem>
-                            <SelectItem value="faux_wood">Faux Wood</SelectItem>
-                            <SelectItem value="pvc">PVC</SelectItem>
-                            <SelectItem value="fabric">Fabric</SelectItem>
-                            <SelectItem value="cellular">Cellular/Honeycomb</SelectItem>
+                            {formData.subcategory === 'vertical' ? (
+                              <>
+                                <SelectItem value="fabric">Fabric</SelectItem>
+                                <SelectItem value="pvc">PVC</SelectItem>
+                              </>
+                            ) : (
+                              <>
+                                <SelectItem value="aluminum">Aluminum</SelectItem>
+                                <SelectItem value="wood">Wood</SelectItem>
+                                <SelectItem value="faux_wood">Faux Wood</SelectItem>
+                                <SelectItem value="pvc">PVC</SelectItem>
+                              </>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
@@ -946,7 +970,7 @@ export const UnifiedInventoryDialog = ({
                       <div className="md:col-span-2">
                         <Label>Product Preview</Label>
                         <div className="space-y-3">
-                          {/* Auto-generated slat preview from colors */}
+                          {/* Auto-generated slat/vane preview from colors */}
                           {(() => {
                             const materialSelectedColors = formData.tags.filter(tag => 
                               COLOR_PALETTE.some(c => c.value === tag) || customColors.some(c => c.value === tag)
@@ -956,8 +980,9 @@ export const UnifiedInventoryDialog = ({
                                 <div className="space-y-2">
                                   <ColorSlatPreview 
                                     hexColor={getColorHex(materialSelectedColors[0], [...COLOR_PALETTE], customColors)}
-                                    slatWidth={formData.specifications?.slat_width || 50}
+                                    slatWidth={formData.specifications?.slat_width || (formData.subcategory === 'vertical' ? 89 : 50)}
                                     materialType={formData.specifications?.material_type}
+                                    orientation={formData.subcategory === 'vertical' ? 'vertical' : 'horizontal'}
                                     showLabel
                                     size="lg"
                                   />
