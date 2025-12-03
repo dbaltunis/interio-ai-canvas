@@ -16,6 +16,8 @@ import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useStoreProductCatalog } from "@/hooks/useStoreProductCatalog";
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useFabricCalculator } from "@/components/shared/measurement-visual/hooks/useFabricCalculator";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { formatFromCM, formatDimensionsFromCM } from "@/utils/measurementFormatters";
 import { formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
 import { Search, Calculator, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -30,6 +32,7 @@ export const AddProductsDialog = ({ open, onOpenChange, storeId }: AddProductsDi
   const { data: items = [], isLoading } = useEnhancedInventory();
   const { data: templates = [] } = useCurtainTemplates();
   const { products, bulkAddProducts } = useStoreProductCatalog(storeId);
+  const { units } = useMeasurementUnits();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedTemplates, setSelectedTemplates] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState("");
@@ -123,7 +126,7 @@ export const AddProductsDialog = ({ open, onOpenChange, storeId }: AddProductsDi
             <div className="flex items-start gap-2">
               <Info className="h-3 w-3 mt-0.5 text-muted-foreground flex-shrink-0" />
               <p className="text-xs text-muted-foreground">
-                Preview based on example size: {exampleMeasurements.rail_width}cm wide × {exampleMeasurements.drop}cm drop
+                Preview based on example size: {formatDimensionsFromCM(parseFloat(exampleMeasurements.rail_width), parseFloat(exampleMeasurements.drop), units.length)}
               </p>
             </div>
             

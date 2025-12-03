@@ -2,6 +2,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { TreatmentData } from "./types";
 
 interface TreatmentControlsProps {
@@ -21,6 +23,7 @@ export const TreatmentControls = ({
 }: TreatmentControlsProps) => {
   const { data: templates = [] } = useCurtainTemplates();
   const { data: inventory = [] } = useEnhancedInventory();
+  const { units } = useMeasurementUnits();
 
   const fabrics = inventory.filter(item => 
     item.category === 'fabric' || item.name?.toLowerCase().includes('fabric')
@@ -112,7 +115,7 @@ export const TreatmentControls = ({
                   <div className="flex flex-col">
                     <span>{fabric.name}</span>
                     <span className="text-xs text-muted-foreground">
-                      {fabric.fabric_width || 137}cm wide • 
+                      {formatFromCM(fabric.fabric_width || 137, units.length)} wide • 
                       ${(fabric.price_per_meter || fabric.selling_price || 0).toFixed(2)}/m
                     </span>
                   </div>
@@ -129,9 +132,9 @@ export const TreatmentControls = ({
           <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
             <div>Type: {treatmentData.template.panel_configuration}</div>
             <div>Fullness: {treatmentData.template.fullness_ratio}x</div>
-            <div>Header: {treatmentData.template.header_allowance}cm</div>
-            <div>Bottom Hem: {treatmentData.template.bottom_hem}cm</div>
-            <div>Side Hems: {treatmentData.template.side_hems}cm</div>
+            <div>Header: {formatFromCM(treatmentData.template.header_allowance, units.length)}</div>
+            <div>Bottom Hem: {formatFromCM(treatmentData.template.bottom_hem, units.length)}</div>
+            <div>Side Hems: {formatFromCM(treatmentData.template.side_hems, units.length)}</div>
             <div>Waste: {treatmentData.template.waste_percent}%</div>
           </div>
         </div>
@@ -142,7 +145,7 @@ export const TreatmentControls = ({
           <h4 className="font-medium text-sm">Fabric Details</h4>
           <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground">
             <div>Name: {treatmentData.fabric.name}</div>
-            <div>Width: {treatmentData.fabric.fabric_width}cm</div>
+            <div>Width: {formatFromCM(treatmentData.fabric.fabric_width, units.length)}</div>
             <div>Price: ${treatmentData.fabric.price_per_meter.toFixed(2)}/m</div>
           </div>
         </div>

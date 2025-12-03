@@ -2,6 +2,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Eye } from "lucide-react";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { getUnitLabel } from "@/utils/measurementFormatters";
 
 interface PricingGridData {
   widthRanges: string[];
@@ -16,6 +18,8 @@ interface PricingGridPreviewProps {
 }
 
 export const PricingGridPreview = ({ gridData, gridName }: PricingGridPreviewProps) => {
+  const { units } = useMeasurementUnits();
+  
   if (!gridData?.widthRanges || !gridData?.dropRanges || !gridData?.prices) {
     return null;
   }
@@ -38,7 +42,7 @@ export const PricingGridPreview = ({ gridData, gridName }: PricingGridPreviewPro
         <div className="space-y-4">
           <div className="text-sm text-muted-foreground">
             <p><strong>Dimensions:</strong> {gridData.dropRanges.length} drop ranges × {gridData.widthRanges.length} width ranges</p>
-            <p><strong>Unit:</strong> {gridData.unit || 'cm'}</p>
+            <p><strong>Unit:</strong> {getUnitLabel(gridData.unit || units.length)}</p>
           </div>
           
           <div className="border rounded-lg overflow-auto">
@@ -46,7 +50,7 @@ export const PricingGridPreview = ({ gridData, gridName }: PricingGridPreviewPro
               <TableHeader>
                 <TableRow>
                   <TableHead className="sticky left-0 bg-background z-10 min-w-[100px]">
-                    Drop / Width ({gridData.unit || 'cm'})
+                    Drop / Width ({getUnitLabel(gridData.unit || units.length)})
                   </TableHead>
                   {gridData.widthRanges.map((width, index) => (
                     <TableHead key={index} className="text-center min-w-[80px]">

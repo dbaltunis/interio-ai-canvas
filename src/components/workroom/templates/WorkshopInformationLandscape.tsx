@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Pencil, RotateCcw, Save } from "lucide-react";
 import { WorkshopData } from "@/hooks/useWorkshopData";
 import { useWorkshopNotes } from "@/hooks/useWorkshopNotes";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 
 interface WorkshopInformationLandscapeProps {
   data: WorkshopData;
@@ -15,6 +17,7 @@ interface WorkshopInformationLandscapeProps {
 export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscapeProps> = ({ data, projectId, isPrintMode = false }) => {
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
+  const { units } = useMeasurementUnits();
   
   // Use workshop notes hook for database persistence
   const {
@@ -192,12 +195,12 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                       {item.fabricDetails && (
                         <>
                           <div className="text-[9px] text-gray-600">
-                            Fabric Width: {item.fabricDetails.fabricWidth}cm, 
+                            Fabric Width: {formatFromCM(item.fabricDetails.fabricWidth, units.length)}, 
                             {item.fabricDetails.rollDirection === 'Horizontal' ? ' ↔️ Horizontal' : ' ↕️ Vertical'}
                           </div>
                           {item.fabricDetails.patternRepeat && (
                             <div className="text-[9px]">
-                              Pattern Repeat: {item.fabricDetails.patternRepeat}cm
+                              Pattern Repeat: {formatFromCM(item.fabricDetails.patternRepeat, units.length)}
                             </div>
                           )}
                         </>
@@ -215,7 +218,7 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                           )}
                           {item.fabricUsage.leftover > 0 && (
                             <div className="text-[9px] text-gray-500">
-                              Leftover: ~{item.fabricUsage.leftover.toFixed(1)}cm per width
+                              Leftover: ~{formatFromCM(item.fabricUsage.leftover, units.length)} per width
                             </div>
                           )}
                         </>
@@ -265,12 +268,12 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                       {item.hems && (
                         <div className="text-[9px] space-y-0.5 mt-1">
                           <div className="font-medium">Hem Allowances:</div>
-                          <div>• Header: {item.hems.header}cm</div>
-                          <div>• Bottom: {item.hems.bottom}cm</div>
-                          <div>• Side: {item.hems.side}cm (each)</div>
+                          <div>• Header: {formatFromCM(item.hems.header, units.length)}</div>
+                          <div>• Bottom: {formatFromCM(item.hems.bottom, units.length)}</div>
+                          <div>• Side: {formatFromCM(item.hems.side, units.length)} (each)</div>
                           {item.fabricUsage && item.fabricUsage.seamsRequired > 0 && (
                             <div className="text-orange-600 font-medium">
-                              • Seam: {item.hems.seam}cm (per join × {item.fabricUsage.seamsRequired})
+                              • Seam: {formatFromCM(item.hems.seam, units.length)} (per join × {item.fabricUsage.seamsRequired})
                             </div>
                           )}
                         </div>
