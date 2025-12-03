@@ -167,10 +167,13 @@ const handler = async (req: Request): Promise<Response> => {
 
       const resend = new Resend(resendApiKey);
 
+      // For Resend, always use verified domain but set reply-to to user's email
+      const verifiedFromEmail = 'noreply@interioapp.com';
       const { data: resendData, error: resendError } = await resend.emails.send({
-        from: `${fromName} <${fromEmail}>`,
+        from: `${fromName} <${verifiedFromEmail}>`,
         to: [to],
         subject: subject,
+        reply_to: fromEmail !== verifiedFromEmail ? fromEmail : undefined,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #333; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px;">

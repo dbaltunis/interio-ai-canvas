@@ -596,11 +596,14 @@ const handler = async (req: Request): Promise<Response> => {
         content: att.content // Resend accepts base64 directly
       }));
 
+      // For Resend, always use verified domain but set reply-to to user's email
+      const verifiedFromEmail = 'noreply@interioapp.com';
       const { error: resendError } = await resend.emails.send({
-        from: `${fromName} <${fromEmail}>`,
+        from: `${fromName} <${verifiedFromEmail}>`,
         to: [to],
         subject: subject,
         html: contentWithSignature,
+        reply_to: fromEmail !== verifiedFromEmail ? fromEmail : undefined,
         attachments: resendAttachments.length > 0 ? resendAttachments : undefined
       });
 
