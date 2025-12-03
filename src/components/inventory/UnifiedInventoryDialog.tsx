@@ -269,9 +269,10 @@ export const UnifiedInventoryDialog = ({
     }
   }, [mode, item?.id, open, initialCategory, initialSubcategory]);
 
-  // Auto-save draft
+  // Auto-save draft - save if any meaningful data exists (category, subcategory, or name)
   const saveDraft = useCallback(() => {
-    if (mode === "create" && open && formData.name) {
+    const hasMeaningfulData = formData.name || formData.category || formData.subcategory;
+    if (mode === "create" && open && hasMeaningfulData) {
       const draftData = { formData, trackInventory, activeTab, timestamp: Date.now() };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(draftData));
     }
