@@ -119,6 +119,7 @@ export const UnifiedInventoryDialog = ({
     product_category: null as string | null,
     price_group: null as string | null,
     tags: [] as string[],
+    specifications: {} as Record<string, any>,
   });
   
   const [customColors, setCustomColors] = useState<Array<{ name: string; value: string; hex: string }>>([]);
@@ -249,6 +250,7 @@ export const UnifiedInventoryDialog = ({
         product_category: item.product_category || null,
         price_group: item.price_group || null,
         tags: item.tags || [],
+        specifications: item.specifications || {},
       });
       
       // Detect pricing method from item data
@@ -790,6 +792,7 @@ export const UnifiedInventoryDialog = ({
 
               {/* PRODUCT DETAILS TAB */}
               <TabsContent value="product_details" className="space-y-4">
+                {/* Fabric Details */}
                 {isFabric && (
                   <Card>
                     <CardHeader>
@@ -889,6 +892,346 @@ export const UnifiedInventoryDialog = ({
                             />
                           </div>
                         )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Blind Materials Details */}
+                {formData.category === 'material' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Material Specifications</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label>Slat/Vane Width (mm)</Label>
+                        <Input
+                          type="number"
+                          step="1"
+                          value={formData.specifications?.slat_width || ""}
+                          onChange={(e) => setFormData(prev => ({ 
+                            ...prev, 
+                            specifications: { ...prev.specifications, slat_width: parseFloat(e.target.value) || 0 }
+                          }))}
+                          placeholder="e.g., 50"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Material Type</Label>
+                        <Select
+                          value={formData.specifications?.material_type || ""}
+                          onValueChange={(value) => setFormData(prev => ({ 
+                            ...prev, 
+                            specifications: { ...prev.specifications, material_type: value }
+                          }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select material" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="aluminum">Aluminum</SelectItem>
+                            <SelectItem value="wood">Wood</SelectItem>
+                            <SelectItem value="faux_wood">Faux Wood</SelectItem>
+                            <SelectItem value="pvc">PVC</SelectItem>
+                            <SelectItem value="fabric">Fabric</SelectItem>
+                            <SelectItem value="cellular">Cellular/Honeycomb</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>Finish</Label>
+                        <Input
+                          value={formData.specifications?.finish || ""}
+                          onChange={(e) => setFormData(prev => ({ 
+                            ...prev, 
+                            specifications: { ...prev.specifications, finish: e.target.value }
+                          }))}
+                          placeholder="e.g., Matte White"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Light Filtering</Label>
+                        <Select
+                          value={formData.specifications?.light_filtering || ""}
+                          onValueChange={(value) => setFormData(prev => ({ 
+                            ...prev, 
+                            specifications: { ...prev.specifications, light_filtering: value }
+                          }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sheer">Sheer</SelectItem>
+                            <SelectItem value="light_filtering">Light Filtering</SelectItem>
+                            <SelectItem value="room_darkening">Room Darkening</SelectItem>
+                            <SelectItem value="blackout">Blackout</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <Label>Product Image</Label>
+                        {formData.image_url ? (
+                          <div className="relative">
+                            <img src={formData.image_url} alt="Product" className="w-full h-32 object-cover rounded-md border" />
+                            <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2" onClick={removeImage}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div>
+                            <Button type="button" variant="outline" onClick={() => document.getElementById('image-upload')?.click()} disabled={uploadingImage}>
+                              <Upload className="h-4 w-4 mr-2" />
+                              {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                            </Button>
+                            <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Hardware Details */}
+                {formData.category === 'hardware' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Hardware Specifications</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label>Mounting Type</Label>
+                        <Select
+                          value={formData.specifications?.mounting_type || ""}
+                          onValueChange={(value) => setFormData(prev => ({ 
+                            ...prev, 
+                            specifications: { ...prev.specifications, mounting_type: value }
+                          }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="wall">Wall Mount</SelectItem>
+                            <SelectItem value="ceiling">Ceiling Mount</SelectItem>
+                            <SelectItem value="top_fix">Top Fix</SelectItem>
+                            <SelectItem value="face_fix">Face Fix</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>Weight Capacity (kg)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={formData.specifications?.weight_capacity || ""}
+                          onChange={(e) => setFormData(prev => ({ 
+                            ...prev, 
+                            specifications: { ...prev.specifications, weight_capacity: parseFloat(e.target.value) || 0 }
+                          }))}
+                          placeholder="e.g., 15"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Material</Label>
+                        <Input
+                          value={formData.specifications?.material || ""}
+                          onChange={(e) => setFormData(prev => ({ 
+                            ...prev, 
+                            specifications: { ...prev.specifications, material: e.target.value }
+                          }))}
+                          placeholder="e.g., Stainless Steel"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Finish/Color</Label>
+                        <Input
+                          value={formData.specifications?.finish || ""}
+                          onChange={(e) => setFormData(prev => ({ 
+                            ...prev, 
+                            specifications: { ...prev.specifications, finish: e.target.value }
+                          }))}
+                          placeholder="e.g., Brushed Nickel"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <Label>Product Image</Label>
+                        {formData.image_url ? (
+                          <div className="relative">
+                            <img src={formData.image_url} alt="Product" className="w-full h-32 object-cover rounded-md border" />
+                            <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2" onClick={removeImage}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div>
+                            <Button type="button" variant="outline" onClick={() => document.getElementById('image-upload')?.click()} disabled={uploadingImage}>
+                              <Upload className="h-4 w-4 mr-2" />
+                              {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                            </Button>
+                            <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Wallcoverings Details */}
+                {formData.category === 'wallcovering' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Wallcovering Specifications</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label>Roll Width (cm)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={formData.specifications?.roll_width || ""}
+                          onChange={(e) => setFormData(prev => ({ 
+                            ...prev, 
+                            specifications: { ...prev.specifications, roll_width: parseFloat(e.target.value) || 0 }
+                          }))}
+                          placeholder="e.g., 52"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Roll Length (m)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={formData.specifications?.roll_length || ""}
+                          onChange={(e) => setFormData(prev => ({ 
+                            ...prev, 
+                            specifications: { ...prev.specifications, roll_length: parseFloat(e.target.value) || 0 }
+                          }))}
+                          placeholder="e.g., 10"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Pattern Repeat (cm)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={formData.specifications?.pattern_repeat || ""}
+                          onChange={(e) => setFormData(prev => ({ 
+                            ...prev, 
+                            specifications: { ...prev.specifications, pattern_repeat: parseFloat(e.target.value) || 0 }
+                          }))}
+                          placeholder="e.g., 64"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Match Type</Label>
+                        <Select
+                          value={formData.specifications?.match_type || ""}
+                          onValueChange={(value) => setFormData(prev => ({ 
+                            ...prev, 
+                            specifications: { ...prev.specifications, match_type: value }
+                          }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select match" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="free_match">Free Match</SelectItem>
+                            <SelectItem value="straight_match">Straight Match</SelectItem>
+                            <SelectItem value="offset_match">Offset/Drop Match</SelectItem>
+                            <SelectItem value="reverse_hang">Reverse Hang</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <Label>Product Image</Label>
+                        {formData.image_url ? (
+                          <div className="relative">
+                            <img src={formData.image_url} alt="Product" className="w-full h-32 object-cover rounded-md border" />
+                            <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2" onClick={removeImage}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div>
+                            <Button type="button" variant="outline" onClick={() => document.getElementById('image-upload')?.click()} disabled={uploadingImage}>
+                              <Upload className="h-4 w-4 mr-2" />
+                              {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                            </Button>
+                            <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Services Details */}
+                {formData.category === 'service' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Service Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label>Estimated Duration</Label>
+                        <Input
+                          value={formData.specifications?.duration || ""}
+                          onChange={(e) => setFormData(prev => ({ 
+                            ...prev, 
+                            specifications: { ...prev.specifications, duration: e.target.value }
+                          }))}
+                          placeholder="e.g., 2 hours"
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Service Type</Label>
+                        <Select
+                          value={formData.specifications?.service_type || ""}
+                          onValueChange={(value) => setFormData(prev => ({ 
+                            ...prev, 
+                            specifications: { ...prev.specifications, service_type: value }
+                          }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="installation">Installation</SelectItem>
+                            <SelectItem value="fitting">Fitting</SelectItem>
+                            <SelectItem value="consultation">Consultation</SelectItem>
+                            <SelectItem value="measurement">Measurement</SelectItem>
+                            <SelectItem value="repair">Repair</SelectItem>
+                            <SelectItem value="removal">Removal</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <Label>Requirements/Notes</Label>
+                        <Textarea
+                          value={formData.specifications?.requirements || ""}
+                          onChange={(e) => setFormData(prev => ({ 
+                            ...prev, 
+                            specifications: { ...prev.specifications, requirements: e.target.value }
+                          }))}
+                          placeholder="Any special requirements or notes for this service..."
+                          rows={3}
+                        />
                       </div>
                     </CardContent>
                   </Card>
