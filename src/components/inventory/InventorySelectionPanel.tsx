@@ -27,6 +27,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { useEnhancedInventory, useCreateEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { supabase } from "@/integrations/supabase/client";
 import { TreatmentCategory, getTreatmentConfig } from "@/utils/treatmentTypeDetection";
 import { useTreatmentSpecificFabrics } from "@/hooks/useTreatmentSpecificFabrics";
@@ -438,14 +439,14 @@ export const InventorySelectionPanel = ({
               {/* Fabric-specific info */}
               {category === "fabric" && <div className="space-y-0.5 text-[10px] text-muted-foreground">
                   {item.fabric_width > 0 && <div className="flex items-center gap-1">
-                      <span>📏 {item.fabric_width}cm wide</span>
+                      <span>📏 {formatFromCM(item.fabric_width, units.length)} wide</span>
                     </div>}
                   {item.product_category && <div className="text-[9px]">
                       For: {item.product_category.replace(/_/g, ' ')}
                     </div>}
                   {item.composition && <div className="truncate">Comp: {item.composition}</div>}
                   {(item.pattern_repeat_vertical > 0 || item.pattern_repeat_horizontal > 0) && <div>
-                      Repeat: {item.pattern_repeat_vertical || 0}×{item.pattern_repeat_horizontal || 0}cm
+                      Repeat: {formatFromCM(item.pattern_repeat_vertical || 0, units.length, 0)}×{formatFromCM(item.pattern_repeat_horizontal || 0, units.length, 0)}
                     </div>}
                 </div>}
               
@@ -660,7 +661,7 @@ export const InventorySelectionPanel = ({
                         placeholder="e.g., 53, 70, 106"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Standard rolls are typically 53cm wide
+                        Standard rolls are typically {formatFromCM(53, units.length)} wide
                       </p>
                     </div>
 

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { FabricPoolStatusBadge, PoolStatus } from "./FabricPoolStatusBadge";
 import { FabricPools } from "@/hooks/useProjectFabricPool";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { formatFromCM } from "@/utils/measurementFormatters";
 
 interface ProjectFabricPoolSummaryProps {
   fabricPools: FabricPools | null;
@@ -94,7 +95,7 @@ export const ProjectFabricPoolSummary = ({
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <div className="font-medium text-foreground">
-                        {pool.fabricName} ({pool.fabricWidth}cm wide)
+                        {pool.fabricName} ({formatFromCM(pool.fabricWidth, units.length)} wide)
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <span>Total: {formatAmount(pool.totalOrdered)} ordered</span>
