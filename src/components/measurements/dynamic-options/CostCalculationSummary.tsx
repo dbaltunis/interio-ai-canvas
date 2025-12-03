@@ -263,7 +263,7 @@ export const CostCalculationSummary = ({
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
               <div className="flex flex-col min-w-0">
-                <span className="text-card-foreground font-medium">Fabric Material</span>
+                <span className="text-card-foreground font-medium">{isBlindCategory(treatmentCategory, template.name) ? 'Material' : 'Fabric Material'}</span>
                 <span className="text-xs text-muted-foreground truncate">{blindCosts.displayText}</span>
               </div>
             </div>
