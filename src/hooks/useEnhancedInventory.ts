@@ -168,11 +168,11 @@ export const useCreateEnhancedInventoryItem = () => {
         'width','height','depth','weight','color','finish','collection_name','image_url',
         'labor_hours','fullness_ratio','service_rate','treatment_type','metadata','show_in_quote',
         'wallpaper_roll_width','wallpaper_roll_length','wallpaper_sold_by','wallpaper_unit_of_measure','wallpaper_match_type','wallpaper_horizontal_repeat','wallpaper_waste_factor','wallpaper_pattern_offset',
-        'product_category','price_group','tags'
+        'product_category','price_group','pricing_grid_id','tags','specifications'
       ] as const;
 
       // UUID fields that should be explicitly set to null if not provided
-      const uuidFields = ['vendor_id', 'collection_id', 'product_category', 'price_group'];
+      const uuidFields = ['vendor_id', 'collection_id', 'product_category', 'price_group', 'pricing_grid_id'];
 
       const item: Record<string, any> = { user_id: userId, active: true };
       for (const key of allowedKeys) {
