@@ -29,6 +29,7 @@ import { useProjectFabricPools, calculateFabricNeeds, useUpdateProjectFabricPool
 import { PoolUsageDisplay } from "./PoolUsageDisplay";
 import { ProjectFabricPoolSummary } from "./ProjectFabricPoolSummary";
 import { ColorSelector } from "./ColorSelector";
+import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
   onMeasurementChange: (field: string, value: string) => void;
@@ -879,8 +880,8 @@ export const VisualMeasurementSheet = ({
                           const leftover = (piecesNeeded * fabricWidthCm) - totalDrop;
                           return <>
                                   <p>✓ Fabric rotated - railroaded with horizontal seaming</p>
-                                  <p className="text-amber-600">Drop ({totalDrop.toFixed(0)}cm) exceeds fabric width ({fabricWidthCm}cm)</p>
-                                  <p className="text-muted-foreground">Requires {piecesNeeded} horizontal pieces with {(piecesNeeded - 1)} seam(s). Leftover: {leftover.toFixed(1)}cm tracked.</p>
+                                  <p className="text-amber-600">Drop ({formatFromCM(totalDrop, units.length)}) exceeds fabric width ({formatFromCM(fabricWidthCm, units.length)})</p>
+                                  <p className="text-muted-foreground">Requires {piecesNeeded} horizontal pieces with {(piecesNeeded - 1)} seam(s). Leftover: {formatFromCM(leftover, units.length)} tracked.</p>
                                 </>;
                         } else {
                           return <>
