@@ -33,6 +33,18 @@ export interface WorkshopRoomItem {
     patternRepeat?: number;
   };
   
+  // Material details for blinds (venetian, vertical, cellular, shutters)
+  materialDetails?: {
+    name: string;
+    slatWidth?: number;
+    materialType?: string;
+    color?: string;
+    imageUrl?: string;
+    pricePerUnit?: number;
+    pricingGridData?: any;
+    resolvedGridName?: string;
+  };
+  
   fabricUsage?: {
     linearMeters: number;
     linearYards: number;
@@ -171,6 +183,34 @@ export const useWorkshopData = (projectId?: string) => {
         patternRepeat: summary.fabric_details.pattern_repeat,
       } : undefined;
       
+      // Extract MATERIAL details for blinds/shutters (venetian, vertical, cellular)
+      const materialDetails = summary?.material_details ? {
+        name: summary.material_details.name || 'Unknown Material',
+        slatWidth: summary.material_details.slat_width,
+        materialType: summary.material_details.material_type,
+        color: summary.material_details.color,
+        imageUrl: summary.material_details.image_url,
+        pricePerUnit: summary.material_details.selling_price,
+        pricingGridData: summary.material_details.pricing_grid_data,
+        resolvedGridName: summary.material_details.resolved_grid_name,
+      } : undefined;
+      
+      // Use material OR fabric for display (prioritize material for blind treatments)
+      const treatmentTypeLower = (summary?.treatment_type || s.surface_type || '').toLowerCase();
+      const isBlindTreatment = treatmentTypeLower.includes('blind') || 
+                               treatmentTypeLower.includes('venetian') || 
+                               treatmentTypeLower.includes('vertical') ||
+                               treatmentTypeLower.includes('cellular') ||
+                               treatmentTypeLower.includes('shutter');
+      const finalFabricDetails = isBlindTreatment && materialDetails ? {
+        name: materialDetails.name,
+        fabricWidth: materialDetails.slatWidth || 0,
+        imageUrl: materialDetails.imageUrl,
+        pricePerUnit: materialDetails.pricePerUnit,
+        rollDirection: undefined,
+        patternRepeat: undefined,
+      } : fabricDetails;
+      
       const linearMeters = summary?.linear_meters || 0;
       const widthsRequired = summary?.widths_required || 1;
       const fabricUsage = {
@@ -273,7 +313,8 @@ export const useWorkshopData = (projectId?: string) => {
         notes: s.notes || undefined,
         summary: summary,
         surface: s,
-        fabricDetails,
+        fabricDetails: finalFabricDetails,
+        materialDetails,
         fabricUsage,
         hems,
         fullness,
