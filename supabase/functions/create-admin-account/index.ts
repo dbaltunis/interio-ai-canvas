@@ -298,7 +298,7 @@ serve(async (req) => {
 
         const resend = new Resend(resendApiKey);
         const { error: resendError } = await resend.emails.send({
-          from: `${brandName} <onboarding@resend.dev>`,
+          from: `${brandName} <noreply@interioapp.com>`,
           to: [email],
           subject: emailSubject,
           html: emailHtml,
