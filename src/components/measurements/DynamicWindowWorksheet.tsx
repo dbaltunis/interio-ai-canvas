@@ -1787,6 +1787,9 @@ export const DynamicWindowWorksheet = forwardRef<{
     setSelectedTreatmentType(category === 'wallpaper' ? 'wallpaper' : category);
     setTreatmentCategory(category);
     
+    // ✅ CRITICAL: Clear old options when template changes to prevent stale data
+    setSelectedOptions([]);
+    
     // ✅ FIX: Initialize measurements with template defaults ONLY if not already set
     // Don't overwrite existing saved values
     setMeasurements(prev => {
@@ -1902,6 +1905,10 @@ export const DynamicWindowWorksheet = forwardRef<{
                 selectedCoveringId={selectedTemplate?.id || ""} 
                 onCoveringSelect={async template => {
                   setSelectedTemplate(template);
+                  
+                  // ✅ CRITICAL: Clear old options when template changes to prevent stale data
+                  setSelectedOptions([]);
+                  
                   if (template) {
                     // Detect and set the correct treatment category
                     const detectedCategory = detectTreatmentType(template);
