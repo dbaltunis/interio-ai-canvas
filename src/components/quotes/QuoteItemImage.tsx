@@ -1,4 +1,5 @@
 import React from 'react';
+import { ProductImageWithColorFallback } from '@/components/ui/ProductImageWithColorFallback';
 
 interface QuoteItemImageProps {
   src?: string;
@@ -8,6 +9,8 @@ interface QuoteItemImageProps {
   fabricImageUrl?: string;
   treatmentImageUrl?: string;
   imagePreference?: 'fabric' | 'treatment';
+  color?: string; // Color for fallback display
+  category?: string; // Category for icon fallback
 }
 
 export const QuoteItemImage: React.FC<QuoteItemImageProps> = ({ 
@@ -17,46 +20,24 @@ export const QuoteItemImage: React.FC<QuoteItemImageProps> = ({
   className = '',
   fabricImageUrl,
   treatmentImageUrl,
-  imagePreference = 'fabric'
+  imagePreference = 'fabric',
+  color,
+  category = 'fabric'
 }) => {
-  const [imageError, setImageError] = React.useState(false);
-  const [isLoading, setIsLoading] = React.useState(true);
-
   // Determine which image to display based on preference
   const displayImage = imagePreference === 'treatment' && treatmentImageUrl 
     ? treatmentImageUrl 
     : (fabricImageUrl || src);
 
-  if (!displayImage || imageError) {
-    return (
-      <div 
-        className={`flex items-center justify-center bg-muted rounded border border-border ${className}`}
-        style={{ width: size, height: size, minWidth: size, minHeight: size }}
-      >
-        <span className="text-xs text-muted-foreground">📦</span>
-      </div>
-    );
-  }
-
   return (
-    <div className={`relative overflow-hidden rounded border border-border ${className}`} style={{ width: size, height: size, minWidth: size, minHeight: size }}>
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted">
-          <span className="text-xs text-muted-foreground">...</span>
-        </div>
-      )}
-      <img
-        src={displayImage}
-        alt={alt}
-        loading="lazy"
-        crossOrigin="anonymous"
-        className="w-full h-full object-cover"
-        onLoad={() => setIsLoading(false)}
-        onError={() => {
-          setImageError(true);
-          setIsLoading(false);
-        }}
-      />
-    </div>
+    <ProductImageWithColorFallback
+      imageUrl={displayImage}
+      color={color}
+      productName={alt}
+      category={category}
+      size={size}
+      className={className}
+      rounded="md"
+    />
   );
 };

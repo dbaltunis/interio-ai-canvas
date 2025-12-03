@@ -10,6 +10,7 @@ export interface ClientBreakdownItem {
   unit_price?: number;
   total_cost?: number;
   image_url?: string;
+  color?: string; // Color for fallback display when no image
   details?: Record<string, any>;
 }
 
@@ -251,6 +252,7 @@ export const buildClientBreakdown = (
       unit_price: combinedMaterialCost,
       total_cost: combinedMaterialCost,
       image_url: materialDetails?.image_url || summary.fabric_details?.image_url || null,
+      color: materialDetails?.color || summary.fabric_details?.color || null,
       category: 'fabric',
       details: {
         widths_required: summary.widths_required,
@@ -282,6 +284,7 @@ export const buildClientBreakdown = (
       unit_price: Number(summary.lining_details?.price_per_metre ?? summary.lining_details?.price_per_meter) || undefined,
       total_cost: Number(summary.lining_cost) || 0,
       image_url: summary.lining_details?.image_url || null,
+      color: summary.lining_details?.color || null,
       category: 'lining',
       details: summary.lining_details || undefined,
     });
@@ -322,6 +325,7 @@ export const buildClientBreakdown = (
         unit_price: option.unit_price,
         quantity: 1,
         image_url: option.image_url,
+        color: option.color || null,
         category: 'option',
         details: option,
       });
