@@ -11,6 +11,7 @@ export interface ClientBreakdownItem {
   total_cost?: number;
   image_url?: string;
   color?: string; // Color for fallback display when no image
+  pricingDetails?: string; // Pricing breakdown info (e.g., "18.00/m × 5.30m")
   details?: Record<string, any>;
 }
 
@@ -260,18 +261,21 @@ export const buildClientBreakdown = (
         }
       }
       
-      const price = Number(option.price || option.cost || option.total_cost || option.unit_price || 0);
+      // CRITICAL: Use calculatedPrice (based on pricing method) if available, otherwise fall back to base price
+      const price = Number(option.calculatedPrice || option.price || option.cost || option.total_cost || option.unit_price || 0);
+      const basePrice = Number(option.basePrice || option.price || 0);
       
       items.push({
         id: option.id || `option-${index}`,
         name: formattedName,
         description: formattedDescription && formattedDescription !== formattedName ? formattedDescription : undefined,
         total_cost: price,
-        unit_price: price,
+        unit_price: basePrice, // Show base rate for reference
         quantity: 1,
         image_url: option.image_url,
         color: option.color || null,
         category: 'option',
+        pricingDetails: option.pricingDetails || '',
         details: option,
       });
       

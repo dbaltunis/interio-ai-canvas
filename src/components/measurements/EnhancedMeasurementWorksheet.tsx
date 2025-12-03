@@ -25,6 +25,7 @@ import { ImprovedTreatmentSelector } from "./treatment-selection/ImprovedTreatme
 import { CostCalculationSummary } from "./dynamic-options/CostCalculationSummary";
 import { useSaveWindowSummary, useWindowSummary } from "@/hooks/useWindowSummary";
 import { calculateTreatmentPricing } from "@/utils/pricing/calculateTreatmentPricing";
+import { calculateOptionPrices } from "@/utils/calculateOptionPrices";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -1002,6 +1003,14 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       if (surfaceId) {
         console.log('💾 Saving window summary with selected_options from state:', selectedOptions);
         
+        // CRITICAL: Calculate option prices based on pricing method before saving
+        const optionsWithCalculatedPrices = calculateOptionPrices(
+          selectedOptions,
+          measurements,
+          fabricCalculation
+        );
+        console.log('💾 Options with calculated prices:', optionsWithCalculatedPrices);
+        
         // Detect the specific treatment type (e.g., 'venetian_blinds', 'roller_blinds', etc.)
         const specificTreatmentType = detectTreatmentType(selectedCovering);
         
@@ -1065,7 +1074,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
            treatment_category: generalCategory, // Save general category like 'blinds'
            // CRITICAL: Save options cost from calculateTreatmentPricing
            options_cost: optionsCost,
-           selected_options: selectedOptions,
+           selected_options: optionsWithCalculatedPrices, // CRITICAL: Use calculated prices, not base prices
            // CRITICAL FIX: Properly convert string values to numbers, handling empty/undefined
            rail_width: (() => {
              const val = (measurements as any).rail_width;
@@ -1110,7 +1119,7 @@ export const EnhancedMeasurementWorksheet = forwardRef<
               const num = parseFloat(String(val));
               return isNaN(num) ? null : num;
             })(),
-            selected_options: selectedOptions  // Use the tracked state with actual prices from database
+            selected_options: optionsWithCalculatedPrices  // CRITICAL: Use calculated prices based on pricing method
           }
         } as any);
         
