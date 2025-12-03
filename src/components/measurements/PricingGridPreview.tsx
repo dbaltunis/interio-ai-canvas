@@ -76,8 +76,42 @@ export const PricingGridPreview = ({ gridData, gridName, gridCode }: PricingGrid
                 </tbody>
               </table>
             </div>
-          ) : gridData.widthColumns && gridData.dropRows ? (
-            // Format A: Full 2D grid using widthColumns and dropRows
+          ) : gridData.widthColumns && gridData.dropRows && typeof gridData.prices === 'object' && !Array.isArray(gridData.prices) ? (
+            // Format C: Flat prices object with keys like "width_drop" or "width-drop"
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-collapse text-xs">
+                <thead>
+                  <tr>
+                    <th className="border border-border bg-muted p-2 sticky left-0 z-10">Width / Drop ({getUnitLabel(units.length)})</th>
+                    {gridData.widthColumns.map((width: number) => (
+                      <th key={width} className="border border-border bg-muted p-2 min-w-[80px]">
+                        {width}{getUnitLabel(units.length)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {gridData.dropRows.map((drop: number) => (
+                    <tr key={drop}>
+                      <td className="border border-border bg-muted p-2 font-medium sticky left-0 z-10">
+                        {drop}{getUnitLabel(units.length)}
+                      </td>
+                      {gridData.widthColumns.map((width: number) => {
+                        // Try both key formats: "width_drop" and "width-drop"
+                        const price = gridData.prices[`${width}_${drop}`] ?? gridData.prices[`${width}-${drop}`] ?? null;
+                        return (
+                          <td key={width} className="border border-border p-2 text-center">
+                            {price !== null ? formatPrice(price) : '-'}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : gridData.widthColumns && gridData.dropRows && Array.isArray(gridData.dropRows) && gridData.dropRows[0]?.prices ? (
+            // Format A: Full 2D grid using widthColumns and dropRows with nested prices array
             <div className="overflow-x-auto">
               <table className="min-w-full border-collapse text-xs">
                 <thead>
