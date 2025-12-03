@@ -1915,18 +1915,25 @@ export const DynamicWindowWorksheet = forwardRef<{
                     setTreatmentCategory(detectedCategory);
                     setSelectedTreatmentType(detectedCategory);
                     
-                    // CRITICAL: Immediately save template name to windows_summary
+                    // CRITICAL: Immediately save template name to windows_summary AND clear old options
                     if (surfaceId) {
                       try {
                         const { error } = await supabase
                           .from('windows_summary')
                           .upsert({
                             window_id: surfaceId,
-                            // ✅ REMOVED user_id - doesn't exist in windows_summary table
                             template_id: template.id,
                             template_name: template.name,
                             treatment_type: detectedCategory,
+                            treatment_category: detectedCategory,
                             description_text: '', // Clear description when changing template
+                            // ✅ CRITICAL: Clear old options when treatment changes
+                            selected_options: [],
+                            cost_breakdown: [],
+                            options_cost: 0,
+                            // Clear lining for non-curtain/roman treatments
+                            lining_type: (detectedCategory === 'curtains' || detectedCategory === 'roman_blinds') ? undefined : 'none',
+                            lining_cost: (detectedCategory === 'curtains' || detectedCategory === 'roman_blinds') ? undefined : 0,
                           }, { onConflict: 'window_id' });
                           
                         if (!error) {

@@ -98,10 +98,17 @@ export const calculateBlindCosts = (
   }
   
   // Calculate options cost - consider pricing method for each option
+  // CRITICAL: Filter out lining options for blinds - they don't use lining
   console.log('💰 Calculating options cost, selectedOptions:', selectedOptions);
   
   const optionsCost = selectedOptions
     .filter(opt => {
+      // Filter out lining options for blind treatments
+      const isLiningOption = opt.name?.toLowerCase().includes('lining');
+      if (isLiningOption) {
+        console.log(`⚠️ Skipping lining option for blind: ${opt.name}`);
+        return false;
+      }
       // Include options with price > 0 OR pricing-grid method (grid price calculated separately)
       return (opt.price && opt.price > 0) || (opt.pricingMethod === 'pricing-grid' && opt.pricingGridData);
     })
