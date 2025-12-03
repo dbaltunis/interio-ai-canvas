@@ -656,12 +656,36 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const getInventoryForCovering = (covering: any) => {
     if (!covering) return [];
     
-    const categoryMap = {
-      fabric: "Fabric",
-      hard: "Hardware"
+    const coveringName = covering?.name?.toLowerCase() || '';
+    const coveringId = (covering?.id || '').toLowerCase();
+    
+    // Determine if this is a blind type that needs material inventory
+    const isVenetianBlind = coveringName.includes('venetian') || coveringId.includes('venetian');
+    const isVerticalBlind = coveringName.includes('vertical') || coveringId.includes('vertical');
+    const isBlind = coveringName.includes('blind') || coveringId.includes('blind');
+    
+    // For venetian/vertical blinds, return material items
+    if (isVenetianBlind || isVerticalBlind) {
+      const subcategory = isVerticalBlind ? 'vertical' : 'venetian';
+      return inventoryItems.filter((item: any) => 
+        item.category === 'material' && item.subcategory === subcategory
+      );
+    }
+    
+    // For other blinds (roller, cellular), return fabric items
+    if (isBlind) {
+      return inventoryItems.filter((item: any) => 
+        item.category === 'fabric' || item.category === 'material'
+      );
+    }
+    
+    // For curtains and other fabric-based items
+    const categoryMap: Record<string, string> = {
+      fabric: "fabric",
+      hard: "hardware"
     };
     
-    return inventoryItems.filter(item => 
+    return inventoryItems.filter((item: any) => 
       item.category === categoryMap[covering.category as keyof typeof categoryMap]
     );
   };

@@ -24,6 +24,7 @@ import { usePricingGrids } from "@/hooks/usePricingGrids";
 import { ColorSelector } from "./ColorSelector";
 import { ColorSlatPreview, getColorHex } from "./ColorSlatPreview";
 import { COLOR_PALETTE } from "@/constants/inventoryCategories";
+import { useInventoryMaterialOptions } from "@/hooks/useInventoryMaterialOptions";
 
 const STORAGE_KEY = "inventory_draft_data";
 
@@ -60,6 +61,7 @@ export const UnifiedInventoryDialog = ({
   const { data: businessSettings } = useBusinessSettings();
   const { data: userPreferences } = useUserPreferences();
   const { data: pricingGrids = [] } = usePricingGrids();
+  const { data: materialOptions } = useInventoryMaterialOptions();
 
   // Get user's measurement units and currency
   const measurementUnits = businessSettings?.measurement_units 
@@ -919,18 +921,13 @@ export const UnifiedInventoryDialog = ({
                           </SelectTrigger>
                           <SelectContent>
                             {formData.subcategory === 'vertical' ? (
-                              <>
-                                <SelectItem value="89">89mm (3.5")</SelectItem>
-                                <SelectItem value="127">127mm (5")</SelectItem>
-                              </>
+                              (materialOptions?.vaneWidths || []).map(opt => (
+                                <SelectItem key={opt.code} value={opt.code.replace('mm', '')}>{opt.label}</SelectItem>
+                              ))
                             ) : (
-                              <>
-                                <SelectItem value="16">16mm</SelectItem>
-                                <SelectItem value="25">25mm (1")</SelectItem>
-                                <SelectItem value="35">35mm</SelectItem>
-                                <SelectItem value="50">50mm (2")</SelectItem>
-                                <SelectItem value="63">63mm (2.5")</SelectItem>
-                              </>
+                              (materialOptions?.slatWidths || []).map(opt => (
+                                <SelectItem key={opt.code} value={opt.code.replace('mm', '')}>{opt.label}</SelectItem>
+                              ))
                             )}
                           </SelectContent>
                         </Select>
@@ -950,17 +947,13 @@ export const UnifiedInventoryDialog = ({
                           </SelectTrigger>
                           <SelectContent>
                             {formData.subcategory === 'vertical' ? (
-                              <>
-                                <SelectItem value="fabric">Fabric</SelectItem>
-                                <SelectItem value="pvc">PVC</SelectItem>
-                              </>
+                              (materialOptions?.verticalMaterials || []).map(opt => (
+                                <SelectItem key={opt.code} value={opt.code}>{opt.label}</SelectItem>
+                              ))
                             ) : (
-                              <>
-                                <SelectItem value="aluminum">Aluminum</SelectItem>
-                                <SelectItem value="wood">Wood</SelectItem>
-                                <SelectItem value="faux_wood">Faux Wood</SelectItem>
-                                <SelectItem value="pvc">PVC</SelectItem>
-                              </>
+                              (materialOptions?.venetianMaterials || []).map(opt => (
+                                <SelectItem key={opt.code} value={opt.code}>{opt.label}</SelectItem>
+                              ))
                             )}
                           </SelectContent>
                         </Select>

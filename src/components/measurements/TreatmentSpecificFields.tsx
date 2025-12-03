@@ -4,7 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { useEffect } from "react";
+import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
+import { useEffect, useMemo } from "react";
 
 interface TreatmentSpecificFieldsProps {
   covering: any;
@@ -22,21 +23,59 @@ export const TreatmentSpecificFields = ({
   readOnly = false
 }: TreatmentSpecificFieldsProps) => {
   const { units } = useMeasurementUnits();
+  
+  // Determine treatment category for dynamic options
+  const treatmentCategory = useMemo(() => {
+    const coveringName = covering?.name?.toLowerCase() || '';
+    const coveringId = covering?.id?.toLowerCase() || '';
+    
+    if (coveringName.includes('venetian') || coveringId.includes('venetian')) {
+      return 'venetian_blinds';
+    }
+    if (coveringName.includes('vertical') || coveringId.includes('vertical')) {
+      return 'vertical_blinds';
+    }
+    if (coveringName.includes('roller') || coveringId.includes('roller')) {
+      return 'roller_blinds';
+    }
+    if (coveringName.includes('cellular') || coveringId.includes('cellular') || 
+        coveringName.includes('honeycomb') || coveringId.includes('honeycomb')) {
+      return 'cellular_blinds';
+    }
+    return 'blinds';
+  }, [covering]);
+
+  // Fetch dynamic treatment options for blinds
+  const { data: dynamicOptions = [] } = useTreatmentOptions(treatmentCategory, 'category');
+
+  // Extract options by key
+  const getOptionsForKey = (key: string) => {
+    const option = dynamicOptions.find(opt => opt.key === key);
+    return option?.option_values || [];
+  };
+
+  const mountTypeOptions = getOptionsForKey('mount_type');
+  const controlTypeOptions = getOptionsForKey('control_type');
+  const slatSizeOptions = getOptionsForKey('slat_size') || getOptionsForKey('slat_width');
+  const vaneSizeOptions = getOptionsForKey('vane_width') || getOptionsForKey('louvre_width');
 
   // Auto-select first options on mount for blinds
   useEffect(() => {
     if (!readOnly && covering?.name?.toLowerCase().includes('blind')) {
       if (!treatmentData.mounting_type) {
-        onTreatmentDataChange("mounting_type", "inside");
+        const firstMount = mountTypeOptions[0]?.code || 'inside';
+        onTreatmentDataChange("mounting_type", firstMount);
       }
       if (!treatmentData.control_type) {
-        onTreatmentDataChange("control_type", "cord");
+        const firstControl = controlTypeOptions[0]?.code || 'cord';
+        onTreatmentDataChange("control_type", firstControl);
       }
       if (!treatmentData.slat_size) {
-        onTreatmentDataChange("slat_size", "2");
+        const firstSlat = slatSizeOptions[0]?.code || vaneSizeOptions[0]?.code || '50mm';
+        onTreatmentDataChange("slat_size", firstSlat);
       }
     }
-  }, [covering?.name, readOnly]);
+  }, [covering?.name, readOnly, mountTypeOptions, controlTypeOptions, slatSizeOptions, vaneSizeOptions]);
 
   const renderCurtainFields = () => (
     <div className="space-y-4">
@@ -160,92 +199,127 @@ export const TreatmentSpecificFields = ({
     </div>
   );
 
-  const renderBlindFields = () => (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg text-foreground">Blind Configuration</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Mounting Type</Label>
-              <Select 
-                value={treatmentData.mounting_type || "inside"} 
-                onValueChange={(value) => onTreatmentDataChange("mounting_type", value)}
-                disabled={readOnly}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="inside">Inside Mount</SelectItem>
-                  <SelectItem value="outside">Outside Mount</SelectItem>
-                </SelectContent>
-              </Select>
+  const renderBlindFields = () => {
+    const isVertical = treatmentCategory === 'vertical_blinds';
+    const sizeOptions = isVertical ? vaneSizeOptions : slatSizeOptions;
+    const sizeLabel = isVertical ? 'Vane Width' : 'Slat Size';
+    
+    return (
+      <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg text-foreground">Blind Configuration</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Mounting Type</Label>
+                <Select 
+                  value={treatmentData.mounting_type || "inside"} 
+                  onValueChange={(value) => onTreatmentDataChange("mounting_type", value)}
+                  disabled={readOnly}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mountTypeOptions.length > 0 ? (
+                      mountTypeOptions.map(opt => (
+                        <SelectItem key={opt.code} value={opt.code}>{opt.label}</SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="inside">Inside Mount</SelectItem>
+                        <SelectItem value="outside">Outside Mount</SelectItem>
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label>Control Type</Label>
+                <Select 
+                  value={treatmentData.control_type || "cord"} 
+                  onValueChange={(value) => onTreatmentDataChange("control_type", value)}
+                  disabled={readOnly}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {controlTypeOptions.length > 0 ? (
+                      controlTypeOptions.map(opt => (
+                        <SelectItem key={opt.code} value={opt.code}>{opt.label}</SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="cord">Cord</SelectItem>
+                        <SelectItem value="wand">Wand</SelectItem>
+                        <SelectItem value="motorized">Motorized</SelectItem>
+                        <SelectItem value="cordless">Cordless</SelectItem>
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            
-            <div>
-              <Label>Control Type</Label>
-              <Select 
-                value={treatmentData.control_type || "cord"} 
-                onValueChange={(value) => onTreatmentDataChange("control_type", value)}
-                disabled={readOnly}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cord">Cord</SelectItem>
-                  <SelectItem value="wand">Wand</SelectItem>
-                  <SelectItem value="motorized">Motorized</SelectItem>
-                  <SelectItem value="cordless">Cordless</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Slat Size</Label>
-              <Select 
-                value={treatmentData.slat_size || "2"} 
-                onValueChange={(value) => onTreatmentDataChange("slat_size", value)}
-                disabled={readOnly}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1 inch</SelectItem>
-                  <SelectItem value="2">2 inch</SelectItem>
-                  <SelectItem value="2.5">2.5 inch</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>{sizeLabel}</Label>
+                <Select 
+                  value={treatmentData.slat_size || sizeOptions[0]?.code || "50mm"} 
+                  onValueChange={(value) => onTreatmentDataChange("slat_size", value)}
+                  disabled={readOnly}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sizeOptions.length > 0 ? (
+                      sizeOptions.map(opt => (
+                        <SelectItem key={opt.code} value={opt.code}>{opt.label}</SelectItem>
+                      ))
+                    ) : isVertical ? (
+                      <>
+                        <SelectItem value="89mm">89mm (3.5")</SelectItem>
+                        <SelectItem value="127mm">127mm (5")</SelectItem>
+                      </>
+                    ) : (
+                      <>
+                        <SelectItem value="25mm">25mm (1")</SelectItem>
+                        <SelectItem value="50mm">50mm (2")</SelectItem>
+                        <SelectItem value="63mm">63mm (2.5")</SelectItem>
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label>Valance</Label>
+                <Select 
+                  value={treatmentData.valance || "standard"} 
+                  onValueChange={(value) => onTreatmentDataChange("valance", value)}
+                  disabled={readOnly}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Valance</SelectItem>
+                    <SelectItem value="standard">Standard Valance</SelectItem>
+                    <SelectItem value="decorative">Decorative Valance</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            
-            <div>
-              <Label>Valance</Label>
-              <Select 
-                value={treatmentData.valance || "standard"} 
-                onValueChange={(value) => onTreatmentDataChange("valance", value)}
-                disabled={readOnly}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No Valance</SelectItem>
-                  <SelectItem value="standard">Standard Valance</SelectItem>
-                  <SelectItem value="decorative">Decorative Valance</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
 
   const renderRomanShadeFields = () => (
     <div className="space-y-4">
