@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Shirt, Palette, ChevronDown, ChevronUp } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 
 interface FabricSelectionSectionProps {
   selectedFabric: string;
@@ -140,7 +141,7 @@ export const FabricSelectionSection = ({
             <div className="text-center p-1 bg-muted/50 rounded">
               <div className="font-medium">
                 {selectedFabricItem.pattern_repeat_vertical ? 
-                  `${selectedFabricItem.pattern_repeat_vertical}cm` : 
+                  formatFromCM(selectedFabricItem.pattern_repeat_vertical, units.length) : 
                   'Plain'
                 }
               </div>
@@ -194,35 +195,35 @@ export const FabricSelectionSection = ({
               {showDetails && (
               <div className="mt-2 p-2 bg-background/50 rounded border text-xs space-y-1">
                 <div className="font-medium text-muted-foreground mb-1">Calculation breakdown:</div>
-                <div>• Fabric width: {selectedFabricItem.fabric_width || 137}cm</div>
-                <div>• Rail width: {fabricCalculation.railWidth || 'Not set'}cm</div>
+                <div>• Fabric width: {formatFromCM(selectedFabricItem.fabric_width || 137, units.length)}</div>
+                <div>• Rail width: {fabricCalculation.railWidth ? formatFromCM(fabricCalculation.railWidth, units.length) : 'Not set'}</div>
                 <div>• Fullness multiplier: {fabricCalculation.fullnessRatio || 0}x</div>
-                <div>• Required width: {fabricCalculation.railWidth ? Math.round((fabricCalculation.railWidth || 0) * (fabricCalculation.fullnessRatio || 0)) : 'Calculating...'}cm</div>
+                <div>• Required width: {fabricCalculation.railWidth ? formatFromCM(Math.round((fabricCalculation.railWidth || 0) * (fabricCalculation.fullnessRatio || 0)), units.length) : 'Calculating...'}</div>
                 {fabricCalculation.totalSideHems && fabricCalculation.totalSideHems > 0 && (
-                  <div>• Side hems: {fabricCalculation.sideHems}cm × 2 sides × {fabricCalculation.curtainCount} curtain(s) = {fabricCalculation.totalSideHems}cm total</div>
+                  <div>• Side hems: {formatFromCM(fabricCalculation.sideHems || 0, units.length)} × 2 sides × {fabricCalculation.curtainCount} curtain(s) = {formatFromCM(fabricCalculation.totalSideHems, units.length)} total</div>
                 )}
                 {fabricCalculation.returns && fabricCalculation.returns > 0 && (
-                  <div>• Returns: {fabricCalculation.returnLeft}cm + {fabricCalculation.returnRight}cm = {fabricCalculation.returns}cm</div>
+                  <div>• Returns: {formatFromCM(fabricCalculation.returnLeft || 0, units.length)} + {formatFromCM(fabricCalculation.returnRight || 0, units.length)} = {formatFromCM(fabricCalculation.returns, units.length)}</div>
                 )}
-                <div>• Total width with allowances: {fabricCalculation.totalWidthWithAllowances || 'Calculating...'}cm</div>
+                <div>• Total width with allowances: {fabricCalculation.totalWidthWithAllowances ? formatFromCM(fabricCalculation.totalWidthWithAllowances, units.length) : 'Calculating...'}</div>
                 <div>• Widths needed: {fabricCalculation.widthsRequired}</div>
                 {fabricCalculation.totalSeamAllowance && fabricCalculation.totalSeamAllowance > 0 && (
-                  <div>• Seam allowances: {fabricCalculation.seamHems}cm × 2 sides × {fabricCalculation.widthsRequired - 1} seam(s) = {fabricCalculation.totalSeamAllowance}cm</div>
+                  <div>• Seam allowances: {formatFromCM(fabricCalculation.seamHems || 0, units.length)} × 2 sides × {fabricCalculation.widthsRequired - 1} seam(s) = {formatFromCM(fabricCalculation.totalSeamAllowance, units.length)}</div>
                 )}
                 <div className="border-t pt-1 mt-1">
-                  <div>• Drop measurement: {fabricCalculation.drop || 'Not set'}cm</div>
-                  <div>• Header hem allowance: {fabricCalculation.headerHem || 8}cm</div>
-                  <div>• Bottom hem allowance: {fabricCalculation.bottomHem || 8}cm</div>
+                  <div>• Drop measurement: {fabricCalculation.drop ? formatFromCM(fabricCalculation.drop, units.length) : 'Not set'}</div>
+                  <div>• Header hem allowance: {formatFromCM(fabricCalculation.headerHem || 8, units.length)}</div>
+                  <div>• Bottom hem allowance: {formatFromCM(fabricCalculation.bottomHem || 8, units.length)}</div>
                   {fabricCalculation.pooling && fabricCalculation.pooling > 0 && (
-                    <div>• Pooling amount: {fabricCalculation.pooling}cm</div>
+                    <div>• Pooling amount: {formatFromCM(fabricCalculation.pooling, units.length)}</div>
                   )}
                   {selectedFabricItem.pattern_repeat_vertical && parseFloat(String(selectedFabricItem.pattern_repeat_vertical)) > 0 && (
-                    <div>• Vertical pattern repeat: {selectedFabricItem.pattern_repeat_vertical}cm</div>
+                    <div>• Vertical pattern repeat: {formatFromCM(selectedFabricItem.pattern_repeat_vertical, units.length)}</div>
                   )}
                   {selectedFabricItem.pattern_repeat_horizontal && parseFloat(String(selectedFabricItem.pattern_repeat_horizontal)) > 0 && (
-                    <div>• Horizontal pattern repeat: {selectedFabricItem.pattern_repeat_horizontal}cm</div>
+                    <div>• Horizontal pattern repeat: {formatFromCM(selectedFabricItem.pattern_repeat_horizontal, units.length)}</div>
                   )}
-                  <div>• Total drop per width: {fabricCalculation.totalDrop || 'Calculating...'}cm</div>
+                  <div>• Total drop per width: {fabricCalculation.totalDrop ? formatFromCM(fabricCalculation.totalDrop, units.length) : 'Calculating...'}</div>
                 </div>
                 <div className="border-t pt-1 mt-1">
                   <div>• Waste factor: {fabricCalculation.wastePercent || 0}%</div>
