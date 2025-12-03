@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { HierarchicalOption } from "@/hooks/useWindowCoveringOptions";
@@ -26,23 +25,37 @@ export const WindowCoveringOptionsCard = ({
   onOptionToggle 
 }: WindowCoveringOptionsCardProps) => {
   const { units } = useMeasurementUnits();
-  const { hierarchicalSelections, handleHierarchicalSelection } = useHierarchicalSelections(hierarchicalOptions);
+  
+  // Pass onOptionToggle to the hook so it can trigger value recording during auto-selection
+  const { hierarchicalSelections, handleHierarchicalSelection } = useHierarchicalSelections(
+    hierarchicalOptions,
+    onOptionToggle
+  );
 
-  const handleHierarchicalSelectionWrapper = (categoryId: string, subcategoryId: string, value: string) => {
+  const handleHierarchicalSelectionWrapper = useCallback((
+    categoryId: string, 
+    subcategoryId: string, 
+    value: string
+  ) => {
     handleHierarchicalSelection(categoryId, subcategoryId, value, onOptionToggle);
-  };
+  }, [handleHierarchicalSelection, onOptionToggle]);
 
   // Handle cascading single-selection: deselect previous, select new
-  const handleCascadingSelect = useCallback((optionType: string, newOptionId: string | null, previousOptionId: string | null) => {
+  // Use functional approach to avoid stale closure issues
+  const handleCascadingSelect = useCallback((
+    optionType: string, 
+    newOptionId: string | null, 
+    previousOptionId: string | null
+  ) => {
     // Deselect previous option for this type if exists
-    if (previousOptionId && selectedOptions.includes(previousOptionId)) {
+    if (previousOptionId) {
       onOptionToggle(previousOptionId);
     }
     // Select new option if provided
-    if (newOptionId && !selectedOptions.includes(newOptionId)) {
+    if (newOptionId) {
       onOptionToggle(newOptionId);
     }
-  }, [selectedOptions, onOptionToggle]);
+  }, [onOptionToggle]);
 
   if (optionsLoading) {
     return (

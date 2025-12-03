@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { CascadingOptionSelect } from "@/components/shared/CascadingOptionSelect";
 
 interface CascadingOptionSelectorProps {
@@ -15,12 +16,17 @@ export const CascadingOptionSelector = ({
   onSelect,
   currency
 }: CascadingOptionSelectorProps) => {
+  // Memoize the handler to prevent stale closures
+  const handleSelect = useCallback((newId: string | null, prevId: string | null) => {
+    onSelect(newId, prevId);
+  }, [onSelect]);
+
   return (
     <CascadingOptionSelect
       label={optionType}
       options={options}
       selectedId={selectedOptionId}
-      onSelect={(newId, prevId) => onSelect(newId, prevId)}
+      onSelect={handleSelect}
       currency={currency}
     />
   );
