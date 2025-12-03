@@ -423,7 +423,11 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
                           <td className="px-2 py-1 text-xs">{item.supplier || '-'}</td>
                           <td className="px-2 py-1 text-xs">{item.fabric_width ? `${item.fabric_width}cm` : '-'}</td>
                           <td className="px-2 py-1 text-xs font-medium">
-                            {formatPrice(item.price_per_meter || item.selling_price || 0)}/m
+                            {item.pricing_grid_id ? (
+                              <span className="text-primary">Grid</span>
+                            ) : (
+                              <>{formatPrice(item.price_per_meter || item.selling_price || 0)}/m</>
+                            )}
                           </td>
                           <td className="px-2 py-1">
                             <div className="flex flex-col gap-0.5">
