@@ -242,7 +242,7 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
                             <EditInventoryDialog
                               item={item}
                               trigger={
-                                <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+                                <Button variant="ghost" size="sm">
                                   <Edit className="h-4 w-4" />
                                 </Button>
                               }
