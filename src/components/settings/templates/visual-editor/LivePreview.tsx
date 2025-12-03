@@ -1133,75 +1133,22 @@ const LivePreviewBlock = ({
           });
         }
         
-        // GROUP RELATED OPTIONS (parent + sub-options like Colour, Length, etc.)
-        const groupedBreakdown = groupRelatedOptionsInBreakdown(breakdown);
+        // CRITICAL FIX: Return breakdown directly - NO GROUPING!
+        // The groupRelatedOptionsInBreakdown function was broken - it assumed "Parent Option Colour"
+        // naming convention, but actual data uses "option_key: value" format
         
-        console.log('[BREAKDOWN] Final breakdown:', {
+        console.log('[BREAKDOWN] Final breakdown (NO grouping applied):', {
           item_name: item.name,
-          breakdown_count: groupedBreakdown.length,
-          breakdown_items: groupedBreakdown.map(b => ({ name: b.name, desc: b.description, total: b.total_cost }))
+          breakdown_count: breakdown.length,
+          breakdown_items: breakdown.map(b => ({ name: b.name, desc: b.description, total: b.total_cost, color: b.color }))
         });
         
-        return groupedBreakdown;
+        return breakdown;
       };
       
-      // Helper to group related options (e.g., "Headrail Selection" + "Headrail Selection Colour")
-      const groupRelatedOptionsInBreakdown = (breakdown: any[]) => {
-        if (!breakdown || breakdown.length === 0) return breakdown;
-        
-        const options = breakdown.filter(item => item.category === 'option' || item.category === 'options');
-        const nonOptions = breakdown.filter(item => item.category !== 'option' && item.category !== 'options');
-        
-        if (options.length === 0) return breakdown;
-        
-        const grouped = new Map<string, any>();
-        
-        // Group options by parent name
-        options.forEach(option => {
-          const name = (option.name || '').trim();
-          
-          // Check if this is a sub-option (ends with attribute keywords)
-          const isSubOption = /\s+(Colour|Color|Length|Chain Side|Side|Size|Type|Width|Height|Finish|Material|Direction)$/i.test(name);
-          
-          if (isSubOption) {
-            // Extract parent name (e.g., "Headrail Selection" from "Headrail Selection Colour")
-            const parentName = name.replace(/\s+(Colour|Color|Length|Chain Side|Side|Size|Type|Width|Height|Finish|Material|Direction)$/i, '').trim();
-            
-            // Find or update parent
-            if (grouped.has(parentName)) {
-              const parent = grouped.get(parentName);
-              // Append sub-description
-              const subDesc = (option.description || '').trim();
-              if (subDesc) {
-                parent.description = parent.description 
-                  ? `${parent.description}, ${subDesc}` 
-                  : subDesc;
-              }
-              // Sum costs
-              parent.total_cost += (option.total_cost || 0);
-              parent.unit_price += (option.unit_price || 0);
-            }
-          } else {
-            // This is a parent option
-            if (!grouped.has(name)) {
-              grouped.set(name, {
-                id: option.id,
-                name: name,
-                category: option.category,
-                description: (option.description || '').trim(),
-                quantity: 1,
-                unit: option.unit,
-                unit_price: option.unit_price || 0,
-                total_cost: option.total_cost || 0,
-                image_url: option.image_url
-              });
-            }
-          }
-        });
-        
-        // Combine non-options with grouped options
-        return [...nonOptions, ...Array.from(grouped.values())];
-      };
+      // NOTE: groupRelatedOptionsInBreakdown function REMOVED - it was broken
+      // The function assumed "Parent Option" + "Parent Option Colour" naming convention
+      // but actual data uses "option_key: value" format, causing options to be lost
       
       console.log('[PRODUCTS BLOCK] Rendering products:', {
         projectItemsCount: projectItems.length,

@@ -135,26 +135,52 @@ export const buildClientBreakdown = (
   if (hasStructured) {
     console.log('✅ Using structured cost_breakdown from database (%d items)', raw.length);
     
-    // Apply grouping logic to existing breakdown items
-    // Separate options from other items
-    const options = raw.filter((item: any) => item.category === 'option');
-    const nonOptions = raw.filter((item: any) => item.category !== 'option');
+    // CRITICAL FIX: Return ALL items directly - NO GROUPING!
+    // The groupRelatedOptions function was broken - it assumed "Parent Option" + "Parent Option Colour"
+    // naming convention, but actual data uses "option_key: value" format
     
-    console.log('🔍 BEFORE GROUPING - Total options:', options.length);
-    options.forEach((opt: any) => {
-      console.log('  Option:', opt.name, '| Description:', opt.description, '| Cost:', opt.total_cost);
+    // Format option names for better display and enrich with color/image from source details
+    const enrichedItems = raw.map((item: any) => {
+      let formattedName = item.name || item.category || 'Item';
+      let formattedDescription = item.description;
+      
+      // Format "option_key: value" to "Option Key: value"
+      if (formattedName && formattedName.includes(':')) {
+        const colonIndex = formattedName.indexOf(':');
+        if (colonIndex > 0) {
+          const key = formattedName.substring(0, colonIndex).trim();
+          const value = formattedName.substring(colonIndex + 1).trim();
+          formattedName = key
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (c: string) => c.toUpperCase());
+          formattedDescription = value || formattedDescription;
+        }
+      }
+      
+      // Enrich fabric items with color/image from source details
+      let itemColor = item.color || null;
+      let itemImageUrl = item.image_url || null;
+      
+      if (item.category === 'fabric') {
+        itemColor = itemColor || summary.fabric_details?.color || summary.material_details?.color || null;
+        itemImageUrl = itemImageUrl || summary.fabric_details?.image_url || summary.material_details?.image_url || null;
+      }
+      
+      return {
+        ...item,
+        name: formattedName,
+        description: formattedDescription,
+        color: itemColor,
+        image_url: itemImageUrl,
+      };
     });
     
-    // Group related options
-    const groupedOptions = groupRelatedOptions(options);
-    
-    console.log('🔍 AFTER GROUPING - Total grouped options:', groupedOptions.length);
-    groupedOptions.forEach((opt: any) => {
-      console.log('  Grouped:', opt.name, '| Description:', opt.description, '| Cost:', opt.total_cost);
+    console.log('✅ Returning ALL %d items (no grouping applied)', enrichedItems.length);
+    enrichedItems.forEach((item: any) => {
+      console.log('  Item:', item.name, '| Desc:', item.description, '| Cost:', item.total_cost, '| Color:', item.color);
     });
     
-    // Combine and return
-    return [...nonOptions, ...groupedOptions] as ClientBreakdownItem[];
+    return enrichedItems as ClientBreakdownItem[];
   }
 
   console.log('⚠️ No structured breakdown - building from scratch (THIS SHOULD BE RARE)');
@@ -304,31 +330,44 @@ export const buildClientBreakdown = (
 
   // Selected Options - These are pre-formatted client-facing options
   // CRITICAL: selected_options is the ONLY source for displaying treatment options in quotes
-  // Filter out options with zero price AND no meaningful selection (avoid clutter)
+  // CRITICAL FIX: Display ALL options - NO GROUPING, NO FILTERING!
+  // Zero-cost options are meaningful selections that clients need to see (e.g., "Mount Type: Inside Mount")
   if (summary.selected_options && Array.isArray(summary.selected_options)) {
-    const filteredOptions = summary.selected_options
-      .filter((option: any) => {
-        const price = Number(option.price || option.cost || option.total_cost || option.unit_price || 0);
-        // Include option if: it has a price > 0 OR it represents a meaningful selection (not just a default)
-        return price > 0 || (option.description && !option.description.toLowerCase().includes('included'));
-      });
+    console.log('📋 Processing %d selected_options (NO grouping/filtering)', summary.selected_options.length);
     
-    // Group related options (parent + sub-options like Colour, Length, Chain Side)
-    const groupedOptions = groupRelatedOptions(filteredOptions);
-    
-    groupedOptions.forEach((option: any, index: number) => {
+    summary.selected_options.forEach((option: any, index: number) => {
+      let formattedName = option.name || option.label || 'Option';
+      let formattedDescription = option.description;
+      
+      // Format "option_key: value" to "Option Key: value"
+      if (formattedName && formattedName.includes(':')) {
+        const colonIndex = formattedName.indexOf(':');
+        if (colonIndex > 0) {
+          const key = formattedName.substring(0, colonIndex).trim();
+          const value = formattedName.substring(colonIndex + 1).trim();
+          formattedName = key
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (c: string) => c.toUpperCase());
+          formattedDescription = value || formattedDescription;
+        }
+      }
+      
+      const price = Number(option.price || option.cost || option.total_cost || option.unit_price || 0);
+      
       items.push({
         id: option.id || `option-${index}`,
-        name: option.name || option.label || 'Option',
-        description: option.description && option.description !== option.name ? option.description : undefined,
-        total_cost: option.total_cost,
-        unit_price: option.unit_price,
+        name: formattedName,
+        description: formattedDescription && formattedDescription !== formattedName ? formattedDescription : undefined,
+        total_cost: price,
+        unit_price: price,
         quantity: 1,
         image_url: option.image_url,
         color: option.color || null,
         category: 'option',
         details: option,
       });
+      
+      console.log('  Added option:', formattedName, '| Desc:', formattedDescription, '| Cost:', price);
     });
   }
 
