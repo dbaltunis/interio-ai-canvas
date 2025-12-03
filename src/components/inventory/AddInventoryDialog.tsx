@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
@@ -20,26 +20,22 @@ export const AddInventoryDialog = ({ trigger, onSuccess, initialCategory, initia
     setOpen(true);
   };
 
-  const renderTrigger = () => {
-    if (!trigger) {
-      return (
-        <Button onClick={handleOpen}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Item
-        </Button>
-      );
-    }
+  // If no trigger provided, use default button with onClick directly attached
+  const defaultTrigger = (
+    <Button onClick={handleOpen}>
+      <Plus className="h-4 w-4 mr-2" />
+      Add Item
+    </Button>
+  );
 
-    return (
-      <div onClick={handleOpen} className="inline-flex cursor-pointer">
-        {trigger}
-      </div>
-    );
-  };
+  // Clone the trigger and inject onClick directly
+  const triggerElement = trigger 
+    ? React.cloneElement(trigger as React.ReactElement, { onClick: handleOpen })
+    : defaultTrigger;
 
   return (
     <>
-      {renderTrigger()}
+      {triggerElement}
       
       <UnifiedInventoryDialog
         open={open}

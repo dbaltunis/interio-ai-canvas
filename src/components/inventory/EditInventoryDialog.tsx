@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
@@ -11,7 +11,6 @@ interface EditInventoryDialogProps {
 }
 
 export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryDialogProps) => {
-  // Use stable key to prevent dialog state issues during re-renders
   const itemId = item?.id ?? 'new';
   const [open, setOpen] = usePersistedDialogState(`edit_inventory_${itemId}`);
 
@@ -21,25 +20,21 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
     setOpen(true);
   };
 
-  const renderTrigger = () => {
-    if (!trigger) {
-      return (
-        <Button variant="outline" size="sm" onClick={handleOpen}>
-          <Edit className="h-4 w-4" />
-        </Button>
-      );
-    }
+  // If no trigger provided, use default button with onClick directly attached
+  const defaultTrigger = (
+    <Button variant="outline" size="sm" onClick={handleOpen}>
+      <Edit className="h-4 w-4" />
+    </Button>
+  );
 
-    return (
-      <div onClick={handleOpen} className="inline-flex cursor-pointer">
-        {trigger}
-      </div>
-    );
-  };
+  // Clone the trigger and inject onClick directly
+  const triggerElement = trigger 
+    ? React.cloneElement(trigger as React.ReactElement, { onClick: handleOpen })
+    : defaultTrigger;
 
   return (
     <>
-      {renderTrigger()}
+      {triggerElement}
       
       <UnifiedInventoryDialog
         open={open}
