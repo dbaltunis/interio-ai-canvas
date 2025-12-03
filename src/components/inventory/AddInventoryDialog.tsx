@@ -14,38 +14,26 @@ interface AddInventoryDialogProps {
 export const AddInventoryDialog = ({ trigger, onSuccess, initialCategory, initialSubcategory }: AddInventoryDialogProps) => {
   const [open, setOpen] = usePersistedDialogState('add_inventory');
 
-  // Render trigger with wrapper that captures clicks before they bubble to Card
+  const handleOpen = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setOpen(true);
+  };
+
   const renderTrigger = () => {
     if (!trigger) {
       return (
-        <Button 
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            setOpen(true);
-          }}
-        >
+        <Button onClick={handleOpen}>
           <Plus className="h-4 w-4 mr-2" />
           Add Item
         </Button>
       );
     }
 
-    // Wrap trigger in a span that captures clicks BEFORE they bubble to Card
     return (
-      <span 
-        onClick={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          setOpen(true);
-        }}
-        onClickCapture={(e) => {
-          e.stopPropagation();
-        }}
-        className="inline-flex"
-      >
+      <div onClick={handleOpen} className="inline-flex cursor-pointer">
         {trigger}
-      </span>
+      </div>
     );
   };
 

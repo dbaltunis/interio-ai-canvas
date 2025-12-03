@@ -15,39 +15,25 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
   const itemId = item?.id ?? 'new';
   const [open, setOpen] = usePersistedDialogState(`edit_inventory_${itemId}`);
 
-  // Render trigger with wrapper that captures clicks before they bubble to Card
+  const handleOpen = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setOpen(true);
+  };
+
   const renderTrigger = () => {
     if (!trigger) {
       return (
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            setOpen(true);
-          }}
-        >
+        <Button variant="outline" size="sm" onClick={handleOpen}>
           <Edit className="h-4 w-4" />
         </Button>
       );
     }
 
-    // Wrap trigger in a span that captures clicks BEFORE they bubble to Card
     return (
-      <span 
-        onClick={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          setOpen(true);
-        }}
-        onClickCapture={(e) => {
-          e.stopPropagation();
-        }}
-        className="inline-flex"
-      >
+      <div onClick={handleOpen} className="inline-flex cursor-pointer">
         {trigger}
-      </span>
+      </div>
     );
   };
 
