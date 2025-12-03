@@ -942,26 +942,6 @@ export const UnifiedInventoryDialog = ({
                         </Select>
                       </div>
 
-                      <div>
-                        <Label>Light Filtering</Label>
-                        <Select
-                          value={formData.specifications?.light_filtering || ""}
-                          onValueChange={(value) => setFormData(prev => ({ 
-                            ...prev, 
-                            specifications: { ...prev.specifications, light_filtering: value }
-                          }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="sheer">Sheer</SelectItem>
-                            <SelectItem value="light_filtering">Light Filtering</SelectItem>
-                            <SelectItem value="room_darkening">Room Darkening</SelectItem>
-                            <SelectItem value="blackout">Blackout</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
 
                       <div className="md:col-span-2">
                         <Label>Product Preview</Label>
