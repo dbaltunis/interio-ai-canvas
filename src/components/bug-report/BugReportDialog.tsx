@@ -218,8 +218,8 @@ export const BugReportDialog = ({
 
   const version = "v2.0";
 
-  // Don't render floating button on onboarding pages or if trigger is hidden
-  const showFloatingButton = !hideTrigger && !isOnboardingPage;
+  // Floating button hidden - support is accessed via user profile slider
+  const showFloatingButton = false;
 
   return (
     <>
