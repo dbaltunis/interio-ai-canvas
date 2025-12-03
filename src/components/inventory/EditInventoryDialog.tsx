@@ -1,4 +1,4 @@
-import React from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
@@ -13,38 +13,40 @@ interface EditInventoryDialogProps {
 export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryDialogProps) => {
   const [open, setOpen] = usePersistedDialogState(`edit_inventory_${item?.id}`);
 
-  const handleTriggerClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setOpen(true);
-  };
-
-  // Clone trigger and merge click handlers
+  // Render trigger with wrapper that captures clicks before they bubble to Card
   const renderTrigger = () => {
     if (!trigger) {
       return (
-        <Button variant="outline" size="sm" onClick={handleTriggerClick}>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setOpen(true);
+          }}
+        >
           <Edit className="h-4 w-4" />
         </Button>
       );
     }
 
-    // Get original onClick if it exists
-    const originalElement = trigger as React.ReactElement;
-    const originalOnClick = originalElement.props?.onClick;
-
-    return React.cloneElement(originalElement, {
-      onClick: (e: React.MouseEvent) => {
-        // Call original onClick first (for stopPropagation etc)
-        if (originalOnClick) {
-          originalOnClick(e);
-        }
-        // Then open the dialog
-        e.stopPropagation();
-        e.preventDefault();
-        setOpen(true);
-      }
-    });
+    // Wrap trigger in a span that captures clicks BEFORE they bubble to Card
+    return (
+      <span 
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          setOpen(true);
+        }}
+        onClickCapture={(e) => {
+          e.stopPropagation();
+        }}
+        className="inline-flex"
+      >
+        {trigger}
+      </span>
+    );
   };
 
   return (
