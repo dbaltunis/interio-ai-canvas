@@ -418,8 +418,10 @@ export const useQuotationSync = ({
                 }
                 
                 const quantity = opt.quantity || 1;
-                const unitPrice = opt.unit_price || opt.price;
-                const total = opt.price;
+                // CRITICAL: Use calculatedPrice if available, otherwise fall back to price
+                const effectivePrice = Number(opt.calculatedPrice) || Number(opt.price) || 0;
+                const unitPrice = Number(opt.basePrice) || Number(opt.price) || effectivePrice;
+                const total = effectivePrice;
                 
                 parentItem.children.push({
                   id: `${window.window_id}-option-${index}`,
@@ -430,6 +432,8 @@ export const useQuotationSync = ({
                   unit_price: unitPrice,
                   total: total,
                   image_url: opt.image_url || null,
+                  pricingDetails: opt.pricingDetails || '',
+                  category: 'option',
                   isChild: true
               });
             });
