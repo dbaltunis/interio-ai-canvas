@@ -191,19 +191,45 @@ export const useQuotationSync = ({
           if (hasStructuredBreakdown) {
             console.log('[BREAKDOWN] Using structured breakdown directly (prevents duplicates)');
             // Convert breakdown items to children format - INCLUDE color for fallback display
-            parentItem.children = breakdown.map((item: any, idx: number) => ({
-              id: `${window.window_id}-${item.id || item.category}-${idx}`,
-              name: item.name || item.category,
-              description: item.description || '-',
-              quantity: item.quantity || 1,
-              unit: item.unit || '',
-              unit_price: item.unit_price || 0,
-              total: item.total_cost || 0,
-              image_url: item.image_url || null,
-              color: item.color || null, // CRITICAL: Pass color for fallback display
-              category: item.category,
-              isChild: true
-            }));
+            parentItem.children = breakdown.map((item: any, idx: number) => {
+              // CRITICAL FIX: Get color/image from fabric_details or material_details for fabric items
+              let itemColor = item.color || null;
+              let itemImageUrl = item.image_url || null;
+              let formattedName = item.name || item.category || 'Item';
+              let formattedDescription = item.description || '-';
+              
+              if (item.category === 'fabric') {
+                itemColor = itemColor || materialDetails?.color || fabricDetails?.color || null;
+                itemImageUrl = itemImageUrl || materialImageUrl || null;
+              }
+              
+              // Format "option_key: value" to "Option Key: value"
+              if (formattedName && formattedName.includes(':')) {
+                const colonIndex = formattedName.indexOf(':');
+                if (colonIndex > 0) {
+                  const key = formattedName.substring(0, colonIndex).trim();
+                  const value = formattedName.substring(colonIndex + 1).trim();
+                  formattedName = key
+                    .replace(/_/g, ' ')
+                    .replace(/\b\w/g, (c: string) => c.toUpperCase());
+                  formattedDescription = value || formattedDescription;
+                }
+              }
+              
+              return {
+                id: `${window.window_id}-${item.id || item.category}-${idx}`,
+                name: formattedName,
+                description: formattedDescription,
+                quantity: item.quantity || 1,
+                unit: item.unit || '',
+                unit_price: item.unit_price || 0,
+                total: item.total_cost || 0,
+                image_url: itemImageUrl,
+                color: itemColor,
+                category: item.category,
+                isChild: true
+              };
+            });
           } else {
             console.log('[BREAKDOWN] No structured breakdown - building children from scratch');
             // ONLY BUILD CHILDREN IF NO STRUCTURED BREAKDOWN EXISTS
