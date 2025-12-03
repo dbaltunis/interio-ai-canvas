@@ -3,6 +3,15 @@
  * Handles parsing, validation, and export for different inventory categories
  */
 
+import {
+  VALID_FABRIC_SUBCATEGORIES,
+  VALID_MATERIAL_SUBCATEGORIES,
+  VALID_HARDWARE_SUBCATEGORIES,
+  VALID_WALLCOVERING_SUBCATEGORIES,
+  VALID_SERVICE_SUBCATEGORIES,
+  VALID_PRODUCT_CATEGORIES
+} from '@/constants/inventoryCategories';
+
 interface ValidationResult {
   valid: any[];
   invalid: { item: any; errors: string[]; row: number }[];
@@ -114,31 +123,14 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
       if (quantityError) errors.push(quantityError);
     }
 
-    const validSubcategories = [
-      'curtain_fabric',
-      'roller_fabric',
-      'blind_fabric',
-      'furniture_fabric',
-      'sheer_fabric'
-    ];
-    
-    if (!item.subcategory || !validSubcategories.includes(item.subcategory)) {
-      errors.push(`Invalid subcategory. Must be one of: ${validSubcategories.join(', ')}`);
+    const subcategoryLower = item.subcategory?.toLowerCase();
+    if (!subcategoryLower || !VALID_FABRIC_SUBCATEGORIES.includes(subcategoryLower as any)) {
+      errors.push(`Invalid subcategory "${item.subcategory}". Must be one of: ${VALID_FABRIC_SUBCATEGORIES.join(', ')}`);
     }
 
-    const validProductCategories = [
-      'roller_blinds',
-      'venetian_blinds', 
-      'vertical_blinds',
-      'roman_blinds',
-      'curtains',
-      'shutters',
-      'panel_blinds',
-      'other'
-    ];
-    
-    if (item.product_category && !validProductCategories.includes(item.product_category)) {
-      errors.push(`Invalid product_category. Must be one of: ${validProductCategories.join(', ')}`);
+    const productCategoryLower = item.product_category?.toLowerCase();
+    if (productCategoryLower && !VALID_PRODUCT_CATEGORIES.includes(productCategoryLower as any)) {
+      errors.push(`Invalid product_category "${item.product_category}". Must be one of: ${VALID_PRODUCT_CATEGORIES.join(', ')}`);
     }
 
     if (errors.length > 0) {
@@ -202,8 +194,9 @@ export const parseHardwareCSV = (csvData: string): ValidationResult => {
       if (quantityError) errors.push(quantityError);
     }
 
-    if (!item.subcategory || !['track', 'pole', 'bracket', 'motor', 'accessory', 'finial'].includes(item.subcategory)) {
-      errors.push('Invalid subcategory. Must be: track, pole, bracket, motor, accessory, or finial');
+    const subcategoryLower = item.subcategory?.toLowerCase();
+    if (!subcategoryLower || !VALID_HARDWARE_SUBCATEGORIES.includes(subcategoryLower as any)) {
+      errors.push(`Invalid subcategory "${item.subcategory}". Must be one of: ${VALID_HARDWARE_SUBCATEGORIES.join(', ')}`);
     }
 
     if (errors.length > 0) {
@@ -280,8 +273,9 @@ export const parseWallpaperCSV = (csvData: string): ValidationResult => {
       if (widthError) errors.push(widthError);
     }
 
-    if (!item.subcategory || !['wallpaper', 'wall_panels_murals', 'grasscloth'].includes(item.subcategory)) {
-      errors.push('Invalid subcategory. Must be: wallpaper, wall_panels_murals, or grasscloth');
+    const subcategoryLower = item.subcategory?.toLowerCase();
+    if (!subcategoryLower || !VALID_WALLCOVERING_SUBCATEGORIES.includes(subcategoryLower as any)) {
+      errors.push(`Invalid subcategory "${item.subcategory}". Must be one of: ${VALID_WALLCOVERING_SUBCATEGORIES.join(', ')}`);
     }
 
     if (errors.length > 0) {
@@ -565,5 +559,189 @@ export const exportCategoryInventory = (items: any[], category: string): string 
     return [headers.join(','), ...rows].join('\n');
   }
 
+  if (category === 'material') {
+    const headers = [
+      'name', 'sku', 'description', 'subcategory', 'tags', 'track_inventory',
+      'quantity', 'unit', 'cost_price', 'selling_price', 'supplier', 'vendor_name', 'collection_name',
+      'location', 'reorder_point', 'slat_width', 'material_type', 'colors', 'image_url'
+    ];
+    
+    const rows = items.map(item => {
+      const isTracked = item.quantity != null ? 'yes' : 'no';
+      const { colors, nonColorTags } = extractColorsFromTags(item.tags);
+      const tagsStr = nonColorTags.join(',');
+      const colorsStr = colors.join(',');
+      
+      return [
+        `"${item.name || ''}"`,
+        `"${item.sku || ''}"`,
+        `"${item.description || ''}"`,
+        `"${item.subcategory || ''}"`,
+        `"${tagsStr}"`,
+        isTracked,
+        item.quantity ?? 0,
+        `"${item.unit || 'pieces'}"`,
+        item.cost_price || 0,
+        item.selling_price || 0,
+        `"${item.supplier || ''}"`,
+        `"${(item as any).metadata?.vendor_name || ''}"`,
+        `"${item.collection_name || ''}"`,
+        `"${item.location || ''}"`,
+        item.reorder_point ?? 0,
+        (item as any).metadata?.slat_width || item.slat_width || '',
+        `"${(item as any).metadata?.material_type || item.material_type || ''}"`,
+        `"${colorsStr}"`,
+        `"${item.image_url || ''}"`
+      ].join(',');
+    });
+
+    return [headers.join(','), ...rows].join('\n');
+  }
+
+  if (category === 'service') {
+    const headers = [
+      'name', 'sku', 'description', 'subcategory', 'tags', 'track_inventory',
+      'quantity', 'unit', 'cost_price', 'selling_price', 'supplier', 'location'
+    ];
+    
+    const rows = items.map(item => {
+      const isTracked = item.quantity != null ? 'yes' : 'no';
+      const tags = Array.isArray(item.tags) ? item.tags.join(',') : '';
+      
+      return [
+        `"${item.name || ''}"`,
+        `"${item.sku || ''}"`,
+        `"${item.description || ''}"`,
+        `"${item.subcategory || ''}"`,
+        `"${tags}"`,
+        isTracked,
+        item.quantity ?? 0,
+        `"${item.unit || 'service'}"`,
+        item.cost_price || 0,
+        item.selling_price || 0,
+        `"${item.supplier || ''}"`,
+        `"${item.location || ''}"`
+      ].join(',');
+    });
+
+    return [headers.join(','), ...rows].join('\n');
+  }
+
   return '';
+};
+
+// MATERIALS PARSER
+export const parseMaterialCSV = (csvData: string): ValidationResult => {
+  const lines = csvData.split('\n').filter(line => line.trim());
+  const headers = parseCSVLine(lines[0]);
+  const valid: any[] = [];
+  const invalid: { item: any; errors: string[]; row: number }[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i]);
+    const errors: string[] = [];
+    
+    const trackInventoryValue = values[5]?.replace(/^"|"$/g, '').toLowerCase();
+    const shouldTrack = trackInventoryValue === 'yes' || trackInventoryValue === 'true' || trackInventoryValue === '1';
+    
+    const colorsRaw = values[17]?.replace(/^"|"$/g, '') || '';
+    const colorValues = colorsRaw.split(',').map(c => c.trim().toLowerCase()).filter(c => c);
+    const tagsRaw = values[4]?.replace(/^"|"$/g, '') || '';
+    const baseTags = tagsRaw.split(',').map(t => t.trim()).filter(t => t);
+    
+    const item: any = {
+      category: 'material',
+      name: values[0]?.replace(/^"|"$/g, ''),
+      sku: values[1]?.replace(/^"|"$/g, ''),
+      description: values[2]?.replace(/^"|"$/g, ''),
+      subcategory: values[3]?.replace(/^"|"$/g, ''),
+      tags: [...baseTags, ...colorValues],
+      quantity: shouldTrack ? (parseFloat(values[6]) || 0) : null,
+      unit: values[7]?.replace(/^"|"$/g, '') || 'pieces',
+      cost_price: parseFloat(values[8]) || 0,
+      selling_price: parseFloat(values[9]) || 0,
+      supplier: values[10]?.replace(/^"|"$/g, ''),
+      collection_name: values[12]?.replace(/^"|"$/g, ''),
+      location: values[13]?.replace(/^"|"$/g, ''),
+      reorder_point: shouldTrack ? (parseFloat(values[14]) || 0) : null,
+      image_url: values[18]?.replace(/^"|"$/g, ''),
+      metadata: {
+        slat_width: parseFloat(values[15]) || null,
+        material_type: values[16]?.replace(/^"|"$/g, ''),
+        vendor_name: values[11]?.replace(/^"|"$/g, ''),
+      },
+    };
+
+    const nameError = validateRequired(item.name, 'Name');
+    if (nameError) errors.push(nameError);
+
+    if (shouldTrack) {
+      const quantityError = validateNumber(item.quantity, 'Quantity', 0);
+      if (quantityError) errors.push(quantityError);
+    }
+
+    const subcategoryLower = item.subcategory?.toLowerCase();
+    if (!subcategoryLower || !VALID_MATERIAL_SUBCATEGORIES.includes(subcategoryLower as any)) {
+      errors.push(`Invalid subcategory "${item.subcategory}". Must be one of: ${VALID_MATERIAL_SUBCATEGORIES.join(', ')}`);
+    }
+
+    if (errors.length > 0) {
+      invalid.push({ item, errors, row: i + 1 });
+    } else {
+      valid.push(item);
+    }
+  }
+
+  return { valid, invalid };
+};
+
+// SERVICES PARSER
+export const parseServiceCSV = (csvData: string): ValidationResult => {
+  const lines = csvData.split('\n').filter(line => line.trim());
+  const headers = parseCSVLine(lines[0]);
+  const valid: any[] = [];
+  const invalid: { item: any; errors: string[]; row: number }[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i]);
+    const errors: string[] = [];
+    
+    const trackInventoryValue = values[5]?.replace(/^"|"$/g, '').toLowerCase();
+    const shouldTrack = trackInventoryValue === 'yes' || trackInventoryValue === 'true' || trackInventoryValue === '1';
+    
+    const tagsRaw = values[4]?.replace(/^"|"$/g, '') || '';
+    const baseTags = tagsRaw.split(',').map(t => t.trim()).filter(t => t);
+    
+    const item: any = {
+      category: 'service',
+      name: values[0]?.replace(/^"|"$/g, ''),
+      sku: values[1]?.replace(/^"|"$/g, ''),
+      description: values[2]?.replace(/^"|"$/g, ''),
+      subcategory: values[3]?.replace(/^"|"$/g, ''),
+      tags: baseTags,
+      quantity: shouldTrack ? (parseFloat(values[6]) || 0) : null,
+      unit: values[7]?.replace(/^"|"$/g, '') || 'service',
+      cost_price: parseFloat(values[8]) || 0,
+      selling_price: parseFloat(values[9]) || 0,
+      supplier: values[10]?.replace(/^"|"$/g, ''),
+      location: values[11]?.replace(/^"|"$/g, ''),
+      reorder_point: null,
+    };
+
+    const nameError = validateRequired(item.name, 'Name');
+    if (nameError) errors.push(nameError);
+
+    const subcategoryLower = item.subcategory?.toLowerCase();
+    if (!subcategoryLower || !VALID_SERVICE_SUBCATEGORIES.includes(subcategoryLower as any)) {
+      errors.push(`Invalid subcategory "${item.subcategory}". Must be one of: ${VALID_SERVICE_SUBCATEGORIES.join(', ')}`);
+    }
+
+    if (errors.length > 0) {
+      invalid.push({ item, errors, row: i + 1 });
+    } else {
+      valid.push(item);
+    }
+  }
+
+  return { valid, invalid };
 };

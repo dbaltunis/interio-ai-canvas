@@ -1,0 +1,5 @@
+name,sku,description,subcategory,tags,track_inventory,quantity,unit,cost_price,selling_price,supplier,vendor_name,collection_name,location,reorder_point,slat_width,material_type,colors,image_url
+"Wood Venetian 50mm","VEN-W50-001","Premium basswood venetian slats","venetian","wood,premium","yes","100","pieces","25.00","45.00","Blind Components Ltd","Blind Components Ltd","Classic Wood","Warehouse B","20","50","wood","natural,walnut,white",""
+"Aluminum Venetian 25mm","VEN-A25-001","Aluminum venetian slats","venetian","aluminum,modern","yes","200","pieces","12.00","22.00","Metal Blinds Co","Metal Blinds Co","Modern Metal","Warehouse B","50","25","aluminum","silver,white,black",""
+"Vertical Fabric 89mm","VERT-F89-001","Fabric vertical vanes","vertical","fabric,light-filtering","yes","150","pieces","8.00","15.00","Vertical Solutions","Vertical Solutions","Fabric Collection","Warehouse C","30","89","fabric","white,cream,grey",""
+"Vertical PVC 127mm","VERT-P127-001","PVC vertical vanes","vertical","pvc,blockout","yes","100","pieces","6.00","12.00","Vertical Solutions","Vertical Solutions","PVC Range","Warehouse C","25","127","pvc","white,cream",""

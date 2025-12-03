@@ -1,0 +1,7 @@
+name,sku,description,subcategory,tags,track_inventory,quantity,unit,cost_price,selling_price,supplier,location
+"Standard Installation","SVC-INST-001","Standard window treatment installation","installation","installation,standard","no","0","service","50.00","95.00","In-house","N/A"
+"Premium Installation","SVC-INST-002","Premium installation with cleanup","installation","installation,premium","no","0","service","75.00","145.00","In-house","N/A"
+"Curtain Fitting","SVC-FIT-001","Professional curtain fitting service","fitting","fitting,curtain","no","0","service","40.00","75.00","In-house","N/A"
+"Blind Fitting","SVC-FIT-002","Professional blind fitting service","fitting","fitting,blind","no","0","service","35.00","65.00","In-house","N/A"
+"Consultation Fee","SVC-OTHER-001","On-site consultation service","other_service","consultation,on-site","no","0","hour","0.00","85.00","In-house","N/A"
+"Measurement Service","SVC-OTHER-002","Professional measurement service","other_service","measurement,professional","no","0","service","0.00","55.00","In-house","N/A"
