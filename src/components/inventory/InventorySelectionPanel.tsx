@@ -32,6 +32,7 @@ import { TreatmentCategory, getTreatmentConfig } from "@/utils/treatmentTypeDete
 import { useTreatmentSpecificFabrics } from "@/hooks/useTreatmentSpecificFabrics";
 import { getAcceptedSubcategories, getTreatmentPrimaryCategory } from "@/constants/inventorySubcategories";
 import { toast } from "sonner";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 interface InventorySelectionPanelProps {
   treatmentType: string;
   selectedItems: {
@@ -467,35 +468,48 @@ export const InventorySelectionPanel = ({
                     </div>}
                 </div>}
               
+              {/* Color display */}
+              {item.color && (
+                <div className="flex items-center gap-1.5 pt-0.5">
+                  <div 
+                    className="w-4 h-4 rounded-full border border-border shadow-sm" 
+                    style={{ backgroundColor: item.color.startsWith('#') ? item.color : `#${item.color}` }}
+                    title={item.color_name || item.color}
+                  />
+                  {item.color_name && (
+                    <span className="text-[9px] text-muted-foreground truncate">{item.color_name}</span>
+                  )}
+                </div>
+              )}
+
               {/* Price and stock */}
               <div className="flex items-center justify-between gap-1 pt-0.5">
                 <div className="flex flex-col">
                   <span className="text-xs font-semibold">
                     {(() => {
+                      const currencySymbol = getCurrencySymbol(units.currency || 'NZD');
+                      const lengthUnit = units.fabric || 'm';
+                      
                       // Check if using pricing grid
                       if (item.price_group || item.pricing_grid_id) {
-                        // Has grid - try to show min price from grid data
-                        if (item.pricing_grid_data && Array.isArray(item.pricing_grid_data) && item.pricing_grid_data.length > 0) {
-                          const minPrice = Math.min(...item.pricing_grid_data.map((row: any) => parseFloat(row.price || 0)));
-                          return `from $${minPrice.toFixed(2)}`;
-                        }
-                        // Grid exists but no data loaded - show the stored price
-                        return `from $${price.toFixed(2)}`;
+                        // Has grid - show "Grid" instead of fake price
+                        return <span className="text-primary">Grid Pricing</span>;
                       }
-                      // No grid - show normal price
-                      return `$${price.toFixed(2)}`;
+                      // No grid - show actual price from database
+                      return `${currencySymbol}${price.toFixed(2)}/${lengthUnit}`;
                     })()}
-                    {item.unit && <span className="text-[9px] text-muted-foreground">/{item.unit}</span>}
                   </span>
                   <span className="text-[8px] text-muted-foreground leading-none">
                     {item.price_group || item.pricing_grid_id
-                      ? `Grid: ${item.price_group || 'Assigned'}` 
-                      : (item.pricing_method || 'Fixed')}
+                      ? `${item.resolved_grid_name || item.price_group || 'Grid assigned'}` 
+                      : (item.pricing_method ? item.pricing_method.replace(/_/g, ' ') : 'Per metre')}
                   </span>
                 </div>
-                {item.quantity !== undefined && <Badge variant={item.quantity > 0 ? "secondary" : "destructive"} className="text-[9px] px-1 py-0 h-3.5">
-                    {item.quantity > 0 ? `${item.quantity} ${item.unit || 'm'}` : 'Out'}
-                  </Badge>}
+                {item.quantity !== undefined && item.quantity > 0 && (
+                  <Badge variant="secondary" className="text-[9px] px-1 py-0 h-3.5">
+                    {item.quantity} {units.fabric || 'm'}
+                  </Badge>
+                )}
               </div>
               
               {/* Tags */}
