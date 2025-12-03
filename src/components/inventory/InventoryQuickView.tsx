@@ -72,6 +72,7 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
                   hexColor={getColorHex(itemColors[0], [...COLOR_PALETTE], [])}
                   slatWidth={(item.specifications as Record<string, any>)?.slat_width}
                   materialType={(item.specifications as Record<string, any>)?.material_type}
+                  orientation={item.subcategory === 'vertical' ? 'vertical' : 'horizontal'}
                   size="lg"
                   showLabel
                 />

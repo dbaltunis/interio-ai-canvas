@@ -211,7 +211,7 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
                           ) : item.category === 'material' && item.tags?.some((tag: string) => 
                             COLOR_PALETTE.some(c => c.value === tag)
                           ) ? (
-                            <ColorSlatPreview 
+                          <ColorSlatPreview 
                               hexColor={getColorHex(
                                 item.tags.find((tag: string) => COLOR_PALETTE.some(c => c.value === tag)) || '',
                                 [...COLOR_PALETTE],
@@ -219,6 +219,7 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
                               )}
                               slatWidth={(item.specifications as Record<string, any>)?.slat_width}
                               materialType={(item.specifications as Record<string, any>)?.material_type}
+                              orientation={item.subcategory === 'vertical' ? 'vertical' : 'horizontal'}
                               size="sm"
                               className="w-16 h-16"
                             />
