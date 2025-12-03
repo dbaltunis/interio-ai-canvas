@@ -10,6 +10,7 @@ import { PoolUsageDisplay } from "../PoolUsageDisplay";
 import { PoolUsage } from "@/hooks/useProjectFabricPool";
 import { detectTreatmentType, getMeasurementLabels } from "@/utils/treatmentTypeDetection";
 import { PricingGridPreview } from "../PricingGridPreview";
+import { formatDimensionsFromCM, formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 
 interface AdaptiveFabricPricingDisplayProps {
   selectedFabricItem: any;
@@ -208,7 +209,7 @@ export const AdaptiveFabricPricingDisplay = ({
             <div className="flex justify-between">
               <span>Dimensions:</span>
               <span className="font-medium text-foreground">
-                {gridWidthCm.toFixed(0)}cm × {gridDropCm.toFixed(0)}cm
+                {formatDimensionsFromCM(gridWidthCm, gridDropCm, units.length)}
               </span>
             </div>
           <div className="flex justify-between border-t border-border pt-2 mt-2">

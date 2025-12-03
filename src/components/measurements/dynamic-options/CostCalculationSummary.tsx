@@ -11,6 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
 import { getPricingMethodLabel } from "@/utils/pricingMethodLabels";
+import { formatDimensionsFromCM, formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 
 // Simple SVG icons
 const FabricSwatchIcon = ({ className }: { className?: string }) => (
@@ -278,7 +279,7 @@ export const CostCalculationSummary = ({
                 <div className="flex flex-col min-w-0">
                   <span className="text-card-foreground font-medium">Assembly & Manufacturing</span>
                   <span className="text-xs text-muted-foreground truncate">
-                    {template?.pricing_type === 'pricing_grid' ? `Grid: ${width}cm × ${height}cm` : 'Labor cost'}
+                    {template?.pricing_type === 'pricing_grid' ? `Grid: ${formatDimensionsFromCM(width, height, units.length)}` : 'Labor cost'}
                   </span>
                 </div>
               </div>
@@ -320,11 +321,11 @@ export const CostCalculationSummary = ({
                         });
                         const matchingEntry = option.pricingGridData.find((entry: any) => parseInt(entry.width) === closestWidth);
                         displayPrice = matchingEntry ? parseFloat(matchingEntry.price) : 0;
-                        pricingDetails = ` (Grid: ${width}cm → ${formatPrice(displayPrice)})`;
+                        pricingDetails = ` (Grid: ${formatFromCM(width, units.length)} → ${formatPrice(displayPrice)})`;
                       } else {
                         // Full 2D grid
                         displayPrice = getPriceFromGrid(option.pricingGridData, width, height);
-                        pricingDetails = ` (Grid: ${width}cm × ${height}cm → ${formatPrice(displayPrice)})`;
+                        pricingDetails = ` (Grid: ${formatDimensionsFromCM(width, height, units.length)} → ${formatPrice(displayPrice)})`;
                       }
                     } else if (option.pricingMethod === 'fixed' || !option.pricingMethod) {
                       pricingDetails = ' (Fixed)';
@@ -470,7 +471,7 @@ export const CostCalculationSummary = ({
                       Curtain height exceeds fabric width, requiring {horizontalPieces} horizontal pieces per panel with {horizontalPieces - 1} seam(s).
                       Total: {widthsReq} piece(s) × {meters.toFixed(2)}m = {formatPrice(meters * pricePerM)}
                       {fabricCalculation.leftoverFromLastPiece && fabricCalculation.leftoverFromLastPiece > 0 && (
-                        <><br />Leftover: {fabricCalculation.leftoverFromLastPiece.toFixed(1)}cm tracked for future use</>
+                        <><br />Leftover: {formatFromCM(fabricCalculation.leftoverFromLastPiece, units.length)} tracked for future use</>
                       )}
                     </>
                   );
