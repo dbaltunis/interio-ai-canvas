@@ -836,6 +836,16 @@ export const VisualMeasurementSheet = ({
                     onColorSelect={(color) => handleInputChange('selected_color', color)}
                     readOnly={readOnly}
                   />
+                  {/* Visual feedback showing selected color */}
+                  {measurements.selected_color && (
+                    <div className="flex items-center gap-2 mt-3 p-2 bg-primary/10 rounded-lg border border-primary/20">
+                      <div 
+                        className="w-6 h-6 rounded-full border-2 border-background shadow-sm" 
+                        style={{ backgroundColor: measurements.selected_color.startsWith('#') ? measurements.selected_color : measurements.selected_color.toLowerCase() }}
+                      />
+                      <span className="text-sm font-medium text-foreground">Selected: {measurements.selected_color}</span>
+                    </div>
+                  )}
                 </div>
               )}
               
