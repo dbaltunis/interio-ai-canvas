@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -36,9 +36,37 @@ interface Template {
   created_at?: string;
 }
 
-// Default templates have been removed to prevent automatic template creation
-// Users must manually create templates through the UI
-const defaultTemplates: Template[] = [];
+// Starter templates for new accounts
+const starterTemplates: Template[] = [
+  {
+    id: 'starter-professional',
+    name: 'Professional Quote',
+    description: 'Clean, professional layout',
+    category: 'quote',
+    blocks: [
+      { id: 'header', type: 'header', content: { title: 'Quote', showLogo: true } },
+      { id: 'client', type: 'client_info', content: {} },
+      { id: 'items', type: 'line_items', content: {} },
+      { id: 'totals', type: 'totals', content: {} },
+      { id: 'footer', type: 'footer', content: { text: 'Thank you for your business!' } }
+    ]
+  },
+  {
+    id: 'starter-detailed',
+    name: 'Detailed Quote',
+    description: 'With room breakdown',
+    category: 'quote',
+    blocks: [
+      { id: 'header', type: 'header', content: { title: 'Detailed Quote', showLogo: true } },
+      { id: 'client', type: 'client_info', content: {} },
+      { id: 'rooms', type: 'room_breakdown', content: {} },
+      { id: 'items', type: 'line_items', content: {} },
+      { id: 'totals', type: 'totals', content: {} },
+      { id: 'terms', type: 'terms', content: {} },
+      { id: 'footer', type: 'footer', content: { text: 'Thank you for your business!' } }
+    ]
+  }
+];
 
 export const SimpleTemplateManager: React.FC = () => {
   const queryClient = useQueryClient();
@@ -330,11 +358,11 @@ export const SimpleTemplateManager: React.FC = () => {
     setSelectedTemplate(prev => prev ? { ...prev, blocks: updatedBlocks } : null);
 
     try {
-      // Check if this is a database record or a hardcoded template
-      const isHardcodedTemplate = defaultTemplates.some(dt => dt.id === selectedTemplate.id);
+      // Check if this is a database record or a starter template
+      const isStarterTemplate = starterTemplates.some(dt => dt.id === selectedTemplate.id);
       
-      if (isHardcodedTemplate) {
-        // For hardcoded templates, create a new database record
+      if (isStarterTemplate) {
+        // For starter templates, create a new database record
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
@@ -624,27 +652,57 @@ export const SimpleTemplateManager: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <label className="text-sm font-medium">Start From</label>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {defaultTemplates.map((template) => (
-                  <Button
-                    key={template.id}
-                    variant="outline"
-                    onClick={() => createFromTemplate(template)}
-                    className="h-auto p-3 text-left"
-                  >
-                    <div>
-                      <div className="font-medium">{template.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {template.description}
+            {starterTemplates.length > 0 && (
+              <div>
+                <label className="text-sm font-medium">Start From Template</label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {starterTemplates.map((template) => (
+                    <Button
+                      key={template.id}
+                      variant="outline"
+                      onClick={() => createFromTemplate(template)}
+                      className="h-auto p-3 text-left"
+                      disabled={!newTemplateName.trim()}
+                    >
+                      <div>
+                        <div className="font-medium">{template.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {template.description}
+                        </div>
                       </div>
-                    </div>
-                  </Button>
-                ))}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreating(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (newTemplateName.trim()) {
+                  createFromTemplate(starterTemplates[0] || {
+                    id: 'blank',
+                    name: 'Blank',
+                    description: 'Start from scratch',
+                    category: selectedCategory,
+                    blocks: [
+                      { id: 'header', type: 'header', content: { title: selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1), showLogo: true } },
+                      { id: 'client', type: 'client_info', content: {} },
+                      { id: 'items', type: 'line_items', content: {} },
+                      { id: 'totals', type: 'totals', content: {} }
+                    ]
+                  });
+                }
+              }}
+              disabled={!newTemplateName.trim()}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create Template
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
