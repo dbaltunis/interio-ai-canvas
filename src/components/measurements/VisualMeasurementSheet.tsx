@@ -829,17 +829,32 @@ export const VisualMeasurementSheet = ({
               </div>)}
               {/* End of curtain visual conditional */}
               
-              {/* Color Selection - for fabric or material with color tags (colors stored in tags array) */}
+              {/* Color Selection - for fabric or material with colors (from tags array or colors field) */}
               {(() => {
-                // Get colors from fabric first, then material
-                const itemWithColors = (selectedFabricItem?.tags?.length > 0 && selectedFabricItem) || 
-                                       (selectedMaterial?.tags?.length > 0 && selectedMaterial);
+                // Helper to extract colors from an item - check tags array, colors array, or colors string
+                const getColorsFromItem = (item: any): string[] => {
+                  if (!item) return [];
+                  // Check tags array first (primary storage)
+                  if (Array.isArray(item.tags) && item.tags.length > 0) return item.tags;
+                  // Check colors array
+                  if (Array.isArray(item.colors) && item.colors.length > 0) return item.colors;
+                  // Check colors as comma-separated string
+                  if (typeof item.colors === 'string' && item.colors.trim()) {
+                    return item.colors.split(',').map((c: string) => c.trim()).filter(Boolean);
+                  }
+                  return [];
+                };
                 
-                if (itemWithColors) {
+                // Get colors from fabric first, then material
+                const fabricColors = getColorsFromItem(selectedFabricItem);
+                const materialColors = getColorsFromItem(selectedMaterial);
+                const availableColors = fabricColors.length > 0 ? fabricColors : materialColors;
+                
+                if (availableColors.length > 0) {
                   return (
                     <div className="container-level-1 rounded-lg p-3 mt-2">
                       <ColorSelector 
-                        colors={itemWithColors.tags}
+                        colors={availableColors}
                         selectedColor={measurements.selected_color}
                         onColorSelect={(color) => handleInputChange('selected_color', color)}
                         readOnly={readOnly}
