@@ -54,6 +54,7 @@ interface VisualMeasurementSheetProps {
     name: string;
     price: number;
   }>) => void;
+  selectedMaterial?: any; // For blinds that use materials (venetian, vertical)
 }
 export const VisualMeasurementSheet = ({
   measurements,
@@ -72,7 +73,8 @@ export const VisualMeasurementSheet = ({
   onFabricCalculationChange,
   treatmentCategory = 'curtains' as import("@/utils/treatmentTypeDetection").TreatmentCategory,
   selectedOptions = [],
-  onSelectedOptionsChange
+  onSelectedOptionsChange,
+  selectedMaterial
 }: VisualMeasurementSheetProps) => {
   // Use ref to track latest options during batch initialization
   const selectedOptionsRef = useRef(selectedOptions);
@@ -517,7 +519,7 @@ export const VisualMeasurementSheet = ({
             }} template={selectedTemplate} selectedItems={{
               material: selectedFabric ? inventory.find(item => item.id === selectedFabric) : undefined
             }} hideDetails={true} /> : /* Blinds visual */
-            treatmentCategory === 'blinds' || treatmentCategory === 'roller_blinds' || treatmentCategory === 'venetian_blinds' || treatmentCategory === 'roman_blinds' || treatmentCategory === 'cellular_blinds' || treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'roller_blind' || selectedTemplate?.curtain_type === 'roman_blind' || selectedTemplate?.curtain_type === 'venetian_blind' || selectedTemplate?.curtain_type === 'vertical_blind' || selectedTemplate?.curtain_type === 'cellular_blind' || selectedTemplate?.curtain_type === 'cellular_shade' ? <DynamicBlindVisual windowType={windowType} measurements={measurements} template={selectedTemplate} blindType={treatmentCategory === 'roller_blinds' || treatmentCategory === 'blinds' || selectedTemplate?.curtain_type === 'roller_blind' ? 'roller' : treatmentCategory === 'venetian_blinds' || selectedTemplate?.curtain_type === 'venetian_blind' ? 'venetian' : treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'vertical_blind' ? 'vertical' : treatmentCategory === 'roman_blinds' || selectedTemplate?.curtain_type === 'roman_blind' ? 'roman' : treatmentCategory === 'cellular_blinds' || selectedTemplate?.curtain_type === 'cellular_blind' || selectedTemplate?.curtain_type === 'cellular_shade' ? 'cellular' : 'roller'} mountType={measurements.mount_type || 'outside'} chainSide={measurements.chain_side || 'right'} controlType={measurements.control_type} material={selectedFabricItem} /> : (/* Curtains visual */
+            treatmentCategory === 'blinds' || treatmentCategory === 'roller_blinds' || treatmentCategory === 'venetian_blinds' || treatmentCategory === 'roman_blinds' || treatmentCategory === 'cellular_blinds' || treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'roller_blind' || selectedTemplate?.curtain_type === 'roman_blind' || selectedTemplate?.curtain_type === 'venetian_blind' || selectedTemplate?.curtain_type === 'vertical_blind' || selectedTemplate?.curtain_type === 'cellular_blind' || selectedTemplate?.curtain_type === 'cellular_shade' ? <DynamicBlindVisual windowType={windowType} measurements={measurements} template={selectedTemplate} blindType={treatmentCategory === 'roller_blinds' || treatmentCategory === 'blinds' || selectedTemplate?.curtain_type === 'roller_blind' ? 'roller' : treatmentCategory === 'venetian_blinds' || selectedTemplate?.curtain_type === 'venetian_blind' ? 'venetian' : treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'vertical_blind' ? 'vertical' : treatmentCategory === 'roman_blinds' || selectedTemplate?.curtain_type === 'roman_blind' ? 'roman' : treatmentCategory === 'cellular_blinds' || selectedTemplate?.curtain_type === 'cellular_blind' || selectedTemplate?.curtain_type === 'cellular_shade' ? 'cellular' : 'roller'} mountType={measurements.mount_type || 'outside'} chainSide={measurements.chain_side || 'right'} controlType={measurements.control_type} material={selectedMaterial || selectedFabricItem} selectedColor={measurements.selected_color} /> : (/* Curtains visual */
             <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
 
               {/* Hardware - Track/Rod that follows window shape */}
@@ -827,27 +829,36 @@ export const VisualMeasurementSheet = ({
               </div>)}
               {/* End of curtain visual conditional */}
               
-              {/* Color Selection - if fabric has color tags (colors stored in tags array) */}
-              {selectedFabricItem && selectedFabricItem.tags && selectedFabricItem.tags.length > 0 && (
-                <div className="container-level-1 rounded-lg p-3 mt-2">
-                  <ColorSelector 
-                    colors={selectedFabricItem.tags}
-                    selectedColor={measurements.selected_color}
-                    onColorSelect={(color) => handleInputChange('selected_color', color)}
-                    readOnly={readOnly}
-                  />
-                  {/* Visual feedback showing selected color */}
-                  {measurements.selected_color && (
-                    <div className="flex items-center gap-2 mt-3 p-2 bg-primary/10 rounded-lg border border-primary/20">
-                      <div 
-                        className="w-6 h-6 rounded-full border-2 border-background shadow-sm" 
-                        style={{ backgroundColor: measurements.selected_color.startsWith('#') ? measurements.selected_color : measurements.selected_color.toLowerCase() }}
+              {/* Color Selection - for fabric or material with color tags (colors stored in tags array) */}
+              {(() => {
+                // Get colors from fabric first, then material
+                const itemWithColors = (selectedFabricItem?.tags?.length > 0 && selectedFabricItem) || 
+                                       (selectedMaterial?.tags?.length > 0 && selectedMaterial);
+                
+                if (itemWithColors) {
+                  return (
+                    <div className="container-level-1 rounded-lg p-3 mt-2">
+                      <ColorSelector 
+                        colors={itemWithColors.tags}
+                        selectedColor={measurements.selected_color}
+                        onColorSelect={(color) => handleInputChange('selected_color', color)}
+                        readOnly={readOnly}
                       />
-                      <span className="text-sm font-medium text-foreground">Selected: {measurements.selected_color}</span>
+                      {/* Visual feedback showing selected color */}
+                      {measurements.selected_color && (
+                        <div className="flex items-center gap-2 mt-3 p-2 bg-primary/10 rounded-lg border border-primary/20">
+                          <div 
+                            className="w-6 h-6 rounded-full border-2 border-background shadow-sm" 
+                            style={{ backgroundColor: measurements.selected_color.startsWith('#') ? measurements.selected_color : measurements.selected_color.toLowerCase() }}
+                          />
+                          <span className="text-sm font-medium text-foreground">Selected: {measurements.selected_color}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )}
+                  );
+                }
+                return null;
+              })()}
               
               {/* Fabric & Pricing Calculations Section - Below Visual - Only for curtains/romans with fabric calculations */}
               {(treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && selectedFabricItem && selectedTemplate && <AdaptiveFabricPricingDisplay selectedFabricItem={selectedFabricItem} fabricCalculation={fabricCalculation} template={selectedTemplate} measurements={measurements} treatmentCategory={treatmentCategory} />}

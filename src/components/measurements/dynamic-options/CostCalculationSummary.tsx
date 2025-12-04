@@ -265,7 +265,19 @@ export const CostCalculationSummary = ({
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
               <div className="flex flex-col min-w-0">
-                <span className="text-card-foreground font-medium">{isBlindCategory(treatmentCategory, template.name) ? 'Material' : 'Fabric Material'}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-card-foreground font-medium">{isBlindCategory(treatmentCategory, template.name) ? 'Material' : 'Fabric Material'}</span>
+                  {/* Show selected color swatch */}
+                  {measurements?.selected_color && (
+                    <div className="flex items-center gap-1.5">
+                      <div 
+                        className="w-4 h-4 rounded-full border border-border shadow-sm" 
+                        style={{ backgroundColor: measurements.selected_color.startsWith('#') ? measurements.selected_color : measurements.selected_color.toLowerCase() }}
+                      />
+                      <span className="text-xs text-muted-foreground capitalize">{measurements.selected_color}</span>
+                    </div>
+                  )}
+                </div>
                 <span className="text-xs text-muted-foreground truncate">{blindCosts.displayText}</span>
               </div>
             </div>
@@ -524,7 +536,19 @@ export const CostCalculationSummary = ({
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
                 <div className="flex flex-col min-w-0">
-                  <span className="text-card-foreground font-medium">Fabric Material</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-card-foreground font-medium">Fabric Material</span>
+                    {/* Show selected color swatch */}
+                    {measurements?.selected_color && (
+                      <div className="flex items-center gap-1.5">
+                        <div 
+                          className="w-4 h-4 rounded-full border border-border shadow-sm" 
+                          style={{ backgroundColor: measurements.selected_color.startsWith('#') ? measurements.selected_color : measurements.selected_color.toLowerCase() }}
+                        />
+                        <span className="text-xs text-muted-foreground capitalize">{measurements.selected_color}</span>
+                      </div>
+                    )}
+                  </div>
                   {fabricDisplayData ? (
                     <>
                       <span className="text-xs text-muted-foreground truncate">
