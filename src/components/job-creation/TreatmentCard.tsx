@@ -1,8 +1,8 @@
-
 import { Button } from "@/components/ui/button";
 import { Search, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import { useCurrency } from "@/hooks/useCurrency";
+import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
 
 interface TreatmentCardProps {
   treatment: any;
@@ -10,6 +10,16 @@ interface TreatmentCardProps {
 
 export const TreatmentCard = ({ treatment }: TreatmentCardProps) => {
   const currency = useCurrency();
+  
+  // Determine if this is a material-based treatment
+  const isMaterialBased = ['venetian_blinds', 'vertical_blinds', 'cellular_blinds', 'roller_blinds', 'blinds', 'shutters'].some(
+    type => treatment.treatment_type?.toLowerCase().includes(type.replace('_', ' ')) || treatment.treatment_type?.toLowerCase().includes(type)
+  );
+  
+  // Get image and color from fabric or material details
+  const imageUrl = treatment.fabric_details?.image_url || treatment.material_details?.image_url;
+  const productColor = treatment.fabric_details?.color || treatment.material_details?.color || treatment.color;
+  const productName = treatment.fabric_details?.name || treatment.material_details?.name || treatment.product_name || treatment.treatment_type;
   
   const getFabricDetails = (treatmentType: string) => {
     switch (treatmentType) {
@@ -40,12 +50,15 @@ export const TreatmentCard = ({ treatment }: TreatmentCardProps) => {
 
   return (
     <div className="flex items-start space-x-4 p-4 border rounded-lg bg-white">
-      {/* Fabric Image */}
-      <div className="w-20 h-20 bg-gray-200 rounded flex-shrink-0 overflow-hidden">
-        <img 
-          src="/placeholder.svg" 
-          alt="Fabric sample" 
-          className="w-full h-full object-cover"
+      {/* Fabric/Material Image with proper fallback */}
+      <div className="w-20 h-20 flex-shrink-0 overflow-hidden rounded">
+        <ProductImageWithColorFallback
+          imageUrl={imageUrl}
+          color={productColor}
+          productName={productName}
+          category={isMaterialBased ? 'material' : 'fabric'}
+          size={80}
+          rounded="md"
         />
       </div>
       
