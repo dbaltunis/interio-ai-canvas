@@ -381,6 +381,12 @@ export const buildClientBreakdown = (
     
     const optionItems: ClientBreakdownItem[] = [];
     
+    // Get selected color from measurements for fallback
+    const selectedColor = (summary.measurements_details as any)?.selected_color || 
+                          summary.fabric_details?.color || 
+                          summary.material_details?.color || 
+                          null;
+    
     summary.selected_options.forEach((option: any, index: number) => {
       let formattedName = option.name || option.label || 'Option';
       let formattedDescription = option.description;
@@ -402,6 +408,9 @@ export const buildClientBreakdown = (
       const price = Number(option.calculatedPrice || option.price || option.cost || option.total_cost || option.unit_price || 0);
       const basePrice = Number(option.basePrice || option.price || 0);
       
+      // CRITICAL: Use option-specific color first, then fall back to treatment's selected color
+      const optionColor = option.color || selectedColor;
+      
       optionItems.push({
         id: option.id || `option-${index}`,
         name: formattedName,
@@ -410,7 +419,7 @@ export const buildClientBreakdown = (
         unit_price: basePrice, // Show base rate for reference
         quantity: 1,
         image_url: option.image_url,
-        color: option.color || null,
+        color: optionColor,
         category: 'option',
         pricingDetails: option.pricingDetails || '',
         details: option,
