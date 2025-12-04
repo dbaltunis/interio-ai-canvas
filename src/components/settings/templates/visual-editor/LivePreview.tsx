@@ -1075,7 +1075,7 @@ const LivePreviewBlock = ({
       const hasRealData = projectItems.length > 0;
 
       const getItemizedBreakdown = (item: any) => {
-        const breakdown = [];
+        const breakdown: any[] = [];
         
         console.log('[BREAKDOWN] Processing item:', {
           name: item.name,
@@ -1090,7 +1090,6 @@ const LivePreviewBlock = ({
             // Skip if this is not a real breakdown item
             if (!child.isChild) return;
             
-            // INCLUDE OPTIONS IN BREAKDOWN - they should be separate rows!
             let displayName = child.name || 'Item';
             let displayDescription = child.description || '';
             
@@ -1111,6 +1110,14 @@ const LivePreviewBlock = ({
               }
             }
             
+            // CRITICAL: For fabric/material rows, use ONLY fabric/material specific images
+            // DO NOT inherit template images for fabric rows
+            let childImageUrl = child.image_url;
+            if ((child.category === 'fabric' || child.category === 'material') && !childImageUrl) {
+              // Only use fabric-specific image, not template image
+              childImageUrl = item.fabric_details?.image_url || item.material_details?.image_url || null;
+            }
+            
             breakdown.push({
               id: child.id || `${item.id}-child-${idx}`,
               name: displayName,
@@ -1120,7 +1127,8 @@ const LivePreviewBlock = ({
               unit: child.unit || '',
               unit_price: child.unit_price || 0,
               total_cost: child.total || 0,
-              image_url: child.image_url
+              image_url: childImageUrl,
+              color: child.color
             });
             
             console.log('[BREAKDOWN] Added child:', {
@@ -1133,22 +1141,101 @@ const LivePreviewBlock = ({
           });
         }
         
-        // CRITICAL FIX: Return breakdown directly - NO GROUPING!
-        // The groupRelatedOptionsInBreakdown function was broken - it assumed "Parent Option Colour"
-        // naming convention, but actual data uses "option_key: value" format
+        // Apply smart grouping to merge related options (e.g., "Headrail Selection" + "Headrail Selection Colour")
+        const groupedBreakdown = groupRelatedOptionsInBreakdown(breakdown);
         
-        console.log('[BREAKDOWN] Final breakdown (NO grouping applied):', {
+        console.log('[BREAKDOWN] Final breakdown after grouping:', {
           item_name: item.name,
-          breakdown_count: breakdown.length,
-          breakdown_items: breakdown.map(b => ({ name: b.name, desc: b.description, total: b.total_cost, color: b.color }))
+          original_count: breakdown.length,
+          grouped_count: groupedBreakdown.length,
+          breakdown_items: groupedBreakdown.map((b: any) => ({ name: b.name, desc: b.description, total: b.total_cost, color: b.color }))
         });
         
-        return breakdown;
+        return groupedBreakdown;
       };
       
-      // NOTE: groupRelatedOptionsInBreakdown function REMOVED - it was broken
-      // The function assumed "Parent Option" + "Parent Option Colour" naming convention
-      // but actual data uses "option_key: value" format, causing options to be lost
+      // Smart grouping function to merge related options
+      const groupRelatedOptionsInBreakdown = (items: any[]) => {
+        if (!items || items.length === 0) return [];
+        
+        // Separate options from non-options
+        const options = items.filter(item => item.category === 'option' || item.category === 'options');
+        const nonOptions = items.filter(item => item.category !== 'option' && item.category !== 'options');
+        
+        if (options.length === 0) return items;
+        
+        // Normalize a name for matching
+        const normalizeKey = (name: string) => {
+          return (name || '').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        };
+        
+        const parentMap = new Map<string, any>();
+        const childMap = new Map<string, { parent: string; item: any }>();
+        const childSuffixes = ['_colour', '_color', '_size', '_style', '_type', '_finish', '_material'];
+        
+        // Identify parent-child relationships
+        options.forEach(item => {
+          const normalizedName = normalizeKey(item.name || '');
+          let isChild = false;
+          
+          for (const suffix of childSuffixes) {
+            if (normalizedName.endsWith(suffix)) {
+              const parentKey = normalizedName.slice(0, -suffix.length);
+              childMap.set(normalizedName, { parent: parentKey, item });
+              isChild = true;
+              break;
+            }
+          }
+          
+          if (!isChild) {
+            parentMap.set(normalizedName, item);
+          }
+        });
+        
+        // Merge children into parents
+        const result: any[] = [...nonOptions];
+        const processedParents = new Set<string>();
+        
+        parentMap.forEach((parentItem, parentKey) => {
+          if (processedParents.has(parentKey)) return;
+          processedParents.add(parentKey);
+          
+          const children: { suffix: string; item: any }[] = [];
+          childMap.forEach((childData, childKey) => {
+            if (childData.parent === parentKey) {
+              const suffix = childKey.slice(parentKey.length + 1);
+              children.push({ suffix, item: childData.item });
+            }
+          });
+          
+          if (children.length === 0) {
+            result.push(parentItem);
+          } else {
+            let mergedDescription = parentItem.description || '';
+            let mergedPrice = Number(parentItem.total_cost) || 0;
+            
+            children.forEach(({ suffix, item: childItem }) => {
+              const formattedSuffix = suffix.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+              const childValue = childItem.description || childItem.name || '';
+              if (childValue) {
+                mergedDescription += mergedDescription ? ` - ${formattedSuffix}: ${childValue}` : `${formattedSuffix}: ${childValue}`;
+              }
+              mergedPrice += Number(childItem.total_cost) || 0;
+            });
+            
+            result.push({ ...parentItem, description: mergedDescription, total_cost: mergedPrice });
+          }
+        });
+        
+        // Add orphan children
+        childMap.forEach((childData) => {
+          if (!parentMap.has(childData.parent)) {
+            result.push(childData.item);
+          }
+        });
+        
+        return result;
+      };
       
       console.log('[PRODUCTS BLOCK] Rendering products:', {
         projectItemsCount: projectItems.length,
