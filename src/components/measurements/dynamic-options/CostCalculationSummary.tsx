@@ -12,6 +12,7 @@ import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
 import { getPricingMethodLabel } from "@/utils/pricingMethodLabels";
 import { formatDimensionsFromCM, formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
+import { PricingGridPreview } from "@/components/settings/tabs/products/pricing/PricingGridPreview";
 
 // Simple SVG icons
 const FabricSwatchIcon = ({ className }: { className?: string }) => (
@@ -377,7 +378,15 @@ export const CostCalculationSummary = ({
           <div className="space-y-2 mt-3 pl-4 border-l-2 border-primary/20">
             <div className="space-y-0.5">
               <div className="text-card-foreground font-medium">Template: {template.name}</div>
-              <div>Method: {template.pricing_type}</div>
+              <div className="flex items-center gap-2">
+                <span>Method: {template.pricing_type}</span>
+                {template.pricing_type === 'pricing_grid' && fabricToUse?.pricingGridData && (
+                  <PricingGridPreview 
+                    gridData={fabricToUse.pricingGridData} 
+                    gridName={fabricToUse.name || 'Product Pricing'}
+                  />
+                )}
+              </div>
               <div>Area: {blindCosts.squareMeters.toFixed(2)} sqm</div>
             </div>
 
