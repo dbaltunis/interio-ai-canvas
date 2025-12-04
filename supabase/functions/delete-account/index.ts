@@ -63,7 +63,8 @@ serve(async (req) => {
     // Delete all user-related data from public schema tables
     // Order matters: delete child records first to avoid foreign key violations
     
-    const tablesToClean = [
+    // Tables that use user_id column
+    const tablesToCleanByUserId = [
       // Child tables first (tables that reference other user tables)
       'appointment_notifications', 'project_notes', 'window_coverings', 'rooms',
       'tasks', 'todos', 'reminders', 'client_measurements', 'client_activity_log',
@@ -115,8 +116,38 @@ serve(async (req) => {
       'user_profiles'
     ];
 
+    // Tables that use account_id column instead of user_id
+    const tablesToCleanByAccountId = [
+      'option_values',
+      'template_option_settings', 
+      'treatment_options',
+      'account_overrides',
+      'account_settings',
+    ];
+
     let deletedRecords = 0;
-    for (const table of tablesToClean) {
+    
+    // Clean tables by account_id first (these often reference other tables)
+    for (const table of tablesToCleanByAccountId) {
+      try {
+        const { error: deleteError, count } = await supabaseAdmin
+          .from(table)
+          .delete({ count: 'exact' })
+          .eq('account_id', userId);
+        
+        if (deleteError) {
+          console.warn(`Warning: Failed to delete from ${table} by account_id:`, deleteError.message);
+        } else if (count && count > 0) {
+          console.log(`Deleted ${count} records from ${table} by account_id`);
+          deletedRecords += count;
+        }
+      } catch (err) {
+        console.warn(`Error cleaning ${table} by account_id:`, err);
+      }
+    }
+
+    // Clean tables by user_id
+    for (const table of tablesToCleanByUserId) {
       try {
         const { error: deleteError, count } = await supabaseAdmin
           .from(table)
