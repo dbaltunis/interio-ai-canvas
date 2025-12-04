@@ -36,6 +36,25 @@ const validateNumber = (value: any, fieldName: string, min?: number): string | n
   return null;
 };
 
+/**
+ * Parse price value from CSV, stripping currency symbols and formatting
+ * Handles: €26.50, $100.00, £1,234.56, NZ$85.00, A$42.50, "42.50", etc.
+ */
+const parsePrice = (value: any): number => {
+  if (value === null || value === undefined) return 0;
+  
+  // Convert to string and clean
+  let cleaned = String(value)
+    .replace(/^"|"$/g, '')           // Remove surrounding quotes
+    .replace(/[€$£¥₹R]/g, '')        // Remove currency symbols
+    .replace(/^(NZ|A|AU|US|CA)\$/i, '') // Remove prefixed currency codes (NZ$, A$, etc.)
+    .replace(/,/g, '')               // Remove thousand separators
+    .trim();
+  
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? 0 : num;
+};
+
 const parseCSVLine = (line: string): string[] => {
   const result: string[] = [];
   let current = '';
@@ -94,9 +113,9 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
       quantity: shouldTrack ? (parseFloat(values[10]) || 0) : null,
       unit: values[11]?.replace(/^"|"$/g, '') || 'meters',
       reorder_point: shouldTrack ? (parseFloat(values[12]) || 0) : null,
-      cost_price: parseFloat(values[13]) || 0,
-      selling_price: parseFloat(values[14]) || 0,
-      price_per_meter: parseFloat(values[14]) || 0,
+      cost_price: parsePrice(values[13]),
+      selling_price: parsePrice(values[14]),
+      price_per_meter: parsePrice(values[14]),
       fabric_width: parseFloat(values[16]) || null,
       fabric_composition: values[17]?.replace(/^"|"$/g, ''),
       fabric_grade: values[18]?.replace(/^"|"$/g, ''),
@@ -166,8 +185,8 @@ export const parseHardwareCSV = (csvData: string): ValidationResult => {
       tags: values[4]?.replace(/^"|"$/g, '').split(',').map(t => t.trim()).filter(t => t) || [],
       quantity: shouldTrack ? (parseFloat(values[6]) || 0) : null,
       unit: values[7]?.replace(/^"|"$/g, '') || 'pieces',
-      cost_price: parseFloat(values[8]) || 0,
-      selling_price: parseFloat(values[9]) || 0,
+      cost_price: parsePrice(values[8]),
+      selling_price: parsePrice(values[9]),
       supplier: values[10]?.replace(/^"|"$/g, ''),
       location: values[13]?.replace(/^"|"$/g, ''),
       reorder_point: shouldTrack ? (parseFloat(values[14]) || 0) : null,
@@ -242,8 +261,8 @@ export const parseWallpaperCSV = (csvData: string): ValidationResult => {
       quantity: shouldTrack ? (parseFloat(values[9]) || 0) : null,
       unit: values[10]?.replace(/^"|"$/g, '') || 'rolls',
       reorder_point: shouldTrack ? (parseFloat(values[11]) || 0) : null,
-      cost_price: parseFloat(values[12]) || 0,
-      selling_price: parseFloat(values[13]) || 0,
+      cost_price: parsePrice(values[12]),
+      selling_price: parsePrice(values[13]),
       roll_width: parseFloat(values[15]) || null,
       roll_length: parseFloat(values[16]) || null,
       pattern_repeat_vertical: parseFloat(values[17]) || null,
@@ -317,13 +336,13 @@ export const parseTrimmingsCSV = (csvData: string): ValidationResult => {
       tags: [...baseTags, ...colorValues], // Merge tags and colors
       quantity: shouldTrack ? (parseFloat(values[6]) || 0) : null,
       unit: values[7]?.replace(/^"|"$/g, '') || 'meters',
-      cost_price: parseFloat(values[8]) || 0,
-      selling_price: parseFloat(values[9]) || 0,
+      cost_price: parsePrice(values[8]),
+      selling_price: parsePrice(values[9]),
       supplier: values[10]?.replace(/^"|"$/g, ''),
       collection_name: values[12]?.replace(/^"|"$/g, ''),
       location: values[13]?.replace(/^"|"$/g, ''),
       reorder_point: shouldTrack ? (parseFloat(values[14]) || 0) : null,
-      unit_price: parseFloat(values[18]) || null,
+      unit_price: parsePrice(values[18]) || null,
       metadata: {
         trimming_width: parseFloat(values[15]) || null,
         material_composition: values[17]?.replace(/^"|"$/g, ''),
@@ -658,8 +677,8 @@ export const parseMaterialCSV = (csvData: string): ValidationResult => {
       tags: [...baseTags, ...colorValues],
       quantity: shouldTrack ? (parseFloat(values[6]) || 0) : null,
       unit: values[7]?.replace(/^"|"$/g, '') || 'pieces',
-      cost_price: parseFloat(values[8]) || 0,
-      selling_price: parseFloat(values[9]) || 0,
+      cost_price: parsePrice(values[8]),
+      selling_price: parsePrice(values[9]),
       supplier: values[10]?.replace(/^"|"$/g, ''),
       collection_name: values[12]?.replace(/^"|"$/g, ''),
       location: values[13]?.replace(/^"|"$/g, ''),
@@ -721,8 +740,8 @@ export const parseServiceCSV = (csvData: string): ValidationResult => {
       tags: baseTags,
       quantity: shouldTrack ? (parseFloat(values[6]) || 0) : null,
       unit: values[7]?.replace(/^"|"$/g, '') || 'service',
-      cost_price: parseFloat(values[8]) || 0,
-      selling_price: parseFloat(values[9]) || 0,
+      cost_price: parsePrice(values[8]),
+      selling_price: parsePrice(values[9]),
       supplier: values[10]?.replace(/^"|"$/g, ''),
       location: values[11]?.replace(/^"|"$/g, ''),
       reorder_point: null,
