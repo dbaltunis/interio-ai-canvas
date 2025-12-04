@@ -306,13 +306,44 @@ serve(async (req) => {
 
         if (resendError) {
           console.error('Resend error:', resendError);
+          // Log failed email to database
+          await supabaseAdmin.from('emails').insert({
+            user_id: newUser.user.id,
+            recipient_email: email,
+            subject: emailSubject,
+            content: emailHtml,
+            status: 'failed',
+            bounce_reason: resendError.message,
+          });
           throw new Error(`Failed to send welcome email: ${resendError.message}`);
         }
+        
+        // Log successful email to database
+        await supabaseAdmin.from('emails').insert({
+          user_id: newUser.user.id,
+          recipient_email: email,
+          subject: emailSubject,
+          content: emailHtml,
+          status: 'sent',
+          sent_at: new Date().toISOString(),
+        });
         console.log('Welcome email sent via shared Resend to:', email);
       }
     } catch (emailError) {
       console.error('Error sending welcome email:', emailError);
-      // Don't fail the account creation if email fails - but log it
+      // Log error email to database if we have user id
+      try {
+        await supabaseAdmin.from('emails').insert({
+          user_id: newUser.user.id,
+          recipient_email: email,
+          subject: emailSubject,
+          content: emailHtml,
+          status: 'failed',
+          bounce_reason: emailError instanceof Error ? emailError.message : 'Unknown error',
+        });
+      } catch (logErr) {
+        console.error('Failed to log email error:', logErr);
+      }
       console.warn('Account created but welcome email not sent for:', email);
     }
 

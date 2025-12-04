@@ -3,6 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { AccountWithDetails, AccountType, SubscriptionType } from "@/types/subscriptions";
 import { useToast } from "@/hooks/use-toast";
 
+export interface InvitationEmailStatus {
+  user_id: string;
+  status: 'sent' | 'failed' | 'pending' | 'none';
+  sent_at?: string;
+  error?: string;
+}
+
 export const useAdminAccounts = (filters?: {
   accountType?: AccountType;
   subscriptionStatus?: string;
@@ -26,6 +33,79 @@ export const useAdminAccounts = (filters?: {
       }
 
       return data.accounts || [];
+    },
+  });
+};
+
+export const useInvitationEmailStatus = (userId: string) => {
+  return useQuery({
+    queryKey: ["invitationEmailStatus", userId],
+    queryFn: async (): Promise<InvitationEmailStatus> => {
+      const { data, error } = await supabase
+        .from('emails')
+        .select('status, sent_at, bounce_reason')
+        .eq('user_id', userId)
+        .ilike('subject', '%welcome%')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching email status:', error);
+        return { user_id: userId, status: 'none' };
+      }
+
+      if (!data) {
+        return { user_id: userId, status: 'none' };
+      }
+
+      return {
+        user_id: userId,
+        status: data.status as 'sent' | 'failed' | 'pending',
+        sent_at: data.sent_at || undefined,
+        error: data.bounce_reason || undefined,
+      };
+    },
+    enabled: !!userId,
+  });
+};
+
+export const useResendInvitation = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ userId }: { userId: string }) => {
+      const { data, error } = await supabase.functions.invoke('resend-account-invitation', {
+        body: { userId }
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["invitationEmailStatus", variables.userId] });
+      queryClient.invalidateQueries({ queryKey: ["adminAccounts"] });
+      
+      if (data.email_sent) {
+        toast({
+          title: "Invitation Resent",
+          description: "A new invitation email has been sent with updated credentials.",
+        });
+      } else {
+        toast({
+          title: "Password Reset",
+          description: `Password was reset but email failed: ${data.email_error}`,
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to resend invitation",
+        variant: "destructive",
+      });
     },
   });
 };
