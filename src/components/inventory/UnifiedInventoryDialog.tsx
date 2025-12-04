@@ -102,6 +102,7 @@ export const UnifiedInventoryDialog = ({
     unit: "meters",
     cost_price: 0,
     selling_price: 0,
+    price_per_meter: 0, // For linear pricing (fabric pricing per running meter/yard)
     supplier: "",
     vendor_id: "",
     collection_id: null as string | null,
@@ -233,6 +234,7 @@ export const UnifiedInventoryDialog = ({
         unit: item.unit || "meters",
         cost_price: item.cost_price || 0,
         selling_price: item.selling_price || 0,
+        price_per_meter: item.price_per_meter || item.selling_price || 0, // Use price_per_meter or fallback to selling_price
         supplier: item.supplier || "",
         vendor_id: item.vendor_id || "",
         collection_id: item.collection_id || null,
@@ -384,6 +386,8 @@ export const UnifiedInventoryDialog = ({
       // Ensure numeric fields are properly set
       cost_price: Number(formData.cost_price) || 0,
       selling_price: Number(formData.selling_price) || 0,
+      // CRITICAL: Save price_per_meter for linear pricing (fabric pricing)
+      price_per_meter: pricingMethod === 'linear' ? Number(formData.selling_price) || 0 : (formData.price_per_meter || null),
       fabric_width: Number(formData.fabric_width) || null,
       pattern_repeat_vertical: Number(formData.pattern_repeat_vertical) || null,
       pattern_repeat_horizontal: Number(formData.pattern_repeat_horizontal) || null,
@@ -417,6 +421,7 @@ export const UnifiedInventoryDialog = ({
           unit: result.unit || "meters",
           cost_price: result.cost_price || 0,
           selling_price: result.selling_price || 0,
+          price_per_meter: result.price_per_meter || 0,
           reorder_point: result.reorder_point || 0,
           location: result.location || "",
           vendor_id: result.vendor_id || "",
@@ -601,40 +606,50 @@ export const UnifiedInventoryDialog = ({
                     <CardDescription>Choose how this product will be priced</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div className="grid grid-cols-3 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setPricingMethod('grid')}
-                        className={`p-4 border-2 rounded-lg text-left transition-all ${
-                          pricingMethod === 'grid' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <div className="font-medium mb-1">Pricing Grid</div>
-                        <div className="text-xs text-muted-foreground">For blinds</div>
-                      </button>
+                    {/* Context-aware pricing method buttons - hide Grid for fabric subcategories */}
+                    {(() => {
+                      const isFabricSubcategory = ['curtain_fabric', 'lining_fabric', 'roman_fabric', 'upholstery_fabric', 'sheer_fabric'].includes(formData.subcategory);
+                      const showGridOption = !isFabricSubcategory;
                       
-                      <button
-                        type="button"
-                        onClick={() => setPricingMethod('linear')}
-                        className={`p-4 border-2 rounded-lg text-left transition-all ${
-                          pricingMethod === 'linear' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <div className="font-medium mb-1">Per Running Meter/Yard</div>
-                        <div className="text-xs text-muted-foreground">For curtains/fabrics</div>
-                      </button>
-                      
-                      <button
-                        type="button"
-                        onClick={() => setPricingMethod('fixed')}
-                        className={`p-4 border-2 rounded-lg text-left transition-all ${
-                          pricingMethod === 'fixed' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <div className="font-medium mb-1">Fixed Price</div>
-                        <div className="text-xs text-muted-foreground">Per piece/roll</div>
-                      </button>
-                    </div>
+                      return (
+                        <div className={`grid gap-3 ${showGridOption ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                          {showGridOption && (
+                            <button
+                              type="button"
+                              onClick={() => setPricingMethod('grid')}
+                              className={`p-4 border-2 rounded-lg text-left transition-all ${
+                                pricingMethod === 'grid' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                              }`}
+                            >
+                              <div className="font-medium mb-1">Pricing Grid</div>
+                              <div className="text-xs text-muted-foreground">For blinds/shutters</div>
+                            </button>
+                          )}
+                          
+                          <button
+                            type="button"
+                            onClick={() => setPricingMethod('linear')}
+                            className={`p-4 border-2 rounded-lg text-left transition-all ${
+                              pricingMethod === 'linear' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                            }`}
+                          >
+                            <div className="font-medium mb-1">Per {pricingUnitLabel}</div>
+                            <div className="text-xs text-muted-foreground">For curtains/fabrics</div>
+                          </button>
+                          
+                          <button
+                            type="button"
+                            onClick={() => setPricingMethod('fixed')}
+                            className={`p-4 border-2 rounded-lg text-left transition-all ${
+                              pricingMethod === 'fixed' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                            }`}
+                          >
+                            <div className="font-medium mb-1">Fixed Price</div>
+                            <div className="text-xs text-muted-foreground">Per piece/roll</div>
+                          </button>
+                        </div>
+                      );
+                    })()}
 
                     {pricingMethod === 'grid' && (
                       <div className="space-y-4 p-4 border rounded-lg">
@@ -746,7 +761,7 @@ export const UnifiedInventoryDialog = ({
                       <div className="space-y-4 p-4 border rounded-lg">
                         <div className="grid gap-4 md:grid-cols-2">
                           <div>
-                            <Label>Cost Price ({currencySymbol} per running {lengthUnit})</Label>
+                            <Label>Cost Price ({currencySymbol} per {pricingUnitLabel})</Label>
                             <Input
                               type="number"
                               step="0.01"
@@ -757,7 +772,7 @@ export const UnifiedInventoryDialog = ({
                           </div>
 
                           <div>
-                            <Label>Selling Price ({currencySymbol} per running {lengthUnit})</Label>
+                            <Label>Selling Price ({currencySymbol} per {pricingUnitLabel})</Label>
                             <Input
                               type="number"
                               step="0.01"

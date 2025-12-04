@@ -64,16 +64,20 @@ export const useFabricPricing = (params: FabricPricingParams): FabricPricingResu
       }
       
       // Use price per unit for fabric (grid is for manufacturing, not fabric material)
-      const pricePerMeter = selectedFabricItem.price_per_meter || 
-                           selectedFabricItem.unit_price || 
-                           selectedFabricItem.selling_price || 
-                           0;
-      fabricCostPerYard = pricePerMeter * 1.09361; // Convert meters to yards
+      // Price is stored as price per meter/yard based on user's configured unit system
+      const pricePerUnit = selectedFabricItem.price_per_meter || 
+                          selectedFabricItem.unit_price || 
+                          selectedFabricItem.selling_price || 
+                          0;
+      
+      // Use price as-is since it's already in user's configured unit (meter or yard)
+      // No hardcoded conversion - user enters price in their preferred unit
+      fabricCostPerYard = pricePerUnit;
       
       if (!usePricingGrid) {
         console.log('ℹ️ Using per-unit pricing for fabric:', {
-          pricePerMeter,
-          fabricCostPerYard,
+          pricePerUnit,
+          userFabricUnit: units.fabric,
           hasGridInfo: !!(selectedFabricItem.price_group && selectedFabricItem.product_category)
         });
       }
