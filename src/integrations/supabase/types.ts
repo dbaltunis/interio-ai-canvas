@@ -9692,7 +9692,9 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_user_account_id: { Args: { p_user_id: string }; Returns: string }
+      get_user_account_id:
+        | { Args: { p_user_id: string }; Returns: string }
+        | { Args: never; Returns: string }
       get_user_effective_permissions: {
         Args: { user_id_param: string }
         Returns: string[]
@@ -9721,6 +9723,7 @@ export type Database = {
         | { Args: { _user_id: string }; Returns: boolean }
       is_admin_or_owner: { Args: never; Returns: boolean }
       is_bug_admin: { Args: never; Returns: boolean }
+      is_same_account: { Args: { target_user_id: string }; Returns: boolean }
       is_valid_email: { Args: { email_address: string }; Returns: boolean }
       link_user_to_account: {
         Args: { child_user_id: string; parent_user_id?: string }
@@ -9763,7 +9766,7 @@ export type Database = {
       }
       seed_account_options: {
         Args: { target_account_id: string }
-        Returns: number
+        Returns: undefined
       }
       seed_default_email_templates: {
         Args: { target_user_id: string }
