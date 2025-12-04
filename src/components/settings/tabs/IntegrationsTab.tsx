@@ -97,12 +97,10 @@ export const IntegrationsTab = () => {
             <Truck className="h-4 w-4" />
             Suppliers
           </TabsTrigger>
-          {shopifyIntegration && (
-            <TabsTrigger value="shopify" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Shopify
-            </TabsTrigger>
-          )}
+          <TabsTrigger value="shopify" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Shopify
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="email">
@@ -158,14 +156,38 @@ export const IntegrationsTab = () => {
           <TWCIntegrationTab />
         </TabsContent>
 
-        {shopifyIntegration && (
-          <TabsContent value="shopify">
-            <div className="space-y-6">
-              <ShopifySetupTab integration={shopifyIntegration} />
-              <ShopifyStatusManagementTab />
-            </div>
-          </TabsContent>
-        )}
+        <TabsContent value="shopify">
+          <div className="space-y-6">
+            {shopifyIntegration ? (
+              <>
+                <ShopifySetupTab integration={shopifyIntegration} />
+                <ShopifyStatusManagementTab />
+              </>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Shopify Integration
+                  </CardTitle>
+                  <CardDescription>
+                    Connect your Shopify store to sync products, orders, and customers
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground mb-4">Shopify is not connected yet</p>
+                    <p className="text-sm text-muted-foreground mb-6">
+                      Connect your Shopify store to import products and sync orders automatically.
+                    </p>
+                    <Badge variant="secondary">Coming Soon</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );

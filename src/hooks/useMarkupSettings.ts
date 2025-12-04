@@ -23,18 +23,18 @@ export interface MarkupSettings {
 }
 
 export const defaultMarkupSettings: MarkupSettings = {
-  default_markup_percentage: 50,
-  labor_markup_percentage: 30,
-  material_markup_percentage: 40,
+  default_markup_percentage: 0,
+  labor_markup_percentage: 0,
+  material_markup_percentage: 0,
   category_markups: {
-    fabric: 45,
-    hardware: 35,
-    installation: 25,
-    curtains: 50,
-    blinds: 45,
-    shutters: 55
+    fabric: 0,
+    hardware: 0,
+    installation: 0,
+    curtains: 0,
+    blinds: 0,
+    shutters: 0
   },
-  minimum_markup_percentage: 20,
+  minimum_markup_percentage: 0,
   dynamic_pricing_enabled: false,
   quantity_discounts_enabled: false,
   show_markup_to_staff: false
