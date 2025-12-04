@@ -1984,29 +1984,6 @@ export const DynamicWindowWorksheet = forwardRef<{
           <Card className="h-full">
             <CardContent className="pt-4 sm:pt-6 h-full space-y-4">
               <InventorySelectionPanel treatmentType={selectedTreatmentType} selectedItems={selectedItems} onItemSelect={handleItemSelect} onItemDeselect={handleItemDeselect} measurements={measurements} treatmentCategory={treatmentCategory} />
-              
-              {/* Color Selection for selected fabric, material, or hardware - UNIVERSAL for all product types */}
-              {(() => {
-                // Get colors from the first selected item that has them (fabric > material > hardware)
-                const selectedItemWithColors = 
-                  (selectedItems.fabric?.tags?.length > 0 && selectedItems.fabric) ||
-                  (selectedItems.material?.tags?.length > 0 && selectedItems.material) ||
-                  (selectedItems.hardware?.tags?.length > 0 && selectedItems.hardware);
-                
-                if (selectedItemWithColors) {
-                  return (
-                    <div className="mt-4 p-3 bg-muted/50 rounded-lg border">
-                      <ColorSelector 
-                        colors={selectedItemWithColors.tags}
-                        selectedColor={measurements.selected_color}
-                        onColorSelect={(color) => handleMeasurementChange('selected_color', color)}
-                        readOnly={readOnly}
-                      />
-                    </div>
-                  );
-                }
-                return null;
-              })()}
             </CardContent>
           </Card>
         </TabsContent>
