@@ -188,55 +188,120 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                   
                   {/* Fabric & Details column */}
                   <td className="py-3 px-2 align-top border-r border-gray-200">
-                    <div className="space-y-0.5">
-                      <div className="font-semibold text-blue-700">
-                        {item.fabricDetails?.name || 'No fabric selected'}
-                      </div>
-                      {item.fabricDetails && (
-                        <>
-                          <div className="text-[9px] text-gray-600">
-                            Fabric Width: {formatFromCM(item.fabricDetails.fabricWidth, units.length)}, 
-                            {item.fabricDetails.rollDirection === 'Horizontal' ? ' ↔️ Horizontal' : ' ↕️ Vertical'}
+                    {(() => {
+                      // Determine if this is a blind/shutter treatment (material-based) vs curtain/roman (fabric-based)
+                      const treatmentLower = (item.treatmentType || '').toLowerCase();
+                      const isBlindTreatment = treatmentLower.includes('blind') || 
+                                               treatmentLower.includes('venetian') || 
+                                               treatmentLower.includes('vertical') ||
+                                               treatmentLower.includes('cellular') ||
+                                               treatmentLower.includes('shutter') ||
+                                               treatmentLower.includes('roller');
+                      
+                      // Get color from material (for blinds) or fabric (for curtains)
+                      const displayColor = item.materialDetails?.color || item.fabricDetails?.color;
+                      
+                      return (
+                        <div className="space-y-0.5">
+                          {/* Product/Material Name */}
+                          <div className="font-semibold text-blue-700">
+                            {isBlindTreatment && item.materialDetails?.name 
+                              ? item.materialDetails.name 
+                              : (item.fabricDetails?.name || 'No product selected')}
                           </div>
-                          {item.fabricDetails.patternRepeat && (
+                          
+                          {/* COLOR - CRITICAL for work orders */}
+                          {displayColor && (
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <div 
+                                className="w-4 h-4 rounded-full border border-gray-300 shadow-sm"
+                                style={{ 
+                                  backgroundColor: displayColor.startsWith('#') 
+                                    ? displayColor 
+                                    : displayColor.toLowerCase() 
+                                }}
+                              />
+                              <span className="text-[9px] font-medium">Color: {displayColor}</span>
+                            </div>
+                          )}
+                          
+                          {/* Material-specific details for blinds */}
+                          {isBlindTreatment && item.materialDetails && (
+                            <>
+                              {item.materialDetails.slatWidth && (
+                                <div className="text-[9px] text-gray-600">
+                                  Slat Width: {item.materialDetails.slatWidth}mm
+                                </div>
+                              )}
+                              {item.materialDetails.materialType && (
+                                <div className="text-[9px] text-gray-600">
+                                  Material: {item.materialDetails.materialType}
+                                </div>
+                              )}
+                              {item.materialDetails.resolvedGridName && (
+                                <div className="text-[9px] text-gray-500">
+                                  Pricing: {item.materialDetails.resolvedGridName}
+                                </div>
+                              )}
+                            </>
+                          )}
+                          
+                          {/* Fabric-specific details for curtains/romans */}
+                          {!isBlindTreatment && item.fabricDetails && (
+                            <>
+                              <div className="text-[9px] text-gray-600">
+                                Fabric Width: {formatFromCM(item.fabricDetails.fabricWidth, units.length)}
+                                {item.fabricDetails.rollDirection && (
+                                  <>, {item.fabricDetails.rollDirection === 'Horizontal' ? ' ↔️ Horizontal' : ' ↕️ Vertical'}</>
+                                )}
+                              </div>
+                              {item.fabricDetails.patternRepeat && item.fabricDetails.patternRepeat > 0 && (
+                                <div className="text-[9px]">
+                                  Pattern Repeat: {formatFromCM(item.fabricDetails.patternRepeat, units.length)}
+                                </div>
+                              )}
+                            </>
+                          )}
+                          
+                          {/* Fabric usage - only for fabric-based treatments */}
+                          {!isBlindTreatment && item.fabricUsage && item.fabricUsage.linearMeters > 0 && (
+                            <>
+                              <div className="font-medium text-green-700 mt-1">
+                                Usage: {item.fabricUsage.linearMeters.toFixed(2)}m 
+                                ({item.fabricUsage.widthsRequired} width{item.fabricUsage.widthsRequired > 1 ? 's' : ''})
+                              </div>
+                              {item.fabricUsage.seamsRequired > 0 && (
+                                <div className="text-[9px] text-orange-600 font-medium">
+                                  ⚠️ {item.fabricUsage.seamsRequired} seam(s) required
+                                </div>
+                              )}
+                              {item.fabricUsage.leftover > 0 && (
+                                <div className="text-[9px] text-gray-500">
+                                  Leftover: ~{formatFromCM(item.fabricUsage.leftover, units.length)} per width
+                                </div>
+                              )}
+                            </>
+                          )}
+                          
+                          {/* Options - show for all treatments */}
+                          {item.options && item.options.length > 0 && (
+                            <div className="text-[9px] mt-1 pt-1 border-t border-gray-200">
+                              <div className="font-medium">Options:</div>
+                              {item.options.map((opt, idx) => (
+                                <div key={idx}>• {opt.name}</div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Lining - only for fabric-based treatments */}
+                          {!isBlindTreatment && item.liningDetails && (
                             <div className="text-[9px]">
-                              Pattern Repeat: {formatFromCM(item.fabricDetails.patternRepeat, units.length)}
+                              Lining: {item.liningDetails.name}
                             </div>
                           )}
-                        </>
-                      )}
-                      {item.fabricUsage && (
-                        <>
-                          <div className="font-medium text-green-700 mt-1">
-                            Usage: {item.fabricUsage.linearMeters.toFixed(2)}m 
-                            ({item.fabricUsage.widthsRequired} width{item.fabricUsage.widthsRequired > 1 ? 's' : ''})
-                          </div>
-                          {item.fabricUsage.seamsRequired > 0 && (
-                            <div className="text-[9px] text-orange-600 font-medium">
-                              ⚠️ {item.fabricUsage.seamsRequired} seam(s) required
-                            </div>
-                          )}
-                          {item.fabricUsage.leftover > 0 && (
-                            <div className="text-[9px] text-gray-500">
-                              Leftover: ~{formatFromCM(item.fabricUsage.leftover, units.length)} per width
-                            </div>
-                          )}
-                        </>
-                      )}
-                      {item.options && item.options.length > 0 && (
-                        <div className="text-[9px] mt-1 pt-1 border-t border-gray-200">
-                          <div className="font-medium">Options:</div>
-                          {item.options.map((opt, idx) => (
-                            <div key={idx}>• {opt.name}</div>
-                          ))}
                         </div>
-                      )}
-                      {item.liningDetails && (
-                        <div className="text-[9px]">
-                          Lining: {item.liningDetails.name}
-                        </div>
-                      )}
-                    </div>
+                      );
+                    })()}
                   </td>
                   
                   {/* Measurements column */}
@@ -257,43 +322,79 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                     </div>
                   </td>
                   
-                  {/* Sewing Details column */}
+                  {/* Sewing/Manufacturing Details column */}
                   <td className="py-3 px-2 align-top">
-                    <div className="space-y-0.5">
-                      {item.fullness && (
-                        <div className="font-medium text-purple-700">
-                          Fullness: {item.fullness.ratio}x ({item.fullness.headingType})
-                        </div>
-                      )}
-                      {item.hems && (
-                        <div className="text-[9px] space-y-0.5 mt-1">
-                          <div className="font-medium">Hem Allowances:</div>
-                          <div>• Header: {formatFromCM(item.hems.header, units.length)}</div>
-                          <div>• Bottom: {formatFromCM(item.hems.bottom, units.length)}</div>
-                          <div>• Side: {formatFromCM(item.hems.side, units.length)} (each)</div>
-                          {item.fabricUsage && item.fabricUsage.seamsRequired > 0 && (
-                            <div className="text-orange-600 font-medium">
-                              • Seam: {formatFromCM(item.hems.seam, units.length)} (per join × {item.fabricUsage.seamsRequired})
+                    {(() => {
+                      // Determine if this is a blind/shutter treatment
+                      const treatmentLower = (item.treatmentType || '').toLowerCase();
+                      const isBlindTreatment = treatmentLower.includes('blind') || 
+                                               treatmentLower.includes('venetian') || 
+                                               treatmentLower.includes('vertical') ||
+                                               treatmentLower.includes('cellular') ||
+                                               treatmentLower.includes('shutter') ||
+                                               treatmentLower.includes('roller');
+                      
+                      // Check if fullness and hems have meaningful values (not default zeros)
+                      const hasFullness = item.fullness && item.fullness.ratio > 0 && item.fullness.ratio !== 1;
+                      const hasHems = item.hems && (item.hems.header > 0 || item.hems.bottom > 0 || item.hems.side > 0);
+                      
+                      return (
+                        <div className="space-y-0.5">
+                          {/* Fullness - ONLY for curtains/romans with actual fullness values */}
+                          {!isBlindTreatment && hasFullness && (
+                            <div className="font-medium text-purple-700">
+                              Fullness: {item.fullness!.ratio}x ({item.fullness!.headingType})
                             </div>
                           )}
-                        </div>
-                      )}
-                      <div className="text-[9px] mt-2 pt-2 border-t border-gray-200">
-                        <div className="font-medium text-gray-700 mb-1">Notes:</div>
-                        {isPrintMode || !editing ? (
-                          <div className="text-gray-600 italic min-h-[20px]">
-                            {getItemNote(item.id, item.notes) || "No notes"}
+                          
+                          {/* Hem Allowances - ONLY for curtains/romans with actual hem values */}
+                          {!isBlindTreatment && hasHems && (
+                            <div className="text-[9px] space-y-0.5 mt-1">
+                              <div className="font-medium">Hem Allowances:</div>
+                              {item.hems!.header > 0 && (
+                                <div>• Header: {formatFromCM(item.hems!.header, units.length)}</div>
+                              )}
+                              {item.hems!.bottom > 0 && (
+                                <div>• Bottom: {formatFromCM(item.hems!.bottom, units.length)}</div>
+                              )}
+                              {item.hems!.side > 0 && (
+                                <div>• Side: {formatFromCM(item.hems!.side, units.length)} (each)</div>
+                              )}
+                              {item.fabricUsage && item.fabricUsage.seamsRequired > 0 && item.hems!.seam && item.hems!.seam > 0 && (
+                                <div className="text-orange-600 font-medium">
+                                  • Seam: {formatFromCM(item.hems!.seam, units.length)} (per join × {item.fabricUsage.seamsRequired})
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* For blinds - show manufacturing info if no sewing details */}
+                          {isBlindTreatment && (
+                            <div className="text-[9px] text-gray-600">
+                              <div className="font-medium">Manufacturing:</div>
+                              <div>Standard blind assembly</div>
+                            </div>
+                          )}
+                          
+                          {/* Notes - show for all treatments */}
+                          <div className="text-[9px] mt-2 pt-2 border-t border-gray-200">
+                            <div className="font-medium text-gray-700 mb-1">Notes:</div>
+                            {isPrintMode || !editing ? (
+                              <div className="text-gray-600 italic min-h-[20px]">
+                                {getItemNote(item.id, item.notes) || "No notes"}
+                              </div>
+                            ) : (
+                              <Textarea
+                                value={getItemNote(item.id, item.notes)}
+                                onChange={(e) => setItemNote(item.id, e.target.value)}
+                                className="text-[9px] min-h-[40px] w-full"
+                                placeholder="Add manufacturing notes for this item..."
+                              />
+                            )}
                           </div>
-                        ) : (
-                          <Textarea
-                            value={getItemNote(item.id, item.notes)}
-                            onChange={(e) => setItemNote(item.id, e.target.value)}
-                            className="text-[9px] min-h-[40px] w-full"
-                            placeholder="Add manufacturing notes for this item..."
-                          />
-                        )}
-                      </div>
-                    </div>
+                        </div>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}
