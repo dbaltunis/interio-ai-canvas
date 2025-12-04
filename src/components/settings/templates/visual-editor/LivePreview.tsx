@@ -1211,14 +1211,31 @@ const LivePreviewBlock = ({
           if (children.length === 0) {
             result.push(parentItem);
           } else {
+            // Format: "STANDARD HEADRAIL; colour: dark" (parent value; child suffix: child value)
             let mergedDescription = parentItem.description || '';
             let mergedPrice = Number(parentItem.total_cost) || 0;
             
             children.forEach(({ suffix, item: childItem }) => {
               const formattedSuffix = suffix.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
-              const childValue = childItem.description || childItem.name || '';
+              
+              // Get ONLY the child's actual value, not its full name
+              let childValue = childItem.description || '';
+              
+              // If child value contains the parent name or suffix name, extract just the value
+              if (childValue.toLowerCase().includes(suffix.replace(/_/g, ' '))) {
+                const colonIndex = childValue.lastIndexOf(':');
+                if (colonIndex > -1) {
+                  childValue = childValue.substring(colonIndex + 1).trim();
+                }
+              }
+              
+              if (!childValue) {
+                childValue = childItem.name || '';
+              }
+              
               if (childValue) {
-                mergedDescription += mergedDescription ? ` - ${formattedSuffix}: ${childValue}` : `${formattedSuffix}: ${childValue}`;
+                // Use semicolon separator for cleaner look
+                mergedDescription += mergedDescription ? `; ${formattedSuffix}: ${childValue}` : `${formattedSuffix}: ${childValue}`;
               }
               mergedPrice += Number(childItem.total_cost) || 0;
             });
