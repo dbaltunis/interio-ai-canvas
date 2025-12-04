@@ -184,28 +184,35 @@ export const buildClientBreakdown = (
       }
       
       // Enrich items with color/image from source details
-      // CRITICAL: For fabric/material, use ONLY fabric/material specific images, NOT template images
-      let itemColor = item.color || null;
+      // CRITICAL RULES:
+      // 1. Template/treatment rows: show template image
+      // 2. Fabric/material rows: show fabric image OR color swatch fallback
+      // 3. Option rows: show option image ONLY if it has one, NO color fallback
+      let itemColor: string | null = null;
       let itemImageUrl = item.image_url || null;
       
       if (item.category === 'fabric' || item.category === 'material') {
-        // For fabric/material rows: ONLY use fabric/material specific images
-        // DO NOT inherit from template - template images should only show on template rows
+        // For fabric/material rows: use fabric/material image OR color as fallback
         const fabricImage = summary.fabric_details?.image_url || summary.material_details?.image_url;
         const fabricColor = summary.fabric_details?.color || summary.material_details?.color || (summary.measurements_details as any)?.selected_color;
         
-        // Only set image if it's specifically a fabric/material image, not template
         itemImageUrl = fabricImage || null;
-        itemColor = itemColor || fabricColor || null;
+        itemColor = fabricColor || null; // Color fallback ONLY for fabric/material
       } else if (item.category === 'hardware') {
-        itemColor = itemColor || summary.hardware_details?.color || (summary.measurements_details as any)?.selected_color || null;
+        // Hardware: image and color from hardware details
         itemImageUrl = itemImageUrl || summary.hardware_details?.image_url || null;
+        itemColor = item.color || summary.hardware_details?.color || null;
       } else if (item.category === 'template' || item.category === 'treatment') {
-        // Template row gets template image
+        // Template row gets template image, no color
         itemImageUrl = itemImageUrl || summary.template_details?.image_url || summary.treatment_image_url || null;
+        itemColor = null;
+      } else if (item.category === 'option' || item.category === 'options') {
+        // OPTIONS: ONLY show image if option has one, NO color fallback
+        itemImageUrl = item.image_url || null;
+        itemColor = null; // Explicitly no color for options
       } else {
-        // For any other category, still check for selected_color in measurements
-        itemColor = itemColor || (summary.measurements_details as any)?.selected_color || null;
+        // Other categories: no automatic color assignment
+        itemColor = null;
       }
       
       return {
@@ -381,12 +388,6 @@ export const buildClientBreakdown = (
     
     const optionItems: ClientBreakdownItem[] = [];
     
-    // Get selected color from measurements for fallback
-    const selectedColor = (summary.measurements_details as any)?.selected_color || 
-                          summary.fabric_details?.color || 
-                          summary.material_details?.color || 
-                          null;
-    
     summary.selected_options.forEach((option: any, index: number) => {
       let formattedName = option.name || option.label || 'Option';
       let formattedDescription = option.description;
@@ -408,9 +409,7 @@ export const buildClientBreakdown = (
       const price = Number(option.calculatedPrice || option.price || option.cost || option.total_cost || option.unit_price || 0);
       const basePrice = Number(option.basePrice || option.price || 0);
       
-      // CRITICAL: Use option-specific color first, then fall back to treatment's selected color
-      const optionColor = option.color || selectedColor;
-      
+      // CRITICAL: Options only show image if they have one - NO color fallback
       optionItems.push({
         id: option.id || `option-${index}`,
         name: formattedName,
@@ -418,8 +417,8 @@ export const buildClientBreakdown = (
         total_cost: price,
         unit_price: basePrice, // Show base rate for reference
         quantity: 1,
-        image_url: option.image_url,
-        color: optionColor,
+        image_url: option.image_url || null, // Only option's own image
+        color: null, // NO color fallback for options
         category: 'option',
         pricingDetails: option.pricingDetails || '',
         details: option,
