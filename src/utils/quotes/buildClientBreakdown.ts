@@ -91,6 +91,7 @@ const groupRelatedOptions = (items: ClientBreakdownItem[]): ClientBreakdownItem[
       result.push(parentItem);
     } else {
       // Merge children into parent
+      // Format: "STANDARD HEADRAIL; colour: dark" (parent value; child suffix: child value)
       let mergedDescription = parentItem.description || '';
       let mergedPrice = Number(parentItem.total_cost) || 0;
       
@@ -100,10 +101,29 @@ const groupRelatedOptions = (items: ClientBreakdownItem[]): ClientBreakdownItem[
           .replace(/_/g, ' ')
           .replace(/\b\w/g, (c: string) => c.toUpperCase());
         
-        // Add child value to description
-        const childValue = childItem.description || childItem.name || '';
+        // Get ONLY the child's actual value, not its full name
+        // Child description might be "dark" or might be "Headrail selection - colour: dark"
+        // We want just the actual value part
+        let childValue = childItem.description || '';
+        
+        // If child value contains the parent name or suffix name, extract just the value
+        // e.g., "Headrail selection - colour: dark" -> "dark"
+        if (childValue.toLowerCase().includes(suffix.replace(/_/g, ' '))) {
+          // Try to extract value after colon
+          const colonIndex = childValue.lastIndexOf(':');
+          if (colonIndex > -1) {
+            childValue = childValue.substring(colonIndex + 1).trim();
+          }
+        }
+        
+        // If still empty, try childItem.name as fallback
+        if (!childValue) {
+          childValue = childItem.name || '';
+        }
+        
         if (childValue) {
-          mergedDescription += mergedDescription ? ` - ${formattedSuffix}: ${childValue}` : `${formattedSuffix}: ${childValue}`;
+          // Use semicolon separator for cleaner look
+          mergedDescription += mergedDescription ? `; ${formattedSuffix}: ${childValue}` : `${formattedSuffix}: ${childValue}`;
         }
         
         // Add child price to total
