@@ -2215,7 +2215,7 @@ export type Database = {
           hand_price_per_metre: number | null
           hand_price_per_panel: number | null
           header_allowance: number | null
-          heading_name: string
+          heading_name: string | null
           heading_upcharge_per_curtain: number | null
           heading_upcharge_per_metre: number | null
           height_breakpoint: number | null
@@ -2290,7 +2290,7 @@ export type Database = {
           hand_price_per_metre?: number | null
           hand_price_per_panel?: number | null
           header_allowance?: number | null
-          heading_name: string
+          heading_name?: string | null
           heading_upcharge_per_curtain?: number | null
           heading_upcharge_per_metre?: number | null
           height_breakpoint?: number | null
@@ -2365,7 +2365,7 @@ export type Database = {
           hand_price_per_metre?: number | null
           hand_price_per_panel?: number | null
           header_allowance?: number | null
-          heading_name?: string
+          heading_name?: string | null
           heading_upcharge_per_curtain?: number | null
           heading_upcharge_per_metre?: number | null
           height_breakpoint?: number | null
