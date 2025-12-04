@@ -7,6 +7,7 @@ import { TemplateGridManager } from "./TemplateGridManager";
 import { HandFinishedToggle } from "./pricing/HandFinishedToggle";
 import { PerMetrePricing } from "./pricing/PerMetrePricing";
 import { PerPanelPricing } from "./pricing/PerPanelPricing";
+import { PerDropPricing } from "./pricing/PerDropPricing";
 
 interface SimplifiedTemplateFormPricingProps {
   formData: any;
@@ -21,9 +22,22 @@ export const SimplifiedTemplateFormPricing = ({
 }: SimplifiedTemplateFormPricingProps) => {
   const { units } = useMeasurementUnits();
   
-  const isCurtainOrRoman = formData.curtain_type === 'curtain' || formData.curtain_type === 'roman_blind';
-  const isWallpaper = formData.curtain_type === 'wallpaper';
+  // Check BOTH treatment_category (plural) and curtain_type (singular) for compatibility
+  const isCurtainOrRoman = 
+    formData.treatment_category === 'curtains' || 
+    formData.treatment_category === 'roman_blinds' ||
+    formData.curtain_type === 'curtain' || 
+    formData.curtain_type === 'roman_blind';
+  
+  const isWallpaper = 
+    formData.treatment_category === 'wallpaper' ||
+    formData.curtain_type === 'wallpaper';
+  
   const isBlind = !isCurtainOrRoman && !isWallpaper;
+  
+  // Unit-aware labels
+  const lengthLabel = units.length === 'inches' || units.length === 'feet' ? 'Yard' : 'Metre';
+  const currencySymbol = units.currency || '$';
   
   return (
     <Card>
@@ -53,7 +67,8 @@ export const SimplifiedTemplateFormPricing = ({
               )}
               {isCurtainOrRoman && (
                 <>
-                  <SelectItem value="per_metre">Per Metre</SelectItem>
+                  <SelectItem value="per_metre">Per Running {lengthLabel}</SelectItem>
+                  <SelectItem value="per_drop">Per Drop/Width</SelectItem>
                   <SelectItem value="per_panel">Per Panel</SelectItem>
                   <SelectItem value="per_sqm">Per m²</SelectItem>
                   <SelectItem value="pricing_grid">Grid</SelectItem>
@@ -83,6 +98,18 @@ export const SimplifiedTemplateFormPricing = ({
           />
         )}
 
+        {formData.pricing_type === "per_drop" && isCurtainOrRoman && (
+          <PerDropPricing
+            machinePricePerDrop={formData.machine_price_per_drop}
+            handPricePerDrop={formData.hand_price_per_drop}
+            offersHandFinished={formData.offers_hand_finished}
+            dropHeightRanges={formData.drop_height_ranges}
+            machineDropHeightPrices={formData.machine_drop_height_prices}
+            handDropHeightPrices={formData.hand_drop_height_prices}
+            onInputChange={handleInputChange}
+          />
+        )}
+
         {formData.pricing_type === "per_panel" && isCurtainOrRoman && (
           <PerPanelPricing
             machinePricePerPanel={formData.machine_price_per_panel}
@@ -94,7 +121,7 @@ export const SimplifiedTemplateFormPricing = ({
 
         {formData.pricing_type === "per_sqm" && (
           <div>
-            <Label>Price ({units.currency}/m²)</Label>
+            <Label>Price ({currencySymbol}/m²)</Label>
             <Input
               type="number"
               step="0.01"
@@ -106,7 +133,7 @@ export const SimplifiedTemplateFormPricing = ({
 
         {formData.pricing_type === "per_unit" && isWallpaper && (
           <div>
-            <Label>Price ({units.currency}/roll)</Label>
+            <Label>Price ({currencySymbol}/roll)</Label>
             <Input
               type="number"
               step="0.01"

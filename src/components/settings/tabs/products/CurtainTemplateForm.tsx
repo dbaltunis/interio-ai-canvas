@@ -61,6 +61,12 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
     machine_price_per_panel: template?.machine_price_per_panel?.toString() || "",
     hand_price_per_panel: template?.hand_price_per_panel?.toString() || "",
     height_price_ranges: template?.height_price_ranges || [],
+    // Per Drop pricing fields
+    machine_price_per_drop: (template as any)?.machine_price_per_drop?.toString() || "",
+    hand_price_per_drop: (template as any)?.hand_price_per_drop?.toString() || "",
+    drop_height_ranges: (template as any)?.drop_height_ranges || [],
+    machine_drop_height_prices: (template as any)?.machine_drop_height_prices || [],
+    hand_drop_height_prices: (template as any)?.hand_drop_height_prices || [],
     
     // Manufacturing
     header_allowance: template?.header_allowance?.toString() || "8",
@@ -144,6 +150,13 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
         machine_price_per_panel: formData.machine_price_per_panel ? parseFloat(formData.machine_price_per_panel) : null,
         hand_price_per_panel: formData.hand_price_per_panel ? parseFloat(formData.hand_price_per_panel) : null,
         height_price_ranges: formData.height_price_ranges,
+        // Per Drop pricing fields
+        machine_price_per_drop: formData.machine_price_per_drop ? parseFloat(formData.machine_price_per_drop) : null,
+        hand_price_per_drop: formData.hand_price_per_drop ? parseFloat(formData.hand_price_per_drop) : null,
+        drop_height_ranges: formData.drop_height_ranges,
+        machine_drop_height_prices: formData.machine_drop_height_prices,
+        hand_drop_height_prices: formData.hand_drop_height_prices,
+        // Manufacturing
         header_allowance: formData.header_allowance ? parseFloat(formData.header_allowance) : null,
         bottom_hem: formData.bottom_hem ? parseFloat(formData.bottom_hem) : null,
         side_hems: formData.side_hems ? parseFloat(formData.side_hems) : null,
