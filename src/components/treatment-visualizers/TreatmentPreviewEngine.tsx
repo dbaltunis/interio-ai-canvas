@@ -9,6 +9,7 @@ import { PanelGlideVisualizer } from "./PanelGlideVisualizer";
 import { AwningVisualizer } from "./AwningVisualizer";
 import { LayeredTreatmentVisualizer } from "./LayeredTreatmentVisualizer";
 import { DynamicWindowRenderer } from "../window-types/DynamicWindowRenderer";
+import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
 
 interface LayeredTreatment {
   id: string;
@@ -36,8 +37,8 @@ interface TreatmentPreviewEngineProps {
   showWindowOnly?: boolean;
   className?: string;
   layeredTreatments?: LayeredTreatment[];
-  hideDetails?: boolean;  // New prop to hide text overlays
-  showProductOnly?: boolean;  // New prop to show only product image
+  hideDetails?: boolean;
+  showProductOnly?: boolean;
 }
 
 export const TreatmentPreviewEngine = ({
@@ -53,38 +54,30 @@ export const TreatmentPreviewEngine = ({
   showProductOnly = false
 }: TreatmentPreviewEngineProps) => {
   
-  // If showing product only, prioritize fabric image when fabric is selected, otherwise use template
+  // If showing product only, use ProductImageWithColorFallback for clean display
   if (showProductOnly) {
-    // Priority: fabric (if selected from inventory) → material (for blinds/shutters) → template (default)
     const productImage = selectedItems.fabric?.image_url || selectedItems.material?.image_url || template?.image_url;
     const productName = selectedItems.fabric?.name || selectedItems.material?.name || template?.name || 'Product';
+    const productColor = selectedItems.fabric?.color || selectedItems.material?.color;
     
-    console.log("🖼️ Product image data:", { 
-      templateImage: template?.image_url?.substring(0, 50), 
-      fabricImage: selectedItems.fabric?.image_url?.substring(0, 50),
-      materialImage: selectedItems.material?.image_url?.substring(0, 50),
-      productName,
-      hasFallback: !productImage
-    });
+    // Determine category for icon fallback
+    const isMaterialBased = ['venetian_blinds', 'vertical_blinds', 'cellular_blinds', 'cellular_shades', 'shutters', 'plantation_shutters'].includes(treatmentType);
+    const category = isMaterialBased ? 'material' : 'fabric';
     
-    // If we have a product image, display it
-    if (productImage) {
-      return (
-        <div className={`relative w-full h-full ${className}`}>
-          <img 
-            src={productImage} 
-            alt={productName} 
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              console.error("❌ Failed to load image:", productImage?.substring(0, 100));
-            }}
-          />
-        </div>
-      );
-    }
-    
-    // Fallback to treatment visualizer if no product image is available
-    // This ensures the image area is never empty
+    // Use ProductImageWithColorFallback - handles image, color swatch, or category icon
+    return (
+      <div className={`relative w-full h-full ${className}`}>
+        <ProductImageWithColorFallback
+          imageUrl={productImage}
+          color={productColor}
+          productName={productName}
+          category={category}
+          size={96}
+          rounded="md"
+          className="w-full h-full"
+        />
+      </div>
+    );
   }
   
   if (showWindowOnly) {

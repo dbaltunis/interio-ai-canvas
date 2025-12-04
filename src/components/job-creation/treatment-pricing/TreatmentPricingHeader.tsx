@@ -1,25 +1,37 @@
-
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useTemplateDisplayImage } from "@/hooks/useTreatmentCategoryImages";
+import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
 
 interface TreatmentPricingHeaderProps {
   productName: string;
   onNameChange: (name: string) => void;
   windowCovering?: any;
   template?: any;
+  selectedFabric?: any;
+  selectedMaterial?: any;
 }
 
 export const TreatmentPricingHeader = ({ 
   productName, 
   onNameChange, 
   windowCovering,
-  template
+  template,
+  selectedFabric,
+  selectedMaterial
 }: TreatmentPricingHeaderProps) => {
   const [isEditingName, setIsEditingName] = useState(false);
   
-  // Get the appropriate display image: template custom image > category default
-  const displayImage = useTemplateDisplayImage(template);
+  // Get the appropriate display image: selected fabric/material > template custom image > category default
+  const categoryDefaultImage = useTemplateDisplayImage(template);
+  
+  // Priority: selected fabric/material image > template display image > category default
+  const displayImage = selectedFabric?.image_url || selectedMaterial?.image_url || template?.display_image_url || template?.image_url || categoryDefaultImage;
+  const displayColor = selectedFabric?.color || selectedMaterial?.color;
+  const displayName = selectedFabric?.name || selectedMaterial?.name || template?.name || windowCovering?.name || productName;
+  
+  // Determine category for icon fallback
+  const isMaterialBased = template?.treatment_category && ['venetian_blinds', 'vertical_blinds', 'cellular_blinds', 'roller_blinds', 'shutters'].includes(template.treatment_category);
 
   const handleNameSave = () => {
     setIsEditingName(false);
@@ -47,16 +59,18 @@ export const TreatmentPricingHeader = ({
         </h3>
       )}
       
-      {/* Display template image (custom or category default) or window covering image */}
-      {(displayImage || windowCovering?.image_url) && (
-        <div className="flex justify-center">
-          <img 
-            src={displayImage || windowCovering.image_url} 
-            alt={template?.name || windowCovering?.name || productName}
-            className="w-24 h-24 object-cover rounded-lg border shadow-sm"
-          />
-        </div>
-      )}
+      {/* Display product image with proper fallbacks */}
+      <div className="flex justify-center">
+        <ProductImageWithColorFallback
+          imageUrl={displayImage}
+          color={displayColor}
+          productName={displayName}
+          category={isMaterialBased ? 'material' : 'fabric'}
+          size={96}
+          rounded="lg"
+          className="border shadow-sm"
+        />
+      </div>
     </div>
   );
 };
