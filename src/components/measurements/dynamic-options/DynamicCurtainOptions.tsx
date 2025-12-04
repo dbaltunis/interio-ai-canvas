@@ -52,6 +52,8 @@ export const DynamicCurtainOptions = ({
   const [treatmentOptionSelections, setTreatmentOptionSelections] = useState<Record<string, string>>({});
   // Track which sub-category is selected for cascading dropdowns
   const [subCategorySelections, setSubCategorySelections] = useState<Record<string, string>>({});
+  // Track if sub-category selections have been restored from saved data
+  const [subCategoryRestored, setSubCategoryRestored] = useState(false);
   
   // Early returns MUST come before hooks to prevent violations
   if (!template) {
@@ -126,6 +128,45 @@ export const DynamicCurtainOptions = ({
       setTreatmentOptionSelections(prev => ({ ...prev, ...autoSelections }));
     }
   }, [treatmentOptions.length, treatmentOptionsLoading]);
+
+  // Restore sub-category selections from saved measurements when editing
+  useEffect(() => {
+    if (treatmentOptions.length === 0 || subCategoryRestored) return;
+    
+    const restoredSubCategories: Record<string, string> = {};
+    let hasRestorations = false;
+    
+    treatmentOptions.forEach(option => {
+      if (!option.visible || !option.option_values) return;
+      
+      // Check if there's a saved main selection for this option
+      const selectedValueId = treatmentOptionSelections[option.key] || measurements[`treatment_option_${option.key}`];
+      if (!selectedValueId) return;
+      
+      const selectedValue = option.option_values.find((v: any) => v.id === selectedValueId);
+      const subOptions = selectedValue?.extra_data?.sub_options;
+      
+      if (!subOptions || subOptions.length === 0) return;
+      
+      // Check each sub-option to see if there's saved data for it
+      for (const subOption of subOptions) {
+        const subKey = `${option.key}_${subOption.key}`;
+        const savedSubValue = treatmentOptionSelections[subKey] || measurements[`treatment_option_${subKey}`] || measurements[subKey];
+        
+        if (savedSubValue) {
+          restoredSubCategories[option.key] = subOption.key;
+          hasRestorations = true;
+          console.log(`🔄 Restored sub-category selection for ${option.label}: ${subOption.label}`);
+          break; // Found the active sub-category for this option
+        }
+      }
+    });
+    
+    if (hasRestorations) {
+      setSubCategorySelections(prev => ({ ...prev, ...restoredSubCategories }));
+    }
+    setSubCategoryRestored(true);
+  }, [treatmentOptions.length, measurements, treatmentOptionSelections, subCategoryRestored]);
   
   // Filter for heading items from inventory - ONLY heading/pleat types, NOT hardware/tracks
   const headingOptions = inventory.filter(item => {
