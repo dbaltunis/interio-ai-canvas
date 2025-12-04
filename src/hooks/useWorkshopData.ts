@@ -31,6 +31,7 @@ export interface WorkshopRoomItem {
     pricePerUnit?: number;
     rollDirection?: string;
     patternRepeat?: number;
+    color?: string; // CRITICAL: Include color for fabric display in work orders
   };
   
   // Material details for blinds (venetian, vertical, cellular, shutters)
@@ -173,7 +174,10 @@ export const useWorkshopData = (projectId?: string) => {
         finalTreatmentType: summary?.template_name || summary?.treatment_type || s.surface_type || undefined
       });
       
-      // Extract manufacturing details from summary
+      // Extract manufacturing details from summary - UNIVERSAL for all product types
+      // CRITICAL: Include color from fabric_details, material_details, OR measurements_details.selected_color
+      const selectedColor = summary?.measurements_details?.selected_color;
+      
       const fabricDetails = summary?.fabric_details ? {
         name: summary.fabric_details.name || 'Unknown Fabric',
         fabricWidth: summary.fabric_details.fabric_width || 137,
@@ -181,6 +185,8 @@ export const useWorkshopData = (projectId?: string) => {
         pricePerUnit: summary.fabric_details.selling_price,
         rollDirection: summary.measurements_details?.fabric_rotated ? 'Horizontal' : 'Vertical',
         patternRepeat: summary.fabric_details.pattern_repeat,
+        // CRITICAL: Include color - prioritize fabric_details.color, then selected_color from measurements
+        color: summary.fabric_details.color || selectedColor || null,
       } : undefined;
       
       // Extract MATERIAL details for blinds/shutters (venetian, vertical, cellular)
@@ -188,7 +194,8 @@ export const useWorkshopData = (projectId?: string) => {
         name: summary.material_details.name || 'Unknown Material',
         slatWidth: summary.material_details.slat_width,
         materialType: summary.material_details.material_type,
-        color: summary.material_details.color,
+        // CRITICAL: Include color - prioritize material_details.color, then selected_color from measurements
+        color: summary.material_details.color || selectedColor || null,
         imageUrl: summary.material_details.image_url,
         pricePerUnit: summary.material_details.selling_price,
         pricingGridData: summary.material_details.pricing_grid_data,

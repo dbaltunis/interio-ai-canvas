@@ -827,7 +827,7 @@ export const VisualMeasurementSheet = ({
               </div>)}
               {/* End of curtain visual conditional */}
               
-              {/* Color Selection - if fabric has color tags */}
+              {/* Color Selection - if fabric has color tags (colors stored in tags array) */}
               {selectedFabricItem && selectedFabricItem.tags && selectedFabricItem.tags.length > 0 && (
                 <div className="container-level-1 rounded-lg p-3 mt-2">
                   <ColorSelector 

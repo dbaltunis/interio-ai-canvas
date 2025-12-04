@@ -66,13 +66,20 @@ export const buildClientBreakdown = (
         }
       }
       
-      // Enrich fabric items with color/image from source details
+      // Enrich ALL items with color/image from source details - universal for all product types
       let itemColor = item.color || null;
       let itemImageUrl = item.image_url || null;
       
-      if (item.category === 'fabric') {
-        itemColor = itemColor || summary.fabric_details?.color || summary.material_details?.color || null;
+      // UNIVERSAL: Check fabric, material, hardware details AND measurements_details.selected_color for all items
+      if (item.category === 'fabric' || item.category === 'material') {
+        itemColor = itemColor || summary.fabric_details?.color || summary.material_details?.color || (summary.measurements_details as any)?.selected_color || null;
         itemImageUrl = itemImageUrl || summary.fabric_details?.image_url || summary.material_details?.image_url || null;
+      } else if (item.category === 'hardware') {
+        itemColor = itemColor || summary.hardware_details?.color || (summary.measurements_details as any)?.selected_color || null;
+        itemImageUrl = itemImageUrl || summary.hardware_details?.image_url || null;
+      } else {
+        // For any other category, still check for selected_color in measurements
+        itemColor = itemColor || (summary.measurements_details as any)?.selected_color || null;
       }
       
       return {

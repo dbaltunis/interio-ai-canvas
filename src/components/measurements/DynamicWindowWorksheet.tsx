@@ -26,6 +26,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { detectTreatmentType, getTreatmentConfig, TreatmentCategory } from "@/utils/treatmentTypeDetection";
 import { calculateWallpaperCost } from "@/utils/wallpaperCalculations";
 import { MeasurementWorksheetSkeleton } from "./skeleton/MeasurementWorksheetSkeleton";
+import { ColorSelector } from "./ColorSelector";
 
 /**
  * CRITICAL MEASUREMENT UNIT STANDARD
@@ -1324,6 +1325,8 @@ export const DynamicWindowWorksheet = forwardRef<{
               selling_price: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price,
               category: selectedItems.fabric.category,
               image_url: selectedItems.fabric.image_url,
+              // CRITICAL: Include color - prioritize user selection, then first tag, then color field
+              color: measurements.selected_color || selectedItems.fabric.tags?.[0] || selectedItems.fabric.color || null,
               // CRITICAL: Preserve pricing grid data for reloading
               pricing_grid_data: selectedItems.fabric.pricing_grid_data,
               resolved_grid_name: selectedItems.fabric.resolved_grid_name,
@@ -1338,13 +1341,18 @@ export const DynamicWindowWorksheet = forwardRef<{
             hardware_details: selectedItems.hardware ? {
               id: selectedItems.hardware.id,
               name: selectedItems.hardware.name,
-              selling_price: selectedItems.hardware.selling_price || selectedItems.hardware.unit_price
+              selling_price: selectedItems.hardware.selling_price || selectedItems.hardware.unit_price,
+              image_url: selectedItems.hardware.image_url,
+              // CRITICAL: Include color for hardware - prioritize user selection, then first tag, then color field
+              color: measurements.selected_color || selectedItems.hardware.tags?.[0] || selectedItems.hardware.color || null
             } : null,
             material_details: selectedItems.material ? {
               id: selectedItems.material.id,
               name: selectedItems.material.name,
               selling_price: selectedItems.material.selling_price || selectedItems.material.unit_price,
               image_url: selectedItems.material.image_url,
+              // CRITICAL: Include color for material - prioritize user selection, then first tag, then color field
+              color: measurements.selected_color || selectedItems.material.tags?.[0] || selectedItems.material.color || null,
               // UNIVERSAL: Preserve pricing grid data for ALL SaaS clients
               pricing_grid_data: selectedItems.material.pricing_grid_data,
               resolved_grid_name: selectedItems.material.resolved_grid_name,
@@ -1974,8 +1982,31 @@ export const DynamicWindowWorksheet = forwardRef<{
         {/* Inventory Selection */}
         <TabsContent value="inventory" className="h-full animate-fade-in">
           <Card className="h-full">
-            <CardContent className="pt-4 sm:pt-6 h-full">
+            <CardContent className="pt-4 sm:pt-6 h-full space-y-4">
               <InventorySelectionPanel treatmentType={selectedTreatmentType} selectedItems={selectedItems} onItemSelect={handleItemSelect} onItemDeselect={handleItemDeselect} measurements={measurements} treatmentCategory={treatmentCategory} />
+              
+              {/* Color Selection for selected fabric, material, or hardware - UNIVERSAL for all product types */}
+              {(() => {
+                // Get colors from the first selected item that has them (fabric > material > hardware)
+                const selectedItemWithColors = 
+                  (selectedItems.fabric?.tags?.length > 0 && selectedItems.fabric) ||
+                  (selectedItems.material?.tags?.length > 0 && selectedItems.material) ||
+                  (selectedItems.hardware?.tags?.length > 0 && selectedItems.hardware);
+                
+                if (selectedItemWithColors) {
+                  return (
+                    <div className="mt-4 p-3 bg-muted/50 rounded-lg border">
+                      <ColorSelector 
+                        colors={selectedItemWithColors.tags}
+                        selectedColor={measurements.selected_color}
+                        onColorSelect={(color) => handleMeasurementChange('selected_color', color)}
+                        readOnly={readOnly}
+                      />
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
