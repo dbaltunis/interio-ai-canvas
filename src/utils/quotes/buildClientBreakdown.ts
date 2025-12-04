@@ -16,6 +16,127 @@ export interface ClientBreakdownItem {
 }
 
 /**
+ * Group related options together (e.g., "Headrail Selection" + "Headrail Selection Colour")
+ * into a single row with combined description and prices.
+ * 
+ * Pattern detection:
+ * - Parent: "headrail_selection" or "Headrail Selection"
+ * - Child: "headrail_selection_colour" or "Headrail Selection Colour"
+ * 
+ * Result: Combined row "Headrail Selection: STANDARD HEADRAIL - Colour: dark"
+ */
+const groupRelatedOptions = (items: ClientBreakdownItem[]): ClientBreakdownItem[] => {
+  if (!items || items.length === 0) return [];
+  
+  // Separate options from non-options
+  const options = items.filter(item => item.category === 'option' || item.category === 'options');
+  const nonOptions = items.filter(item => item.category !== 'option' && item.category !== 'options');
+  
+  if (options.length === 0) return items;
+  
+  // Normalize a name for matching (lowercase, replace spaces with underscores)
+  const normalizeKey = (name: string) => {
+    return (name || '')
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_]/g, '');
+  };
+  
+  // Build a map of parent options and their children
+  const parentMap = new Map<string, ClientBreakdownItem>();
+  const childMap = new Map<string, { parent: string; item: ClientBreakdownItem }>();
+  
+  // Common child suffixes that indicate a sub-option
+  const childSuffixes = ['_colour', '_color', '_size', '_style', '_type', '_finish', '_material'];
+  
+  // First pass: identify all options and potential parent-child relationships
+  options.forEach(item => {
+    const normalizedName = normalizeKey(item.name || '');
+    
+    // Check if this is a child option (has a suffix that indicates it belongs to a parent)
+    let isChild = false;
+    for (const suffix of childSuffixes) {
+      if (normalizedName.endsWith(suffix)) {
+        const parentKey = normalizedName.slice(0, -suffix.length);
+        childMap.set(normalizedName, { parent: parentKey, item });
+        isChild = true;
+        break;
+      }
+    }
+    
+    if (!isChild) {
+      parentMap.set(normalizedName, item);
+    }
+  });
+  
+  // Second pass: merge children into parents
+  const processedParents = new Set<string>();
+  const result: ClientBreakdownItem[] = [...nonOptions];
+  
+  parentMap.forEach((parentItem, parentKey) => {
+    if (processedParents.has(parentKey)) return;
+    processedParents.add(parentKey);
+    
+    // Find all children for this parent
+    const children: { suffix: string; item: ClientBreakdownItem }[] = [];
+    childMap.forEach((childData, childKey) => {
+      if (childData.parent === parentKey) {
+        const suffix = childKey.slice(parentKey.length + 1); // +1 for underscore
+        children.push({ suffix, item: childData.item });
+      }
+    });
+    
+    if (children.length === 0) {
+      // No children, add parent as-is
+      result.push(parentItem);
+    } else {
+      // Merge children into parent
+      let mergedDescription = parentItem.description || '';
+      let mergedPrice = Number(parentItem.total_cost) || 0;
+      
+      children.forEach(({ suffix, item: childItem }) => {
+        // Format suffix nicely (colour -> Colour)
+        const formattedSuffix = suffix
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, (c: string) => c.toUpperCase());
+        
+        // Add child value to description
+        const childValue = childItem.description || childItem.name || '';
+        if (childValue) {
+          mergedDescription += mergedDescription ? ` - ${formattedSuffix}: ${childValue}` : `${formattedSuffix}: ${childValue}`;
+        }
+        
+        // Add child price to total
+        mergedPrice += Number(childItem.total_cost) || 0;
+      });
+      
+      result.push({
+        ...parentItem,
+        description: mergedDescription,
+        total_cost: mergedPrice,
+        // Keep original unit_price from parent for display
+      });
+    }
+  });
+  
+  // Add any orphan children (children without matching parents)
+  childMap.forEach((childData, childKey) => {
+    const parentExists = parentMap.has(childData.parent);
+    if (!parentExists) {
+      result.push(childData.item);
+    }
+  });
+  
+  console.log('🔗 groupRelatedOptions:', {
+    inputCount: items.length,
+    outputCount: result.length,
+    groupedOptions: options.length - (result.length - nonOptions.length)
+  });
+  
+  return result;
+};
+
+/**
  * Build a client-facing cost breakdown from a saved window summary.
  * - Uses structured summary.cost_breakdown if already shaped
  * - Otherwise, derives Fabric, Lining, and Manufacturing lines from summary fields
@@ -44,10 +165,6 @@ export const buildClientBreakdown = (
   if (hasStructured) {
     console.log('✅ Using structured cost_breakdown from database (%d items)', raw.length);
     
-    // CRITICAL FIX: Return ALL items directly - NO GROUPING!
-    // The groupRelatedOptions function was broken - it assumed "Parent Option" + "Parent Option Colour"
-    // naming convention, but actual data uses "option_key: value" format
-    
     // Format option names for better display and enrich with color/image from source details
     const enrichedItems = raw.map((item: any) => {
       let formattedName = item.name || item.category || 'Item';
@@ -66,17 +183,26 @@ export const buildClientBreakdown = (
         }
       }
       
-      // Enrich ALL items with color/image from source details - universal for all product types
+      // Enrich items with color/image from source details
+      // CRITICAL: For fabric/material, use ONLY fabric/material specific images, NOT template images
       let itemColor = item.color || null;
       let itemImageUrl = item.image_url || null;
       
-      // UNIVERSAL: Check fabric, material, hardware details AND measurements_details.selected_color for all items
       if (item.category === 'fabric' || item.category === 'material') {
-        itemColor = itemColor || summary.fabric_details?.color || summary.material_details?.color || (summary.measurements_details as any)?.selected_color || null;
-        itemImageUrl = itemImageUrl || summary.fabric_details?.image_url || summary.material_details?.image_url || null;
+        // For fabric/material rows: ONLY use fabric/material specific images
+        // DO NOT inherit from template - template images should only show on template rows
+        const fabricImage = summary.fabric_details?.image_url || summary.material_details?.image_url;
+        const fabricColor = summary.fabric_details?.color || summary.material_details?.color || (summary.measurements_details as any)?.selected_color;
+        
+        // Only set image if it's specifically a fabric/material image, not template
+        itemImageUrl = fabricImage || null;
+        itemColor = itemColor || fabricColor || null;
       } else if (item.category === 'hardware') {
         itemColor = itemColor || summary.hardware_details?.color || (summary.measurements_details as any)?.selected_color || null;
         itemImageUrl = itemImageUrl || summary.hardware_details?.image_url || null;
+      } else if (item.category === 'template' || item.category === 'treatment') {
+        // Template row gets template image
+        itemImageUrl = itemImageUrl || summary.template_details?.image_url || summary.treatment_image_url || null;
       } else {
         // For any other category, still check for selected_color in measurements
         itemColor = itemColor || (summary.measurements_details as any)?.selected_color || null;
@@ -91,12 +217,15 @@ export const buildClientBreakdown = (
       };
     });
     
-    console.log('✅ Returning ALL %d items (no grouping applied)', enrichedItems.length);
-    enrichedItems.forEach((item: any) => {
+    // Apply smart grouping to merge related options (e.g., "Headrail Selection" + "Headrail Selection Colour")
+    const groupedItems = groupRelatedOptions(enrichedItems);
+    
+    console.log('✅ Returning %d items after grouping (original: %d)', groupedItems.length, enrichedItems.length);
+    groupedItems.forEach((item: any) => {
       console.log('  Item:', item.name, '| Desc:', item.description, '| Cost:', item.total_cost, '| Color:', item.color);
     });
     
-    return enrichedItems as ClientBreakdownItem[];
+    return groupedItems as ClientBreakdownItem[];
   }
 
   console.log('⚠️ No structured breakdown - building from scratch (THIS SHOULD BE RARE)');
@@ -246,10 +375,11 @@ export const buildClientBreakdown = (
 
   // Selected Options - These are pre-formatted client-facing options
   // CRITICAL: selected_options is the ONLY source for displaying treatment options in quotes
-  // CRITICAL FIX: Display ALL options - NO GROUPING, NO FILTERING!
-  // Zero-cost options are meaningful selections that clients need to see (e.g., "Mount Type: Inside Mount")
+  // Apply smart grouping to merge related options (e.g., "Headrail Selection" + "Headrail Selection Colour")
   if (summary.selected_options && Array.isArray(summary.selected_options)) {
-    console.log('📋 Processing %d selected_options (NO grouping/filtering)', summary.selected_options.length);
+    console.log('📋 Processing %d selected_options with smart grouping', summary.selected_options.length);
+    
+    const optionItems: ClientBreakdownItem[] = [];
     
     summary.selected_options.forEach((option: any, index: number) => {
       let formattedName = option.name || option.label || 'Option';
@@ -272,7 +402,7 @@ export const buildClientBreakdown = (
       const price = Number(option.calculatedPrice || option.price || option.cost || option.total_cost || option.unit_price || 0);
       const basePrice = Number(option.basePrice || option.price || 0);
       
-      items.push({
+      optionItems.push({
         id: option.id || `option-${index}`,
         name: formattedName,
         description: formattedDescription && formattedDescription !== formattedName ? formattedDescription : undefined,
@@ -285,9 +415,17 @@ export const buildClientBreakdown = (
         pricingDetails: option.pricingDetails || '',
         details: option,
       });
-      
-      console.log('  Added option:', formattedName, '| Desc:', formattedDescription, '| Cost:', price);
     });
+    
+    // Apply smart grouping to merge related options
+    const groupedOptions = groupRelatedOptions(optionItems);
+    
+    groupedOptions.forEach((option) => {
+      items.push(option);
+      console.log('  Added option:', option.name, '| Desc:', option.description, '| Cost:', option.total_cost);
+    });
+    
+    console.log('📋 Options after grouping: %d (original: %d)', groupedOptions.length, optionItems.length);
   }
 
   // Manufacturing/Assembly - UNIVERSAL RULE: only show if NOT using fabric pricing grid
