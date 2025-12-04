@@ -380,9 +380,9 @@ export const CostCalculationSummary = ({
               <div className="text-card-foreground font-medium">Template: {template.name}</div>
               <div className="flex items-center gap-2">
                 <span>Method: {template.pricing_type}</span>
-                {template.pricing_type === 'pricing_grid' && fabricToUse?.pricingGridData && (
+                {template.pricing_type === 'pricing_grid' && fabricToUse?.pricing_grid_data && (
                   <PricingGridPreview 
-                    gridData={fabricToUse.pricingGridData} 
+                    gridData={fabricToUse.pricing_grid_data} 
                     gridName={fabricToUse.name || 'Product Pricing'}
                   />
                 )}
