@@ -36,36 +36,12 @@ interface Template {
   created_at?: string;
 }
 
-// Starter templates for new accounts
-const starterTemplates: Template[] = [
-  {
-    id: 'starter-professional',
-    name: 'Professional Quote',
-    description: 'Clean, professional layout',
-    category: 'quote',
-    blocks: [
-      { id: 'header', type: 'header', content: { title: 'Quote', showLogo: true } },
-      { id: 'client', type: 'client_info', content: {} },
-      { id: 'items', type: 'line_items', content: {} },
-      { id: 'totals', type: 'totals', content: {} },
-      { id: 'footer', type: 'footer', content: { text: 'Thank you for your business!' } }
-    ]
-  },
-  {
-    id: 'starter-detailed',
-    name: 'Detailed Quote',
-    description: 'With room breakdown',
-    category: 'quote',
-    blocks: [
-      { id: 'header', type: 'header', content: { title: 'Detailed Quote', showLogo: true } },
-      { id: 'client', type: 'client_info', content: {} },
-      { id: 'rooms', type: 'room_breakdown', content: {} },
-      { id: 'items', type: 'line_items', content: {} },
-      { id: 'totals', type: 'totals', content: {} },
-      { id: 'terms', type: 'terms', content: {} },
-      { id: 'footer', type: 'footer', content: { text: 'Thank you for your business!' } }
-    ]
-  }
+// Default blank template blocks
+const getBlankTemplateBlocks = (category: string) => [
+  { id: 'header', type: 'header', content: { title: category.charAt(0).toUpperCase() + category.slice(1), showLogo: true } },
+  { id: 'client', type: 'client_info', content: {} },
+  { id: 'items', type: 'line_items', content: {} },
+  { id: 'totals', type: 'totals', content: {} }
 ];
 
 export const SimpleTemplateManager: React.FC = () => {
@@ -358,66 +334,23 @@ export const SimpleTemplateManager: React.FC = () => {
     setSelectedTemplate(prev => prev ? { ...prev, blocks: updatedBlocks } : null);
 
     try {
-      // Check if this is a database record or a starter template
-      const isStarterTemplate = starterTemplates.some(dt => dt.id === selectedTemplate.id);
-      
-      if (isStarterTemplate) {
-        // For starter templates, create a new database record
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('User not authenticated');
+      // Update database record
+      const { error } = await supabase
+        .from('quote_templates')
+        .update({
+          blocks: updatedBlocks
+        })
+        .eq('id', selectedTemplate.id);
 
-        const { data, error } = await supabase
-          .from('quote_templates')
-          .insert({
-            name: selectedTemplate.name,
-            description: selectedTemplate.description,
-            blocks: updatedBlocks,
-            template_style: selectedTemplate.category,
-            user_id: user.id
-          })
-          .select()
-          .single();
+      if (error) throw error;
 
-        if (error) throw error;
-
-        // Update local state with new database record
-        const newTemplate: Template = {
-          id: data.id,
-          name: data.name,
-          description: data.description,
-          blocks: updatedBlocks,
-          category: data.template_style,
-          created_at: data.created_at,
-          is_default: true
-        };
-
-        setTemplates(prev => 
-          prev.map(t => 
-            t.id === selectedTemplate.id 
-              ? newTemplate
-              : t
-          )
-        );
-        setSelectedTemplate(newTemplate);
-      } else {
-        // For existing database records, update normally
-        const { error } = await supabase
-          .from('quote_templates')
-          .update({
-            blocks: updatedBlocks
-          })
-          .eq('id', selectedTemplate.id);
-
-        if (error) throw error;
-
-        setTemplates(prev => 
-          prev.map(t => 
-            t.id === selectedTemplate.id 
-              ? { ...t, blocks: updatedBlocks }
-              : t
-          )
-        );
-      }
+      setTemplates(prev => 
+        prev.map(t => 
+          t.id === selectedTemplate.id 
+            ? { ...t, blocks: updatedBlocks }
+            : t
+        )
+      );
 
       console.log('Template saved successfully');
       // Only show toast for manual saves, not auto-saves
@@ -652,29 +585,6 @@ export const SimpleTemplateManager: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            {starterTemplates.length > 0 && (
-              <div>
-                <label className="text-sm font-medium">Start From Template</label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {starterTemplates.map((template) => (
-                    <Button
-                      key={template.id}
-                      variant="outline"
-                      onClick={() => createFromTemplate(template)}
-                      className="h-auto p-3 text-left"
-                      disabled={!newTemplateName.trim()}
-                    >
-                      <div>
-                        <div className="font-medium">{template.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {template.description}
-                        </div>
-                      </div>
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreating(false)}>
@@ -683,17 +593,11 @@ export const SimpleTemplateManager: React.FC = () => {
             <Button 
               onClick={() => {
                 if (newTemplateName.trim()) {
-                  createFromTemplate(starterTemplates[0] || {
+                  createFromTemplate({
                     id: 'blank',
                     name: 'Blank',
-                    description: 'Start from scratch',
                     category: selectedCategory,
-                    blocks: [
-                      { id: 'header', type: 'header', content: { title: selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1), showLogo: true } },
-                      { id: 'client', type: 'client_info', content: {} },
-                      { id: 'items', type: 'line_items', content: {} },
-                      { id: 'totals', type: 'totals', content: {} }
-                    ]
+                    blocks: getBlankTemplateBlocks(selectedCategory)
                   });
                 }
               }}
