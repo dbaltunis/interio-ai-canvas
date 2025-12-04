@@ -3,10 +3,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AccountWithDetails, AccountType } from "@/types/subscriptions";
-import { useUpdateAccountType } from "@/hooks/useAdminAccounts";
+import { useUpdateAccountType, useInvitationEmailStatus, useResendInvitation } from "@/hooks/useAdminAccounts";
 import { useDeleteAccount } from "@/hooks/useDeleteAccount";
 import { format } from "date-fns";
-import { User, Mail, Calendar, Users, Trash2 } from "lucide-react";
+import { User, Mail, Calendar, Users, Trash2, RefreshCw, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
 
 interface AccountInfoPanelProps {
   account: AccountWithDetails;
@@ -16,6 +16,8 @@ interface AccountInfoPanelProps {
 export function AccountInfoPanel({ account, onAccountDeleted }: AccountInfoPanelProps) {
   const updateAccountType = useUpdateAccountType();
   const deleteAccount = useDeleteAccount();
+  const { data: emailStatus, isLoading: emailStatusLoading } = useInvitationEmailStatus(account.user_id);
+  const resendInvitation = useResendInvitation();
 
   const handleAccountTypeChange = (newType: AccountType) => {
     if (window.confirm(`Are you sure you want to change the account type to "${newType}"?`)) {
@@ -35,6 +37,46 @@ export function AccountInfoPanel({ account, onAccountDeleted }: AccountInfoPanel
           onAccountDeleted?.();
         }
       });
+    }
+  };
+
+  const handleResendInvitation = () => {
+    if (window.confirm(`This will generate a new password and send a new invitation email to ${account.email}. Continue?`)) {
+      resendInvitation.mutate({ userId: account.user_id });
+    }
+  };
+
+  const getEmailStatusBadge = () => {
+    if (emailStatusLoading) {
+      return <Badge variant="outline"><Clock className="h-3 w-3 mr-1" /> Loading...</Badge>;
+    }
+
+    if (!emailStatus || emailStatus.status === 'none') {
+      return <Badge variant="outline"><AlertCircle className="h-3 w-3 mr-1" /> No invitation sent</Badge>;
+    }
+
+    switch (emailStatus.status) {
+      case 'sent':
+        return (
+          <Badge variant="default" className="bg-green-100 text-green-800">
+            <CheckCircle className="h-3 w-3 mr-1" /> 
+            Sent {emailStatus.sent_at ? format(new Date(emailStatus.sent_at), "MMM d, h:mm a") : ''}
+          </Badge>
+        );
+      case 'failed':
+        return (
+          <Badge variant="destructive">
+            <XCircle className="h-3 w-3 mr-1" /> Failed
+          </Badge>
+        );
+      case 'pending':
+        return (
+          <Badge variant="secondary">
+            <Clock className="h-3 w-3 mr-1" /> Pending
+          </Badge>
+        );
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
     }
   };
 
@@ -78,6 +120,39 @@ export function AccountInfoPanel({ account, onAccountDeleted }: AccountInfoPanel
               <p className="text-sm text-muted-foreground">{account.team_members_count}</p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Invitation Email Status Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            Invitation Email
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium mb-1">Status</p>
+              {getEmailStatusBadge()}
+              {emailStatus?.error && (
+                <p className="text-xs text-destructive mt-1">{emailStatus.error}</p>
+              )}
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleResendInvitation}
+              disabled={resendInvitation.isPending}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${resendInvitation.isPending ? 'animate-spin' : ''}`} />
+              {resendInvitation.isPending ? 'Sending...' : 'Resend Invitation'}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Resending will generate a new temporary password and send login credentials to the user's email.
+          </p>
         </CardContent>
       </Card>
 
