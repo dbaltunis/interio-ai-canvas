@@ -119,10 +119,8 @@ serve(async (req) => {
     // Tables that use account_id column instead of user_id
     const tablesToCleanByAccountId = [
       'option_values',
-      'template_option_settings', 
       'treatment_options',
       'account_overrides',
-      'account_settings',
     ];
 
     let deletedRecords = 0;

@@ -1,11 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export const useUserRole = () => {
+  const { user, loading: authLoading } = useAuth();
+  
   return useQuery({
-    queryKey: ["user-role"],
+    queryKey: ["user-role", user?.id],
+    enabled: !authLoading && !!user,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
       if (!user) return null;
 
       // Get role from secure user_roles table using SECURITY DEFINER function

@@ -180,7 +180,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         const result = await Promise.race([
           supabase.auth.getSession(),
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Auth timeout')), 2000))
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Auth timeout')), 8000))
         ]);
         
         if (result?.data?.session) {
