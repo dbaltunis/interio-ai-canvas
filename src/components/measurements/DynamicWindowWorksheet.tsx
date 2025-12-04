@@ -2010,6 +2010,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                     treatmentCategory={treatmentCategory}
                     selectedOptions={selectedOptions}
                     onSelectedOptionsChange={setSelectedOptions}
+                    selectedMaterial={selectedItems.material}
                   />
                 </div>
 

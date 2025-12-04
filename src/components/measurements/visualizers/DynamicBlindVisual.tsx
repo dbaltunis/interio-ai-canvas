@@ -10,6 +10,7 @@ interface DynamicBlindVisualProps {
   chainSide?: 'left' | 'right';
   controlType?: string;
   material?: any;
+  selectedColor?: string; // User-selected color from ColorSelector
 }
 
 export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
@@ -20,10 +21,54 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
   mountType = 'outside',
   chainSide = 'right',
   controlType,
-  material
+  material,
+  selectedColor
 }) => {
   const { units } = useMeasurementUnits();
   const hasValue = (value: any) => value && value !== "" && value !== "0";
+  
+  // Convert color name to CSS color value
+  const getColorValue = (colorName?: string): string => {
+    if (!colorName) return 'hsl(var(--primary))';
+    // If it's already a hex/rgb/hsl value, use it directly
+    if (colorName.startsWith('#') || colorName.startsWith('rgb') || colorName.startsWith('hsl')) {
+      return colorName;
+    }
+    // Map common color names to actual colors
+    const colorMap: Record<string, string> = {
+      'white': '#FFFFFF',
+      'black': '#1a1a1a',
+      'grey': '#808080',
+      'gray': '#808080',
+      'silver': '#C0C0C0',
+      'cream': '#FFFDD0',
+      'ivory': '#FFFFF0',
+      'beige': '#F5F5DC',
+      'brown': '#8B4513',
+      'tan': '#D2B48C',
+      'red': '#DC2626',
+      'blue': '#2563EB',
+      'green': '#16A34A',
+      'yellow': '#EAB308',
+      'orange': '#EA580C',
+      'purple': '#9333EA',
+      'pink': '#EC4899',
+      'gold': '#D4AF37',
+      'bronze': '#CD7F32',
+      'navy': '#001f3f',
+      'charcoal': '#36454F',
+      'walnut': '#5D432C',
+      'oak': '#806517',
+      'mahogany': '#C04000',
+      'cherry': '#DE3163',
+      'natural': '#E8D4A8',
+      'aluminum': '#A8A9AD',
+      'aluminium': '#A8A9AD',
+    };
+    return colorMap[colorName.toLowerCase()] || colorName;
+  };
+  
+  const blindColor = getColorValue(selectedColor);
   
   // Helper to display measurement with correct unit (measurements already in user's unit)
   const displayValue = (value: any) => {
@@ -71,10 +116,11 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
         </div>
 
         {/* Roller Blind Fabric - Semi-transparent */}
-        <div className={`absolute ${blindWidth} bg-primary/30 backdrop-blur-[1px] shadow-lg overflow-hidden`}
+        <div className={`absolute ${blindWidth} backdrop-blur-[1px] shadow-lg overflow-hidden`}
              style={{
                top: `calc(${blindTop.includes('24') ? '6rem' : '5rem'} + 1rem)`,
-               bottom: hasValue(measurements.drop) ? '4rem' : '8rem'
+               bottom: hasValue(measurements.drop) ? '4rem' : '8rem',
+               backgroundColor: selectedColor ? `${blindColor}4D` : 'hsl(var(--primary) / 0.3)'
              }}>
           {/* Fabric image if available */}
           {material?.image_url ? (
@@ -162,17 +208,15 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
                 className={`absolute left-0 right-0 ${slatHeight} transition-all duration-300`}
                 style={{ 
                   top: `${(i / slatsCount) * 100}%`,
-                  background: `linear-gradient(180deg, 
-                    hsl(var(--primary) / 0.5) 0%, 
-                    hsl(var(--primary) / 0.35) 40%, 
-                    hsl(var(--primary) / 0.45) 60%,
-                    hsl(var(--primary) / 0.3) 100%)`,
+                  background: selectedColor 
+                    ? `linear-gradient(180deg, ${blindColor} 0%, ${blindColor}CC 40%, ${blindColor}DD 60%, ${blindColor}AA 100%)`
+                    : `linear-gradient(180deg, hsl(var(--primary) / 0.5) 0%, hsl(var(--primary) / 0.35) 40%, hsl(var(--primary) / 0.45) 60%, hsl(var(--primary) / 0.3) 100%)`,
                   boxShadow: '0 1px 2px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.1)',
                   borderRadius: '1px',
                   transform: 'perspective(500px) rotateX(45deg)',
                   transformOrigin: 'center center',
-                  borderTop: '1px solid hsl(var(--primary) / 0.2)',
-                  borderBottom: '1px solid hsl(var(--primary) / 0.15)',
+                  borderTop: selectedColor ? `1px solid ${blindColor}33` : '1px solid hsl(var(--primary) / 0.2)',
+                  borderBottom: selectedColor ? `1px solid ${blindColor}22` : '1px solid hsl(var(--primary) / 0.15)',
                 }}
               >
                 {/* Slat highlight for 3D effect */}
@@ -227,11 +271,13 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
           {Array.from({ length: vaneCount }).map((_, i) => (
             <div
               key={i}
-              className="h-full bg-primary/35 border-l border-r border-primary/20 shadow-md overflow-hidden relative"
+              className="h-full border-l border-r shadow-md overflow-hidden relative"
               style={{ 
                 width: `calc(100% / ${vaneCount} - 2px)`,
                 transform: 'rotateY(30deg)',
-                transformOrigin: 'top center'
+                transformOrigin: 'top center',
+                backgroundColor: selectedColor ? `${blindColor}5A` : 'hsl(var(--primary) / 0.35)',
+                borderColor: selectedColor ? `${blindColor}33` : 'hsl(var(--primary) / 0.2)'
               }}
             >
               {material?.image_url && (
@@ -285,7 +331,7 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
              style={{
                top: `calc(${blindTop.includes('24') ? '6rem' : '5rem'} + 0.75rem)`,
                bottom: '4rem',
-               backgroundColor: material?.color || 'hsl(var(--primary) / 0.3)'
+               backgroundColor: selectedColor ? blindColor : (material?.color || 'hsl(var(--primary) / 0.3)')
              }}>
           {/* Fabric image if available */}
           {material?.image_url && (
@@ -350,10 +396,11 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
         </div>
 
         {/* Cellular honeycomb structure */}
-        <div className={`absolute ${blindWidth} bg-primary/25 backdrop-blur-[1px] shadow-lg overflow-hidden`}
+        <div className={`absolute ${blindWidth} backdrop-blur-[1px] shadow-lg overflow-hidden`}
              style={{
                top: `calc(${blindTop.includes('24') ? '6rem' : '5rem'} + 0.75rem)`,
-               bottom: '4rem'
+               bottom: '4rem',
+               backgroundColor: selectedColor ? `${blindColor}40` : 'hsl(var(--primary) / 0.25)'
              }}>
           {/* Fabric image background if available */}
           {material?.image_url && (
