@@ -23,8 +23,15 @@ import { ManufacturingDefaults } from "./products/ManufacturingDefaults";
 import { useSearchParams } from "react-router-dom";
 
 export const SystemSettingsTab = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const subtab = searchParams.get('subtab') || 'general';
+
+  const handleSubtabChange = (value: string) => {
+    setSearchParams(prev => {
+      prev.set('subtab', value);
+      return prev;
+    });
+  };
   
   const [notifications, setNotifications] = useState({
     email: true,
@@ -51,7 +58,7 @@ export const SystemSettingsTab = () => {
   }, [accent]);
 
   return (
-    <Tabs value={subtab} className="w-full">
+    <Tabs value={subtab} onValueChange={handleSubtabChange} className="w-full">
       <TabsList className="grid w-full grid-cols-4 mb-4">
         <TabsTrigger value="general">
           <SettingsIcon className="h-4 w-4 mr-2" />
