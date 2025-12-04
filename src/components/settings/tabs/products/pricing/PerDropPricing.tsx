@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,6 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface DropHeightRange {
   min: number;
@@ -31,6 +31,10 @@ export const PerDropPricing = ({
   handDropHeightPrices,
   onInputChange
 }: PerDropPricingProps) => {
+  const { units } = useMeasurementUnits();
+  const currencySymbol = units.currency || '$';
+  const lengthUnit = units.length === 'inches' || units.length === 'feet' ? 'in' : 'cm';
+  
   const isHeightBasedEnabled = dropHeightRanges && dropHeightRanges.length > 0;
 
   const toggleHeightBased = (checked: boolean) => {
@@ -77,6 +81,9 @@ export const PerDropPricing = ({
     onInputChange(fieldName, newPrices);
   };
 
+  const examplePrice = parseFloat(machinePricePerDrop || '30');
+  const exampleTotal = (3 * examplePrice).toFixed(2);
+
   return (
     <div className="space-y-4">
       <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
@@ -90,8 +97,8 @@ export const PerDropPricing = ({
       <div className="bg-amber-50 dark:bg-amber-950 p-3 rounded-lg">
         <h5 className="font-medium text-xs text-amber-900 dark:text-amber-100">Calculation Example:</h5>
         <p className="text-xs text-amber-800 dark:text-amber-200 mt-1">
-          Curtain width: 300cm, Fabric width: 137cm → Need 3 drops<br/>
-          Final price: 3 drops × £{machinePricePerDrop || '30'} = £{(3 * parseFloat(machinePricePerDrop || '30')).toFixed(2)}
+          Curtain width: 300{lengthUnit}, Fabric width: 137{lengthUnit} → Need 3 drops<br/>
+          Final price: 3 drops × {currencySymbol}{machinePricePerDrop || '30'} = {currencySymbol}{exampleTotal}
         </p>
       </div>
 
@@ -120,7 +127,7 @@ export const PerDropPricing = ({
         /* Simple per-drop pricing */
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="machine_price_per_drop">Machine Price per Drop</Label>
+            <Label htmlFor="machine_price_per_drop">Machine Price per Drop ({currencySymbol})</Label>
             <Input
               id="machine_price_per_drop"
               type="number"
@@ -133,7 +140,7 @@ export const PerDropPricing = ({
           </div>
           {offersHandFinished && (
             <div>
-              <Label htmlFor="hand_price_per_drop">Hand-Finished Price per Drop</Label>
+              <Label htmlFor="hand_price_per_drop">Hand-Finished Price per Drop ({currencySymbol})</Label>
               <Input
                 id="hand_price_per_drop"
                 type="number"
@@ -158,7 +165,7 @@ export const PerDropPricing = ({
             {dropHeightRanges?.map((range, index) => (
               <div key={index} className="grid grid-cols-5 gap-2 items-center">
                 <div>
-                  <Label className="text-xs">Min Height (cm)</Label>
+                  <Label className="text-xs">Min Height ({lengthUnit})</Label>
                   <Input
                     type="number"
                     value={range.min}
@@ -167,7 +174,7 @@ export const PerDropPricing = ({
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">Max Height (cm)</Label>
+                  <Label className="text-xs">Max Height ({lengthUnit})</Label>
                   <Input
                     type="number"
                     value={range.max}
@@ -176,7 +183,7 @@ export const PerDropPricing = ({
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">Machine (£/drop)</Label>
+                  <Label className="text-xs">Machine ({currencySymbol}/drop)</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -187,7 +194,7 @@ export const PerDropPricing = ({
                 </div>
                 {offersHandFinished && (
                   <div>
-                    <Label className="text-xs">Hand (£/drop)</Label>
+                    <Label className="text-xs">Hand ({currencySymbol}/drop)</Label>
                     <Input
                       type="number"
                       step="0.01"
