@@ -1088,18 +1088,20 @@ export const EnhancedMeasurementWorksheet = forwardRef<
              const num = parseFloat(String(val));
              return isNaN(num) ? null : num;
            })(),
-           fabric_details: {
-             id: fabricItem.id, 
-             name: fabricItem.name, 
-             price_per_meter: pricePerMeter,
-             width: (fabricItem as any).fabric_width,
-             width_cm: (fabricItem as any).fabric_width,
-             fabric_width: (fabricItem as any).fabric_width,
-             pattern_repeat_vertical: (fabricItem as any).pattern_repeat_vertical,
-             pattern_repeat_horizontal: (fabricItem as any).pattern_repeat_horizontal,
-             category: (fabricItem as any).category, // Include fabric category for detection
-             image_url: (fabricItem as any).image_url // Include image for display
-           },
+          fabric_details: {
+              id: fabricItem.id, 
+              name: fabricItem.name, 
+              price_per_meter: pricePerMeter,
+              width: (fabricItem as any).fabric_width,
+              width_cm: (fabricItem as any).fabric_width,
+              fabric_width: (fabricItem as any).fabric_width,
+              pattern_repeat_vertical: (fabricItem as any).pattern_repeat_vertical,
+              pattern_repeat_horizontal: (fabricItem as any).pattern_repeat_horizontal,
+              category: (fabricItem as any).category, // Include fabric category for detection
+              image_url: (fabricItem as any).image_url, // Include image for display
+              // CRITICAL: Include color - prioritize user selection, then first tag, then color field
+              color: measurements.selected_color || (fabricItem as any).tags?.[0] || (fabricItem as any).color || null
+            },
            lining_details: liningDetails,
            heading_details: { id: selectedHeading },
            extras_details: [],
