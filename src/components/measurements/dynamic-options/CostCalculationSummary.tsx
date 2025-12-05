@@ -10,7 +10,7 @@ import { safeParseFloat } from "@/utils/costCalculationErrors";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
-import { getPricingMethodLabel } from "@/utils/pricingMethodLabels";
+import { getPricingMethodLabel, getPricingMethodSuffix, getLengthUnitLabel, getAreaUnitLabel } from "@/utils/pricingMethodLabels";
 import { formatDimensionsFromCM, formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { PricingGridPreview } from "@/components/settings/tabs/products/pricing/PricingGridPreview";
 
@@ -669,13 +669,18 @@ export const CostCalculationSummary = ({
                            safeParseFloat(measurements?.height, 0);
           const linearMeters = fabricCalculation?.linearMeters || (widthCm / 100);
           
+          // Determine if metric based on units settings
+          const isMetric = units?.length?.toLowerCase() !== 'imperial' && units?.length?.toLowerCase() !== 'in' && units?.length?.toLowerCase() !== 'ft';
+          const lengthUnit = getLengthUnitLabel(isMetric);
+          const areaUnit = getAreaUnitLabel(isMetric);
+          
           if (option.pricingMethod === 'per-meter' && basePrice > 0) {
             calculatedPrice = basePrice * linearMeters;
-            pricingDetails = `${basePrice.toFixed(2)}/m × ${linearMeters.toFixed(2)}m`;
+            pricingDetails = `${basePrice.toFixed(2)}/${lengthUnit} × ${linearMeters.toFixed(2)}${lengthUnit}`;
           } else if (option.pricingMethod === 'per-sqm' && basePrice > 0) {
             const sqm = (widthCm * heightCm) / 10000;
             calculatedPrice = basePrice * sqm;
-            pricingDetails = `${basePrice.toFixed(2)}/sqm × ${sqm.toFixed(2)}sqm`;
+            pricingDetails = `${basePrice.toFixed(2)}/${areaUnit} × ${sqm.toFixed(2)}${areaUnit}`;
           } else if (option.pricingMethod === 'pricing-grid' && option.pricingGridData) {
             calculatedPrice = getPriceFromGrid(option.pricingGridData, widthCm, heightCm);
             pricingDetails = `Grid lookup`;
