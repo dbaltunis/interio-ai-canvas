@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Hash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import type { EntityType } from "@/hooks/useNumberSequences";
+import { useSequenceLabel, type EntityType } from "@/hooks/useNumberSequences";
 
 interface EditableDocumentNumberProps {
   entityType: EntityType;
@@ -14,17 +14,23 @@ interface EditableDocumentNumberProps {
   placeholder?: string;
   disabled?: boolean;
   showRegenerateButton?: boolean;
+  autoLabel?: boolean; // If true, fetches label from settings
 }
 
 export const EditableDocumentNumber = ({
   entityType,
   value,
   onChange,
-  label = "Document Number",
+  label: propLabel,
   placeholder = "Enter or generate number",
   disabled = false,
   showRegenerateButton = true,
+  autoLabel = false,
 }: EditableDocumentNumberProps) => {
+  const { label: settingsLabel, prefix } = useSequenceLabel(entityType);
+  
+  // Use settings label if autoLabel is true, otherwise use prop
+  const label = autoLabel ? settingsLabel : (propLabel || settingsLabel);
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
 

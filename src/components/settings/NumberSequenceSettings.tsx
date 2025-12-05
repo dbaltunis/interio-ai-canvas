@@ -9,6 +9,7 @@ import {
   useCreateNumberSequence, 
   useUpdateNumberSequence, 
   useDeleteNumberSequence,
+  useEnsureDefaultSequences,
   EntityType 
 } from "@/hooks/useNumberSequences";
 import { Plus, Save, Trash2, Hash } from "lucide-react";
@@ -33,8 +34,7 @@ const ENTITY_TYPES: { value: EntityType; label: string; description: string }[] 
   { value: 'draft', label: 'Drafts', description: 'Draft document numbers' },
   { value: 'quote', label: 'Quotes', description: 'Quote numbers' },
   { value: 'order', label: 'Orders', description: 'Order numbers' },
-  // Invoice sequences not yet implemented in backend
-  // { value: 'invoice', label: 'Invoices', description: 'Invoice numbers' },
+  { value: 'invoice', label: 'Invoices', description: 'Invoice numbers' },
 ];
 
 export const NumberSequenceSettings = () => {
@@ -42,6 +42,9 @@ export const NumberSequenceSettings = () => {
   const createSequence = useCreateNumberSequence();
   const updateSequence = useUpdateNumberSequence();
   const deleteSequence = useDeleteNumberSequence();
+  
+  // Auto-create default sequences for new users
+  useEnsureDefaultSequences();
 
   const [newSequence, setNewSequence] = useState<{
     entity_type: EntityType;
@@ -339,11 +342,6 @@ export const NumberSequenceSettings = () => {
             </ul>
           </div>
           
-          <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <p className="text-sm text-blue-900 dark:text-blue-100">
-              <strong>Coming Soon:</strong> Invoice number sequences
-            </p>
-          </div>
         </div>
       </CardContent>
     </Card>

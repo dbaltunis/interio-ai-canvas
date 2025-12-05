@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin, Package, FileText, DollarSign, Calendar as CalendarIcon, Hash } from "lucide-react";
 import { EditableDocumentNumber } from "../EditableDocumentNumber";
 import { syncSequenceCounter } from "@/hooks/useNumberSequenceGeneration";
+import { useEnsureDefaultSequences, type EntityType } from "@/hooks/useNumberSequences";
 import { useUpdateQuote } from "@/hooks/useQuotes";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -58,11 +59,26 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const { data: treatments = [] } = useTreatments(project.id);
   const updateQuote = useUpdateQuote();
   
+  // Ensure default sequences exist for this user
+  useEnsureDefaultSequences();
+  
   // Get the current quote for this project
   const currentQuote = quotes.length > 0 ? quotes.reduce((latest, quote) => {
     if (!latest) return quote;
     return new Date(quote.created_at) > new Date(latest.created_at) ? quote : latest;
   }, null) : null;
+  
+  // Determine the entity type based on quote status
+  const getQuoteEntityType = (): EntityType => {
+    if (!currentQuote) return 'quote';
+    const status = currentQuote.status?.toLowerCase();
+    if (status === 'invoiced' || status === 'invoice') return 'invoice';
+    if (status === 'approved' || status === 'ordered') return 'order';
+    if (status === 'draft') return 'draft';
+    return 'quote';
+  };
+  
+  const quoteEntityType = getQuoteEntityType();
   
   // State for editable document numbers
   const [jobNumber, setJobNumber] = useState(project.job_number || "");
@@ -97,15 +113,8 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
           quote_number: quoteNumber,
         });
         
-        // Determine entity type based on quote status
-        const entityType = currentQuote.status === 'invoiced' || currentQuote.status === 'invoice' 
-          ? 'invoice' 
-          : currentQuote.status === 'sent' || currentQuote.status === 'approved'
-          ? 'quote'
-          : 'draft';
-        
-        // Sync sequence counter
-        await syncSequenceCounter(entityType, quoteNumber);
+        // Use the determined entity type based on quote status
+        await syncSequenceCounter(quoteEntityType, quoteNumber);
       }
       
       toast({
@@ -539,34 +548,24 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Job Number */}
-            <div className="space-y-2">
-              <Label htmlFor="job-number">Job Number</Label>
-              <Input
-                id="job-number"
-                value={jobNumber}
-                onChange={(e) => setJobNumber(e.target.value)}
-                placeholder="JOB-0001"
-              />
-            </div>
+            <EditableDocumentNumber
+              entityType="job"
+              value={jobNumber}
+              onChange={setJobNumber}
+              autoLabel
+            />
             
-            {/* Quote/Invoice Number */}
-            <div className="space-y-2">
-              <Label htmlFor="quote-number">
-                {currentQuote?.status === 'invoiced' || currentQuote?.status === 'invoice' 
-                  ? 'Invoice Number' 
-                  : 'Quote Number'}
-              </Label>
-              <Input
-                id="quote-number"
-                value={quoteNumber}
-                onChange={(e) => setQuoteNumber(e.target.value)}
-                placeholder={currentQuote?.status === 'invoiced' ? 'INV-0001' : 'QT-0001'}
-                disabled={!currentQuote}
-              />
-              {!currentQuote && (
-                <p className="text-xs text-muted-foreground">No quote created yet</p>
-              )}
-            </div>
+            {/* Quote/Order/Invoice Number - based on status */}
+            <EditableDocumentNumber
+              entityType={quoteEntityType}
+              value={quoteNumber}
+              onChange={setQuoteNumber}
+              autoLabel
+              disabled={!currentQuote}
+            />
+            {!currentQuote && (
+              <p className="text-xs text-muted-foreground col-span-full">No quote created yet</p>
+            )}
           </div>
           
           {(jobNumber !== project.job_number || (currentQuote && quoteNumber !== currentQuote.quote_number)) && (
