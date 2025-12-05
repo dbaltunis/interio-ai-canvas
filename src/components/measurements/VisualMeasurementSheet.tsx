@@ -167,8 +167,9 @@ export const VisualMeasurementSheet = ({
   console.log("🎯 Specific values - rail_width:", measurements.rail_width, "drop:", measurements.drop);
 
   // Use measurements as the source of truth for UI state, with fallbacks to template defaults
-  // Default to "pair" if no curtain type is specified
-  const curtainType = measurements.curtain_type || (selectedTemplate as any)?.panel_configuration || selectedTemplate?.curtain_type || "pair";
+  // Default to "pair" for curtains, "single" for roman blinds
+  const defaultCurtainType = treatmentCategory === 'roman_blinds' ? 'single' : 'pair';
+  const curtainType = measurements.curtain_type || (selectedTemplate as any)?.panel_configuration || selectedTemplate?.curtain_type || defaultCurtainType;
   const curtainSide = measurements.curtain_side || "left";
   const hardwareType = selectedTemplate?.compatible_hardware?.[0]?.toLowerCase() || measurements.hardware_type || "rod";
   const poolingOption = measurements.pooling_option || "above_floor";
