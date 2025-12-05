@@ -25,6 +25,8 @@ import { toast } from "sonner";
 import { ModernEditor } from './ModernEditor';
 import { LivePreview } from './LivePreview';
 import { AIDesignAssistant } from './AIDesignAssistant';
+import { useBusinessSettings } from '@/hooks/useBusinessSettings';
+import { usePreviewNextNumber } from '@/hooks/usePreviewNextNumber';
 
 interface EnhancedVisualEditorProps {
   isOpen: boolean;
@@ -46,6 +48,39 @@ export const EnhancedVisualEditor = ({
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'design' | 'preview' | 'ai' | 'export'>('design');
   const [showPreview, setShowPreview] = useState(false);
+  const [customDocumentNumber, setCustomDocumentNumber] = useState<string>('');
+  
+  // Fetch real business settings and preview next number
+  const { data: businessSettings } = useBusinessSettings();
+  const { data: previewNextNumber } = usePreviewNextNumber('invoice');
+  
+  // Build projectData with real business settings for canvas preview
+  const projectData = {
+    businessSettings: businessSettings || {},
+    // Sample client data for template preview (no real client in template editor)
+    client: {
+      name: 'Sample Client Name',
+      email: 'client@example.com',
+      phone: '(555) 987-6543',
+      address: '456 Client Street',
+      city: 'Client City',
+      state: 'CS',
+      zip_code: '54321',
+      company_name: 'Client Company LLC'
+    },
+    project: {
+      job_number: customDocumentNumber || previewNextNumber || 'INV-0001',
+      quote_number: customDocumentNumber || previewNextNumber || 'INV-0001',
+      name: 'Sample Project',
+      created_at: new Date().toISOString()
+    },
+    // Sample financial data
+    subtotal: 2500,
+    taxRate: businessSettings?.tax_rate ? businessSettings.tax_rate / 100 : 0.1,
+    taxAmount: 250,
+    total: 2750,
+    currency: (businessSettings?.pricing_settings as any)?.currency || 'USD'
+  };
 
   const handleSave = async () => {
     try {
@@ -189,11 +224,13 @@ export const EnhancedVisualEditor = ({
               </div>
               <div className="flex-1 bg-gray-100">
                 <div className="h-full overflow-auto p-8">
-                  <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+                <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
                     <LivePreview 
                       blocks={blocks} 
-                      projectData={null}
+                      projectData={projectData}
                       isEditable={true}
+                      previewNextNumber={previewNextNumber}
+                      onDocumentNumberChange={setCustomDocumentNumber}
                     />
                   </div>
                 </div>
@@ -206,7 +243,7 @@ export const EnhancedVisualEditor = ({
               <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
                 <LivePreview 
                   blocks={blocks} 
-                  projectData={null}
+                  projectData={projectData}
                   isEditable={false}
                 />
               </div>
