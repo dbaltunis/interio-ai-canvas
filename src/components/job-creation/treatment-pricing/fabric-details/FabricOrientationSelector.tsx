@@ -17,26 +17,29 @@ const FABRIC_WIDTH_THRESHOLD_CM = 200;
 export const FabricOrientationSelector = ({ formData, onInputChange }: FabricOrientationSelectorProps) => {
   const fabricWidthCm = parseFloat(formData.fabric_width) || 137;
   const isNarrowFabric = fabricWidthCm <= FABRIC_WIDTH_THRESHOLD_CM;
-  const autoSelectedOrientation = isNarrowFabric ? "vertical" : "horizontal";
-  const isAutoSelected = formData.roll_direction === autoSelectedOrientation;
-  const previousWidthRef = useRef<number>(fabricWidthCm);
+  const recommendedOrientation = isNarrowFabric ? "vertical" : "horizontal";
+  const isAutoSelected = formData.roll_direction === recommendedOrientation;
+  const previousWidthRef = useRef<number | null>(null); // Start as null to trigger on first valid fabric
 
-  // Auto-select orientation when fabric width changes (e.g., when fabric is selected)
+  // Auto-select orientation when fabric width changes OR on initial load with fabric selected
   useEffect(() => {
+    // Only auto-select if fabric width is valid (not default 137)
+    const hasValidFabricWidth = formData.fabric_width && parseFloat(formData.fabric_width) !== 137;
+    const isFirstLoad = previousWidthRef.current === null;
     const widthChanged = previousWidthRef.current !== fabricWidthCm;
     
-    if (widthChanged && fabricWidthCm > 0) {
-      const recommendedOrientation = fabricWidthCm > FABRIC_WIDTH_THRESHOLD_CM ? "horizontal" : "vertical";
+    if (hasValidFabricWidth && (isFirstLoad || widthChanged)) {
+      const correctOrientation = fabricWidthCm > FABRIC_WIDTH_THRESHOLD_CM ? "horizontal" : "vertical";
       
-      // Auto-apply the recommended orientation
-      if (formData.roll_direction !== recommendedOrientation) {
-        console.log(`🔄 Auto-selecting orientation: ${recommendedOrientation} for fabric width ${fabricWidthCm}cm`);
-        onInputChange("roll_direction", recommendedOrientation);
+      // Auto-apply the correct orientation
+      if (formData.roll_direction !== correctOrientation) {
+        console.log(`🔄 Auto-selecting orientation: ${correctOrientation} for fabric width ${fabricWidthCm}cm (>200cm = horizontal, ≤200cm = vertical)`);
+        onInputChange("roll_direction", correctOrientation);
       }
       
       previousWidthRef.current = fabricWidthCm;
     }
-  }, [fabricWidthCm, formData.roll_direction, onInputChange]);
+  }, [fabricWidthCm, formData.fabric_width, formData.roll_direction, onInputChange]);
 
   // Dynamic labeling based on recommendation
   const horizontalLabel = isNarrowFabric ? "Horizontal (Rotated)" : "Horizontal (Standard)";
