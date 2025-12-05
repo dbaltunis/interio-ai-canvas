@@ -196,15 +196,18 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
   };
 
   // Determine which tabs to show based on treatment type
+  // Curtains get Heading tab, Roman Blinds do NOT (they use lift systems/fold styles instead)
+  const isCurtainOnly = formData.treatment_category === 'curtains';
   const isCurtainOrRoman = formData.treatment_category === 'curtains' || formData.treatment_category === 'roman_blinds';
-  const visibleTabCount = 3 + (isCurtainOrRoman ? 2 : 0); // Basic + Options + Pricing + (Heading + Manufacturing for curtains/romans)
+  // Calculate visible tabs: Basic + Options + Pricing + (Heading for curtains) + (Manufacturing for curtains/romans)
+  const visibleTabCount = 3 + (isCurtainOnly ? 1 : 0) + (isCurtainOrRoman ? 1 : 0);
 
   return (
     <div className="space-y-6">
       <Tabs defaultValue="basic" className="w-full">
         <TabsList className={`grid w-full grid-cols-${visibleTabCount}`}>
           <TabsTrigger value="basic">Basic</TabsTrigger>
-          {isCurtainOrRoman && <TabsTrigger value="heading">Heading</TabsTrigger>}
+          {isCurtainOnly && <TabsTrigger value="heading">Heading</TabsTrigger>}
           <TabsTrigger value="options">Options</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
           {isCurtainOrRoman && <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>}
@@ -286,7 +289,7 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
           </Card>
         </TabsContent>
 
-        {isCurtainOrRoman && (
+        {isCurtainOnly && (
           <TabsContent value="heading" className="space-y-4 mt-4">
             <HeadingStyleSelector
               selectedHeadingIds={formData.selected_heading_ids}
