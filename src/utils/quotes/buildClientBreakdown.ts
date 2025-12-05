@@ -290,6 +290,16 @@ export const buildClientBreakdown = (
   
   // Fabric line - handle both fabric and material (for blinds/shutters)
   const isBlindsOrShutters = summary.treatment_category?.includes('blind') || summary.treatment_category?.includes('shutter');
+  
+  // Source-aware label: Material for blinds/shutters, Wallpaper for wallcoverings, Fabric for curtains/romans
+  const getMaterialLabel = (): string => {
+    const treatmentCategory = summary.treatment_category;
+    const hasWallpaper = treatmentCategory === 'wallpaper' || 
+                         summary.fabric_details?.category === 'wallcovering';
+    if (hasWallpaper) return 'Wallpaper';
+    if (treatmentCategory?.includes('blind') || treatmentCategory?.includes('shutter')) return 'Material';
+    return 'Fabric';
+  };
   const materialDetails = isBlindsOrShutters ? (summary.material_details || summary.fabric_details) : summary.fabric_details;
   
   const fabricCost = Number(summary.fabric_cost) || 0;
@@ -370,7 +380,7 @@ export const buildClientBreakdown = (
     
     items.push({
       id: 'fabric',
-      name: `Fabric Material (${pricingLabel})`,
+      name: `${getMaterialLabel()} (${pricingLabel})`,
       description: description,
       quantity: 1,
       unit: '',
