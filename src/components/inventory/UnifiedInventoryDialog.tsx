@@ -392,6 +392,8 @@ export const UnifiedInventoryDialog = ({
       selling_price: Number(formData.selling_price) || 0,
       // CRITICAL: Save price_per_meter for linear pricing (fabric pricing)
       price_per_meter: pricingMethod === 'linear' ? Number(formData.selling_price) || 0 : (formData.price_per_meter || null),
+      // Save price_per_sqm for square meter pricing
+      price_per_sqm: pricingMethod === 'per_sqm' ? Number(formData.selling_price) || 0 : null,
       // Save pricing method for calculation logic
       pricing_method: pricingMethod,
       fabric_width: Number(formData.fabric_width) || null,

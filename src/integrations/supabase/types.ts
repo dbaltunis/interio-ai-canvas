@@ -2975,6 +2975,7 @@ export type Database = {
           pattern_repeat_vertical: number | null
           price_group: string | null
           price_per_meter: number | null
+          price_per_sqm: number | null
           price_per_unit: number | null
           price_per_yard: number | null
           pricing_grid_id: string | null
@@ -3057,6 +3058,7 @@ export type Database = {
           pattern_repeat_vertical?: number | null
           price_group?: string | null
           price_per_meter?: number | null
+          price_per_sqm?: number | null
           price_per_unit?: number | null
           price_per_yard?: number | null
           pricing_grid_id?: string | null
@@ -3139,6 +3141,7 @@ export type Database = {
           pattern_repeat_vertical?: number | null
           price_group?: string | null
           price_per_meter?: number | null
+          price_per_sqm?: number | null
           price_per_unit?: number | null
           price_per_yard?: number | null
           pricing_grid_id?: string | null
