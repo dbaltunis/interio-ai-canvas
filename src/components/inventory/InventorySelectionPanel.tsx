@@ -93,16 +93,20 @@ export const InventorySelectionPanel = ({
   useEffect(() => {
     const selectedId = selectedItems[activeCategory as keyof typeof selectedItems]?.id;
     if (selectedId) {
-      const selectedCard = selectedCardRefs.current.get(selectedId);
-      if (selectedCard) {
-        selectedCard.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-          inline: 'nearest'
-        });
-      }
+      // Use a small delay to ensure DOM has rendered the items
+      const scrollTimeout = setTimeout(() => {
+        const selectedCard = selectedCardRefs.current.get(selectedId);
+        if (selectedCard) {
+          selectedCard.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest'
+          });
+        }
+      }, 100);
+      return () => clearTimeout(scrollTimeout);
     }
-  }, [activeCategory, selectedItems]);
+  }, [activeCategory, selectedItems, treatmentFabrics, inventory]);
 
   // Handle manual entry submission
   const handleManualEntrySubmit = async () => {
@@ -400,7 +404,7 @@ export const InventorySelectionPanel = ({
     return <Card 
       key={item.id} 
       ref={(el) => {
-        if (el && isSelected) {
+        if (el) {
           selectedCardRefs.current.set(item.id, el);
         }
       }}
