@@ -327,7 +327,7 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
       // Fabric with detailed quantity and unit price
       ...(fabricCost > 0 ? [{
         id: 'fabric',
-        name: fabricItem?.name || 'Fabric Material',
+        name: fabricItem?.name || (isBlindTreatment ? 'Material' : treatmentCategory === 'wallpaper' ? 'Wallpaper' : 'Fabric'),
         description: effectivePricingType === 'per_sqm' && isBlindTreatment 
           ? `${((widthCm * heightCm) / 10000 * wasteMultiplier).toFixed(2)} sqm × ${pricePerMeter.toFixed(2)}/sqm`
           : `${linearMeters.toFixed(2)} m × ${pricePerMeter.toFixed(2)}/m`,

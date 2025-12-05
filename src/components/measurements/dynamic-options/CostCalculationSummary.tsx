@@ -269,7 +269,7 @@ export const CostCalculationSummary = ({
               <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-card-foreground font-medium">{isBlindCategory(treatmentCategory, template.name) ? 'Material' : 'Fabric Material'}</span>
+                  <span className="text-card-foreground font-medium">{isBlindCategory(treatmentCategory, template.name) ? 'Material' : treatmentCategory === 'wallpaper' ? 'Wallpaper' : 'Fabric'}</span>
                   {/* Show selected color swatch */}
                   {measurements?.selected_color && (
                     <div className="flex items-center gap-1.5">
@@ -540,7 +540,7 @@ export const CostCalculationSummary = ({
                 <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
                 <div className="flex flex-col min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-card-foreground font-medium">Fabric Material</span>
+                    <span className="text-card-foreground font-medium">{isBlindCategory(treatmentCategory, template.name) ? 'Material' : treatmentCategory === 'wallpaper' ? 'Wallpaper' : 'Fabric'}</span>
                     {/* Show selected color swatch */}
                     {measurements?.selected_color && (
                       <div className="flex items-center gap-1.5">
