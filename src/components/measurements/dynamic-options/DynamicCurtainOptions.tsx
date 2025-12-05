@@ -67,7 +67,9 @@ export const DynamicCurtainOptions = ({
   // Hooks MUST be called unconditionally after early returns
   const { units } = useMeasurementUnits();
   const { data: inventory = [], isLoading: headingsLoading } = useEnhancedInventory();
-  const { data: treatmentOptions = [], isLoading: treatmentOptionsLoading } = useTreatmentOptions('curtains', 'category');
+  // Use template's treatment_category to fetch the correct options (e.g., 'roman_blinds', 'curtains')
+  const treatmentCategory = template?.treatment_category || 'curtains';
+  const { data: treatmentOptions = [], isLoading: treatmentOptionsLoading } = useTreatmentOptions(treatmentCategory, 'category');
   
   // Get template option settings to filter hidden options
   const { isOptionEnabled } = useEnabledTemplateOptions(template?.id);
