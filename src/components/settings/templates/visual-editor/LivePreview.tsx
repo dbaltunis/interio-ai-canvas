@@ -1846,8 +1846,6 @@ interface LivePreviewProps {
   layout?: 'simple' | 'detailed';
   onSettingsChange?: (settings: { showDetailedBreakdown?: boolean; showImages?: boolean; groupByRoom?: boolean }) => void;
   quoteId?: string;
-  previewNextNumber?: string | null;
-  onDocumentNumberChange?: (value: string) => void;
 }
 
 export const LivePreview = ({ 
