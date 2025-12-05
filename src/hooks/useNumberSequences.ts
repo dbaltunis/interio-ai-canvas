@@ -1,8 +1,27 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 export type EntityType = 'draft' | 'quote' | 'order' | 'invoice' | 'job';
+
+// Default labels for entity types
+const ENTITY_TYPE_LABELS: Record<EntityType, string> = {
+  draft: 'Draft',
+  quote: 'Quote',
+  order: 'Order',
+  invoice: 'Invoice',
+  job: 'Job',
+};
+
+// Default prefixes for entity types
+const DEFAULT_PREFIXES: Record<EntityType, string> = {
+  draft: 'DRAFT-',
+  quote: 'QUOTE-',
+  order: 'ORDER-',
+  invoice: 'INV-',
+  job: 'JOB-',
+};
 
 export interface NumberSequence {
   id: string;
@@ -156,4 +175,62 @@ export const useGetNextSequenceNumber = () => {
       });
     },
   });
+};
+
+// Hook to get sequence label and config for a specific entity type
+export const useSequenceLabel = (entityType: EntityType) => {
+  const { data: sequences = [] } = useNumberSequences();
+  
+  const sequence = sequences.find(s => s.entity_type === entityType && s.active);
+  
+  const label = sequence?.prefix 
+    ? `${ENTITY_TYPE_LABELS[entityType]} Number`
+    : `${ENTITY_TYPE_LABELS[entityType]} Number`;
+  
+  const prefix = sequence?.prefix || DEFAULT_PREFIXES[entityType];
+  
+  return {
+    label,
+    prefix,
+    sequence,
+    hasSequence: !!sequence,
+  };
+};
+
+// Hook to ensure default sequences exist for a user
+export const useEnsureDefaultSequences = () => {
+  const { data: sequences = [], isLoading } = useNumberSequences();
+  const createSequence = useCreateNumberSequence();
+  
+  useEffect(() => {
+    const ensureDefaults = async () => {
+      if (isLoading || sequences.length > 0) return;
+      
+      // User has no sequences, create defaults
+      const defaultSequences: Array<{
+        entity_type: EntityType;
+        prefix: string;
+        next_number: number;
+        padding: number;
+        active: boolean;
+      }> = [
+        { entity_type: 'draft', prefix: 'DRAFT-', next_number: 1, padding: 3, active: true },
+        { entity_type: 'quote', prefix: 'QUOTE-', next_number: 1, padding: 3, active: true },
+        { entity_type: 'order', prefix: 'ORDER-', next_number: 1, padding: 3, active: true },
+        { entity_type: 'invoice', prefix: 'INV-', next_number: 1, padding: 3, active: true },
+        { entity_type: 'job', prefix: 'JOB-', next_number: 1, padding: 3, active: true },
+      ];
+      
+      for (const seq of defaultSequences) {
+        try {
+          await createSequence.mutateAsync(seq);
+        } catch (error) {
+          // Sequence might already exist, ignore
+          console.log(`Sequence ${seq.entity_type} may already exist`);
+        }
+      }
+    };
+    
+    ensureDefaults();
+  }, [isLoading, sequences.length]);
 };
