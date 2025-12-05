@@ -51,10 +51,27 @@ export const calculateOptionPrices = (
     // Calculate based on pricing method
     const method = option.pricingMethod?.toLowerCase();
     
+    // CRITICAL: Hardware uses ACTUAL rail width, NOT fullness-adjusted fabric linear meters!
+    // Hardware = tracks, poles, rods, rails - physical items matching window width
+    const optionNameLower = (option.name || '').toLowerCase();
+    const optionKeyLower = (option.optionKey || option.option_key || '').toLowerCase();
+    const isHardware = optionNameLower.includes('hardware') || 
+                       optionNameLower.includes('track') || 
+                       optionNameLower.includes('pole') || 
+                       optionNameLower.includes('rod') ||
+                       optionNameLower.includes('rail') ||
+                       optionKeyLower.includes('hardware') ||
+                       optionKeyLower.includes('track') ||
+                       optionKeyLower.includes('pole');
+    
+    // Hardware uses actual rail width in meters, fabric uses fullness-adjusted linear meters
+    const actualRailMeters = widthCm / 100;
+    const metersForCalculation = isHardware ? actualRailMeters : linearMeters;
+    
     if (method === 'per-meter' || method === 'per-metre' || method === 'per-linear-meter') {
-      if (basePrice > 0 && linearMeters > 0) {
-        calculatedPrice = basePrice * linearMeters;
-        pricingDetails = `${basePrice.toFixed(2)}/m × ${linearMeters.toFixed(2)}m`;
+      if (basePrice > 0 && metersForCalculation > 0) {
+        calculatedPrice = basePrice * metersForCalculation;
+        pricingDetails = `${basePrice.toFixed(2)}/m × ${metersForCalculation.toFixed(2)}m`;
       }
     } else if (method === 'per-sqm' || method === 'per-square-meter') {
       if (basePrice > 0 && widthCm > 0 && heightCm > 0) {
@@ -70,8 +87,8 @@ export const calculateOptionPrices = (
       }
     } else if (method === 'per-width') {
       if (basePrice > 0 && widthCm > 0) {
-        calculatedPrice = basePrice * (widthCm / 100); // Per meter width
-        pricingDetails = `${basePrice.toFixed(2)}/m × ${(widthCm / 100).toFixed(2)}m`;
+        calculatedPrice = basePrice * actualRailMeters; // Per meter width (always actual rail)
+        pricingDetails = `${basePrice.toFixed(2)}/m × ${actualRailMeters.toFixed(2)}m`;
       }
     }
     // 'fixed', 'per-unit', 'per-item' - use base price as-is
@@ -80,6 +97,8 @@ export const calculateOptionPrices = (
       basePrice,
       calculatedPrice,
       pricingMethod: method,
+      isHardware,
+      metersForCalculation,
       pricingDetails,
       widthCm,
       heightCm,

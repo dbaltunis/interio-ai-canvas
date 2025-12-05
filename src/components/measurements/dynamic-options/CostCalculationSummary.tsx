@@ -692,7 +692,23 @@ export const CostCalculationSummary = ({
                           safeParseFloat(measurements?.width, 0);
           const heightCm = safeParseFloat(measurements?.drop, 0) / 10 || 
                            safeParseFloat(measurements?.height, 0);
-          const linearMeters = fabricCalculation?.linearMeters || (widthCm / 100);
+          const fabricLinearMeters = fabricCalculation?.linearMeters || (widthCm / 100);
+          
+          // CRITICAL: Hardware uses ACTUAL rail width, NOT fullness-adjusted fabric meters!
+          // Hardware = tracks, poles, rods, rails - these are physical items matching window width
+          const optionNameLower = (option.name || '').toLowerCase();
+          const optionKeyLower = (option.optionKey || '').toLowerCase();
+          const isHardware = optionNameLower.includes('hardware') || 
+                            optionNameLower.includes('track') || 
+                            optionNameLower.includes('pole') || 
+                            optionNameLower.includes('rod') ||
+                            optionNameLower.includes('rail') ||
+                            optionKeyLower.includes('hardware') ||
+                            optionKeyLower.includes('track') ||
+                            optionKeyLower.includes('pole');
+          
+          // Hardware uses actual rail width in meters, fabric uses fullness-adjusted linear meters
+          const metersForCalculation = isHardware ? (widthCm / 100) : fabricLinearMeters;
           
           // Determine if metric based on units settings
           const isMetric = units?.length?.toLowerCase() !== 'imperial' && units?.length?.toLowerCase() !== 'in' && units?.length?.toLowerCase() !== 'ft';
@@ -700,8 +716,8 @@ export const CostCalculationSummary = ({
           const areaUnit = getAreaUnitLabel(isMetric);
           
           if (option.pricingMethod === 'per-meter' && basePrice > 0) {
-            calculatedPrice = basePrice * linearMeters;
-            pricingDetails = `${basePrice.toFixed(2)}/${lengthUnit} × ${linearMeters.toFixed(2)}${lengthUnit}`;
+            calculatedPrice = basePrice * metersForCalculation;
+            pricingDetails = `${basePrice.toFixed(2)}/${lengthUnit} × ${metersForCalculation.toFixed(2)}${lengthUnit}`;
           } else if (option.pricingMethod === 'per-sqm' && basePrice > 0) {
             const sqm = (widthCm * heightCm) / 10000;
             calculatedPrice = basePrice * sqm;
