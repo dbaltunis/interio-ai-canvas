@@ -181,8 +181,10 @@ export const DynamicCurtainOptions = ({
            && !category.includes('hardware');
   });
   
-  // Auto-select first heading if none selected
+  // Auto-select first heading if none selected (only for curtains, not roman blinds)
   useEffect(() => {
+    // Roman blinds don't have headings - skip auto-selection
+    if (treatmentCategory !== 'curtains') return;
     if (headingsLoading || headingOptions.length === 0) return;
     
     const currentHeading = measurements.selected_heading || selectedHeading;
@@ -193,7 +195,7 @@ export const DynamicCurtainOptions = ({
         handleHeadingChange(firstHeading.id);
       }
     }
-  }, [headingOptions.length, headingsLoading]);
+  }, [headingOptions.length, headingsLoading, treatmentCategory]);
   
   // Auto-select first lining if none selected
   useEffect(() => {
@@ -459,7 +461,7 @@ export const DynamicCurtainOptions = ({
 
       {/* Heading Type - Removed misleading alert */}
       
-      {availableHeadings.length > 0 && (
+      {treatmentCategory === 'curtains' && availableHeadings.length > 0 && (
         <div className="space-y-3">
           <h4 className={`font-medium ${!measurements.selected_heading && availableHeadings.length > 1 ? 'text-destructive' : 'text-foreground'}`}>Heading Type</h4>
           <div className="flex items-center justify-between">
