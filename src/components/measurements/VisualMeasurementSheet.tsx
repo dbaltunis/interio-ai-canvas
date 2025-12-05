@@ -31,6 +31,7 @@ import { ProjectFabricPoolSummary } from "./ProjectFabricPoolSummary";
 import { ColorSelector } from "./ColorSelector";
 import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
+import { MeasurementSizeWarning } from "./MeasurementSizeWarning";
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
   onMeasurementChange: (field: string, value: string) => void;
@@ -1008,6 +1009,12 @@ export const VisualMeasurementSheet = ({
                          {units.length}
                       </span>
                     </div>
+                    <MeasurementSizeWarning
+                      value={parseFloat(measurements.rail_width) || undefined}
+                      minValue={selectedTemplate?.minimum_width}
+                      maxValue={selectedTemplate?.maximum_width}
+                      fieldLabel="Width"
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -1031,6 +1038,12 @@ export const VisualMeasurementSheet = ({
                         {units.length}
                       </span>
                     </div>
+                    <MeasurementSizeWarning
+                      value={parseFloat(measurements.drop) || undefined}
+                      minValue={selectedTemplate?.minimum_height}
+                      maxValue={selectedTemplate?.maximum_height}
+                      fieldLabel="Height"
+                    />
                   </div>
                 </div>
               </div>}
