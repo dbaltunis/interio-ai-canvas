@@ -225,7 +225,14 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
                             />
                           ) : null}
                           <div className="flex-1">
-                            <h3 className="font-semibold">{item.name}</h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold">{item.name}</h3>
+                              {item.supplier?.toUpperCase() === 'TWC' && (
+                                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px]">
+                                  TWC
+                                </Badge>
+                              )}
+                            </div>
                             <p className="text-sm text-muted-foreground">{item.sku}</p>
                           </div>
                           <div className="flex items-center gap-2">

@@ -277,7 +277,14 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
                       </div>
                     </div>
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-base line-clamp-1">{item.name}</CardTitle>
+                      <div className="flex items-center justify-between gap-2">
+                        <CardTitle className="text-base line-clamp-1">{item.name}</CardTitle>
+                        {item.supplier?.toUpperCase() === 'TWC' && (
+                          <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 shrink-0 text-[10px]">
+                            TWC
+                          </Badge>
+                        )}
+                      </div>
                       <CardDescription className="text-xs">{item.sku || 'No SKU'}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">

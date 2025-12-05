@@ -113,7 +113,7 @@ serve(async (req) => {
         continue;
       }
 
-      // Create treatment_option with account_id
+      // Create treatment_option with account_id and source metadata
       const { data: newOption, error: optionError } = await supabase
         .from('treatment_options')
         .insert({
@@ -124,7 +124,11 @@ serve(async (req) => {
           input_type: 'select',
           order_index: 100 + optionsCreated,
           required: questionData.isRequired,
-          visible: true
+          visible: true,
+          metadata: {
+            source: 'twc',
+            imported_at: new Date().toISOString()
+          }
         })
         .select('id')
         .single();
