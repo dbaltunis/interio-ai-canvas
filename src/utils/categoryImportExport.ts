@@ -1,6 +1,7 @@
 /**
  * Category-specific CSV import/export utilities
  * Handles parsing, validation, and export for different inventory categories
+ * Uses header-based column lookup for flexible CSV parsing
  */
 
 import {
@@ -77,10 +78,61 @@ const parseCSVLine = (line: string): string[] => {
   return result;
 };
 
-// FABRICS PARSER
+/**
+ * Create a lookup map from CSV headers to column indices
+ * Normalizes headers: lowercase, trim, replace spaces with underscores
+ */
+const createColumnLookup = (headers: string[]): Record<string, number> => {
+  const lookup: Record<string, number> = {};
+  headers.forEach((header, index) => {
+    // Normalize header names: lowercase, trim, replace spaces with underscores
+    const normalized = header
+      .toLowerCase()
+      .trim()
+      .replace(/^"|"$/g, '')
+      .replace(/\s+/g, '_');
+    lookup[normalized] = index;
+  });
+  return lookup;
+};
+
+/**
+ * Get value from CSV row using multiple possible column names
+ * Supports flexible header naming (e.g., "cost_price" or "cost" or "buy_price")
+ */
+const getValue = (values: string[], lookup: Record<string, number>, ...columnNames: string[]): string => {
+  for (const name of columnNames) {
+    const index = lookup[name.toLowerCase()];
+    if (index !== undefined && values[index] !== undefined) {
+      return values[index].replace(/^"|"$/g, '');
+    }
+  }
+  return '';
+};
+
+/**
+ * Parse boolean value from CSV (yes/true/1 = true)
+ */
+const parseBoolValue = (value: string): boolean => {
+  const v = value.toLowerCase().trim();
+  return v === 'yes' || v === 'true' || v === '1';
+};
+
+/**
+ * Parse comma-separated values into array
+ */
+const parseCommaSeparated = (value: string): string[] => {
+  if (!value) return [];
+  return value.split(',').map(v => v.trim().toLowerCase()).filter(v => v);
+};
+
+// FABRICS PARSER - Header-based
 export const parseFabricCSV = (csvData: string): ValidationResult => {
   const lines = csvData.split('\n').filter(line => line.trim());
+  if (lines.length < 2) return { valid: [], invalid: [] };
+  
   const headers = parseCSVLine(lines[0]);
+  const lookup = createColumnLookup(headers);
   const valid: any[] = [];
   const invalid: { item: any; errors: string[]; row: number }[] = [];
 
@@ -88,44 +140,46 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
     const values = parseCSVLine(lines[i]);
     const errors: string[] = [];
     
-    // Parse track_inventory column (index 6)
-    const trackInventoryValue = values[6]?.replace(/^"|"$/g, '').toLowerCase();
-    const shouldTrack = trackInventoryValue === 'yes' || trackInventoryValue === 'true' || trackInventoryValue === '1';
+    // Track inventory - supports multiple column names
+    const trackValue = getValue(values, lookup, 'track_inventory', 'track', 'tracked');
+    const shouldTrack = parseBoolValue(trackValue);
     
-    const rotationValue = values[23]?.replace(/^"|"$/g, '').toLowerCase();
-    const canRotate = rotationValue === 'yes' || rotationValue === 'true' || rotationValue === '1';
+    // Rotation allowance
+    const rotationValue = getValue(values, lookup, 'rotation_allowance', 'rotation', 'can_rotate');
+    const canRotate = parseBoolValue(rotationValue);
     
-    // Parse colors column (index 5) - comma-separated colors that go into tags
-    const colorsRaw = values[5]?.replace(/^"|"$/g, '') || '';
-    const colorValues = colorsRaw.split(',').map(c => c.trim().toLowerCase()).filter(c => c);
+    // Colors - supports multiple column names
+    const colorsRaw = getValue(values, lookup, 'colors', 'color', 'colour', 'colours');
+    const colorValues = parseCommaSeparated(colorsRaw);
     
     const item: any = {
       category: 'fabric',
-      name: values[0]?.replace(/^"|"$/g, ''),
-      sku: values[1]?.replace(/^"|"$/g, ''),
-      description: values[2]?.replace(/^"|"$/g, ''),
-      subcategory: values[3]?.replace(/^"|"$/g, ''),
-      product_category: values[4]?.replace(/^"|"$/g, ''),
-      tags: colorValues, // Colors go directly into tags for ColorSelector
-      supplier: values[7]?.replace(/^"|"$/g, ''),
-      collection_name: values[8]?.replace(/^"|"$/g, ''),
-      location: values[9]?.replace(/^"|"$/g, ''),
-      quantity: shouldTrack ? (parseFloat(values[10]) || 0) : null,
-      unit: values[11]?.replace(/^"|"$/g, '') || 'meters',
-      reorder_point: shouldTrack ? (parseFloat(values[12]) || 0) : null,
-      cost_price: parsePrice(values[13]),
-      selling_price: parsePrice(values[14]),
-      price_per_meter: parsePrice(values[14]),
-      fabric_width: parseFloat(values[16]) || null,
-      fabric_composition: values[17]?.replace(/^"|"$/g, ''),
-      fabric_grade: values[18]?.replace(/^"|"$/g, ''),
-      pattern_repeat_vertical: parseFloat(values[19]) || null,
-      pattern_repeat_horizontal: parseFloat(values[20]) || null,
-      image_url: values[23]?.replace(/^"|"$/g, ''),
+      name: getValue(values, lookup, 'name', 'product_name', 'fabric_name'),
+      sku: getValue(values, lookup, 'sku', 'code', 'product_code', 'item_code'),
+      description: getValue(values, lookup, 'description', 'desc', 'details'),
+      subcategory: getValue(values, lookup, 'subcategory', 'sub_category', 'type', 'fabric_type'),
+      product_category: getValue(values, lookup, 'product_category', 'category', 'treatment_type'),
+      tags: colorValues,
+      supplier: getValue(values, lookup, 'supplier', 'vendor', 'manufacturer', 'brand'),
+      collection_name: getValue(values, lookup, 'collection_name', 'collection', 'range', 'series'),
+      location: getValue(values, lookup, 'location', 'warehouse', 'storage', 'bin'),
+      quantity: shouldTrack ? (parseFloat(getValue(values, lookup, 'quantity', 'qty', 'stock', 'on_hand')) || 0) : null,
+      unit: getValue(values, lookup, 'unit', 'uom', 'unit_of_measure') || 'meters',
+      reorder_point: shouldTrack ? (parseFloat(getValue(values, lookup, 'reorder_point', 'reorder_level', 'min_stock', 'minimum')) || 0) : null,
+      // CRITICAL: Support multiple price column name variations
+      cost_price: parsePrice(getValue(values, lookup, 'cost_price', 'cost', 'buy_price', 'purchase_price', 'wholesale_price', 'cost_per_meter', 'cost_per_metre')),
+      selling_price: parsePrice(getValue(values, lookup, 'selling_price', 'sell_price', 'retail_price', 'price', 'rrp', 'price_per_meter', 'price_per_metre')),
+      price_per_meter: parsePrice(getValue(values, lookup, 'selling_price', 'sell_price', 'retail_price', 'price', 'rrp', 'price_per_meter', 'price_per_metre')),
+      fabric_width: parseFloat(getValue(values, lookup, 'fabric_width', 'width', 'roll_width', 'material_width')) || null,
+      fabric_composition: getValue(values, lookup, 'fabric_composition', 'composition', 'material', 'content', 'fibre_content'),
+      fabric_grade: getValue(values, lookup, 'fabric_grade', 'grade', 'quality', 'tier'),
+      pattern_repeat_vertical: parseFloat(getValue(values, lookup, 'pattern_repeat_vertical', 'vertical_repeat', 'pattern_vertical', 'v_repeat')) || null,
+      pattern_repeat_horizontal: parseFloat(getValue(values, lookup, 'pattern_repeat_horizontal', 'horizontal_repeat', 'pattern_horizontal', 'h_repeat')) || null,
+      image_url: getValue(values, lookup, 'image_url', 'image', 'photo', 'picture', 'img'),
       metadata: {
-        maxLength: parseFloat(values[21]) || null,
+        maxLength: parseFloat(getValue(values, lookup, 'max_length', 'maximum_length', 'roll_length')) || null,
         rotationAllowance: canRotate,
-        priceGroup: values[15]?.replace(/^"|"$/g, '') || null,
+        priceGroup: getValue(values, lookup, 'price_group', 'pricing_group', 'grid_code', 'price_code') || null,
       },
     };
 
@@ -136,7 +190,6 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
     const widthError = item.fabric_width ? validateNumber(item.fabric_width, 'Fabric Width', 0) : null;
     if (widthError) errors.push(widthError);
 
-    // Only validate quantity if tracking is enabled
     if (shouldTrack) {
       const quantityError = validateNumber(item.quantity, 'Quantity', 0);
       if (quantityError) errors.push(quantityError);
@@ -162,10 +215,13 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
   return { valid, invalid };
 };
 
-// HARDWARE PARSER
+// HARDWARE PARSER - Header-based
 export const parseHardwareCSV = (csvData: string): ValidationResult => {
   const lines = csvData.split('\n').filter(line => line.trim());
+  if (lines.length < 2) return { valid: [], invalid: [] };
+  
   const headers = parseCSVLine(lines[0]);
+  const lookup = createColumnLookup(headers);
   const valid: any[] = [];
   const invalid: { item: any; errors: string[]; row: number }[] = [];
 
@@ -173,33 +229,35 @@ export const parseHardwareCSV = (csvData: string): ValidationResult => {
     const values = parseCSVLine(lines[i]);
     const errors: string[] = [];
     
-    // Parse track_inventory column (index 5)
-    const trackInventoryValue = values[5]?.replace(/^"|"$/g, '').toLowerCase();
-    const shouldTrack = trackInventoryValue === 'yes' || trackInventoryValue === 'true' || trackInventoryValue === '1';
+    const trackValue = getValue(values, lookup, 'track_inventory', 'track', 'tracked');
+    const shouldTrack = parseBoolValue(trackValue);
+    
+    const tagsRaw = getValue(values, lookup, 'tags', 'keywords', 'labels');
+    const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(t => t) : [];
     
     const item: any = {
-      name: values[0]?.replace(/^"|"$/g, ''),
-      sku: values[1]?.replace(/^"|"$/g, ''),
-      description: values[2]?.replace(/^"|"$/g, ''),
-      subcategory: values[3]?.replace(/^"|"$/g, ''),
-      tags: values[4]?.replace(/^"|"$/g, '').split(',').map(t => t.trim()).filter(t => t) || [],
-      quantity: shouldTrack ? (parseFloat(values[6]) || 0) : null,
-      unit: values[7]?.replace(/^"|"$/g, '') || 'pieces',
-      cost_price: parsePrice(values[8]),
-      selling_price: parsePrice(values[9]),
-      supplier: values[10]?.replace(/^"|"$/g, ''),
-      location: values[13]?.replace(/^"|"$/g, ''),
-      reorder_point: shouldTrack ? (parseFloat(values[14]) || 0) : null,
-      hardware_type: values[15]?.replace(/^"|"$/g, ''),
-      material_finish: values[16]?.replace(/^"|"$/g, ''),
-      hardware_load_capacity: parseFloat(values[17]) || null,
-      hardware_weight: parseFloat(values[18]) || null,
-      mounting_type: values[19]?.replace(/^"|"$/g, ''),
-      collection_name: values[12]?.replace(/^"|"$/g, ''),
+      name: getValue(values, lookup, 'name', 'product_name', 'item_name'),
+      sku: getValue(values, lookup, 'sku', 'code', 'product_code', 'item_code'),
+      description: getValue(values, lookup, 'description', 'desc', 'details'),
+      subcategory: getValue(values, lookup, 'subcategory', 'sub_category', 'type', 'hardware_category'),
+      tags,
+      quantity: shouldTrack ? (parseFloat(getValue(values, lookup, 'quantity', 'qty', 'stock', 'on_hand')) || 0) : null,
+      unit: getValue(values, lookup, 'unit', 'uom', 'unit_of_measure') || 'pieces',
+      cost_price: parsePrice(getValue(values, lookup, 'cost_price', 'cost', 'buy_price', 'purchase_price', 'wholesale')),
+      selling_price: parsePrice(getValue(values, lookup, 'selling_price', 'sell_price', 'retail_price', 'price', 'rrp')),
+      supplier: getValue(values, lookup, 'supplier', 'vendor', 'manufacturer', 'brand'),
+      location: getValue(values, lookup, 'location', 'warehouse', 'storage', 'bin'),
+      reorder_point: shouldTrack ? (parseFloat(getValue(values, lookup, 'reorder_point', 'reorder_level', 'min_stock')) || 0) : null,
+      hardware_type: getValue(values, lookup, 'hardware_type', 'type', 'category'),
+      material_finish: getValue(values, lookup, 'material_finish', 'finish', 'color', 'colour'),
+      hardware_load_capacity: parseFloat(getValue(values, lookup, 'hardware_load_capacity', 'load_capacity', 'max_load', 'weight_capacity')) || null,
+      hardware_weight: parseFloat(getValue(values, lookup, 'hardware_weight', 'weight', 'item_weight')) || null,
+      mounting_type: getValue(values, lookup, 'mounting_type', 'mount_type', 'mounting'),
+      collection_name: getValue(values, lookup, 'collection_name', 'collection', 'range', 'series'),
       metadata: {
-        compatible_with: values[20]?.replace(/^"|"$/g, ''),
-        dimensions: values[21]?.replace(/^"|"$/g, ''),
-        vendor_name: values[11]?.replace(/^"|"$/g, ''),
+        compatible_with: getValue(values, lookup, 'compatible_with', 'compatibility', 'works_with'),
+        dimensions: getValue(values, lookup, 'dimensions', 'size', 'measurements'),
+        vendor_name: getValue(values, lookup, 'vendor_name', 'vendor', 'brand'),
       },
     };
 
@@ -207,7 +265,6 @@ export const parseHardwareCSV = (csvData: string): ValidationResult => {
     const nameError = validateRequired(item.name, 'Name');
     if (nameError) errors.push(nameError);
 
-    // Only validate quantity if tracking is enabled
     if (shouldTrack) {
       const quantityError = validateNumber(item.quantity, 'Quantity', 0);
       if (quantityError) errors.push(quantityError);
@@ -228,10 +285,13 @@ export const parseHardwareCSV = (csvData: string): ValidationResult => {
   return { valid, invalid };
 };
 
-// WALLPAPER PARSER
+// WALLPAPER PARSER - Header-based
 export const parseWallpaperCSV = (csvData: string): ValidationResult => {
   const lines = csvData.split('\n').filter(line => line.trim());
+  if (lines.length < 2) return { valid: [], invalid: [] };
+  
   const headers = parseCSVLine(lines[0]);
+  const lookup = createColumnLookup(headers);
   const valid: any[] = [];
   const invalid: { item: any; errors: string[]; row: number }[] = [];
 
@@ -239,49 +299,46 @@ export const parseWallpaperCSV = (csvData: string): ValidationResult => {
     const values = parseCSVLine(lines[i]);
     const errors: string[] = [];
     
-    // Parse track_inventory column (index 5)
-    const trackInventoryValue = values[5]?.replace(/^"|"$/g, '').toLowerCase();
-    const shouldTrack = trackInventoryValue === 'yes' || trackInventoryValue === 'true' || trackInventoryValue === '1';
+    const trackValue = getValue(values, lookup, 'track_inventory', 'track', 'tracked');
+    const shouldTrack = parseBoolValue(trackValue);
     
-    // Parse tags and colors - colors (index 20) go into tags for ColorSelector
-    const tagsRaw = values[4]?.replace(/^"|"$/g, '') || '';
-    const baseTags = tagsRaw.split(',').map(t => t.trim()).filter(t => t);
-    const colorsRaw = values[20]?.replace(/^"|"$/g, '') || '';
-    const colorValues = colorsRaw.split(',').map(c => c.trim().toLowerCase()).filter(c => c);
+    const tagsRaw = getValue(values, lookup, 'tags', 'keywords', 'labels');
+    const baseTags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(t => t) : [];
+    const colorsRaw = getValue(values, lookup, 'colors', 'color', 'colour', 'colours');
+    const colorValues = parseCommaSeparated(colorsRaw);
     
     const item: any = {
-      name: values[0]?.replace(/^"|"$/g, ''),
-      sku: values[1]?.replace(/^"|"$/g, ''),
-      description: values[2]?.replace(/^"|"$/g, ''),
-      subcategory: values[3]?.replace(/^"|"$/g, ''),
-      tags: [...baseTags, ...colorValues], // Merge tags and colors
-      supplier: values[6]?.replace(/^"|"$/g, ''),
-      collection_name: values[7]?.replace(/^"|"$/g, ''),
-      location: values[8]?.replace(/^"|"$/g, ''),
-      quantity: shouldTrack ? (parseFloat(values[9]) || 0) : null,
-      unit: values[10]?.replace(/^"|"$/g, '') || 'rolls',
-      reorder_point: shouldTrack ? (parseFloat(values[11]) || 0) : null,
-      cost_price: parsePrice(values[12]),
-      selling_price: parsePrice(values[13]),
-      roll_width: parseFloat(values[15]) || null,
-      roll_length: parseFloat(values[16]) || null,
-      pattern_repeat_vertical: parseFloat(values[17]) || null,
-      pattern_repeat_horizontal: parseFloat(values[18]) || null,
+      name: getValue(values, lookup, 'name', 'product_name', 'wallpaper_name'),
+      sku: getValue(values, lookup, 'sku', 'code', 'product_code', 'item_code'),
+      description: getValue(values, lookup, 'description', 'desc', 'details'),
+      subcategory: getValue(values, lookup, 'subcategory', 'sub_category', 'type', 'wallpaper_type'),
+      tags: [...baseTags, ...colorValues],
+      supplier: getValue(values, lookup, 'supplier', 'vendor', 'manufacturer', 'brand'),
+      collection_name: getValue(values, lookup, 'collection_name', 'collection', 'range', 'series'),
+      location: getValue(values, lookup, 'location', 'warehouse', 'storage', 'bin'),
+      quantity: shouldTrack ? (parseFloat(getValue(values, lookup, 'quantity', 'qty', 'stock', 'on_hand')) || 0) : null,
+      unit: getValue(values, lookup, 'unit', 'uom', 'unit_of_measure') || 'rolls',
+      reorder_point: shouldTrack ? (parseFloat(getValue(values, lookup, 'reorder_point', 'reorder_level', 'min_stock')) || 0) : null,
+      cost_price: parsePrice(getValue(values, lookup, 'cost_price', 'cost', 'buy_price', 'purchase_price', 'wholesale')),
+      selling_price: parsePrice(getValue(values, lookup, 'selling_price', 'sell_price', 'retail_price', 'price', 'rrp')),
+      roll_width: parseFloat(getValue(values, lookup, 'roll_width', 'width', 'wallpaper_width')) || null,
+      roll_length: parseFloat(getValue(values, lookup, 'roll_length', 'length', 'wallpaper_length')) || null,
+      pattern_repeat_vertical: parseFloat(getValue(values, lookup, 'pattern_repeat_vertical', 'vertical_repeat', 'v_repeat')) || null,
+      pattern_repeat_horizontal: parseFloat(getValue(values, lookup, 'pattern_repeat_horizontal', 'horizontal_repeat', 'h_repeat')) || null,
       metadata: {
-        coverage_per_roll: parseFloat(values[19]) || null,
-        material_type: values[21]?.replace(/^"|"$/g, ''),
-        washability: values[22]?.replace(/^"|"$/g, ''),
-        fire_rating: values[23]?.replace(/^"|"$/g, ''),
-        price_group: values[14]?.replace(/^"|"$/g, '') || null,
+        coverage_per_roll: parseFloat(getValue(values, lookup, 'coverage_per_roll', 'coverage', 'sqm_per_roll')) || null,
+        material_type: getValue(values, lookup, 'material_type', 'material', 'type'),
+        washability: getValue(values, lookup, 'washability', 'washable', 'cleaning'),
+        fire_rating: getValue(values, lookup, 'fire_rating', 'fire_rated', 'flammability'),
+        price_group: getValue(values, lookup, 'price_group', 'pricing_group', 'price_code') || null,
       },
-      image_url: values[24]?.replace(/^"|"$/g, ''),
+      image_url: getValue(values, lookup, 'image_url', 'image', 'photo', 'picture', 'img'),
     };
 
     // Validation
     const nameError = validateRequired(item.name, 'Name');
     if (nameError) errors.push(nameError);
 
-    // Only validate quantity if tracking is enabled
     if (shouldTrack) {
       const quantityError = validateNumber(item.quantity, 'Quantity', 0);
       if (quantityError) errors.push(quantityError);
@@ -307,10 +364,13 @@ export const parseWallpaperCSV = (csvData: string): ValidationResult => {
   return { valid, invalid };
 };
 
-// TRIMMINGS PARSER
+// TRIMMINGS PARSER - Header-based
 export const parseTrimmingsCSV = (csvData: string): ValidationResult => {
   const lines = csvData.split('\n').filter(line => line.trim());
+  if (lines.length < 2) return { valid: [], invalid: [] };
+  
   const headers = parseCSVLine(lines[0]);
+  const lookup = createColumnLookup(headers);
   const valid: any[] = [];
   const invalid: { item: any; errors: string[]; row: number }[] = [];
 
@@ -318,35 +378,33 @@ export const parseTrimmingsCSV = (csvData: string): ValidationResult => {
     const values = parseCSVLine(lines[i]);
     const errors: string[] = [];
     
-    // Parse track_inventory column (index 5)
-    const trackInventoryValue = values[5]?.replace(/^"|"$/g, '').toLowerCase();
-    const shouldTrack = trackInventoryValue === 'yes' || trackInventoryValue === 'true' || trackInventoryValue === '1';
+    const trackValue = getValue(values, lookup, 'track_inventory', 'track', 'tracked');
+    const shouldTrack = parseBoolValue(trackValue);
     
-    // Parse tags and colors - colors (index 16) go into tags for ColorSelector
-    const tagsRaw = values[4]?.replace(/^"|"$/g, '') || '';
-    const baseTags = tagsRaw.split(',').map(t => t.trim()).filter(t => t);
-    const colorsRaw = values[16]?.replace(/^"|"$/g, '') || '';
-    const colorValues = colorsRaw.split(',').map(c => c.trim().toLowerCase()).filter(c => c);
+    const tagsRaw = getValue(values, lookup, 'tags', 'keywords', 'labels');
+    const baseTags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(t => t) : [];
+    const colorsRaw = getValue(values, lookup, 'colors', 'color', 'colour', 'colours');
+    const colorValues = parseCommaSeparated(colorsRaw);
     
     const item: any = {
-      name: values[0]?.replace(/^"|"$/g, ''),
-      sku: values[1]?.replace(/^"|"$/g, ''),
-      description: values[2]?.replace(/^"|"$/g, ''),
-      subcategory: values[3]?.replace(/^"|"$/g, ''),
-      tags: [...baseTags, ...colorValues], // Merge tags and colors
-      quantity: shouldTrack ? (parseFloat(values[6]) || 0) : null,
-      unit: values[7]?.replace(/^"|"$/g, '') || 'meters',
-      cost_price: parsePrice(values[8]),
-      selling_price: parsePrice(values[9]),
-      supplier: values[10]?.replace(/^"|"$/g, ''),
-      collection_name: values[12]?.replace(/^"|"$/g, ''),
-      location: values[13]?.replace(/^"|"$/g, ''),
-      reorder_point: shouldTrack ? (parseFloat(values[14]) || 0) : null,
-      unit_price: parsePrice(values[18]) || null,
+      name: getValue(values, lookup, 'name', 'product_name', 'trimming_name'),
+      sku: getValue(values, lookup, 'sku', 'code', 'product_code', 'item_code'),
+      description: getValue(values, lookup, 'description', 'desc', 'details'),
+      subcategory: getValue(values, lookup, 'subcategory', 'sub_category', 'type', 'trimming_type'),
+      tags: [...baseTags, ...colorValues],
+      quantity: shouldTrack ? (parseFloat(getValue(values, lookup, 'quantity', 'qty', 'stock', 'on_hand')) || 0) : null,
+      unit: getValue(values, lookup, 'unit', 'uom', 'unit_of_measure') || 'meters',
+      cost_price: parsePrice(getValue(values, lookup, 'cost_price', 'cost', 'buy_price', 'purchase_price', 'wholesale')),
+      selling_price: parsePrice(getValue(values, lookup, 'selling_price', 'sell_price', 'retail_price', 'price', 'rrp')),
+      supplier: getValue(values, lookup, 'supplier', 'vendor', 'manufacturer', 'brand'),
+      collection_name: getValue(values, lookup, 'collection_name', 'collection', 'range', 'series'),
+      location: getValue(values, lookup, 'location', 'warehouse', 'storage', 'bin'),
+      reorder_point: shouldTrack ? (parseFloat(getValue(values, lookup, 'reorder_point', 'reorder_level', 'min_stock')) || 0) : null,
+      unit_price: parsePrice(getValue(values, lookup, 'unit_price', 'price_per_meter', 'price_per_metre')) || null,
       metadata: {
-        trimming_width: parseFloat(values[15]) || null,
-        material_composition: values[17]?.replace(/^"|"$/g, ''),
-        vendor_name: values[11]?.replace(/^"|"$/g, ''),
+        trimming_width: parseFloat(getValue(values, lookup, 'trimming_width', 'width', 'size')) || null,
+        material_composition: getValue(values, lookup, 'material_composition', 'composition', 'material', 'content'),
+        vendor_name: getValue(values, lookup, 'vendor_name', 'vendor', 'brand'),
       },
     };
 
@@ -354,14 +412,135 @@ export const parseTrimmingsCSV = (csvData: string): ValidationResult => {
     const nameError = validateRequired(item.name, 'Name');
     if (nameError) errors.push(nameError);
 
-    // Only validate quantity if tracking is enabled
     if (shouldTrack) {
       const quantityError = validateNumber(item.quantity, 'Quantity', 0);
       if (quantityError) errors.push(quantityError);
     }
 
-    if (!item.subcategory || !['fringe', 'cord', 'tassel', 'braid', 'border'].includes(item.subcategory)) {
+    if (!item.subcategory || !['fringe', 'cord', 'tassel', 'braid', 'border'].includes(item.subcategory?.toLowerCase())) {
       errors.push('Invalid subcategory. Must be: fringe, cord, tassel, braid, or border');
+    }
+
+    if (errors.length > 0) {
+      invalid.push({ item, errors, row: i + 1 });
+    } else {
+      valid.push(item);
+    }
+  }
+
+  return { valid, invalid };
+};
+
+// MATERIALS PARSER - Header-based
+export const parseMaterialCSV = (csvData: string): ValidationResult => {
+  const lines = csvData.split('\n').filter(line => line.trim());
+  if (lines.length < 2) return { valid: [], invalid: [] };
+  
+  const headers = parseCSVLine(lines[0]);
+  const lookup = createColumnLookup(headers);
+  const valid: any[] = [];
+  const invalid: { item: any; errors: string[]; row: number }[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i]);
+    const errors: string[] = [];
+    
+    const trackValue = getValue(values, lookup, 'track_inventory', 'track', 'tracked');
+    const shouldTrack = parseBoolValue(trackValue);
+    
+    const tagsRaw = getValue(values, lookup, 'tags', 'keywords', 'labels');
+    const baseTags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(t => t) : [];
+    const colorsRaw = getValue(values, lookup, 'colors', 'color', 'colour', 'colours');
+    const colorValues = parseCommaSeparated(colorsRaw);
+    
+    const item: any = {
+      category: 'material',
+      name: getValue(values, lookup, 'name', 'product_name', 'material_name'),
+      sku: getValue(values, lookup, 'sku', 'code', 'product_code', 'item_code'),
+      description: getValue(values, lookup, 'description', 'desc', 'details'),
+      subcategory: getValue(values, lookup, 'subcategory', 'sub_category', 'type', 'material_category'),
+      tags: [...baseTags, ...colorValues],
+      quantity: shouldTrack ? (parseFloat(getValue(values, lookup, 'quantity', 'qty', 'stock', 'on_hand')) || 0) : null,
+      unit: getValue(values, lookup, 'unit', 'uom', 'unit_of_measure') || 'pieces',
+      cost_price: parsePrice(getValue(values, lookup, 'cost_price', 'cost', 'buy_price', 'purchase_price', 'wholesale')),
+      selling_price: parsePrice(getValue(values, lookup, 'selling_price', 'sell_price', 'retail_price', 'price', 'rrp')),
+      supplier: getValue(values, lookup, 'supplier', 'vendor', 'manufacturer', 'brand'),
+      collection_name: getValue(values, lookup, 'collection_name', 'collection', 'range', 'series'),
+      location: getValue(values, lookup, 'location', 'warehouse', 'storage', 'bin'),
+      reorder_point: shouldTrack ? (parseFloat(getValue(values, lookup, 'reorder_point', 'reorder_level', 'min_stock')) || 0) : null,
+      image_url: getValue(values, lookup, 'image_url', 'image', 'photo', 'picture', 'img'),
+      metadata: {
+        slat_width: parseFloat(getValue(values, lookup, 'slat_width', 'width', 'size')) || null,
+        material_type: getValue(values, lookup, 'material_type', 'material', 'type'),
+        vendor_name: getValue(values, lookup, 'vendor_name', 'vendor', 'brand'),
+      },
+    };
+
+    const nameError = validateRequired(item.name, 'Name');
+    if (nameError) errors.push(nameError);
+
+    if (shouldTrack) {
+      const quantityError = validateNumber(item.quantity, 'Quantity', 0);
+      if (quantityError) errors.push(quantityError);
+    }
+
+    const subcategoryLower = item.subcategory?.toLowerCase();
+    if (!subcategoryLower || !VALID_MATERIAL_SUBCATEGORIES.includes(subcategoryLower as any)) {
+      errors.push(`Invalid subcategory "${item.subcategory}". Must be one of: ${VALID_MATERIAL_SUBCATEGORIES.join(', ')}`);
+    }
+
+    if (errors.length > 0) {
+      invalid.push({ item, errors, row: i + 1 });
+    } else {
+      valid.push(item);
+    }
+  }
+
+  return { valid, invalid };
+};
+
+// SERVICES PARSER - Header-based
+export const parseServiceCSV = (csvData: string): ValidationResult => {
+  const lines = csvData.split('\n').filter(line => line.trim());
+  if (lines.length < 2) return { valid: [], invalid: [] };
+  
+  const headers = parseCSVLine(lines[0]);
+  const lookup = createColumnLookup(headers);
+  const valid: any[] = [];
+  const invalid: { item: any; errors: string[]; row: number }[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i]);
+    const errors: string[] = [];
+    
+    const trackValue = getValue(values, lookup, 'track_inventory', 'track', 'tracked');
+    const shouldTrack = parseBoolValue(trackValue);
+    
+    const tagsRaw = getValue(values, lookup, 'tags', 'keywords', 'labels');
+    const baseTags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(t => t) : [];
+    
+    const item: any = {
+      category: 'service',
+      name: getValue(values, lookup, 'name', 'service_name', 'product_name'),
+      sku: getValue(values, lookup, 'sku', 'code', 'service_code'),
+      description: getValue(values, lookup, 'description', 'desc', 'details'),
+      subcategory: getValue(values, lookup, 'subcategory', 'sub_category', 'type', 'service_type'),
+      tags: baseTags,
+      quantity: shouldTrack ? (parseFloat(getValue(values, lookup, 'quantity', 'qty')) || 0) : null,
+      unit: getValue(values, lookup, 'unit', 'uom', 'billing_unit') || 'service',
+      cost_price: parsePrice(getValue(values, lookup, 'cost_price', 'cost', 'hourly_cost')),
+      selling_price: parsePrice(getValue(values, lookup, 'selling_price', 'sell_price', 'price', 'rate', 'hourly_rate')),
+      supplier: getValue(values, lookup, 'supplier', 'provider', 'vendor'),
+      location: getValue(values, lookup, 'location', 'area'),
+      reorder_point: null,
+    };
+
+    const nameError = validateRequired(item.name, 'Name');
+    if (nameError) errors.push(nameError);
+
+    const subcategoryLower = item.subcategory?.toLowerCase();
+    if (!subcategoryLower || !VALID_SERVICE_SUBCATEGORIES.includes(subcategoryLower as any)) {
+      errors.push(`Invalid subcategory "${item.subcategory}". Must be one of: ${VALID_SERVICE_SUBCATEGORIES.join(', ')}`);
     }
 
     if (errors.length > 0) {
@@ -647,120 +826,4 @@ export const exportCategoryInventory = (items: any[], category: string): string 
   }
 
   return '';
-};
-
-// MATERIALS PARSER
-export const parseMaterialCSV = (csvData: string): ValidationResult => {
-  const lines = csvData.split('\n').filter(line => line.trim());
-  const headers = parseCSVLine(lines[0]);
-  const valid: any[] = [];
-  const invalid: { item: any; errors: string[]; row: number }[] = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const values = parseCSVLine(lines[i]);
-    const errors: string[] = [];
-    
-    const trackInventoryValue = values[5]?.replace(/^"|"$/g, '').toLowerCase();
-    const shouldTrack = trackInventoryValue === 'yes' || trackInventoryValue === 'true' || trackInventoryValue === '1';
-    
-    const colorsRaw = values[17]?.replace(/^"|"$/g, '') || '';
-    const colorValues = colorsRaw.split(',').map(c => c.trim().toLowerCase()).filter(c => c);
-    const tagsRaw = values[4]?.replace(/^"|"$/g, '') || '';
-    const baseTags = tagsRaw.split(',').map(t => t.trim()).filter(t => t);
-    
-    const item: any = {
-      category: 'material',
-      name: values[0]?.replace(/^"|"$/g, ''),
-      sku: values[1]?.replace(/^"|"$/g, ''),
-      description: values[2]?.replace(/^"|"$/g, ''),
-      subcategory: values[3]?.replace(/^"|"$/g, ''),
-      tags: [...baseTags, ...colorValues],
-      quantity: shouldTrack ? (parseFloat(values[6]) || 0) : null,
-      unit: values[7]?.replace(/^"|"$/g, '') || 'pieces',
-      cost_price: parsePrice(values[8]),
-      selling_price: parsePrice(values[9]),
-      supplier: values[10]?.replace(/^"|"$/g, ''),
-      collection_name: values[12]?.replace(/^"|"$/g, ''),
-      location: values[13]?.replace(/^"|"$/g, ''),
-      reorder_point: shouldTrack ? (parseFloat(values[14]) || 0) : null,
-      image_url: values[18]?.replace(/^"|"$/g, ''),
-      metadata: {
-        slat_width: parseFloat(values[15]) || null,
-        material_type: values[16]?.replace(/^"|"$/g, ''),
-        vendor_name: values[11]?.replace(/^"|"$/g, ''),
-      },
-    };
-
-    const nameError = validateRequired(item.name, 'Name');
-    if (nameError) errors.push(nameError);
-
-    if (shouldTrack) {
-      const quantityError = validateNumber(item.quantity, 'Quantity', 0);
-      if (quantityError) errors.push(quantityError);
-    }
-
-    const subcategoryLower = item.subcategory?.toLowerCase();
-    if (!subcategoryLower || !VALID_MATERIAL_SUBCATEGORIES.includes(subcategoryLower as any)) {
-      errors.push(`Invalid subcategory "${item.subcategory}". Must be one of: ${VALID_MATERIAL_SUBCATEGORIES.join(', ')}`);
-    }
-
-    if (errors.length > 0) {
-      invalid.push({ item, errors, row: i + 1 });
-    } else {
-      valid.push(item);
-    }
-  }
-
-  return { valid, invalid };
-};
-
-// SERVICES PARSER
-export const parseServiceCSV = (csvData: string): ValidationResult => {
-  const lines = csvData.split('\n').filter(line => line.trim());
-  const headers = parseCSVLine(lines[0]);
-  const valid: any[] = [];
-  const invalid: { item: any; errors: string[]; row: number }[] = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const values = parseCSVLine(lines[i]);
-    const errors: string[] = [];
-    
-    const trackInventoryValue = values[5]?.replace(/^"|"$/g, '').toLowerCase();
-    const shouldTrack = trackInventoryValue === 'yes' || trackInventoryValue === 'true' || trackInventoryValue === '1';
-    
-    const tagsRaw = values[4]?.replace(/^"|"$/g, '') || '';
-    const baseTags = tagsRaw.split(',').map(t => t.trim()).filter(t => t);
-    
-    const item: any = {
-      category: 'service',
-      name: values[0]?.replace(/^"|"$/g, ''),
-      sku: values[1]?.replace(/^"|"$/g, ''),
-      description: values[2]?.replace(/^"|"$/g, ''),
-      subcategory: values[3]?.replace(/^"|"$/g, ''),
-      tags: baseTags,
-      quantity: shouldTrack ? (parseFloat(values[6]) || 0) : null,
-      unit: values[7]?.replace(/^"|"$/g, '') || 'service',
-      cost_price: parsePrice(values[8]),
-      selling_price: parsePrice(values[9]),
-      supplier: values[10]?.replace(/^"|"$/g, ''),
-      location: values[11]?.replace(/^"|"$/g, ''),
-      reorder_point: null,
-    };
-
-    const nameError = validateRequired(item.name, 'Name');
-    if (nameError) errors.push(nameError);
-
-    const subcategoryLower = item.subcategory?.toLowerCase();
-    if (!subcategoryLower || !VALID_SERVICE_SUBCATEGORIES.includes(subcategoryLower as any)) {
-      errors.push(`Invalid subcategory "${item.subcategory}". Must be one of: ${VALID_SERVICE_SUBCATEGORIES.join(', ')}`);
-    }
-
-    if (errors.length > 0) {
-      invalid.push({ item, errors, row: i + 1 });
-    } else {
-      valid.push(item);
-    }
-  }
-
-  return { valid, invalid };
 };
