@@ -410,7 +410,8 @@ const LivePreviewBlock = ({
   const userDateFormat = convertToDateFnsFormat(userPreferences?.date_format || 'MM/dd/yyyy');
   
   // Trim and normalize block type to prevent matching issues
-  const blockType = (block.type || '').toString().trim().toLowerCase();
+  // Convert underscores to hyphens for consistency (client_info -> client-info)
+  const blockType = (block.type || '').toString().trim().toLowerCase().replace(/_/g, '-');
   
   // Handle document-settings block (metadata block - don't render)
   if (blockType === 'document-settings') {

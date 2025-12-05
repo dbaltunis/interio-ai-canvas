@@ -36,11 +36,11 @@ interface Template {
   created_at?: string;
 }
 
-// Default blank template blocks
+// Default blank template blocks - use hyphenated types for consistency
 const getBlankTemplateBlocks = (category: string) => [
   { id: 'header', type: 'header', content: { title: category.charAt(0).toUpperCase() + category.slice(1), showLogo: true } },
-  { id: 'client', type: 'client_info', content: {} },
-  { id: 'items', type: 'line_items', content: {} },
+  { id: 'client', type: 'client-info', content: {} },
+  { id: 'items', type: 'line-items', content: {} },
   { id: 'totals', type: 'totals', content: {} }
 ];
 
