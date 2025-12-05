@@ -6,16 +6,25 @@ export const useCRMStats = () => {
   return useQuery({
     queryKey: ["crm-stats"],
     queryFn: async () => {
+      // DEFENSE-IN-DEPTH: Explicit user filtering even with RLS
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return {
+        totalLeads: 0, activeLeads: 0, convertedLeads: 0, lostDeals: 0,
+        totalRevenueThisMonth: 0, totalRevenueThisQuarter: 0, avgDealSize: 0,
+        conversionRate: 0, bySource: {}, byStage: {}
+      };
+
       const now = new Date();
       const monthStart = startOfMonth(now).toISOString();
       const monthEnd = endOfMonth(now).toISOString();
       const quarterStart = startOfQuarter(now).toISOString();
       const quarterEnd = endOfQuarter(now).toISOString();
 
-      // Get all clients
+      // Get all clients - explicit user_id filter
       const { data: allClients, error: clientsError } = await supabase
         .from("clients")
-        .select("*, deals(deal_value, stage)");
+        .select("*, deals(deal_value, stage)")
+        .eq("user_id", user.id);
 
       if (clientsError) throw clientsError;
 
@@ -25,10 +34,11 @@ export const useCRMStats = () => {
       ).length || 0;
       const convertedLeads = allClients?.filter(c => c.funnel_stage === 'approved').length || 0;
 
-      // Get deals data
+      // Get deals data - explicit user_id filter
       const { data: deals } = await supabase
         .from("deals")
-        .select("*");
+        .select("*")
+        .eq("user_id", user.id);
 
       const lostDeals = deals?.filter(d => d.stage === 'closed_lost').length || 0;
       

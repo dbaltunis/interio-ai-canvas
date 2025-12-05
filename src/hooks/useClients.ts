@@ -16,10 +16,11 @@ export const useClients = (enabled: boolean = true) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      // Simply select all clients - RLS policies will handle filtering
+      // DEFENSE-IN-DEPTH: Explicit user_id filter even with RLS
       const { data, error } = await supabase
         .from("clients")
         .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
