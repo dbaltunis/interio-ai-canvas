@@ -16,6 +16,7 @@ import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
 import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
 import { useToast } from "@/hooks/use-toast";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 
 export const InventoryManagement = () => {
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
@@ -29,6 +30,7 @@ export const InventoryManagement = () => {
   const { integration } = useShopifyIntegrationReal();
   const deleteInventoryItem = useDeleteEnhancedInventoryItem();
   const { toast } = useToast();
+  const { formatCurrency } = useFormattedCurrency();
   
   // Bulk selection
   const {
@@ -84,13 +86,6 @@ export const InventoryManagement = () => {
     const unitPrice = item.selling_price || item.price_per_unit || item.cost_price || 0;
     return sum + (unitPrice * (item.quantity || 0));
   }, 0) || 0;
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
 
   const handleBulkDelete = async () => {
     try {
