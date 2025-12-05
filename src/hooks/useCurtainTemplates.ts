@@ -128,10 +128,20 @@ export const useCurtainTemplates = () => {
       if (!user) throw new Error('User not authenticated');
       console.log("✅ [useCurtainTemplates] User authenticated:", user.id);
 
-      // RLS policies will filter by account owner automatically
+      // Get user's account_id for explicit filtering (defense-in-depth)
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('user_id, parent_account_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      const accountId = profile?.parent_account_id || user.id;
+
+      // Explicit user_id filtering + RLS for defense-in-depth
       const { data, error } = await supabase
         .from("curtain_templates" as any)
         .select("*")
+        .eq("user_id", accountId)
         .eq("active", true)
         .order("name");
 

@@ -71,9 +71,13 @@ export const useHotLeads = () => {
   return useQuery({
     queryKey: ["hot-leads"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
       const { data, error } = await supabase
         .from("clients")
         .select("*")
+        .eq("user_id", user.id)
         .gte("lead_score", 50)
         .order("lead_score", { ascending: false })
         .limit(10);
@@ -88,9 +92,13 @@ export const useLeadSourceAnalytics = () => {
   return useQuery({
     queryKey: ["lead-source-analytics"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
       const { data, error } = await supabase
         .from("clients")
         .select("lead_source, lead_score, deal_value, funnel_stage")
+        .eq("user_id", user.id)
         .not("lead_source", "is", null);
 
       if (error) throw error;

@@ -16,6 +16,7 @@ export const useQuotes = (projectId?: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
+      // Explicit user filtering for defense-in-depth (RLS is primary protection)
       let query = supabase
         .from("quotes")
         .select(`
@@ -36,7 +37,8 @@ export const useQuotes = (projectId?: string) => {
               email
             )
           )
-        `);
+        `)
+        .eq("user_id", user.id);
       
       if (projectId) {
         query = query.eq("project_id", projectId);
