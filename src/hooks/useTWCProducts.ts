@@ -83,18 +83,20 @@ export const useTWCImportedProducts = () => {
 
       if (itemsError) throw itemsError;
 
-      // Get templates for these items
+      // Get templates for these items - match by inventory_item_id for accuracy
+      const itemIds = items?.map(i => i.id) || [];
       const { data: templates, error: templatesError } = await supabase
         .from("curtain_templates")
-        .select("id, name, pricing_grid_data, description")
-        .ilike("description", "%TWC%");
+        .select("id, name, pricing_grid_data, description, inventory_item_id")
+        .or(`inventory_item_id.in.(${itemIds.join(',')}),description.ilike.%TWC%`);
 
       if (templatesError) console.warn("Could not fetch templates:", templatesError);
 
-      // Merge templates into items based on name matching
+      // Merge templates into items - prioritize inventory_item_id match, fallback to name
       const enrichedItems = items?.map(item => ({
         ...item,
         templates: templates?.filter(t => 
+          t.inventory_item_id === item.id ||
           t.name === item.name || 
           t.description?.includes(item.name)
         ) || []
