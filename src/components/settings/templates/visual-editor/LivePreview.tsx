@@ -1165,9 +1165,14 @@ const LivePreviewBlock = ({
         
         if (options.length === 0) return items;
         
-        // Normalize a name for matching
+        // Normalize a name for matching (lowercase, replace spaces/dashes with underscores, collapse multiple underscores)
         const normalizeKey = (name: string) => {
-          return (name || '').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+          return (name || '')
+            .toLowerCase()
+            .replace(/[\s\-]+/g, '_')           // Replace spaces AND dashes with underscore
+            .replace(/[^a-z0-9_]/g, '')         // Remove other special chars
+            .replace(/_+/g, '_')                 // Collapse multiple underscores to single
+            .replace(/^_|_$/g, '');              // Trim leading/trailing underscores
         };
         
         const parentMap = new Map<string, any>();
