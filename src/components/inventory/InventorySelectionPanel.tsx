@@ -426,11 +426,11 @@ export const InventorySelectionPanel = ({
               />
               {isSelected && <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full z-10" />}
               
-              {/* Pricing Grid Badge Overlay - Only for fabric */}
-              {category === 'fabric' && (item.price_group || item.pricing_grid_id) && (
+              {/* Pricing Grid Badge Overlay - Check price_group, pricing_grid_id, OR metadata.pricing_grid_data for TWC */}
+              {(category === 'fabric' || category === 'material') && (item.price_group || item.pricing_grid_id || item.metadata?.pricing_grid_data) && (
                 <div className="absolute bottom-1 left-1 right-1 z-10">
                   <Badge variant="default" className="text-[9px] px-1.5 py-0.5 h-5 bg-green-600 hover:bg-green-700 text-white w-full justify-center">
-                    ✓ Grid: {item.price_group || 'Assigned'}
+                    ✓ Grid: {item.price_group || item.resolved_grid_name || 'Assigned'}
                   </Badge>
                 </div>
               )}
@@ -475,8 +475,8 @@ export const InventorySelectionPanel = ({
                       const currencySymbol = getCurrencySymbol(units.currency || 'NZD');
                       const lengthUnit = units.fabric || 'm';
                       
-                      // Check if using pricing grid
-                      if (item.price_group || item.pricing_grid_id) {
+                      // Check if using pricing grid - also check metadata for TWC products
+                      if (item.price_group || item.pricing_grid_id || item.metadata?.pricing_grid_data) {
                         // Has grid - show "Grid" instead of fake price
                         return <span className="text-primary">Grid Pricing</span>;
                       }
@@ -485,7 +485,7 @@ export const InventorySelectionPanel = ({
                     })()}
                   </span>
                   <span className="text-[8px] text-muted-foreground leading-none">
-                    {item.price_group || item.pricing_grid_id
+                    {item.price_group || item.pricing_grid_id || item.metadata?.pricing_grid_data
                       ? `${item.resolved_grid_name || item.price_group || 'Grid assigned'}` 
                       : (item.pricing_method ? item.pricing_method.replace(/_/g, ' ') : 'Per metre')}
                   </span>

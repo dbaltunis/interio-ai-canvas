@@ -188,6 +188,32 @@ const handler = async (req: Request): Promise<Response> => {
       return { category: 'material', subcategory: 'blind_material' };
     };
 
+    // Extract colors from TWC fabricsAndColours data
+    const extractColors = (fabricsAndColours: any): string[] => {
+      const colors: string[] = [];
+      if (fabricsAndColours && Array.isArray(fabricsAndColours)) {
+        for (const item of fabricsAndColours) {
+          if (item.fabricOrColourName) {
+            colors.push(item.fabricOrColourName);
+          }
+        }
+      }
+      // Also check itemMaterials structure
+      if (fabricsAndColours?.itemMaterials && Array.isArray(fabricsAndColours.itemMaterials)) {
+        for (const material of fabricsAndColours.itemMaterials) {
+          if (material.colours && Array.isArray(material.colours)) {
+            for (const colour of material.colours) {
+              if (colour.colour) {
+                colors.push(colour.colour);
+              }
+            }
+          }
+        }
+      }
+      // Deduplicate and limit to 30 colors
+      return [...new Set(colors)].slice(0, 30);
+    };
+
     // Prepare inventory items for batch insert (only new products)
     const inventoryItems = newProducts.map(product => {
       // Safe extraction of product type with multiple fallbacks
@@ -204,6 +230,9 @@ const handler = async (req: Request): Promise<Response> => {
       const productName = product.description || product.itemNumber || 'TWC Product';
       const categoryMapping = mapCategory(product.description);
       
+      // Extract colors from TWC data for tags
+      const extractedColors = extractColors(product.fabricsAndColours);
+      
       return {
         user_id: user.id,
         name: productName,
@@ -214,6 +243,8 @@ const handler = async (req: Request): Promise<Response> => {
         active: true,
         show_in_quote: true,
         description: `${productType} - Imported from TWC`,
+        // Store extracted colors in tags for display
+        tags: extractedColors,
         metadata: {
           twc_item_number: product.itemNumber,
           twc_description: product.description,
@@ -334,7 +365,7 @@ const handler = async (req: Request): Promise<Response> => {
               }
             };
 
-            // Create treatment option with correct column names
+            // Create treatment option with correct column names and TWC source metadata
             const { data: option, error: optionError } = await supabaseClient
               .from('treatment_options')
               .insert({
@@ -344,6 +375,13 @@ const handler = async (req: Request): Promise<Response> => {
                 label: question.question,
                 input_type: mapInputType(question.questionType),
                 order_index: 0,
+                visible: true,
+                required: false,
+                metadata: {
+                  source: 'twc',
+                  twc_question_type: question.questionType,
+                  imported_at: new Date().toISOString(),
+                },
               })
               .select()
               .single();
@@ -351,6 +389,26 @@ const handler = async (req: Request): Promise<Response> => {
             if (optionError) {
               console.error(`Error creating option ${optionKey}:`, optionError);
               continue;
+            }
+
+            // Create template_option_settings to enable option for this template
+            if (option) {
+              const { error: settingsError } = await supabaseClient
+                .from('template_option_settings')
+                .insert({
+                  template_id: template.id,
+                  treatment_option_id: option.id,
+                  is_enabled: true,
+                  order_index: 0,
+                })
+                .select()
+                .single();
+
+              if (settingsError) {
+                console.error(`Error enabling option ${optionKey} for template:`, settingsError);
+              } else {
+                console.log(`Enabled TWC option ${optionKey} for template ${template.name}`);
+              }
             }
 
             // Create option values from answers
