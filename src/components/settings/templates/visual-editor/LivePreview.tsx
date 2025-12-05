@@ -1159,11 +1159,8 @@ const LivePreviewBlock = ({
       const groupRelatedOptionsInBreakdown = (items: any[]) => {
         if (!items || items.length === 0) return [];
         
-        // Separate options from non-options
-        const options = items.filter(item => item.category === 'option' || item.category === 'options');
-        const nonOptions = items.filter(item => item.category !== 'option' && item.category !== 'options');
-        
-        if (options.length === 0) return items;
+        // UNIVERSAL GROUPING: Apply to ALL items regardless of category (options, lining, hardware, etc.)
+        // Any items following parent-child naming pattern will be grouped
         
         // Normalize a name for matching (lowercase, replace spaces/dashes with underscores, collapse multiple underscores)
         const normalizeKey = (name: string) => {
@@ -1198,7 +1195,7 @@ const LivePreviewBlock = ({
         ];
         
         // Identify parent-child relationships
-        options.forEach(item => {
+        items.forEach(item => {
           const normalizedName = normalizeKey(item.name || '');
           let isChild = false;
           
@@ -1217,7 +1214,7 @@ const LivePreviewBlock = ({
         });
         
         // Merge children into parents
-        const result: any[] = [...nonOptions];
+        const result: any[] = [];
         const processedParents = new Set<string>();
         
         parentMap.forEach((parentItem, parentKey) => {
