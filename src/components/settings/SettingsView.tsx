@@ -58,6 +58,9 @@ export const SettingsView = () => {
   const [createTemplateData, setCreateTemplateData] = useState<CreateTemplateData | null>(
     locationState?.createTemplate || null
   );
+  const [editTemplateId, setEditTemplateId] = useState<string | null>(
+    locationState?.editTemplateId || null
+  );
 
   // Clear location state after reading to prevent re-triggering on refresh
   useEffect(() => {
@@ -195,6 +198,8 @@ export const SettingsView = () => {
                 <WindowCoveringsTab 
                   createTemplateData={createTemplateData}
                   onTemplateCreated={() => setCreateTemplateData(null)}
+                  editTemplateId={editTemplateId}
+                  onTemplateEdited={() => setEditTemplateId(null)}
                 />
               </CardContent>
             </Card>
