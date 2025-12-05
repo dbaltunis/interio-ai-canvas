@@ -2131,31 +2131,32 @@ export const DynamicWindowWorksheet = forwardRef<{
                       manufacturingQuantityLabel = manufacturingQuantity === 1 ? 'drop' : 'drops';
                       manufacturingCost = pricePerUnit * manufacturingQuantity;
                     } else if (pricingType === 'per_metre') {
-                      // ✅ CRITICAL FIX: Match save calculation exactly - use width after fullness + hems + returns + waste
+                      // ✅ CRITICAL FIX: Use fabricCalculation.totalWidthWithAllowances which is already in CM
+                      // (rail_width in MM → converted to CM → fullness applied → hems/returns added)
                       pricePerUnit = manufacturingType === 'hand'
                         ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
                         : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
                       
-                      const railWidthCm = parseFloat(measurements.rail_width || '0');
-                      const fullness = fabricCalculation.fullnessRatio || 0;
-                      const sideHemsCm = fabricCalculation.totalSideHems || 0;
-                      const returnsCm = fabricCalculation.returns || 0;
+                      // totalWidthWithAllowances is already in CM with fullness, hems, returns applied
+                      const widthWithAllowancesCm = fabricCalculation.totalWidthWithAllowances || 0;
                       const wastePercent = fabricCalculation.wastePercent || selectedTemplate.waste_percent || 0;
                       
-                      const baseWidthCm = railWidthCm * fullness;
-                      const widthWithAllowancesCm = baseWidthCm + sideHemsCm + returnsCm;
+                      // Apply waste and convert to meters
                       const finalWidthCm = widthWithAllowancesCm * (1 + wastePercent / 100);
                       const finalWidthM = finalWidthCm / 100;
                       
+                      // Use user's unit preference for label
+                      const unitIsMetric = units?.length === 'mm' || units?.length === 'cm' || units?.length === 'm';
                       manufacturingQuantity = finalWidthM;
-                      manufacturingQuantityLabel = 'm';
+                      manufacturingQuantityLabel = unitIsMetric ? 'm' : 'yd';
                       manufacturingCost = pricePerUnit * manufacturingQuantity;
                     } else {
                       pricePerUnit = manufacturingType === 'hand'
                         ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
                         : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
                       manufacturingQuantity = fabricCalculation.linearMeters || 0;
-                      manufacturingQuantityLabel = 'm';
+                      const fallbackUnitIsMetric = units?.length === 'mm' || units?.length === 'cm' || units?.length === 'm';
+                      manufacturingQuantityLabel = fallbackUnitIsMetric ? 'm' : 'yd';
                       manufacturingCost = pricePerUnit * manufacturingQuantity;
                     }
 
