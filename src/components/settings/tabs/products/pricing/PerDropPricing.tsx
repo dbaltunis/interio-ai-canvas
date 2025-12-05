@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 interface DropHeightRange {
   min: number;
   max: number;
@@ -32,7 +32,7 @@ export const PerDropPricing = ({
   onInputChange
 }: PerDropPricingProps) => {
   const { units } = useMeasurementUnits();
-  const currencySymbol = units.currency || '$';
+  const currencySymbol = getCurrencySymbol(units.currency || 'USD');
   const lengthUnit = units.length === 'inches' || units.length === 'feet' ? 'in' : 'cm';
   
   const isHeightBasedEnabled = dropHeightRanges && dropHeightRanges.length > 0;
