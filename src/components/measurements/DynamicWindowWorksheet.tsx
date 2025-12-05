@@ -2111,17 +2111,25 @@ export const DynamicWindowWorksheet = forwardRef<{
                     const manufacturingType = measurements.manufacturing_type || 'machine';
                     const pricingType = selectedPricingMethod?.pricing_type || selectedTemplate.pricing_type || selectedTemplate.makeup_pricing_method || selectedTemplate.pricing_method || 'per_metre';
                     
+                    // Track actual values used for display breakdown
                     let pricePerUnit = 0;
+                    let manufacturingQuantity = 0;
+                    let manufacturingQuantityLabel = '';
+                    
                     if (pricingType === 'per_panel') {
                       pricePerUnit = manufacturingType === 'hand' 
                         ? (selectedPricingMethod?.hand_price_per_panel ?? selectedTemplate.hand_price_per_panel ?? 0)
                         : (selectedPricingMethod?.machine_price_per_panel ?? selectedTemplate.machine_price_per_panel ?? 0);
-                      manufacturingCost = pricePerUnit * (fabricCalculation.curtainCount || 1);
+                      manufacturingQuantity = fabricCalculation.curtainCount || 1;
+                      manufacturingQuantityLabel = manufacturingQuantity === 1 ? 'panel' : 'panels';
+                      manufacturingCost = pricePerUnit * manufacturingQuantity;
                     } else if (pricingType === 'per_drop') {
                       pricePerUnit = manufacturingType === 'hand'
                         ? (selectedPricingMethod?.hand_price_per_drop ?? selectedTemplate.hand_price_per_drop ?? 0)
                         : (selectedPricingMethod?.machine_price_per_drop ?? selectedTemplate.machine_price_per_drop ?? 0);
-                      manufacturingCost = pricePerUnit * (fabricCalculation.widthsRequired || 1);
+                      manufacturingQuantity = fabricCalculation.widthsRequired || 1;
+                      manufacturingQuantityLabel = manufacturingQuantity === 1 ? 'drop' : 'drops';
+                      manufacturingCost = pricePerUnit * manufacturingQuantity;
                     } else if (pricingType === 'per_metre') {
                       // ✅ CRITICAL FIX: Match save calculation exactly - use width after fullness + hems + returns + waste
                       pricePerUnit = manufacturingType === 'hand'
@@ -2139,12 +2147,16 @@ export const DynamicWindowWorksheet = forwardRef<{
                       const finalWidthCm = widthWithAllowancesCm * (1 + wastePercent / 100);
                       const finalWidthM = finalWidthCm / 100;
                       
-                      manufacturingCost = pricePerUnit * finalWidthM;
+                      manufacturingQuantity = finalWidthM;
+                      manufacturingQuantityLabel = 'm';
+                      manufacturingCost = pricePerUnit * manufacturingQuantity;
                     } else {
                       pricePerUnit = manufacturingType === 'hand'
                         ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
                         : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
-                      manufacturingCost = pricePerUnit * (fabricCalculation.linearMeters || 0);
+                      manufacturingQuantity = fabricCalculation.linearMeters || 0;
+                      manufacturingQuantityLabel = 'm';
+                      manufacturingCost = pricePerUnit * manufacturingQuantity;
                     }
 
                     if (pricingType === 'height_range' && selectedPricingMethod?.height_price_ranges) {
@@ -2154,9 +2166,20 @@ export const DynamicWindowWorksheet = forwardRef<{
                       );
                       if (range) {
                         pricePerUnit = manufacturingType === 'hand' ? range.hand_price : range.machine_price;
-                        manufacturingCost = pricePerUnit * (fabricCalculation.curtainCount || fabricCalculation.widthsRequired || 1);
+                        manufacturingQuantity = fabricCalculation.curtainCount || fabricCalculation.widthsRequired || 1;
+                        manufacturingQuantityLabel = manufacturingQuantity === 1 ? 'unit' : 'units';
+                        manufacturingCost = pricePerUnit * manufacturingQuantity;
                       }
                     }
+                    
+                    // Store manufacturing details for display breakdown
+                    const manufacturingDetails = {
+                      pricingType,
+                      pricePerUnit,
+                      quantity: manufacturingQuantity,
+                      quantityLabel: manufacturingQuantityLabel,
+                      manufacturingType: manufacturingType as 'hand' | 'machine'
+                    };
 
                     // Calculate heading cost - CRITICAL: Must match save calculation
                     let headingCost = 0;
@@ -2179,40 +2202,6 @@ export const DynamicWindowWorksheet = forwardRef<{
                     const optionsCost = selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0);
 
                     const totalCost = fabricCost + liningCost + manufacturingCost + headingCost + optionsCost;
-
-                    // Calculate manufacturing details for display breakdown
-                    let manufacturingQuantity = 0;
-                    let manufacturingQuantityLabel = '';
-                    if (pricingType === 'per_panel') {
-                      manufacturingQuantity = fabricCalculation.curtainCount || 1;
-                      manufacturingQuantityLabel = manufacturingQuantity === 1 ? 'panel' : 'panels';
-                    } else if (pricingType === 'per_drop') {
-                      manufacturingQuantity = fabricCalculation.widthsRequired || 1;
-                      manufacturingQuantityLabel = manufacturingQuantity === 1 ? 'drop' : 'drops';
-                    } else if (pricingType === 'per_metre') {
-                      const railWidthCm = parseFloat(measurements.rail_width || '0');
-                      const fullness = fabricCalculation.fullnessRatio || 0;
-                      const sideHemsCm = fabricCalculation.totalSideHems || 0;
-                      const returnsCm = fabricCalculation.returns || 0;
-                      const wastePercent = fabricCalculation.wastePercent || selectedTemplate.waste_percent || 0;
-                      const finalWidthCm = ((railWidthCm * fullness) + sideHemsCm + returnsCm) * (1 + wastePercent / 100);
-                      manufacturingQuantity = finalWidthCm / 100;
-                      manufacturingQuantityLabel = 'm';
-                    } else if (pricingType === 'height_range') {
-                      manufacturingQuantity = fabricCalculation.curtainCount || fabricCalculation.widthsRequired || 1;
-                      manufacturingQuantityLabel = manufacturingQuantity === 1 ? 'unit' : 'units';
-                    } else {
-                      manufacturingQuantity = fabricCalculation.linearMeters || 0;
-                      manufacturingQuantityLabel = 'm';
-                    }
-
-                    const manufacturingDetails = {
-                      pricingType,
-                      pricePerUnit,
-                      quantity: manufacturingQuantity,
-                      quantityLabel: manufacturingQuantityLabel,
-                      manufacturingType: manufacturingType as 'hand' | 'machine'
-                    };
 
                     // ✅ SAVE TO STATE: Single source of truth for all displays
                     // Calculate total meters to order (for horizontal pieces)
