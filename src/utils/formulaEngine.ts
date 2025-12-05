@@ -1,10 +1,10 @@
 // DEPRECATED: This file has been replaced with secureFormulaEngine.ts for security reasons
 // Please use SecureFormulaEngine instead of FormulaEngine
 
-export { SecureFormulaEngine as FormulaEngine, getFormulasByCategory, findApplicableFormula } from './secureFormulaEngine';
+export { SecureFormulaEngine as FormulaEngine } from './secureFormulaEngine';
 export type { FormulaResult } from './secureFormulaEngine';
 
-// Re-export centralized calculation formulas
+// Re-export centralized calculation formulas (THE source of truth)
 export { 
   BLIND_FORMULA, 
   CURTAIN_VERTICAL_FORMULA, 
@@ -12,8 +12,8 @@ export {
   PRICING_FORMULAS,
   BLIND_DEFAULTS,
   CURTAIN_DEFAULTS,
-  getFormulasByCategory as getCalculationFormulasByCategory,
-  findApplicableFormula as findApplicableCalculationFormula
+  getFormulasByCategory,
+  findApplicableFormula
 } from './calculationFormulas';
 
 export type { 

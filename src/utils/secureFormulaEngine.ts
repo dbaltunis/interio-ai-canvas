@@ -288,12 +288,12 @@ export class SecureFormulaEngine {
   }
 }
 
-// Helper functions remain the same
-export const getFormulasByCategory = (formulas: any[], category: string) => {
+// Helper functions for working with formula arrays (legacy support)
+export const filterFormulasByCategory = (formulas: any[], category: string) => {
   return formulas.filter(formula => formula.category === category && formula.active);
 };
 
-export const findApplicableFormula = (formulas: any[], treatmentType: string, calculationType: string) => {
+export const findApplicableFormulaInArray = (formulas: any[], treatmentType: string, calculationType: string) => {
   return formulas.find(formula => 
     formula.category === calculationType &&
     formula.active &&
@@ -301,7 +301,7 @@ export const findApplicableFormula = (formulas: any[], treatmentType: string, ca
   );
 };
 
-// Re-export centralized formulas for convenience
+// Re-export centralized formulas (THE source of truth - from calculationFormulas.ts)
 export { 
   BLIND_FORMULA, 
   CURTAIN_VERTICAL_FORMULA, 
@@ -309,8 +309,8 @@ export {
   PRICING_FORMULAS,
   BLIND_DEFAULTS,
   CURTAIN_DEFAULTS,
-  getFormulasByCategory as getCalculationFormulasByCategory,
-  findApplicableFormula as findApplicableCalculationFormula
+  getFormulasByCategory,
+  findApplicableFormula
 } from './calculationFormulas';
 
 export type { 
