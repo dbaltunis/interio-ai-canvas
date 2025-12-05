@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,10 @@ import { useClients } from "@/hooks/useClients";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin, Package, FileText, DollarSign, Calendar as CalendarIcon } from "lucide-react";
+import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin, Package, FileText, DollarSign, Calendar as CalendarIcon, Hash } from "lucide-react";
+import { EditableDocumentNumber } from "../EditableDocumentNumber";
+import { syncSequenceCounter } from "@/hooks/useNumberSequenceGeneration";
+import { useUpdateQuote } from "@/hooks/useQuotes";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -53,6 +56,71 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const { data: rooms = [] } = useRooms(project.id);
   const { data: surfaces = [] } = useSurfaces(project.id);
   const { data: treatments = [] } = useTreatments(project.id);
+  const updateQuote = useUpdateQuote();
+  
+  // Get the current quote for this project
+  const currentQuote = quotes.length > 0 ? quotes.reduce((latest, quote) => {
+    if (!latest) return quote;
+    return new Date(quote.created_at) > new Date(latest.created_at) ? quote : latest;
+  }, null) : null;
+  
+  // State for editable document numbers
+  const [jobNumber, setJobNumber] = useState(project.job_number || "");
+  const [quoteNumber, setQuoteNumber] = useState(currentQuote?.quote_number || "");
+  
+  // Update quote number when quotes load
+  useEffect(() => {
+    if (currentQuote?.quote_number && !quoteNumber) {
+      setQuoteNumber(currentQuote.quote_number);
+    }
+  }, [currentQuote]);
+  
+  // Handle saving document numbers
+  const handleSaveDocumentNumbers = async () => {
+    try {
+      // Update job number on project
+      if (jobNumber !== project.job_number) {
+        await updateProject.mutateAsync({
+          id: project.id,
+          job_number: jobNumber,
+        });
+        project.job_number = jobNumber;
+        
+        // Sync sequence counter for jobs
+        await syncSequenceCounter('job', jobNumber);
+      }
+      
+      // Update quote number on quote
+      if (currentQuote && quoteNumber !== currentQuote.quote_number) {
+        await updateQuote.mutateAsync({
+          id: currentQuote.id,
+          quote_number: quoteNumber,
+        });
+        
+        // Determine entity type based on quote status
+        const entityType = currentQuote.status === 'invoiced' || currentQuote.status === 'invoice' 
+          ? 'invoice' 
+          : currentQuote.status === 'sent' || currentQuote.status === 'approved'
+          ? 'quote'
+          : 'draft';
+        
+        // Sync sequence counter
+        await syncSequenceCounter(entityType, quoteNumber);
+      }
+      
+      toast({
+        title: "Success",
+        description: "Document numbers updated",
+      });
+    } catch (error) {
+      console.error("Failed to update document numbers:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update document numbers",
+        variant: "destructive",
+      });
+    }
+  };
   
   // Fetch quote items for the latest quote
   const { data: quoteItems = [] } = useQuery({
@@ -459,6 +527,63 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
           </div>
         </div>
       </div>
+
+      {/* Document Numbers - Editable Section */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <Hash className="h-4 w-4" />
+            Document Numbers
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Job Number */}
+            <div className="space-y-2">
+              <Label htmlFor="job-number">Job Number</Label>
+              <Input
+                id="job-number"
+                value={jobNumber}
+                onChange={(e) => setJobNumber(e.target.value)}
+                placeholder="JOB-0001"
+              />
+            </div>
+            
+            {/* Quote/Invoice Number */}
+            <div className="space-y-2">
+              <Label htmlFor="quote-number">
+                {currentQuote?.status === 'invoiced' || currentQuote?.status === 'invoice' 
+                  ? 'Invoice Number' 
+                  : 'Quote Number'}
+              </Label>
+              <Input
+                id="quote-number"
+                value={quoteNumber}
+                onChange={(e) => setQuoteNumber(e.target.value)}
+                placeholder={currentQuote?.status === 'invoiced' ? 'INV-0001' : 'QT-0001'}
+                disabled={!currentQuote}
+              />
+              {!currentQuote && (
+                <p className="text-xs text-muted-foreground">No quote created yet</p>
+              )}
+            </div>
+          </div>
+          
+          {(jobNumber !== project.job_number || (currentQuote && quoteNumber !== currentQuote.quote_number)) && (
+            <Button 
+              onClick={handleSaveDocumentNumbers}
+              className="mt-4"
+              size="sm"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save Numbers
+            </Button>
+          )}
+          <p className="text-xs text-muted-foreground mt-2">
+            Edit numbers and the sequence counter will auto-sync if a higher number is entered
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Client Assignment - Primary Section */}
       <Card>

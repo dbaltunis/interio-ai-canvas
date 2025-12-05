@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/usePermissions";
-import { generateSequenceNumber, getEntityTypeFromStatus, shouldRegenerateNumber } from "./useNumberSequenceGeneration";
+import { generateSequenceNumber, getEntityTypeFromStatus, shouldRegenerateNumber, syncSequenceCounter } from "./useNumberSequenceGeneration";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type Quote = Tables<"quotes">;
@@ -139,6 +139,17 @@ export const useCreateQuote = () => {
         .single();
 
       if (error) throw error;
+      
+      // Sync sequence counter if a custom number was provided
+      if (quote.quote_number && quote.quote_number.trim() !== '') {
+        const entityType = quote.status === 'invoiced' || quote.status === 'invoice' 
+          ? 'invoice' 
+          : quote.status === 'sent' || quote.status === 'approved'
+          ? 'quote'
+          : 'draft';
+        await syncSequenceCounter(entityType as any, quoteNumber);
+      }
+      
       return data;
     },
     onMutate: async (newQuote) => {
