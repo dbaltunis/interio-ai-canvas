@@ -1250,7 +1250,7 @@ export const DynamicWindowWorksheet = forwardRef<{
               // Fabric - CRITICAL: Use the calculated fabricCost (already includes horizontal pieces)
               ...(fabricCost > 0 ? [{
                 id: 'fabric',
-                name: 'Fabric Material',
+                name: selectedTemplate?.treatment_category?.includes('blind') || selectedTemplate?.treatment_category?.includes('shutter') ? 'Material' : selectedTemplate?.treatment_category === 'wallpaper' ? 'Wallpaper' : 'Fabric',
                 total_cost: fabricCost,  // CRITICAL: Use fabricCost NOT linearMeters
                 category: 'fabric',
                 quantity: fabricCalculation?.horizontalPiecesNeeded 

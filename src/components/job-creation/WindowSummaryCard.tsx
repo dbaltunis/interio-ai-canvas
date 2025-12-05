@@ -192,11 +192,11 @@ export function WindowSummaryCard({
     
     // FABRIC/MATERIAL: Always include with proper name display
     const fabricName = usePricingGrid 
-      ? 'Fabric Material'
+      ? (isBlindsOrShutters ? 'Material' : treatmentType === 'wallpaper' ? 'Wallpaper' : 'Fabric')
       : (summary.material_details?.name ||
          summary.fabric_details?.name || 
          summary.fabric_details?.fabric_name ||  
-         (isBlindsOrShutters ? 'Material' : treatmentType === 'wallpaper' ? 'Wallpaper Material' : 'Fabric'));
+         (isBlindsOrShutters ? 'Material' : treatmentType === 'wallpaper' ? 'Wallpaper' : 'Fabric'));
     
     // Build description and pricing based on treatment type
     let fabricDescription = '';
