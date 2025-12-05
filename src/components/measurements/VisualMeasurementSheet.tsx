@@ -207,10 +207,34 @@ export const VisualMeasurementSheet = ({
     }
   }, []);
 
-  // ✅ Fabric rotation is now MANUAL ONLY - no auto-rotation
-  // Users must manually toggle rotation if they want to railroad the fabric
-  // This allows for alternative solutions like adding borders or using fewer widths
-  // NO automatic initialization - preserves user's existing rotation settings
+  // ✅ AUTO-SELECT fabric rotation based on fabric width threshold (200cm)
+  // Fabric width > 200cm → horizontal/railroaded (fabric_rotated = true)
+  // Fabric width ≤ 200cm → vertical/standard (fabric_rotated = false)
+  const FABRIC_WIDTH_THRESHOLD_CM = 200;
+  const previousFabricIdRef = useRef<string | null>(null);
+  
+  useEffect(() => {
+    // Only auto-select for curtains/romans with valid fabric selection
+    if (treatmentCategory !== 'curtains' && treatmentCategory !== 'roman_blinds') return;
+    if (!selectedFabricItem || readOnly) return;
+    
+    const fabricWidthCm = selectedFabricItem.fabric_width || 137;
+    const fabricChanged = previousFabricIdRef.current !== selectedFabric;
+    
+    // Only auto-select when fabric CHANGES (not on every render)
+    if (fabricChanged && selectedFabric) {
+      const shouldBeHorizontal = fabricWidthCm > FABRIC_WIDTH_THRESHOLD_CM;
+      const currentRotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
+      
+      // Auto-apply the correct orientation based on fabric width
+      if (shouldBeHorizontal !== currentRotated) {
+        console.log(`🔄 Auto-selecting fabric orientation: ${shouldBeHorizontal ? 'HORIZONTAL (railroaded)' : 'VERTICAL (standard)'} for fabric width ${fabricWidthCm}cm (threshold: ${FABRIC_WIDTH_THRESHOLD_CM}cm)`);
+        handleInputChange("fabric_rotated", shouldBeHorizontal.toString());
+      }
+      
+      previousFabricIdRef.current = selectedFabric;
+    }
+  }, [selectedFabric, selectedFabricItem, treatmentCategory, readOnly]);
 
   // CRITICAL FIX: Use a recalc trigger to force useMemo to re-run on changes
   const [recalcTrigger, setRecalcTrigger] = useState(0);
