@@ -102,7 +102,7 @@ export const DynamicWindowWorksheet = forwardRef<{
   const [fabricCalculation, setFabricCalculation] = useState<any>(null);
   const [selectedHeading, setSelectedHeading] = useState("standard");
   const [selectedLining, setSelectedLining] = useState("none");
-  const [selectedOptions, setSelectedOptions] = useState<Array<{ name: string; price: number; pricingMethod?: string; pricingGridData?: any }>>([]);
+  const [selectedOptions, setSelectedOptions] = useState<Array<{ name: string; price: number; pricingMethod?: string; pricingGridData?: any; optionKey?: string }>>([]);
   const [isSaving, setIsSaving] = useState(false);
   
   // ✅ SINGLE SOURCE OF TRUTH: Calculated costs stored once, used everywhere

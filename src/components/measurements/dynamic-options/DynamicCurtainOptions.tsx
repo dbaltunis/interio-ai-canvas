@@ -23,8 +23,8 @@ interface DynamicCurtainOptionsProps {
   template?: any; // The selected curtain template
   readOnly?: boolean;
   onOptionPriceChange?: (optionKey: string, price: number, label: string, pricingMethod?: string, pricingGridData?: any) => void;
-  selectedOptions?: Array<{ name: string; price: number; pricingMethod?: string; pricingGridData?: any }>;
-  onSelectedOptionsChange?: (options: Array<{ name: string; price: number; pricingMethod?: string; pricingGridData?: any }>) => void;
+  selectedOptions?: Array<{ name: string; price: number; pricingMethod?: string; pricingGridData?: any; optionKey?: string }>;
+  onSelectedOptionsChange?: (options: Array<{ name: string; price: number; pricingMethod?: string; pricingGridData?: any; optionKey?: string }>) => void;
   selectedEyeletRing?: string;
   onEyeletRingChange?: (ringId: string) => void;
   selectedHeading?: string;
@@ -340,16 +340,26 @@ export const DynamicCurtainOptions = ({
         
         // Update parent's price tracking
         if (onOptionPriceChange) {
-          // Get pricing method from extra_data or default to 'per-meter' from settings
           const pricingMethod = selectedValue.extra_data?.pricing_method || 'per-meter';
           onOptionPriceChange(optionKey, price, selectedValue.label, pricingMethod);
         }
         
-        // CRITICAL: Also update selectedOptions array for cost summary display
+        // ✅ CLEAN FIX: Update selectedOptions using optionKey as unique identifier
         if (onSelectedOptionsChange) {
-          const updatedOptions = selectedOptions.filter(opt => !opt.name.includes(option.label));
+          // Remove ALL options that start with this option's key or label prefix
+          // This ensures both main option and any sub-options are cleared
+          const updatedOptions = selectedOptions.filter(opt => {
+            // Use optionKey stored in option object if available, otherwise check by label prefix
+            const optKey = (opt as any).optionKey;
+            if (optKey) {
+              return !optKey.startsWith(optionKey);
+            }
+            // Fallback: filter by exact label prefix match (e.g., "Hardware:" not just "Hardware")
+            return !opt.name.startsWith(`${option.label}:`);
+          });
+          
+          // Add the new option with its key for future identification
           if (price > 0) {
-            // Extract pricing method from extra_data or default to 'per-meter' from settings
             const pricingMethod = selectedValue.extra_data?.pricing_method || 'per-meter';
             const pricingGridData = selectedValue.extra_data?.pricing_grid_data;
             
@@ -357,14 +367,22 @@ export const DynamicCurtainOptions = ({
               name: `${option.label}: ${selectedValue.label}`, 
               price,
               pricingMethod,
-              pricingGridData
-            });
+              pricingGridData,
+              optionKey: optionKey // ✅ Store key for reliable filtering
+            } as any);
           }
           onSelectedOptionsChange(updatedOptions);
-          console.log('🎨 Updated selectedOptions for cost summary:', updatedOptions);
+          console.log('🎨 Updated selectedOptions:', updatedOptions.map(o => o.name));
         }
       }
     }
+    
+    // Clear any sub-category selections for this option when main option changes
+    setSubCategorySelections(prev => {
+      const updated = { ...prev };
+      delete updated[optionKey];
+      return updated;
+    });
     
     // Store in measurements
     onChange(`treatment_option_${optionKey}`, valueId);
@@ -856,12 +874,32 @@ export const DynamicCurtainOptions = ({
                       value={currentSubCategory || ''}
                       onValueChange={(categoryKey) => {
                         console.log(`🔥 Sub-category change: ${option.key} type = ${categoryKey}`);
-                        setSubCategorySelections(prev => ({ ...prev, [option.key]: categoryKey }));
+                        
+                        // ✅ CLEAN FIX: Remove ALL old sub-option entries when changing category
+                        if (onSelectedOptionsChange) {
+                          const cleanedOptions = selectedOptions.filter(opt => {
+                            // Remove any option that starts with this option's label followed by " - "
+                            // This catches "Hardware - Rods:" and "Hardware - tracks:" etc.
+                            return !opt.name.startsWith(`${option.label} - `);
+                          });
+                          onSelectedOptionsChange(cleanedOptions);
+                          console.log('🧹 Cleaned sub-options for category change:', cleanedOptions.map(o => o.name));
+                        }
+                        
                         // Clear previous item selection when category changes
                         const prevCategory = subCategorySelections[option.key];
                         if (prevCategory && prevCategory !== categoryKey) {
-                          handleTreatmentOptionChange(`${option.key}_${prevCategory}`, '');
+                          // Clear the measurement for old category
+                          onChange(`treatment_option_${option.key}_${prevCategory}`, '');
+                          // Clear from local state
+                          setTreatmentOptionSelections(prev => {
+                            const updated = { ...prev };
+                            delete updated[`${option.key}_${prevCategory}`];
+                            return updated;
+                          });
                         }
+                        
+                        setSubCategorySelections(prev => ({ ...prev, [option.key]: categoryKey }));
                       }}
                       disabled={readOnly}
                     >
@@ -885,27 +923,36 @@ export const DynamicCurtainOptions = ({
                   if (!selectedSubOption || !selectedSubOption.choices) return null;
                   
                   const currentItemSelection = treatmentOptionSelections[`${option.key}_${selectedSubOption.key}`];
+                  const subOptionKey = `${option.key}_${selectedSubOption.key}`;
                   
                   // Auto-select if only one choice
                   if (selectedSubOption.choices.length === 1 && !currentItemSelection) {
                     const singleChoice = selectedSubOption.choices[0];
                     setTimeout(() => {
                       console.log(`✅ Auto-selecting single choice for ${selectedSubOption.label}:`, singleChoice.label);
-                      handleTreatmentOptionChange(`${option.key}_${selectedSubOption.key}`, singleChoice.value);
+                      handleTreatmentOptionChange(subOptionKey, singleChoice.value);
                       
                       const displayLabel = `${option.label} - ${selectedSubOption.label}: ${singleChoice.label}`;
                       const pricingMethod = singleChoice.pricing_method || selectedSubOption.pricing_method || 'per-unit';
                       const price = singleChoice.price || 0;
                       
                       if (onOptionPriceChange) {
-                        onOptionPriceChange(`${option.key}_${selectedSubOption.key}`, price, displayLabel, pricingMethod);
+                        onOptionPriceChange(subOptionKey, price, displayLabel, pricingMethod);
                       }
                       
                       if (onSelectedOptionsChange) {
-                        const updatedOptions = selectedOptions.filter(opt => 
-                          !opt.name.startsWith(`${option.label} - ${selectedSubOption.label}`)
-                        );
-                        updatedOptions.push({ name: displayLabel, price, pricingMethod });
+                        // ✅ CLEAN FIX: Filter by optionKey or label prefix
+                        const updatedOptions = selectedOptions.filter(opt => {
+                          const optKey = (opt as any).optionKey;
+                          if (optKey) return optKey !== subOptionKey;
+                          return !opt.name.startsWith(`${option.label} - ${selectedSubOption.label}:`);
+                        });
+                        updatedOptions.push({ 
+                          name: displayLabel, 
+                          price, 
+                          pricingMethod,
+                          optionKey: subOptionKey // ✅ Store key for reliable filtering
+                        } as any);
                         onSelectedOptionsChange(updatedOptions);
                       }
                     }, 0);
@@ -920,8 +967,8 @@ export const DynamicCurtainOptions = ({
                         <Select
                           value={currentItemSelection || ''}
                           onValueChange={(choiceValue) => {
-                            console.log(`🔥 Choice selection: ${option.key}_${selectedSubOption.key} = ${choiceValue}`);
-                            handleTreatmentOptionChange(`${option.key}_${selectedSubOption.key}`, choiceValue);
+                            console.log(`🔥 Choice selection: ${subOptionKey} = ${choiceValue}`);
+                            handleTreatmentOptionChange(subOptionKey, choiceValue);
                             
                             const choice = selectedSubOption.choices?.find((c: any) => c.value === choiceValue);
                             if (choice) {
@@ -931,19 +978,22 @@ export const DynamicCurtainOptions = ({
                               
                               // Update option price
                               if (onOptionPriceChange) {
-                                onOptionPriceChange(`${option.key}_${selectedSubOption.key}`, price, displayLabel, pricingMethod);
+                                onOptionPriceChange(subOptionKey, price, displayLabel, pricingMethod);
                               }
                               
-                              // CRITICAL: Also update selectedOptions for Cost Summary display
+                              // ✅ CLEAN FIX: Also update selectedOptions for Cost Summary display
                               if (onSelectedOptionsChange) {
-                                const updatedOptions = selectedOptions.filter(opt => 
-                                  !opt.name.startsWith(`${option.label} - ${selectedSubOption.label}`)
-                                );
+                                const updatedOptions = selectedOptions.filter(opt => {
+                                  const optKey = (opt as any).optionKey;
+                                  if (optKey) return optKey !== subOptionKey;
+                                  return !opt.name.startsWith(`${option.label} - ${selectedSubOption.label}:`);
+                                });
                                 updatedOptions.push({
                                   name: displayLabel,
                                   price: price,
-                                  pricingMethod
-                                });
+                                  pricingMethod,
+                                  optionKey: subOptionKey // ✅ Store key for reliable filtering
+                                } as any);
                                 onSelectedOptionsChange(updatedOptions);
                               }
                             }
