@@ -40,6 +40,14 @@ const AssemblyIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+interface ManufacturingDetails {
+  pricingType: string;
+  pricePerUnit: number;
+  quantity: number;
+  quantityLabel: string;
+  manufacturingType: 'hand' | 'machine';
+}
+
 interface CostCalculationSummaryProps {
   template: CurtainTemplate;
   measurements: any;
@@ -68,6 +76,7 @@ interface CostCalculationSummaryProps {
     horizontalPieces: number;
     orientation: 'horizontal' | 'vertical';
   };
+  manufacturingDetails?: ManufacturingDetails;
 }
 
 export const CostCalculationSummary = ({
@@ -85,7 +94,8 @@ export const CostCalculationSummary = ({
   calculatedHeadingCost,
   calculatedOptionsCost,
   calculatedTotalCost,
-  fabricDisplayData
+  fabricDisplayData,
+  manufacturingDetails
 }: CostCalculationSummaryProps) => {
   const { units } = useMeasurementUnits();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
@@ -610,7 +620,29 @@ export const CostCalculationSummary = ({
 
         {manufacturingCost > 0 && (
           <div className="flex justify-between py-1.5 border-b border-border/50">
-            <span className="text-card-foreground font-medium">Manufacturing</span>
+            <div className="flex flex-col">
+              <span className="text-card-foreground font-medium">
+                Manufacturing {manufacturingDetails?.manufacturingType ? `(${manufacturingDetails.manufacturingType})` : ''}
+              </span>
+              {manufacturingDetails && manufacturingDetails.pricePerUnit > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  {(() => {
+                    const { pricingType, pricePerUnit, quantity, quantityLabel } = manufacturingDetails;
+                    
+                    if (pricingType === 'per_metre') {
+                      return `${formatPrice(pricePerUnit)}/m × ${quantity.toFixed(2)}m`;
+                    } else if (pricingType === 'per_panel') {
+                      return `${formatPrice(pricePerUnit)}/panel × ${quantity} ${quantity === 1 ? 'panel' : 'panels'}`;
+                    } else if (pricingType === 'per_drop') {
+                      return `${formatPrice(pricePerUnit)}/drop × ${quantity} ${quantity === 1 ? 'drop' : 'drops'}`;
+                    } else if (pricingType === 'height_range') {
+                      return `${formatPrice(pricePerUnit)} (height range) × ${quantity} ${quantityLabel}`;
+                    }
+                    return quantityLabel || '';
+                  })()}
+                </span>
+              )}
+            </div>
             <span className="font-semibold text-card-foreground">{formatPrice(manufacturingCost)}</span>
           </div>
         )}
