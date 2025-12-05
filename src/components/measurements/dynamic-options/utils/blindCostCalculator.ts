@@ -23,6 +23,10 @@ export const calculateBlindCosts = (
   measurements?: Record<string, any>
 ): BlindCalculationResult => {
   
+  // Check for double configuration (Roman blinds - two blinds on one headrail)
+  const isDoubleConfig = measurements?.curtain_type === 'double';
+  const blindMultiplier = isDoubleConfig ? 2 : 1;
+  
   // CRITICAL FIX: Blinds don't use hems or waste - only curtains do
   // For blinds, use the dimensions as-is without adding allowances
   const headerHem = 0;
@@ -34,9 +38,18 @@ export const calculateBlindCosts = (
   const effectiveWidth = widthCm + (sideHem * 2);
   const effectiveHeight = heightCm + headerHem + bottomHem;
   
-  // Calculate square meters with waste
+  // Calculate square meters with waste (per blind)
   const sqmRaw = (effectiveWidth * effectiveHeight) / 10000;
-  const squareMeters = sqmRaw * (1 + wastePercent / 100);
+  const squareMetersPerBlind = sqmRaw * (1 + wastePercent / 100);
+  // Total square meters (doubled if double configuration)
+  const squareMeters = squareMetersPerBlind * blindMultiplier;
+  
+  console.log('📐 Roman Blind Configuration:', {
+    isDoubleConfig,
+    blindMultiplier,
+    squareMetersPerBlind: squareMetersPerBlind.toFixed(2),
+    totalSquareMeters: squareMeters.toFixed(2)
+  });
   
   // Get fabric price per sqm - FABRIC GRIDS ARE FOR FABRIC COST ONLY, NOT MANUFACTURING
   let fabricPricePerSqm = 0;
@@ -51,19 +64,22 @@ export const calculateBlindCosts = (
     // UNIVERSAL: Fabric pricing grid = TOTAL PRODUCT PRICE (not just fabric cost)
     // Works for ALL blind types and ALL SaaS client accounts automatically
     const totalGridPrice = getPriceFromGrid(fabricItem.pricing_grid_data, widthCm, heightCm);
-    fabricCost = totalGridPrice; // This is the COMPLETE cost (fabric + manufacturing)
-    fabricPricePerSqm = squareMeters > 0 ? totalGridPrice / squareMeters : 0;
+    // For double configuration, multiply the grid price by 2 (two blinds)
+    fabricCost = totalGridPrice * blindMultiplier;
+    fabricPricePerSqm = squareMeters > 0 ? fabricCost / squareMeters : 0;
     
     console.log('✅ UNIVERSAL FABRIC GRID (ALL CLIENTS, ALL BLIND TYPES):', {
       blindType: template?.treatment_category || 'unknown',
       gridName: fabricItem.resolved_grid_name,
       gridCode: fabricItem.resolved_grid_code,
       dimensions: `${widthCm}cm × ${heightCm}cm`,
-      totalGridPrice,
+      singleBlindGridPrice: totalGridPrice,
+      blindMultiplier,
+      totalFabricCost: fabricCost,
       note: 'Grid price = TOTAL product price (fabric + manufacturing) - applies to ALL SaaS clients'
     });
   } else {
-    // No grid - use per-unit pricing for fabric only
+    // No grid - use per-unit pricing for fabric only (already uses total squareMeters which includes multiplier)
     fabricPricePerSqm = fabricItem?.selling_price || fabricItem?.price_per_meter || fabricItem?.unit_price || 0;
     fabricCost = squareMeters * fabricPricePerSqm;
     
@@ -71,6 +87,7 @@ export const calculateBlindCosts = (
       blindType: template?.treatment_category || 'unknown',
       fabricPricePerSqm,
       squareMeters: squareMeters.toFixed(2),
+      blindMultiplier,
       fabricCost: fabricCost.toFixed(2)
     });
   }
@@ -86,15 +103,19 @@ export const calculateBlindCosts = (
     console.log('✅ Manufacturing = 0 (included in fabric grid) - ALL CLIENTS, ALL BLIND TYPES');
   } else if (template?.pricing_type === 'pricing_grid' && template?.pricing_grid_data) {
     // Fallback: Template manufacturing grid (when fabric has no grid)
-    manufacturingCost = getPriceFromGrid(template.pricing_grid_data, widthCm, heightCm);
+    // Apply multiplier for double configuration
+    const singleManufacturingCost = getPriceFromGrid(template.pricing_grid_data, widthCm, heightCm);
+    manufacturingCost = singleManufacturingCost * blindMultiplier;
     console.log('✅ Template manufacturing grid (fallback):', {
       blindType: template?.treatment_category || 'unknown',
-      manufacturingCost
+      singleManufacturingCost,
+      blindMultiplier,
+      totalManufacturingCost: manufacturingCost
     });
   } else if (template?.machine_price_per_panel) {
-    manufacturingCost = template.machine_price_per_panel;
+    manufacturingCost = template.machine_price_per_panel * blindMultiplier;
   } else if (template?.unit_price) {
-    manufacturingCost = squareMeters * template.unit_price * 0.5; // 50% for labor
+    manufacturingCost = squareMeters * template.unit_price * 0.5; // 50% for labor (squareMeters already includes multiplier)
   }
   
   // Calculate options cost - consider pricing method for each option
@@ -178,11 +199,15 @@ export const calculateBlindCosts = (
   // Total cost
   const totalCost = fabricCost + manufacturingCost + optionsCost;
   
-  // Display text
-  const displayText = `${squareMeters.toFixed(2)} sqm × ${fabricPricePerSqm.toFixed(2)}/sqm`;
+  // Display text (show multiplier if double)
+  const displayText = isDoubleConfig 
+    ? `${squareMeters.toFixed(2)} sqm (2 blinds) × ${fabricPricePerSqm.toFixed(2)}/sqm`
+    : `${squareMeters.toFixed(2)} sqm × ${fabricPricePerSqm.toFixed(2)}/sqm`;
   
   console.log('🧮 Blind Cost Calculation:', {
     dimensions: `${widthCm}cm × ${heightCm}cm`,
+    configuration: isDoubleConfig ? 'Double (2 blinds)' : 'Single',
+    blindMultiplier,
     hems: { header: headerHem, bottom: bottomHem, side: sideHem },
     effectiveDimensions: `${effectiveWidth}cm × ${effectiveHeight}cm`,
     squareMeters: squareMeters.toFixed(2),
