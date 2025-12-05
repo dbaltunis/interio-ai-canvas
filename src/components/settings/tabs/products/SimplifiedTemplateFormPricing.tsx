@@ -8,6 +8,7 @@ import { HandFinishedToggle } from "./pricing/HandFinishedToggle";
 import { PerMetrePricing } from "./pricing/PerMetrePricing";
 import { PerPanelPricing } from "./pricing/PerPanelPricing";
 import { PerDropPricing } from "./pricing/PerDropPricing";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface SimplifiedTemplateFormPricingProps {
   formData: any;
@@ -37,7 +38,7 @@ export const SimplifiedTemplateFormPricing = ({
   
   // Unit-aware labels
   const lengthLabel = units.length === 'inches' || units.length === 'feet' ? 'Yard' : 'Metre';
-  const currencySymbol = units.currency || '$';
+  const currencySymbol = getCurrencySymbol(units.currency || 'USD');
   
   return (
     <Card>

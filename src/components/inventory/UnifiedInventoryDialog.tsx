@@ -24,6 +24,7 @@ import { usePricingGrids } from "@/hooks/usePricingGrids";
 import { ColorSelector } from "./ColorSelector";
 import { ColorSlatPreview, getColorHex } from "./ColorSlatPreview";
 import { COLOR_PALETTE } from "@/constants/inventoryCategories";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 const STORAGE_KEY = "inventory_draft_data";
 
@@ -68,18 +69,9 @@ export const UnifiedInventoryDialog = ({
         : businessSettings.measurement_units)
     : defaultMeasurementUnits;
   
-  const currency = userPreferences?.currency || measurementUnits.currency || 'USD';
+  const currency = measurementUnits.currency || 'USD';
   const lengthUnit = measurementUnits.fabric || measurementUnits.length || 'm';
-  
-  const currencySymbols: Record<string, string> = {
-    'NZD': 'NZ$',
-    'AUD': 'A$',
-    'USD': '$',
-    'GBP': '£',
-    'EUR': '€',
-    'ZAR': 'R'
-  };
-  const currencySymbol = currencySymbols[currency] || currency;
+  const currencySymbol = getCurrencySymbol(currency);
   
   const isImperial = measurementUnits.system === 'imperial';
   const getPricingUnitLabel = () => {
