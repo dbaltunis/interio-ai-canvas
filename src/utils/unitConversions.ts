@@ -307,12 +307,19 @@ export function validatePriceCalculation(calc: PriceCalculation): {
 
 /**
  * Format a price for display with currency
- * Uses centralized getCurrencySymbol for consistency
+ * Uses inline currency symbols to avoid circular dependencies
  */
 export function formatPrice(price: number, currency: string = 'USD'): string {
-  // Import getCurrencySymbol inline to avoid circular dependencies
-  const { getCurrencySymbol } = require('@/utils/formatCurrency');
-  const symbol = getCurrencySymbol(currency);
+  const symbols: Record<string, string> = {
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+    'AUD': 'A$',
+    'NZD': 'NZ$',
+    'ZAR': 'R'
+  };
+  
+  const symbol = symbols[currency] || currency;
   const amount = roundTo(safeParseNumber(price), 2).toFixed(2);
   
   return `${symbol}${amount}`;
