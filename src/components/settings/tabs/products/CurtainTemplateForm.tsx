@@ -77,8 +77,11 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
     return_right: template?.return_right?.toString() || "7.5",
     overlap: template?.overlap?.toString() || "10",
     waste_percent: template?.waste_percent?.toString() || "5",
-    minimum_width: (template as any)?.minimum_width?.toString() || "30",
-    maximum_width: (template as any)?.maximum_width?.toString() || "300",
+    // Size constraints (optional)
+    minimum_width: (template as any)?.minimum_width?.toString() || "",
+    maximum_width: (template as any)?.maximum_width?.toString() || "",
+    minimum_height: (template as any)?.minimum_height?.toString() || "",
+    maximum_height: (template as any)?.maximum_height?.toString() || "",
   });
 
   const handleInputChange = (field: string, value: any) => {
@@ -167,6 +170,8 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
         waste_percent: formData.waste_percent ? parseFloat(formData.waste_percent) : null,
         minimum_width: formData.minimum_width ? parseFloat(formData.minimum_width) : null,
         maximum_width: formData.maximum_width ? parseFloat(formData.maximum_width) : null,
+        minimum_height: formData.minimum_height ? parseFloat(formData.minimum_height) : null,
+        maximum_height: formData.maximum_height ? parseFloat(formData.maximum_height) : null,
         active: true,
       };
 
