@@ -8,6 +8,7 @@ interface RomanBlindVisualizerProps {
   className?: string;
   foldStyle?: 'classic' | 'relaxed' | 'hobbled';
   mounted?: 'inside' | 'outside';
+  configuration?: 'single' | 'double';
 }
 
 export const RomanBlindVisualizer = ({
@@ -17,8 +18,12 @@ export const RomanBlindVisualizer = ({
   material,
   className = "",
   foldStyle = 'classic',
-  mounted = 'outside'
+  mounted = 'outside',
+  configuration = 'single'
 }: RomanBlindVisualizerProps) => {
+  
+  // Check if double configuration from measurements
+  const isDouble = configuration === 'double' || measurements?.curtain_type === 'double';
   
   const renderRomanBlind = useMemo(() => {
     const width = measurements?.rail_width || measurements?.window_width || 200;
@@ -26,6 +31,10 @@ export const RomanBlindVisualizer = ({
     const fabricColor = material?.color || "#E8E2D4";
     const fabricImage = material?.image_url || null;
     const foldCount = Math.floor(height / 25); // Fold every 25cm approximately
+    
+    // For double configuration, calculate individual blind width
+    const blindWidth = isDouble ? (width * 0.8 - 4) / 2 : width * 0.8;
+    const blindGap = 4; // Gap between blinds
     
     return (
       <svg viewBox="0 0 400 300" className="w-full h-full">
@@ -59,7 +68,7 @@ export const RomanBlindVisualizer = ({
         {/* Window frame background */}
         <rect x="50" y="50" width={width * 0.8} height={height * 0.8} fill="#F5F5F0" stroke="#8B7355" strokeWidth="8" rx="4" />
         
-        {/* Roman blind mounting system */}
+        {/* Roman blind mounting system - single headrail for both configurations */}
         {mounted === 'outside' ? (
           <>
             {/* Outside mount - headrail above window */}
@@ -85,36 +94,54 @@ export const RomanBlindVisualizer = ({
           </>
         )}
         
-        {/* Roman blind fabric with realistic folds */}
-        {foldStyle === 'classic' && renderClassicFolds(width, height, foldCount, fabricImage ? 'url(#fabricPattern)' : fabricColor, fabricImage)}
-        {foldStyle === 'relaxed' && renderRelaxedFolds(width, height, foldCount, fabricImage ? 'url(#fabricPattern)' : fabricColor, fabricImage)}
-        {foldStyle === 'hobbled' && renderHobbledFolds(width, height, foldCount, fabricImage ? 'url(#fabricPattern)' : fabricColor, fabricImage)}
-        
-        {/* Control cord */}
-        <line 
-          x1={50 + width * 0.75} y1="54" 
-          x2={50 + width * 0.75} y2="280" 
-          stroke="#8B4513" 
-          strokeWidth="2" 
-        />
-        
-        {/* Cord pull */}
-        <circle 
-          cx={50 + width * 0.75} cy="285" 
-          r="4" 
-          fill="#D2691E" 
-          stroke="#8B4513" 
-          strokeWidth="1" 
-        />
+        {/* Roman blind fabric - Single or Double */}
+        {isDouble ? (
+          <>
+            {/* Left blind */}
+            <g transform={`translate(0, 0)`}>
+              {foldStyle === 'classic' && renderClassicFoldsOffset(50, blindWidth, height, foldCount, fabricImage ? 'url(#fabricPattern)' : fabricColor, fabricImage)}
+              {foldStyle === 'relaxed' && renderRelaxedFoldsOffset(50, blindWidth, height, foldCount, fabricImage ? 'url(#fabricPattern)' : fabricColor, fabricImage)}
+              {foldStyle === 'hobbled' && renderHobbledFoldsOffset(50, blindWidth, height, foldCount, fabricImage ? 'url(#fabricPattern)' : fabricColor, fabricImage)}
+            </g>
+            {/* Center divider line */}
+            <line 
+              x1={50 + blindWidth + blindGap/2} y1="54" 
+              x2={50 + blindWidth + blindGap/2} y2={50 + height * 0.75} 
+              stroke="#666" 
+              strokeWidth="2" 
+            />
+            {/* Right blind */}
+            <g transform={`translate(0, 0)`}>
+              {foldStyle === 'classic' && renderClassicFoldsOffset(50 + blindWidth + blindGap, blindWidth, height, foldCount, fabricImage ? 'url(#fabricPattern)' : fabricColor, fabricImage)}
+              {foldStyle === 'relaxed' && renderRelaxedFoldsOffset(50 + blindWidth + blindGap, blindWidth, height, foldCount, fabricImage ? 'url(#fabricPattern)' : fabricColor, fabricImage)}
+              {foldStyle === 'hobbled' && renderHobbledFoldsOffset(50 + blindWidth + blindGap, blindWidth, height, foldCount, fabricImage ? 'url(#fabricPattern)' : fabricColor, fabricImage)}
+            </g>
+            {/* Control cords - two for double */}
+            <line x1={50 + blindWidth * 0.75} y1="54" x2={50 + blindWidth * 0.75} y2="280" stroke="#8B4513" strokeWidth="2" />
+            <circle cx={50 + blindWidth * 0.75} cy="285" r="4" fill="#D2691E" stroke="#8B4513" strokeWidth="1" />
+            <line x1={50 + blindWidth + blindGap + blindWidth * 0.75} y1="54" x2={50 + blindWidth + blindGap + blindWidth * 0.75} y2="280" stroke="#8B4513" strokeWidth="2" />
+            <circle cx={50 + blindWidth + blindGap + blindWidth * 0.75} cy="285" r="4" fill="#D2691E" stroke="#8B4513" strokeWidth="1" />
+          </>
+        ) : (
+          <>
+            {/* Single blind */}
+            {foldStyle === 'classic' && renderClassicFolds(width, height, foldCount, fabricImage ? 'url(#fabricPattern)' : fabricColor, fabricImage)}
+            {foldStyle === 'relaxed' && renderRelaxedFolds(width, height, foldCount, fabricImage ? 'url(#fabricPattern)' : fabricColor, fabricImage)}
+            {foldStyle === 'hobbled' && renderHobbledFolds(width, height, foldCount, fabricImage ? 'url(#fabricPattern)' : fabricColor, fabricImage)}
+            {/* Control cord */}
+            <line x1={50 + width * 0.75} y1="54" x2={50 + width * 0.75} y2="280" stroke="#8B4513" strokeWidth="2" />
+            <circle cx={50 + width * 0.75} cy="285" r="4" fill="#D2691E" stroke="#8B4513" strokeWidth="1" />
+          </>
+        )}
         
         {/* Material info badge */}
-        <rect x="60" y="260" width="120" height="25" fill="rgba(255,255,255,0.9)" rx="4" />
+        <rect x="60" y="260" width="140" height="25" fill="rgba(255,255,255,0.9)" rx="4" />
         <text x="70" y="275" fontSize="10" fill="#333">
-          {material?.name || 'Roman Blind'} - {foldStyle.charAt(0).toUpperCase() + foldStyle.slice(1)}
+          {material?.name || 'Roman Blind'} - {isDouble ? 'Double' : 'Single'} {foldStyle.charAt(0).toUpperCase() + foldStyle.slice(1)}
         </text>
       </svg>
     );
-  }, [windowType, measurements, material, foldStyle, mounted]);
+  }, [windowType, measurements, material, foldStyle, mounted, isDouble]);
 
   return (
     <div className={`relative bg-gradient-to-b from-blue-50 to-blue-100 rounded-lg border-2 border-blue-200 ${className}`}>
@@ -245,6 +272,126 @@ const renderHobbledFolds = (width: number, height: number, foldCount: number, fa
         x1={50 + (width * 0.8) * 0.2} 
         y1={y + foldHeight - curveHeight} 
         x2={50 + (width * 0.8) * 0.8} 
+        y2={y + foldHeight - curveHeight} 
+        stroke="rgba(0,0,0,0.3)" 
+        strokeWidth="1"
+        strokeDasharray="2,2"
+      />
+    );
+  }
+  
+  return <g>{folds}</g>;
+};
+
+// Offset versions for double roman blinds
+const renderClassicFoldsOffset = (xOffset: number, blindWidth: number, height: number, foldCount: number, fabricColor: string, hasFabricImage?: boolean) => {
+  const folds = [];
+  const foldHeight = (height * 0.7) / foldCount;
+  
+  for (let i = 0; i < foldCount; i++) {
+    const y = 60 + (i * foldHeight);
+    const isVisible = i < foldCount - 2;
+    
+    if (isVisible) {
+      folds.push(
+        <rect 
+          key={`fold-${xOffset}-${i}`}
+          x={xOffset} 
+          y={y} 
+          width={blindWidth} 
+          height={foldHeight - 4} 
+          fill={fabricColor} 
+          stroke="rgba(0,0,0,0.1)" 
+          strokeWidth="0.5" 
+        />
+      );
+      folds.push(
+        <line 
+          key={`fold-line-${xOffset}-${i}`}
+          x1={xOffset} 
+          y1={y + foldHeight - 4} 
+          x2={xOffset + blindWidth} 
+          y2={y + foldHeight - 4} 
+          stroke="rgba(0,0,0,0.2)" 
+          strokeWidth="2" 
+        />
+      );
+    } else {
+      const curveHeight = 8;
+      folds.push(
+        <path 
+          key={`raised-fold-${xOffset}-${i}`}
+          d={`M ${xOffset} ${y} Q ${xOffset + blindWidth / 2} ${y + curveHeight} ${xOffset + blindWidth} ${y} L ${xOffset + blindWidth} ${y + foldHeight} Q ${xOffset + blindWidth / 2} ${y + foldHeight - curveHeight} ${xOffset} ${y + foldHeight} Z`}
+          fill={fabricColor}
+          stroke="rgba(0,0,0,0.15)"
+          strokeWidth="1"
+        />
+      );
+    }
+  }
+  
+  return <g>{folds}</g>;
+};
+
+const renderRelaxedFoldsOffset = (xOffset: number, blindWidth: number, height: number, foldCount: number, fabricColor: string, hasFabricImage?: boolean) => {
+  const folds = [];
+  const foldHeight = (height * 0.7) / foldCount;
+  
+  for (let i = 0; i < foldCount; i++) {
+    const y = 60 + (i * foldHeight);
+    const isVisible = i < foldCount - 3;
+    
+    if (isVisible) {
+      const curve = 3;
+      folds.push(
+        <path 
+          key={`relaxed-fold-${xOffset}-${i}`}
+          d={`M ${xOffset} ${y} Q ${xOffset + blindWidth / 2} ${y + curve} ${xOffset + blindWidth} ${y} L ${xOffset + blindWidth} ${y + foldHeight} Q ${xOffset + blindWidth / 2} ${y + foldHeight + curve} ${xOffset} ${y + foldHeight} Z`}
+          fill={fabricColor}
+          stroke="rgba(0,0,0,0.1)"
+          strokeWidth="0.5"
+        />
+      );
+    } else {
+      const curveHeight = 12;
+      folds.push(
+        <path 
+          key={`deep-fold-${xOffset}-${i}`}
+          d={`M ${xOffset} ${y} Q ${xOffset + blindWidth / 2} ${y + curveHeight} ${xOffset + blindWidth} ${y} L ${xOffset + blindWidth} ${y + foldHeight} Q ${xOffset + blindWidth / 2} ${y + foldHeight - curveHeight} ${xOffset} ${y + foldHeight} Z`}
+          fill={fabricColor}
+          stroke="rgba(0,0,0,0.2)"
+          strokeWidth="1"
+        />
+      );
+    }
+  }
+  
+  return <g>{folds}</g>;
+};
+
+const renderHobbledFoldsOffset = (xOffset: number, blindWidth: number, height: number, foldCount: number, fabricColor: string, hasFabricImage?: boolean) => {
+  const folds = [];
+  const foldHeight = (height * 0.7) / (foldCount + 2);
+  
+  for (let i = 0; i < foldCount + 2; i++) {
+    const y = 60 + (i * foldHeight);
+    const curveHeight = 6;
+    
+    folds.push(
+      <path 
+        key={`hobbled-fold-${xOffset}-${i}`}
+        d={`M ${xOffset} ${y} Q ${xOffset + blindWidth / 2} ${y + curveHeight} ${xOffset + blindWidth} ${y} L ${xOffset + blindWidth} ${y + foldHeight - curveHeight} Q ${xOffset + blindWidth / 2} ${y + foldHeight} ${xOffset} ${y + foldHeight - curveHeight} Z`}
+        fill={fabricColor}
+        stroke="rgba(0,0,0,0.15)"
+        strokeWidth="1"
+      />
+    );
+    folds.push(
+      <line 
+        key={`tack-line-${xOffset}-${i}`}
+        x1={xOffset + blindWidth * 0.2} 
+        y1={y + foldHeight - curveHeight} 
+        x2={xOffset + blindWidth * 0.8} 
         y2={y + foldHeight - curveHeight} 
         stroke="rgba(0,0,0,0.3)" 
         strokeWidth="1"
