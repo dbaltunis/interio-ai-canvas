@@ -1,4 +1,3 @@
-
 import { useState, useEffect, Suspense, lazy } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ResponsiveHeader } from "@/components/layout/ResponsiveHeader";
@@ -7,6 +6,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { AIBackground } from "@/components/common/AIBackground";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
+import { useEnsureDefaultSequences } from "@/hooks/useNumberSequences";
 import { OrderingHubPage } from "@/components/ordering/OrderingHubPage";
 import { Button } from "@/components/ui/button";
 
@@ -214,6 +214,9 @@ const Index = () => {
   
   // Enable session timeout tracking
   useSessionTimeout();
+  
+  // Ensure default number sequences exist for all new users
+  useEnsureDefaultSequences();
 
   console.log('Index: Rendering with activeTab =', activeTab, 'user =', user?.email || 'no user');
   console.log('Index: Render time =', new Date().toISOString());

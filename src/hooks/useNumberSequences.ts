@@ -197,16 +197,16 @@ export const useSequenceLabel = (entityType: EntityType) => {
   };
 };
 
-// Hook to ensure default sequences exist for a user
+// Hook to ensure default sequences exist for a user (creates missing entity types)
 export const useEnsureDefaultSequences = () => {
   const { data: sequences = [], isLoading } = useNumberSequences();
   const createSequence = useCreateNumberSequence();
   
   useEffect(() => {
     const ensureDefaults = async () => {
-      if (isLoading || sequences.length > 0) return;
+      if (isLoading) return;
       
-      // User has no sequences, create defaults
+      // Define all required entity types with their defaults
       const defaultSequences: Array<{
         entity_type: EntityType;
         prefix: string;
@@ -221,16 +221,24 @@ export const useEnsureDefaultSequences = () => {
         { entity_type: 'job', prefix: 'JOB-', next_number: 1, padding: 3, active: true },
       ];
       
-      for (const seq of defaultSequences) {
+      // Find which entity types are missing
+      const existingTypes = new Set(sequences.map(s => s.entity_type));
+      const missingSequences = defaultSequences.filter(s => !existingTypes.has(s.entity_type));
+      
+      if (missingSequences.length === 0) return;
+      
+      console.log('Creating missing number sequences:', missingSequences.map(s => s.entity_type));
+      
+      for (const seq of missingSequences) {
         try {
           await createSequence.mutateAsync(seq);
         } catch (error) {
-          // Sequence might already exist, ignore
+          // Sequence might already exist due to race condition, ignore
           console.log(`Sequence ${seq.entity_type} may already exist`);
         }
       }
     };
     
     ensureDefaults();
-  }, [isLoading, sequences.length]);
+  }, [isLoading, sequences]);
 };

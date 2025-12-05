@@ -472,24 +472,27 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
           }}
           className="mb-6"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              {content.showLogo && (
-                <div className={`mb-4 ${content.logoPosition === 'center' ? 'text-center' : ''}`}>
-                  {projectData?.businessSettings?.company_logo_url ? (
-                    <img 
-                      src={projectData.businessSettings.company_logo_url} 
-                      alt="Company Logo" 
-                      className="h-16 w-auto object-contain"
-                      style={{ maxWidth: '200px' }}
-                    />
-                  ) : (
-                    <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
-                      <Building2 className="h-8 w-8 text-white" />
-                    </div>
-                  )}
+          {/* Row 1: Logo alone on top */}
+          {content.showLogo && (
+            <div className={`mb-4 ${content.logoPosition === 'center' ? 'text-center' : ''}`}>
+              {projectData?.businessSettings?.company_logo_url ? (
+                <img 
+                  src={projectData.businessSettings.company_logo_url} 
+                  alt="Company Logo" 
+                  className="h-16 w-auto object-contain"
+                  style={{ maxWidth: '200px' }}
+                />
+              ) : (
+                <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <Building2 className="h-8 w-8 text-white" />
                 </div>
               )}
+            </div>
+          )}
+          
+          {/* Row 2: Company info left, Document title right - aligned on same line */}
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
               <EditableText
                 value={content.companyName || renderTokenValue('company_name')}
                 onChange={(value) => updateBlockContent({ companyName: value })}
