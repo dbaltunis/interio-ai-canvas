@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { WindowCoveringOption } from "@/hooks/useWindowCoveringOptions";
 import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
 import { QuantityInput } from "./QuantityInput";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface OptionCardProps {
   option: WindowCoveringOption;
@@ -41,7 +42,7 @@ const formatPricingDisplay = (price: number, method: string, currency: string): 
       methodLabel = '';
   }
   
-  const currencySymbol = currency === 'NZD' ? 'NZ$' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : currency;
+  const currencySymbol = getCurrencySymbol(currency);
   return `${currencySymbol}${price.toFixed(2)}${methodLabel}`;
 };
 
