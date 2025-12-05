@@ -28,11 +28,8 @@ export interface ClientBreakdownItem {
 const groupRelatedOptions = (items: ClientBreakdownItem[]): ClientBreakdownItem[] => {
   if (!items || items.length === 0) return [];
   
-  // Separate options from non-options
-  const options = items.filter(item => item.category === 'option' || item.category === 'options');
-  const nonOptions = items.filter(item => item.category !== 'option' && item.category !== 'options');
-  
-  if (options.length === 0) return items;
+  // UNIVERSAL GROUPING: Apply to ALL items regardless of category (options, lining, hardware, etc.)
+  // Any items following parent-child naming pattern will be grouped
   
   // Normalize a name for matching (lowercase, replace spaces/dashes with underscores, collapse multiple underscores)
   const normalizeKey = (name: string) => {
@@ -68,8 +65,8 @@ const groupRelatedOptions = (items: ClientBreakdownItem[]): ClientBreakdownItem[
     '_louvre', '_louvres',                           // Louvre options
   ];
   
-  // First pass: identify all options and potential parent-child relationships
-  options.forEach(item => {
+  // First pass: identify all items and potential parent-child relationships
+  items.forEach(item => {
     const normalizedName = normalizeKey(item.name || '');
     
     // Check if this is a child option (has a suffix that indicates it belongs to a parent)
@@ -90,7 +87,7 @@ const groupRelatedOptions = (items: ClientBreakdownItem[]): ClientBreakdownItem[
   
   // Second pass: merge children into parents
   const processedParents = new Set<string>();
-  const result: ClientBreakdownItem[] = [...nonOptions];
+  const result: ClientBreakdownItem[] = [];
   
   parentMap.forEach((parentItem, parentKey) => {
     if (processedParents.has(parentKey)) return;
@@ -169,7 +166,7 @@ const groupRelatedOptions = (items: ClientBreakdownItem[]): ClientBreakdownItem[
   console.log('🔗 groupRelatedOptions:', {
     inputCount: items.length,
     outputCount: result.length,
-    groupedOptions: options.length - (result.length - nonOptions.length)
+    groupedItems: items.length - result.length
   });
   
   return result;
