@@ -7,6 +7,7 @@ import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 import type { EyeletRing } from "@/hooks/useEyeletRings";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface HeadingOptionsSectionProps {
   template: CurtainTemplate;
@@ -43,15 +44,7 @@ export const HeadingOptionsSection = ({
   );
 
   const formatPrice = (price: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    const symbol = currencySymbols[units.currency] || units.currency;
+    const symbol = getCurrencySymbol(units.currency);
     return `${symbol}${price.toFixed(2)}`;
   };
 

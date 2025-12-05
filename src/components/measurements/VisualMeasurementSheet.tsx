@@ -30,6 +30,7 @@ import { PoolUsageDisplay } from "./PoolUsageDisplay";
 import { ProjectFabricPoolSummary } from "./ProjectFabricPoolSummary";
 import { ColorSelector } from "./ColorSelector";
 import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
   onMeasurementChange: (field: string, value: string) => void;
@@ -478,15 +479,7 @@ export const VisualMeasurementSheet = ({
     }
   };
   const formatPrice = (price: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    const symbol = currencySymbols[units.currency] || units.currency;
+    const symbol = getCurrencySymbol(units.currency);
     return `${symbol}${price.toFixed(2)}`;
   };
   return <div key={`${windowType}-${curtainType}-${hardwareType}-${poolingOption}`} className="w-full container-level-1 rounded-none md:rounded-lg overflow-hidden">

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { useSurfaces } from "@/hooks/useSurfaces";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useFormattedDate } from "@/hooks/useFormattedDate";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface JobCardProps {
   quote: any;
@@ -76,16 +76,7 @@ export const JobCard = ({
       console.warn('Could not parse measurement units:', e);
     }
     
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$', 
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-
-    const symbol = currencySymbols[currency] || '$';
+    const symbol = getCurrencySymbol(currency);
     return `${symbol}${amount.toLocaleString()}`;
   };
 

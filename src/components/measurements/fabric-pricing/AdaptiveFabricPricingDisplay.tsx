@@ -11,6 +11,7 @@ import { PoolUsage } from "@/hooks/useProjectFabricPool";
 import { detectTreatmentType, getMeasurementLabels } from "@/utils/treatmentTypeDetection";
 import { PricingGridPreview } from "../PricingGridPreview";
 import { formatDimensionsFromCM, formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface AdaptiveFabricPricingDisplayProps {
   selectedFabricItem: any;
@@ -50,15 +51,7 @@ export const AdaptiveFabricPricingDisplay = ({
   const fabricToUse = enrichedFabric || selectedFabricItem;
 
   const formatPrice = (price: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    const symbol = currencySymbols[units.currency] || units.currency;
+    const symbol = getCurrencySymbol(units.currency);
     return `${symbol}${price.toFixed(2)}`;
   };
 

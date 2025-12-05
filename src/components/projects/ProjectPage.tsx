@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -6,6 +5,7 @@ import { ArrowLeft, Plus, Trash2, Copy, Edit, ChevronDown, Calendar } from "luci
 import { cn } from "@/lib/utils";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface ProjectPageProps {
   projectId?: string;
@@ -27,15 +27,7 @@ export const ProjectPage = ({ projectId, onBack }: ProjectPageProps) => {
 
   // Format currency properly
   const formatCurrency = (amount: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    const symbol = currencySymbols[units.currency] || units.currency;
+    const symbol = getCurrencySymbol(units.currency);
     return `${symbol}${amount.toFixed(2)}`;
   };
 

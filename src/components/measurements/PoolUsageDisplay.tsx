@@ -3,6 +3,7 @@ import { FabricPoolStatusBadge, PoolStatus } from "./FabricPoolStatusBadge";
 import { DollarSign, Lightbulb } from "lucide-react";
 import { PoolUsage } from "@/hooks/useProjectFabricPool";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface PoolUsageDisplayProps {
   poolUsage: PoolUsage;
@@ -33,15 +34,7 @@ export const PoolUsageDisplay = ({
   };
 
   const formatPrice = (price: number) => {
-    const currencySymbols: Record<string, string> = {
-      NZD: "NZ$",
-      AUD: "A$",
-      USD: "$",
-      GBP: "£",
-      EUR: "€",
-      ZAR: "R",
-    };
-    const symbol = currencySymbols[units.currency] || units.currency;
+    const symbol = getCurrencySymbol(units.currency);
     return `${symbol}${price.toFixed(2)}`;
   };
 

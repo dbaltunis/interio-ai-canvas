@@ -1,10 +1,10 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Package, AlertTriangle, Edit, Copy, Eye } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface ProductCardsProps {
   vendors: any[];
@@ -26,15 +26,7 @@ export const ProductCards = ({
   const { units, getFabricUnitLabel, formatFabric } = useMeasurementUnits();
 
   const formatCurrency = (amount: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
+    return `${getCurrencySymbol(units.currency)}${amount.toFixed(2)}`;
   };
 
   const getStockStatus = (current: number, reorderPoint: number) => {

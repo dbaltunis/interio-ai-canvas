@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface FabricFormProps {
   onClose: () => void;
@@ -41,16 +42,8 @@ export const FabricForm = ({ onClose }: FabricFormProps) => {
     lightFastness: ""
   });
 
-  const formatCurrency = (amount: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    return currencySymbols[units.currency] || units.currency;
+  const formatCurrency = () => {
+    return getCurrencySymbol(units.currency);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -173,7 +166,7 @@ export const FabricForm = ({ onClose }: FabricFormProps) => {
           <Label htmlFor="price">Price per Unit</Label>
           <div className="relative mt-1">
             <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-              {formatCurrency(0).replace('0.00', '')}
+              {formatCurrency()}
             </span>
             <Input
               id="price"
