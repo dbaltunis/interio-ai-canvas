@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, X, Upload, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Save, X, Upload, Loader2, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CurtainTemplate, useCreateCurtainTemplate, useUpdateCurtainTemplate } from "@/hooks/useCurtainTemplates";
@@ -15,6 +16,7 @@ import { SimplifiedTemplateFormPricing } from "./SimplifiedTemplateFormPricing";
 import { SimplifiedTemplateFormManufacturing } from "./SimplifiedTemplateFormManufacturing";
 import { HeadingStyleSelector } from "./HeadingStyleSelector";
 import { TemplateOptionsManager } from "./TemplateOptionsManager";
+import { TWCOptionsPreview } from "./TWCOptionsPreview";
 
 interface PrefilledData {
   name: string;
@@ -34,6 +36,7 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
   const createTemplate = useCreateCurtainTemplate();
   const updateTemplate = useUpdateCurtainTemplate();
   const [isSaving, setIsSaving] = useState(false);
+  const [linkedTWCProduct, setLinkedTWCProduct] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     name: template?.name || prefilledData?.name || "",
@@ -83,6 +86,40 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
     minimum_height: (template as any)?.minimum_height?.toString() || "",
     maximum_height: (template as any)?.maximum_height?.toString() || "",
   });
+
+  // Fetch linked TWC product data when template has inventory_item_id
+  useEffect(() => {
+    const fetchLinkedTWCProduct = async () => {
+      const inventoryItemId = formData.inventory_item_id;
+      if (!inventoryItemId) {
+        setLinkedTWCProduct(null);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('enhanced_inventory_items')
+          .select('id, name, sku, category, supplier, metadata')
+          .eq('id', inventoryItemId)
+          .single();
+
+        if (error) throw error;
+
+        // Check if it's a TWC product (has twc_item_number in metadata)
+        const metadata = data?.metadata as Record<string, any> | null;
+        if (metadata?.twc_item_number || data?.supplier?.toUpperCase() === 'TWC') {
+          setLinkedTWCProduct(data);
+        } else {
+          setLinkedTWCProduct(null);
+        }
+      } catch (err) {
+        console.error('Error fetching linked product:', err);
+        setLinkedTWCProduct(null);
+      }
+    };
+
+    fetchLinkedTWCProduct();
+  }, [formData.inventory_item_id]);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -292,6 +329,28 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
               </div>
             </CardContent>
           </Card>
+
+          {/* TWC Product Info - show when linked to TWC product */}
+          {linkedTWCProduct && (
+            <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-blue-600" />
+                  <CardTitle className="text-base">Linked TWC Product</CardTitle>
+                  <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                    TWC
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-2">
+                <div className="text-sm space-y-1">
+                  <p><span className="text-muted-foreground">Product:</span> {linkedTWCProduct.name}</p>
+                  <p><span className="text-muted-foreground">Item #:</span> {(linkedTWCProduct.metadata as any)?.twc_item_number || linkedTWCProduct.sku}</p>
+                  <p><span className="text-muted-foreground">Category:</span> {linkedTWCProduct.category}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {isCurtainOnly && (
@@ -305,6 +364,15 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
         )}
 
         <TabsContent value="options" className="space-y-4 mt-4">
+          {/* TWC Options Preview - show when linked to TWC product */}
+          {linkedTWCProduct && (linkedTWCProduct.metadata as any)?.twc_questions?.length > 0 && (
+            <TWCOptionsPreview 
+              twcQuestions={(linkedTWCProduct.metadata as any).twc_questions}
+              productName={linkedTWCProduct.name}
+              itemNumber={(linkedTWCProduct.metadata as any)?.twc_item_number || linkedTWCProduct.sku}
+            />
+          )}
+          
           <TemplateOptionsManager 
             treatmentCategory={formData.treatment_category} 
             templateId={template?.id}

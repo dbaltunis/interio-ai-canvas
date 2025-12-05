@@ -126,6 +126,7 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId }: Templa
                 const visibleValues = option.option_values?.filter(v => !v.hidden_by_user) || [];
                 const hiddenValues = option.option_values?.filter(v => v.hidden_by_user) || [];
                 const enabled = isOptionEnabled(option.id);
+                const isTWCOption = (option as any).metadata?.source === 'twc';
                 
                 return (
                   <AccordionItem key={option.id} value={option.id}>
@@ -133,6 +134,11 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId }: Templa
                       <div className="flex items-center justify-between w-full pr-4">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{option.label}</span>
+                          {isTWCOption && (
+                            <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px]">
+                              TWC
+                            </Badge>
+                          )}
                           <Badge variant="secondary" className="text-xs">
                             {visibleValues.length} option{visibleValues.length !== 1 ? 's' : ''}
                           </Badge>
