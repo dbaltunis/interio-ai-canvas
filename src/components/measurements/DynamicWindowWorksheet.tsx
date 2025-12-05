@@ -528,7 +528,7 @@ export const DynamicWindowWorksheet = forwardRef<{
           const fullness = md.heading_fullness || md.fullness_ratio || 2;
           const requiredWidth = railWidthCm * fullness;
           const returns = (md.return_left || 0) + (md.return_right || 0);
-          const curtainMultiplier = (md.curtain_type === 'pair') ? 2 : 1;
+          const curtainMultiplier = (md.curtain_type === 'pair' || md.curtain_type === 'double') ? 2 : 1;
           const totalSideHems = (md.side_hems || 0) * 2 * curtainMultiplier;
           // Use saved value if available, otherwise calculate
           const totalWidthWithAllowances = md.total_width_with_allowances_cm || (requiredWidth + returns + totalSideHems);

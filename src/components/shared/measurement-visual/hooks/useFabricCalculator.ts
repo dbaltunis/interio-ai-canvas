@@ -79,8 +79,8 @@ export const useFabricCalculator = ({
       // Calculate required width with fullness
       const requiredWidth = width * fullnessRatio;
       
-      // Calculate curtain count
-      const curtainCount = template.panel_configuration === 'pair' ? 2 : 1;
+      // Calculate curtain/blind count (supports 'pair' for curtains, 'double' for roman blinds)
+      const curtainCount = (template.panel_configuration === 'pair' || template.panel_configuration === 'double') ? 2 : 1;
       
       // Add side hems to width calculation
       const totalSideHems = sideHems * 2 * curtainCount;
