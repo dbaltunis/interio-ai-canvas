@@ -50,10 +50,14 @@ interface VisualMeasurementSheetProps {
   selectedOptions?: Array<{
     name: string;
     price: number;
+    pricingMethod?: string;
+    optionKey?: string;
   }>;
   onSelectedOptionsChange?: (options: Array<{
     name: string;
     price: number;
+    pricingMethod?: string;
+    optionKey?: string;
   }>) => void;
   selectedMaterial?: any; // For blinds that use materials (venetian, vertical)
 }
