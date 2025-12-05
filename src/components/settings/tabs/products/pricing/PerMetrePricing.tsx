@@ -2,6 +2,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface PriceRange {
   min_height: number;
@@ -26,6 +28,12 @@ export const PerMetrePricing = ({
   heightPriceRanges = [],
   onInputChange
 }: PerMetrePricingProps) => {
+  const { units } = useMeasurementUnits();
+  const currencySymbol = getCurrencySymbol(units.currency || 'USD');
+  const isImperial = units.system === 'imperial';
+  const lengthUnitLabel = isImperial ? 'inches' : 'cm';
+  const pricingUnitLabel = isImperial ? 'Yard' : 'Metre';
+
   const updateRange = (index: number, field: keyof PriceRange, value: number) => {
     const updated = [...heightPriceRanges];
     updated[index] = { ...updated[index], [field]: value };
@@ -59,7 +67,7 @@ export const PerMetrePricing = ({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="machine_price_per_metre">Machine Price per Metre (Default)</Label>
+          <Label htmlFor="machine_price_per_metre">Machine Price per {pricingUnitLabel} (Default)</Label>
           <Input
             id="machine_price_per_metre"
             type="number"
@@ -71,7 +79,7 @@ export const PerMetrePricing = ({
         </div>
         {offersHandFinished && (
           <div>
-            <Label htmlFor="hand_price_per_metre">Hand-Finished Price per Metre</Label>
+            <Label htmlFor="hand_price_per_metre">Hand-Finished Price per {pricingUnitLabel}</Label>
             <Input
               id="hand_price_per_metre"
               type="number"
@@ -105,7 +113,7 @@ export const PerMetrePricing = ({
           <div key={index} className="space-y-3 p-4 border rounded-lg bg-muted/30">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">Min Height (cm)</Label>
+                <Label className="text-xs">Min Height ({lengthUnitLabel})</Label>
                 <Input
                   type="number"
                   step="1"
@@ -115,7 +123,7 @@ export const PerMetrePricing = ({
                 />
               </div>
               <div>
-                <Label className="text-xs">Max Height (cm)</Label>
+                <Label className="text-xs">Max Height ({lengthUnitLabel})</Label>
                 <Input
                   type="number"
                   step="1"
@@ -128,7 +136,7 @@ export const PerMetrePricing = ({
             
             <div className={`grid gap-3 ${offersHandFinished ? 'grid-cols-2' : 'grid-cols-1'}`}>
               <div>
-                <Label className="text-xs">Machine Per Metre Rate (£)</Label>
+                <Label className="text-xs">Machine Per {pricingUnitLabel} Rate ({currencySymbol})</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -137,13 +145,13 @@ export const PerMetrePricing = ({
                   placeholder="24"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Per metre rate for this height range (replaces standard rate)
+                  Per {pricingUnitLabel.toLowerCase()} rate for this height range (replaces standard rate)
                 </p>
               </div>
               
               {offersHandFinished && (
                 <div>
-                  <Label className="text-xs">Hand-Finished Per Metre Rate (£)</Label>
+                  <Label className="text-xs">Hand-Finished Per {pricingUnitLabel} Rate ({currencySymbol})</Label>
                   <Input
                     type="number"
                     step="0.01"

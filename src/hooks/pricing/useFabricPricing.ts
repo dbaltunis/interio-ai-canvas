@@ -33,8 +33,11 @@ export const useFabricPricing = (params: FabricPricingParams): FabricPricingResu
       selectedFabricItem
     );
 
-    let fabricCostPerYard = parseFloat(formData.fabric_cost_per_yard) || 0;
+    let fabricCostPerUnit = parseFloat(formData.fabric_cost_per_yard) || 0;
     let usePricingGrid = false;
+    
+    // Get pricing method from fabric item (defaults to 'linear')
+    const pricingMethod = selectedFabricItem?.pricing_method || 'linear';
     
     if (selectedFabricItem) {
       // PRIORITY 1: Check if fabric has pricing grid data already resolved
@@ -72,10 +75,11 @@ export const useFabricPricing = (params: FabricPricingParams): FabricPricingResu
       
       // Use price as-is since it's already in user's configured unit (meter or yard)
       // No hardcoded conversion - user enters price in their preferred unit
-      fabricCostPerYard = pricePerUnit;
+      fabricCostPerUnit = pricePerUnit;
       
       if (!usePricingGrid) {
-        console.log('ℹ️ Using per-unit pricing for fabric:', {
+        console.log('ℹ️ Using pricing method for fabric:', {
+          pricingMethod,
           pricePerUnit,
           userFabricUnit: units.fabric,
           hasGridInfo: !!(selectedFabricItem.price_group && selectedFabricItem.product_category)
@@ -88,27 +92,50 @@ export const useFabricPricing = (params: FabricPricingParams): FabricPricingResu
       ? fabricUsageResult.yards 
       : fabricUsageResult.meters;
     
-    // CRITICAL FIX: Multiply by horizontal pieces for railroaded fabric
-    const horizontalPieces = fabricUsageResult.horizontalPiecesNeeded || 1;
-    const totalFabricToOrder = fabricAmount * horizontalPieces;
-    const fabricCost = totalFabricToOrder * fabricCostPerYard;
+    let fabricCost = 0;
     
-    // 🔍 DEBUG: Log fabric pricing multiplier
-    console.log('🔧 FABRIC PRICING MULTIPLIER:', {
-      fabricAmount: `${fabricAmount.toFixed(2)}${units.fabric}`,
-      horizontalPieces,
-      totalFabricToOrder: `${totalFabricToOrder.toFixed(2)}${units.fabric}`,
-      calculation: `${fabricAmount.toFixed(2)} × ${horizontalPieces} = ${totalFabricToOrder.toFixed(2)}`,
-      costPerUnit: fabricCostPerYard.toFixed(2),
-      fabricCost: fabricCost.toFixed(2)
-    });
+    // Calculate cost based on pricing method
+    if (pricingMethod === 'per_sqm') {
+      // Per square meter pricing: calculate fabric area in sqm
+      const widthMm = parseFloat(formData.rail_width) || 0;
+      const dropMm = parseFloat(formData.drop) || 0;
+      
+      // Convert MM to meters for sqm calculation
+      const widthM = widthMm / 1000;
+      const dropM = dropMm / 1000;
+      const areaSqm = widthM * dropM;
+      
+      fabricCost = areaSqm * fabricCostPerUnit;
+      
+      console.log('🔧 FABRIC PRICING (per sqm):', {
+        dimensions: `${widthMm}mm × ${dropMm}mm`,
+        areaSqm: areaSqm.toFixed(4),
+        pricePerSqm: fabricCostPerUnit.toFixed(2),
+        fabricCost: fabricCost.toFixed(2)
+      });
+    } else {
+      // Linear pricing (per meter/yard): multiply by fabric usage
+      // CRITICAL FIX: Multiply by horizontal pieces for railroaded fabric
+      const horizontalPieces = fabricUsageResult.horizontalPiecesNeeded || 1;
+      const totalFabricToOrder = fabricAmount * horizontalPieces;
+      fabricCost = totalFabricToOrder * fabricCostPerUnit;
+      
+      console.log('🔧 FABRIC PRICING (linear):', {
+        fabricAmount: `${fabricAmount.toFixed(2)}${units.fabric}`,
+        horizontalPieces,
+        totalFabricToOrder: `${totalFabricToOrder.toFixed(2)}${units.fabric}`,
+        calculation: `${fabricAmount.toFixed(2)} × ${horizontalPieces} = ${totalFabricToOrder.toFixed(2)}`,
+        costPerUnit: fabricCostPerUnit.toFixed(2),
+        fabricCost: fabricCost.toFixed(2)
+      });
+    }
 
     return {
       fabricCost,
       fabricUsage: fabricAmount,  // Linear meters per piece
       fabricUsageUnit: units.fabric as 'yards' | 'meters',
       fabricUsageResult,
-      costPerUnit: fabricCostPerYard
+      costPerUnit: fabricCostPerUnit
     };
   }, [formData, treatmentTypesData, selectedFabricItem, units.fabric]);
 
