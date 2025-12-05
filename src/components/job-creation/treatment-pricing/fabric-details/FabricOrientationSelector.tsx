@@ -1,4 +1,5 @@
 
+import { useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -10,11 +11,32 @@ interface FabricOrientationSelectorProps {
   onInputChange: (field: string, value: any) => void;
 }
 
+// Threshold: 200cm = ~78.74 inches
+const FABRIC_WIDTH_THRESHOLD_CM = 200;
+
 export const FabricOrientationSelector = ({ formData, onInputChange }: FabricOrientationSelectorProps) => {
   const fabricWidthCm = parseFloat(formData.fabric_width) || 137;
-  const isNarrowFabric = fabricWidthCm <= 200;
+  const isNarrowFabric = fabricWidthCm <= FABRIC_WIDTH_THRESHOLD_CM;
   const autoSelectedOrientation = isNarrowFabric ? "vertical" : "horizontal";
   const isAutoSelected = formData.roll_direction === autoSelectedOrientation;
+  const previousWidthRef = useRef<number>(fabricWidthCm);
+
+  // Auto-select orientation when fabric width changes (e.g., when fabric is selected)
+  useEffect(() => {
+    const widthChanged = previousWidthRef.current !== fabricWidthCm;
+    
+    if (widthChanged && fabricWidthCm > 0) {
+      const recommendedOrientation = fabricWidthCm > FABRIC_WIDTH_THRESHOLD_CM ? "horizontal" : "vertical";
+      
+      // Auto-apply the recommended orientation
+      if (formData.roll_direction !== recommendedOrientation) {
+        console.log(`🔄 Auto-selecting orientation: ${recommendedOrientation} for fabric width ${fabricWidthCm}cm`);
+        onInputChange("roll_direction", recommendedOrientation);
+      }
+      
+      previousWidthRef.current = fabricWidthCm;
+    }
+  }, [fabricWidthCm, formData.roll_direction, onInputChange]);
 
   // Dynamic labeling based on recommendation
   const horizontalLabel = isNarrowFabric ? "Horizontal (Rotated)" : "Horizontal (Standard)";
