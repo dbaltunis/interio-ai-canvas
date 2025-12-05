@@ -1,8 +1,8 @@
-
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { TreatmentFormData } from "../useTreatmentFormData";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface FabricBasicDetailsProps {
   formData: TreatmentFormData;
@@ -54,7 +54,7 @@ export const FabricBasicDetails = ({ formData, onInputChange }: FabricBasicDetai
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="fabric_cost_per_yard">Cost per {getFabricUnitLabel()} ({units.currency})</Label>
+        <Label htmlFor="fabric_cost_per_yard">Cost per {getFabricUnitLabel()} ({getCurrencySymbol(units.currency)})</Label>
         <Input
           id="fabric_cost_per_yard"
           type="number"

@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
 import { cn } from "@/lib/utils";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface OptionItem {
   id: string;
@@ -66,7 +67,7 @@ const formatPricingLabel = (option: OptionItem, currency: string): string => {
       methodLabel = '';
   }
   
-  const currencySymbol = currency === 'NZD' ? 'NZ$' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : currency;
+  const currencySymbol = getCurrencySymbol(currency);
   return `${currencySymbol}${price.toFixed(2)}${methodLabel}`;
 };
 
