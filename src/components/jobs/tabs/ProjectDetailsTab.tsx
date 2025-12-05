@@ -12,7 +12,7 @@ import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin, Package, FileText, DollarSign, Calendar as CalendarIcon, Hash } from "lucide-react";
 import { EditableDocumentNumber } from "../EditableDocumentNumber";
-import { syncSequenceCounter } from "@/hooks/useNumberSequenceGeneration";
+import { syncSequenceCounter, getEntityTypeFromStatus, shouldRegenerateNumber, generateSequenceNumber, getDocumentLabel } from "@/hooks/useNumberSequenceGeneration";
 import { useEnsureDefaultSequences, type EntityType } from "@/hooks/useNumberSequences";
 import { useUpdateQuote } from "@/hooks/useQuotes";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -68,28 +68,54 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
     return new Date(quote.created_at) > new Date(latest.created_at) ? quote : latest;
   }, null) : null;
   
-  // Determine the entity type based on quote status
-  const getQuoteEntityType = (): EntityType => {
-    if (!currentQuote) return 'quote';
-    const status = currentQuote.status?.toLowerCase();
-    if (status === 'invoiced' || status === 'invoice') return 'invoice';
-    if (status === 'approved' || status === 'ordered') return 'order';
-    if (status === 'draft') return 'draft';
-    return 'quote';
-  };
-  
-  const quoteEntityType = getQuoteEntityType();
+  // Determine the entity type based on project status (not quote status)
+  const projectStatusName = project.status || 'draft';
+  const documentEntityType: EntityType = getEntityTypeFromStatus(projectStatusName) || 'draft';
+  const documentLabel = getDocumentLabel(documentEntityType);
   
   // State for editable document numbers
   const [jobNumber, setJobNumber] = useState(project.job_number || "");
-  const [quoteNumber, setQuoteNumber] = useState(currentQuote?.quote_number || "");
+  const [documentNumber, setDocumentNumber] = useState(currentQuote?.quote_number || "");
+  const [previousStatus, setPreviousStatus] = useState(projectStatusName);
   
-  // Update quote number when quotes load
+  // Update document number when quotes load
   useEffect(() => {
-    if (currentQuote?.quote_number && !quoteNumber) {
-      setQuoteNumber(currentQuote.quote_number);
+    if (currentQuote?.quote_number && !documentNumber) {
+      setDocumentNumber(currentQuote.quote_number);
     }
   }, [currentQuote]);
+  
+  // Handle status change - regenerate document number if entity type changes
+  useEffect(() => {
+    const handleStatusChange = async () => {
+      if (previousStatus !== projectStatusName && shouldRegenerateNumber(previousStatus, projectStatusName)) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const newNumber = await generateSequenceNumber(user.id, documentEntityType, documentEntityType.toUpperCase());
+          setDocumentNumber(newNumber);
+          
+          // Auto-save the new number to the quote
+          if (currentQuote) {
+            try {
+              await updateQuote.mutateAsync({
+                id: currentQuote.id,
+                quote_number: newNumber,
+              });
+              toast({
+                title: "Document Number Updated",
+                description: `Changed to ${documentLabel} Number: ${newNumber}`,
+              });
+            } catch (error) {
+              console.error("Failed to update document number:", error);
+            }
+          }
+        }
+      }
+      setPreviousStatus(projectStatusName);
+    };
+    
+    handleStatusChange();
+  }, [projectStatusName]);
   
   // Handle saving document numbers
   const handleSaveDocumentNumbers = async () => {
@@ -106,15 +132,15 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
         await syncSequenceCounter('job', jobNumber);
       }
       
-      // Update quote number on quote
-      if (currentQuote && quoteNumber !== currentQuote.quote_number) {
+      // Update document number on quote
+      if (currentQuote && documentNumber !== currentQuote.quote_number) {
         await updateQuote.mutateAsync({
           id: currentQuote.id,
-          quote_number: quoteNumber,
+          quote_number: documentNumber,
         });
         
-        // Use the determined entity type based on quote status
-        await syncSequenceCounter(quoteEntityType, quoteNumber);
+        // Use the determined entity type based on project status
+        await syncSequenceCounter(documentEntityType, documentNumber);
       }
       
       toast({
@@ -540,14 +566,19 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
       {/* Document Numbers - Editable Section */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Hash className="h-4 w-4" />
-            Document Numbers
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <Hash className="h-4 w-4" />
+              Document Numbers
+            </CardTitle>
+            <Badge variant="outline" className="text-xs">
+              Status: {projectStatusName}
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Job Number */}
+            {/* Job Number - Always visible, constant for the project */}
             <EditableDocumentNumber
               entityType="job"
               value={jobNumber}
@@ -555,20 +586,22 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
               autoLabel
             />
             
-            {/* Quote/Order/Invoice Number - based on status */}
-            <EditableDocumentNumber
-              entityType={quoteEntityType}
-              value={quoteNumber}
-              onChange={setQuoteNumber}
-              autoLabel
-              disabled={!currentQuote}
-            />
-            {!currentQuote && (
-              <p className="text-xs text-muted-foreground col-span-full">No quote created yet</p>
-            )}
+            {/* Dynamic Document Number - Changes based on project status */}
+            <div className="space-y-2">
+              <EditableDocumentNumber
+                entityType={documentEntityType}
+                value={documentNumber}
+                onChange={setDocumentNumber}
+                label={`${documentLabel} Number`}
+                disabled={!currentQuote}
+              />
+              {!currentQuote && (
+                <p className="text-xs text-muted-foreground">Create a quote to generate document number</p>
+              )}
+            </div>
           </div>
           
-          {(jobNumber !== project.job_number || (currentQuote && quoteNumber !== currentQuote.quote_number)) && (
+          {(jobNumber !== project.job_number || (currentQuote && documentNumber !== currentQuote.quote_number)) && (
             <Button 
               onClick={handleSaveDocumentNumbers}
               className="mt-4"
@@ -579,7 +612,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
             </Button>
           )}
           <p className="text-xs text-muted-foreground mt-2">
-            Edit numbers and the sequence counter will auto-sync if a higher number is entered
+            Document type changes automatically with status. Number regenerates when status moves between Draft → Quote → Order → Invoice.
           </p>
         </CardContent>
       </Card>
