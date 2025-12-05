@@ -2978,6 +2978,7 @@ export type Database = {
           price_per_unit: number | null
           price_per_yard: number | null
           pricing_grid_id: string | null
+          pricing_method: string | null
           product_category: string | null
           profit_margin_percentage: number | null
           profit_per_unit: number | null
@@ -3059,6 +3060,7 @@ export type Database = {
           price_per_unit?: number | null
           price_per_yard?: number | null
           pricing_grid_id?: string | null
+          pricing_method?: string | null
           product_category?: string | null
           profit_margin_percentage?: number | null
           profit_per_unit?: number | null
@@ -3140,6 +3142,7 @@ export type Database = {
           price_per_unit?: number | null
           price_per_yard?: number | null
           pricing_grid_id?: string | null
+          pricing_method?: string | null
           product_category?: string | null
           profit_margin_percentage?: number | null
           profit_per_unit?: number | null

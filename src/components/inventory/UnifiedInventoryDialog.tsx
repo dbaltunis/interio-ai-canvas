@@ -47,7 +47,7 @@ export const UnifiedInventoryDialog = ({
   initialSubcategory
 }: UnifiedInventoryDialogProps) => {
   const [activeTab, setActiveTab] = useState("basic");
-  const [pricingMethod, setPricingMethod] = useState<'grid' | 'linear' | 'fixed'>('linear');
+  const [pricingMethod, setPricingMethod] = useState<'grid' | 'linear' | 'per_sqm' | 'fixed'>('linear');
   const [trackInventory, setTrackInventory] = useState(mode === "edit" ? (item?.quantity > 0) : false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const { toast } = useToast();
@@ -81,6 +81,7 @@ export const UnifiedInventoryDialog = ({
   };
   const currencySymbol = currencySymbols[currency] || currency;
   
+  const isImperial = measurementUnits.system === 'imperial';
   const getPricingUnitLabel = () => {
     if (lengthUnit === 'mm') return 'running meter';
     if (lengthUnit === 'cm') return 'running meter';
@@ -91,6 +92,7 @@ export const UnifiedInventoryDialog = ({
     return lengthUnit;
   };
   const pricingUnitLabel = getPricingUnitLabel();
+  const sqUnitLabel = isImperial ? 'sq ft' : 'm²';
 
   const [formData, setFormData] = useState({
     name: "",
@@ -257,7 +259,9 @@ export const UnifiedInventoryDialog = ({
       });
       
       // Detect pricing method from item data
-      if (item.pricing_grid_id || item.price_group) {
+      if (item.pricing_method) {
+        setPricingMethod(item.pricing_method);
+      } else if (item.pricing_grid_id || item.price_group) {
         setPricingMethod('grid');
       } else if (item.category === 'fabric' || item.category === 'material') {
         setPricingMethod('linear');
@@ -388,6 +392,8 @@ export const UnifiedInventoryDialog = ({
       selling_price: Number(formData.selling_price) || 0,
       // CRITICAL: Save price_per_meter for linear pricing (fabric pricing)
       price_per_meter: pricingMethod === 'linear' ? Number(formData.selling_price) || 0 : (formData.price_per_meter || null),
+      // Save pricing method for calculation logic
+      pricing_method: pricingMethod,
       fabric_width: Number(formData.fabric_width) || null,
       pattern_repeat_vertical: Number(formData.pattern_repeat_vertical) || null,
       pattern_repeat_horizontal: Number(formData.pattern_repeat_horizontal) || null,
@@ -606,13 +612,17 @@ export const UnifiedInventoryDialog = ({
                     <CardDescription>Choose how this product will be priced</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {/* Context-aware pricing method buttons - hide Grid for fabric subcategories */}
+                    {/* Context-aware pricing method buttons */}
                     {(() => {
                       const isFabricSubcategory = ['curtain_fabric', 'lining_fabric', 'roman_fabric', 'upholstery_fabric', 'sheer_fabric'].includes(formData.subcategory);
                       const showGridOption = !isFabricSubcategory;
+                      const showSqmOption = isFabricSubcategory || formData.category === 'fabric';
+                      
+                      // Calculate grid columns: grid + linear + sqm (for fabrics) + fixed
+                      const columnCount = (showGridOption ? 1 : 0) + 1 + (showSqmOption ? 1 : 0) + 1;
                       
                       return (
-                        <div className={`grid gap-3 ${showGridOption ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                        <div className={`grid gap-3 grid-cols-${columnCount}`} style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))` }}>
                           {showGridOption && (
                             <button
                               type="button"
@@ -634,8 +644,21 @@ export const UnifiedInventoryDialog = ({
                             }`}
                           >
                             <div className="font-medium mb-1">Per {pricingUnitLabel}</div>
-                            <div className="text-xs text-muted-foreground">For curtains/fabrics</div>
+                            <div className="text-xs text-muted-foreground">Narrow-width fabrics</div>
                           </button>
+                          
+                          {showSqmOption && (
+                            <button
+                              type="button"
+                              onClick={() => setPricingMethod('per_sqm')}
+                              className={`p-4 border-2 rounded-lg text-left transition-all ${
+                                pricingMethod === 'per_sqm' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                              }`}
+                            >
+                              <div className="font-medium mb-1">Per {sqUnitLabel}</div>
+                              <div className="text-xs text-muted-foreground">Wide-width fabrics</div>
+                            </button>
+                          )}
                           
                           <button
                             type="button"
@@ -757,11 +780,11 @@ export const UnifiedInventoryDialog = ({
                       </div>
                     )}
 
-                    {pricingMethod === 'linear' && (
+                    {(pricingMethod === 'linear' || pricingMethod === 'per_sqm') && (
                       <div className="space-y-4 p-4 border rounded-lg">
                         <div className="grid gap-4 md:grid-cols-2">
                           <div>
-                            <Label>Cost Price ({currencySymbol} per {pricingUnitLabel})</Label>
+                            <Label>Cost Price ({currencySymbol} per {pricingMethod === 'per_sqm' ? sqUnitLabel : pricingUnitLabel})</Label>
                             <Input
                               type="number"
                               step="0.01"
@@ -772,7 +795,7 @@ export const UnifiedInventoryDialog = ({
                           </div>
 
                           <div>
-                            <Label>Selling Price ({currencySymbol} per {pricingUnitLabel})</Label>
+                            <Label>Selling Price ({currencySymbol} per {pricingMethod === 'per_sqm' ? sqUnitLabel : pricingUnitLabel})</Label>
                             <Input
                               type="number"
                               step="0.01"
