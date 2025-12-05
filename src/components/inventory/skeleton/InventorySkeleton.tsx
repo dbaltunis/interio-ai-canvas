@@ -83,10 +83,10 @@ export const InventorySkeleton = () => {
                     <Skeleton className="h-5 w-5 rounded" animation="shimmer" />
                     <Skeleton className="h-5 w-24" animation="shimmer" />
                   </CardTitle>
-                  <CardDescription>
+                  <div className="text-sm text-muted-foreground">
                     <Skeleton className="h-4 w-full mb-1" animation="shimmer" />
                     <Skeleton className="h-4 w-3/4" animation="shimmer" />
-                  </CardDescription>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
