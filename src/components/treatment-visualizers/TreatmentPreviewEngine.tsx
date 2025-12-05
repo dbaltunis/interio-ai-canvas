@@ -128,6 +128,7 @@ export const TreatmentPreviewEngine = ({
             className={className}
             foldStyle={template?.fold_style || 'classic'}
             mounted={template?.mount_type || 'outside'}
+            configuration={measurements?.curtain_type || 'single'}
           />
         );
       

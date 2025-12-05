@@ -68,6 +68,7 @@ export const LayeredTreatmentVisualizer = ({
               material={treatment.selectedItems?.material}
               foldStyle={treatment.template?.fold_style || 'classic'}
               mounted={treatment.template?.mount_type || 'outside'}
+              configuration={measurements?.curtain_type || 'single'}
             />
           </div>
         );
