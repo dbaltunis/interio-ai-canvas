@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle, Package, Loader2, RefreshCw, Trash2, Settings, Palette } from "lucide-react";
 import { useTWCImportedProducts, useResyncTWCProducts, useDeleteTWCProduct, useUpdateExistingTWCProducts } from "@/hooks/useTWCProducts";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import {
   AlertDialog,
@@ -91,6 +92,8 @@ export const TWCImportedProducts = () => {
           editTemplateId: templateId
         }
       });
+    } else {
+      toast.error("Template not found. Please create a template first.");
     }
   };
 
