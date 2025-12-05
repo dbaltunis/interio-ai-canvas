@@ -68,16 +68,6 @@ function NavObserver() {
   useEffect(() => {
     console.warn('[NAV] location changed ->', location.pathname + location.search + location.hash);
     
-    // Fix URL encoding issue where ?tab= gets encoded as %3Ftab=
-    if (location.pathname.includes('%3F')) {
-      const decodedPath = decodeURIComponent(location.pathname);
-      const newUrl = decodedPath + location.search + location.hash;
-      console.warn('[NAV] Fixing encoded URL:', location.pathname, '->', newUrl);
-      window.history.replaceState({}, '', newUrl);
-      window.location.replace(newUrl);
-      return;
-    }
-    
     // Handle Shopify OAuth callback
     const params = new URLSearchParams(location.search);
     const shopifyConnected = params.get('shopify_connected');
