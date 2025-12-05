@@ -27,6 +27,7 @@ import { detectTreatmentType, getTreatmentConfig, TreatmentCategory } from "@/ut
 import { calculateWallpaperCost } from "@/utils/wallpaperCalculations";
 import { MeasurementWorksheetSkeleton } from "./skeleton/MeasurementWorksheetSkeleton";
 import { ColorSelector } from "./ColorSelector";
+import { calculateOptionPrices, getOptionEffectivePrice } from "@/utils/calculateOptionPrices";
 
 /**
  * CRITICAL MEASUREMENT UNIT STANDARD
@@ -2217,8 +2218,10 @@ export const DynamicWindowWorksheet = forwardRef<{
                       }
                     }
 
-                    // Calculate options cost
-                    const optionsCost = selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0);
+                    // Calculate options cost - CRITICAL: Use pricing method calculations!
+                    // Hardware uses actual rail width, fabric options use fullness-adjusted linear meters
+                    const enrichedOptions = calculateOptionPrices(selectedOptions, measurements, fabricCalculation);
+                    const optionsCost = enrichedOptions.reduce((sum, opt) => sum + getOptionEffectivePrice(opt), 0);
 
                     const totalCost = fabricCost + liningCost + manufacturingCost + headingCost + optionsCost;
 

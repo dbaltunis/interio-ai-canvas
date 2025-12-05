@@ -100,7 +100,6 @@ export const ProductImageWithColorFallback: React.FC<ProductImageWithColorFallba
           src={imageUrl}
           alt={productName}
           loading="lazy"
-          crossOrigin="anonymous"
           className="w-full h-full object-cover"
           onLoad={() => setIsLoading(false)}
           onError={() => {
