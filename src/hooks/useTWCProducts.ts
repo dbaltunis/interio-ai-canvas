@@ -210,3 +210,41 @@ export const useDeleteTWCProduct = () => {
     }
   });
 };
+
+export const useUpdateExistingTWCProducts = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.functions.invoke("twc-update-existing", {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Update failed");
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["twc-imported-products"] });
+      queryClient.invalidateQueries({ queryKey: ["enhanced-inventory"] });
+      
+      const summary = data.items_updated > 0
+        ? `Updated ${data.items_updated} products with ${data.colors_extracted} colors`
+        : `All ${data.items_found} products already up to date`;
+
+      toast.success('TWC Products Updated', {
+        description: summary,
+        duration: 5000,
+      });
+    },
+    onError: (error) => {
+      toast.error('Update Failed', {
+        description: error.message || 'Could not update TWC products',
+        duration: 5000,
+      });
+    },
+  });
+};

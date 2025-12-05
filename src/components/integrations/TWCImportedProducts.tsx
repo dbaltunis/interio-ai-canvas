@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle, Package, Loader2, RefreshCw, Trash2, Settings } from "lucide-react";
-import { useTWCImportedProducts, useResyncTWCProducts, useDeleteTWCProduct } from "@/hooks/useTWCProducts";
+import { CheckCircle2, AlertCircle, Package, Loader2, RefreshCw, Trash2, Settings, Palette } from "lucide-react";
+import { useTWCImportedProducts, useResyncTWCProducts, useDeleteTWCProduct, useUpdateExistingTWCProducts } from "@/hooks/useTWCProducts";
 import { useNavigate } from "react-router-dom";
 import {
   AlertDialog,
@@ -20,6 +20,7 @@ import { TWCPricingConfigSheet } from "./TWCPricingConfigSheet";
 export const TWCImportedProducts = () => {
   const { data: importedProducts, isLoading } = useTWCImportedProducts();
   const resyncMutation = useResyncTWCProducts();
+  const updateExistingMutation = useUpdateExistingTWCProducts();
   const deleteMutation = useDeleteTWCProduct();
   const navigate = useNavigate();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
@@ -44,6 +45,10 @@ export const TWCImportedProducts = () => {
 
   const handleResync = () => {
     resyncMutation.mutate();
+  };
+
+  const handleUpdateColors = () => {
+    updateExistingMutation.mutate();
   };
 
   const handleDelete = (id: string, name: string) => {
@@ -99,25 +104,46 @@ export const TWCImportedProducts = () => {
               <h3 className="font-semibold text-lg">My TWC Products</h3>
               <Badge variant="secondary">{importedProducts.length} imported</Badge>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleResync}
-              disabled={resyncMutation.isPending}
-              className="gap-1.5"
-            >
-              {resyncMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Re-syncing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4" />
-                  Re-sync Options
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleUpdateColors}
+                disabled={updateExistingMutation.isPending}
+                className="gap-1.5"
+              >
+                {updateExistingMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Palette className="h-4 w-4" />
+                    Update Colors
+                  </>
+                )}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleResync}
+                disabled={resyncMutation.isPending}
+                className="gap-1.5"
+              >
+                {resyncMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Re-syncing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4" />
+                    Re-sync Options
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
@@ -233,7 +259,7 @@ export const TWCImportedProducts = () => {
           </div>
 
           <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-            💡 Click "Re-sync Options" to create treatment options from TWC product data
+            💡 "Update Colors" extracts colors from TWC data • "Re-sync Options" creates treatment options
           </div>
         </CardContent>
       </Card>
