@@ -300,3 +300,22 @@ export const findApplicableFormula = (formulas: any[], treatmentType: string, ca
     (formula.applies_to?.includes(treatmentType) || formula.applies_to?.includes('all'))
   );
 };
+
+// Re-export centralized formulas for convenience
+export { 
+  BLIND_FORMULA, 
+  CURTAIN_VERTICAL_FORMULA, 
+  CURTAIN_HORIZONTAL_FORMULA,
+  PRICING_FORMULAS,
+  BLIND_DEFAULTS,
+  CURTAIN_DEFAULTS,
+  getFormulasByCategory as getCalculationFormulasByCategory,
+  findApplicableFormula as findApplicableCalculationFormula
+} from './calculationFormulas';
+
+export type { 
+  BlindFormulaInputs, 
+  BlindFormulaResult,
+  CurtainFormulaInputs, 
+  CurtainFormulaResult 
+} from './calculationFormulas';
