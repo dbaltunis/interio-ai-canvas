@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, Grid } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getUnitLabel } from "@/utils/measurementFormatters";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface PricingGridPreviewProps {
   gridData: any;
@@ -24,15 +25,7 @@ export const PricingGridPreview = ({ gridData, gridName, gridCode }: PricingGrid
   if (!gridData) return null;
 
   const formatPrice = (price: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    const symbol = currencySymbols[units.currency] || units.currency;
+    const symbol = getCurrencySymbol(units.currency);
     return `${symbol}${price.toFixed(2)}`;
   };
 

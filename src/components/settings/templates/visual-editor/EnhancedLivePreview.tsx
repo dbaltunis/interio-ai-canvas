@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Download, Share2, Eye, Printer } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface EnhancedLivePreviewProps {
   blocks: any[];
@@ -43,15 +44,7 @@ export const EnhancedLivePreview = ({
       try {
         const units = JSON.parse(businessSettings.measurement_units);
         const currency = units.currency || 'USD';
-        const currencySymbols: Record<string, string> = {
-          'NZD': 'NZ$',
-          'AUD': 'A$',
-          'USD': '$',
-          'GBP': '£',
-          'EUR': '€',
-          'ZAR': 'R'
-        };
-        return `${currencySymbols[currency] || currency}${amount.toFixed(2)}`;
+        return `${getCurrencySymbol(currency)}${amount.toFixed(2)}`;
       } catch {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
       }

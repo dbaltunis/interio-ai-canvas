@@ -1,6 +1,7 @@
 import { FabricCalculation } from "./types";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { convertLength } from "@/hooks/useBusinessSettings";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface CalculationDisplayProps {
   calculation: FabricCalculation;
@@ -11,15 +12,7 @@ export const CalculationDisplay = ({ calculation, compact = false }: Calculation
   const { units } = useMeasurementUnits();
   
   const formatCurrency = (amount: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    const symbol = currencySymbols[units.currency] || units.currency;
+    const symbol = getCurrencySymbol(units.currency);
     return `${symbol}${amount.toFixed(2)}`;
   };
   

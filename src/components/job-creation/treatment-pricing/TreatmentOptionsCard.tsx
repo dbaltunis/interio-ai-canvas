@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -7,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface TreatmentOptionsCardProps {
   treatmentTypesData: any[];
@@ -30,15 +30,7 @@ export const TreatmentOptionsCard = ({
   const { units } = useMeasurementUnits();
 
   const formatCurrency = (amount: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    return `${currencySymbols[units.currency] || units.currency}${amount.toFixed(2)}`;
+    return `${getCurrencySymbol(units.currency)}${amount.toFixed(2)}`;
   };
 
   const currentTreatmentType = treatmentTypesData?.find(tt => tt.name === treatmentType);

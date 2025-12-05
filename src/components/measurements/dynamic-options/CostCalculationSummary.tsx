@@ -13,6 +13,7 @@ import { getPriceFromGrid } from "@/hooks/usePricingGrids";
 import { getPricingMethodLabel, getPricingMethodSuffix, getLengthUnitLabel, getAreaUnitLabel } from "@/utils/pricingMethodLabels";
 import { formatDimensionsFromCM, formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { PricingGridPreview } from "@/components/settings/tabs/products/pricing/PricingGridPreview";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 // Simple SVG icons
 const FabricSwatchIcon = ({ className }: { className?: string }) => (
@@ -120,15 +121,7 @@ export const CostCalculationSummary = ({
   }
 
   const formatPrice = (price: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    const symbol = currencySymbols[units.currency] || units.currency;
+    const symbol = getCurrencySymbol(units.currency);
     return `${symbol}${price.toFixed(2)}`;
   };
 

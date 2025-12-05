@@ -1,5 +1,5 @@
-
 import { type MeasurementUnits } from "@/hooks/useBusinessSettings";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface MeasurementPreviewProps {
   units: MeasurementUnits;
@@ -24,15 +24,7 @@ export const MeasurementPreview = ({ units }: MeasurementPreviewProps) => {
   };
 
   const formatCurrency = (value: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    return `${currencySymbols[units.currency] || units.currency}${value.toFixed(2)}`;
+    return `${getCurrencySymbol(units.currency)}${value.toFixed(2)}`;
   };
 
   return (

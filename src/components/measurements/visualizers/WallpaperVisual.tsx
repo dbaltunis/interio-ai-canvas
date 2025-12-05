@@ -15,6 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface WallpaperVisualProps {
   measurements: Record<string, any>;
@@ -46,15 +47,7 @@ export const WallpaperVisual = ({
 
   // Format price with currency
   const formatPrice = (price: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    const symbol = currencySymbols[units.currency] || units.currency;
+    const symbol = getCurrencySymbol(units.currency);
     return `${symbol}${price.toFixed(2)}`;
   };
   

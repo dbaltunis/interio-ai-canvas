@@ -9,6 +9,7 @@ import { Shirt, Palette, ChevronDown, ChevronUp } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface FabricSelectionSectionProps {
   selectedFabric: string;
@@ -61,15 +62,7 @@ export const FabricSelectionSection = ({
   const selectedFabricItem = fabricItems.find(item => item.id === selectedFabric);
 
   const formatPrice = (price: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    const symbol = currencySymbols[units.currency] || units.currency;
+    const symbol = getCurrencySymbol(units.currency);
     return `${symbol}${price.toFixed(2)}`;
   };
 

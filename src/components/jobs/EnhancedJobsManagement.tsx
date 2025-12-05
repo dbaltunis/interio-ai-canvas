@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,7 @@ import { ProjectCard } from "./ProjectCard";
 import { JobsOverview } from "./JobsOverview";
 import { NewJobPage } from "../job-creation/NewJobPage";
 import { useToast } from "@/hooks/use-toast";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 export const EnhancedJobsManagement = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -56,18 +56,8 @@ export const EnhancedJobsManagement = () => {
   };
 
   const formatCurrency = (amount: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    
-    // Default to metric units if not available
     const currency = units?.currency || 'USD';
-    return `${currencySymbols[currency] || currency}${amount.toFixed(2)}`;
+    return `${getCurrencySymbol(currency)}${amount.toFixed(2)}`;
   };
 
   if (projectsLoading) {
