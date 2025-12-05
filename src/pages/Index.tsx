@@ -220,8 +220,10 @@ const Index = () => {
 
   // Sync activeTab with URL (single source of truth)
   useEffect(() => {
-    const urlTab = searchParams.get('tab') || "dashboard";
-    if (urlTab !== activeTab) {
+    const urlTab = searchParams.get('tab');
+    // ONLY sync from URL if URL actually has a tab parameter
+    // Don't override sessionStorage when URL has no tab
+    if (urlTab && urlTab !== activeTab) {
       console.warn('[NAV] Index: Syncing activeTab from URL:', urlTab);
       setActiveTab(urlTab);
       sessionStorage.setItem('active_tab', urlTab);
