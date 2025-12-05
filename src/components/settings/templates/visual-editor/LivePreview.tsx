@@ -1162,6 +1162,17 @@ const LivePreviewBlock = ({
         // UNIVERSAL GROUPING: Apply to ALL items regardless of category (options, lining, hardware, etc.)
         // Any items following parent-child naming pattern will be grouped
         
+        // Extract type key from name (e.g., "Lining Types: Blockout Lining" → "Lining Types")
+        // This ensures we match on the TYPE, not the selected VALUE
+        const extractTypeKey = (name: string): string => {
+          if (!name) return '';
+          const colonIndex = name.indexOf(':');
+          if (colonIndex > 0) {
+            return name.substring(0, colonIndex).trim();
+          }
+          return name; // No colon, use full name
+        };
+        
         // Normalize a name for matching (lowercase, replace spaces/dashes with underscores, collapse multiple underscores)
         const normalizeKey = (name: string) => {
           return (name || '')
@@ -1196,7 +1207,9 @@ const LivePreviewBlock = ({
         
         // Identify parent-child relationships
         items.forEach(item => {
-          const normalizedName = normalizeKey(item.name || '');
+          // Extract type key before colon, then normalize
+          const typeKey = extractTypeKey(item.name || '');
+          const normalizedName = normalizeKey(typeKey);
           let isChild = false;
           
           for (const suffix of childSuffixes) {
