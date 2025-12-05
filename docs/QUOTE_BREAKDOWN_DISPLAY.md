@@ -92,14 +92,67 @@ Before any changes to `buildClientBreakdown.ts`:
 4. Check that $0.00 options show as "Included"
 5. Ensure fabric/material/manufacturing lines are correct
 
+## Option Grouping System (Parent-Child Merging)
+
+The system automatically groups related options (e.g., "Lining Types" + "Lining Types - colours") into single rows for cleaner quote display.
+
+### Naming Convention Required
+
+For automatic grouping to work, option names MUST follow this pattern:
+
+- **Parent option**: `"Type Name: Selected Value"` 
+  - Example: `"Lining Types: Blockout Lining"`
+  - Example: `"Hardware Selection: Standard Track"`
+
+- **Child option**: `"Type Name - suffix: Selected Value"`
+  - Example: `"Lining Types - colours: white"`
+  - Example: `"Hardware Selection - finish: Chrome"`
+
+### Supported Child Suffixes
+
+The following suffixes are recognized as child indicators:
+- Colors: `_colour`, `_colours`, `_color`, `_colors`
+- Dimensions: `_size`, `_sizes`, `_width`, `_length`, `_height`
+- Appearance: `_style`, `_styles`, `_finish`, `_finishes`
+- Materials: `_material`, `_materials`
+- Hardware: `_track`, `_tracks`, `_rod`, `_rods`, `_chain`, `_chains`
+- Blinds: `_slat`, `_slats`, `_vane`, `_vanes`, `_louvre`, `_louvres`
+
+### What NOT to use as suffixes
+
+These are PARENT category patterns and should NOT be in childSuffixes:
+- `_type`, `_types` (e.g., "Lining Types" is a parent)
+- `_option`, `_options` (e.g., "Control Options" is a parent)
+- `_control`, `_controls` (e.g., "Control Type" is a parent)
+- `_mount`, `_mounts` (e.g., "Mount Type" is a parent)
+
+### How Grouping Works
+
+1. Extract type key from name (everything before first colon)
+2. Normalize key (lowercase, spaces/dashes → underscores)
+3. If normalized key ends with a child suffix → it's a CHILD
+4. Find parent by removing suffix from key
+5. Merge child into parent row: `"Parent: Value; Suffix: ChildValue"`
+
+### Example Grouping Result
+
+**Input items:**
+- `"Lining Types: Blockout Lining"` - $50.00
+- `"Lining Types - colours: white"` - $0.00
+
+**Output (single row):**
+- `"Lining Types: Blockout Lining; Colours: white"` - $50.00
+
 ## Related Files
 
-- `src/utils/quotes/buildClientBreakdown.ts` - Main breakdown builder
+- `src/utils/quotes/buildClientBreakdown.ts` - Main breakdown builder with groupRelatedOptions()
+- `src/components/settings/templates/visual-editor/LivePreview.tsx` - Live preview with same grouping logic
 - `src/components/quotes/QuoteItemBreakdown.tsx` - Display component
 - `src/components/quotation/QuotePreview.tsx` - Quote preview
 - `windows_summary` database view - Source data
 
 ## Change History
 
+- 2025-12-05: Fixed parent-child grouping by extracting type key before colon and removing aggressive suffixes (_type, _option, _control, _mount)
 - 2025-11-23: Established selected_options as single source of truth for options display
 - 2025-11-23: Added comprehensive documentation to prevent future breaks
