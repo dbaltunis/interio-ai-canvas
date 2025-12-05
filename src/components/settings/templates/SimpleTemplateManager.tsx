@@ -56,6 +56,8 @@ export const SimpleTemplateManager: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [useRealData, setUseRealData] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   
   const { data: templateData } = useTemplateData(selectedProjectId, useRealData);
   
@@ -200,6 +202,9 @@ export const SimpleTemplateManager: React.FC = () => {
       return;
     }
 
+    // Prevent double-click submissions
+    if (isSubmitting) return;
+
     // Check for duplicate template name
     const duplicateName = templates.some(t => 
       t.name.toLowerCase() === newTemplateName.trim().toLowerCase()
@@ -210,11 +215,12 @@ export const SimpleTemplateManager: React.FC = () => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const { data, error } = await supabase
         .from('quote_templates')
         .insert({
-          name: newTemplateName,
+          name: newTemplateName.trim(),
           description: `Based on ${baseTemplate.name}`,
           blocks: baseTemplate.blocks,
           template_style: selectedCategory,
@@ -238,9 +244,16 @@ export const SimpleTemplateManager: React.FC = () => {
       setNewTemplateName('');
       setIsCreating(false);
       toast.success('Template created successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating template:', error);
-      toast.error('Failed to create template');
+      // Handle unique constraint violation
+      if (error?.code === '23505') {
+        toast.error('A template with this name already exists.');
+      } else {
+        toast.error('Failed to create template');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -288,11 +301,23 @@ export const SimpleTemplateManager: React.FC = () => {
 
 
   const duplicateTemplate = async (template: Template) => {
+    // Prevent double-click
+    if (isDuplicating === template.id) return;
+    
+    setIsDuplicating(template.id);
     try {
+      // Generate unique name by checking existing copies
+      let copyName = `${template.name} (Copy)`;
+      let copyNum = 1;
+      while (templates.some(t => t.name.toLowerCase() === copyName.toLowerCase())) {
+        copyNum++;
+        copyName = `${template.name} (Copy ${copyNum})`;
+      }
+
       const { data, error } = await supabase
         .from('quote_templates')
         .insert({
-          name: `${template.name} (Copy)`,
+          name: copyName,
           description: template.description,
           blocks: template.blocks,
           template_style: template.category,
@@ -314,9 +339,15 @@ export const SimpleTemplateManager: React.FC = () => {
 
       setTemplates(prev => [duplicatedTemplate, ...prev]);
       toast.success('Template duplicated successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error duplicating template:', error);
-      toast.error('Failed to duplicate template');
+      if (error?.code === '23505') {
+        toast.error('A template with this name already exists.');
+      } else {
+        toast.error('Failed to duplicate template');
+      }
+    } finally {
+      setIsDuplicating(null);
     }
   };
 
