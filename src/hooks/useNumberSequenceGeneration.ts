@@ -56,3 +56,51 @@ export const shouldRegenerateNumber = (
   // AND the new entity type is valid
   return oldEntityType !== newEntityType && newEntityType !== null;
 };
+
+/**
+ * Sync the sequence counter if a higher number is manually entered.
+ * Extracts the numeric part from the document number and updates the sequence.
+ */
+export const syncSequenceCounter = async (
+  entityType: EntityType,
+  documentNumber: string
+): Promise<void> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Extract numeric part from the document number
+    const numericMatch = documentNumber.match(/(\d+)$/);
+    if (!numericMatch) return;
+
+    const enteredNumber = parseInt(numericMatch[1], 10);
+    if (isNaN(enteredNumber)) return;
+
+    // Get current sequence
+    const { data: sequence, error: fetchError } = await supabase
+      .from("number_sequences")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("entity_type", entityType)
+      .eq("active", true)
+      .maybeSingle();
+
+    if (fetchError || !sequence) return;
+
+    // Only update if entered number is >= current next_number
+    if (enteredNumber >= sequence.next_number) {
+      const { error: updateError } = await supabase
+        .from("number_sequences")
+        .update({ next_number: enteredNumber + 1 })
+        .eq("id", sequence.id);
+
+      if (updateError) {
+        console.error("Error syncing sequence counter:", updateError);
+      } else {
+        console.log(`Synced ${entityType} sequence to ${enteredNumber + 1}`);
+      }
+    }
+  } catch (error) {
+    console.error("Error in syncSequenceCounter:", error);
+  }
+};
