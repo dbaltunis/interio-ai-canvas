@@ -1,40 +1,11 @@
 
 import { FabricCalculationParams, FabricUsageResult } from './types';
 import { calculateOrientation } from './orientationCalculator';
+import { getBlindHemDefaults, calculateBlindSqm, logBlindCalculation } from '@/utils/blindCalculationDefaults';
 
 // Helper to detect if treatment is a blind
 export const isBlind = (treatmentCategory?: string) =>
   !!treatmentCategory && /blind/i.test(treatmentCategory);
-
-const round2 = (n: number) => Math.round(n * 100) / 100;
-
-// Blind-specific calculation
-function calculateBlindUsage(
-  railWidthCm: number,
-  dropCm: number,
-  wastePct: number,
-  blindHeaderHemCm: number,
-  blindBottomHemCm: number,
-  blindSideHemCm: number
-): { sqm: number; display: string; widthCalcNote: string; heightCalcNote: string } {
-  const waste = wastePct / 100;
-  const head = blindHeaderHemCm;
-  const bot = blindBottomHemCm;
-  const side = blindSideHemCm;
-
-  const effWidthCm = railWidthCm + side * 2;
-  const effDropCm = dropCm + head + bot;
-
-  const sqmRaw = (effWidthCm * effDropCm) / 10000; // m²
-  const sqm = sqmRaw * (1 + waste);
-
-  return {
-    display: `Material: ${round2(sqm)} sqm (${effWidthCm} × ${effDropCm} cm incl hems, waste ${wastePct}%)`,
-    sqm: round2(sqm),
-    widthCalcNote: `Width: ${railWidthCm} + ${side} + ${side} = ${effWidthCm} cm`,
-    heightCalcNote: `Height: ${dropCm} + ${head} + ${bot} = ${effDropCm} cm`,
-  };
-}
 
 export const calculateFabricUsage = (
   formData: any,
@@ -128,27 +99,22 @@ export const calculateFabricUsage = (
     finalDrop: drop
   });
   
-  // Check if this is a blind - use square meter calculation
+  // Check if this is a blind - use square meter calculation with centralized defaults
   if (selectedTemplate && isBlind(selectedTemplate.treatment_category)) {
-    const wastePct = selectedTemplate.waste_percent || 5;
-    const blindHeaderHemCm = selectedTemplate.blind_header_hem_cm || 8;
-    const blindBottomHemCm = selectedTemplate.blind_bottom_hem_cm || 8;
-    const blindSideHemCm = selectedTemplate.blind_side_hem_cm || 0;
-
-    const blindCalc = calculateBlindUsage(
-      railWidth,
-      drop,
-      wastePct,
-      blindHeaderHemCm,
-      blindBottomHemCm,
-      blindSideHemCm
-    );
+    // Get hem defaults from centralized source - template settings take priority
+    const hems = getBlindHemDefaults(selectedTemplate);
+    
+    // Calculate sqm using centralized function
+    const blindCalc = calculateBlindSqm(railWidth, drop, hems);
+    
+    // Log calculation for debugging
+    logBlindCalculation('fabricUsageCalculator', railWidth, drop, hems, blindCalc);
 
     return {
       yards: blindCalc.sqm * 1.19599, // sqm to sq yards
       meters: blindCalc.sqm,
       details: {
-        display: blindCalc.display,
+        display: `Material: ${blindCalc.sqm} sqm (${blindCalc.effectiveWidthCm} × ${blindCalc.effectiveHeightCm} cm incl hems${hems.wastePercent > 0 ? `, waste ${hems.wastePercent}%` : ''})`,
         widthCalcNote: blindCalc.widthCalcNote,
         heightCalcNote: blindCalc.heightCalcNote,
         sqm: blindCalc.sqm,
