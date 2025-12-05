@@ -12,6 +12,7 @@ import { detectTreatmentType, getMeasurementLabels } from "@/utils/treatmentType
 import { PricingGridPreview } from "../PricingGridPreview";
 import { formatDimensionsFromCM, formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
+import { getBlindHemDefaults, calculateBlindSqm } from "@/utils/blindCalculationDefaults";
 
 interface AdaptiveFabricPricingDisplayProps {
   selectedFabricItem: any;
@@ -128,23 +129,34 @@ export const AdaptiveFabricPricingDisplay = ({
     });
   }
 
-  // CRITICAL: Calculate square meters - measurements are in MM
+  // CRITICAL: Calculate square meters with hems - measurements are in MM
+  // Uses centralized blind calculation defaults for consistency
   const calculateSquareMeters = () => {
     if (!measurements.rail_width || !measurements.drop) return 0;
     const widthMm = parseFloat(measurements.rail_width);
     const dropMm = parseFloat(measurements.drop);
-    // Convert mm to m: divide by 1000
-    const widthM = widthMm / 1000;
-    const dropM = dropMm / 1000;
-    const sqm = widthM * dropM;
-    console.log('📐 SQM CALCULATION:', {
+    // Convert mm to cm for calculation
+    const widthCm = widthMm / 10;
+    const dropCm = dropMm / 10;
+    
+    // Get hem defaults from template (centralized source)
+    const hems = getBlindHemDefaults(template);
+    
+    // Calculate sqm with hems using centralized function
+    const blindCalc = calculateBlindSqm(widthCm, dropCm, hems);
+    
+    console.log('📐 SQM CALCULATION (with hems):', {
       widthMm,
       dropMm,
-      widthM,
-      dropM,
-      sqm
+      widthCm,
+      dropCm,
+      hems,
+      effectiveDimensions: `${blindCalc.effectiveWidthCm}cm × ${blindCalc.effectiveHeightCm}cm`,
+      sqm: blindCalc.sqm,
+      widthCalcNote: blindCalc.widthCalcNote,
+      heightCalcNote: blindCalc.heightCalcNote
     });
-    return sqm;
+    return blindCalc.sqm;
   };
   
   // Calculate linear meters for roller blinds (drop + 5% waste)

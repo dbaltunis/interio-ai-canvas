@@ -1,9 +1,11 @@
 /**
  * Clean Blind Cost Calculator
  * Calculates costs for blinds with proper sqm calculations including hems and waste
+ * Uses centralized defaults from blindCalculationDefaults.ts
  */
 
 import { getPriceFromGrid } from '@/hooks/usePricingGrids';
+import { getBlindHemDefaults, calculateBlindSqm, logBlindCalculation } from '@/utils/blindCalculationDefaults';
 
 interface BlindCalculationResult {
   squareMeters: number;
@@ -12,6 +14,8 @@ interface BlindCalculationResult {
   optionsCost: number;
   totalCost: number;
   displayText: string;
+  widthCalcNote?: string;
+  heightCalcNote?: string;
 }
 
 export const calculateBlindCosts = (
@@ -27,26 +31,23 @@ export const calculateBlindCosts = (
   const isDoubleConfig = measurements?.curtain_type === 'double';
   const blindMultiplier = isDoubleConfig ? 2 : 1;
   
-  // CRITICAL FIX: Blinds don't use hems or waste - only curtains do
-  // For blinds, use the dimensions as-is without adding allowances
-  const headerHem = 0;
-  const bottomHem = 0;
-  const sideHem = 0;
-  const wastePercent = 0;
+  // Get hem defaults from centralized source - template settings take priority
+  const hems = getBlindHemDefaults(template);
   
-  // Calculate effective dimensions with hems
-  const effectiveWidth = widthCm + (sideHem * 2);
-  const effectiveHeight = heightCm + headerHem + bottomHem;
-  
-  // Calculate square meters with waste (per blind)
-  const sqmRaw = (effectiveWidth * effectiveHeight) / 10000;
-  const squareMetersPerBlind = sqmRaw * (1 + wastePercent / 100);
+  // Calculate sqm using centralized function
+  const blindCalc = calculateBlindSqm(widthCm, heightCm, hems);
+  const squareMetersPerBlind = blindCalc.sqm;
   // Total square meters (doubled if double configuration)
   const squareMeters = squareMetersPerBlind * blindMultiplier;
   
-  console.log('📐 Roman Blind Configuration:', {
+  // Log calculation for debugging
+  logBlindCalculation('blindCostCalculator', widthCm, heightCm, hems, blindCalc);
+  
+  console.log('📐 Blind Configuration:', {
     isDoubleConfig,
     blindMultiplier,
+    hems,
+    effectiveDimensions: `${blindCalc.effectiveWidthCm}cm × ${blindCalc.effectiveHeightCm}cm`,
     squareMetersPerBlind: squareMetersPerBlind.toFixed(2),
     totalSquareMeters: squareMeters.toFixed(2)
   });
@@ -208,8 +209,8 @@ export const calculateBlindCosts = (
     dimensions: `${widthCm}cm × ${heightCm}cm`,
     configuration: isDoubleConfig ? 'Double (2 blinds)' : 'Single',
     blindMultiplier,
-    hems: { header: headerHem, bottom: bottomHem, side: sideHem },
-    effectiveDimensions: `${effectiveWidth}cm × ${effectiveHeight}cm`,
+    hems,
+    effectiveDimensions: `${blindCalc.effectiveWidthCm}cm × ${blindCalc.effectiveHeightCm}cm`,
     squareMeters: squareMeters.toFixed(2),
     fabricPricePerSqm,
     fabricCost: fabricCost.toFixed(2),
@@ -224,7 +225,9 @@ export const calculateBlindCosts = (
     manufacturingCost,
     optionsCost,
     totalCost,
-    displayText
+    displayText,
+    widthCalcNote: blindCalc.widthCalcNote,
+    heightCalcNote: blindCalc.heightCalcNote
   };
 };
 

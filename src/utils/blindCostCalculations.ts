@@ -1,9 +1,11 @@
 /**
  * Blind Cost Calculation Utilities
  * Handles pricing for roller, venetian, roman, vertical blinds and shutters
+ * Uses centralized defaults from blindCalculationDefaults.ts
  */
 
 import { getPriceFromGrid } from '@/hooks/usePricingGrids';
+import { getBlindHemDefaults, calculateBlindSqm, logBlindCalculation } from '@/utils/blindCalculationDefaults';
 
 export interface BlindCostResult {
   fabricCost: number;
@@ -14,6 +16,8 @@ export interface BlindCostResult {
   totalCost: number;
   squareMeters: number;
   linearMeters: number;
+  widthCalcNote?: string;
+  heightCalcNote?: string;
 }
 
 /**
@@ -27,35 +31,17 @@ export const calculateBlindCost = (
   selectedOptions: Array<{ name: string; price?: number }> = []
 ): BlindCostResult => {
   
-  // CRITICAL: All values must come from template settings - NO HARDCODED FALLBACKS
-  // For blinds (roller, venetian, etc.), hem allowances should be 0 unless explicitly set
-  const blindHeaderHem = template?.blind_header_hem_cm || template?.header_allowance || 0;
-  const blindBottomHem = template?.blind_bottom_hem_cm || template?.bottom_hem || 0;
-  const blindSideHem = template?.blind_side_hem_cm || 0;
-  const wastePercent = template?.waste_percent || 0;
+  // Get hem defaults from centralized source - template settings take priority
+  const hems = getBlindHemDefaults(template);
   
-  console.log('🎯 calculateBlindCost:', {
-    width,
-    height,
-    template: template?.name,
-    pricing_type: template?.pricing_type,
-    fabricPrice: fabricItem?.selling_price,
-    blindHeaderHem,
-    blindBottomHem,
-    blindSideHem,
-    wastePercent,
-    options: selectedOptions,
-    WARNING: blindHeaderHem > 0 || blindBottomHem > 0 ? 'HEM ALLOWANCES DETECTED - Should be 0 for most blinds!' : 'Hems are zero (correct for most blinds)'
-  });
-  const wasteMultiplier = 1 + (wastePercent / 100);
+  // Calculate sqm using centralized function
+  const blindCalc = calculateBlindSqm(width, height, hems);
+  const squareMeters = blindCalc.sqm;
   
-  const effectiveWidthCm = width + (blindSideHem * 2);
-  const effectiveHeightCm = height + blindHeaderHem + blindBottomHem;
-  const widthM = effectiveWidthCm / 100;
-  const heightM = effectiveHeightCm / 100;
-  const squareMetersRaw = widthM * heightM;
-  const squareMeters = squareMetersRaw * wasteMultiplier; // Apply waste
-  const linearMeters = heightM; // For blinds, linear meters typically = height
+  // Log calculation for debugging
+  logBlindCalculation('blindCostCalculations', width, height, hems, blindCalc);
+  
+  const linearMeters = blindCalc.effectiveHeightCm / 100; // For blinds, linear meters typically = effective height
   
   // PRICING GRID: Check fabric item FIRST, then template
   let fabricCost = 0;
@@ -182,8 +168,8 @@ export const calculateBlindCost = (
     totalCost,
     squareMeters,
     linearMeters,
-    effectiveWidthCm,
-    effectiveHeightCm
+    effectiveWidthCm: blindCalc.effectiveWidthCm,
+    effectiveHeightCm: blindCalc.effectiveHeightCm
   });
   
   return {
@@ -194,7 +180,9 @@ export const calculateBlindCost = (
     headingCost: 0, // Blinds don't have heading costs
     totalCost,
     squareMeters,
-    linearMeters
+    linearMeters,
+    widthCalcNote: blindCalc.widthCalcNote,
+    heightCalcNote: blindCalc.heightCalcNote
   };
 };
 
