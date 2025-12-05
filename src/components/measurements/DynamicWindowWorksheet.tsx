@@ -518,21 +518,36 @@ export const DynamicWindowWorksheet = forwardRef<{
         hasLoadedInitialData.current = true;
         console.log('✅ Initial data load complete - will not reload again');
         
-        // Set fabric calculation if available - CRITICAL: Include hems and returns
+        // Set fabric calculation if available - CRITICAL: Include hems and returns AND totalWidthWithAllowances
         if (existingWindowSummary.linear_meters && existingWindowSummary.fabric_cost) {
           const md = existingWindowSummary.measurements_details as any || {};
+          
+          // CRITICAL FIX: Calculate totalWidthWithAllowances from restored values
+          // rail_width is stored in MM in database, convert to CM for fabric calculation
+          const railWidthCm = (md.rail_width || 0) / 10;
+          const fullness = md.heading_fullness || md.fullness_ratio || 2;
+          const requiredWidth = railWidthCm * fullness;
+          const returns = (md.return_left || 0) + (md.return_right || 0);
+          const curtainMultiplier = (md.curtain_type === 'pair') ? 2 : 1;
+          const totalSideHems = (md.side_hems || 0) * 2 * curtainMultiplier;
+          // Use saved value if available, otherwise calculate
+          const totalWidthWithAllowances = md.total_width_with_allowances_cm || (requiredWidth + returns + totalSideHems);
+          
           setFabricCalculation({
             linearMeters: existingWindowSummary.linear_meters,
             totalCost: existingWindowSummary.fabric_cost,
             pricePerMeter: existingWindowSummary.price_per_meter,
             widthsRequired: existingWindowSummary.widths_required,
-            // CRITICAL: Restore hems and returns from measurements_details
-            returns: (md.return_left || 0) + (md.return_right || 0),
-            totalSideHems: (md.side_hems || 0) * 2 * ((md.curtain_type === 'pair') ? 2 : 1),
+            // CRITICAL: Restore all values needed for manufacturing calculation
+            returns: returns,
+            totalSideHems: totalSideHems,
             returnLeft: md.return_left || 0,
             returnRight: md.return_right || 0,
             sideHems: md.side_hems || 0,
-            fullnessRatio: md.heading_fullness || md.fullness_ratio || 0
+            fullnessRatio: fullness,
+            totalWidthWithAllowances: totalWidthWithAllowances, // ✅ Now calculated/restored
+            railWidth: railWidthCm,
+            wastePercent: md.waste_percent || 5
           });
         }
         return;
@@ -1435,7 +1450,10 @@ export const DynamicWindowWorksheet = forwardRef<{
               fabric_width_cm: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140,
               window_type: selectedWindowType?.name || 'Room Wall',
               selected_heading: selectedHeading,
-              selected_lining: selectedLining
+              selected_lining: selectedLining,
+              // CRITICAL: Save totalWidthWithAllowances for manufacturing calculation restoration
+              total_width_with_allowances_cm: fabricCalculation?.totalWidthWithAllowances || 0,
+              waste_percent_saved: fabricCalculation?.wastePercent || measurements.waste_percent || selectedTemplate?.waste_percent || 5
             }
           };
 
