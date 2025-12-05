@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { CurtainTemplateForm } from "./CurtainTemplateForm";
 import { CurtainTemplatesList } from "./CurtainTemplatesList";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { CurtainTemplate } from "@/hooks/useCurtainTemplates";
+import { CurtainTemplate, useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 
 interface CreateTemplateData {
   name: string;
@@ -17,16 +17,21 @@ interface CurtainTemplatesManagerProps {
   highlightedTemplateId?: string | null;
   createTemplateData?: CreateTemplateData | null;
   onTemplateCreated?: () => void;
+  editTemplateId?: string | null;
+  onTemplateEdited?: () => void;
 }
 
 export const CurtainTemplatesManager = ({ 
   highlightedTemplateId,
   createTemplateData,
-  onTemplateCreated
+  onTemplateCreated,
+  editTemplateId,
+  onTemplateEdited
 }: CurtainTemplatesManagerProps) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<CurtainTemplate | null>(null);
   const [prefilledData, setPrefilledData] = useState<CreateTemplateData | null>(null);
+  const { data: templates } = useCurtainTemplates();
 
   // Auto-open form when createTemplateData is provided
   useEffect(() => {
@@ -36,6 +41,19 @@ export const CurtainTemplatesManager = ({
       setIsFormOpen(true);
     }
   }, [createTemplateData]);
+
+  // Auto-open form when editTemplateId is provided
+  useEffect(() => {
+    if (editTemplateId && templates) {
+      const templateToEdit = templates.find(t => t.id === editTemplateId);
+      if (templateToEdit) {
+        setEditingTemplate(templateToEdit);
+        setPrefilledData(null);
+        setIsFormOpen(true);
+        onTemplateEdited?.();
+      }
+    }
+  }, [editTemplateId, templates]);
 
   const handleAddTemplate = () => {
     console.log("Add Template button clicked");

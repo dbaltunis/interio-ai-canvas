@@ -20,10 +20,17 @@ interface CreateTemplateData {
 interface WindowCoveringsTabProps {
   createTemplateData?: CreateTemplateData | null;
   onTemplateCreated?: () => void;
+  editTemplateId?: string | null;
+  onTemplateEdited?: () => void;
 }
 
-export const WindowCoveringsTab = ({ createTemplateData, onTemplateCreated }: WindowCoveringsTabProps) => {
-  const [activeTab, setActiveTab] = useState(createTemplateData ? "templates" : "templates");
+export const WindowCoveringsTab = ({ 
+  createTemplateData, 
+  onTemplateCreated,
+  editTemplateId,
+  onTemplateEdited
+}: WindowCoveringsTabProps) => {
+  const [activeTab, setActiveTab] = useState(createTemplateData || editTemplateId ? "templates" : "templates");
   const [highlightedTemplateId, setHighlightedTemplateId] = useState<string | null>(null);
   
   // Check if TWC integration is enabled
@@ -32,12 +39,12 @@ export const WindowCoveringsTab = ({ createTemplateData, onTemplateCreated }: Wi
     (i) => i.integration_type === 'twc' && i.active
   );
 
-  // Auto-switch to templates tab when createTemplateData is provided
+  // Auto-switch to templates tab when createTemplateData or editTemplateId is provided
   useEffect(() => {
-    if (createTemplateData) {
+    if (createTemplateData || editTemplateId) {
       setActiveTab("templates");
     }
-  }, [createTemplateData]);
+  }, [createTemplateData, editTemplateId]);
 
   const handleTemplateCloned = (templateId: string) => {
     setActiveTab("templates");
@@ -92,6 +99,8 @@ export const WindowCoveringsTab = ({ createTemplateData, onTemplateCreated }: Wi
                 highlightedTemplateId={highlightedTemplateId}
                 createTemplateData={createTemplateData}
                 onTemplateCreated={onTemplateCreated}
+                editTemplateId={editTemplateId}
+                onTemplateEdited={onTemplateEdited}
               />
             </TabsContent>
 
