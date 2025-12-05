@@ -381,6 +381,11 @@ export const VisualMeasurementSheet = ({
       const orderedLinearMeters = result.meters; // Already includes waste
       const remnantMeters = 0; // Remnant tracking should be done at fabric pool level, not here
       
+      // Calculate total width with fullness and all allowances for manufacturing cost calculation
+      const fullnessRatioValue = parseFloat(enrichedMeasurements.heading_fullness as any) || 0;
+      const requiredWidth = width * fullnessRatioValue;
+      const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
+      
       const fabricCalcResult = {
         linearMeters: result.meters, // Actual fabric used in calculation
         orderedLinearMeters: orderedLinearMeters, // = result.meters (trust the calculator)
@@ -391,7 +396,7 @@ export const VisualMeasurementSheet = ({
         widthsRequired: result.widthsRequired || 1,
         railWidth: width,
         // ✅ FIX: Use dynamic heading_fullness from measurements, NO hardcoded fallbacks
-        fullnessRatio: parseFloat(enrichedMeasurements.heading_fullness as any) || 0,
+        fullnessRatio: fullnessRatioValue,
         drop: height,
         headerHem: headerHem,
         bottomHem: bottomHem,
@@ -409,6 +414,8 @@ export const VisualMeasurementSheet = ({
         curtainType: panelConfig,
         fabricRotated: fabricRotated,
         fabricOrientation: result.fabricOrientation || 'vertical',
+        // ✅ FIX: Add totalWidthWithAllowances for manufacturing cost calculation
+        totalWidthWithAllowances: totalWidthWithAllowances,
         // Add horizontal pieces info for leftover tracking (only when applicable)
         ...(result.horizontalPiecesNeeded && result.horizontalPiecesNeeded > 1 && { 
           horizontalPiecesNeeded: result.horizontalPiecesNeeded 
