@@ -611,7 +611,7 @@ export const CostCalculationSummary = ({
           </div>
         )}
 
-        {manufacturingCost > 0 && (
+        {manufacturingCost > 0 ? (
           <div className="flex justify-between py-1.5 border-b border-border/50">
             <div className="flex flex-col">
               <span className="text-card-foreground font-medium">
@@ -638,6 +638,30 @@ export const CostCalculationSummary = ({
             </div>
             <span className="font-semibold text-card-foreground">{formatPrice(manufacturingCost)}</span>
           </div>
+        ) : (
+          /* CRITICAL: Show warning ONLY for curtains/romans when manufacturing not configured */
+          (() => {
+            const treatmentCategory = template?.treatment_category?.toLowerCase() || '';
+            const requiresManufacturing = ['curtains', 'curtain', 'romans', 'roman', 'roman_blinds', 'roman blind'].some(
+              t => treatmentCategory.includes(t)
+            );
+            
+            if (!requiresManufacturing) return null;
+            
+            return (
+              <div className="flex justify-between py-1.5 border-b border-border/50 bg-amber-50 dark:bg-amber-950/30 -mx-4 px-4">
+                <div className="flex flex-col">
+                  <span className="text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1">
+                    ⚠️ Manufacturing Not Configured
+                  </span>
+                  <span className="text-xs text-amber-600 dark:text-amber-500">
+                    Set pricing in Settings → Templates → Pricing tab
+                  </span>
+                </div>
+                <span className="font-semibold text-amber-700 dark:text-amber-400">{formatPrice(0)}</span>
+              </div>
+            );
+          })()
         )}
 
         {liningCost > 0 && (
