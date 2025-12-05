@@ -15,6 +15,7 @@ import { AuthPage } from "./components/auth/AuthPage";
 import { ErrorBoundary } from "./components/performance/ErrorBoundary";
 import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
 import { PresenceProvider } from "./contexts/PresenceContext";
+import { TeachingProvider } from "./contexts/TeachingContext";
 import { BugReportDialog } from "@/components/bug-report/BugReportDialog";
 import { ThemeProvider } from "next-themes";
 import { ThemeDarkSync } from "./components/system/ThemeDarkSync";
@@ -22,6 +23,7 @@ import { InteractionUnlockGuard } from "./components/system/InteractionUnlockGua
 import { LoadingState } from "./components/ui/loading-state";
 import { ProjectInventoryTrackingHandler } from "./components/projects/ProjectInventoryTrackingHandler";
 import { SyncIndicator } from "./components/system/SyncIndicator";
+import { FloatingTeachingButton } from "./components/teaching/TeachingHelpButton";
 import "@/styles/theme.css";
 
 // Lazy load all route components for better code splitting
@@ -143,9 +145,11 @@ const App = () => {
               <BrowserRouter>
                 <NavObserver />
                 <AuthProvider>
+                  <TeachingProvider>
                   <PresenceProvider>
                     <EmailRealtimeProvider>
                       <BugReportDialog />
+                      <FloatingTeachingButton />
                   <Suspense fallback={<></>}>
                   <Routes>
                 {/* Public store routes */}
@@ -304,6 +308,7 @@ const App = () => {
               </Suspense>
                     </EmailRealtimeProvider>
                   </PresenceProvider>
+                  </TeachingProvider>
                   <ProjectInventoryTrackingHandler />
                 </AuthProvider>
                  </BrowserRouter>
