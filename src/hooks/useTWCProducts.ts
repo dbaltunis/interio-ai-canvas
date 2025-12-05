@@ -171,10 +171,23 @@ export const useResyncTWCProducts = () => {
       queryClient.invalidateQueries({ queryKey: ["treatment-options"] });
       queryClient.invalidateQueries({ queryKey: ["twc-imported-products"] });
       queryClient.invalidateQueries({ queryKey: ["option-values"] });
+      queryClient.invalidateQueries({ queryKey: ["template-option-settings"] });
       
-      const summary = data.options_created > 0 || data.values_created > 0
-        ? `Created ${data.options_created} options with ${data.values_created} values`
-        : `All ${data.options_skipped} options already exist`;
+      const parts: string[] = [];
+      if (data.options_created > 0) {
+        parts.push(`${data.options_created} options created`);
+      }
+      if (data.values_created > 0) {
+        parts.push(`${data.values_created} values`);
+      }
+      if (data.template_settings_created > 0) {
+        parts.push(`enabled for ${data.template_settings_created} templates`);
+      }
+      if (data.options_skipped > 0 && parts.length === 0) {
+        parts.push(`${data.options_skipped} options already exist`);
+      }
+      
+      const summary = parts.join(', ') || 'Options synced successfully';
 
       toast.success('TWC Options Synced', {
         description: summary,

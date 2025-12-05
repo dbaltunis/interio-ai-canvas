@@ -40,11 +40,11 @@ serve(async (req) => {
     const accountId = profile?.parent_account_id || user.id;
     console.log('Re-syncing TWC products for account:', accountId);
 
-    // Fetch all TWC inventory items with metadata
+    // Fetch all TWC inventory items with metadata - use user.id not accountId for user_id column
     const { data: twcItems, error: itemsError } = await supabase
       .from('enhanced_inventory_items')
       .select('id, name, category, metadata')
-      .eq('user_id', accountId)
+      .eq('user_id', user.id)
       .not('metadata->twc_item_number', 'is', null);
 
     if (itemsError) {
@@ -54,13 +54,36 @@ serve(async (req) => {
 
     console.log(`Found ${twcItems?.length || 0} TWC inventory items`);
 
+    // Fetch templates linked to these inventory items
+    const itemIds = twcItems?.map(item => item.id) || [];
+    const { data: templates } = await supabase
+      .from('curtain_templates')
+      .select('id, name, inventory_item_id, treatment_category')
+      .in('inventory_item_id', itemIds.length > 0 ? itemIds : ['no-match']);
+
+    console.log(`Found ${templates?.length || 0} linked templates`);
+
+    // Create a map of inventory_item_id to template
+    const templateMap = new Map<string, { id: string; treatment_category: string }>();
+    for (const template of templates || []) {
+      if (template.inventory_item_id) {
+        templateMap.set(template.inventory_item_id, {
+          id: template.id,
+          treatment_category: template.treatment_category
+        });
+      }
+    }
+
     // Extract unique questions from all TWC items
+    // TWC data format: { question: string, questionType: string, answers: string[] }
+    // OR format: { name: string, options: string[], isRequired: boolean }
     const uniqueQuestions = new Map<string, {
       key: string;
       label: string;
       options: string[];
       isRequired: boolean;
       treatmentCategory: string;
+      sourceItemIds: string[];
     }>();
 
     for (const item of twcItems || []) {
@@ -68,25 +91,36 @@ serve(async (req) => {
       const treatmentCategory = mapCategoryToTreatment(item.category);
       
       for (const q of questions) {
-        // Use the question name as the key
-        const key = generateKey(q.name);
+        // Handle both TWC API format and stored format
+        // Format 1: { question, questionType, answers }
+        // Format 2: { name, options, isRequired }
+        const questionLabel = q.question || q.name;
+        const answerOptions = q.answers || q.options || [];
+        const isRequired = q.isRequired || false;
+        
+        if (!questionLabel) continue;
+        
+        // Use the question label as the key
+        const key = generateKey(questionLabel);
         
         // Skip questions with no options
-        if (!q.options || q.options.length === 0) continue;
+        if (!answerOptions || answerOptions.length === 0) continue;
         
         if (!uniqueQuestions.has(key)) {
           uniqueQuestions.set(key, {
             key,
-            label: q.name,
-            options: q.options || [],
-            isRequired: q.isRequired || false,
-            treatmentCategory
+            label: questionLabel,
+            options: answerOptions,
+            isRequired,
+            treatmentCategory,
+            sourceItemIds: [item.id]
           });
         } else {
           // Merge options if same key exists
           const existing = uniqueQuestions.get(key)!;
-          const mergedOptions = [...new Set([...existing.options, ...(q.options || [])])];
+          const mergedOptions = [...new Set([...existing.options, ...answerOptions])];
           existing.options = mergedOptions;
+          existing.sourceItemIds.push(item.id);
         }
       }
     }
@@ -96,10 +130,13 @@ serve(async (req) => {
     let optionsCreated = 0;
     let valuesCreated = 0;
     let optionsSkipped = 0;
+    let templateSettingsCreated = 0;
 
     // Process each unique question
     for (const [key, questionData] of uniqueQuestions) {
       // Check if treatment_option already exists for this account
+      let optionId: string | null = null;
+      
       const { data: existingOption } = await supabase
         .from('treatment_options')
         .select('id')
@@ -108,63 +145,98 @@ serve(async (req) => {
         .maybeSingle();
 
       if (existingOption) {
-        console.log(`Option "${key}" already exists for account, skipping`);
+        console.log(`Option "${key}" already exists for account, will link to templates`);
+        optionId = existingOption.id;
         optionsSkipped++;
-        continue;
-      }
-
-      // Create treatment_option with account_id and source metadata
-      const { data: newOption, error: optionError } = await supabase
-        .from('treatment_options')
-        .insert({
-          account_id: accountId,
-          treatment_category: questionData.treatmentCategory,
-          key: key,
-          label: questionData.label,
-          input_type: 'select',
-          order_index: 100 + optionsCreated,
-          required: questionData.isRequired,
-          visible: true,
-          metadata: {
-            source: 'twc',
-            imported_at: new Date().toISOString()
-          }
-        })
-        .select('id')
-        .single();
-
-      if (optionError) {
-        console.error(`Error creating option "${key}":`, optionError);
-        continue;
-      }
-
-      console.log(`Created treatment_option: ${key} (id: ${newOption.id})`);
-      optionsCreated++;
-
-      // Create option_values for each answer choice
-      for (let i = 0; i < questionData.options.length; i++) {
-        const optionValue = questionData.options[i];
-        
-        // Skip empty options
-        if (!optionValue || optionValue.trim() === '') continue;
-        
-        const valueKey = generateKey(optionValue);
-
-        const { error: valueError } = await supabase
-          .from('option_values')
+      } else {
+        // Create treatment_option with account_id and source metadata
+        const { data: newOption, error: optionError } = await supabase
+          .from('treatment_options')
           .insert({
-            treatment_option_id: newOption.id,
-            label: optionValue,
-            value: valueKey,
-            code: optionValue,
-            order_index: i,
-            is_default: i === 0
-          });
+            account_id: accountId,
+            treatment_category: questionData.treatmentCategory,
+            key: key,
+            label: questionData.label,
+            input_type: 'select',
+            order_index: 100 + optionsCreated,
+            required: questionData.isRequired,
+            visible: true,
+            metadata: {
+              source: 'twc',
+              imported_at: new Date().toISOString()
+            }
+          })
+          .select('id')
+          .single();
 
-        if (valueError) {
-          console.error(`Error creating value "${optionValue}" for option "${key}":`, valueError);
-        } else {
-          valuesCreated++;
+        if (optionError) {
+          console.error(`Error creating option "${key}":`, optionError);
+          continue;
+        }
+
+        console.log(`Created treatment_option: ${key} (id: ${newOption.id})`);
+        optionId = newOption.id;
+        optionsCreated++;
+
+        // Create option_values for each answer choice
+        for (let i = 0; i < questionData.options.length; i++) {
+          const optionValue = questionData.options[i];
+          
+          // Skip empty options
+          if (!optionValue || optionValue.trim() === '') continue;
+          
+          const valueKey = generateKey(optionValue);
+
+          const { error: valueError } = await supabase
+            .from('option_values')
+            .insert({
+              treatment_option_id: optionId,
+              label: optionValue,
+              value: valueKey,
+              code: optionValue,
+              order_index: i,
+              is_default: i === 0
+            });
+
+          if (valueError) {
+            console.error(`Error creating value "${optionValue}" for option "${key}":`, valueError);
+          } else {
+            valuesCreated++;
+          }
+        }
+      }
+
+      // Enable option for all related templates
+      if (optionId) {
+        for (const sourceItemId of questionData.sourceItemIds) {
+          const template = templateMap.get(sourceItemId);
+          if (template) {
+            // Check if setting already exists
+            const { data: existingSetting } = await supabase
+              .from('template_option_settings')
+              .select('id')
+              .eq('template_id', template.id)
+              .eq('treatment_option_id', optionId)
+              .maybeSingle();
+
+            if (!existingSetting) {
+              const { error: settingError } = await supabase
+                .from('template_option_settings')
+                .insert({
+                  template_id: template.id,
+                  treatment_option_id: optionId,
+                  is_enabled: true,
+                  order_index: 100 + templateSettingsCreated
+                });
+
+              if (settingError) {
+                console.error(`Error creating template_option_setting:`, settingError);
+              } else {
+                console.log(`Enabled option "${key}" for template ${template.id}`);
+                templateSettingsCreated++;
+              }
+            }
+          }
         }
       }
     }
@@ -175,7 +247,8 @@ serve(async (req) => {
       unique_questions_found: uniqueQuestions.size,
       options_created: optionsCreated,
       options_skipped: optionsSkipped,
-      values_created: valuesCreated
+      values_created: valuesCreated,
+      template_settings_created: templateSettingsCreated
     };
 
     console.log('Re-sync complete:', result);
