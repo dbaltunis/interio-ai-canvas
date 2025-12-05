@@ -46,8 +46,25 @@ const groupRelatedOptions = (items: ClientBreakdownItem[]): ClientBreakdownItem[
   const parentMap = new Map<string, ClientBreakdownItem>();
   const childMap = new Map<string, { parent: string; item: ClientBreakdownItem }>();
   
-  // Common child suffixes that indicate a sub-option
-  const childSuffixes = ['_colour', '_color', '_size', '_style', '_type', '_finish', '_material'];
+  // Common child suffixes that indicate a sub-option (MUST include both singular AND plural forms)
+  const childSuffixes = [
+    '_colour', '_colours', '_color', '_colors',     // Color variations
+    '_size', '_sizes',                               // Size variations
+    '_style', '_styles',                             // Style variations
+    '_type', '_types',                               // Type variations
+    '_finish', '_finishes',                          // Finish variations
+    '_material', '_materials',                       // Material variations
+    '_track', '_tracks',                             // Hardware tracks
+    '_rod', '_rods',                                 // Hardware rods
+    '_option', '_options',                           // Generic options
+    '_width', '_length', '_height',                  // Dimension options
+    '_chain', '_chains',                             // Chain side options
+    '_control', '_controls',                         // Control type options
+    '_mount', '_mounts',                             // Mount type options
+    '_slat', '_slats',                               // Slat options
+    '_vane', '_vanes',                               // Vane options
+    '_louvre', '_louvres',                           // Louvre options
+  ];
   
   // First pass: identify all options and potential parent-child relationships
   options.forEach(item => {
