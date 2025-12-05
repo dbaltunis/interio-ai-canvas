@@ -2,11 +2,11 @@
  * Centralized Blind Calculation Defaults
  * Single source of truth for all blind sqm calculations
  * 
- * FORMULA: 
- *   effectiveWidth = railWidth + (sideHem × 2)
- *   effectiveHeight = drop + headerHem + bottomHem
- *   sqm = (effectiveWidth × effectiveHeight) / 10000 × (1 + waste%)
+ * Re-exports from calculationFormulas.ts for backward compatibility
+ * All formulas are now defined in calculationFormulas.ts
  */
+
+import { BLIND_FORMULA, BLIND_DEFAULTS, BlindFormulaInputs, BlindFormulaResult } from './calculationFormulas';
 
 export interface BlindHemDefaults {
   headerHemCm: number;
@@ -22,27 +22,27 @@ export interface BlindHemDefaults {
  *   height: 120 + 8 + 10 = 138 cm (header = 8, bottom = 10)
  */
 export const getBlindHemDefaults = (template?: any): BlindHemDefaults => {
-  // PRIORITY: Template settings → Sensible defaults
+  // PRIORITY: Template settings → Centralized defaults
   return {
     headerHemCm: parseFloat(template?.blind_header_hem_cm) || 
                  parseFloat(template?.header_allowance) || 
-                 8, // Default: 8cm header
+                 BLIND_DEFAULTS.headerHemCm,
     
     bottomHemCm: parseFloat(template?.blind_bottom_hem_cm) || 
                  parseFloat(template?.bottom_hem) || 
-                 10, // Default: 10cm bottom
+                 BLIND_DEFAULTS.bottomHemCm,
     
     sideHemCm: parseFloat(template?.blind_side_hem_cm) || 
                parseFloat(template?.side_hem) || 
-               4, // Default: 4cm per side
+               BLIND_DEFAULTS.sideHemCm,
     
-    wastePercent: parseFloat(template?.waste_percent) || 0 // Default: 0% waste
+    wastePercent: parseFloat(template?.waste_percent) || BLIND_DEFAULTS.wastePercent
   };
 };
 
 /**
  * Calculate blind sqm with hems applied
- * This is THE SINGLE calculation function all code paths should use
+ * This uses the centralized BLIND_FORMULA from calculationFormulas.ts
  */
 export const calculateBlindSqm = (
   railWidthCm: number,
@@ -50,26 +50,32 @@ export const calculateBlindSqm = (
   hems: BlindHemDefaults
 ): {
   sqm: number;
+  sqmRaw?: number;
   effectiveWidthCm: number;
   effectiveHeightCm: number;
   widthCalcNote: string;
   heightCalcNote: string;
+  formula?: string;
 } => {
-  const effectiveWidthCm = railWidthCm + (hems.sideHemCm * 2);
-  const effectiveHeightCm = dropCm + hems.headerHemCm + hems.bottomHemCm;
+  const inputs: BlindFormulaInputs = {
+    railWidthCm,
+    dropCm,
+    headerHemCm: hems.headerHemCm,
+    bottomHemCm: hems.bottomHemCm,
+    sideHemCm: hems.sideHemCm,
+    wastePercent: hems.wastePercent
+  };
   
-  const sqmRaw = (effectiveWidthCm * effectiveHeightCm) / 10000;
-  const sqm = sqmRaw * (1 + hems.wastePercent / 100);
-  
-  // Round to 2 decimal places
-  const roundedSqm = Math.round(sqm * 100) / 100;
+  const result = BLIND_FORMULA.calculate(inputs);
   
   return {
-    sqm: roundedSqm,
-    effectiveWidthCm,
-    effectiveHeightCm,
-    widthCalcNote: `width: ${railWidthCm} + ${hems.sideHemCm} + ${hems.sideHemCm} = ${effectiveWidthCm} cm`,
-    heightCalcNote: `height: ${dropCm} + ${hems.headerHemCm} + ${hems.bottomHemCm} = ${effectiveHeightCm} cm`
+    sqm: result.sqm,
+    sqmRaw: result.sqmRaw,
+    effectiveWidthCm: result.effectiveWidthCm,
+    effectiveHeightCm: result.effectiveHeightCm,
+    widthCalcNote: result.widthCalcNote,
+    heightCalcNote: result.heightCalcNote,
+    formula: result.formula
   };
 };
 
@@ -81,7 +87,7 @@ export const logBlindCalculation = (
   railWidthCm: number,
   dropCm: number,
   hems: BlindHemDefaults,
-  result: { sqm: number; effectiveWidthCm: number; effectiveHeightCm: number }
+  result: { sqm: number; effectiveWidthCm: number; effectiveHeightCm: number; formula?: string }
 ) => {
   console.log(`📐 ${context} Blind Calculation:`, {
     input: { railWidthCm, dropCm },
@@ -95,6 +101,7 @@ export const logBlindCalculation = (
       width: `${railWidthCm} + ${hems.sideHemCm} + ${hems.sideHemCm} = ${result.effectiveWidthCm} cm`,
       height: `${dropCm} + ${hems.headerHemCm} + ${hems.bottomHemCm} = ${result.effectiveHeightCm} cm`
     },
-    area: `${(result.effectiveWidthCm/100).toFixed(2)} m × ${(result.effectiveHeightCm/100).toFixed(2)} m = ${result.sqm} sqm`
+    area: `${(result.effectiveWidthCm/100).toFixed(2)} m × ${(result.effectiveHeightCm/100).toFixed(2)} m = ${result.sqm} sqm`,
+    formula: result.formula
   });
 };

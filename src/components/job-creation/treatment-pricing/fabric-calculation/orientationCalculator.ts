@@ -1,5 +1,18 @@
+/**
+ * Orientation Calculator for Curtain Fabric
+ * Uses centralized formulas from calculationFormulas.ts
+ * 
+ * VERTICAL (Standard): Fabric runs top to bottom
+ * HORIZONTAL (Railroaded): Fabric runs side to side
+ */
 
 import { FabricCalculationParams, OrientationResult } from './types';
+import { 
+  CURTAIN_VERTICAL_FORMULA, 
+  CURTAIN_HORIZONTAL_FORMULA,
+  CurtainFormulaInputs,
+  CURTAIN_DEFAULTS 
+} from '@/utils/calculationFormulas';
 
 export const calculateOrientation = (
   orientation: 'horizontal' | 'vertical',
@@ -32,20 +45,41 @@ export const calculateOrientation = (
   const vRepeat = verticalPatternRepeatCm > 0 ? verticalPatternRepeatCm : 0;
   const hRepeat = horizontalPatternRepeatCm > 0 ? horizontalPatternRepeatCm : 0;
 
-  const totalDropRaw = drop + pooling + headerHem + bottomHem; // cm
-  // Side hems: pair of curtains = 2 panels × 2 sides = 4 side hems; single = 1 panel × 2 sides = 2 side hems
+  // Build inputs for centralized formula
+  const formulaInputs: CurtainFormulaInputs = {
+    railWidthCm: railWidth,
+    dropCm: drop,
+    fullness: fullness || CURTAIN_DEFAULTS.fullness,
+    fabricWidthCm: fabricWidth,
+    quantity: quantity || 1,
+    headerHemCm: headerHem || CURTAIN_DEFAULTS.headerHemCm,
+    bottomHemCm: bottomHem || CURTAIN_DEFAULTS.bottomHemCm,
+    sideHemCm: sideHem || CURTAIN_DEFAULTS.sideHemCm,
+    seamHemCm: seamHem || CURTAIN_DEFAULTS.seamHemCm,
+    poolingCm: pooling || CURTAIN_DEFAULTS.poolingCm,
+    returnLeftCm: returnLeft,
+    returnRightCm: returnRight
+  };
+
+  // Use centralized formulas
+  const formula = orientation === 'horizontal' 
+    ? CURTAIN_HORIZONTAL_FORMULA 
+    : CURTAIN_VERTICAL_FORMULA;
+  
+  const formulaResult = formula.calculate(formulaInputs);
+
+  const totalDropRaw = formulaResult.totalDropCm;
   const numberOfSideHems = quantity * 2;
-  const totalSideHemAllowance = sideHem * numberOfSideHems; // Total cm needed for all side hems
-  const totalWidthRaw = railWidth * fullness + returnLeft + returnRight; // cm (side hems handled separately per orientation)
+  const totalSideHemAllowance = sideHem * numberOfSideHems;
+  const totalWidthRaw = railWidth * fullness + returnLeft + returnRight;
 
   let horizontalPiecesNeeded: number | undefined;
   let leftoverFromLastPiece: number | undefined;
 
   if (orientation === 'horizontal') {
     // Railroaded/Wide fabric: fabric runs horizontally (sideways)
-    // - Drop (height) must fit within or span multiple fabric WIDTH pieces
-    // - Rail width determines fabric LENGTH needed
     effectiveFabricWidth = fabricWidth;
+    horizontalPiecesNeeded = formulaResult.widthsRequired;
 
     const requiredLengthUnrounded = totalDropRaw;
     requiredLength = vRepeat > 0 ? Math.ceil(requiredLengthUnrounded / vRepeat) * vRepeat : requiredLengthUnrounded;

@@ -13,6 +13,7 @@ import { PricingGridPreview } from "../PricingGridPreview";
 import { formatDimensionsFromCM, formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { getBlindHemDefaults, calculateBlindSqm } from "@/utils/blindCalculationDefaults";
+import { CURTAIN_VERTICAL_FORMULA, CURTAIN_HORIZONTAL_FORMULA, CURTAIN_DEFAULTS, CurtainFormulaInputs } from '@/utils/calculationFormulas';
 
 interface AdaptiveFabricPricingDisplayProps {
   selectedFabricItem: any;
