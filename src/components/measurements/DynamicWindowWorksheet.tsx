@@ -980,19 +980,13 @@ export const DynamicWindowWorksheet = forwardRef<{
                 : (selectedPricingMethod?.machine_price_per_drop ?? selectedTemplate.machine_price_per_drop ?? 0);
               manufacturingCost = pricePerUnit * (fabricCalculation.widthsRequired || 1);
             } else if (pricingType === 'per_metre') {
-              // ✅ FIX: For per_metre, calculate width after fullness + side hems + returns + waste
-              // This is the MANUFACTURING width to sew, not fabric usage
-              const railWidthCm = parseFloat(measurements.rail_width || '0');
-              const fullness = fabricCalculation.fullnessRatio || 0;
-              const sideHemsCm = fabricCalculation.totalSideHems || 0;
-              const returnsCm = fabricCalculation.returns || 0;
+              // ✅ FIX: Use fabricCalculation.totalWidthWithAllowances directly
+              // This is the SAME value used in the display logic (CostCalculationSummary)
+              // Already correctly calculated in CM with fullness, hems, returns applied
+              const widthWithAllowancesCm = fabricCalculation.totalWidthWithAllowances || 0;
               const wastePercent = fabricCalculation.wastePercent || selectedTemplate.waste_percent || 0;
               
-              // Base width after fullness
-              const baseWidthCm = railWidthCm * fullness;
-              // Add hems and returns
-              const widthWithAllowancesCm = baseWidthCm + sideHemsCm + returnsCm;
-              // Add waste percentage
+              // Add waste percentage and convert to meters
               const finalWidthCm = widthWithAllowancesCm * (1 + wastePercent / 100);
               const finalWidthM = finalWidthCm / 100;
               
@@ -1003,19 +997,14 @@ export const DynamicWindowWorksheet = forwardRef<{
               // Multiply final width by manufacturing price per meter
               manufacturingCost = pricePerUnit * finalWidthM;
               
-              console.log('💰 [SAVE] Per metre manufacturing calculation:', {
-                railWidthCm,
-                fullness,
-                baseWidthCm,
-                sideHemsCm,
-                returnsCm,
+              console.log('💰 [SAVE] Per metre manufacturing calculation (FIXED):', {
                 widthWithAllowancesCm,
                 wastePercent,
                 finalWidthCm,
                 finalWidthM,
                 pricePerUnit,
                 manufacturingCost,
-                formula: `${railWidthCm}cm × ${fullness} = ${baseWidthCm.toFixed(0)}cm + ${sideHemsCm}cm hems + ${returnsCm}cm returns + ${wastePercent}% waste = ${finalWidthCm.toFixed(0)}cm (${finalWidthM.toFixed(2)}m) × $${pricePerUnit}/m = $${manufacturingCost.toFixed(2)}`
+                formula: `${widthWithAllowancesCm.toFixed(0)}cm + ${wastePercent}% waste = ${finalWidthCm.toFixed(0)}cm (${finalWidthM.toFixed(2)}m) × $${pricePerUnit}/m = $${manufacturingCost.toFixed(2)}`
               });
             } else if (pricingType === 'height_based' && selectedPricingMethod?.height_price_ranges) {
               const height = parseFloat(measurements.drop || '0');
