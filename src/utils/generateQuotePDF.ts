@@ -55,10 +55,10 @@ export const generateQuotePDF = async (
       compress: true,
     },
     pagebreak: {
-      mode: ['avoid-all', 'css', 'legacy'],
+      mode: ['css', 'legacy'],
       before: '.page-break-before, .force-page-break',
-      after: '.page-break-after, .workshop-room-section',
-      avoid: ['.avoid-page-break', '.workshop-item-card', 'tr', 'table', '.products-table', 'img']
+      after: '.page-break-after',
+      avoid: ['.avoid-page-break', '.quote-header', '.client-details-block', 'img']
     },
   };
 
@@ -114,10 +114,10 @@ export const generateQuotePDFBlob = async (
       compress: true,
     },
     pagebreak: {
-      mode: ['avoid-all', 'css', 'legacy'],
+      mode: ['css', 'legacy'],
       before: '.page-break-before, .force-page-break',
-      after: '.page-break-after, .workshop-room-section',
-      avoid: ['.avoid-page-break', '.workshop-item-card', 'tr', 'table', 'img']
+      after: '.page-break-after',
+      avoid: ['.avoid-page-break', '.quote-header', '.client-details-block', 'img']
     },
   };
 

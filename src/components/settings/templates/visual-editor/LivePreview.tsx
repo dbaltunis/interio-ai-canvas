@@ -1018,7 +1018,7 @@ const LivePreviewBlock = ({
         { 'All Items': projectItems };
 
       return (
-        <div className="mb-4" style={{ pageBreakInside: 'avoid', backgroundColor: '#ffffff', padding: '8px 0' }}>
+        <div className="mb-4 products-section" style={{ backgroundColor: '#ffffff', padding: '8px 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', backgroundColor: '#ffffff' }}>
             <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#000', backgroundColor: '#ffffff', padding: '4px 0' }}>
               {content.title || 'Quote Items'}
