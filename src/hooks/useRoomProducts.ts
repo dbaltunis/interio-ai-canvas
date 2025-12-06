@@ -5,12 +5,16 @@ import { toast } from "sonner";
 export interface RoomProduct {
   id: string;
   room_id: string;
-  inventory_item_id: string;
+  inventory_item_id: string | null;
   user_id: string;
   quantity: number;
   unit_price: number;
   total_price: number;
   notes: string | null;
+  name: string | null;
+  description: string | null;
+  image_url: string | null;
+  is_custom: boolean;
   created_at: string;
   updated_at: string;
   inventory_item?: {
@@ -25,11 +29,15 @@ export interface RoomProduct {
 
 export interface RoomProductInsert {
   room_id: string;
-  inventory_item_id: string;
+  inventory_item_id?: string | null;
   quantity: number;
   unit_price: number;
   total_price: number;
   notes?: string;
+  name?: string;
+  description?: string;
+  image_url?: string;
+  is_custom?: boolean;
 }
 
 export const useRoomProducts = (roomId?: string) => {

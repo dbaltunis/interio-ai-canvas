@@ -6610,8 +6610,12 @@ export type Database = {
       room_products: {
         Row: {
           created_at: string
+          description: string | null
           id: string
-          inventory_item_id: string
+          image_url: string | null
+          inventory_item_id: string | null
+          is_custom: boolean | null
+          name: string | null
           notes: string | null
           quantity: number
           room_id: string
@@ -6622,8 +6626,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          description?: string | null
           id?: string
-          inventory_item_id: string
+          image_url?: string | null
+          inventory_item_id?: string | null
+          is_custom?: boolean | null
+          name?: string | null
           notes?: string | null
           quantity?: number
           room_id: string
@@ -6634,8 +6642,12 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          description?: string | null
           id?: string
-          inventory_item_id?: string
+          image_url?: string | null
+          inventory_item_id?: string | null
+          is_custom?: boolean | null
+          name?: string | null
           notes?: string | null
           quantity?: number
           room_id?: string

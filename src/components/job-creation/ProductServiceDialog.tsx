@@ -31,6 +31,8 @@ export interface SelectedProduct {
   imageUrl: string | null;
   unit: string;
   description?: string;
+  notes?: string;
+  isCustom?: boolean;
 }
 
 interface CustomItem {
@@ -172,6 +174,8 @@ export const ProductServiceDialog = ({
       imageUrl: customItem.imageUrl,
       unit: customItem.unit,
       description: customItem.description,
+      notes: customItem.description,
+      isCustom: true,
     };
     
     onAddProducts([customProduct]);

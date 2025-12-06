@@ -81,6 +81,12 @@ export const RoomProductsList = ({ roomId }: RoomProductsListProps) => {
         {products.map((product) => {
           const isEditing = editingId === product.id;
           const inventoryItem = product.inventory_item;
+          const isCustom = product.is_custom;
+          
+          // For custom items, use product fields; for inventory items, use inventory_item
+          const displayName = isCustom ? product.name : (inventoryItem?.name || "Unknown Product");
+          const displayImage = isCustom ? product.image_url : inventoryItem?.image_url;
+          const displayCategory = isCustom ? "Custom" : inventoryItem?.subcategory;
 
           return (
             <div
@@ -88,10 +94,10 @@ export const RoomProductsList = ({ roomId }: RoomProductsListProps) => {
               className="px-4 py-3 flex items-center gap-3 hover:bg-muted/20 transition-colors"
             >
               {/* Image or Icon */}
-              {inventoryItem?.image_url ? (
+              {displayImage ? (
                 <img
-                  src={inventoryItem.image_url}
-                  alt={inventoryItem.name}
+                  src={displayImage}
+                  alt={displayName || "Product"}
                   className="w-10 h-10 object-cover rounded"
                 />
               ) : (
@@ -103,18 +109,21 @@ export const RoomProductsList = ({ roomId }: RoomProductsListProps) => {
               {/* Details */}
               <div className="flex-1 min-w-0">
                 <div className="font-medium text-sm truncate">
-                  {inventoryItem?.name || "Unknown Product"}
+                  {displayName}
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
-                  {inventoryItem?.subcategory && (
-                    <Badge variant="secondary" className="text-xs capitalize">
-                      {inventoryItem.subcategory.replace(/_/g, " ")}
+                  {displayCategory && (
+                    <Badge variant={isCustom ? "outline" : "secondary"} className="text-xs capitalize">
+                      {displayCategory.replace(/_/g, " ")}
                     </Badge>
                   )}
                   <span className="text-xs text-muted-foreground">
                     {currencySymbol}{product.unit_price.toFixed(2)} × {product.quantity}
                   </span>
                 </div>
+                {isCustom && product.description && (
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{product.description}</p>
+                )}
               </div>
 
               {/* Quantity Edit */}
