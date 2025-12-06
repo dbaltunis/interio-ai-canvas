@@ -855,11 +855,17 @@ export const DynamicWindowWorksheet = forwardRef<{
             // Original curtain calculations
             linearMeters = fabricCalculation?.linearMeters || 0;
             
-            // CRITICAL FIX: Calculate fabric cost with horizontal pieces
+            // CRITICAL FIX: Calculate fabric cost with horizontal pieces AND leftover logic
             const horizontalPiecesNeeded = fabricCalculation?.horizontalPiecesNeeded || 1;
-            const totalMetersOrdered = horizontalPiecesNeeded > 1 
-              ? linearMeters * horizontalPiecesNeeded  // Horizontal: multiply by pieces
-              : (fabricCalculation?.orderedLinearMeters || linearMeters); // Vertical: use ordered or actual
+            
+            // Check if using leftover fabric - only charge for 1 piece instead of 2
+            const usesLeftover = measurements.uses_leftover_for_horizontal === true || 
+                                 measurements.uses_leftover_for_horizontal === 'true';
+            const piecesToCharge = (usesLeftover && horizontalPiecesNeeded > 1) ? 1 : horizontalPiecesNeeded;
+            
+            const totalMetersOrdered = piecesToCharge > 1 
+              ? linearMeters * piecesToCharge  // Horizontal: multiply by pieces to charge
+              : (fabricCalculation?.orderedLinearMeters || linearMeters); // Single piece or vertical
             
             const pricePerMeter = fabricCalculation?.pricePerMeter || 0;
             fabricCost = totalMetersOrdered * pricePerMeter;
@@ -867,6 +873,8 @@ export const DynamicWindowWorksheet = forwardRef<{
             console.log('💰 [SAVE] Using fabric calculation:', {
               linearMeters,
               horizontalPiecesNeeded,
+              usesLeftover,
+              piecesToCharge,
               totalMetersOrdered,
               pricePerMeter,
               fabricCost,
@@ -1248,16 +1256,22 @@ export const DynamicWindowWorksheet = forwardRef<{
             
             total_cost: finalTotalCost,
             // CRITICAL: Save structured cost_breakdown for accurate room/project totals
-            cost_breakdown: [
-              // Fabric - CRITICAL: Use the calculated fabricCost (already includes horizontal pieces)
+            cost_breakdown: (() => {
+              // Calculate pieces to charge (accounting for leftover usage)
+              const horizontalPiecesNeeded = fabricCalculation?.horizontalPiecesNeeded || 1;
+              const usesLeftover = measurements.uses_leftover_for_horizontal === true || 
+                                   measurements.uses_leftover_for_horizontal === 'true';
+              const piecesToCharge = (usesLeftover && horizontalPiecesNeeded > 1) ? 1 : horizontalPiecesNeeded;
+              const fabricQuantity = piecesToCharge > 1 ? linearMeters * piecesToCharge : linearMeters;
+              
+              return [
+              // Fabric - CRITICAL: Use the calculated fabricCost (already includes horizontal pieces with leftover logic)
               ...(fabricCost > 0 ? [{
                 id: 'fabric',
                 name: selectedTemplate?.treatment_category?.includes('blind') || selectedTemplate?.treatment_category?.includes('shutter') ? 'Material' : selectedTemplate?.treatment_category === 'wallpaper' ? 'Wallpaper' : 'Fabric',
-                total_cost: fabricCost,  // CRITICAL: Use fabricCost NOT linearMeters
+                total_cost: fabricCost,  // CRITICAL: Use fabricCost which already accounts for leftover
                 category: 'fabric',
-                quantity: fabricCalculation?.horizontalPiecesNeeded 
-                  ? linearMeters * (fabricCalculation.horizontalPiecesNeeded || 1) 
-                  : linearMeters,
+                quantity: fabricQuantity,
                 unit: 'm',
                 unit_price: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0,
                 // CRITICAL: Save pricing method for correct quote display terminology
@@ -1265,7 +1279,10 @@ export const DynamicWindowWorksheet = forwardRef<{
                 // Save additional context for quote display
                 widths_required: fabricCalculation?.widthsRequired,
                 fabric_orientation: fabricCalculation?.fabricOrientation,
-                uses_pricing_grid: !!(selectedItems.fabric?.pricing_grid_data || selectedItems.material?.pricing_grid_data)
+                uses_pricing_grid: !!(selectedItems.fabric?.pricing_grid_data || selectedItems.material?.pricing_grid_data),
+                uses_leftover: usesLeftover,
+                horizontal_pieces_needed: horizontalPiecesNeeded,
+                pieces_charged: piecesToCharge
               }] : []),
               // Lining
               ...(finalLiningCost > 0 ? [{
@@ -1308,7 +1325,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                 category: 'option',
                 description: opt.pricingMethod === 'included' ? 'Included' : undefined
               }))
-            ],
+            ];})(),
             template_id: selectedTemplate?.id,
             pricing_type: selectedTemplate?.pricing_type || 'per_metre',
             waste_percent: selectedTemplate?.waste_percent || 5,
