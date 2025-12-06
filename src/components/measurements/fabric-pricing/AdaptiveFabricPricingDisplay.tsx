@@ -795,15 +795,18 @@ export const AdaptiveFabricPricingDisplay = ({
                   const linearMeters = fabricCalculation.linearMeters || 0;
                   const horizontalPiecesNeeded = fabricCalculation.horizontalPiecesNeeded || 1;
                   
-                  // ✅ CRITICAL: Multiply by horizontal pieces for total meters to order
-                  const totalLinearMetersToOrder = linearMeters * horizontalPiecesNeeded;
+                  // ✅ CRITICAL FIX: When using leftover fabric, only charge for 1 piece
+                  const piecesToCharge = useLeftoverForHorizontal && horizontalPiecesNeeded > 1 ? 1 : horizontalPiecesNeeded;
+                  const totalLinearMetersToOrder = linearMeters * piecesToCharge;
                   
                   // 🔍 DEBUG: Log horizontal calculation
                   console.log('🔧 HORIZONTAL DISPLAY CALCULATION:', {
                     linearMeters: `${linearMeters.toFixed(2)}m per piece`,
                     horizontalPiecesNeeded,
+                    piecesToCharge,
+                    useLeftoverForHorizontal,
                     totalLinearMetersToOrder: `${totalLinearMetersToOrder.toFixed(2)}m`,
-                    calculation: `${linearMeters.toFixed(2)}m × ${horizontalPiecesNeeded} pieces = ${totalLinearMetersToOrder.toFixed(2)}m`,
+                    calculation: `${linearMeters.toFixed(2)}m × ${piecesToCharge} pieces = ${totalLinearMetersToOrder.toFixed(2)}m`,
                     pricePerUnit: formatPrice(pricePerUnit),
                     totalCost: formatPrice(totalLinearMetersToOrder * pricePerUnit),
                     fabricCalculation
@@ -815,8 +818,14 @@ export const AdaptiveFabricPricingDisplay = ({
                   unitSuffix = 'm';
                   
                   if (horizontalPiecesNeeded > 1) {
-                    calculationText = `${linearMeters.toFixed(2)}m × ${horizontalPiecesNeeded} pieces = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
-                    calculationBreakdown = `Railroaded fabric requiring ${horizontalPiecesNeeded} horizontal pieces. ${linearMeters.toFixed(2)}m per piece × ${horizontalPiecesNeeded} = ${totalLinearMetersToOrder.toFixed(2)}m total × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
+                    if (useLeftoverForHorizontal) {
+                      // ✅ Using leftover - only charging for 1 piece
+                      calculationText = `${linearMeters.toFixed(2)}m × 1 piece (using leftover) = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
+                      calculationBreakdown = `Using leftover fabric for second piece. Charging for 1 piece: ${linearMeters.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
+                    } else {
+                      calculationText = `${linearMeters.toFixed(2)}m × ${horizontalPiecesNeeded} pieces = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
+                      calculationBreakdown = `Railroaded fabric requiring ${horizontalPiecesNeeded} horizontal pieces. ${linearMeters.toFixed(2)}m per piece × ${horizontalPiecesNeeded} = ${(linearMeters * horizontalPiecesNeeded).toFixed(2)}m total × ${formatPrice(pricePerUnit)}/m = ${formatPrice(linearMeters * horizontalPiecesNeeded * pricePerUnit)}`;
+                    }
                   } else {
                     calculationText = `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
                     calculationBreakdown = `${linearMeters.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;

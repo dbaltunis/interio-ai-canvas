@@ -432,7 +432,18 @@ export const VisualMeasurementSheet = ({
       const remnantMeters = 0; // Remnant tracking should be done at fabric pool level, not here
       
       // Calculate total width with fullness and all allowances for manufacturing cost calculation
-      const fullnessRatioValue = parseFloat(enrichedMeasurements.heading_fullness as any) || 0;
+      // ✅ CRITICAL FIX: Prioritize template fullness, then measurements
+      // NEVER allow fullness < 1 (minimum is 1x, not 0.15 which was a parsing bug)
+      const fullnessFromTemplate = selectedTemplate.fullness_ratio;
+      const fullnessFromMeasurements = parseFloat(enrichedMeasurements.heading_fullness as any);
+      
+      // Use first valid value, ensuring minimum of 1.0
+      let fullnessRatioValue = fullnessFromTemplate || fullnessFromMeasurements || 1.5;
+      if (fullnessRatioValue < 1) {
+        console.warn('⚠️ Invalid fullness ratio detected:', fullnessRatioValue, '- using 1.5 as fallback');
+        fullnessRatioValue = 1.5; // Industry standard minimum for curtains
+      }
+      
       const requiredWidth = width * fullnessRatioValue;
       const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
       
