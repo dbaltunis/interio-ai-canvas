@@ -72,17 +72,23 @@ export const TeachingOverlay = () => {
         targetEl = document.querySelector(activeTeaching.targetSelector);
       }
       
-      // If no specific target, position in a sensible default location
+      // If no target element found, DON'T show the bubble at all
+      // This prevents floating tips in random positions
       if (!targetEl) {
-        // Default to center-right of viewport for bottom position
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-        
-        setPosition({
-          top: viewportHeight * 0.3,
-          left: Math.min(viewportWidth - 340, viewportWidth * 0.6),
-          arrowPosition: 'none',
-        });
+        // Only show centered if explicitly no target selector defined
+        if (!activeTeaching.targetSelector) {
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+          
+          setPosition({
+            top: viewportHeight * 0.3,
+            left: Math.min(viewportWidth - 340, viewportWidth * 0.6),
+            arrowPosition: 'none',
+          });
+        } else {
+          // Target selector defined but element not found - hide the bubble
+          setPosition(null);
+        }
         return;
       }
 
