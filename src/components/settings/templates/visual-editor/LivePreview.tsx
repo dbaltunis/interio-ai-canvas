@@ -574,24 +574,72 @@ const LivePreviewBlock = ({
       );
 
     case 'header':
-      // Use same centered layout as document-header for consistency
       return (
-        <DocumentHeaderBlock
-          block={{
-            ...block,
-            content: {
-              ...content,
-              layout: 'centered',
-              documentTitle: content.documentTitle || content.title || 'Quote',
-              quoteNumberLabel: content.quoteNumberLabel || 'Quote #'
-            }
+        <div 
+          className="p-6 rounded-lg mb-6" 
+          style={{ 
+            backgroundColor: style.backgroundColor || '#f8fafc',
+            color: style.textColor || '#1e293b'
           }}
-          projectData={projectData}
-          userTimezone={userTimezone}
-          userDateFormat={userDateFormat}
-          isPrintMode={isPrintMode}
-          isEditable={false}
-        />
+        >
+          {/* Row 1: Logo alone on top */}
+          {content.showLogo && (
+            <div className={`mb-4 ${content.logoPosition === 'center' ? 'text-center' : ''}`}>
+              {projectData?.businessSettings?.company_logo_url ? (
+                <img 
+                  src={projectData.businessSettings.company_logo_url} 
+                  alt="Company Logo" 
+                  className="h-16 w-auto object-contain"
+                  style={{ maxWidth: '200px' }}
+                />
+              ) : (
+                <div style={{ width: '64px', height: '64px', backgroundColor: '#2563eb', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Building2 className="h-8 w-8 text-white" />
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Row 2: Company info left, Document title right - aligned on same line */}
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold mb-2">
+                {renderTokenValue('company_name')}
+              </h1>
+              <div className="space-y-1 opacity-90 text-sm">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  <span>{renderTokenValue('company_address')}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  <span>{renderTokenValue('company_phone')}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  <span>{renderTokenValue('company_email')}</span>
+                </div>
+              </div>
+            </div>
+            <div className="text-right">
+              <h2 className="text-2xl font-semibold mb-2">{content.documentTitle || 'Quote'}</h2>
+              <div className="text-sm space-y-1">
+                <div className="flex items-center gap-2 justify-end">
+                  <Hash className="h-3 w-3" />
+                  <span>{content.quoteNumberLabel || "Quote #"}: {renderTokenValue('quote_number')}</span>
+                </div>
+                <div className="flex items-center gap-2 justify-end">
+                  <Calendar className="h-3 w-3" />
+                  <span>{content.dateLabel || "Date"}: {renderTokenValue('date')}</span>
+                </div>
+                <div className="flex items-center gap-2 justify-end">
+                  <Calendar className="h-3 w-3" />
+                  <span>{content.validUntilLabel || "Valid Until"}: {renderTokenValue('valid_until')}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       );
 
     case 'client-info':
@@ -1190,7 +1238,7 @@ const LivePreviewBlock = ({
               )}
               
               {/* GST/Tax */}
-              {content.showTax !== false && (
+              {content.showTax && (
                 <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
                   <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
                     <span style={{ fontSize: '14px', color: '#111827 !important' }}>
