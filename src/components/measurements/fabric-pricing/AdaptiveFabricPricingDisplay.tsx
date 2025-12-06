@@ -1,7 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { Ruler, Calculator } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Ruler, Calculator, Scissors, Check } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
 import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
@@ -25,6 +26,9 @@ interface AdaptiveFabricPricingDisplayProps {
   // Leftover fabric tracking
   leftoverFabricIds?: string[]; // IDs of leftover pieces being used
   usedLeftoverCount?: number; // How many widths come from leftover
+  // Use leftover for horizontal seaming
+  useLeftoverForHorizontal?: boolean;
+  onToggleLeftoverForHorizontal?: () => void;
 }
 
 export const AdaptiveFabricPricingDisplay = ({
@@ -35,7 +39,9 @@ export const AdaptiveFabricPricingDisplay = ({
   treatmentCategory,
   poolUsage,
   leftoverFabricIds = [],
-  usedLeftoverCount = 0
+  usedLeftoverCount = 0,
+  useLeftoverForHorizontal = false,
+  onToggleLeftoverForHorizontal
 }: AdaptiveFabricPricingDisplayProps) => {
   const { units, getLengthUnitLabel, getFabricUnitLabel } = useMeasurementUnits();
   
@@ -445,17 +451,32 @@ export const AdaptiveFabricPricingDisplay = ({
                 <div className="flex justify-between pt-2 mt-2 border-t border-border/30">
                   <span className="font-medium">Total Width:</span>
                   <span className="font-medium text-foreground">
-                    {formatMeasurement(
-                      (parseFloat(measurements.rail_width) || 0) * (parseFloat(measurements.heading_fullness) || 1) +
-                      (fabricCalculation.returns || 0) +
-                      (fabricCalculation.totalSideHems || 0) +
-                      ((fabricCalculation.seamsRequired || 0) * (parseFloat(measurements.seam_hems) || 1) * 2)
-                    )}
+                    {(() => {
+                      // CRITICAL FIX: All calculations in MM, then format to user's unit
+                      // rail_width is in MM from database
+                      // fabricCalculation values (returns, totalSideHems) are in CM - convert to MM
+                      const railWidthMM = parseFloat(measurements.rail_width) || 0;
+                      // Use fabricCalculation.fullnessRatio (calculated value) FIRST, not raw input
+                      const fullness = fabricCalculation.fullnessRatio || parseFloat(measurements.heading_fullness) || 1.5;
+                      const returnsMM = (fabricCalculation.returns || 0) * 10;  // CM → MM
+                      const sideHemsMM = (fabricCalculation.totalSideHems || 0) * 10;  // CM → MM
+                      const seamHemMM = (parseFloat(measurements.seam_hems) || 1) * 10;  // CM → MM
+                      const seamAllowanceMM = (fabricCalculation.seamsRequired || 0) * seamHemMM * 2;
+                      
+                      const totalWidthMM = (railWidthMM * fullness) + returnsMM + sideHemsMM + seamAllowanceMM;
+                      return formatMeasurement(totalWidthMM, 'mm');
+                    })()}
                   </span>
                 </div>
                 <div className="flex justify-between pl-2 text-muted-foreground/70">
                   <span>Rail Width × Fullness:</span>
-                  <span>{formatMeasurement((parseFloat(measurements.rail_width) || 0) * (parseFloat(measurements.heading_fullness) || 1), 'mm')}</span>
+                  <span>
+                    {(() => {
+                      const railWidthMM = parseFloat(measurements.rail_width) || 0;
+                      const fullness = fabricCalculation.fullnessRatio || parseFloat(measurements.heading_fullness) || 1.5;
+                      return formatMeasurement(railWidthMM * fullness, 'mm');
+                    })()}
+                  </span>
                 </div>
                 <div className="flex justify-between pl-2 text-muted-foreground/70">
                   <span>Side Hems:</span>
@@ -556,12 +577,46 @@ export const AdaptiveFabricPricingDisplay = ({
                   </div>
                 )}
                 
-                {/* Warning when second width is needed for railroaded fabric */}
+                {/* Warning when second width is needed for railroaded fabric - with Use Leftover option */}
                 {fabricCalculation.horizontalPiecesNeeded && fabricCalculation.horizontalPiecesNeeded > 1 && (
                   <div className="mt-3 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded text-xs">
-                    <p className="text-amber-800 dark:text-amber-200 font-medium">
-                      ⚠️ Second width required: Drop height exceeds fabric width
-                    </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-amber-800 dark:text-amber-200 font-medium">
+                          ⚠️ Second width required
+                        </p>
+                        <p className="text-amber-700 dark:text-amber-300 text-xs mt-0.5">
+                          Drop height exceeds fabric width by ~{(() => {
+                            const fabricWidthCM = selectedFabricItem?.fabric_width || 137;
+                            const dropCM = fabricCalculation.drop || (parseFloat(measurements.drop) / 10) || 0;
+                            const shortfallCM = Math.max(0, dropCM - fabricWidthCM);
+                            return formatMeasurement(shortfallCM, 'cm');
+                          })()}
+                        </p>
+                      </div>
+                      {onToggleLeftoverForHorizontal && (
+                        <Button
+                          variant={useLeftoverForHorizontal ? "default" : "outline"}
+                          size="sm"
+                          onClick={onToggleLeftoverForHorizontal}
+                          className={useLeftoverForHorizontal 
+                            ? "bg-green-600 hover:bg-green-700 text-white text-xs" 
+                            : "text-xs border-amber-500 text-amber-700 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900/30"
+                          }
+                        >
+                          {useLeftoverForHorizontal ? (
+                            <><Check className="h-3 w-3 mr-1" /> Using Leftover</>
+                          ) : (
+                            <><Scissors className="h-3 w-3 mr-1" /> Use Leftover</>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                    {useLeftoverForHorizontal && (
+                      <div className="mt-2 text-xs text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/30 p-1.5 rounded border border-green-300 dark:border-green-700">
+                        ✓ Leftover fabric will cover extra width - no additional fabric cost
+                      </div>
+                    )}
                   </div>
                 )}
               </>

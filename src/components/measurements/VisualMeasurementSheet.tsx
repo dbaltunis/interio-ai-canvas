@@ -84,11 +84,31 @@ export const VisualMeasurementSheet = ({
 }: VisualMeasurementSheetProps) => {
   // Use ref to track latest options during batch initialization
   const selectedOptionsRef = useRef(selectedOptions);
+  
+  // State for leftover fabric usage when horizontal seaming is needed
+  const [useLeftoverForHorizontal, setUseLeftoverForHorizontal] = useState(
+    () => measurements.uses_leftover_for_horizontal === true
+  );
 
   // Keep ref in sync with props
   useEffect(() => {
     selectedOptionsRef.current = selectedOptions;
   }, [selectedOptions]);
+  
+  // Sync useLeftoverForHorizontal with measurements when loaded
+  useEffect(() => {
+    if (measurements.uses_leftover_for_horizontal !== undefined) {
+      setUseLeftoverForHorizontal(measurements.uses_leftover_for_horizontal === true);
+    }
+  }, [measurements.uses_leftover_for_horizontal]);
+  
+  // Handler for toggling leftover usage
+  const handleToggleLeftoverForHorizontal = () => {
+    const newValue = !useLeftoverForHorizontal;
+    setUseLeftoverForHorizontal(newValue);
+    // Persist to measurements so it saves with the treatment
+    onMeasurementChange('uses_leftover_for_horizontal', String(newValue));
+  };
 
   // Detect treatment type - use treatmentCategory prop if provided, otherwise detect from template
   const treatmentType = treatmentCategory || detectTreatmentType(selectedTemplate);
@@ -906,7 +926,17 @@ export const VisualMeasurementSheet = ({
               })()}
               
               {/* Fabric & Pricing Calculations Section - Below Visual - Only for curtains/romans with fabric calculations */}
-              {(treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && selectedFabricItem && selectedTemplate && <AdaptiveFabricPricingDisplay selectedFabricItem={selectedFabricItem} fabricCalculation={fabricCalculation} template={selectedTemplate} measurements={measurements} treatmentCategory={treatmentCategory} />}
+              {(treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && selectedFabricItem && selectedTemplate && (
+                <AdaptiveFabricPricingDisplay 
+                  selectedFabricItem={selectedFabricItem} 
+                  fabricCalculation={fabricCalculation} 
+                  template={selectedTemplate} 
+                  measurements={measurements} 
+                  treatmentCategory={treatmentCategory}
+                  useLeftoverForHorizontal={useLeftoverForHorizontal}
+                  onToggleLeftoverForHorizontal={handleToggleLeftoverForHorizontal}
+                />
+              )}
               
               {/* Fabric Rotation Toggle - Moved from Curtain Configuration - Only for curtains/romans */}
               {(treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && selectedFabricItem && measurements.rail_width && measurements.drop && <div className="container-level-1 rounded-lg p-3 mt-2">
