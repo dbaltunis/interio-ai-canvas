@@ -6358,9 +6358,12 @@ export type Database = {
           discount_scope: string | null
           discount_type: string | null
           discount_value: number | null
+          draft_number: string | null
           id: string
+          invoice_number: string | null
           materials_status: string | null
           notes: string | null
+          order_number: string | null
           payment_amount: number | null
           payment_percentage: number | null
           payment_status: string | null
@@ -6392,9 +6395,12 @@ export type Database = {
           discount_scope?: string | null
           discount_type?: string | null
           discount_value?: number | null
+          draft_number?: string | null
           id?: string
+          invoice_number?: string | null
           materials_status?: string | null
           notes?: string | null
+          order_number?: string | null
           payment_amount?: number | null
           payment_percentage?: number | null
           payment_status?: string | null
@@ -6426,9 +6432,12 @@ export type Database = {
           discount_scope?: string | null
           discount_type?: string | null
           discount_value?: number | null
+          draft_number?: string | null
           id?: string
+          invoice_number?: string | null
           materials_status?: string | null
           notes?: string | null
+          order_number?: string | null
           payment_amount?: number | null
           payment_percentage?: number | null
           payment_status?: string | null
