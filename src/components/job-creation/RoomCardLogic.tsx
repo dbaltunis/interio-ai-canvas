@@ -5,12 +5,14 @@ import { useSurfaces } from "@/hooks/useSurfaces";
 import { useClientMeasurements } from "@/hooks/useClientMeasurements";
 import { calculateFabricUsage } from "./treatment-pricing/fabric-calculation/fabricUsageCalculator";
 import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
+import { useRoomProducts } from "@/hooks/useRoomProducts";
 
 export const useRoomCardLogic = (room: any, projectId: string, clientId?: string, onCreateTreatment?: (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => void) => {
   const { data: allTreatments } = useTreatments(projectId);
   const { data: allSurfaces, isLoading: surfacesLoading } = useSurfaces(projectId);
   const { data: clientMeasurements } = useClientMeasurements(clientId);
   const { data: projectSummaries } = useProjectWindowSummaries(projectId);
+  const { data: roomProducts = [] } = useRoomProducts(room.id);
   
   const [pricingFormOpen, setPricingFormOpen] = useState(false);
   const [calculatorDialogOpen, setCalculatorDialogOpen] = useState(false);
@@ -146,12 +148,16 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
       }
     }
 
-    // Add any additional services or extra costs for this room
-    // TODO: Add logic for additional services, extras, etc. when that data structure is available
+    // Add room products/services total
+    const roomProductsTotal = roomProducts.reduce((sum, p) => sum + (p.total_price || 0), 0);
+    if (roomProductsTotal > 0) {
+      console.log(`Room products/services total: £${roomProductsTotal.toFixed(2)}`);
+      total += roomProductsTotal;
+    }
 
-  console.log(`=== FINAL ROOM TOTAL FOR ${room.name}: £${total.toFixed(2)} ===`);
+    console.log(`=== FINAL ROOM TOTAL FOR ${room.name}: £${total.toFixed(2)} ===`);
     return total;
-  }, [projectSummaries, roomTreatments, clientMeasurements, projectId, room.id, room.name]);
+  }, [projectSummaries, roomTreatments, clientMeasurements, projectId, room.id, room.name, roomProducts]);
 
   // Calculate project-wide total (sum of all windows across all rooms)
   const projectTotal = useMemo(() => {

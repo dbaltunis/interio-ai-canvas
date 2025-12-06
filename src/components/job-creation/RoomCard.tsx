@@ -109,10 +109,14 @@ export const RoomCard = ({
   const handleAddProducts = (products: SelectedProduct[]) => {
     const roomProducts = products.map(p => ({
       room_id: room.id,
-      inventory_item_id: p.inventoryItemId,
+      inventory_item_id: p.isCustom ? null : p.inventoryItemId,
       quantity: p.quantity,
       unit_price: p.unitPrice,
       total_price: p.totalPrice,
+      name: p.name || null,
+      description: p.notes || null,
+      image_url: p.imageUrl || null,
+      is_custom: p.isCustom || false,
     }));
     createRoomProducts.mutate(roomProducts);
   };
