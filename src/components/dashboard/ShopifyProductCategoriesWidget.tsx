@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Package, Grid3x3, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 export const ShopifyProductCategoriesWidget = () => {
   const { data: categoryData, isLoading } = useQuery({
@@ -76,10 +77,13 @@ export const ShopifyProductCategoriesWidget = () => {
     );
   }
 
+  const { units } = useMeasurementUnits();
+  const currency = units.currency || 'USD';
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);

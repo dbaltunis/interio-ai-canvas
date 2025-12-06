@@ -1318,7 +1318,7 @@ export const DynamicWindowWorksheet = forwardRef<{
             template_id: selectedTemplate?.id,
             pricing_type: selectedTemplate?.pricing_type || 'per_metre',
             waste_percent: selectedTemplate?.waste_percent || 5,
-            currency: 'USD',
+            currency: units?.currency || 'USD',
             
             // STEP 1: Window Type Selection
             window_type: selectedWindowType?.name || 'Standard Window',

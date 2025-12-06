@@ -12,6 +12,7 @@ import { PermissionGuard } from "@/components/common/PermissionGuard";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ProjectMaterialsStatusIndicator } from "@/components/projects/ProjectMaterialsStatusIndicator";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface ProjectManagementProps {
   onViewProject?: (project: any) => void;
@@ -26,6 +27,8 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
   const canCreateProjects = useHasPermission('create_projects');
   const canEditProjects = useHasPermission('edit_projects');
   const isMobile = useIsMobile();
+  const { units } = useMeasurementUnits();
+  const currency = units.currency || 'USD';
 
   if (!canViewProjects) {
     return (
@@ -70,7 +73,7 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: currency,
     }).format(amount);
   };
 

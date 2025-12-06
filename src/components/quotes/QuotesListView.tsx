@@ -10,6 +10,7 @@ import { Plus, Search, MoreHorizontal, Eye, Edit, Copy, Calendar, DollarSign, Us
 import { useQuotes } from "@/hooks/useQuotes";
 import { useClients } from "@/hooks/useClients";
 import { formatUserDate } from "@/utils/dateFormatUtils";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface QuotesListViewProps {
   onNewQuote: () => void;
@@ -24,6 +25,8 @@ export const QuotesListView = ({ onNewQuote, onQuoteSelect, onQuoteEdit }: Quote
 
   const { data: quotes, isLoading: quotesLoading } = useQuotes();
   const { data: clients } = useClients();
+  const { units } = useMeasurementUnits();
+  const currency = units.currency || 'USD';
 
   // Create client lookup
   const clientsMap = clients?.reduce((acc, client) => {
@@ -64,7 +67,7 @@ export const QuotesListView = ({ onNewQuote, onQuoteSelect, onQuoteEdit }: Quote
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);

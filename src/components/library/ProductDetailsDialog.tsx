@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { Edit, Copy, Package, AlertTriangle, Calendar, MapPin } from "lucide-react";
 
 interface ProductDetailsDialogProps {
@@ -16,18 +17,14 @@ interface ProductDetailsDialogProps {
 }
 
 export const ProductDetailsDialog = ({ open, onOpenChange, product, productType }: ProductDetailsDialogProps) => {
-  const { formatFabric } = useMeasurementUnits();
+  const { formatFabric, units } = useMeasurementUnits();
+  const currency = units.currency || 'USD';
 
   const formatCurrency = (amount: number) => {
-    const currencySymbols: Record<string, string> = {
-      'NZD': 'NZ$',
-      'AUD': 'A$',
-      'USD': '$',
-      'GBP': '£',
-      'EUR': '€',
-      'ZAR': 'R'
-    };
-    return `NZ$${amount.toFixed(2)}`;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
   };
 
   if (!product) return null;

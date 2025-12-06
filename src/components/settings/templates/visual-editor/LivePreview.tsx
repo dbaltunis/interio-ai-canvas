@@ -502,15 +502,18 @@ const LivePreviewBlock = ({
       currency_code: projectData?.currency || getDefaultCurrency(),
       currency_symbol: (() => {
         const curr = projectData?.currency || getDefaultCurrency();
+        // Use centralized getCurrencySymbol from formatCurrency utility
         const symbols: Record<string, string> = {
           'GBP': '£',
           'EUR': '€',
           'AUD': 'A$',
           'NZD': 'NZ$',
           'USD': '$',
-          'ZAR': 'R'
+          'ZAR': 'R',
+          'CAD': 'C$',
+          'JPY': '¥'
         };
-        return symbols[curr] || '€';
+        return symbols[curr] || '$';
       })(),
       basetotal: (() => {
         const curr = projectData?.currency || getDefaultCurrency();

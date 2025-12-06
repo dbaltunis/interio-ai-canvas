@@ -25,6 +25,7 @@ import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QRCodeDisplay } from "./QRCodeDisplay";
 import { InventoryQuickView } from "./InventoryQuickView";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface HardwareInventoryViewProps {
   searchQuery: string;
@@ -140,10 +141,13 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
     }
   };
 
+  const { units } = useMeasurementUnits();
+  const currency = units.currency || 'USD';
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: currency
     }).format(price);
   };
 

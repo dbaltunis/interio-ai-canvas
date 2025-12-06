@@ -5,6 +5,7 @@ import { MoreHorizontal, Eye, Edit, Copy, Calendar, User, DollarSign } from "luc
 import { JobActionsMenu } from "./JobActionsMenu";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { DuplicateJobIndicator } from "./DuplicateJobIndicator";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface JobListViewProps {
   jobs: any[];
@@ -15,6 +16,8 @@ interface JobListViewProps {
 
 export const JobListView = ({ jobs, onJobEdit, onJobView, onJobCopy }: JobListViewProps) => {
   const { data: jobStatuses = [] } = useJobStatuses();
+  const { units } = useMeasurementUnits();
+  const currency = units.currency || 'USD';
   
   const getStatusBadge = (status: string) => {
     // Find status details from database
@@ -69,7 +72,7 @@ export const JobListView = ({ jobs, onJobEdit, onJobView, onJobCopy }: JobListVi
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: currency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, FileText, Calendar, DollarSign, Eye } from "lucide-react";
 import { useQuotes } from "@/hooks/useQuotes";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface ClientQuotesListProps {
   clientId: string;
@@ -12,6 +13,8 @@ interface ClientQuotesListProps {
 
 export const ClientQuotesList = ({ clientId }: ClientQuotesListProps) => {
   const { data: allQuotes, isLoading } = useQuotes();
+  const { units } = useMeasurementUnits();
+  const currency = units.currency || 'USD';
   
   // Filter quotes for this specific client
   const quotes = allQuotes?.filter(quote => quote.client_id === clientId) || [];
@@ -94,14 +97,14 @@ export const ClientQuotesList = ({ clientId }: ClientQuotesListProps) => {
                       <DollarSign className="h-3 w-3 mr-1" />
                       {quote.total_amount?.toLocaleString('en-US', { 
                         style: 'currency', 
-                        currency: 'USD' 
+                        currency: currency 
                       }) || '$0.00'}
                     </div>
                     {quote.subtotal !== quote.total_amount && (
                       <div className="text-sm text-muted-foreground">
                         Subtotal: {quote.subtotal?.toLocaleString('en-US', { 
                           style: 'currency', 
-                          currency: 'USD' 
+                          currency: currency 
                         }) || '$0.00'}
                       </div>
                     )}

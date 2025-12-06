@@ -5,11 +5,14 @@ import { useShopifyAnalytics, useSyncShopifyAnalytics } from "@/hooks/useShopify
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Store, DollarSign, ShoppingCart, Users, TrendingUp, RefreshCw, ExternalLink, Package } from "lucide-react";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 export const ShopifyOrdersWidget = () => {
   const { data: analytics, isLoading } = useShopifyAnalytics(true);
   const { integration } = useShopifyIntegrationReal();
   const { mutate: syncAnalytics, isPending: isSyncing } = useSyncShopifyAnalytics();
+  const { units } = useMeasurementUnits();
+  const currency = units.currency || 'USD';
 
   const showSyncing = isLoading || isSyncing;
   const showEmptyState = !isLoading && !analytics;
@@ -17,7 +20,7 @@ export const ShopifyOrdersWidget = () => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: currency,
     }).format(amount);
   };
 
