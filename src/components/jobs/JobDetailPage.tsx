@@ -735,9 +735,9 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
       <div className="flex-1 overflow-y-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Standardized Tab Navigation - STICKY */}
-          <div className="sticky top-0 z-20 bg-background border-b border-border/50 shadow-sm">
+          <div className="sticky top-0 z-30 bg-card/95 backdrop-blur-sm border-b border-border shadow-md">
             <div className="px-2 sm:px-4 lg:px-6">
-              <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+              <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide py-1">
                 {/* Desktop: Show all tabs */}
                 {allTabs.map((tab) => {
                   const Icon = tab.icon;
