@@ -73,40 +73,80 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const documentEntityType: EntityType = getEntityTypeFromStatus(projectStatusName) || 'draft';
   const documentLabel = getDocumentLabel(documentEntityType);
   
+  // Helper to get stored number for entity type from quote
+  const getStoredNumberForType = (quote: any, entityType: EntityType): string | null => {
+    if (!quote) return null;
+    switch (entityType) {
+      case 'draft': return quote.draft_number || null;
+      case 'quote': return quote.quote_number || null;
+      case 'order': return quote.order_number || null;
+      case 'invoice': return quote.invoice_number || null;
+      default: return null;
+    }
+  };
+  
+  // Helper to get the column name for entity type
+  const getNumberColumnForType = (entityType: EntityType): string => {
+    switch (entityType) {
+      case 'draft': return 'draft_number';
+      case 'quote': return 'quote_number';
+      case 'order': return 'order_number';
+      case 'invoice': return 'invoice_number';
+      default: return 'quote_number';
+    }
+  };
+  
   // State for editable document numbers
   const [jobNumber, setJobNumber] = useState(project.job_number || "");
-  const [documentNumber, setDocumentNumber] = useState(currentQuote?.quote_number || "");
+  const [documentNumber, setDocumentNumber] = useState(
+    getStoredNumberForType(currentQuote, documentEntityType) || ""
+  );
   const [previousStatus, setPreviousStatus] = useState(projectStatusName);
   
-  // Update document number when quotes load
+  // Update document number when quotes load or entity type changes
   useEffect(() => {
-    if (currentQuote?.quote_number && !documentNumber) {
-      setDocumentNumber(currentQuote.quote_number);
+    const storedNumber = getStoredNumberForType(currentQuote, documentEntityType);
+    if (storedNumber) {
+      setDocumentNumber(storedNumber);
     }
-  }, [currentQuote]);
+  }, [currentQuote, documentEntityType]);
   
-  // Handle status change - regenerate document number if entity type changes
+  // Handle status change - only generate new number if one doesn't already exist for that stage
   useEffect(() => {
     const handleStatusChange = async () => {
       if (previousStatus !== projectStatusName && shouldRegenerateNumber(previousStatus, projectStatusName)) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const newNumber = await generateSequenceNumber(user.id, documentEntityType, documentEntityType.toUpperCase());
-          setDocumentNumber(newNumber);
-          
-          // Auto-save the new number to the quote
-          if (currentQuote) {
-            try {
-              await updateQuote.mutateAsync({
-                id: currentQuote.id,
-                quote_number: newNumber,
-              });
-              toast({
-                title: "Document Number Updated",
-                description: `Changed to ${documentLabel} Number: ${newNumber}`,
-              });
-            } catch (error) {
-              console.error("Failed to update document number:", error);
+        // Check if we already have a number for this entity type
+        const existingNumber = getStoredNumberForType(currentQuote, documentEntityType);
+        
+        if (existingNumber) {
+          // Reuse existing number - don't generate a new one
+          setDocumentNumber(existingNumber);
+          toast({
+            title: "Document Number Restored",
+            description: `Using existing ${documentLabel} Number: ${existingNumber}`,
+          });
+        } else {
+          // No existing number - generate a new one
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const newNumber = await generateSequenceNumber(user.id, documentEntityType, documentEntityType.toUpperCase());
+            setDocumentNumber(newNumber);
+            
+            // Auto-save the new number to the quote in the correct column
+            if (currentQuote) {
+              try {
+                const updateData: any = {
+                  id: currentQuote.id,
+                  [getNumberColumnForType(documentEntityType)]: newNumber,
+                };
+                await updateQuote.mutateAsync(updateData);
+                toast({
+                  title: "Document Number Generated",
+                  description: `New ${documentLabel} Number: ${newNumber}`,
+                });
+              } catch (error) {
+                console.error("Failed to update document number:", error);
+              }
             }
           }
         }
@@ -132,14 +172,16 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
         await syncSequenceCounter('job', jobNumber);
       }
       
-      // Update document number on quote
-      if (currentQuote && documentNumber !== currentQuote.quote_number) {
-        await updateQuote.mutateAsync({
+      // Update document number on quote in the correct column for the entity type
+      const storedNumber = getStoredNumberForType(currentQuote, documentEntityType);
+      if (currentQuote && documentNumber !== storedNumber) {
+        const updateData: any = {
           id: currentQuote.id,
-          quote_number: documentNumber,
-        });
+          [getNumberColumnForType(documentEntityType)]: documentNumber,
+        };
+        await updateQuote.mutateAsync(updateData);
         
-        // Use the determined entity type based on project status
+        // Sync sequence counter for the current entity type
         await syncSequenceCounter(documentEntityType, documentNumber);
       }
       
@@ -601,7 +643,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
             </div>
           </div>
           
-          {(jobNumber !== project.job_number || (currentQuote && documentNumber !== currentQuote.quote_number)) && (
+          {(jobNumber !== project.job_number || (currentQuote && documentNumber !== getStoredNumberForType(currentQuote, documentEntityType))) && (
             <Button 
               onClick={handleSaveDocumentNumbers}
               className="mt-4"
@@ -612,7 +654,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
             </Button>
           )}
           <p className="text-xs text-muted-foreground mt-2">
-            Document type changes automatically with status. Number regenerates when status moves between Draft → Quote → Order → Invoice.
+            Document type changes automatically with status. Previously used numbers are preserved when switching back.
           </p>
         </CardContent>
       </Card>
