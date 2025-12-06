@@ -24,6 +24,7 @@ import { LoadingState } from "./components/ui/loading-state";
 import { ProjectInventoryTrackingHandler } from "./components/projects/ProjectInventoryTrackingHandler";
 import { SyncIndicator } from "./components/system/SyncIndicator";
 import { FloatingTeachingButton } from "./components/teaching/TeachingHelpButton";
+import { TeachingOverlay } from "./components/teaching/TeachingOverlay";
 import "@/styles/theme.css";
 
 // Lazy load all route components for better code splitting
@@ -150,6 +151,7 @@ const App = () => {
                     <EmailRealtimeProvider>
                       <BugReportDialog />
                       <FloatingTeachingButton />
+                      <TeachingOverlay />
                   <Suspense fallback={<></>}>
                   <Routes>
                 {/* Public store routes */}

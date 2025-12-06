@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { HelpCircle, RotateCcw, ChevronRight, Check, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,10 +12,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTeaching } from '@/contexts/TeachingContext';
 import { getTeachingPointsForPage, TeachingPoint } from '@/config/teachingPoints';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 interface TeachingHelpButtonProps {
-  currentPage?: string;
-  currentSection?: string;
   className?: string;
 }
 
@@ -23,13 +23,13 @@ interface TeachingHelpButtonProps {
  * Users can re-trigger dismissed teachings and control teaching visibility.
  */
 export const TeachingHelpButton = ({
-  currentPage = '/app',
-  currentSection,
   className,
 }: TeachingHelpButtonProps) => {
   const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const { user } = useAuth();
   const { 
-    isTeachingEnabled, 
+    isTeachingEnabled,
     setTeachingEnabled, 
     resetAllTeaching,
     showTeaching,
@@ -37,6 +37,19 @@ export const TeachingHelpButton = ({
     isDismissedForever,
     progress,
   } = useTeaching();
+
+  // Derive current page/section from route
+  const path = location.pathname;
+  const searchParams = new URLSearchParams(location.search);
+  let currentPage = path;
+  let currentSection: string | undefined;
+  
+  if (path === '/' || path === '/app') {
+    currentPage = '/app';
+    currentSection = searchParams.get('tab') || 'dashboard';
+  } else if (path === '/settings') {
+    currentSection = searchParams.get('section') || 'personal';
+  }
 
   const pageTeachings = getTeachingPointsForPage(currentPage, currentSection);
   const allTeachings = getTeachingPointsForPage(currentPage);
@@ -189,8 +202,14 @@ export const TeachingHelpButton = ({
 
 /**
  * Minimal floating help button for bottom-right corner
+ * Only shows when user is authenticated
  */
 export const FloatingTeachingButton = ({ className }: { className?: string }) => {
+  const { user } = useAuth();
+  
+  // Don't show on auth pages or when not logged in
+  if (!user) return null;
+  
   return (
     <div className={cn("fixed bottom-6 right-6 z-50", className)}>
       <TeachingHelpButton />
