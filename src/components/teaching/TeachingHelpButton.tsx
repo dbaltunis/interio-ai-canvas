@@ -173,14 +173,14 @@ export const TeachingHelpButton = ({
           </div>
 
           {/* Teaching List */}
-          <ScrollArea className="max-h-72">
+          <ScrollArea className="h-80">
             <div className="p-2">
               {Object.entries(groupedTeachings).map(([category, teachings]) => (
                 <div key={category} className="mb-3 last:mb-0">
-                  <h4 className="text-xs font-medium text-muted-foreground px-2 mb-1">
+                  <h4 className="text-xs font-medium text-muted-foreground px-2 mb-1 sticky top-0 bg-popover py-1">
                     {formatCategoryName(category)}
                   </h4>
-                  {teachings.slice(0, 5).map(tp => {
+                  {teachings.map(tp => {
                     const seen = hasSeenTeaching(tp.id);
                     const dismissed = isDismissedForever(tp.id);
                     
@@ -218,11 +218,6 @@ export const TeachingHelpButton = ({
                       </motion.button>
                     );
                   })}
-                  {teachings.length > 5 && (
-                    <p className="text-xs text-muted-foreground px-3 py-1">
-                      +{teachings.length - 5} more tips...
-                    </p>
-                  )}
                 </div>
               ))}
               
