@@ -213,10 +213,13 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
     // Auto-show teaching for new page if enabled
     if (isTeachingEnabled && initialized) {
       const next = getNextTeaching(page, section);
+      console.log('[Teaching] Page changed:', { page, section, next: next?.id, isTeachingEnabled, initialized });
+      
       if (next && next.trigger.type === 'first_visit') {
         // Small delay to let page render
         setTimeout(() => {
           if (!hasSeenTeaching(next.id) && !isDismissedForever(next.id)) {
+            console.log('[Teaching] Showing teaching:', next.id);
             setActiveTeaching(next);
           }
         }, 500);

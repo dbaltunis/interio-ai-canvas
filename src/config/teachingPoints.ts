@@ -558,8 +558,18 @@ export const allTeachingPoints: TeachingPoint[] = [
 // Helper to get teaching points by page/section
 export const getTeachingPointsForPage = (page: string, section?: string): TeachingPoint[] => {
   return allTeachingPoints.filter(tp => {
-    const pageMatch = tp.trigger.page === page || tp.trigger.page?.startsWith(page);
-    const sectionMatch = section ? tp.trigger.section === section : true;
+    // Normalize page paths
+    const normalizedPage = page === '/' ? '/app' : page;
+    const triggerPage = tp.trigger.page === '/' ? '/app' : tp.trigger.page;
+    
+    // Check page match (exact or prefix)
+    const pageMatch = !triggerPage || 
+      triggerPage === normalizedPage || 
+      normalizedPage.startsWith(triggerPage);
+    
+    // Check section match
+    const sectionMatch = !section || !tp.trigger.section || tp.trigger.section === section;
+    
     return pageMatch && sectionMatch;
   });
 };
