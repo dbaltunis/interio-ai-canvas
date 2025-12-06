@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Lightbulb, RotateCcw, ChevronRight, Check, Sparkles, ExternalLink } from 'lucide-react';
+import { Lightbulb, RotateCcw, Check, Sparkles, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -10,7 +10,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTeaching } from '@/contexts/TeachingContext';
-import { getTeachingPointsForPage, allTeachingPoints, TeachingPoint } from '@/config/teachingPoints';
+import { allTeachingPoints, TeachingPoint } from '@/config/teachingPoints';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,6 +20,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 
 interface TeachingHelpButtonProps {
   className?: string;
@@ -39,25 +40,12 @@ export const TeachingHelpButton = ({
     isTeachingEnabled,
     setTeachingEnabled, 
     resetAllTeaching,
-    showTeaching,
     hasSeenTeaching,
     isDismissedForever,
+    completeTeaching,
   } = useTeaching();
 
-  // Derive current page/section from route
-  const path = location.pathname;
-  const searchParams = new URLSearchParams(location.search);
-  let currentPage = path;
-  let currentSection: string | undefined;
-  
-  if (path === '/' || path === '/app') {
-    currentPage = '/app';
-    currentSection = searchParams.get('tab') || 'dashboard';
-  } else if (path === '/settings') {
-    currentSection = searchParams.get('section') || 'personal';
-  }
-
-  // Get ALL tips, not just current page
+  // Get ALL tips
   const allTips = allTeachingPoints;
   
   // Group by category
@@ -86,19 +74,33 @@ export const TeachingHelpButton = ({
     
     setOpen(false);
     
-    // Navigate first, then scroll to element and show teaching
+    // Navigate to the page
     navigate(targetUrl);
+    
+    // Show the tip content as a toast so user always sees the guidance
     setTimeout(() => {
-      // Try to scroll to the target element
+      // Try to scroll to the target element if it exists
       if (tp.targetSelector) {
         const element = document.querySelector(tp.targetSelector);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Highlight the element briefly
+          element.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+          setTimeout(() => {
+            element.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+          }, 3000);
         }
       }
-      // Show the teaching popover
-      showTeaching(tp.id);
-    }, 600);
+      
+      // Show tip as toast
+      toast.info(tp.title, {
+        description: tp.description,
+        duration: 6000,
+      });
+      
+      // Mark as seen
+      completeTeaching(tp.id);
+    }, 500);
   };
 
   const formatCategoryName = (category: string): string => {
