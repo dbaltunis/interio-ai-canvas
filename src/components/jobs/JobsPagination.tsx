@@ -63,31 +63,43 @@ export const JobsPagination = ({
   
   if (totalPages <= 1) return null;
 
-  const pageNumbers = getPageNumbers(currentPage, totalPages);
+  // Ensure currentPage is valid
+  const safePage = Math.max(1, Math.min(currentPage, totalPages));
+  const pageNumbers = getPageNumbers(safePage, totalPages);
+
+  const handlePageChange = (page: number) => {
+    const validPage = Math.max(1, Math.min(page, totalPages));
+    if (validPage !== currentPage) {
+      onPageChange(validPage);
+    }
+  };
+
+  const startItem = ((safePage - 1) * itemsPerPage) + 1;
+  const endItem = Math.min(safePage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex items-center justify-between px-2 py-4">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-2 py-4">
       <div className="text-sm text-muted-foreground">
-        Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} jobs
+        Showing {startItem} to {endItem} of {totalItems} items
       </div>
       
       <Pagination>
-        <PaginationContent>
+        <PaginationContent className="flex-wrap justify-center">
           <PaginationItem>
             <PaginationPrevious 
-              onClick={() => onPageChange(currentPage - 1)}
-              className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              onClick={() => handlePageChange(safePage - 1)}
+              className={safePage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
             />
           </PaginationItem>
           
           {pageNumbers.map((page, index) => (
             <PaginationItem key={`${page}-${index}`}>
               {page === 'ellipsis' ? (
-                <PaginationEllipsis />
+                <PaginationEllipsis className="hidden sm:flex" />
               ) : (
                 <PaginationLink
-                  onClick={() => onPageChange(page)}
-                  isActive={currentPage === page}
+                  onClick={() => handlePageChange(page)}
+                  isActive={safePage === page}
                   className="cursor-pointer"
                 >
                   {page}
@@ -98,8 +110,8 @@ export const JobsPagination = ({
           
           <PaginationItem>
             <PaginationNext 
-              onClick={() => onPageChange(currentPage + 1)}
-              className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              onClick={() => handlePageChange(safePage + 1)}
+              className={safePage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
             />
           </PaginationItem>
         </PaginationContent>
