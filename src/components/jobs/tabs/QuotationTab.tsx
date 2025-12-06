@@ -27,6 +27,7 @@ import { EmptyQuoteVersionState } from "@/components/jobs/EmptyQuoteVersionState
 import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 import { generateQuotePDF, generateQuotePDFBlob } from '@/utils/generateQuotePDF';
 import { InlineDiscountPanel } from "@/components/jobs/quotation/InlineDiscountPanel";
+import { InlinePaymentConfig } from "@/components/jobs/quotation/InlinePaymentConfig";
 import { useQuoteDiscount } from "@/hooks/useQuoteDiscount";
 import { TWCSubmitDialog } from "@/components/integrations/TWCSubmitDialog";
 interface QuotationTabProps {
@@ -58,6 +59,7 @@ export const QuotationTab = ({
   const [showQuotationItems, setShowQuotationItems] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
+  const [isPaymentConfigOpen, setIsPaymentConfigOpen] = useState(false);
   const [isTWCSubmitDialogOpen, setIsTWCSubmitDialogOpen] = useState(false);
   const {
     data: projects
@@ -545,25 +547,17 @@ export const QuotationTab = ({
       description: "Terms & Conditions functionality would be implemented here"
     });
   };
-  const handlePayment = () => {
-    const paymentSection = document.getElementById('payment-section');
-    if (paymentSection) {
-      paymentSection.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
-      });
-      // Add a subtle highlight animation
-      paymentSection.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
-      setTimeout(() => {
-        paymentSection.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
-      }, 2000);
-    } else {
-      toast({
-        title: "Payment Section",
-        description: "Please save the quote first to configure payment options",
-        variant: "destructive"
-      });
-    }
+  const handlePayment = async () => {
+    const effectiveQuoteId = await getOrCreateQuoteId();
+    if (!effectiveQuoteId) return;
+
+    // Toggle the inline payment config panel
+    setIsPaymentConfigOpen(!isPaymentConfigOpen);
+
+    // Force refetch of quote versions when opening payment panel
+    await queryClient.invalidateQueries({
+      queryKey: ["quote-versions", projectId]
+    });
   };
   if (!project) {
     return <div className="flex items-center justify-center py-12">
@@ -685,6 +679,21 @@ export const QuotationTab = ({
       amount: currentQuote.discount_amount || 0,
       selectedItems: currentQuote.selected_discount_items as string[] || undefined
     } : undefined} />
+
+      {/* Inline Payment Config Panel */}
+      {isPaymentConfigOpen && (
+        <InlinePaymentConfig
+          quoteId={quoteId || quoteVersions?.[0]?.id || ''}
+          total={total}
+          currency={projectData.currency}
+          currentPayment={currentQuote ? {
+            type: currentQuote.payment_type as 'full' | 'deposit' || 'full',
+            percentage: currentQuote.payment_percentage || undefined,
+            amount: currentQuote.payment_amount || total,
+            status: currentQuote.payment_status as 'pending' | 'paid' | 'deposit_paid' | 'failed' || undefined
+          } : undefined}
+        />
+      )}
 
       {/* Quotation Items Modal */}
       <QuotationItemsModal 

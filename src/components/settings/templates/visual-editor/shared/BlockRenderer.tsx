@@ -495,6 +495,26 @@ export const TotalsBlock: React.FC<BlockRendererProps> = ({
             {formatCurrency(total, currency)}
           </span>
         </div>
+
+        {/* Deposit Payment Summary */}
+        {projectData?.payment?.type === 'deposit' && projectData.payment.amount > 0 && (
+          <div className="py-2 border-t mt-2" style={{ borderColor: '#e5e7eb' }}>
+            <div className="flex justify-between py-1">
+              <span style={{ color: '#374151', fontSize: '14px', fontWeight: '600' }}>
+                Deposit ({projectData.payment.percentage || 50}%):
+              </span>
+              <span style={{ fontWeight: '600', color: '#2563eb', fontSize: '14px' }}>
+                {formatCurrency(projectData.payment.amount, currency)}
+              </span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span style={{ color: '#6b7280', fontSize: '13px' }}>Balance Due:</span>
+              <span style={{ color: '#6b7280', fontSize: '13px' }}>
+                {formatCurrency(total - projectData.payment.amount, currency)}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
