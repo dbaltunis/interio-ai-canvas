@@ -649,6 +649,7 @@ export const useQuotationSync = ({
       currentData.treatmentCount !== previousDataRef.current.treatmentCount ||
       currentData.roomCount !== previousDataRef.current.roomCount ||
       currentData.surfaceCount !== previousDataRef.current.surfaceCount ||
+      currentData.roomProductsCount !== previousDataRef.current.roomProductsCount ||
       Math.abs(currentData.totalCost - previousDataRef.current.totalCost) > 0.01 ||
       windowIdsChanged ||
       windowValuesChanged ||
@@ -787,7 +788,7 @@ export const useQuotationSync = ({
 
   // Monitor changes and sync with immediate + debounced pattern
   useEffect(() => {
-    if (projectId && (treatments.length > 0 || projectSummaries?.windows?.length > 0)) {
+    if (projectId && (treatments.length > 0 || projectSummaries?.windows?.length > 0 || allRoomProducts.length > 0)) {
       // Check if we need immediate sync
       const currentWindowCosts: Record<string, number> = {};
       (projectSummaries?.windows || []).forEach(w => {
@@ -799,13 +800,17 @@ export const useQuotationSync = ({
       const windowCostsChanged = Object.keys(currentWindowCosts).some(
         id => currentWindowCosts[id] !== prevWindowCosts[id]
       );
+      
+      // Check if room products changed
+      const roomProductsCountChanged = allRoomProducts.length !== previousDataRef.current.roomProductsCount;
 
-      if (windowCountChanged || windowCostsChanged) {
-        console.log('[QUOTE SYNC] Window data changed, triggering immediate sync', {
+      if (windowCountChanged || windowCostsChanged || roomProductsCountChanged) {
+        console.log('[QUOTE SYNC] Data changed, triggering immediate sync', {
           windowCountChanged,
           windowCostsChanged,
-          currentCosts: currentWindowCosts,
-          prevCosts: prevWindowCosts
+          roomProductsCountChanged,
+          currentRoomProducts: allRoomProducts.length,
+          prevRoomProducts: previousDataRef.current.roomProductsCount
         });
         syncQuotation();
         previousDataRef.current.windowCosts = currentWindowCosts;
@@ -818,7 +823,7 @@ export const useQuotationSync = ({
 
       return () => clearTimeout(timeoutId);
     }
-  }, [projectId, treatments, rooms, surfaces, projectSummaries, projectSummaries?.windows]);
+  }, [projectId, treatments, rooms, surfaces, projectSummaries, projectSummaries?.windows, allRoomProducts]);
 
   return {
     isLoading: createQuote.isPending || updateQuote.isPending,
