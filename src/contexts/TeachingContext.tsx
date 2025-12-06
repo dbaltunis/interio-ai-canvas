@@ -134,10 +134,22 @@ export const TeachingProvider = ({ children }: { children: ReactNode }) => {
     return available[0];
   }, [getAvailableTeachings]);
 
-  // Show a specific teaching point
+  // Show a specific teaching point and scroll to target element
   const showTeaching = useCallback((id: string) => {
     const teaching = allTeachingPoints.find(tp => tp.id === id);
     if (teaching && !isDismissedForever(id)) {
+      // Scroll to target element if specified
+      if (teaching.targetSelector) {
+        const element = document.querySelector(teaching.targetSelector);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Small delay to let scroll complete before showing popover
+          setTimeout(() => {
+            setActiveTeaching(teaching);
+          }, 400);
+          return;
+        }
+      }
       setActiveTeaching(teaching);
     }
   }, [isDismissedForever]);
