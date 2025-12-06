@@ -339,24 +339,32 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                         {item.treatmentType || 'No treatment'}
                       </div>
                       
-                      {/* Cut dimensions for manufacturing - show total with hems */}
-                      {item.fabricUsage && (item.fabricUsage.totalDropCm > 0 || item.fabricUsage.totalWidthCm > 0) && (
-                        <div className="mt-2 pt-2 border-t border-dashed border-gray-300">
-                          <div className="text-[9px] font-medium text-purple-700 mb-1">Cut Dimensions:</div>
-                          {item.fabricUsage.totalWidthCm > 0 && (
-                            <div className="text-[9px]">
-                              Total Width: {formatFromCM(item.fabricUsage.totalWidthCm, units.length)}
-                              <span className="text-gray-500 ml-1">(incl. fullness, returns, hems)</span>
-                            </div>
-                          )}
-                          {item.fabricUsage.totalDropCm > 0 && (
-                            <div className="text-[9px]">
-                              Total Drop: {formatFromCM(item.fabricUsage.totalDropCm, units.length)}
-                              <span className="text-gray-500 ml-1">(incl. header, bottom, pool)</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      {/* Cut dimensions for manufacturing - only show for curtains and roman blinds that use hems/fullness */}
+                      {(() => {
+                        const treatmentLower = (item.treatmentType || '').toLowerCase();
+                        const isCurtainOrRoman = treatmentLower.includes('curtain') || treatmentLower.includes('roman');
+                        const hasFabricUsage = item.fabricUsage && (item.fabricUsage.totalDropCm > 0 || item.fabricUsage.totalWidthCm > 0);
+                        
+                        if (!isCurtainOrRoman || !hasFabricUsage) return null;
+                        
+                        return (
+                          <div className="mt-2 pt-2 border-t border-dashed border-gray-300">
+                            <div className="text-[9px] font-medium text-purple-700 mb-1">Cut Dimensions:</div>
+                            {item.fabricUsage.totalWidthCm > 0 && (
+                              <div className="text-[9px]">
+                                Total Width: {formatFromCM(item.fabricUsage.totalWidthCm, units.length)}
+                                <span className="text-gray-500 ml-1">(incl. fullness, returns, hems)</span>
+                              </div>
+                            )}
+                            {item.fabricUsage.totalDropCm > 0 && (
+                              <div className="text-[9px]">
+                                Total Drop: {formatFromCM(item.fabricUsage.totalDropCm, units.length)}
+                                <span className="text-gray-500 ml-1">(incl. header, bottom, pool)</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </td>
                   
