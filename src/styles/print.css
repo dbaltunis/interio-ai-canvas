@@ -53,13 +53,34 @@
     background-image: none !important;
   }
 
-  /* Prevent page breaks inside elements */
+  /* Keep header and client details together */
   .avoid-page-break,
-  .workshop-item-card,
-  table,
+  .quote-header,
+  .client-details-block {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* ALLOW tables to break between rows */
+  table {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  /* Keep individual rows together (don't split a single row) */
   tr {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+
+  /* Repeat table header on each page */
+  thead {
+    display: table-header-group;
+  }
+
+  /* Keep first row with header */
+  tbody tr:first-child {
+    page-break-before: avoid !important;
   }
   
   /* Optional page break after room sections */
