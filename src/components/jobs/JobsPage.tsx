@@ -18,6 +18,7 @@ import { JobsFocusHandler } from "./JobsFocusHandler";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ColumnCustomizationModal } from "./ColumnCustomizationModal";
 import { useColumnPreferences } from "@/hooks/useColumnPreferences";
+import { supabase } from "@/integrations/supabase/client";
 
 const JobsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -65,8 +66,16 @@ const JobsPage = () => {
     try {
       console.log("Creating new job...", clientId ? `for client: ${clientId}` : '');
       
-      // Generate a unique job number
-      const jobNumber = `JOB-${Date.now()}`;
+      // Generate job number from settings sequence
+      const { data: { user } } = await supabase.auth.getUser();
+      let jobNumber = `JOB-${Date.now()}`; // Fallback only
+      if (user) {
+        const { data } = await supabase.rpc("get_next_sequence_number", {
+          p_user_id: user.id,
+          p_entity_type: "job",
+        });
+        if (data) jobNumber = data;
+      }
       
       // First create the project
       const newProject = await createProject.mutateAsync({

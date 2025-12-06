@@ -35,8 +35,8 @@ export const ProjectJobsHeader = ({
     .filter(t => t.project_id === project?.id)
     .reduce((sum, treatment) => sum + (treatment.total_price || 0), 0);
 
-  // Generate a proper sequential job number
-  const jobNumber = project?.job_number || `${Date.now().toString().slice(-6)}`;
+  // Display job number from project (should already be set from sequence)
+  const jobNumber = project?.job_number || "—";
 
   const handleSaveName = async () => {
     if (!editedName.trim()) {
