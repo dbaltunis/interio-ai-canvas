@@ -52,6 +52,11 @@ export interface WorkshopRoomItem {
     widthsRequired: number;
     seamsRequired: number;
     leftover?: number;
+    horizontalPiecesNeeded?: number;
+    usesLeftover?: boolean;
+    totalDropCm?: number;
+    totalWidthCm?: number;
+    isHorizontal?: boolean;
   };
   
   hems?: {
@@ -220,12 +225,29 @@ export const useWorkshopData = (projectId?: string) => {
       
       const linearMeters = summary?.linear_meters || 0;
       const widthsRequired = summary?.widths_required || 1;
+      const md = summary?.measurements_details || {};
+      const isHorizontal = md.fabric_rotated === true || md.roll_direction === 'horizontal';
+      const horizontalPiecesNeeded = md.horizontal_pieces_needed || (isHorizontal ? Math.ceil((heightMM || 0) / ((fabricDetails?.fabricWidth || 137) * 10)) : 0);
+      const usesLeftover = md.uses_leftover_for_horizontal === true;
+      
+      // Total drop with hems for manufacturing
+      const totalDropCm = (md.total_drop_per_width_cm || 0) || 
+        ((md.drop_cm || (heightMM || 0) / 10) + (md.header_allowance_cm || 0) + (md.bottom_hem_cm || 0) + (md.pooling_amount_cm || 0));
+      
+      // Total width with allowances for manufacturing
+      const totalWidthCm = md.total_width_with_allowances_cm || 0;
+      
       const fabricUsage = {
         linearMeters,
         linearYards: linearMeters * 1.09361,
         widthsRequired,
         seamsRequired: Math.max(0, widthsRequired - 1),
-        leftover: summary?.measurements_details?.leftover || 0,
+        leftover: md.leftover || md.leftover_per_panel_cm || 0,
+        horizontalPiecesNeeded: horizontalPiecesNeeded > 1 ? horizontalPiecesNeeded : undefined,
+        usesLeftover,
+        totalDropCm,
+        totalWidthCm,
+        isHorizontal,
       };
       
       // Derive hem values from template settings - no hardcoded fallbacks
