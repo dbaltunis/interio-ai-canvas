@@ -345,9 +345,10 @@ export const ProductServiceDialog = ({
                       <Input
                         type="number"
                         value={item.quantity}
-                        onChange={(e) => handleQuantityChange(item.inventoryItemId, parseInt(e.target.value) || 1)}
+                        onChange={(e) => handleQuantityChange(item.inventoryItemId, parseFloat(e.target.value) || 1)}
                         className="w-16 text-center"
-                        min={1}
+                        min={0.01}
+                        step={0.01}
                       />
                       <Button
                         variant="outline"
