@@ -1,21 +1,9 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { RefreshCw, Hash, AlertTriangle } from "lucide-react";
+import { Hash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSequenceLabel, type EntityType } from "@/hooks/useNumberSequences";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 interface EditableDocumentNumberProps {
   entityType: EntityType;
@@ -24,7 +12,6 @@ interface EditableDocumentNumberProps {
   label?: string;
   placeholder?: string;
   disabled?: boolean;
-  showRegenerateButton?: boolean;
   autoLabel?: boolean; // If true, fetches label from settings
 }
 
@@ -33,9 +20,8 @@ export const EditableDocumentNumber = ({
   value,
   onChange,
   label: propLabel,
-  placeholder = "Enter or generate number",
+  placeholder = "Enter number",
   disabled = false,
-  showRegenerateButton = true,
   autoLabel = false,
 }: EditableDocumentNumberProps) => {
   const { label: settingsLabel, prefix } = useSequenceLabel(entityType);
@@ -94,51 +80,12 @@ export const EditableDocumentNumber = ({
         <Hash className="h-4 w-4" />
         {label}
       </Label>
-      <div className="flex gap-2">
-        <Input
-          value={value}
-          onChange={(e) => handleChange(e.target.value)}
-          placeholder={placeholder}
-          disabled={disabled || isGenerating}
-          className="flex-1"
-        />
-        {showRegenerateButton && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                disabled={disabled || isGenerating}
-                title="Generate next number (will skip current)"
-              >
-                <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-500" />
-                  Generate New Number?
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will generate the next number in sequence and skip the current one.
-                  The current number "{value}" will be lost. Are you sure?
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={generateNextNumber}>
-                  Generate New Number
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Auto-generated or enter a custom number
-      </p>
+      <Input
+        value={value}
+        onChange={(e) => handleChange(e.target.value)}
+        placeholder={placeholder}
+        disabled={disabled || isGenerating}
+      />
     </div>
   );
 };
