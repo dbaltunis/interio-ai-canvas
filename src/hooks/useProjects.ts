@@ -173,11 +173,7 @@ export const useUpdateProject = () => {
             if (user) {
               const entityType = getEntityTypeFromStatus(newStatusName);
               if (entityType) {
-                const prefix = entityType === 'quote' ? 'QUOTE' : 
-                               entityType === 'order' ? 'ORDER' : 
-                               entityType === 'invoice' ? 'INV' : 
-                               entityType === 'draft' ? 'DRAFT' : 'DOC';
-                const newNumber = await generateSequenceNumber(user.id, entityType, prefix);
+                const newNumber = await generateSequenceNumber(user.id, entityType, 'JOB');
                 updates.job_number = newNumber;
               }
             }

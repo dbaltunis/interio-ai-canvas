@@ -6,11 +6,10 @@ import type { EntityType } from "./useNumberSequences";
  * This determines the document number prefix (DRAFT-, QUOTE-, ORDER-, INV-)
  */
 const STATUS_ENTITY_MAP: Record<string, EntityType> = {
-  // Draft stage - initial/planning states
+  // Draft stage
   'draft': 'draft',
   'new': 'draft',
   'pending': 'draft',
-  'planning': 'draft',
   
   // Quote stage
   'quote': 'quote',
@@ -25,7 +24,7 @@ const STATUS_ENTITY_MAP: Record<string, EntityType> = {
   'approved': 'order',
   'order': 'order',
   'ordered': 'order',
-  'in progress': 'order',
+  'planning': 'order',
   'in production': 'order',
   'production': 'order',
   'manufacturing': 'order',
