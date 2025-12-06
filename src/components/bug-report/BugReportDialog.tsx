@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LifeBuoy, BookOpen, FileText, List, Upload, X } from "lucide-react";
+import { LifeBuoy, BookOpen, FileText, Lightbulb, Sparkles, Bug, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,6 +25,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "react-router-dom";
 import { WhatsNewDialog } from "@/components/version/WhatsNewDialog";
 
+type FeedbackType = "bug" | "feature" | "improvement";
+
 interface BugReportDialogProps {
   className?: string;
   /** If true, hides the floating trigger button (for use when triggered externally) */
@@ -43,7 +45,8 @@ export const BugReportDialog = ({
 }: BugReportDialogProps) => {
   const [internalOpen, setInternalOpen] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
-  const [showBugForm, setShowBugForm] = useState(false);
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+  const [feedbackType, setFeedbackType] = useState<FeedbackType>("bug");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [title, setTitle] = useState("");
@@ -202,13 +205,14 @@ export const BugReportDialog = ({
       setActualBehavior("");
       setPriority("medium");
       setImages([]);
-      setShowBugForm(false);
+      setShowFeedbackForm(false);
+      setFeedbackType("bug");
       setOpen(false);
     } catch (error: any) {
-      console.error("Error submitting bug report:", error);
+      console.error("Error submitting feedback:", error);
       toast({
         title: "Error",
-        description: "Failed to submit bug report. Please try again.",
+        description: "Failed to submit feedback. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -221,11 +225,43 @@ export const BugReportDialog = ({
   // Floating button hidden - support is accessed via user profile slider
   const showFloatingButton = false;
 
+  const feedbackTypeConfig = {
+    bug: {
+      title: "Report a Bug",
+      description: "Report issues, errors, or unexpected behavior",
+      icon: Bug,
+      color: "bg-destructive/10 text-destructive",
+      submitText: "Submit Bug Report",
+    },
+    feature: {
+      title: "Request a Feature",
+      description: "Suggest a new feature or capability",
+      icon: Sparkles,
+      color: "bg-primary/10 text-primary",
+      submitText: "Submit Feature Request",
+    },
+    improvement: {
+      title: "Suggest Improvement",
+      description: "Share ideas to improve existing features",
+      icon: Lightbulb,
+      color: "bg-warning/10 text-warning",
+      submitText: "Submit Suggestion",
+    },
+  };
+
+  const handleSelectFeedbackType = (type: FeedbackType) => {
+    setFeedbackType(type);
+    setShowFeedbackForm(true);
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={(isOpen) => {
         setOpen(isOpen);
-        if (!isOpen) setShowBugForm(false);
+        if (!isOpen) {
+          setShowFeedbackForm(false);
+          setFeedbackType("bug");
+        }
       }}>
         {showFloatingButton && (
           <DialogTrigger asChild>
@@ -244,58 +280,99 @@ export const BugReportDialog = ({
         )}
 
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          {!showBugForm ? (
+          {!showFeedbackForm ? (
             <>
               <DialogHeader>
-                <DialogTitle>Help & Support</DialogTitle>
+                <DialogTitle>Help & Feedback</DialogTitle>
                 <DialogDescription>
-                  Choose an option below to get help or report issues
+                  How can we help you today?
                 </DialogDescription>
               </DialogHeader>
               
-              <div className="grid gap-4 mt-6">
+              <div className="grid gap-3 mt-6">
+                {/* Documentation */}
                 <Card 
                   className="cursor-pointer hover:border-primary transition-colors"
                   onClick={() => window.open('/documentation', '_blank')}
                 >
-                  <CardHeader>
-                    <div className="flex items-start gap-4">
-                      <div className="p-3 rounded-lg bg-primary/10">
-                        <BookOpen className="h-6 w-6 text-primary" />
+                  <CardHeader className="py-4">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2.5 rounded-lg bg-primary/10">
+                        <BookOpen className="h-5 w-5 text-primary" />
                       </div>
                       <div className="flex-1">
-                        <CardTitle className="text-lg">Developer Documentation</CardTitle>
-                        <CardDescription className="mt-2">
-                          Access comprehensive guides, API references, and tutorials
+                        <CardTitle className="text-base">Documentation</CardTitle>
+                        <CardDescription className="text-sm">
+                          Guides and tutorials
                         </CardDescription>
                       </div>
                     </div>
                   </CardHeader>
                 </Card>
 
+                {/* Report Bug */}
+                <Card 
+                  className="cursor-pointer hover:border-destructive transition-colors"
+                  onClick={() => handleSelectFeedbackType("bug")}
+                >
+                  <CardHeader className="py-4">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2.5 rounded-lg bg-destructive/10">
+                        <Bug className="h-5 w-5 text-destructive" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-base">Report a Bug</CardTitle>
+                        <CardDescription className="text-sm">
+                          Something not working? Let us know
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+
+                {/* Request Feature */}
                 <Card 
                   className="cursor-pointer hover:border-primary transition-colors"
-                  onClick={() => setShowBugForm(true)}
+                  onClick={() => handleSelectFeedbackType("feature")}
                 >
-                  <CardHeader>
-                    <div className="flex items-start gap-4">
-                      <div className="p-3 rounded-lg bg-destructive/10">
-                        <FileText className="h-6 w-6 text-destructive" />
+                  <CardHeader className="py-4">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2.5 rounded-lg bg-primary/10">
+                        <Sparkles className="h-5 w-5 text-primary" />
                       </div>
                       <div className="flex-1">
-                        <CardTitle className="text-lg">Record a Bug</CardTitle>
-                        <CardDescription className="mt-2">
-                          Report issues, errors, or unexpected behavior
+                        <CardTitle className="text-base">Request a Feature</CardTitle>
+                        <CardDescription className="text-sm">
+                          Suggest new functionality
                         </CardDescription>
                       </div>
                     </div>
                   </CardHeader>
                 </Card>
 
-                {/* View All Bugs - hidden in production */}
+                {/* Suggest Improvement */}
+                <Card 
+                  className="cursor-pointer hover:border-warning transition-colors"
+                  onClick={() => handleSelectFeedbackType("improvement")}
+                >
+                  <CardHeader className="py-4">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2.5 rounded-lg bg-warning/10">
+                        <Lightbulb className="h-5 w-5 text-warning" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-base">Suggest Improvement</CardTitle>
+                        <CardDescription className="text-sm">
+                          Ideas to make things better
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
 
                 <Button
                   variant="outline"
+                  size="sm"
                   className="w-full mt-2"
                   onClick={() => setShowWhatsNew(true)}
                 >
@@ -306,37 +383,55 @@ export const BugReportDialog = ({
           ) : (
             <>
               <DialogHeader>
-                <DialogTitle>Report a Bug</DialogTitle>
+                <DialogTitle className="flex items-center gap-2">
+                  {(() => {
+                    const Icon = feedbackTypeConfig[feedbackType].icon;
+                    return <Icon className="h-5 w-5" />;
+                  })()}
+                  {feedbackTypeConfig[feedbackType].title}
+                </DialogTitle>
                 <DialogDescription>
-                  Help us improve by reporting any issues you encounter. Your feedback is valuable!
+                  {feedbackType === "bug" 
+                    ? "Help us fix issues by providing details"
+                    : feedbackType === "feature"
+                    ? "Describe the feature you'd like to see"
+                    : "Share your improvement ideas"}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Bug Title *</Label>
+                  <Label htmlFor="title">Title *</Label>
                   <Input
                     id="title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Brief description of the issue"
+                    placeholder={
+                      feedbackType === "bug" 
+                        ? "Brief description of the issue"
+                        : feedbackType === "feature"
+                        ? "Name your feature idea"
+                        : "What would you improve?"
+                    }
                     required
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="priority">Priority</Label>
-                  <Select value={priority} onValueChange={(value: any) => setPriority(value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low - Minor inconvenience</SelectItem>
-                      <SelectItem value="medium">Medium - Affects functionality</SelectItem>
-                      <SelectItem value="high">High - Major issue</SelectItem>
-                      <SelectItem value="critical">Critical - Blocking work</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {feedbackType === "bug" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="priority">Priority</Label>
+                    <Select value={priority} onValueChange={(value: any) => setPriority(value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low - Minor inconvenience</SelectItem>
+                        <SelectItem value="medium">Medium - Affects functionality</SelectItem>
+                        <SelectItem value="high">High - Major issue</SelectItem>
+                        <SelectItem value="critical">Critical - Blocking work</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="description">Description *</Label>
@@ -344,64 +439,74 @@ export const BugReportDialog = ({
                     id="description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Detailed description of the bug"
+                    placeholder={
+                      feedbackType === "bug"
+                        ? "What happened? What were you trying to do?"
+                        : feedbackType === "feature"
+                        ? "Describe what this feature would do and why it would be useful"
+                        : "Describe your improvement idea and how it would help"
+                    }
                     rows={4}
                     required
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="steps">Steps to Reproduce</Label>
-                  <Textarea
-                    id="steps"
-                    value={stepsToReproduce}
-                    onChange={(e) => setStepsToReproduce(e.target.value)}
-                    placeholder="1. Go to...&#10;2. Click on...&#10;3. See error"
-                    rows={3}
-                  />
-                </div>
+                {feedbackType === "bug" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="steps">Steps to Reproduce (Optional)</Label>
+                      <Textarea
+                        id="steps"
+                        value={stepsToReproduce}
+                        onChange={(e) => setStepsToReproduce(e.target.value)}
+                        placeholder="1. Go to...&#10;2. Click on...&#10;3. See error"
+                        rows={3}
+                      />
+                    </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="expected">Expected Behavior</Label>
-                    <Textarea
-                      id="expected"
-                      value={expectedBehavior}
-                      onChange={(e) => setExpectedBehavior(e.target.value)}
-                      placeholder="What should happen?"
-                      rows={3}
-                    />
-                  </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="expected">Expected Behavior</Label>
+                        <Textarea
+                          id="expected"
+                          value={expectedBehavior}
+                          onChange={(e) => setExpectedBehavior(e.target.value)}
+                          placeholder="What should happen?"
+                          rows={2}
+                        />
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="actual">Actual Behavior</Label>
-                    <Textarea
-                      id="actual"
-                      value={actualBehavior}
-                      onChange={(e) => setActualBehavior(e.target.value)}
-                      placeholder="What actually happened?"
-                      rows={3}
-                    />
-                  </div>
-                </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="actual">Actual Behavior</Label>
+                        <Textarea
+                          id="actual"
+                          value={actualBehavior}
+                          onChange={(e) => setActualBehavior(e.target.value)}
+                          placeholder="What actually happened?"
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="images">Screenshots (Optional)</Label>
                   <div className="space-y-3">
                     {images.length > 0 && (
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-3 gap-2">
                         {images.map((url, index) => (
                           <div key={index} className="relative group">
                             <img 
                               src={url} 
                               alt={`Screenshot ${index + 1}`}
-                              className="w-full h-24 object-cover rounded border"
+                              className="w-full h-20 object-cover rounded border"
                             />
                             <Button
                               type="button"
                               size="icon"
                               variant="destructive"
-                              className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-1 right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={() => handleImageDelete(url)}
                             >
                               <X className="h-3 w-3" />
@@ -418,24 +523,21 @@ export const BugReportDialog = ({
                         multiple
                         onChange={handleImageUpload}
                         disabled={uploading || isSubmitting}
-                        className="cursor-pointer"
+                        className="cursor-pointer text-sm"
                       />
                       {uploading && (
                         <span className="text-sm text-muted-foreground">Uploading...</span>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Upload screenshots to help us understand the issue better
-                    </p>
                   </div>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setShowBugForm(false)}>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setShowFeedbackForm(false)}>
                     Back
                   </Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Submitting..." : "Submit Bug Report"}
+                  <Button type="submit" size="sm" disabled={isSubmitting}>
+                    {isSubmitting ? "Submitting..." : feedbackTypeConfig[feedbackType].submitText}
                   </Button>
                 </div>
               </form>
