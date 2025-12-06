@@ -9,7 +9,7 @@ interface VersionBadgeProps {
 
 export const VersionBadge = ({ className = "", size = "default" }: VersionBadgeProps) => {
   const [showWhatsNew, setShowWhatsNew] = useState(false);
-  const version = "v2.0.1";
+  const version = "v2.3.1";
 
   return (
     <>

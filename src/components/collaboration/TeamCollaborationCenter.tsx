@@ -13,11 +13,12 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useCurrentUserProfile, useUpdateUserProfile } from '@/hooks/useUserProfile';
 import { useTheme } from 'next-themes';
 import { useCompactMode } from '@/hooks/useCompactMode';
-import { Users, MessageCircle, Zap, Circle, Send, X, Edit, Check, Settings, LogOut, Sun, Moon, Palette, LifeBuoy } from 'lucide-react';
+import { Users, MessageCircle, Zap, Circle, Send, X, Edit, Check, Settings, LogOut, Sun, Moon, Palette, LifeBuoy, Lightbulb } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useNavigate } from 'react-router-dom';
 import { DirectMessageDialog } from './DirectMessageDialog';
 import { BugReportDialog } from '@/components/bug-report/BugReportDialog';
+import { TeachingHelpButton } from '@/components/teaching/TeachingHelpButton';
 import { cn } from '@/lib/utils';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { Switch } from '@/components/ui/switch';
@@ -49,6 +50,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const [isEditingStatus, setIsEditingStatus] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
+  const [tipsOpen, setTipsOpen] = useState(false);
 
   const quickStatusOptions = [
     { icon: Clock, text: "Available", color: "bg-green-500" },
@@ -338,6 +340,16 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                            </Tooltip>
                           
                           <div className="h-4 w-px bg-border mx-1" />
+                          
+                          {/* Tips - already has its own popover */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div>
+                                <TeachingHelpButton variant="icon" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>Tips</TooltipContent>
+                          </Tooltip>
                           
                           {/* Support */}
                           <Tooltip>
