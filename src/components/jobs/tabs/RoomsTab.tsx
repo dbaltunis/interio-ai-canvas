@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EnhancedRoomView } from "@/components/room-management/EnhancedRoomView";
 import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
@@ -11,9 +11,11 @@ import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { useWorkroomSync } from "@/hooks/useWorkroomSync";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { supabase } from "@/integrations/supabase/client";
+
 interface RoomsTabProps {
   projectId: string;
 }
+
 export const RoomsTab = ({
   projectId
 }: RoomsTabProps) => {
@@ -27,7 +29,7 @@ export const RoomsTab = ({
     refetch: refetchTreatments
   } = useTreatments(projectId);
   const {
-    data: rooms
+    data: rooms = []
   } = useRooms(projectId);
   const {
     data: surfaces,
@@ -42,6 +44,24 @@ export const RoomsTab = ({
   } = useBusinessSettings();
   const createRoom = useCreateRoom();
   const project = projects?.find(p => p.id === projectId);
+
+  // Fetch all room products for this project
+  const roomIds = rooms.map(r => r.id);
+  const { data: allRoomProducts = [] } = useQuery({
+    queryKey: ["project-room-products", projectId, roomIds],
+    queryFn: async () => {
+      if (roomIds.length === 0) return [];
+      
+      const { data, error } = await supabase
+        .from("room_products")
+        .select("*")
+        .in("room_id", roomIds);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: roomIds.length > 0,
+  });
 
   // Auto-cleanup: Remove orphaned treatments and surfaces (those with no/invalid parent room)
   useEffect(() => {
@@ -123,9 +143,13 @@ export const RoomsTab = ({
   // Project pricing calculation - show base cost without automatic markups
   const summariesTotal = projectSummaries?.projectTotal || 0;
 
+  // Calculate room products total
+  const roomProductsTotal = allRoomProducts.reduce((sum, p) => sum + (p.total_price || 0), 0);
+
   // Use windows_summary data if available (more accurate as it includes fabric calculations)
   // Fall back to treatments table data only if no window summaries exist
-  const baseSubtotal = summariesTotal > 0 ? summariesTotal : treatmentTotal;
+  // CRITICAL: Always include room products in total
+  const baseSubtotal = (summariesTotal > 0 ? summariesTotal : treatmentTotal) + roomProductsTotal;
 
   // TODO: Markup and tax should be configurable in settings, not hardcoded
   // For now, show the base cost without automatic markup/tax to provide clarity
