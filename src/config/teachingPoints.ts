@@ -32,15 +32,16 @@ export interface TeachingPoint {
 }
 
 // ============================================
-// SETTINGS TEACHING POINTS (Valuable Hidden Gems Only)
+// SETTINGS TEACHING POINTS (1-3 per section)
 // ============================================
 
 export const settingsTeachingPoints: TeachingPoint[] = [
-  // Personal Section - Keep timezone (often missed)
+  // Personal Section (3 tips)
   {
     id: 'settings-personal-timezone',
     title: 'Set Your Timezone',
     description: 'Ensure appointments and deadlines show the correct time by setting your local timezone.',
+    targetSelector: '[data-teaching="timezone-select"]',
     position: 'bottom',
     trigger: { type: 'first_visit', page: '/settings', section: 'personal' },
     priority: 'high',
@@ -48,12 +49,25 @@ export const settingsTeachingPoints: TeachingPoint[] = [
     sequence: 'settings-personal',
     sequenceOrder: 1,
   },
+  {
+    id: 'settings-personal-date-format',
+    title: 'Date & Time Formats',
+    description: 'Choose how dates appear throughout the app. Match your regional preferences.',
+    targetSelector: '[data-teaching="date-format"]',
+    position: 'bottom',
+    trigger: { type: 'first_visit', page: '/settings', section: 'personal' },
+    priority: 'medium',
+    category: 'settings',
+    sequence: 'settings-personal',
+    sequenceOrder: 2,
+  },
 
-  // Business Section - Keep logo (important for branding)
+  // Business Section (3 tips)
   {
     id: 'settings-business-logo',
     title: 'Upload Your Company Logo',
     description: 'Your logo appears on quotes, invoices, and client documents. Drag and drop or click to upload.',
+    targetSelector: '[data-teaching="company-logo"]',
     position: 'right',
     trigger: { type: 'first_visit', page: '/settings', section: 'business' },
     priority: 'high',
@@ -61,12 +75,25 @@ export const settingsTeachingPoints: TeachingPoint[] = [
     sequence: 'settings-business',
     sequenceOrder: 1,
   },
+  {
+    id: 'settings-business-abn',
+    title: 'Tax Registration Number',
+    description: 'Add your ABN, VAT, or tax ID. This appears on invoices for your clients\' records.',
+    targetSelector: '[data-teaching="abn-field"]',
+    position: 'bottom',
+    trigger: { type: 'first_visit', page: '/settings', section: 'business' },
+    priority: 'medium',
+    category: 'settings',
+    sequence: 'settings-business',
+    sequenceOrder: 2,
+  },
 
-  // Units Section - Keep measurement and currency (critical for accuracy)
+  // Units Section (2 tips)
   {
     id: 'settings-units-measurement',
     title: 'Choose Measurement Units',
-    description: 'Select metric (cm/m) or imperial (inches/feet) based on your region. All calculations will use this system.',
+    description: 'Select metric (cm/m) or imperial (inches/feet). All calculations use this system.',
+    targetSelector: '[data-teaching="measurement-units"]',
     position: 'right',
     trigger: { type: 'first_visit', page: '/settings', section: 'units' },
     priority: 'high',
@@ -78,6 +105,7 @@ export const settingsTeachingPoints: TeachingPoint[] = [
     id: 'settings-units-currency',
     title: 'Set Your Currency',
     description: 'Choose your currency for pricing. This affects quotes, invoices, and all financial displays.',
+    targetSelector: '[data-teaching="currency-select"]',
     position: 'bottom',
     trigger: { type: 'first_visit', page: '/settings', section: 'units' },
     priority: 'high',
@@ -86,11 +114,12 @@ export const settingsTeachingPoints: TeachingPoint[] = [
     sequenceOrder: 2,
   },
 
-  // Products Section - Keep pricing grid (powerful but hidden)
+  // Products Section (3 tips)
   {
     id: 'settings-products-pricing-grid',
     title: 'Upload Pricing Grids',
     description: 'Import CSV pricing grids from your suppliers. These automatically calculate prices based on width and drop.',
+    targetSelector: '[data-teaching="pricing-grid"]',
     position: 'right',
     trigger: { type: 'feature_unused', page: '/settings', section: 'products' },
     priority: 'high',
@@ -102,6 +131,7 @@ export const settingsTeachingPoints: TeachingPoint[] = [
     id: 'settings-products-options',
     title: 'Configure Treatment Options',
     description: 'Add options like lining types, controls, and finishes. Toggle which options appear for each template.',
+    targetSelector: '[data-teaching="treatment-options"]',
     position: 'bottom',
     trigger: { type: 'feature_unused', page: '/settings', section: 'products' },
     priority: 'medium',
@@ -109,12 +139,25 @@ export const settingsTeachingPoints: TeachingPoint[] = [
     sequence: 'settings-products',
     sequenceOrder: 2,
   },
+  {
+    id: 'settings-products-templates',
+    title: 'Create Product Templates',
+    description: 'Templates define how treatments are priced and what options are available. One template per treatment type.',
+    targetSelector: '[data-teaching="product-templates"]',
+    position: 'bottom',
+    trigger: { type: 'feature_unused', page: '/settings', section: 'products' },
+    priority: 'medium',
+    category: 'settings',
+    sequence: 'settings-products',
+    sequenceOrder: 3,
+  },
 
-  // Markup & Tax Section - Keep markup calculation (common confusion)
+  // Markup & Tax Section (2 tips)
   {
     id: 'settings-markup-calculation',
     title: 'Margin vs Markup',
-    description: 'Markup adds percentage to cost. Margin is percentage of selling price. Choose your preferred calculation method.',
+    description: 'Markup adds percentage to cost. Margin is percentage of selling price. Choose your preferred method.',
+    targetSelector: '[data-teaching="markup-method"]',
     position: 'right',
     trigger: { type: 'first_visit', page: '/settings', section: 'markup' },
     priority: 'high',
@@ -122,12 +165,51 @@ export const settingsTeachingPoints: TeachingPoint[] = [
     sequence: 'settings-markup',
     sequenceOrder: 1,
   },
+  {
+    id: 'settings-markup-tax',
+    title: 'Tax Settings',
+    description: 'Configure your tax rate (GST, VAT). Choose whether to display prices inclusive or exclusive of tax.',
+    targetSelector: '[data-teaching="tax-settings"]',
+    position: 'bottom',
+    trigger: { type: 'first_visit', page: '/settings', section: 'markup' },
+    priority: 'medium',
+    category: 'settings',
+    sequence: 'settings-markup',
+    sequenceOrder: 2,
+  },
 
-  // Documents Section - Keep numbering (hidden but useful)
+  // Team Section (2 tips)
+  {
+    id: 'settings-team-invite',
+    title: 'Invite Team Members',
+    description: 'Add staff with different permission levels. Managers see costs, staff see only what they need.',
+    targetSelector: '[data-teaching="invite-team"]',
+    position: 'bottom',
+    trigger: { type: 'first_visit', page: '/settings', section: 'team' },
+    priority: 'high',
+    category: 'settings',
+    sequence: 'settings-team',
+    sequenceOrder: 1,
+  },
+  {
+    id: 'settings-team-permissions',
+    title: 'Role-Based Access',
+    description: 'Each role has specific permissions. Admins see everything, staff see limited data for their work.',
+    targetSelector: '[data-teaching="team-roles"]',
+    position: 'bottom',
+    trigger: { type: 'feature_unused', page: '/settings', section: 'team' },
+    priority: 'medium',
+    category: 'settings',
+    sequence: 'settings-team',
+    sequenceOrder: 2,
+  },
+
+  // Documents Section (2 tips)
   {
     id: 'settings-documents-numbering',
     title: 'Custom Document Numbers',
     description: 'Set your own prefixes like QT-001, INV-500. Starting numbers pick up from your existing system.',
+    targetSelector: '[data-teaching="doc-numbering"]',
     position: 'bottom',
     trigger: { type: 'first_visit', page: '/settings', section: 'documents' },
     priority: 'medium',
@@ -135,25 +217,77 @@ export const settingsTeachingPoints: TeachingPoint[] = [
     sequence: 'settings-documents',
     sequenceOrder: 1,
   },
+  {
+    id: 'settings-documents-templates',
+    title: 'Customize Document Templates',
+    description: 'Edit quote and invoice layouts in the visual editor. Add your branding and custom fields.',
+    targetSelector: '[data-teaching="doc-templates"]',
+    position: 'bottom',
+    trigger: { type: 'feature_unused', page: '/settings', section: 'documents' },
+    priority: 'medium',
+    category: 'settings',
+    sequence: 'settings-documents',
+    sequenceOrder: 2,
+  },
 
-  // System Section - Keep dark mode (often missed)
+  // System Section (2 tips)
   {
     id: 'settings-system-theme',
-    title: 'Work Comfortably at Night',
+    title: 'Dark Mode Available',
     description: 'Enable dark mode for reduced eye strain. Perfect for evening work sessions.',
+    targetSelector: '[data-teaching="theme-toggle"]',
     position: 'right',
     trigger: { type: 'first_visit', page: '/settings', section: 'system' },
-    priority: 'low',
+    priority: 'medium',
     category: 'settings',
     sequence: 'settings-system',
     sequenceOrder: 1,
   },
+  {
+    id: 'settings-system-data',
+    title: 'Export Your Data',
+    description: 'Download all your data anytime. Export clients, quotes, and inventory as CSV files.',
+    targetSelector: '[data-teaching="data-export"]',
+    position: 'bottom',
+    trigger: { type: 'feature_unused', page: '/settings', section: 'system' },
+    priority: 'low',
+    category: 'settings',
+    sequence: 'settings-system',
+    sequenceOrder: 2,
+  },
 
-  // Integrations Section - Keep email and Shopify (powerful features)
+  // Alerts Section (2 tips)
+  {
+    id: 'settings-alerts-notifications',
+    title: 'Configure Notifications',
+    description: 'Choose which events trigger alerts. Get notified about new quotes, overdue invoices, and more.',
+    targetSelector: '[data-teaching="notifications"]',
+    position: 'bottom',
+    trigger: { type: 'first_visit', page: '/settings', section: 'alerts' },
+    priority: 'medium',
+    category: 'settings',
+    sequence: 'settings-alerts',
+    sequenceOrder: 1,
+  },
+  {
+    id: 'settings-alerts-reminders',
+    title: 'Automatic Reminders',
+    description: 'Set up follow-up reminders for quotes and appointments. Never miss a client touchpoint.',
+    targetSelector: '[data-teaching="reminders"]',
+    position: 'bottom',
+    trigger: { type: 'feature_unused', page: '/settings', section: 'alerts' },
+    priority: 'medium',
+    category: 'settings',
+    sequence: 'settings-alerts',
+    sequenceOrder: 2,
+  },
+
+  // Integrations Section (3 tips)
   {
     id: 'settings-integrations-email',
     title: 'Send Quotes from App',
     description: 'Connect your email provider to send quotes and invoices directly without leaving the app.',
+    targetSelector: '[data-teaching="email-integration"]',
     position: 'bottom',
     trigger: { type: 'first_visit', page: '/settings', section: 'integrations' },
     priority: 'high',
@@ -165,12 +299,25 @@ export const settingsTeachingPoints: TeachingPoint[] = [
     id: 'settings-integrations-shopify',
     title: 'Sync with Shopify',
     description: 'Connect your Shopify store to automatically sync products, orders, and customer data.',
+    targetSelector: '[data-teaching="shopify-integration"]',
     position: 'bottom',
     trigger: { type: 'feature_unused', page: '/settings', section: 'integrations' },
     priority: 'medium',
     category: 'settings',
     sequence: 'settings-integrations',
     sequenceOrder: 2,
+  },
+  {
+    id: 'settings-integrations-twc',
+    title: 'TWC Manufacturing',
+    description: 'Connect to TWC to import their product catalog and submit orders directly for manufacturing.',
+    targetSelector: '[data-teaching="twc-integration"]',
+    position: 'bottom',
+    trigger: { type: 'feature_unused', page: '/settings', section: 'integrations' },
+    priority: 'medium',
+    category: 'settings',
+    sequence: 'settings-integrations',
+    sequenceOrder: 3,
   },
 ];
 
