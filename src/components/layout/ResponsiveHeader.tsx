@@ -13,7 +13,8 @@ import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useHasPermission } from '@/hooks/usePermissions';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { TeachingHelpButton } from '@/components/teaching/TeachingHelpButton';
+// Hidden for now - TeachingHelpButton needs completion before deployment
+// import { TeachingHelpButton } from '@/components/teaching/TeachingHelpButton';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -191,7 +192,8 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
           </nav>
           {/* Right: Tips + User Profile */}
           <div className="flex items-center gap-2">
-            <TeachingHelpButton />
+            {/* Hidden for now - TeachingHelpButton needs completion */}
+            {/* <TeachingHelpButton /> */}
             <UserProfile
               onOpenTeamHub={() => setPresencePanelOpen(!presencePanelOpen)}
               showCollaborationIndicator={hasActivity}
