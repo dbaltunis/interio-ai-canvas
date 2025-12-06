@@ -1,6 +1,6 @@
 import { Settings, User, Building2, Ruler, Package, Percent, Users, FileText, Monitor, Bell, Plug, 
   LayoutDashboard, Briefcase, UserCircle, Warehouse, Calculator, Library, Columns, Moon, Mail, 
-  Import, Filter, PieChart, Palette, Globe, Calendar, CreditCard, Shield, Sparkles } from 'lucide-react';
+  Import, Filter, PieChart, Palette, Globe, Calendar, CreditCard, Shield, Sparkles, Move, Download, Wifi, ShoppingBag, FileCheck, ToggleLeft } from 'lucide-react';
 
 export type TeachingTriggerType = 
   | 'first_visit'
@@ -27,38 +27,16 @@ export interface TeachingPoint {
   };
   priority: TeachingPriority;
   category: 'settings' | 'app' | 'feature';
-  sequence?: string; // Group related teachings
+  sequence?: string;
   sequenceOrder?: number;
 }
 
 // ============================================
-// SETTINGS TEACHING POINTS
+// SETTINGS TEACHING POINTS (Valuable Hidden Gems Only)
 // ============================================
 
 export const settingsTeachingPoints: TeachingPoint[] = [
-  // Personal Section
-  {
-    id: 'settings-personal-profile-photo',
-    title: 'Add Your Profile Photo',
-    description: 'Upload a profile photo to personalize your account. Your photo appears in team views and client communications.',
-    position: 'right',
-    trigger: { type: 'first_visit', page: '/settings', section: 'personal' },
-    priority: 'medium',
-    category: 'settings',
-    sequence: 'settings-personal',
-    sequenceOrder: 1,
-  },
-  {
-    id: 'settings-personal-display-name',
-    title: 'Set Your Display Name',
-    description: 'This name appears on quotes, invoices, and client emails. Make it professional!',
-    position: 'bottom',
-    trigger: { type: 'first_visit', page: '/settings', section: 'personal' },
-    priority: 'high',
-    category: 'settings',
-    sequence: 'settings-personal',
-    sequenceOrder: 2,
-  },
+  // Personal Section - Keep timezone (often missed)
   {
     id: 'settings-personal-timezone',
     title: 'Set Your Timezone',
@@ -68,10 +46,10 @@ export const settingsTeachingPoints: TeachingPoint[] = [
     priority: 'high',
     category: 'settings',
     sequence: 'settings-personal',
-    sequenceOrder: 3,
+    sequenceOrder: 1,
   },
 
-  // Business Section
+  // Business Section - Keep logo (important for branding)
   {
     id: 'settings-business-logo',
     title: 'Upload Your Company Logo',
@@ -83,30 +61,8 @@ export const settingsTeachingPoints: TeachingPoint[] = [
     sequence: 'settings-business',
     sequenceOrder: 1,
   },
-  {
-    id: 'settings-business-abn',
-    title: 'Add Your Business Number',
-    description: 'Enter your ABN/Tax ID for professional invoices and legal compliance.',
-    position: 'bottom',
-    trigger: { type: 'first_visit', page: '/settings', section: 'business' },
-    priority: 'medium',
-    category: 'settings',
-    sequence: 'settings-business',
-    sequenceOrder: 2,
-  },
-  {
-    id: 'settings-business-contact',
-    title: 'Business Contact Details',
-    description: 'Add your business email and phone. These appear on client-facing documents.',
-    position: 'bottom',
-    trigger: { type: 'first_visit', page: '/settings', section: 'business' },
-    priority: 'high',
-    category: 'settings',
-    sequence: 'settings-business',
-    sequenceOrder: 3,
-  },
 
-  // Units Section
+  // Units Section - Keep measurement and currency (critical for accuracy)
   {
     id: 'settings-units-measurement',
     title: 'Choose Measurement Units',
@@ -129,40 +85,18 @@ export const settingsTeachingPoints: TeachingPoint[] = [
     sequence: 'settings-units',
     sequenceOrder: 2,
   },
-  {
-    id: 'settings-units-date-format',
-    title: 'Date Format Preference',
-    description: 'Choose how dates appear throughout the app (DD/MM/YYYY or MM/DD/YYYY).',
-    position: 'bottom',
-    trigger: { type: 'first_visit', page: '/settings', section: 'units' },
-    priority: 'low',
-    category: 'settings',
-    sequence: 'settings-units',
-    sequenceOrder: 3,
-  },
 
-  // Products Section
-  {
-    id: 'settings-products-templates',
-    title: 'Create Product Templates',
-    description: 'Templates define your window treatments with pricing, options, and manufacturing settings. Start by creating your first template.',
-    position: 'bottom',
-    trigger: { type: 'first_visit', page: '/settings', section: 'products' },
-    priority: 'high',
-    category: 'settings',
-    sequence: 'settings-products',
-    sequenceOrder: 1,
-  },
+  // Products Section - Keep pricing grid (powerful but hidden)
   {
     id: 'settings-products-pricing-grid',
     title: 'Upload Pricing Grids',
     description: 'Import CSV pricing grids from your suppliers. These automatically calculate prices based on width and drop.',
     position: 'right',
     trigger: { type: 'feature_unused', page: '/settings', section: 'products' },
-    priority: 'medium',
+    priority: 'high',
     category: 'settings',
     sequence: 'settings-products',
-    sequenceOrder: 2,
+    sequenceOrder: 1,
   },
   {
     id: 'settings-products-options',
@@ -173,14 +107,14 @@ export const settingsTeachingPoints: TeachingPoint[] = [
     priority: 'medium',
     category: 'settings',
     sequence: 'settings-products',
-    sequenceOrder: 3,
+    sequenceOrder: 2,
   },
 
-  // Markup & Tax Section
+  // Markup & Tax Section - Keep markup calculation (common confusion)
   {
-    id: 'settings-markup-global',
-    title: 'Set Your Default Markup',
-    description: 'Apply a global profit margin to all products. You can override this per product or quote.',
+    id: 'settings-markup-calculation',
+    title: 'Margin vs Markup',
+    description: 'Markup adds percentage to cost. Margin is percentage of selling price. Choose your preferred calculation method.',
     position: 'right',
     trigger: { type: 'first_visit', page: '/settings', section: 'markup' },
     priority: 'high',
@@ -188,71 +122,25 @@ export const settingsTeachingPoints: TeachingPoint[] = [
     sequence: 'settings-markup',
     sequenceOrder: 1,
   },
-  {
-    id: 'settings-markup-tax',
-    title: 'Configure Tax Settings',
-    description: 'Set your tax rate (GST/VAT) and choose whether prices display inclusive or exclusive of tax.',
-    position: 'bottom',
-    trigger: { type: 'first_visit', page: '/settings', section: 'markup' },
-    priority: 'high',
-    category: 'settings',
-    sequence: 'settings-markup',
-    sequenceOrder: 2,
-  },
 
-  // Team Section
-  {
-    id: 'settings-team-invite',
-    title: 'Invite Team Members',
-    description: 'Add your staff, installers, or contractors. Assign roles to control what they can access.',
-    position: 'right',
-    trigger: { type: 'first_visit', page: '/settings', section: 'team' },
-    priority: 'medium',
-    category: 'settings',
-    sequence: 'settings-team',
-    sequenceOrder: 1,
-  },
-  {
-    id: 'settings-team-roles',
-    title: 'Understand Role Permissions',
-    description: 'Admin: Full access. Manager: Most features. Staff: Limited to assigned work. Choose carefully!',
-    position: 'bottom',
-    trigger: { type: 'first_visit', page: '/settings', section: 'team' },
-    priority: 'low',
-    category: 'settings',
-    sequence: 'settings-team',
-    sequenceOrder: 2,
-  },
-
-  // Documents Section
-  {
-    id: 'settings-documents-template',
-    title: 'Customize Quote Templates',
-    description: 'Design how your quotes look. Add your logo, adjust colors, and set default terms.',
-    position: 'right',
-    trigger: { type: 'first_visit', page: '/settings', section: 'documents' },
-    priority: 'medium',
-    category: 'settings',
-    sequence: 'settings-documents',
-    sequenceOrder: 1,
-  },
+  // Documents Section - Keep numbering (hidden but useful)
   {
     id: 'settings-documents-numbering',
-    title: 'Set Document Numbering',
-    description: 'Customize prefixes and starting numbers for quotes, invoices, and jobs (e.g., QT-001, INV-001).',
+    title: 'Custom Document Numbers',
+    description: 'Set your own prefixes like QT-001, INV-500. Starting numbers pick up from your existing system.',
     position: 'bottom',
     trigger: { type: 'first_visit', page: '/settings', section: 'documents' },
     priority: 'medium',
     category: 'settings',
     sequence: 'settings-documents',
-    sequenceOrder: 2,
+    sequenceOrder: 1,
   },
 
-  // System Section
+  // System Section - Keep dark mode (often missed)
   {
     id: 'settings-system-theme',
-    title: 'Switch to Dark Mode',
-    description: 'Prefer working at night? Enable dark mode for easier viewing and reduced eye strain.',
+    title: 'Work Comfortably at Night',
+    description: 'Enable dark mode for reduced eye strain. Perfect for evening work sessions.',
     position: 'right',
     trigger: { type: 'first_visit', page: '/settings', section: 'system' },
     priority: 'low',
@@ -260,156 +148,73 @@ export const settingsTeachingPoints: TeachingPoint[] = [
     sequence: 'settings-system',
     sequenceOrder: 1,
   },
-  {
-    id: 'settings-system-compact',
-    title: 'Try Compact Mode',
-    description: 'See more data on screen with compact mode. Great for large inventories and long client lists.',
-    position: 'bottom',
-    trigger: { type: 'feature_unused', page: '/settings', section: 'system' },
-    priority: 'low',
-    category: 'settings',
-    sequence: 'settings-system',
-    sequenceOrder: 2,
-  },
 
-  // Alerts Section
-  {
-    id: 'settings-alerts-email',
-    title: 'Email Notifications',
-    description: 'Choose which events trigger email alerts: new quotes, overdue payments, appointment reminders.',
-    position: 'right',
-    trigger: { type: 'first_visit', page: '/settings', section: 'alerts' },
-    priority: 'medium',
-    category: 'settings',
-    sequence: 'settings-alerts',
-    sequenceOrder: 1,
-  },
-  {
-    id: 'settings-alerts-browser',
-    title: 'Browser Notifications',
-    description: 'Get instant notifications in your browser for urgent updates even when the app is minimized.',
-    position: 'bottom',
-    trigger: { type: 'feature_unused', page: '/settings', section: 'alerts' },
-    priority: 'low',
-    category: 'settings',
-    sequence: 'settings-alerts',
-    sequenceOrder: 2,
-  },
-
-  // Integrations Section
-  {
-    id: 'settings-integrations-calendar',
-    title: 'Connect Your Calendar',
-    description: 'Sync with Google Calendar to see appointments and block out busy times automatically.',
-    position: 'right',
-    trigger: { type: 'first_visit', page: '/settings', section: 'integrations' },
-    priority: 'medium',
-    category: 'settings',
-    sequence: 'settings-integrations',
-    sequenceOrder: 1,
-  },
+  // Integrations Section - Keep email and Shopify (powerful features)
   {
     id: 'settings-integrations-email',
-    title: 'Set Up Email Provider',
-    description: 'Connect your email to send quotes and invoices directly from the app with your branding.',
+    title: 'Send Quotes from App',
+    description: 'Connect your email provider to send quotes and invoices directly without leaving the app.',
     position: 'bottom',
     trigger: { type: 'first_visit', page: '/settings', section: 'integrations' },
     priority: 'high',
     category: 'settings',
     sequence: 'settings-integrations',
-    sequenceOrder: 2,
+    sequenceOrder: 1,
   },
   {
     id: 'settings-integrations-shopify',
-    title: 'Connect Shopify Store',
-    description: 'Link your Shopify store to sync products, orders, and customer data automatically.',
+    title: 'Sync with Shopify',
+    description: 'Connect your Shopify store to automatically sync products, orders, and customer data.',
     position: 'bottom',
     trigger: { type: 'feature_unused', page: '/settings', section: 'integrations' },
-    priority: 'low',
+    priority: 'medium',
     category: 'settings',
     sequence: 'settings-integrations',
-    sequenceOrder: 3,
+    sequenceOrder: 2,
   },
 ];
 
 // ============================================
-// APP FEATURE TEACHING POINTS
+// APP FEATURE TEACHING POINTS (Hidden Gems Only)
 // ============================================
 
 export const appTeachingPoints: TeachingPoint[] = [
-  // Dashboard
+  // Dashboard - NEW: Drag widgets (hidden feature)
   {
-    id: 'app-dashboard-kpis',
-    title: 'Your Business at a Glance',
-    description: 'These KPI cards show your key metrics: revenue, quotes sent, conversion rate. Click any card for details.',
+    id: 'hidden-dashboard-drag-widgets',
+    title: 'Rearrange Your Dashboard',
+    description: 'Drag and drop dashboard widgets to customize your layout. Put your most-used data first.',
     position: 'bottom',
-    trigger: { type: 'first_visit', page: '/app', section: 'dashboard' },
-    priority: 'high',
-    category: 'app',
-    sequence: 'dashboard-intro',
-    sequenceOrder: 1,
-  },
-  {
-    id: 'app-dashboard-quick-actions',
-    title: 'Quick Actions',
-    description: 'Start your most common tasks here: create a quote, add a client, or schedule an appointment.',
-    position: 'bottom',
-    trigger: { type: 'first_visit', page: '/app', section: 'dashboard' },
-    priority: 'high',
-    category: 'app',
-    sequence: 'dashboard-intro',
-    sequenceOrder: 2,
+    trigger: { type: 'time_on_page', page: '/app', section: 'dashboard', delayMs: 30000 },
+    priority: 'medium',
+    category: 'feature',
   },
 
-  // Jobs/Projects
-  {
-    id: 'app-jobs-status-workflow',
-    title: 'Track Job Progress',
-    description: 'Jobs move through stages: Draft → Quoted → Ordered → In Production → Installed. Drag to update status.',
-    position: 'bottom',
-    trigger: { type: 'first_visit', page: '/app', section: 'jobs' },
-    priority: 'high',
-    category: 'app',
-    sequence: 'jobs-intro',
-    sequenceOrder: 1,
-  },
+  // Jobs/Projects - Keep column customize (hidden icon)
   {
     id: 'app-jobs-column-customize',
-    title: 'Customize Your Columns',
+    title: 'Show/Hide Table Columns',
     description: 'Click the settings icon to choose which columns appear. Show or hide data that matters to you.',
     targetSelector: '[data-teaching="column-settings"]',
     position: 'left',
-    trigger: { type: 'feature_unused', page: '/app', section: 'jobs' },
+    trigger: { type: 'feature_unused', page: '/app', section: 'projects' },
     priority: 'medium',
     category: 'app',
     sequence: 'jobs-intro',
-    sequenceOrder: 2,
-  },
-  {
-    id: 'app-jobs-filters',
-    title: 'Filter Your Jobs',
-    description: 'Use filters to find specific jobs by status, date, client, or installer. Save filters for quick access.',
-    targetSelector: '[data-teaching="job-filters"]',
-    position: 'bottom',
-    trigger: { type: 'feature_unused', page: '/app', section: 'jobs' },
-    priority: 'medium',
-    category: 'app',
-    sequence: 'jobs-intro',
-    sequenceOrder: 3,
-  },
-
-  // Clients/CRM
-  {
-    id: 'app-clients-add-first',
-    title: 'Add Your First Client',
-    description: 'Click "Add Client" to create your first contact. Include their address for appointment scheduling.',
-    position: 'bottom',
-    trigger: { type: 'empty_state', page: '/app', section: 'clients' },
-    priority: 'high',
-    category: 'app',
-    sequence: 'clients-intro',
     sequenceOrder: 1,
   },
+  // Jobs - NEW: Export CSV (hidden feature)
+  {
+    id: 'hidden-jobs-export-csv',
+    title: 'Export Jobs to CSV',
+    description: 'Download your job list as a spreadsheet for reporting, backup, or sharing with your accountant.',
+    position: 'bottom',
+    trigger: { type: 'feature_unused', page: '/app', section: 'projects' },
+    priority: 'low',
+    category: 'feature',
+  },
+
+  // Clients - Keep timeline (powerful feature)
   {
     id: 'app-clients-timeline',
     title: 'Client Activity Timeline',
@@ -418,9 +223,8 @@ export const appTeachingPoints: TeachingPoint[] = [
     trigger: { type: 'after_action', action: 'view_client' },
     priority: 'medium',
     category: 'app',
-    sequence: 'clients-intro',
-    sequenceOrder: 2,
   },
+  // Clients - Keep lead scoring (hidden intelligence)
   {
     id: 'app-clients-lead-scoring',
     title: 'Smart Lead Scoring',
@@ -431,65 +235,53 @@ export const appTeachingPoints: TeachingPoint[] = [
     category: 'app',
   },
 
-  // Inventory
-  {
-    id: 'app-inventory-create',
-    title: 'Add Your First Product',
-    description: 'Click "Add Product" to add fabrics, materials, or hardware. Set cost and selling prices.',
-    position: 'bottom',
-    trigger: { type: 'empty_state', page: '/app', section: 'inventory' },
-    priority: 'high',
-    category: 'app',
-    sequence: 'inventory-intro',
-    sequenceOrder: 1,
-  },
+  // Inventory - Keep CSV import (huge time saver)
   {
     id: 'app-inventory-csv-import',
-    title: 'Bulk Import Products',
-    description: 'Have a product list? Click "Import" to upload a CSV file and add hundreds of products at once.',
+    title: 'Import Hundreds of Products',
+    description: 'Upload a CSV file to bulk import fabrics, materials, or hardware in one go. Saves hours of data entry.',
     targetSelector: '[data-teaching="inventory-import"]',
     position: 'left',
     trigger: { type: 'feature_unused', page: '/app', section: 'inventory' },
     priority: 'high',
     category: 'app',
     sequence: 'inventory-intro',
-    sequenceOrder: 2,
-  },
-  {
-    id: 'app-inventory-pricing-grid',
-    title: 'Assign Pricing Grids',
-    description: 'Link pricing grids to products for automatic width×drop price lookups. No more manual calculations!',
-    position: 'bottom',
-    trigger: { type: 'feature_unused', page: '/app', section: 'inventory' },
-    priority: 'medium',
-    category: 'app',
-    sequence: 'inventory-intro',
-    sequenceOrder: 3,
-  },
-
-  // Calculator/Quote Builder
-  {
-    id: 'app-calculator-select-treatment',
-    title: 'Select a Treatment Type',
-    description: 'Choose the window treatment for this quote: curtains, blinds, shutters, or custom options.',
-    position: 'bottom',
-    trigger: { type: 'first_visit', page: '/app', section: 'calculator' },
-    priority: 'high',
-    category: 'app',
-    sequence: 'calculator-intro',
     sequenceOrder: 1,
   },
+  // Inventory - Keep pricing grid (powerful automation)
   {
-    id: 'app-calculator-measurements',
-    title: 'Enter Measurements',
-    description: 'Add width and drop measurements. The system calculates fabric, pricing, and manufacturing automatically.',
-    position: 'right',
-    trigger: { type: 'after_action', action: 'select_treatment' },
+    id: 'app-inventory-pricing-grid',
+    title: 'Auto-Price with Grids',
+    description: 'Link pricing grids to products - prices calculate automatically based on width and drop dimensions.',
+    position: 'bottom',
+    trigger: { type: 'feature_unused', page: '/app', section: 'inventory' },
     priority: 'high',
     category: 'app',
-    sequence: 'calculator-intro',
+    sequence: 'inventory-intro',
     sequenceOrder: 2,
   },
+  // Inventory - NEW: Colors flow to quotes (hidden connection)
+  {
+    id: 'hidden-inventory-colors-flow',
+    title: 'Colors Flow to Quotes',
+    description: 'Colors you add to fabrics automatically appear for selection in the calculator and show on client quotes.',
+    position: 'bottom',
+    trigger: { type: 'first_visit', page: '/app', section: 'inventory' },
+    priority: 'medium',
+    category: 'feature',
+  },
+  // Inventory - NEW: TWC import (powerful integration)
+  {
+    id: 'hidden-inventory-twc-import',
+    title: 'Import TWC Blinds Catalog',
+    description: 'Import from TWC\'s 400+ product catalog and create templates with pricing grids in one click.',
+    position: 'bottom',
+    trigger: { type: 'empty_state', page: '/app', section: 'inventory' },
+    priority: 'medium',
+    category: 'feature',
+  },
+
+  // Calculator - Keep options and preview (key workflow)
   {
     id: 'app-calculator-options',
     title: 'Configure Options',
@@ -499,7 +291,7 @@ export const appTeachingPoints: TeachingPoint[] = [
     priority: 'high',
     category: 'app',
     sequence: 'calculator-intro',
-    sequenceOrder: 3,
+    sequenceOrder: 1,
   },
   {
     id: 'app-calculator-preview',
@@ -510,21 +302,31 @@ export const appTeachingPoints: TeachingPoint[] = [
     priority: 'medium',
     category: 'app',
     sequence: 'calculator-intro',
-    sequenceOrder: 4,
+    sequenceOrder: 2,
+  },
+  // Calculator - NEW: Option toggles (hidden power)
+  {
+    id: 'hidden-calculator-option-toggles',
+    title: 'Enable/Disable Options per Template',
+    description: 'In Settings → Products, toggle which options appear for each treatment type. Simplify your workflow.',
+    position: 'bottom',
+    trigger: { type: 'time_on_page', page: '/app', section: 'calculator', delayMs: 45000 },
+    priority: 'medium',
+    category: 'feature',
   },
 
-  // Library
+  // Library - NEW: Quote templates (hidden feature)
   {
-    id: 'app-library-templates',
-    title: 'Your Template Library',
-    description: 'Manage all your product templates here. Edit pricing, options, and manufacturing settings.',
+    id: 'hidden-library-quote-templates',
+    title: 'Save Quote Templates',
+    description: 'Save your quote layouts as templates for consistent client presentations across all jobs.',
     position: 'bottom',
     trigger: { type: 'first_visit', page: '/app', section: 'library' },
     priority: 'medium',
-    category: 'app',
+    category: 'feature',
   },
 
-  // Hidden Features
+  // Global Features - Keep keyboard shortcuts (power user feature)
   {
     id: 'app-feature-keyboard-shortcuts',
     title: 'Keyboard Shortcuts',
@@ -534,13 +336,14 @@ export const appTeachingPoints: TeachingPoint[] = [
     priority: 'low',
     category: 'feature',
   },
+
+  // NEW: Offline support (hidden resilience)
   {
-    id: 'app-feature-dark-mode-toggle',
-    title: 'Quick Theme Toggle',
-    description: 'Switch between light and dark mode anytime from the header menu.',
-    targetSelector: '[data-teaching="theme-toggle"]',
+    id: 'hidden-offline-support',
+    title: 'Works Offline Too',
+    description: 'The app caches your data so you can keep working even with poor internet. Changes sync when you\'re back online.',
     position: 'bottom',
-    trigger: { type: 'time_on_page', delayMs: 120000 },
+    trigger: { type: 'time_on_page', page: '/app', section: 'dashboard', delayMs: 90000 },
     priority: 'low',
     category: 'feature',
   },
@@ -556,19 +359,19 @@ export const allTeachingPoints: TeachingPoint[] = [
 ];
 
 // Helper to get teaching points by page/section
+// FIXED: Strict exact matching to prevent tips appearing on wrong pages
 export const getTeachingPointsForPage = (page: string, section?: string): TeachingPoint[] => {
   return allTeachingPoints.filter(tp => {
     // Normalize page paths
     const normalizedPage = page === '/' ? '/app' : page;
     const triggerPage = tp.trigger.page === '/' ? '/app' : tp.trigger.page;
     
-    // Check page match (exact or prefix)
-    const pageMatch = !triggerPage || 
-      triggerPage === normalizedPage || 
-      normalizedPage.startsWith(triggerPage);
+    // STRICT page match - exact match only, no prefix matching
+    const pageMatch = !triggerPage || triggerPage === normalizedPage;
     
-    // Check section match
-    const sectionMatch = !section || !tp.trigger.section || tp.trigger.section === section;
+    // STRICT section match - if teaching point defines a section, it must match exactly
+    // If no section is provided to this function, only show tips without section requirement
+    const sectionMatch = !tp.trigger.section || (section && tp.trigger.section === section);
     
     return pageMatch && sectionMatch;
   });
