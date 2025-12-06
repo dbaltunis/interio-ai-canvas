@@ -80,8 +80,11 @@ export const useQuotePayment = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Invalidate all quote-related queries to refresh UI
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      queryClient.invalidateQueries({ queryKey: ["quote-versions"] });
+      queryClient.invalidateQueries({ queryKey: ["quote-items"] });
       toast.success("Payment configuration updated");
     },
     onError: (error: Error) => {
