@@ -76,6 +76,7 @@ interface CostCalculationSummaryProps {
     pricePerMeter: number;
     horizontalPieces: number;
     orientation: 'horizontal' | 'vertical';
+    usesLeftover?: boolean;
   };
   manufacturingDetails?: ManufacturingDetails;
 }
@@ -558,12 +559,16 @@ export const CostCalculationSummary = ({
                         {/* ✅ USE PRE-CALCULATED VALUES - SINGLE SOURCE OF TRUTH */}
                         {fabricDisplayData.orientation === 'horizontal' && fabricDisplayData.horizontalPieces > 1
                           ? `${fabricDisplayData.linearMeters.toFixed(2)}m × ${fabricDisplayData.horizontalPieces} pieces = ${fabricDisplayData.totalMeters.toFixed(2)}m × ${formatPrice(fabricDisplayData.pricePerMeter)}/m`
-                          : `${fabricDisplayData.linearMeters.toFixed(2)}m × ${formatPrice(fabricDisplayData.pricePerMeter)}/m`
+                          : fabricDisplayData.usesLeftover 
+                            ? `${fabricDisplayData.linearMeters.toFixed(2)}m × 1 piece (using leftover) × ${formatPrice(fabricDisplayData.pricePerMeter)}/m`
+                            : `${fabricDisplayData.linearMeters.toFixed(2)}m × ${formatPrice(fabricDisplayData.pricePerMeter)}/m`
                         }
                       </span>
                       <span className="text-xs text-muted-foreground/80 mt-0.5">
                         {fabricDisplayData.orientation === 'horizontal'
-                          ? `⚡ Railroaded orientation: ${fabricDisplayData.horizontalPieces} piece(s) needed`
+                          ? fabricDisplayData.usesLeftover 
+                            ? `✓ Using leftover fabric - charged for 1 piece only`
+                            : `⚡ Railroaded orientation: ${fabricDisplayData.horizontalPieces} piece(s) needed`
                           : `📏 Standard vertical: ${fabricDisplayData.horizontalPieces} width(s)`
                         }
                       </span>

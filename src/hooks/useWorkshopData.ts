@@ -228,7 +228,7 @@ export const useWorkshopData = (projectId?: string) => {
       const md = summary?.measurements_details || {};
       const isHorizontal = md.fabric_rotated === true || md.roll_direction === 'horizontal';
       const horizontalPiecesNeeded = md.horizontal_pieces_needed || (isHorizontal ? Math.ceil((heightMM || 0) / ((fabricDetails?.fabricWidth || 137) * 10)) : 0);
-      const usesLeftover = md.uses_leftover_for_horizontal === true;
+      const usesLeftover = md.uses_leftover_for_horizontal === true || md.uses_leftover_for_horizontal === 'true';
       
       // Total drop with hems for manufacturing
       const totalDropCm = (md.total_drop_per_width_cm || 0) || 
