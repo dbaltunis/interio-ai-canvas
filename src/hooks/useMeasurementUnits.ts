@@ -1,13 +1,28 @@
-
 import { useBusinessSettings, type MeasurementUnits, defaultMeasurementUnits, convertLength, formatMeasurement } from "./useBusinessSettings";
+import { settingsCacheService, CACHE_KEYS } from "@/services/settingsCacheService";
 
 export const useMeasurementUnits = () => {
   const { data: businessSettings, isLoading } = useBusinessSettings();
   
   const units: MeasurementUnits = (() => {
     try {
-      return businessSettings?.measurement_units ? 
-        JSON.parse(businessSettings.measurement_units) : defaultMeasurementUnits;
+      // Priority 1: Use fetched business settings if available
+      if (businessSettings?.measurement_units) {
+        return JSON.parse(businessSettings.measurement_units);
+      }
+      
+      // Priority 2: Use cached settings for instant load (prevents unit flash)
+      const cachedSettings = settingsCacheService.getInstant(CACHE_KEYS.BUSINESS_SETTINGS);
+      if (cachedSettings?.measurement_units) {
+        try {
+          return JSON.parse(cachedSettings.measurement_units);
+        } catch {
+          // Fall through to defaults
+        }
+      }
+      
+      // Priority 3: Fall back to defaults (MM-based to match database standard)
+      return defaultMeasurementUnits;
     } catch (error) {
       console.warn('Failed to parse measurement units, using defaults:', error);
       return defaultMeasurementUnits;
@@ -49,25 +64,57 @@ export const useMeasurementUnits = () => {
     return formatMeasurement(converted, units.fabric);
   };
 
-  const getLengthUnitLabel = (): string => {
-    const labels: Record<string, string> = {
+  // Unit labels for display - includes both short (") and long (inches) formats
+  const getLengthUnitLabel = (format: 'short' | 'long' = 'long'): string => {
+    const shortLabels: Record<string, string> = {
       'mm': 'mm',
       'cm': 'cm', 
       'm': 'm',
-      'inches': 'inches',
-      'feet': 'feet'
+      'inches': '"',
+      'feet': "'"
     };
-    return labels[units.length] || units.length;
+    const longLabels: Record<string, string> = {
+      'mm': 'mm',
+      'cm': 'cm', 
+      'm': 'm',
+      'inches': 'in',
+      'feet': 'ft'
+    };
+    return format === 'short' 
+      ? (shortLabels[units.length] || units.length)
+      : (longLabels[units.length] || units.length);
   };
 
-  const getFabricUnitLabel = (): string => {
-    const labels: Record<string, string> = {
+  const getFabricUnitLabel = (format: 'short' | 'long' = 'long'): string => {
+    const shortLabels: Record<string, string> = {
       'cm': 'cm',
       'm': 'm', 
-      'inches': 'inches',
-      'yards': 'yards'
+      'inches': '"',
+      'yards': 'yd'
     };
-    return labels[units.fabric] || units.fabric;
+    const longLabels: Record<string, string> = {
+      'cm': 'cm',
+      'm': 'm', 
+      'inches': 'in',
+      'yards': 'yd'
+    };
+    return format === 'short' 
+      ? (shortLabels[units.fabric] || units.fabric)
+      : (longLabels[units.fabric] || units.fabric);
+  };
+
+  // Get per-unit pricing label based on system (metric vs imperial)
+  const getPerUnitLabel = (type: 'length' | 'fabric' | 'area'): string => {
+    if (type === 'length') {
+      return units.system === 'imperial' ? 'Per Running Yard' : 'Per Running Metre';
+    }
+    if (type === 'fabric') {
+      return units.system === 'imperial' ? 'Per Running Yard' : 'Per Running Metre';
+    }
+    if (type === 'area') {
+      return units.system === 'imperial' ? 'Per sq ft' : 'Per m²';
+    }
+    return 'Per Unit';
   };
 
   return {
@@ -80,6 +127,7 @@ export const useMeasurementUnits = () => {
     formatFabric,
     getLengthUnitLabel,
     getFabricUnitLabel,
+    getPerUnitLabel,
     isLoading
   };
 };

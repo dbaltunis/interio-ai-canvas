@@ -12,7 +12,8 @@
 
 import { convertLength, type MeasurementUnits } from "@/hooks/useBusinessSettings";
 
-const UNIT_LABELS: Record<string, string> = {
+// Short labels for inline display (e.g., 100mm, 39")
+const UNIT_LABELS_SHORT: Record<string, string> = {
   'mm': 'mm',
   'cm': 'cm',
   'm': 'm',
@@ -20,6 +21,19 @@ const UNIT_LABELS: Record<string, string> = {
   'feet': "'",
   'yards': 'yd'
 };
+
+// Long labels for headers and descriptions (e.g., "Width in inches")
+const UNIT_LABELS_LONG: Record<string, string> = {
+  'mm': 'mm',
+  'cm': 'cm',
+  'm': 'm',
+  'inches': 'in',
+  'feet': 'ft',
+  'yards': 'yd'
+};
+
+// For backward compatibility
+const UNIT_LABELS = UNIT_LABELS_SHORT;
 
 /**
  * Get the label/symbol for a unit

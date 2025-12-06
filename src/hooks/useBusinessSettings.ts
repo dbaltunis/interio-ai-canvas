@@ -63,12 +63,13 @@ export interface MeasurementUnits {
   currency: 'NZD' | 'AUD' | 'USD' | 'GBP' | 'EUR' | 'ZAR';
 }
 
+// Default to MM to match most users' settings and prevent flash during load
 export const defaultMeasurementUnits: MeasurementUnits = {
   system: 'metric',
-  length: 'cm',
+  length: 'mm',  // ✅ Changed from 'cm' to match database standard
   area: 'sq_cm', 
   fabric: 'm',
-  currency: 'USD' // Changed from EUR - should never be used if user has settings
+  currency: 'USD'
 };
 
 export const defaultImperialMeasurementUnits: MeasurementUnits = {
