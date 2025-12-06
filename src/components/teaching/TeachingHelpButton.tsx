@@ -52,11 +52,11 @@ export const TeachingHelpButton = ({
     currentSection = searchParams.get('section') || 'personal';
   }
 
+  // ONLY get tips for current section - strict filtering
   const pageTeachings = getTeachingPointsForPage(currentPage, currentSection);
-  const allTeachings = getTeachingPointsForPage(currentPage);
   
-  // Group teachings by section
-  const groupedTeachings = allTeachings.reduce<Record<string, TeachingPoint[]>>((acc, tp) => {
+  // Group by section - but only show CURRENT section's tips
+  const groupedTeachings = pageTeachings.reduce<Record<string, TeachingPoint[]>>((acc, tp) => {
     const section = tp.trigger.section || 'general';
     if (!acc[section]) acc[section] = [];
     acc[section].push(tp);

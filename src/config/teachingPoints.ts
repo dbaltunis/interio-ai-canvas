@@ -326,173 +326,146 @@ export const settingsTeachingPoints: TeachingPoint[] = [
 // ============================================
 
 export const appTeachingPoints: TeachingPoint[] = [
-  // Dashboard - NEW: Drag widgets (hidden feature)
+  // Dashboard tips (2 tips)
   {
-    id: 'hidden-dashboard-drag-widgets',
-    title: 'Rearrange Your Dashboard',
-    description: 'Drag and drop dashboard widgets to customize your layout. Put your most-used data first.',
+    id: 'app-dashboard-widgets',
+    title: 'Customize Your Dashboard',
+    description: 'Drag and drop widgets to rearrange your dashboard. Put your most important data first.',
+    targetSelector: '[data-teaching="dashboard-widgets"]',
     position: 'bottom',
-    trigger: { type: 'time_on_page', page: '/app', section: 'dashboard', delayMs: 30000 },
-    priority: 'medium',
-    category: 'feature',
-  },
-
-  // Jobs/Projects - Keep column customize (hidden icon)
-  {
-    id: 'app-jobs-column-customize',
-    title: 'Show/Hide Table Columns',
-    description: 'Click the settings icon to choose which columns appear. Show or hide data that matters to you.',
-    targetSelector: '[data-teaching="column-settings"]',
-    position: 'left',
-    trigger: { type: 'feature_unused', page: '/app', section: 'projects' },
+    trigger: { type: 'first_visit', page: '/app', section: 'dashboard' },
     priority: 'medium',
     category: 'app',
-    sequence: 'jobs-intro',
-    sequenceOrder: 1,
   },
-  // Jobs - NEW: Export CSV (hidden feature)
   {
-    id: 'hidden-jobs-export-csv',
-    title: 'Export Jobs to CSV',
+    id: 'app-dashboard-quick-actions',
+    title: 'Quick Actions Available',
+    description: 'Use the quick action buttons to create quotes, add clients, or start new jobs instantly.',
+    targetSelector: '[data-teaching="quick-actions"]',
+    position: 'bottom',
+    trigger: { type: 'time_on_page', page: '/app', section: 'dashboard', delayMs: 30000 },
+    priority: 'low',
+    category: 'app',
+  },
+
+  // Jobs/Projects tips (2 tips)
+  {
+    id: 'app-jobs-column-customize',
+    title: 'Customize Table Columns',
+    description: 'Click the settings icon to choose which columns appear. Show only the data that matters to you.',
+    targetSelector: '[data-teaching="column-settings"]',
+    position: 'left',
+    trigger: { type: 'first_visit', page: '/app', section: 'projects' },
+    priority: 'medium',
+    category: 'app',
+  },
+  {
+    id: 'app-jobs-export',
+    title: 'Export to CSV',
     description: 'Download your job list as a spreadsheet for reporting, backup, or sharing with your accountant.',
+    targetSelector: '[data-teaching="export-button"]',
     position: 'bottom',
     trigger: { type: 'feature_unused', page: '/app', section: 'projects' },
     priority: 'low',
-    category: 'feature',
+    category: 'app',
   },
 
-  // Clients - Keep timeline (powerful feature)
+  // Clients/CRM tips (2 tips)
   {
     id: 'app-clients-timeline',
-    title: 'Client Activity Timeline',
+    title: 'Activity Timeline',
     description: 'Every interaction is logged: quotes sent, calls made, appointments scheduled. Never lose context.',
+    targetSelector: '[data-teaching="client-timeline"]',
     position: 'right',
-    trigger: { type: 'after_action', action: 'view_client' },
+    trigger: { type: 'first_visit', page: '/app', section: 'crm' },
     priority: 'medium',
     category: 'app',
   },
-  // Clients - Keep lead scoring (hidden intelligence)
   {
     id: 'app-clients-lead-scoring',
     title: 'Smart Lead Scoring',
-    description: 'Clients are automatically scored based on engagement. Focus on hot leads first!',
+    description: 'Clients are automatically scored based on engagement. Focus on your hottest leads first!',
+    targetSelector: '[data-teaching="lead-score"]',
     position: 'bottom',
     trigger: { type: 'feature_unused', page: '/app', section: 'crm' },
     priority: 'low',
     category: 'app',
   },
 
-  // Inventory - Keep CSV import (huge time saver)
+  // Inventory tips (3 tips)
   {
     id: 'app-inventory-csv-import',
-    title: 'Import Hundreds of Products',
-    description: 'Upload a CSV file to bulk import fabrics, materials, or hardware in one go. Saves hours of data entry.',
+    title: 'Import Products in Bulk',
+    description: 'Upload a CSV file to import hundreds of fabrics, materials, or hardware in one go. Saves hours!',
     targetSelector: '[data-teaching="inventory-import"]',
     position: 'left',
-    trigger: { type: 'feature_unused', page: '/app', section: 'inventory' },
+    trigger: { type: 'first_visit', page: '/app', section: 'inventory' },
     priority: 'high',
     category: 'app',
-    sequence: 'inventory-intro',
-    sequenceOrder: 1,
   },
-  // Inventory - Keep pricing grid (powerful automation)
   {
     id: 'app-inventory-pricing-grid',
-    title: 'Auto-Price with Grids',
-    description: 'Link pricing grids to products - prices calculate automatically based on width and drop dimensions.',
+    title: 'Pricing Grids Auto-Calculate',
+    description: 'Link pricing grids to products - prices calculate automatically based on width and drop.',
+    targetSelector: '[data-teaching="pricing-grid"]',
     position: 'bottom',
     trigger: { type: 'feature_unused', page: '/app', section: 'inventory' },
     priority: 'high',
     category: 'app',
-    sequence: 'inventory-intro',
-    sequenceOrder: 2,
   },
-  // Inventory - NEW: Colors flow to quotes (hidden connection)
   {
-    id: 'hidden-inventory-colors-flow',
+    id: 'app-inventory-colors',
     title: 'Colors Flow to Quotes',
-    description: 'Colors you add to fabrics automatically appear for selection in the calculator and show on client quotes.',
+    description: 'Colors you add to fabrics appear for selection in the calculator and show on client quotes.',
+    targetSelector: '[data-teaching="product-colors"]',
     position: 'bottom',
-    trigger: { type: 'first_visit', page: '/app', section: 'inventory' },
+    trigger: { type: 'feature_unused', page: '/app', section: 'inventory' },
     priority: 'medium',
-    category: 'feature',
-  },
-  // Inventory - NEW: TWC import (powerful integration)
-  {
-    id: 'hidden-inventory-twc-import',
-    title: 'Import TWC Blinds Catalog',
-    description: 'Import from TWC\'s 400+ product catalog and create templates with pricing grids in one click.',
-    position: 'bottom',
-    trigger: { type: 'empty_state', page: '/app', section: 'inventory' },
-    priority: 'medium',
-    category: 'feature',
+    category: 'app',
   },
 
-  // Calculator - Keep options and preview (key workflow)
+  // Calculator tips (2 tips)
   {
     id: 'app-calculator-options',
     title: 'Configure Options',
     description: 'Select lining, controls, finishes, and accessories. Each choice updates the price in real-time.',
+    targetSelector: '[data-teaching="calculator-options"]',
     position: 'right',
-    trigger: { type: 'after_action', action: 'enter_measurements' },
+    trigger: { type: 'first_visit', page: '/app', section: 'calculator' },
     priority: 'high',
     category: 'app',
-    sequence: 'calculator-intro',
-    sequenceOrder: 1,
   },
   {
     id: 'app-calculator-preview',
     title: 'Live Quote Preview',
     description: 'See exactly what your client will receive. Review line items and totals before sending.',
+    targetSelector: '[data-teaching="quote-preview"]',
     position: 'left',
-    trigger: { type: 'after_action', action: 'configure_options' },
+    trigger: { type: 'feature_unused', page: '/app', section: 'calculator' },
     priority: 'medium',
     category: 'app',
-    sequence: 'calculator-intro',
-    sequenceOrder: 2,
-  },
-  // Calculator - NEW: Option toggles (hidden power)
-  {
-    id: 'hidden-calculator-option-toggles',
-    title: 'Enable/Disable Options per Template',
-    description: 'In Settings → Products, toggle which options appear for each treatment type. Simplify your workflow.',
-    position: 'bottom',
-    trigger: { type: 'time_on_page', page: '/app', section: 'calculator', delayMs: 45000 },
-    priority: 'medium',
-    category: 'feature',
   },
 
-  // Library - NEW: Quote templates (hidden feature)
+  // Library tips (2 tips)
   {
-    id: 'hidden-library-quote-templates',
+    id: 'app-library-templates',
     title: 'Save Quote Templates',
-    description: 'Save your quote layouts as templates for consistent client presentations across all jobs.',
+    description: 'Save your quote layouts as templates for consistent presentations across all jobs.',
+    targetSelector: '[data-teaching="library-templates"]',
     position: 'bottom',
     trigger: { type: 'first_visit', page: '/app', section: 'library' },
     priority: 'medium',
-    category: 'feature',
+    category: 'app',
   },
-
-  // Global Features - Keep keyboard shortcuts (power user feature)
   {
-    id: 'app-feature-keyboard-shortcuts',
-    title: 'Keyboard Shortcuts',
-    description: 'Press "?" anywhere to see keyboard shortcuts. Navigate faster with Cmd+K for quick search.',
+    id: 'app-library-export',
+    title: 'Export Documents',
+    description: 'Download quotes and invoices as PDF files to share with clients or keep for records.',
+    targetSelector: '[data-teaching="library-export"]',
     position: 'bottom',
-    trigger: { type: 'time_on_page', delayMs: 60000 },
+    trigger: { type: 'feature_unused', page: '/app', section: 'library' },
     priority: 'low',
-    category: 'feature',
-  },
-
-  // NEW: Offline support (hidden resilience)
-  {
-    id: 'hidden-offline-support',
-    title: 'Works Offline Too',
-    description: 'The app caches your data so you can keep working even with poor internet. Changes sync when you\'re back online.',
-    position: 'bottom',
-    trigger: { type: 'time_on_page', page: '/app', section: 'dashboard', delayMs: 90000 },
-    priority: 'low',
-    category: 'feature',
+    category: 'app',
   },
 ];
 
