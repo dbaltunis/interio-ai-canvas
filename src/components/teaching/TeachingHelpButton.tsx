@@ -17,6 +17,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface TeachingHelpButtonProps {
   className?: string;
+  /** Render as icon-only button for compact layouts */
+  variant?: 'default' | 'icon';
 }
 
 /**
@@ -25,6 +27,7 @@ interface TeachingHelpButtonProps {
  */
 export const TeachingHelpButton = ({
   className,
+  variant = 'default',
 }: TeachingHelpButtonProps) => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
@@ -79,6 +82,8 @@ export const TeachingHelpButton = ({
       .join(' ');
   };
 
+  const isIconVariant = variant === 'icon';
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -86,31 +91,53 @@ export const TeachingHelpButton = ({
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          <Button
-            variant="default"
-            size="sm"
-            className={cn(
-              "relative gap-2 rounded-full shadow-lg",
-              "bg-primary hover:bg-primary/90",
-              "transition-all duration-200",
-              className
-            )}
-          >
-            <Lightbulb className="h-4 w-4" />
-            <span className="text-sm font-medium">Tips</span>
-            <AnimatePresence>
-              {unseenCount > 0 && isTeachingEnabled && (
-                <motion.span 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-bold"
-                >
-                  {unseenCount}
-                </motion.span>
+          {isIconVariant ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn("h-8 w-8 p-0 relative", className)}
+            >
+              <Lightbulb className="h-4 w-4" />
+              <AnimatePresence>
+                {unseenCount > 0 && isTeachingEnabled && (
+                  <motion.span 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center font-bold"
+                  >
+                    {unseenCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              size="sm"
+              className={cn(
+                "relative gap-2 rounded-full shadow-lg",
+                "bg-primary hover:bg-primary/90",
+                "transition-all duration-200",
+                className
               )}
-            </AnimatePresence>
-          </Button>
+            >
+              <Lightbulb className="h-4 w-4" />
+              <span className="text-sm font-medium">Tips</span>
+              <AnimatePresence>
+                {unseenCount > 0 && isTeachingEnabled && (
+                  <motion.span 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-bold"
+                  >
+                    {unseenCount}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </Button>
+          )}
         </motion.div>
       </PopoverTrigger>
       <PopoverContent 

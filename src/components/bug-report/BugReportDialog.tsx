@@ -183,7 +183,7 @@ export const BugReportDialog = ({
         route: location.pathname,
         user_agent: navigator.userAgent,
         browser_info: browserInfo,
-        app_version: "v2.0",
+        app_version: "v2.3.1",
         images: images.length > 0 ? images : null,
       });
 
@@ -216,7 +216,7 @@ export const BugReportDialog = ({
     }
   };
 
-  const version = "v2.0";
+  const version = "v2.3.1";
 
   // Floating button hidden - support is accessed via user profile slider
   const showFloatingButton = false;
@@ -292,27 +292,7 @@ export const BugReportDialog = ({
                   </CardHeader>
                 </Card>
 
-                <Card 
-                  className="cursor-pointer hover:border-primary transition-colors"
-                  onClick={() => {
-                    setOpen(false);
-                    window.location.href = '/?tab=bug-reports';
-                  }}
-                >
-                  <CardHeader>
-                    <div className="flex items-start gap-4">
-                      <div className="p-3 rounded-lg bg-muted">
-                        <List className="h-6 w-6" />
-                      </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-lg">View All Bugs</CardTitle>
-                        <CardDescription className="mt-2">
-                          See all reported bugs and their status
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                </Card>
+                {/* View All Bugs - hidden in production */}
 
                 <Button
                   variant="outline"

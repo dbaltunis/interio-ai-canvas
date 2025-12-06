@@ -23,7 +23,7 @@ import { InteractionUnlockGuard } from "./components/system/InteractionUnlockGua
 import { LoadingState } from "./components/ui/loading-state";
 import { ProjectInventoryTrackingHandler } from "./components/projects/ProjectInventoryTrackingHandler";
 import { SyncIndicator } from "./components/system/SyncIndicator";
-import { FloatingTeachingButton } from "./components/teaching/TeachingHelpButton";
+// FloatingTeachingButton moved to TeamCollaborationCenter
 import { TeachingOverlay } from "./components/teaching/TeachingOverlay";
 import "@/styles/theme.css";
 
@@ -150,7 +150,6 @@ const App = () => {
                   <PresenceProvider>
                     <EmailRealtimeProvider>
                       <BugReportDialog />
-                      <FloatingTeachingButton />
                       <TeachingOverlay />
                   <Suspense fallback={<></>}>
                   <Routes>
