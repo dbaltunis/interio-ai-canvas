@@ -26,8 +26,15 @@ export const RoomActionsMenu = ({
   onChangeRoomType,
   isCopying = false
 }: RoomActionsMenuProps) => {
-  const canEditJobs = useHasPermission('edit_all_jobs') || useHasPermission('edit_own_jobs');
-  const canDeleteJobs = useHasPermission('delete_jobs');
+  const editAllJobs = useHasPermission('edit_all_jobs');
+  const editOwnJobs = useHasPermission('edit_own_jobs');
+  const deleteJobs = useHasPermission('delete_jobs');
+  
+  // Default to true during loading for better UX (RLS will enforce permissions anyway)
+  const canEditJobs = editAllJobs === undefined && editOwnJobs === undefined 
+    ? true 
+    : (editAllJobs || editOwnJobs);
+  const canDeleteJobs = deleteJobs === undefined ? true : deleteJobs;
   
   const roomTypes = [
     { value: "living_room", label: "Living Room", icon: Home },

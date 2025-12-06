@@ -1,4 +1,4 @@
-
+import { useQueryClient } from "@tanstack/react-query";
 import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom } from "@/hooks/useRooms";
 import { useSurfaces, useCreateSurface, useUpdateSurface, useDeleteSurface } from "@/hooks/useSurfaces";
 import { useTreatments, useCreateTreatment, useUpdateTreatment, useDeleteTreatment } from "@/hooks/useTreatments";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const useJobHandlers = (project: any) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const projectId = project?.project_id || project?.id;
   const clientId = project?.client_id;
   
@@ -232,8 +233,15 @@ export const useJobHandlers = (project: any) => {
       // Copy treatments and re-link to the newly created surfaces
       const roomTreatments = allTreatments?.filter(t => t.room_id === room.id) || [];
       for (const treatment of roomTreatments) {
-        const mappedWindowId = surfaceIdMap[treatment.window_id];
-        if (!mappedWindowId) continue; // skip if the original window wasn't copied
+        // If treatment has a window_id, map it to the new surface
+        // If treatment has no window_id (room-level treatment), use null
+        const mappedWindowId = treatment.window_id 
+          ? surfaceIdMap[treatment.window_id] 
+          : null;
+        
+        // Only skip if window_id existed but wasn't found in map
+        if (treatment.window_id && !mappedWindowId) continue;
+        
         await createTreatment.mutateAsync({
           project_id: projectId,
           room_id: newRoom.id,
@@ -259,6 +267,31 @@ export const useJobHandlers = (project: any) => {
           status: treatment.status
         });
       }
+
+      // Copy room products from the original room to the new room
+      const { data: roomProducts } = await supabase
+        .from("room_products")
+        .select("*")
+        .eq("room_id", room.id);
+
+      if (roomProducts && roomProducts.length > 0) {
+        for (const product of roomProducts) {
+          const { id, room_id, created_at, updated_at, ...productData } = product;
+          await supabase
+            .from("room_products")
+            .insert({
+              ...productData,
+              room_id: newRoom.id,
+              user_id: user.id
+            });
+        }
+      }
+
+      // Invalidate queries to refresh UI
+      queryClient.invalidateQueries({ queryKey: ["room-products"] });
+      queryClient.invalidateQueries({ queryKey: ["project-room-products"] });
+      queryClient.invalidateQueries({ queryKey: ["quote-items"] });
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
 
       toast({
         title: "Success",
