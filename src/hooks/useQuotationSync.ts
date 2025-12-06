@@ -536,11 +536,19 @@ export const useQuotationSync = ({
       const room = rooms.find(r => r.id === product.room_id);
       const roomName = room?.name || 'Unknown Room';
       const inventoryItem = product.inventory_item;
+      const isCustom = product.is_custom;
+      
+      // For custom items, use product fields; for inventory items, use inventory_item
+      const displayName = isCustom ? (product.name || 'Custom Item') : (inventoryItem?.name || 'Product');
+      const displayDescription = isCustom 
+        ? (product.description || 'Custom') 
+        : (inventoryItem?.subcategory?.replace(/_/g, ' ') || inventoryItem?.category || '');
+      const displayImage = isCustom ? product.image_url : inventoryItem?.image_url;
       
       items.push({
         id: `product-${product.id}`,
-        name: inventoryItem?.name || 'Product',
-        description: inventoryItem?.subcategory?.replace(/_/g, ' ') || inventoryItem?.category || '',
+        name: displayName,
+        description: displayDescription,
         quantity: product.quantity,
         unit_price: product.unit_price,
         total: product.total_price,
@@ -553,9 +561,10 @@ export const useQuotationSync = ({
         })(),
         room_name: roomName,
         room_id: product.room_id,
-        image_url: inventoryItem?.image_url,
+        image_url: displayImage,
         isRoomProduct: true,
-        inventory_item_id: product.inventory_item_id,
+        isCustomProduct: isCustom,
+        inventory_item_id: isCustom ? null : product.inventory_item_id,
       });
       
       roomProductsTotal += product.total_price;
@@ -574,12 +583,12 @@ export const useQuotationSync = ({
     
     if (taxInclusive) {
       // Prices already include tax, so extract tax from total
-      total = baseSubtotal;
-      subtotal = baseSubtotal / (1 + taxRate);
+      total = combinedSubtotal;
+      subtotal = combinedSubtotal / (1 + taxRate);
       taxAmount = total - subtotal;
     } else {
       // Prices exclude tax, so add tax on top
-      subtotal = baseSubtotal;
+      subtotal = combinedSubtotal;
       taxAmount = subtotal * taxRate;
       total = subtotal + taxAmount;
     }
