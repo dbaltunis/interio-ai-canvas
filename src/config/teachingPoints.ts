@@ -326,7 +326,7 @@ export const settingsTeachingPoints: TeachingPoint[] = [
 // ============================================
 
 export const appTeachingPoints: TeachingPoint[] = [
-  // Dashboard tips (2 tips)
+  // ========== DASHBOARD (2 tips) ==========
   {
     id: 'app-dashboard-widgets',
     title: 'Customize Your Dashboard',
@@ -338,21 +338,43 @@ export const appTeachingPoints: TeachingPoint[] = [
     category: 'app',
   },
   {
-    id: 'app-dashboard-quick-actions',
-    title: 'Quick Actions Available',
-    description: 'Use the quick action buttons to create quotes, add clients, or start new jobs instantly.',
-    targetSelector: '[data-teaching="quick-actions"]',
+    id: 'app-dashboard-kpis',
+    title: 'Track Key Metrics',
+    description: 'Monitor pending quotes, revenue, and client activity at a glance. Data updates in real-time.',
+    targetSelector: '[data-teaching="dashboard-kpis"]',
     position: 'bottom',
-    trigger: { type: 'time_on_page', page: '/app', section: 'dashboard', delayMs: 30000 },
+    trigger: { type: 'time_on_page', page: '/app', section: 'dashboard', delayMs: 20000 },
     priority: 'low',
     category: 'app',
   },
 
-  // Jobs/Projects tips (2 tips)
+  // ========== CLIENTS (2 tips) ==========
+  {
+    id: 'app-clients-search',
+    title: 'Search & Filter Clients',
+    description: 'Use the search bar to find clients instantly. Filter by tags, status, or recent activity.',
+    targetSelector: '[data-teaching="client-search"]',
+    position: 'bottom',
+    trigger: { type: 'first_visit', page: '/app', section: 'clients' },
+    priority: 'medium',
+    category: 'app',
+  },
+  {
+    id: 'app-clients-tags',
+    title: 'Organize with Tags',
+    description: 'Add custom tags to clients for easy filtering. Group by project type, location, or priority.',
+    targetSelector: '[data-teaching="client-tags"]',
+    position: 'bottom',
+    trigger: { type: 'feature_unused', page: '/app', section: 'clients' },
+    priority: 'low',
+    category: 'app',
+  },
+
+  // ========== JOBS/PROJECTS (2 tips) ==========
   {
     id: 'app-jobs-column-customize',
     title: 'Customize Table Columns',
-    description: 'Click the settings icon to choose which columns appear. Show only the data that matters to you.',
+    description: 'Click the settings icon to choose which columns appear. Show only the data that matters.',
     targetSelector: '[data-teaching="column-settings"]',
     position: 'left',
     trigger: { type: 'first_visit', page: '/app', section: 'projects' },
@@ -360,31 +382,75 @@ export const appTeachingPoints: TeachingPoint[] = [
     category: 'app',
   },
   {
-    id: 'app-jobs-export',
-    title: 'Export to CSV',
-    description: 'Download your job list as a spreadsheet for reporting, backup, or sharing with your accountant.',
-    targetSelector: '[data-teaching="export-button"]',
+    id: 'app-jobs-status',
+    title: 'Track Job Progress',
+    description: 'Click on status badges to update job progress. Move jobs through your workflow stages.',
+    targetSelector: '[data-teaching="job-status"]',
     position: 'bottom',
     trigger: { type: 'feature_unused', page: '/app', section: 'projects' },
     priority: 'low',
     category: 'app',
   },
 
-  // Clients/CRM tips (2 tips)
+  // ========== CALENDAR (2 tips) ==========
   {
-    id: 'app-clients-timeline',
-    title: 'Activity Timeline',
-    description: 'Every interaction is logged: quotes sent, calls made, appointments scheduled. Never lose context.',
-    targetSelector: '[data-teaching="client-timeline"]',
-    position: 'right',
+    id: 'app-calendar-views',
+    title: 'Multiple Calendar Views',
+    description: 'Switch between day, week, and month views. Find the layout that works best for you.',
+    targetSelector: '[data-teaching="calendar-views"]',
+    position: 'bottom',
+    trigger: { type: 'first_visit', page: '/app', section: 'calendar' },
+    priority: 'medium',
+    category: 'app',
+  },
+  {
+    id: 'app-calendar-drag',
+    title: 'Drag to Reschedule',
+    description: 'Drag and drop appointments to reschedule them. Changes save automatically.',
+    targetSelector: '[data-teaching="calendar-events"]',
+    position: 'bottom',
+    trigger: { type: 'feature_unused', page: '/app', section: 'calendar' },
+    priority: 'low',
+    category: 'app',
+  },
+
+  // ========== EMAILS (2 tips) ==========
+  {
+    id: 'app-emails-templates',
+    title: 'Email Templates',
+    description: 'Create reusable email templates for quotes, follow-ups, and confirmations. Save time!',
+    targetSelector: '[data-teaching="email-templates"]',
+    position: 'bottom',
+    trigger: { type: 'first_visit', page: '/app', section: 'emails' },
+    priority: 'medium',
+    category: 'app',
+  },
+  {
+    id: 'app-emails-tracking',
+    title: 'Track Email Opens',
+    description: 'See when clients open your emails. Follow up at the perfect moment.',
+    targetSelector: '[data-teaching="email-tracking"]',
+    position: 'bottom',
+    trigger: { type: 'feature_unused', page: '/app', section: 'emails' },
+    priority: 'low',
+    category: 'app',
+  },
+
+  // ========== CRM (2 tips) ==========
+  {
+    id: 'app-crm-pipeline',
+    title: 'Sales Pipeline View',
+    description: 'Visualize your leads in a pipeline. Drag cards between stages to track progress.',
+    targetSelector: '[data-teaching="crm-pipeline"]',
+    position: 'bottom',
     trigger: { type: 'first_visit', page: '/app', section: 'crm' },
     priority: 'medium',
     category: 'app',
   },
   {
-    id: 'app-clients-lead-scoring',
+    id: 'app-crm-lead-scoring',
     title: 'Smart Lead Scoring',
-    description: 'Clients are automatically scored based on engagement. Focus on your hottest leads first!',
+    description: 'Clients are automatically scored based on engagement. Focus on your hottest leads!',
     targetSelector: '[data-teaching="lead-score"]',
     position: 'bottom',
     trigger: { type: 'feature_unused', page: '/app', section: 'crm' },
@@ -392,11 +458,11 @@ export const appTeachingPoints: TeachingPoint[] = [
     category: 'app',
   },
 
-  // Inventory tips (3 tips)
+  // ========== INVENTORY (3 tips) ==========
   {
     id: 'app-inventory-csv-import',
     title: 'Import Products in Bulk',
-    description: 'Upload a CSV file to import hundreds of fabrics, materials, or hardware in one go. Saves hours!',
+    description: 'Upload a CSV file to import hundreds of products at once. Saves hours of data entry!',
     targetSelector: '[data-teaching="inventory-import"]',
     position: 'left',
     trigger: { type: 'first_visit', page: '/app', section: 'inventory' },
@@ -406,7 +472,7 @@ export const appTeachingPoints: TeachingPoint[] = [
   {
     id: 'app-inventory-pricing-grid',
     title: 'Pricing Grids Auto-Calculate',
-    description: 'Link pricing grids to products - prices calculate automatically based on width and drop.',
+    description: 'Link pricing grids to products - prices calculate automatically based on dimensions.',
     targetSelector: '[data-teaching="pricing-grid"]',
     position: 'bottom',
     trigger: { type: 'feature_unused', page: '/app', section: 'inventory' },
@@ -416,7 +482,7 @@ export const appTeachingPoints: TeachingPoint[] = [
   {
     id: 'app-inventory-colors',
     title: 'Colors Flow to Quotes',
-    description: 'Colors you add to fabrics appear for selection in the calculator and show on client quotes.',
+    description: 'Colors you add to products appear for selection in quotes and work orders.',
     targetSelector: '[data-teaching="product-colors"]',
     position: 'bottom',
     trigger: { type: 'feature_unused', page: '/app', section: 'inventory' },
@@ -424,11 +490,11 @@ export const appTeachingPoints: TeachingPoint[] = [
     category: 'app',
   },
 
-  // Calculator tips (2 tips)
+  // ========== CALCULATOR (2 tips) ==========
   {
     id: 'app-calculator-options',
-    title: 'Configure Options',
-    description: 'Select lining, controls, finishes, and accessories. Each choice updates the price in real-time.',
+    title: 'Configure Treatment Options',
+    description: 'Select lining, controls, and finishes. Each choice updates the price in real-time.',
     targetSelector: '[data-teaching="calculator-options"]',
     position: 'right',
     trigger: { type: 'first_visit', page: '/app', section: 'calculator' },
@@ -438,7 +504,7 @@ export const appTeachingPoints: TeachingPoint[] = [
   {
     id: 'app-calculator-preview',
     title: 'Live Quote Preview',
-    description: 'See exactly what your client will receive. Review line items and totals before sending.',
+    description: 'See exactly what your client will receive. Review totals before sending.',
     targetSelector: '[data-teaching="quote-preview"]',
     position: 'left',
     trigger: { type: 'feature_unused', page: '/app', section: 'calculator' },
@@ -446,11 +512,11 @@ export const appTeachingPoints: TeachingPoint[] = [
     category: 'app',
   },
 
-  // Library tips (2 tips)
+  // ========== LIBRARY (2 tips) ==========
   {
     id: 'app-library-templates',
     title: 'Save Quote Templates',
-    description: 'Save your quote layouts as templates for consistent presentations across all jobs.',
+    description: 'Save your layouts as templates for consistent presentations across all jobs.',
     targetSelector: '[data-teaching="library-templates"]',
     position: 'bottom',
     trigger: { type: 'first_visit', page: '/app', section: 'library' },
@@ -459,8 +525,8 @@ export const appTeachingPoints: TeachingPoint[] = [
   },
   {
     id: 'app-library-export',
-    title: 'Export Documents',
-    description: 'Download quotes and invoices as PDF files to share with clients or keep for records.',
+    title: 'Export as PDF',
+    description: 'Download quotes and invoices as PDF files to share or keep for records.',
     targetSelector: '[data-teaching="library-export"]',
     position: 'bottom',
     trigger: { type: 'feature_unused', page: '/app', section: 'library' },
