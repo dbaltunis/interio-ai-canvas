@@ -1253,6 +1253,32 @@ const LivePreviewBlock = ({
                   <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#111827 !important' }}>Total: {renderTokenValue('total')}</span>
                 </div>
               </div>
+
+              {/* Deposit Payment Summary */}
+              {projectData?.payment?.type === 'deposit' && projectData.payment.amount > 0 && (
+                <div className="py-3 mt-2 border-t" style={{ borderColor: '#e5e7eb', backgroundColor: '#ffffff !important' }}>
+                  <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
+                    <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
+                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#111827 !important' }}>
+                        Deposit Required ({projectData.payment.percentage || 50}%):
+                      </span>
+                      <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#2563eb', marginLeft: '8px' }}>
+                        {formatCurrency(projectData.payment.amount, projectData?.currency || getDefaultCurrency())}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
+                    <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
+                      <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                        Balance Due After Deposit:
+                      </span>
+                      <span style={{ fontSize: '14px', color: '#6b7280', marginLeft: '8px' }}>
+                        {formatCurrency((projectData.total || 0) - projectData.payment.amount, projectData?.currency || getDefaultCurrency())}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {/* Payment Button - Always visible when quote exists, shows config prompt if not set up */}
               {!isPrintMode && projectData?.quoteId && (
