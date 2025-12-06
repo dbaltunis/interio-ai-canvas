@@ -156,6 +156,9 @@ export const useUpdateProject = () => {
           newStatusName = newStatus.name;
           statusChanged = oldStatusName !== newStatusName;
           
+          // IMPORTANT: Always sync the status name field with the status_id
+          updates.status = newStatusName;
+          
           if (shouldRegenerateNumber(oldStatusName, newStatusName)) {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
