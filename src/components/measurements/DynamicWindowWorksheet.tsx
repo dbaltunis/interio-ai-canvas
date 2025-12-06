@@ -121,7 +121,8 @@ export const DynamicWindowWorksheet = forwardRef<{
     horizontalPiecesNeeded: 1,
     fabricOrientation: 'vertical' as 'horizontal' | 'vertical',
     seamsRequired: 0,
-    widthsRequired: 0
+    widthsRequired: 0,
+    usesLeftover: false
   });
   
   const [layeredTreatments, setLayeredTreatments] = useState<Array<{
@@ -2090,11 +2091,15 @@ export const DynamicWindowWorksheet = forwardRef<{
                     const horizontalPiecesNeeded = fabricCalculation.horizontalPiecesNeeded || 1;
                     const pricePerMeter = fabricCalculation.pricePerMeter || 0;
                     
+                    // CRITICAL FIX: Check if using leftover fabric for horizontal seaming
+                    const usesLeftover = measurements.uses_leftover_for_horizontal === true || 
+                                        measurements.uses_leftover_for_horizontal === 'true';
+                    
                     // CRITICAL FIX: For horizontal orientation, linearMeters is the WIDTH to order
                     // horizontalPiecesNeeded tells us how many pieces are needed to cover the HEIGHT
-                    // The TOTAL fabric to order is linearMeters × horizontalPiecesNeeded
-                    // ALWAYS calculate correctly regardless of fabricCalculation.fabricCost
-                    const fabricCost = (linearMeters * horizontalPiecesNeeded) * pricePerMeter;
+                    // If usesLeftover is true, only charge for 1 piece (leftover covers extra)
+                    const piecesToCharge = usesLeftover && horizontalPiecesNeeded > 1 ? 1 : horizontalPiecesNeeded;
+                    const fabricCost = (linearMeters * piecesToCharge) * pricePerMeter;
 
                     // Calculate lining cost - DYNAMIC based on template configuration
                     let liningCost = 0;
@@ -2226,8 +2231,8 @@ export const DynamicWindowWorksheet = forwardRef<{
                     const totalCost = fabricCost + liningCost + manufacturingCost + headingCost + optionsCost;
 
                     // ✅ SAVE TO STATE: Single source of truth for all displays
-                    // Calculate total meters to order (for horizontal pieces)
-                    const totalMetersToOrder = linearMeters * horizontalPiecesNeeded;
+                    // Calculate total meters to order (for horizontal pieces) - account for leftover usage
+                    const totalMetersToOrder = linearMeters * piecesToCharge;
                     const newCalculatedCosts = {
                       fabricLinearMeters: linearMeters,
                       fabricTotalMeters: totalMetersToOrder,
@@ -2238,11 +2243,13 @@ export const DynamicWindowWorksheet = forwardRef<{
                       headingCost,
                       optionsCost,
                       totalCost,
-                      horizontalPiecesNeeded,
+                      // CRITICAL: Show actual pieces needed but indicate we're only charging for piecesToCharge
+                      horizontalPiecesNeeded: piecesToCharge, // Use piecesToCharge so Cost Summary shows correct pieces
                       fabricOrientation: (fabricCalculation.fabricOrientation || 'vertical') as 'horizontal' | 'vertical',
                       seamsRequired: fabricCalculation.seamsRequired || 0,
                       widthsRequired: fabricCalculation.widthsRequired || 0,
-                      manufacturingDetails
+                      manufacturingDetails,
+                      usesLeftover // Include this for downstream components
                     };
                     
                     // Only update if values changed to prevent infinite loops
@@ -2271,7 +2278,8 @@ export const DynamicWindowWorksheet = forwardRef<{
                           totalMeters: calculatedCosts.fabricTotalMeters,
                           pricePerMeter: calculatedCosts.fabricCostPerMeter,
                           horizontalPieces: calculatedCosts.horizontalPiecesNeeded,
-                          orientation: calculatedCosts.fabricOrientation
+                          orientation: calculatedCosts.fabricOrientation,
+                          usesLeftover: calculatedCosts.usesLeftover
                         }}
                         manufacturingDetails={manufacturingDetails}
                       />

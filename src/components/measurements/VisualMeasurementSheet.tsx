@@ -87,7 +87,7 @@ export const VisualMeasurementSheet = ({
   
   // State for leftover fabric usage when horizontal seaming is needed
   const [useLeftoverForHorizontal, setUseLeftoverForHorizontal] = useState(
-    () => measurements.uses_leftover_for_horizontal === true
+    () => measurements.uses_leftover_for_horizontal === true || measurements.uses_leftover_for_horizontal === 'true'
   );
 
   // Keep ref in sync with props
@@ -98,7 +98,8 @@ export const VisualMeasurementSheet = ({
   // Sync useLeftoverForHorizontal with measurements when loaded
   useEffect(() => {
     if (measurements.uses_leftover_for_horizontal !== undefined) {
-      setUseLeftoverForHorizontal(measurements.uses_leftover_for_horizontal === true);
+      const isTrue = measurements.uses_leftover_for_horizontal === true || measurements.uses_leftover_for_horizontal === 'true';
+      setUseLeftoverForHorizontal(isTrue);
     }
   }, [measurements.uses_leftover_for_horizontal]);
   
@@ -106,8 +107,8 @@ export const VisualMeasurementSheet = ({
   const handleToggleLeftoverForHorizontal = () => {
     const newValue = !useLeftoverForHorizontal;
     setUseLeftoverForHorizontal(newValue);
-    // Persist to measurements so it saves with the treatment
-    onMeasurementChange('uses_leftover_for_horizontal', String(newValue));
+    // Persist to measurements as boolean for proper save - use true/false not string
+    onMeasurementChange('uses_leftover_for_horizontal', newValue ? 'true' : 'false');
   };
 
   // Detect treatment type - use treatmentCategory prop if provided, otherwise detect from template
