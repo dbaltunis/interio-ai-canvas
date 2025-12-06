@@ -1,8 +1,6 @@
-import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Hash } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useSequenceLabel, type EntityType } from "@/hooks/useNumberSequences";
 
 interface EditableDocumentNumberProps {
@@ -12,7 +10,7 @@ interface EditableDocumentNumberProps {
   label?: string;
   placeholder?: string;
   disabled?: boolean;
-  autoLabel?: boolean; // If true, fetches label from settings
+  autoLabel?: boolean;
 }
 
 export const EditableDocumentNumber = ({
@@ -24,55 +22,10 @@ export const EditableDocumentNumber = ({
   disabled = false,
   autoLabel = false,
 }: EditableDocumentNumberProps) => {
-  const { label: settingsLabel, prefix } = useSequenceLabel(entityType);
+  const { label: settingsLabel } = useSequenceLabel(entityType);
   
   // Use settings label if autoLabel is true, otherwise use prop
   const label = autoLabel ? settingsLabel : (propLabel || settingsLabel);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
-
-  // Auto-generate number on first mount if value is empty
-  useEffect(() => {
-    if (!hasLoaded && !value) {
-      generateNextNumber();
-      setHasLoaded(true);
-    } else {
-      setHasLoaded(true);
-    }
-  }, []);
-
-  const generateNextNumber = async () => {
-    setIsGenerating(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      const { data, error } = await supabase.rpc("get_next_sequence_number", {
-        p_user_id: user.id,
-        p_entity_type: entityType,
-      });
-
-      if (error) throw error;
-
-      if (data) {
-        onChange(data);
-      }
-    } catch (error: any) {
-      console.error("Error generating number:", error);
-      // Generate fallback number
-      const prefix = entityType === 'quote' ? 'QT' : 
-                     entityType === 'invoice' ? 'INV' : 
-                     entityType === 'order' ? 'ORD' : 
-                     entityType === 'draft' ? 'DFT' : 'DOC';
-      onChange(`${prefix}-${Date.now().toString().slice(-6)}`);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleChange = (newValue: string) => {
-    onChange(newValue);
-  };
 
   return (
     <div className="space-y-2">
@@ -82,9 +35,9 @@ export const EditableDocumentNumber = ({
       </Label>
       <Input
         value={value}
-        onChange={(e) => handleChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        disabled={disabled || isGenerating}
+        disabled={disabled}
       />
     </div>
   );
