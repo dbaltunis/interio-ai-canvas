@@ -47,6 +47,8 @@ interface ManufacturingDetails {
   quantity: number;
   quantityLabel: string;
   manufacturingType: 'hand' | 'machine';
+  seamLaborCost?: number;
+  totalSeams?: number;
 }
 
 interface CostCalculationSummaryProps {
@@ -625,18 +627,26 @@ export const CostCalculationSummary = ({
               {manufacturingDetails && manufacturingDetails.pricePerUnit > 0 && (
                 <span className="text-xs text-muted-foreground">
                   {(() => {
-                    const { pricingType, pricePerUnit, quantity, quantityLabel } = manufacturingDetails;
+                    const { pricingType, pricePerUnit, quantity, quantityLabel, seamLaborCost, totalSeams } = manufacturingDetails;
                     
+                    let baseFormula = '';
                     if (pricingType === 'per_metre') {
-                      return `${formatPrice(pricePerUnit)}/m × ${quantity.toFixed(2)}m`;
+                      baseFormula = `${formatPrice(pricePerUnit)}/m × ${quantity.toFixed(2)}m`;
                     } else if (pricingType === 'per_panel') {
-                      return `${formatPrice(pricePerUnit)}/panel × ${quantity} ${quantity === 1 ? 'panel' : 'panels'}`;
+                      baseFormula = `${formatPrice(pricePerUnit)}/panel × ${quantity} ${quantity === 1 ? 'panel' : 'panels'}`;
                     } else if (pricingType === 'per_drop') {
-                      return `${formatPrice(pricePerUnit)}/drop × ${quantity} ${quantity === 1 ? 'drop' : 'drops'}`;
+                      baseFormula = `${formatPrice(pricePerUnit)}/drop × ${quantity} ${quantity === 1 ? 'drop' : 'drops'}`;
                     } else if (pricingType === 'height_range') {
-                      return `${formatPrice(pricePerUnit)} (height range) × ${quantity} ${quantityLabel}`;
+                      baseFormula = `${formatPrice(pricePerUnit)} (height range) × ${quantity} ${quantityLabel}`;
+                    } else {
+                      baseFormula = quantityLabel || '';
                     }
-                    return quantityLabel || '';
+                    
+                    // Add seam labor if present
+                    if (seamLaborCost && seamLaborCost > 0 && totalSeams && totalSeams > 0) {
+                      return `${baseFormula} + ${totalSeams} seam(s) labor`;
+                    }
+                    return baseFormula;
                   })()}
                 </span>
               )}

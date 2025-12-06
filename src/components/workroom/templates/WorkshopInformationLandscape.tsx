@@ -406,6 +406,35 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                             </div>
                           )}
                           
+                          {/* 🆕 SEAMING LABOR INFO - Critical for manufacturing cost transparency */}
+                          {!isBlindTreatment && item.fabricUsage && (
+                            (() => {
+                              const verticalSeams = item.fabricUsage.seamsRequired || 0;
+                              const horizontalSeams = item.fabricUsage.isHorizontal && item.fabricUsage.horizontalPiecesNeeded 
+                                ? Math.max(0, item.fabricUsage.horizontalPiecesNeeded - 1) 
+                                : 0;
+                              const totalSeams = verticalSeams + horizontalSeams;
+                              
+                              if (totalSeams > 0) {
+                                return (
+                                  <div className="text-[9px] mt-2 p-1.5 bg-orange-50 border border-orange-200 rounded">
+                                    <div className="font-medium text-orange-700">⚠️ Seaming Required:</div>
+                                    {verticalSeams > 0 && (
+                                      <div className="text-orange-600">• {verticalSeams} vertical seam(s)</div>
+                                    )}
+                                    {horizontalSeams > 0 && (
+                                      <div className="text-orange-600">• {horizontalSeams} horizontal seam(s)</div>
+                                    )}
+                                    <div className="text-gray-600 mt-1">
+                                      Est. labor: {(totalSeams * 0.5).toFixed(1)} hours ({totalSeams} × 30min)
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()
+                          )}
+                          
                           {/* For blinds - show manufacturing info if no sewing details */}
                           {isBlindTreatment && (
                             <div className="text-[9px] text-gray-600">
