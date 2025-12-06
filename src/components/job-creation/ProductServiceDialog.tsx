@@ -61,16 +61,8 @@ export const ProductServiceDialog = ({
   const { units } = useMeasurementUnits();
   const currencySymbol = getCurrencySymbol(units.currency);
 
-  // Get unique categories from inventory
-  const categories = useMemo(() => {
-    const cats = new Set<string>();
-    inventoryItems.forEach(item => {
-      if (item.category) cats.add(item.category.toLowerCase());
-    });
-    return Array.from(cats).filter(c => 
-      ['hardware', 'service', 'fabric', 'material', 'wallcovering'].includes(c)
-    );
-  }, [inventoryItems]);
+  // Always show all main categories, regardless of inventory content
+  const categories = ['material', 'fabric', 'hardware', 'service', 'wallcovering'];
 
   // Filter items by selected category and search
   const filteredItems = useMemo(() => {
