@@ -86,11 +86,19 @@ export const TeachingHelpButton = ({
     
     setOpen(false);
     
-    // Navigate first, then show teaching after a short delay
+    // Navigate first, then scroll to element and show teaching
     navigate(targetUrl);
     setTimeout(() => {
+      // Try to scroll to the target element
+      if (tp.targetSelector) {
+        const element = document.querySelector(tp.targetSelector);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+      // Show the teaching popover
       showTeaching(tp.id);
-    }, 500);
+    }, 600);
   };
 
   const formatCategoryName = (category: string): string => {
