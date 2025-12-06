@@ -9,6 +9,7 @@ import { useUsageLimits } from "@/hooks/useUsageLimits";
 import { useAvailableAddOns, useUserAddOns, useActivateAddOn, useDeactivateAddOn } from "@/hooks/useUserAddOns";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useNavigate } from "react-router-dom";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { 
   CreditCard, 
   TrendingUp, 
@@ -32,13 +33,15 @@ export const BillingTab = () => {
   const activateAddOn = useActivateAddOn();
   const deactivateAddOn = useDeactivateAddOn();
   const navigate = useNavigate();
+  const { units } = useMeasurementUnits();
+  const currency = units.currency || 'USD';
 
   const isOwner = userProfile?.role === 'Owner';
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: currency,
     }).format(amount);
   };
 

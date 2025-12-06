@@ -10,6 +10,7 @@ import { ProjectTimeline } from "./ProjectTimeline";
 import { ProjectTeam } from "./ProjectTeam";
 import { ProjectNotes } from "./ProjectNotes";
 import { formatJobNumber } from "@/lib/format-job-number";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface ProjectDetailsViewProps {
   project: any;
@@ -19,6 +20,8 @@ interface ProjectDetailsViewProps {
 
 export const ProjectDetailsView = ({ project, onBack, onEdit }: ProjectDetailsViewProps) => {
   const [activeTab, setActiveTab] = useState("overview");
+  const { units } = useMeasurementUnits();
+  const currency = units.currency || 'USD';
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -45,7 +48,7 @@ export const ProjectDetailsView = ({ project, onBack, onEdit }: ProjectDetailsVi
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: currency,
     }).format(amount);
   };
 

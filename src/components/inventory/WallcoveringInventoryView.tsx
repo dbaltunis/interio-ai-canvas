@@ -24,6 +24,7 @@ import { useBulkInventorySelection } from "@/hooks/useBulkInventorySelection";
 import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QRCodeDisplay } from "./QRCodeDisplay";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface WallcoveringInventoryViewProps {
   searchQuery: string;
@@ -135,10 +136,13 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
     }
   };
 
+  const { units } = useMeasurementUnits();
+  const currency = units.currency || 'USD';
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: currency
     }).format(price);
   };
 

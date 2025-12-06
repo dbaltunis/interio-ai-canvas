@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface ShopifyOrder {
   id: string;
@@ -21,6 +22,8 @@ interface ShopifyOrder {
 
 export const ShopifyLeadsSection = () => {
   const { toast } = useToast();
+  const { units } = useMeasurementUnits();
+  const currency = units.currency || 'USD';
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ['shopify-orders'],
@@ -62,7 +65,7 @@ export const ShopifyLeadsSection = () => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: currency,
     }).format(amount);
   };
 

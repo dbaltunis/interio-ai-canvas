@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, FileText, Calendar, DollarSign } from "lucide-react";
 import { useQuotes } from "@/hooks/useQuotes";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface QuoteSelectorProps {
   selectedQuotes: any[];
@@ -19,6 +20,8 @@ export const QuoteSelector = ({ selectedQuotes, onSelectionChange, selectedClien
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const { data: allQuotes = [] } = useQuotes();
+  const { units } = useMeasurementUnits();
+  const currency = units.currency || 'USD';
 
   // Filter quotes by selected clients if any
   const filteredQuotes = allQuotes.filter(quote => {
@@ -53,7 +56,7 @@ export const QuoteSelector = ({ selectedQuotes, onSelectionChange, selectedClien
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: currency
     }).format(amount);
   };
 

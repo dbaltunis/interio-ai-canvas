@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DollarSign } from "lucide-react";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface QuotationSummaryProps {
   subtotal: number;
@@ -42,10 +43,13 @@ export const QuotationSummary = ({
   onEditDiscount,
   onEditPayment,
 }: QuotationSummaryProps) => {
+  const { units } = useMeasurementUnits();
+  const currency = units.currency || 'USD';
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: currency,
     }).format(amount);
   };
 
