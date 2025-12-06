@@ -613,9 +613,10 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
               <Hash className="h-4 w-4" />
               Document Numbers
             </CardTitle>
-            <Badge variant="outline" className="text-xs">
+            {/* Status badge hidden per user request - keeping for potential future use */}
+            {/* <Badge variant="outline" className="text-xs">
               Status: {projectStatusName}
-            </Badge>
+            </Badge> */}
           </div>
         </CardHeader>
         <CardContent>
