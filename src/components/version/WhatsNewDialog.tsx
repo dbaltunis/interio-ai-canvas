@@ -15,16 +15,18 @@ interface WhatsNewDialogProps {
 }
 
 interface ReleaseNotes {
-  summary: string;
+  summary?: string;
   highlights?: string[];
   newFeatures?: Array<{
     title: string;
     description: string;
   }>;
-  improvements?: Array<{
+  features?: Array<{
     title: string;
     description: string;
   }>;
+  improvements?: Array<string | { title: string; description: string }>;
+  security?: string[];
   knownIssues?: string[];
 }
 
@@ -126,18 +128,37 @@ export const WhatsNewDialog = ({ open, onOpenChange }: WhatsNewDialogProps) => {
         <ScrollArea className="flex-1 -mx-6 px-6">
           <div className="space-y-6 text-sm pr-4 pb-4">
             {/* Summary */}
-            <div className="pb-4 border-b border-border/30">
-              <p className="text-foreground/80 leading-relaxed">{notes.summary}</p>
-            </div>
+            {notes.summary && (
+              <div className="pb-4 border-b border-border/30">
+                <p className="text-foreground/80 leading-relaxed">{notes.summary}</p>
+              </div>
+            )}
 
-            {/* New Features */}
-            {notes.newFeatures && notes.newFeatures.length > 0 && (
+            {/* Highlights */}
+            {notes.highlights && notes.highlights.length > 0 && (
+              <div className="pb-4 border-b border-border/30">
+                <h3 className="text-base font-semibold mb-3 text-foreground flex items-center gap-2">
+                  <span className="text-primary">★</span> Highlights
+                </h3>
+                <ul className="space-y-2">
+                  {notes.highlights.map((highlight, index) => (
+                    <li key={index} className="flex gap-2 text-foreground/80">
+                      <span className="text-primary mt-0.5 flex-shrink-0">•</span>
+                      <span>{highlight}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* New Features (supports both newFeatures and features keys) */}
+            {((notes.newFeatures && notes.newFeatures.length > 0) || (notes.features && notes.features.length > 0)) && (
               <div>
                 <h3 className="text-base font-semibold mb-3 text-foreground flex items-center gap-2">
                   <span className="text-success">✦</span> New Features
                 </h3>
                 <ul className="space-y-3">
-                  {notes.newFeatures.map((feature, index) => (
+                  {(notes.newFeatures || notes.features || []).map((feature, index) => (
                     <li key={index} className="flex gap-2">
                       <span className="text-success mt-1.5 flex-shrink-0">•</span>
                       <div>
@@ -150,20 +171,41 @@ export const WhatsNewDialog = ({ open, onOpenChange }: WhatsNewDialogProps) => {
               </div>
             )}
 
-            {/* Improvements/Fixes */}
+            {/* Improvements/Fixes - handles both string[] and {title, description}[] */}
             {notes.improvements && notes.improvements.length > 0 && (
               <div>
                 <h3 className="text-base font-semibold mb-3 text-foreground flex items-center gap-2">
                   <span className="text-primary">✦</span> Improvements
                 </h3>
-                <ul className="space-y-3">
+                <ul className="space-y-2">
                   {notes.improvements.map((improvement, index) => (
                     <li key={index} className="flex gap-2">
-                      <span className="text-primary mt-1.5 flex-shrink-0">•</span>
-                      <div>
-                        <span className="font-medium text-foreground">{improvement.title}</span>
-                        <p className="text-muted-foreground mt-0.5">{improvement.description}</p>
-                      </div>
+                      <span className="text-primary mt-0.5 flex-shrink-0">•</span>
+                      {typeof improvement === 'string' ? (
+                        <span className="text-foreground/80">{improvement}</span>
+                      ) : (
+                        <div>
+                          <span className="font-medium text-foreground">{improvement.title}</span>
+                          <p className="text-muted-foreground mt-0.5">{improvement.description}</p>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Security */}
+            {notes.security && notes.security.length > 0 && (
+              <div>
+                <h3 className="text-base font-semibold mb-3 text-foreground flex items-center gap-2">
+                  <span className="text-warning">🔒</span> Security
+                </h3>
+                <ul className="space-y-2">
+                  {notes.security.map((item, index) => (
+                    <li key={index} className="flex gap-2 text-foreground/80">
+                      <span className="text-warning mt-0.5 flex-shrink-0">•</span>
+                      <span>{item}</span>
                     </li>
                   ))}
                 </ul>
@@ -179,7 +221,7 @@ export const WhatsNewDialog = ({ open, onOpenChange }: WhatsNewDialogProps) => {
                 <ul className="space-y-2">
                   {notes.knownIssues.map((issue, index) => (
                     <li key={index} className="flex gap-2 text-muted-foreground">
-                      <span className="mt-1.5 flex-shrink-0">•</span>
+                      <span className="mt-0.5 flex-shrink-0">•</span>
                       <span>{issue}</span>
                     </li>
                   ))}
