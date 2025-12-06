@@ -91,7 +91,10 @@ export const useCreateRoomProduct = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["room-products", variables.room_id] });
+      queryClient.invalidateQueries({ queryKey: ["project-room-products"] });
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["quote-items"] });
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
       toast.success("Product added to room");
     },
     onError: (error) => {
@@ -127,7 +130,10 @@ export const useCreateRoomProducts = () => {
     onSuccess: (_, variables) => {
       if (variables.length > 0) {
         queryClient.invalidateQueries({ queryKey: ["room-products", variables[0].room_id] });
+        queryClient.invalidateQueries({ queryKey: ["project-room-products"] });
         queryClient.invalidateQueries({ queryKey: ["rooms"] });
+        queryClient.invalidateQueries({ queryKey: ["quote-items"] });
+        queryClient.invalidateQueries({ queryKey: ["quotes"] });
       }
       toast.success(`${variables.length} product(s) added to room`);
     },
@@ -170,7 +176,10 @@ export const useUpdateRoomProduct = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["room-products", data.room_id] });
+      queryClient.invalidateQueries({ queryKey: ["project-room-products"] });
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["quote-items"] });
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
     },
     onError: (error) => {
       console.error("Error updating room product:", error);
@@ -194,7 +203,10 @@ export const useDeleteRoomProduct = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["room-products", variables.roomId] });
+      queryClient.invalidateQueries({ queryKey: ["project-room-products"] });
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["quote-items"] });
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
       toast.success("Product removed");
     },
     onError: (error) => {

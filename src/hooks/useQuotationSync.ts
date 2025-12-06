@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
@@ -62,6 +62,7 @@ export const useQuotationSync = ({
     enabled: roomIds.length > 0,
   });
   
+  const queryClient = useQueryClient();
   const createQuote = useCreateQuote();
   const updateQuote = useUpdateQuote();
 
@@ -767,6 +768,10 @@ export const useQuotationSync = ({
           console.error("Error saving quote items:", itemsError);
         } else {
           console.log(`✅ QuotationSync: Saved ${itemsToSave.length} quote items`);
+          // CRITICAL: Invalidate quote-items cache to refresh UI immediately
+          queryClient.invalidateQueries({ queryKey: ["quote-items", quoteId] });
+          queryClient.invalidateQueries({ queryKey: ["quote-items"] });
+          queryClient.invalidateQueries({ queryKey: ["quotes"] });
         }
       }
     } catch (error) {
