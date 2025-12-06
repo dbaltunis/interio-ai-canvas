@@ -2197,43 +2197,13 @@ export const DynamicWindowWorksheet = forwardRef<{
                       }
                     }
                     
-                    // 🆕 ADD SEAM LABOR COST - Critical for accurate manufacturing pricing
-                    // Calculate seams from both vertical (fabric widths) and horizontal (railroaded pieces)
-                    const verticalSeams = fabricCalculation.seamsRequired || Math.max(0, (fabricCalculation.widthsRequired || 1) - 1);
-                    const isHorizontal = fabricCalculation.fabricOrientation === 'horizontal' || fabricCalculation.fabricRotated === true;
-                    const horizontalSeams = isHorizontal && fabricCalculation.horizontalPiecesNeeded 
-                      ? Math.max(0, fabricCalculation.horizontalPiecesNeeded - 1) 
-                      : 0;
-                    const totalSeams = verticalSeams + horizontalSeams;
-                    
-                    // Add seam labor cost (0.5 hours per seam × labor rate)
-                    let seamLaborCost = 0;
-                    if (totalSeams > 0) {
-                      const laborRate = selectedTemplate.labor_rate || 25; // Default $25/hour
-                      const hoursPerSeam = 0.5; // 30 minutes per seam
-                      seamLaborCost = totalSeams * hoursPerSeam * laborRate;
-                      manufacturingCost += seamLaborCost;
-                      
-                      console.log('🧵 SEAM LABOR ADDED TO MANUFACTURING:', {
-                        verticalSeams,
-                        horizontalSeams,
-                        totalSeams,
-                        hoursPerSeam,
-                        laborRate,
-                        seamLaborCost,
-                        formula: `${totalSeams} seams × ${hoursPerSeam}hr × $${laborRate}/hr = $${seamLaborCost.toFixed(2)}`
-                      });
-                    }
-                    
                     // Store manufacturing details for display breakdown
                     const manufacturingDetails = {
                       pricingType,
                       pricePerUnit,
                       quantity: manufacturingQuantity,
                       quantityLabel: manufacturingQuantityLabel,
-                      manufacturingType: manufacturingType as 'hand' | 'machine',
-                      seamLaborCost,
-                      totalSeams
+                      manufacturingType: manufacturingType as 'hand' | 'machine'
                     };
 
                     // Calculate heading cost - CRITICAL: Must match save calculation

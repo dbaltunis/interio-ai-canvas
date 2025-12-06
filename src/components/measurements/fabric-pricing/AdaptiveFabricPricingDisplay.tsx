@@ -891,29 +891,12 @@ export const AdaptiveFabricPricingDisplay = ({
                 }
               }
               
-              // 🆕 Calculate seaming labor cost (for BOTH vertical and horizontal seams)
+              // 🆕 Calculate seaming labor cost
               let seamingCost = 0;
-              const verticalSeams = fabricCalculation.seamsRequired || 0;
-              const horizontalSeams = isHorizontal && fabricCalculation.horizontalPiecesNeeded 
-                ? Math.max(0, fabricCalculation.horizontalPiecesNeeded - 1) 
-                : 0;
-              const totalSeams = verticalSeams + horizontalSeams;
-              
-              if (totalSeams > 0) {
+              if (fabricCalculation.seamsCount && fabricCalculation.seamsCount > 0) {
                 const laborRate = template?.labor_rate || 25; // Default $25/hour
-                const hoursPerSeam = 0.5; // 30 minutes per seam
-                seamingCost = totalSeams * hoursPerSeam * laborRate;
+                seamingCost = (fabricCalculation.seamLaborHours || 0) * laborRate;
                 totalCost += seamingCost;
-                
-                console.log('🧵 SEAMING LABOR CALCULATION:', {
-                  verticalSeams,
-                  horizontalSeams,
-                  totalSeams,
-                  hoursPerSeam,
-                  laborRate: formatPrice(laborRate),
-                  seamingCost: formatPrice(seamingCost),
-                  formula: `${totalSeams} seams × ${hoursPerSeam}hr × ${formatPrice(laborRate)}/hr = ${formatPrice(seamingCost)}`
-                });
               }
               
               return (
