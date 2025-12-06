@@ -287,11 +287,26 @@ export const useJobHandlers = (project: any) => {
         }
       }
 
-      // Invalidate queries to refresh UI
+      // Comprehensive query invalidations to refresh UI
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["rooms", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["surfaces"] });
+      queryClient.invalidateQueries({ queryKey: ["surfaces", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["treatments"] });
+      queryClient.invalidateQueries({ queryKey: ["treatments", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["window-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
+      queryClient.invalidateQueries({ queryKey: ["project-window-summaries", projectId] });
       queryClient.invalidateQueries({ queryKey: ["room-products"] });
       queryClient.invalidateQueries({ queryKey: ["project-room-products"] });
+      queryClient.invalidateQueries({ queryKey: ["project-room-products", projectId] });
       queryClient.invalidateQueries({ queryKey: ["quote-items"] });
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      
+      // Invalidate specific window-summary queries for each new surface
+      for (const newSurfaceId of Object.values(surfaceIdMap)) {
+        queryClient.invalidateQueries({ queryKey: ["window-summary", newSurfaceId] });
+      }
 
       toast({
         title: "Success",
