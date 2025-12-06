@@ -270,9 +270,28 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                                 Usage: {item.fabricUsage.linearMeters.toFixed(2)}m 
                                 ({item.fabricUsage.widthsRequired} width{item.fabricUsage.widthsRequired > 1 ? 's' : ''})
                               </div>
-                              {item.fabricUsage.seamsRequired > 0 && (
+                              
+                              {/* Horizontal pieces info - explains why 1 or 2 widths */}
+                              {item.fabricUsage.isHorizontal && item.fabricUsage.horizontalPiecesNeeded && item.fabricUsage.horizontalPiecesNeeded > 1 && (
+                                <div className="text-[9px] mt-1 p-1.5 bg-amber-50 border border-amber-200 rounded">
+                                  <div className="font-medium text-amber-700">
+                                    ↔️ Railroaded: {item.fabricUsage.horizontalPiecesNeeded} horizontal piece{item.fabricUsage.horizontalPiecesNeeded > 1 ? 's' : ''}
+                                  </div>
+                                  {item.fabricUsage.usesLeftover ? (
+                                    <div className="text-green-700 font-medium">
+                                      ✓ Using leftover fabric for extra width - 1 piece charged
+                                    </div>
+                                  ) : (
+                                    <div className="text-gray-600">
+                                      Drop exceeds fabric width, requires seaming
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {item.fabricUsage.seamsRequired > 0 && !item.fabricUsage.isHorizontal && (
                                 <div className="text-[9px] text-orange-600 font-medium">
-                                  ⚠️ {item.fabricUsage.seamsRequired} seam(s) required
+                                  ⚠️ {item.fabricUsage.seamsRequired} vertical seam(s) required
                                 </div>
                               )}
                               {item.fabricUsage.leftover > 0 && (
@@ -319,6 +338,25 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                       <div className="text-[9px] text-gray-500 mt-1">
                         {item.treatmentType || 'No treatment'}
                       </div>
+                      
+                      {/* Cut dimensions for manufacturing - show total with hems */}
+                      {item.fabricUsage && (item.fabricUsage.totalDropCm > 0 || item.fabricUsage.totalWidthCm > 0) && (
+                        <div className="mt-2 pt-2 border-t border-dashed border-gray-300">
+                          <div className="text-[9px] font-medium text-purple-700 mb-1">Cut Dimensions:</div>
+                          {item.fabricUsage.totalWidthCm > 0 && (
+                            <div className="text-[9px]">
+                              Total Width: {formatFromCM(item.fabricUsage.totalWidthCm, units.length)}
+                              <span className="text-gray-500 ml-1">(incl. fullness, returns, hems)</span>
+                            </div>
+                          )}
+                          {item.fabricUsage.totalDropCm > 0 && (
+                            <div className="text-[9px]">
+                              Total Drop: {formatFromCM(item.fabricUsage.totalDropCm, units.length)}
+                              <span className="text-gray-500 ml-1">(incl. header, bottom, pool)</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </td>
                   
