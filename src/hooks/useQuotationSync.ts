@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
@@ -32,6 +33,35 @@ export const useQuotationSync = ({
   const { data: markupSettings } = useMarkupSettings();
   const { data: businessSettings } = useBusinessSettings();
   
+  // Fetch all room products for this project's rooms
+  const roomIds = rooms.map(r => r.id);
+  const { data: allRoomProducts = [] } = useQuery({
+    queryKey: ["project-room-products", projectId, roomIds],
+    queryFn: async () => {
+      if (roomIds.length === 0) return [];
+      
+      const { data, error } = await supabase
+        .from("room_products")
+        .select(`
+          *,
+          inventory_item:enhanced_inventory_items(
+            id,
+            name,
+            category,
+            subcategory,
+            image_url,
+            unit
+          )
+        `)
+        .in("room_id", roomIds)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: roomIds.length > 0,
+  });
+  
   const createQuote = useCreateQuote();
   const updateQuote = useUpdateQuote();
 
@@ -45,6 +75,7 @@ export const useQuotationSync = ({
     surfaceCount: number;
     totalCost: number;
     windowCosts: Record<string, number>;
+    roomProductsCount: number;
     breakdownHash?: string;
   }>({
     treatmentCount: 0,
@@ -52,6 +83,7 @@ export const useQuotationSync = ({
     surfaceCount: 0,
     totalCost: 0,
     windowCosts: {},
+    roomProductsCount: 0,
     breakdownHash: ''
   });
 
@@ -498,6 +530,40 @@ export const useQuotationSync = ({
       }
     });
 
+    // Add room products/services to quote items
+    let roomProductsTotal = 0;
+    allRoomProducts.forEach((product: any) => {
+      const room = rooms.find(r => r.id === product.room_id);
+      const roomName = room?.name || 'Unknown Room';
+      const inventoryItem = product.inventory_item;
+      
+      items.push({
+        id: `product-${product.id}`,
+        name: inventoryItem?.name || 'Product',
+        description: inventoryItem?.subcategory?.replace(/_/g, ' ') || inventoryItem?.category || '',
+        quantity: product.quantity,
+        unit_price: product.unit_price,
+        total: product.total_price,
+        currency: (() => {
+          if (!businessSettings?.measurement_units) return 'USD';
+          const units = typeof businessSettings.measurement_units === 'string' 
+            ? JSON.parse(businessSettings.measurement_units)
+            : businessSettings.measurement_units;
+          return units?.currency || 'USD';
+        })(),
+        room_name: roomName,
+        room_id: product.room_id,
+        image_url: inventoryItem?.image_url,
+        isRoomProduct: true,
+        inventory_item_id: product.inventory_item_id,
+      });
+      
+      roomProductsTotal += product.total_price;
+    });
+
+    // Include room products in total
+    const combinedSubtotal = baseSubtotal + roomProductsTotal;
+
     // Calculate tax based on tax_inclusive setting
     const pricingSettings = businessSettings?.pricing_settings as any;
     const taxInclusive = pricingSettings?.tax_inclusive || false;
@@ -542,7 +608,8 @@ export const useQuotationSync = ({
       roomCount: rooms.length,
       surfaceCount: surfaces.length,
       totalCost: quotationData.baseSubtotal,
-      windowCosts: currentWindowCosts
+      windowCosts: currentWindowCosts,
+      roomProductsCount: allRoomProducts.length
     };
 
     // Check if window costs have changed (more granular detection)
@@ -699,6 +766,7 @@ export const useQuotationSync = ({
     // Update reference data including window costs and breakdown hash
     previousDataRef.current = {
       ...currentData,
+      roomProductsCount: allRoomProducts.length,
       breakdownHash: (projectSummaries?.windows || [])
         .map(w => JSON.stringify({ 
           breakdown: w.summary?.cost_breakdown || [], 

@@ -1,15 +1,17 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, RectangleHorizontal } from "lucide-react";
+import { Plus, RectangleHorizontal, Package } from "lucide-react";
 import { useRoomCardLogic } from "./RoomCardLogic";
 import { RoomHeader } from "./RoomHeader";
 import { SurfaceList } from "./SurfaceList";
+import { RoomProductsList } from "./RoomProductsList";
+import { ProductServiceDialog, SelectedProduct } from "./ProductServiceDialog";
 import { useCompactMode } from "@/hooks/useCompactMode";
 import { WindowManagementDialog } from "./WindowManagementDialog";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
+import { useCreateRoomProducts } from "@/hooks/useRoomProducts";
 
 
 interface RoomCardProps {
@@ -71,7 +73,10 @@ export const RoomCard = ({
   const [isOpen, setIsOpen] = useState(true);
   
   const [showWorksheetDialog, setShowWorksheetDialog] = useState(false);
+  const [showProductDialog, setShowProductDialog] = useState(false);
   const [newSurface, setNewSurface] = useState<any>(null);
+  
+  const createRoomProducts = useCreateRoomProducts();
 
   const handleSurfaceCreation = async () => {
     setIsCreatingSurface(true);
@@ -99,6 +104,17 @@ export const RoomCard = ({
       setEditingRoomId(null);
       setEditingRoomName(room.name);
     }
+  };
+
+  const handleAddProducts = (products: SelectedProduct[]) => {
+    const roomProducts = products.map(p => ({
+      room_id: room.id,
+      inventory_item_id: p.inventoryItemId,
+      quantity: p.quantity,
+      unit_price: p.unitPrice,
+      total_price: p.totalPrice,
+    }));
+    createRoomProducts.mutate(roomProducts);
   };
 
   if (surfacesLoading) {
@@ -152,11 +168,14 @@ export const RoomCard = ({
             <div className="text-center py-6 border-2 border-dashed border-border rounded-lg mx-4 my-4">
               <div className="text-4xl mb-2">🪟</div>
               <h4 className="font-medium text-foreground mb-1">No measurement worksheets added</h4>
-              <p className="text-sm text-muted-foreground mb-4">Add measurement worksheets to get started with treatments</p>
+              <p className="text-sm text-muted-foreground mb-4">Add measurement worksheets or products to get started</p>
             </div>
           )}
 
-          {/* Add Window Button */}
+          {/* Room Products & Services */}
+          <RoomProductsList roomId={room.id} />
+
+          {/* Add Buttons */}
           <div className="flex gap-2 pt-3 pb-4 px-4 border-t border-border/50">
             <Button
               onClick={handleSurfaceCreation}
@@ -167,6 +186,15 @@ export const RoomCard = ({
             >
               <RectangleHorizontal className="h-4 w-4 mr-2" />
               Add Measurement Worksheet
+            </Button>
+            <Button
+              onClick={() => setShowProductDialog(true)}
+              variant="outline"
+              size={compact ? "sm" : "sm"}
+              className="flex-1"
+            >
+              <Package className="h-4 w-4 mr-2" />
+              Add Product/Service
             </Button>
           </div>
         </CollapsibleContent>
@@ -190,6 +218,14 @@ export const RoomCard = ({
             onSaveTreatment={(treatmentData) => handleAddTreatment(newSurface.id, treatmentData.treatment_type, treatmentData)}
           />
         )}
+
+        {/* Product/Service Selection Dialog */}
+        <ProductServiceDialog
+          isOpen={showProductDialog}
+          onClose={() => setShowProductDialog(false)}
+          roomId={room.id}
+          onAddProducts={handleAddProducts}
+        />
       </Card>
     </Collapsible>
   );
