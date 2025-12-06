@@ -212,7 +212,10 @@ export const QuotationTab = ({
       layout: 'detailed' as 'simple' | 'detailed'
     };
     const blocksArray = Array.isArray(blocks) ? blocks : [];
-    const productsBlock = blocksArray.find((b: any) => b?.type === 'products') as any;
+    // Match all product/items block types that LivePreview handles
+    const productsBlock = blocksArray.find((b: any) => 
+      b?.type === 'products' || b?.type === 'product' || b?.type === 'line-items' || b?.type === 'items'
+    ) as any;
 
     // Get layout from content, defaulting to 'detailed'
     const layout = (productsBlock?.content?.layout || 'detailed') as 'simple' | 'detailed';
@@ -230,7 +233,8 @@ export const QuotationTab = ({
     try {
       const blocks = Array.isArray(selectedTemplate.blocks) ? selectedTemplate.blocks : [];
       const updatedBlocks = blocks.map((block: any) => {
-        if (block?.type === 'products') {
+        // Match all product/items block types that LivePreview handles
+        if (block?.type === 'products' || block?.type === 'product' || block?.type === 'line-items' || block?.type === 'items') {
           return {
             ...block,
             content: {
