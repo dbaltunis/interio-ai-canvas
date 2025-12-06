@@ -11,7 +11,6 @@ import { formatJobNumber } from "@/lib/format-job-number";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ClientProjectsListProps {
   clientId: string;
@@ -86,23 +85,11 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
     try {
       console.log('[CLIENT] Creating new project for client:', clientId);
       
-      // Generate job number from settings sequence
-      const { data: { user } } = await supabase.auth.getUser();
-      let jobNumber = `JOB-${Date.now()}`; // Fallback only
-      if (user) {
-        const { data } = await supabase.rpc("get_next_sequence_number", {
-          p_user_id: user.id,
-          p_entity_type: "job",
-        });
-        if (data) jobNumber = data;
-      }
-      
-      // Create the project
+      // Create the project - useCreateProject will handle job number generation
       const newProject = await createProject.mutateAsync({
         name: `New Job ${new Date().toLocaleDateString()}`,
         description: "",
         status: "planning",
-        job_number: jobNumber,
         client_id: clientId
       });
 
@@ -118,7 +105,6 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
         tax_amount: 0,
         total_amount: 0,
         notes: "New job created",
-        quote_number: jobNumber
       });
 
       console.log('[CLIENT] Quote created, navigating to project');

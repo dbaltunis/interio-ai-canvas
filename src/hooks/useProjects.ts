@@ -66,8 +66,17 @@ export const useCreateProject = () => {
       // Generate job number using number sequences if not provided
       let jobNumber = project.job_number;
       if (!jobNumber || jobNumber.trim() === '') {
+        // Get account owner ID for team members
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("parent_account_id")
+          .eq("user_id", user.id)
+          .single();
+        
+        const accountOwnerId = profile?.parent_account_id || user.id;
+        
         const { data: generatedNumber, error: seqError } = await supabase.rpc("get_next_sequence_number", {
-          p_user_id: user.id,
+          p_user_id: accountOwnerId,
           p_entity_type: "job",
         });
         
