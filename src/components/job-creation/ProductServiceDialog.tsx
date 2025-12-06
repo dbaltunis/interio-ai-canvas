@@ -6,7 +6,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Package, Wrench, Layers, ArrowLeft, Plus, Minus, ShoppingCart } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Search, Package, Wrench, Layers, ArrowLeft, Plus, Minus, ShoppingCart, PenLine, Upload, X } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
@@ -28,6 +30,16 @@ export interface SelectedProduct {
   totalPrice: number;
   imageUrl: string | null;
   unit: string;
+  description?: string;
+}
+
+interface CustomItem {
+  name: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  imageUrl: string | null;
+  unit: string;
 }
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -36,6 +48,7 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   fabric: <Layers className="h-5 w-5" />,
   material: <Layers className="h-5 w-5" />,
   wallcovering: <Layers className="h-5 w-5" />,
+  custom: <PenLine className="h-5 w-5" />,
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -44,6 +57,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   fabric: "Fabrics",
   material: "Materials",
   wallcovering: "Wallcoverings",
+  custom: "Custom Item",
 };
 
 export const ProductServiceDialog = ({
@@ -52,17 +66,25 @@ export const ProductServiceDialog = ({
   roomId,
   onAddProducts,
 }: ProductServiceDialogProps) => {
-  const [step, setStep] = useState<"category" | "browse" | "quantity">("category");
+  const [step, setStep] = useState<"category" | "browse" | "quantity" | "custom">("category");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<Map<string, SelectedProduct>>(new Map());
+  const [customItem, setCustomItem] = useState<CustomItem>({
+    name: "",
+    description: "",
+    quantity: 1,
+    unitPrice: 0,
+    imageUrl: null,
+    unit: "each",
+  });
   
   const { data: inventoryItems = [], isLoading } = useEnhancedInventory();
   const { units } = useMeasurementUnits();
   const currencySymbol = getCurrencySymbol(units.currency);
 
   // Always show all main categories, regardless of inventory content
-  const categories = ['material', 'fabric', 'hardware', 'service', 'wallcovering'];
+  const categories = ['material', 'fabric', 'hardware', 'service', 'wallcovering', 'custom'];
 
   // Filter items by selected category and search
   const filteredItems = useMemo(() => {
@@ -86,7 +108,11 @@ export const ProductServiceDialog = ({
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
-    setStep("browse");
+    if (category === "custom") {
+      setStep("custom");
+    } else {
+      setStep("browse");
+    }
   };
 
   const handleItemToggle = (item: any) => {
@@ -114,11 +140,42 @@ export const ProductServiceDialog = ({
     const newSelected = new Map(selectedItems);
     const item = newSelected.get(itemId);
     if (item) {
-      item.quantity = Math.max(1, quantity);
+      item.quantity = Math.max(0.01, quantity);
       item.totalPrice = item.quantity * item.unitPrice;
       newSelected.set(itemId, item);
       setSelectedItems(newSelected);
     }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCustomItem(prev => ({ ...prev, imageUrl: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddCustomItem = () => {
+    if (!customItem.name || customItem.unitPrice <= 0) return;
+    
+    const customProduct: SelectedProduct = {
+      inventoryItemId: `custom-${Date.now()}`,
+      name: customItem.name,
+      category: "custom",
+      subcategory: "",
+      quantity: customItem.quantity,
+      unitPrice: customItem.unitPrice,
+      totalPrice: customItem.quantity * customItem.unitPrice,
+      imageUrl: customItem.imageUrl,
+      unit: customItem.unit,
+      description: customItem.description,
+    };
+    
+    onAddProducts([customProduct]);
+    handleClose();
   };
 
   const handleConfirm = () => {
@@ -132,13 +189,21 @@ export const ProductServiceDialog = ({
     setSelectedCategory("");
     setSearchQuery("");
     setSelectedItems(new Map());
+    setCustomItem({
+      name: "",
+      description: "",
+      quantity: 1,
+      unitPrice: 0,
+      imageUrl: null,
+      unit: "each",
+    });
     onClose();
   };
 
   const handleBack = () => {
     if (step === "quantity") {
       setStep("browse");
-    } else if (step === "browse") {
+    } else if (step === "browse" || step === "custom") {
       setStep("category");
       setSelectedCategory("");
       setSearchQuery("");
@@ -149,6 +214,8 @@ export const ProductServiceDialog = ({
   const grandTotal = Array.from(selectedItems.values()).reduce(
     (sum, item) => sum + item.totalPrice, 0
   );
+
+  const customTotal = customItem.quantity * customItem.unitPrice;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
@@ -163,6 +230,7 @@ export const ProductServiceDialog = ({
             {step === "category" && "Add Product or Service"}
             {step === "browse" && `Select ${CATEGORY_LABELS[selectedCategory] || selectedCategory}`}
             {step === "quantity" && "Set Quantities"}
+            {step === "custom" && "Create Custom Item"}
           </DialogTitle>
         </DialogHeader>
 
@@ -173,20 +241,132 @@ export const ProductServiceDialog = ({
               <Button
                 key={category}
                 variant="outline"
-                className="h-24 flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-primary/5"
+                className={`h-24 flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-primary/5 ${
+                  category === "custom" ? "border-dashed" : ""
+                }`}
                 onClick={() => handleCategorySelect(category)}
               >
                 {CATEGORY_ICONS[category] || <Package className="h-5 w-5" />}
                 <span className="font-medium">{CATEGORY_LABELS[category] || category}</span>
               </Button>
             ))}
-            {categories.length === 0 && (
-              <div className="col-span-2 text-center py-8 text-muted-foreground">
-                No products or services in inventory yet.
-                <br />
-                Add items in Library first.
+          </div>
+        )}
+
+        {/* Custom Item Form */}
+        {step === "custom" && (
+          <div className="flex flex-col gap-4 py-4">
+            {/* Image Upload */}
+            <div className="flex items-start gap-4">
+              <div className="relative">
+                {customItem.imageUrl ? (
+                  <div className="relative w-24 h-24">
+                    <img 
+                      src={customItem.imageUrl} 
+                      alt="Custom item" 
+                      className="w-24 h-24 object-cover rounded-lg border"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6"
+                      onClick={() => setCustomItem(prev => ({ ...prev, imageUrl: null }))}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="w-24 h-24 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                    <Upload className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground mt-1">Image</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleImageUpload}
+                    />
+                  </label>
+                )}
               </div>
-            )}
+              
+              <div className="flex-1 space-y-3">
+                <div>
+                  <Label htmlFor="custom-name">Title *</Label>
+                  <Input
+                    id="custom-name"
+                    placeholder="Item name"
+                    value={customItem.name}
+                    onChange={(e) => setCustomItem(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="custom-unit">Unit</Label>
+                  <Input
+                    id="custom-unit"
+                    placeholder="e.g., each, meter, hour"
+                    value={customItem.unit}
+                    onChange={(e) => setCustomItem(prev => ({ ...prev, unit: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="custom-description">Description</Label>
+              <Textarea
+                id="custom-description"
+                placeholder="Optional description..."
+                value={customItem.description}
+                onChange={(e) => setCustomItem(prev => ({ ...prev, description: e.target.value }))}
+                rows={2}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="custom-quantity">Quantity</Label>
+                <Input
+                  id="custom-quantity"
+                  type="number"
+                  min={0.01}
+                  step={0.01}
+                  value={customItem.quantity}
+                  onChange={(e) => setCustomItem(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 1 }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="custom-price">Price per {customItem.unit || "unit"}</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    {currencySymbol}
+                  </span>
+                  <Input
+                    id="custom-price"
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={customItem.unitPrice}
+                    onChange={(e) => setCustomItem(prev => ({ ...prev, unitPrice: parseFloat(e.target.value) || 0 }))}
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Total</Label>
+                <div className="h-10 px-3 flex items-center bg-muted rounded-md font-medium">
+                  {currencySymbol}{customTotal.toFixed(2)}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4 border-t">
+              <Button 
+                onClick={handleAddCustomItem}
+                disabled={!customItem.name || customItem.unitPrice <= 0}
+              >
+                Add to Room
+              </Button>
+            </div>
           </div>
         )}
 
