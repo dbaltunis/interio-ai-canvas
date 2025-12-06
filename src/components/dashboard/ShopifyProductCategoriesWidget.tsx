@@ -7,6 +7,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 export const ShopifyProductCategoriesWidget = () => {
+  const { units } = useMeasurementUnits();
+  const currency = units.currency || 'USD';
+
   const { data: categoryData, isLoading } = useQuery({
     queryKey: ['product-categories'],
     queryFn: async () => {
@@ -76,9 +79,6 @@ export const ShopifyProductCategoriesWidget = () => {
       </Card>
     );
   }
-
-  const { units } = useMeasurementUnits();
-  const currency = units.currency || 'USD';
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
