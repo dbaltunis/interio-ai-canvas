@@ -1,6 +1,9 @@
-Build timestamp: 2025-12-07T01:40:00Z
-Version: 2.3.1
+Build timestamp: 2025-12-07T10:50:00Z
+Version: 2.3.2
 Changes:
+- CRITICAL FIX: Fullness dropdown now correctly updates calculations
+- CRITICAL FIX: User's fullness selection saved instead of template default
+- Added logging to track fullness changes for debugging
 - Custom document template creation with drag-and-drop blocks
 - Hardware category for inventory management
 - Products & Services can be added to projects and quotes
@@ -9,5 +12,4 @@ Changes:
 - Number sequences automatically created for new accounts
 - Multi-account isolation for SaaS deployment
 - RLS security hardening with 60+ policy fixes
-- Enhanced feedback dialog (bugs, features, improvements)
 - Performance and stability improvements

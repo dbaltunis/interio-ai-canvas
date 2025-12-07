@@ -1454,7 +1454,9 @@ export const DynamicWindowWorksheet = forwardRef<{
               curtain_side: measurements.curtain_side || 'left',
               pooling_option: measurements.pooling_option || 'above_floor',
               pooling_amount: measurements.pooling_amount || '',
-              fullness_ratio: selectedTemplate?.fullness_ratio || (treatmentCategory === 'wallpaper' ? 1 : 0),
+              // CRITICAL FIX: Use user's heading_fullness selection, NOT template default
+              fullness_ratio: measurements.heading_fullness || measurements.fullness_ratio || selectedTemplate?.fullness_ratio || (treatmentCategory === 'wallpaper' ? 1 : 2),
+              heading_fullness: measurements.heading_fullness || selectedTemplate?.fullness_ratio || 2,
               fabric_width_cm: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140,
               window_type: selectedWindowType?.name || 'Room Wall',
               selected_heading: selectedHeading,

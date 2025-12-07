@@ -516,7 +516,15 @@ export const DynamicCurtainOptions = ({
                   <div className="w-64">
                     <Select 
                       value={measurements.heading_fullness?.toString() || metadata.multiple_fullness_ratios[0].toString()} 
-                      onValueChange={(value) => onChange('heading_fullness', parseFloat(value))}
+                      onValueChange={(value) => {
+                        const newFullness = parseFloat(value);
+                        console.log('🔄 FULLNESS DROPDOWN CHANGED:', {
+                          oldValue: measurements.heading_fullness,
+                          newValue: newFullness,
+                          displayedValue: value
+                        });
+                        onChange('heading_fullness', newFullness);
+                      }}
                       disabled={readOnly}
                     >
                       <SelectTrigger className="bg-background border-input">
