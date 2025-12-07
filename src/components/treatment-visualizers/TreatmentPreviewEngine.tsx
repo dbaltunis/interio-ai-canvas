@@ -7,6 +7,7 @@ import { CellularShadeVisualizer } from "./CellularShadeVisualizer";
 import { VerticalBlindVisualizer } from "./VerticalBlindVisualizer";
 import { PanelGlideVisualizer } from "./PanelGlideVisualizer";
 import { AwningVisualizer } from "./AwningVisualizer";
+import { WallpaperVisualizer } from "./WallpaperVisualizer";
 import { LayeredTreatmentVisualizer } from "./LayeredTreatmentVisualizer";
 import { DynamicWindowRenderer } from "../window-types/DynamicWindowRenderer";
 import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
@@ -207,7 +208,7 @@ export const TreatmentPreviewEngine = ({
             windowType={windowType}
             measurements={measurements}
             template={template}
-            material={selectedItems.material}
+            material={selectedItems.fabric || selectedItems.material}
             className={className}
             isRetractable={template?.retractable !== false}
             frameType={measurements.frame_type || template?.frame_type || 'retractable'}
@@ -215,6 +216,23 @@ export const TreatmentPreviewEngine = ({
             fabricPattern={measurements.fabric_pattern || template?.fabric_pattern || 'striped'}
             valanceStyle={measurements.valance_style || template?.valance_style || 'scalloped'}
             projection={measurements.projection ? parseFloat(measurements.projection) : undefined}
+          />
+        );
+      
+      case "wallpaper":
+        return (
+          <WallpaperVisualizer
+            measurements={{
+              wall_width: measurements.rail_width || measurements.width || 300,
+              wall_height: measurements.drop || measurements.height || 260
+            }}
+            wallpaper={{
+              image_url: selectedItems.fabric?.image_url || selectedItems.material?.image_url,
+              name: selectedItems.fabric?.name || selectedItems.material?.name,
+              roll_width: template?.roll_width || 53,
+              pattern_repeat: template?.pattern_repeat
+            }}
+            className={className}
           />
         );
       

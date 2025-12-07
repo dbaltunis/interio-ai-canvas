@@ -10,6 +10,7 @@ import { PanelGlideVisualizer } from "@/components/treatment-visualizers/PanelGl
 import { VenetianBlindVisualizer } from "@/components/treatment-visualizers/VenetianBlindVisualizer";
 import { ShutterVisualizer } from "@/components/treatment-visualizers/ShutterVisualizer";
 import { AwningVisualizer } from "@/components/treatment-visualizers/AwningVisualizer";
+import { WallpaperVisualizer } from "@/components/treatment-visualizers/WallpaperVisualizer";
 
 interface DynamicTreatmentVisualizerProps {
   template: CurtainTemplate;
@@ -290,6 +291,32 @@ export const DynamicTreatmentVisualizer = ({
             louverSize={(template as any).louver_size || '63mm'}
             frameStyle={(template as any).frame_style || 'L-frame'}
             mounted={(template as any).mount_type || 'inside'}
+          />
+        );
+      
+      case 'awning':
+        return (
+          <AwningVisualizer
+            windowType="standard"
+            measurements={{ width, height }}
+            template={template}
+            material={selectedFabric}
+          />
+        );
+      
+      case 'wallpaper':
+        return (
+          <WallpaperVisualizer
+            measurements={{
+              wall_width: width,
+              wall_height: height
+            }}
+            wallpaper={{
+              image_url: selectedFabric?.image_url,
+              name: selectedFabric?.name,
+              roll_width: (template as any)?.roll_width || 53,
+              pattern_repeat: (template as any)?.pattern_repeat
+            }}
           />
         );
       

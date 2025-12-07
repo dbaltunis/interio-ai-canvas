@@ -11,7 +11,7 @@ export const VALID_FABRIC_SUBCATEGORIES = [
 ] as const;
 
 export const VALID_MATERIAL_SUBCATEGORIES = [
-  'venetian', 'vertical'
+  'venetian', 'vertical', 'shutter', 'cellular', 'panel_track'
 ] as const;
 
 export const VALID_HARDWARE_SUBCATEGORIES = [
