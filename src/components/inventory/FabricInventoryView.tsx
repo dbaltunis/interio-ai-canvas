@@ -46,6 +46,7 @@ const FABRIC_CATEGORIES = [
   { key: "roller_fabric", label: "Roller Blind Fabrics" },
   { key: "cellular", label: "Cellular/Honeycomb" },
   { key: "vertical_fabric", label: "Vertical Blind Fabrics" },
+  { key: "panel_glide_fabric", label: "Panel Glide Fabrics" },
   { key: "awning_fabric", label: "Awning Fabrics" },
   { key: "lining_fabric", label: "Lining Fabrics" },
   { key: "upholstery_fabric", label: "Upholstery Fabrics" },

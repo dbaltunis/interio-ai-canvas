@@ -1242,9 +1242,11 @@ export const EnhancedMeasurementWorksheet = forwardRef<
         <CardContent className="space-y-6 p-6 bg-card">
           {/* Basic Setup */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {/* Window Type Selector */}
+            {/* Window/Surface Type Selector - Dynamic label based on selection */}
             <div>
-              <Label htmlFor="windowType">Window Type</Label>
+              <Label htmlFor="windowType">
+                {windowType === 'room_wall' ? 'Surface Type' : 'Window Type'}
+              </Label>
               <Select value={windowType} onValueChange={setWindowType} disabled={readOnly}>
                 <SelectTrigger id="windowType" className="bg-background">
                   <SelectValue placeholder="Select type" />
@@ -1257,6 +1259,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                   ))}
                 </SelectContent>
               </Select>
+              {windowType === 'room_wall' && (
+                <p className="text-xs text-muted-foreground mt-1">For wallpaper and wall coverings</p>
+              )}
             </div>
 
             {/* Window Covering Selector */}

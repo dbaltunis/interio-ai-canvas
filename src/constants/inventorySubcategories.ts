@@ -79,6 +79,12 @@ export const TREATMENT_SUBCATEGORIES: Record<TreatmentCategory, {
     description: 'Shutter panel materials'
   },
   
+  shutter: {
+    category: 'material',
+    subcategories: ['shutter_material', 'shutter_panels', 'shutter'],
+    description: 'Shutter panel materials (singular alias)'
+  },
+  
   plantation_shutters: {
     category: 'material',
     subcategories: ['shutter_material', 'shutter_panels', 'shutter'],
