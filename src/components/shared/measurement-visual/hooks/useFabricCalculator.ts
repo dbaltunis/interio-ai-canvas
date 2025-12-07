@@ -42,12 +42,23 @@ export const useFabricCalculator = ({
 
       // Fabric width is stored in cm, no conversion needed
       const fabricWidthCm = fabric.fabric_width || 137;
-      const fullnessRatio = template.fullness_ratio || 2.0;
+      
+      // CRITICAL FIX: Prioritize user's heading_fullness selection over template default
+      // measurements.heading_fullness = what user selected in fullness dropdown
+      // template.fullness_ratio = template default (fallback only)
+      const measurementsAny = measurements as any;
+      const fullnessRatio = measurementsAny.heading_fullness || measurementsAny.fullness_ratio || template.fullness_ratio || 2.0;
+      
+      console.log('📐 Fullness calculation:', {
+        userSelection: measurementsAny.heading_fullness,
+        measurementsFallback: measurementsAny.fullness_ratio,
+        templateDefault: template.fullness_ratio,
+        USED: fullnessRatio
+      });
       
       // Manufacturing allowances - prioritize measurements, fallback to template
       // Use nullish coalescing (??) to ONLY apply defaults when value is null/undefined, NOT when it's 0
       const templateAny = template as any;
-      const measurementsAny = measurements as any;
       const headerHem = measurementsAny.header_hem ?? measurementsAny.header_allowance ?? templateAny.header_allowance ?? templateAny.header_hem ?? 8;
       const bottomHem = measurementsAny.bottom_hem ?? measurementsAny.bottom_allowance ?? templateAny.bottom_hem ?? templateAny.bottom_allowance ?? 15;
       const sideHems = measurementsAny.side_hems ?? measurementsAny.side_hem ?? templateAny.side_hem ?? template.side_hems ?? 7.5;
