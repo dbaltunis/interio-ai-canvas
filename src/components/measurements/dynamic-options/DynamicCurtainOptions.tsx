@@ -71,6 +71,20 @@ export const DynamicCurtainOptions = ({
   const treatmentCategory = template?.treatment_category || 'curtains';
   const { data: treatmentOptions = [], isLoading: treatmentOptionsLoading } = useTreatmentOptions(treatmentCategory, 'category');
   
+  // Debug: Log TWC options in component
+  console.log('🎯 DynamicCurtainOptions - TWC Debug:', {
+    templateId: template?.id,
+    templateName: template?.name,
+    treatmentCategory,
+    isLoading: treatmentOptionsLoading,
+    optionsCount: treatmentOptions.length,
+    options: treatmentOptions.map(o => ({
+      key: o.key,
+      label: o.label,
+      valuesCount: o.option_values?.length || 0
+    }))
+  });
+  
   // Get template option settings to filter hidden options
   const { isOptionEnabled } = useEnabledTemplateOptions(template?.id);
   
