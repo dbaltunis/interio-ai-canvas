@@ -91,6 +91,20 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
         return true;
       });
       
+      // Debug: Log TWC options loaded
+      console.log('🔧 useTreatmentOptions loaded:', {
+        queryType,
+        category: templateIdOrCategory,
+        accountId,
+        totalOptions: filteredData.length,
+        options: filteredData.map(o => ({
+          key: o.key,
+          label: o.label,
+          valuesCount: o.option_values?.length || 0,
+          source: (o as any).metadata?.source
+        }))
+      });
+      
       return filteredData;
     },
     enabled: !!templateIdOrCategory,
