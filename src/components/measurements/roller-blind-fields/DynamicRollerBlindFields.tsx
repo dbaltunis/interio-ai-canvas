@@ -64,13 +64,22 @@ export const DynamicRollerBlindFields = ({
         settings?.map(s => [s.treatment_option_id, s.is_enabled]) || []
       );
       
-      // CRITICAL FIX: Blacklist logic - options are ENABLED by default if no setting exists
-      // Only hide if explicitly disabled in template_option_settings
+      const hasAnySettings = settings && settings.length > 0;
+      
+      // WHITELIST APPROACH: If template HAS settings, only show explicitly enabled options
+      // This prevents unlinked duplicate options from appearing
       const enabledOptions = allOptions.filter(opt => {
-        if (!settingsMap.has(opt.id)) {
-          // No template_option_settings entry = enabled by default
+        if (!hasAnySettings) {
+          // No settings at all = show all options (backward compatible for templates without settings)
           return true;
         }
+        
+        if (!settingsMap.has(opt.id)) {
+          // Template HAS settings but this option is NOT linked = hide it
+          console.log(`❌ Hiding option "${opt.label}" - not linked to template settings`);
+          return false;
+        }
+        
         const isEnabled = settingsMap.get(opt.id);
         if (!isEnabled) {
           console.log(`❌ Hiding option "${opt.label}" - disabled in template settings`);
@@ -78,7 +87,7 @@ export const DynamicRollerBlindFields = ({
         return isEnabled;
       });
       
-      console.log(`✅ Showing ${enabledOptions.length} enabled options out of ${allOptions.length} total`);
+      console.log(`✅ WHITELIST: Showing ${enabledOptions.length} enabled options out of ${allOptions.length} total (template has ${settings?.length || 0} settings)`);
       setTreatmentOptions(enabledOptions);
     };
     
