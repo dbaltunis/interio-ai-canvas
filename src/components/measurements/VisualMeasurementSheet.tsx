@@ -568,7 +568,7 @@ export const VisualMeasurementSheet = ({
               <div className="w-full lg:w-2/5 flex-shrink-0 space-y-1.5 md:space-y-2">
                 {/* Original Visual Diagram first */}
                 {/* Specialized visualizers for panel glide, shutters, and awnings */}
-                {treatmentCategory === 'panel_glide' || treatmentCategory === 'plantation_shutters' || treatmentCategory === 'shutters' || treatmentCategory === 'awning' ? <TreatmentPreviewEngine windowType={windowType} treatmentType={treatmentCategory || treatmentType} measurements={{
+                {treatmentCategory === 'panel_glide' || treatmentCategory === 'plantation_shutters' || treatmentCategory === 'shutters' || treatmentCategory === 'shutter' || treatmentCategory === 'awning' ? <TreatmentPreviewEngine windowType={windowType} treatmentType={treatmentCategory || treatmentType} measurements={{
               ...measurements,
               width: parseFloat(measurements.rail_width || measurements.width || '200'),
               height: parseFloat(measurements.drop || measurements.height || '200'),

@@ -1,4 +1,4 @@
-export type TreatmentCategory = 'curtains' | 'blinds' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_blinds' | 'panel_glide' | 'plantation_shutters' | 'shutters' | 'awning' | 'wallpaper';
+export type TreatmentCategory = 'curtains' | 'blinds' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_blinds' | 'panel_glide' | 'plantation_shutters' | 'shutters' | 'shutter' | 'awning' | 'wallpaper';
 
 export interface TreatmentConfig {
   requiresFullness: boolean;
@@ -192,7 +192,18 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       showPooling: false,
       inventoryCategory: 'shutter_material',
       specificFields: ['louver_size', 'panel_config', 'frame_type'],
-      visualComponent: 'RollerBlindVisualizer',
+      visualComponent: 'ShutterVisualizer',
+    },
+    shutter: {
+      requiresFullness: false,
+      requiresHardwareType: false,
+      requiresFabricOrientation: false,
+      requiresHeading: false,
+      requiresLining: false,
+      showPooling: false,
+      inventoryCategory: 'shutter_material',
+      specificFields: ['louver_size', 'panel_config', 'frame_type'],
+      visualComponent: 'ShutterVisualizer',
     },
     awning: {
       requiresFullness: false,
@@ -233,6 +244,7 @@ export const getTreatmentDisplayName = (category: TreatmentCategory): string => 
     panel_glide: 'Panel Glide',
     plantation_shutters: 'Plantation Shutters',
     shutters: 'Shutters',
+    shutter: 'Shutter',
     awning: 'Awning',
     wallpaper: 'Wallpaper',
   };
@@ -301,6 +313,12 @@ export const getMeasurementLabels = (category: TreatmentCategory): MeasurementLa
       heightShort: 'Height'
     },
     shutters: {
+      width: 'Frame Width',
+      height: 'Frame Height',
+      widthShort: 'Width',
+      heightShort: 'Height'
+    },
+    shutter: {
       width: 'Frame Width',
       height: 'Frame Height',
       widthShort: 'Width',
