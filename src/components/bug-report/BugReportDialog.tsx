@@ -186,7 +186,7 @@ export const BugReportDialog = ({
         route: location.pathname,
         user_agent: navigator.userAgent,
         browser_info: browserInfo,
-        app_version: "v2.3.1",
+        app_version: "v2.3.2",
         images: images.length > 0 ? images : null,
       });
 

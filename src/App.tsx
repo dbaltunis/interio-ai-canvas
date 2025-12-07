@@ -16,7 +16,9 @@ import { ErrorBoundary } from "./components/performance/ErrorBoundary";
 import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
 import { PresenceProvider } from "./contexts/PresenceContext";
 import { TeachingProvider } from "./contexts/TeachingContext";
+import { DebugModeProvider } from "./contexts/DebugModeContext";
 import { BugReportDialog } from "@/components/bug-report/BugReportDialog";
+import { DebugPanel } from "./components/debug/DebugPanel";
 import { ThemeProvider } from "next-themes";
 import { ThemeDarkSync } from "./components/system/ThemeDarkSync";
 import { InteractionUnlockGuard } from "./components/system/InteractionUnlockGuard";
@@ -127,6 +129,7 @@ const App = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
+        <DebugModeProvider>
             <TooltipProvider>
             <SyncIndicator />
             {/* Ensure custom themes also apply the dark class */}
@@ -150,6 +153,7 @@ const App = () => {
                   <PresenceProvider>
                     <EmailRealtimeProvider>
                       <BugReportDialog />
+                      <DebugPanel />
                       <TeachingOverlay />
                   <Suspense fallback={<></>}>
                   <Routes>
@@ -315,6 +319,7 @@ const App = () => {
                  </BrowserRouter>
               </ThemeProvider>
             </TooltipProvider>
+        </DebugModeProvider>
       </QueryClientProvider>
       </ErrorBoundary>
     );

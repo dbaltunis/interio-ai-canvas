@@ -9,6 +9,7 @@ import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { useEnsureDefaultSequences } from "@/hooks/useNumberSequences";
 import { OrderingHubPage } from "@/components/ordering/OrderingHubPage";
 import { Button } from "@/components/ui/button";
+import { VersionFooter } from "@/components/version/VersionFooter";
 
 
 // Lazy load heavy components with proper error handling
@@ -361,6 +362,7 @@ const Index = () => {
           </main>
           
           <MobileBottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+          <VersionFooter />
         </div>
       </AIBackground>
     </OnboardingProvider>
