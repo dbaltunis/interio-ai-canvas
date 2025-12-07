@@ -38,7 +38,10 @@ interface MaterialInventoryViewProps {
 const MATERIAL_CATEGORIES = [
   { key: "all", label: "All Materials" },
   { key: "venetian", label: "Venetian Blinds" },
-  { key: "vertical", label: "Vertical Blinds" }
+  { key: "vertical", label: "Vertical Blinds" },
+  { key: "shutter", label: "Plantation Shutters" },
+  { key: "cellular", label: "Cellular/Honeycomb" },
+  { key: "panel_track", label: "Panel Track/Glide" }
 ];
 
 const ITEMS_PER_PAGE = 24;

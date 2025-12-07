@@ -161,7 +161,10 @@ export const UnifiedInventoryDialog = ({
     ],
     material: [
       { value: "venetian", label: "Venetian Blinds" },
-      { value: "vertical", label: "Vertical Blinds" }
+      { value: "vertical", label: "Vertical Blinds" },
+      { value: "shutter", label: "Plantation Shutters" },
+      { value: "cellular", label: "Cellular/Honeycomb" },
+      { value: "panel_track", label: "Panel Track/Glide" }
     ],
     hardware: [
       { value: "rod", label: "Rods/Poles" },
