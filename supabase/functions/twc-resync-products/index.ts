@@ -217,12 +217,13 @@ serve(async (req) => {
             // Check if setting already exists
             const { data: existingSetting } = await supabase
               .from('template_option_settings')
-              .select('id')
+              .select('id, is_enabled')
               .eq('template_id', template.id)
               .eq('treatment_option_id', optionId)
               .maybeSingle();
 
             if (!existingSetting) {
+              // Create new setting
               const { error: settingError } = await supabase
                 .from('template_option_settings')
                 .insert({
@@ -235,7 +236,20 @@ serve(async (req) => {
               if (settingError) {
                 console.error(`Error creating template_option_setting:`, settingError);
               } else {
-                console.log(`Enabled option "${key}" for template ${template.id}`);
+                console.log(`Created and enabled option "${key}" for template ${template.id}`);
+                templateSettingsCreated++;
+              }
+            } else if (!existingSetting.is_enabled) {
+              // Update existing setting to enable it
+              const { error: updateError } = await supabase
+                .from('template_option_settings')
+                .update({ is_enabled: true })
+                .eq('id', existingSetting.id);
+
+              if (updateError) {
+                console.error(`Error enabling template_option_setting:`, updateError);
+              } else {
+                console.log(`Enabled existing option "${key}" for template ${template.id}`);
                 templateSettingsCreated++;
               }
             }
