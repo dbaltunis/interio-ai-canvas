@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { invalidateWindowSummaryCache } from "@/utils/cacheInvalidation";
 
 export interface WindowSummary {
   window_id: string;
@@ -285,20 +286,23 @@ export const useSaveWindowSummary = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["window-summary", data.window_id] });
-      // Invalidate project summaries to trigger quote sync
-      queryClient.invalidateQueries({ queryKey: ["project-window-summaries"] });
-      // CRITICAL: Also invalidate quotes to ensure documents show updated data
-      queryClient.invalidateQueries({ queryKey: ["quote-items"] });
-      queryClient.invalidateQueries({ queryKey: ["quotes"] });
+    onSuccess: async (data) => {
+      console.log('✅ [SAVE] Window summary saved successfully:', {
+        window_id: data.window_id,
+        total_cost: data.total_cost,
+        options_cost: data.options_cost
+      });
+      
+      // Use comprehensive cache invalidation
+      await invalidateWindowSummaryCache(queryClient, data.window_id);
+      
       toast({
         title: "Success",
         description: "Window summary saved successfully",
       });
     },
     onError: (error) => {
-      console.error("Save window summary error:", error);
+      console.error("❌ [SAVE] Window summary error:", error);
       toast({
         title: "Error",
         description: "Failed to save window summary",

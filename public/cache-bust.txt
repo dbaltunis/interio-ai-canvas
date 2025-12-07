@@ -1,4 +1,4 @@
-Build timestamp: 2025-12-07T10:50:00Z
+Build timestamp: 2025-12-07T11:15:00Z
 Version: 2.3.2
 Changes:
 - CRITICAL FIX: Fullness dropdown now correctly updates calculations
