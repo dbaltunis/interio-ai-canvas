@@ -185,17 +185,20 @@ serve(async (req) => {
           // Skip empty options
           if (!optionValue || optionValue.trim() === '') continue;
           
-          const valueKey = generateKey(optionValue);
+          const valueCode = generateKey(optionValue);
 
           const { error: valueError } = await supabase
             .from('option_values')
             .insert({
-              treatment_option_id: optionId,
-              label: optionValue,
-              value: valueKey,
-              code: optionValue,
+              option_id: optionId,          // Correct column name (not treatment_option_id)
+              account_id: accountId,         // Required column - was missing!
+              code: valueCode,               // Use generated code
+              label: optionValue,            // Human-readable label
               order_index: i,
-              is_default: i === 0
+              extra_data: {
+                is_default: i === 0,
+                source: 'twc'
+              }
             });
 
           if (valueError) {
