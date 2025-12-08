@@ -727,8 +727,9 @@ export const AdaptiveFabricPricingDisplay = ({
 
               // FALLBACK: If sqm is 0 or missing, calculate it with hems for blinds
               if (sqm === 0 && treatmentCategory && treatmentCategory.includes('blind')) {
-                const widthCm = parseFloat(measurements.rail_width || '0');
-                const heightCm = parseFloat(measurements.drop || '0');
+                // ✅ CRITICAL: measurements.rail_width and drop are stored in MM, convert to CM
+                const widthCm = (parseFloat(measurements.rail_width || '0')) / 10;
+                const heightCm = (parseFloat(measurements.drop || '0')) / 10;
                 const headerHem = template?.blind_header_hem_cm || template?.header_allowance || 8;
                 const bottomHem = template?.blind_bottom_hem_cm || template?.bottom_hem || 8;
                 const sideHem = template?.blind_side_hem_cm || 0;

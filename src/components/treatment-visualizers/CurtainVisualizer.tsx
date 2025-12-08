@@ -1,3 +1,6 @@
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { formatFromMM } from "@/utils/measurementFormatters";
+
 interface CurtainVisualizerProps {
   windowType: string;
   measurements: Record<string, any>;
@@ -17,6 +20,7 @@ export const CurtainVisualizer = ({
   className = "",
   hideDetails = false
 }: CurtainVisualizerProps) => {
+  const { units } = useMeasurementUnits();
   const curtainType = measurements.panel_configuration || template?.panel_configuration || "pair";
   const hardwareType = hardware?.type || "rod";
   // Fullness must come from template - no hardcoded default for calculations
@@ -134,7 +138,7 @@ export const CurtainVisualizer = ({
             {/* Measurement line */}
             <div className="flex-1 border-t-2 border-blue-600 relative">
               <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg z-20 whitespace-nowrap">
-                {hardwareName} Width: {measurements.rail_width}cm
+                {hardwareName} Width: {formatFromMM(parseFloat(measurements.rail_width) || 0, units.length)}
               </span>
             </div>
             {/* Right arrow */}
