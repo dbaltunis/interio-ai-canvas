@@ -534,7 +534,9 @@ export const VisualMeasurementSheet = ({
     recalcTrigger, // CRITICAL: Force recalc when trigger changes
     selectedFabric, 
     selectedTemplate, 
-    inventory
+    inventory,
+    measurements, // CRITICAL: Must include measurements to get fresh values
+    units.length
   ]);
 
   // Notify parent when fabric calculation changes
