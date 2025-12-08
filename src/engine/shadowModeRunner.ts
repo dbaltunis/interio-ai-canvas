@@ -60,7 +60,7 @@ interface WorksheetData {
  * Build MeasurementsContract from worksheet measurements
  * Worksheet stores measurements in MM in the database
  */
-function buildMeasurements(
+export function buildMeasurements(
   measurements: Record<string, any>,
   units: { length: string }
 ): MeasurementsContract | null {
@@ -129,7 +129,7 @@ function buildMeasurements(
  * Build TemplateContract from selected template
  * NO HIDDEN DEFAULTS - all required fields must be present
  */
-function buildTemplate(
+export function buildTemplate(
   template: any,
   category: TreatmentCategoryDbValue
 ): TemplateContract | null {
@@ -227,7 +227,7 @@ function buildTemplate(
  * Build FabricContract from selected fabric item
  * NO HIDDEN DEFAULTS - width and pricing_method are required
  */
-function buildFabric(fabric: any): FabricContract | null {
+export function buildFabric(fabric: any): FabricContract | null {
   if (!fabric) return null;
   
   try {
@@ -295,7 +295,7 @@ function buildFabric(fabric: any): FabricContract | null {
  * Build SelectedOptionContract array from worksheet options
  * Skip options with missing price or pricing_method - log and exclude
  */
-function buildOptions(options: any[]): SelectedOptionContract[] {
+export function buildOptions(options: any[]): SelectedOptionContract[] {
   if (!options || !Array.isArray(options)) return [];
   
   return options.flatMap((opt, index) => {

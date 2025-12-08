@@ -14,6 +14,7 @@ import { PricingGridPreview } from "../PricingGridPreview";
 import { formatDimensionsFromCM, formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { getBlindHemDefaults, calculateBlindSqm } from "@/utils/blindCalculationDefaults";
+import { useCurtainEngine } from "@/engine/useCurtainEngine";
 // Centralized formulas used by orientationCalculator - calculations happen there, results passed via fabricCalculation prop
 
 interface AdaptiveFabricPricingDisplayProps {
@@ -47,6 +48,30 @@ export const AdaptiveFabricPricingDisplay = ({
     getLengthUnitLabel,
     getFabricUnitLabel
   } = useMeasurementUnits();
+
+  // NEW ENGINE: Use calculation engine for curtains/roman_blinds
+  const engineResult = useCurtainEngine({
+    treatmentCategory,
+    measurements,
+    selectedTemplate: template,
+    selectedFabric: selectedFabricItem,
+    selectedOptions: [], // Options handled separately in this component
+    units,
+  });
+
+  // Log engine result for comparison (dev mode)
+  if (engineResult && import.meta.env.DEV) {
+    console.debug('[CURTAIN_ENGINE_RESULT]', {
+      category: treatmentCategory,
+      linear_meters: engineResult.linear_meters,
+      fabric_cost: engineResult.fabric_cost,
+      fullness: engineResult.formula_breakdown?.values?.fullness,
+      total_width_cm: engineResult.formula_breakdown?.values?.total_width_cm,
+      total_drop_cm: engineResult.formula_breakdown?.values?.total_drop_cm,
+      widths_required: engineResult.widths_required,
+      formula: engineResult.formula_breakdown?.formula_string,
+    });
+  }
 
   // Detect treatment type and get measurement labels
   const treatmentType = detectTreatmentType(template);
