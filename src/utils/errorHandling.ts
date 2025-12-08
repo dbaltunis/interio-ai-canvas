@@ -259,3 +259,84 @@ export function assertPositive(
     );
   }
 }
+
+// ============================================
+// Error Recovery Patterns
+// ============================================
+
+/**
+ * Retry an async operation with exponential backoff
+ */
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: {
+    maxAttempts?: number;
+    baseDelayMs?: number;
+    maxDelayMs?: number;
+    onRetry?: (attempt: number, error: Error) => void;
+  } = {}
+): Promise<T> {
+  const { maxAttempts = 3, baseDelayMs = 1000, maxDelayMs = 10000, onRetry } = options;
+  
+  let lastError: Error | undefined;
+  
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      if (attempt < maxAttempts) {
+        const delay = Math.min(baseDelayMs * Math.pow(2, attempt - 1), maxDelayMs);
+        onRetry?.(attempt, lastError);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
+/**
+ * Create a circuit breaker for external service calls
+ */
+export function createCircuitBreaker<T>(
+  fn: () => Promise<T>,
+  options: {
+    failureThreshold?: number;
+    resetTimeoutMs?: number;
+  } = {}
+) {
+  const { failureThreshold = 5, resetTimeoutMs = 30000 } = options;
+  
+  let failures = 0;
+  let lastFailureTime: number | null = null;
+  let isOpen = false;
+  
+  return async (): Promise<T> => {
+    // Check if circuit should be reset
+    if (isOpen && lastFailureTime && Date.now() - lastFailureTime > resetTimeoutMs) {
+      isOpen = false;
+      failures = 0;
+    }
+    
+    if (isOpen) {
+      throw new AppError('Service temporarily unavailable', 'CIRCUIT_OPEN');
+    }
+    
+    try {
+      const result = await fn();
+      failures = 0;
+      return result;
+    } catch (error) {
+      failures++;
+      lastFailureTime = Date.now();
+      
+      if (failures >= failureThreshold) {
+        isOpen = true;
+      }
+      
+      throw error;
+    }
+  };
+}
