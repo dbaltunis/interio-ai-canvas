@@ -62,7 +62,7 @@ export const TreatmentControls = ({
         fabric: {
           id: fabric.id,
           name: fabric.name,
-          fabric_width: fabric.fabric_width || 137,
+          fabric_width: fabric.fabric_width || null, // NO hardcoded 137
           price_per_meter: fabric.price_per_meter || fabric.selling_price || 0
         }
       });
@@ -115,7 +115,7 @@ export const TreatmentControls = ({
                   <div className="flex flex-col">
                     <span>{fabric.name}</span>
                     <span className="text-xs text-muted-foreground">
-                      {formatFromCM(fabric.fabric_width || 137, units.length)} wide • 
+                      {fabric.fabric_width ? formatFromCM(fabric.fabric_width, units.length) : '--'} wide • 
                       ${(fabric.price_per_meter || fabric.selling_price || 0).toFixed(2)}/m
                     </span>
                   </div>

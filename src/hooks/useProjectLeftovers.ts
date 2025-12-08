@@ -119,8 +119,8 @@ export const useProjectLeftovers = (projectId: string | undefined) => {
         // Extract leftover heading tape
         const headingCost = summary.heading_cost || 0;
         const widthsRequired = summary.widths_required || 0;
-        const fabricWidth = (fabricDetails.width || 137); // Default fabric width 137cm
-        const finishedWidthCm = widthsRequired * fabricWidth;
+        const fabricWidth = fabricDetails.width; // NO hardcoded 137 - must come from fabric details
+        const finishedWidthCm = fabricWidth ? widthsRequired * fabricWidth : 0;
         
         if (headingCost > 0 && finishedWidthCm > 0) {
           // Assume we order slightly more than needed

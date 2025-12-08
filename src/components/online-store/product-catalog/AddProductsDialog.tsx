@@ -103,7 +103,7 @@ export const AddProductsDialog = ({ open, onOpenChange, storeId }: AddProductsDi
         fabric: {
           id: item.id,
           name: item.name,
-          fabric_width: item.fabric_width || 137,
+          fabric_width: item.fabric_width || null, // NO hardcoded 137
           price_per_meter: item.selling_price || item.unit_price || 0,
           unit_price: item.unit_price,
           selling_price: item.selling_price,

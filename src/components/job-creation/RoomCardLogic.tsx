@@ -105,14 +105,14 @@ export const useRoomCardLogic = (room: any, projectId: string, clientId?: string
               console.log(`Processing measurement ${measurement.id}: ${railWidth}" × ${drop}"`);
 
               if (railWidth > 0 && drop > 0) {
-                // Use proper fabric calculation (kept for compatibility)
+                // Use proper fabric calculation - values must come from measurements/template, not hardcoded
                 const formData = {
                   rail_width: measurements.rail_width,
                   drop: measurements.drop,
-                  heading_fullness: 2.5,
-                  fabric_width: 140,
+                  heading_fullness: measurements.heading_fullness || measurements.fullness_ratio || null, // NO hardcoded 2.5
+                  fabric_width: measurements.fabric_width || null, // NO hardcoded 140
                   quantity: 1,
-                  fabric_type: 'plain',
+                  fabric_type: measurements.fabric_type || 'plain',
                 };
 
                 const calculation = calculateFabricUsage(formData, []);
