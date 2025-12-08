@@ -21,8 +21,10 @@ export interface PricingContext {
   railWidth: number; // CRITICAL: in MM (database storage unit)
   drop: number; // CRITICAL: in MM (database storage unit)
   quantity: number;
-  fullness?: number;
-  fabricWidth?: number;
+  /** REQUIRED for panel calculations - must come from template, no fallback */
+  fullness: number | null;
+  /** REQUIRED for panel calculations - must come from fabric inventory, no fallback */
+  fabricWidth: number | null;
   fabricCost?: number;
   fabricUsage?: number;
   pricingGridData?: any; // CRITICAL: For pricing-grid method
@@ -38,6 +40,8 @@ export interface PricingResult {
     unitCost?: number;
     multiplier?: number;
   };
+  /** Error if required configuration is missing */
+  error?: string;
 }
 
 // Core pricing calculator - single source of truth
@@ -50,11 +54,11 @@ export const calculatePrice = (
     railWidth,
     drop,
     quantity,
-    fullness = 2.5, // TODO: Should come from template settings, not hardcoded
-    fabricWidth = 137, // TODO: Should come from inventory item settings, not hardcoded
+    fullness, // NO DEFAULT - must be provided or calculation fails for methods that need it
+    fabricWidth, // NO DEFAULT - must be provided or calculation fails for methods that need it
     fabricCost = 0,
     fabricUsage = 0,
-    currencySymbol = '$' // Fallback currency symbol
+    currencySymbol = '$' // Fallback currency symbol - acceptable for display
   } = context;
 
   switch (method) {
@@ -72,6 +76,23 @@ export const calculatePrice = (
       };
 
     case 'per-panel': {
+      // CRITICAL: Validate required fields - fail loud if missing
+      if (fullness == null) {
+        console.error('[PRICING] per-panel calculation requires fullness ratio - not configured in template');
+        return {
+          cost: 0,
+          calculation: 'ERROR: Fullness ratio not configured in template',
+          error: 'fullness_required'
+        };
+      }
+      if (fabricWidth == null) {
+        console.error('[PRICING] per-panel calculation requires fabric width - not configured in inventory');
+        return {
+          cost: 0,
+          calculation: 'ERROR: Fabric width not configured in inventory',
+          error: 'fabric_width_required'
+        };
+      }
       const panelsNeeded = Math.ceil((railWidth * fullness) / (fabricWidth * 10)); // CRITICAL: railWidth in MM, fabricWidth in CM
       const cost = baseCost * panelsNeeded * quantity;
       return {

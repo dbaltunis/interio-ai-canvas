@@ -40,6 +40,14 @@ export interface FabricCalculationParams {
     fabricCostPerYard: number;
     rollDirection: string;
   };
+  /** Fullness ratio from template - REQUIRED, no hardcoded fallback */
+  fullnessRatio?: number | null;
+  /** Waste percentage from template - defaults to 0 if not provided */
+  wastePercent?: number | null;
+  /** Total allowances (header + bottom hems etc) from template in cm */
+  allowances?: number;
+  /** Labor rate per hour from business settings */
+  laborRate?: number;
 }
 
 export interface IntegratedCalculationResult {
@@ -157,11 +165,17 @@ export const calculateIntegratedFabricUsage = async (params: FabricCalculationPa
   const fabricWidth = fabricDetails.fabricWidth;
   const fabricCostPerYard = fabricDetails.fabricCostPerYard;
 
-  // Base calculations
-  let fullnessRatio = 2.5; // Default
-  let fabricWasteFactor = 0.1; // 10% default waste
-  let patternRepeatFactor = 1.0;
-  let seamComplexityFactor = 1.0;
+  // CRITICAL: These values MUST come from template/settings - NO hardcoded fallbacks
+  // If not provided, calculations will be inaccurate and should show warnings
+  const fullnessRatio = params.fullnessRatio ?? null; // Must be passed in from template
+  const fabricWasteFactor = params.wastePercent != null ? params.wastePercent / 100 : 0; // Default to 0, not 0.1
+  const patternRepeatFactor = 1.0; // Pattern repeat should come from fabric if applicable
+  const seamComplexityFactor = 1.0;
+
+  // Log warning if critical values are missing
+  if (fullnessRatio == null) {
+    console.warn('[MAKING_COST] No fullness ratio provided - using 1 (no fullness). Configure in template settings.');
+  }
 
   // If making cost is linked, fetch bundled options and their effects
   if (makingCostId) {
@@ -183,8 +197,12 @@ export const calculateIntegratedFabricUsage = async (params: FabricCalculationPa
   }
 
   // Calculate fabric requirements with enhancements
-  const totalWidthNeeded = railWidth * fullnessRatio;
-  const fabricLengthNeeded = drop + measurements.pooling + 25; // 25cm allowances
+  // CRITICAL: Use actual fullness or 1 if not configured (no hidden 2.5x multiplier)
+  const effectiveFullness = fullnessRatio ?? 1;
+  const totalWidthNeeded = railWidth * effectiveFullness;
+  // CRITICAL: Allowances should come from template, not hardcoded
+  const allowances = params.allowances ?? 0; // Must be passed from template
+  const fabricLengthNeeded = drop + measurements.pooling + allowances;
   
   // Determine orientation and calculate widths needed
   let widthsRequired = 0;
@@ -224,11 +242,13 @@ export const calculateIntegratedFabricUsage = async (params: FabricCalculationPa
   result.costs.fabricCost = totalYards * fabricCostPerYard;
 
   // Calculate labor cost
+  // CRITICAL: Labor rate should come from business settings, not hardcoded
+  const laborRate = params.laborRate ?? 0; // Must be passed from settings
   const baseLaborHours = 2;
-  const sewingComplexity = (railWidth * drop * fullnessRatio) / 25000;
+  const sewingComplexity = (railWidth * drop * effectiveFullness) / 25000;
   const seamHours = result.fabricUsage.seamLaborHours;
   const totalLaborHours = Math.max(3, baseLaborHours + sewingComplexity + seamHours);
-  result.costs.laborCost = totalLaborHours * 25; // £25/hour default
+  result.costs.laborCost = totalLaborHours * laborRate;
 
   // Calculate total cost
   result.costs.totalCost = result.costs.fabricCost + result.costs.makingCost + 

@@ -29,19 +29,23 @@ export const useOptionPricing = (params: OptionPricingParams): OptionPricingResu
     const optionDetails: Array<{ name: string; cost: number; method: string; calculation: string }> = [];
 
     // Get fullness from formData - MUST come from template, no hardcoded defaults
-    const fullness = parseFloat(formData.heading_fullness) || parseFloat(formData.fullness_ratio);
-    const fabricWidth = parseFloat(formData.fabric_width) || parseFloat(formData.fabric_width_cm);
+    const fullness = parseFloat(formData.heading_fullness) || parseFloat(formData.fullness_ratio) || null;
+    const fabricWidth = parseFloat(formData.fabric_width) || parseFloat(formData.fabric_width_cm) || null;
     
-    if (!fullness) {
-      console.warn('[OPTION_PRICING] Missing fullness - should come from template');
+    // FAIL LOUD: Log errors if critical values are missing
+    if (fullness == null) {
+      console.error('[OPTION_PRICING] Missing fullness - configure in template settings');
+    }
+    if (fabricWidth == null) {
+      console.error('[OPTION_PRICING] Missing fabric width - configure in inventory');
     }
     
     const pricingContext: Partial<PricingContext> = {
       railWidth: parseFloat(formData.rail_width) || 0,
       drop: parseFloat(formData.drop) || 0,
       quantity: formData.quantity || 1,
-      fullness: fullness || 1.0, // Safe fallback but warning logged
-      fabricWidth: fabricWidth || 137, // Log warning above
+      fullness: fullness, // NO FALLBACK - null if not configured
+      fabricWidth: fabricWidth, // NO FALLBACK - null if not configured
       fabricCost: parseFloat(formData.fabric_cost_per_yard) || 0,
       fabricUsage: parseFloat(formData.fabric_usage) || 0,
       windowCoveringPricingMethod
