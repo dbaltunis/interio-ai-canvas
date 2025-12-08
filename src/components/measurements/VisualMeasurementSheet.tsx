@@ -369,14 +369,16 @@ export const VisualMeasurementSheet = ({
         }
       });
 
-      // ✅ FIX: Convert measurements from user's unit to cm BEFORE calculation
-      const widthInUserUnit = parseFloat(measurements.rail_width);
-      const heightInUserUnit = parseFloat(measurements.drop);
-      const poolingInUserUnit = parseFloat(measurements.pooling_amount || "0");
+      // ✅ CRITICAL FIX: measurements.rail_width and measurements.drop are stored in MM (database standard)
+      // Convert from MM to CM for calculation (NOT from user's display unit)
+      const widthMM = parseFloat(measurements.rail_width) || 0;
+      const heightMM = parseFloat(measurements.drop) || 0;
+      const poolingMM = parseFloat(measurements.pooling_amount || "0") || 0;
       
-      const width = convertLength(widthInUserUnit, units.length, 'cm');
-      const height = convertLength(heightInUserUnit, units.length, 'cm');
-      const pooling = convertLength(poolingInUserUnit, units.length, 'cm');
+      // Convert MM → CM for calculations (database stores MM, fabric calculations use CM)
+      const width = widthMM / 10;
+      const height = heightMM / 10;
+      const pooling = poolingMM / 10;
 
       // ✅ Create enriched measurements with converted values
       const enrichedMeasurementsWithConversion = {
