@@ -4,7 +4,7 @@
  * Single source of truth for treatment data structures.
  * All measurements follow strict unit standards:
  * - Database/API: millimeters (MM)
- * - Templates: centimeters (CM)
+ * - Templates: centimeters (CM) - from database records
  * - Engine calculations: converts as needed
  * 
  * NO silent defaults. NO fallbacks. Missing data = validation error.
@@ -27,48 +27,52 @@ export const UNSUPPORTED_TYPES: TreatmentCategoryDbValue[] = ['wallpaper', 'awni
  * This is the raw input from windows_summary.measurements
  */
 export interface MeasurementsContract {
+  /** Rail/track width in millimeters */
   rail_width_mm: number;
+  /** Drop/height in millimeters */
   drop_mm: number;
   
-  // Optional overrides (user selections in worksheet)
-  heading_fullness?: number;      // e.g., 2.0, 2.5, 3.0
-  return_left_cm?: number;
-  return_right_cm?: number;
-  pooling_cm?: number;
+  /** User-selected fullness ratio (e.g., 2.0, 2.5, 3.0) */
+  heading_fullness?: number;
+  /** Left return in millimeters */
+  return_left_mm?: number;
+  /** Right return in millimeters */
+  return_right_mm?: number;
+  /** Pooling/puddle allowance in millimeters */
+  pooling_mm?: number;
   
   // Blind-specific
   stack_position?: 'left' | 'right' | 'center' | 'split';
   control_side?: 'left' | 'right';
-  
-  // Raw values for reference
-  raw?: Record<string, unknown>;
 }
 
 /**
  * Template configuration - ALL VALUES IN CENTIMETERS
- * This is the configuration from curtain_templates/product_templates
+ * These values come from curtain_templates/product_templates database records.
+ * NO DEFAULTS - if these are missing, the template record is incomplete.
  */
 export interface TemplateContract {
   id: string;
   name: string;
   treatment_category: TreatmentCategoryDbValue;
   
-  // Pricing configuration
+  // Pricing configuration - REQUIRED
   pricing_type: 'per_running_meter' | 'per_sqm' | 'per_drop' | 'pricing_grid' | 'fixed';
   base_price?: number;
   
-  // Manufacturing defaults (in CM)
+  // Manufacturing values in CM - REQUIRED, no defaults
   header_hem_cm: number;
   bottom_hem_cm: number;
   side_hem_cm: number;
+  /** Total seam allowance per join (not per side) */
   seam_hem_cm: number;
   
-  // Curtain-specific
-  default_fullness_ratio?: number;  // e.g., 2.5
+  // Curtain-specific - REQUIRED for curtains
+  default_fullness_ratio?: number;
   default_returns_cm?: number;
   
-  // Waste factor
-  waste_percentage: number;  // e.g., 5 for 5%
+  // Waste factor as percentage (e.g., 5 = 5%)
+  waste_percentage: number;
   
   // Pricing grid if applicable
   pricing_grid_data?: PricingGridContract;
@@ -81,12 +85,13 @@ export interface TemplateContract {
 export interface FabricContract {
   id: string;
   name: string;
+  /** Fabric width in centimeters - REQUIRED */
   width_cm: number;
   
-  // Pricing
+  // Pricing - REQUIRED
   price_per_meter?: number;
   price_per_sqm?: number;
-  pricing_method: 'per_running_meter' | 'per_sqm' | 'fixed';
+  pricing_method: 'per_running_meter' | 'per_sqm' | 'pricing_grid' | 'fixed';
   
   // Pattern info
   pattern_repeat_cm?: number;
@@ -121,10 +126,10 @@ export interface MaterialContract {
  */
 export interface SelectedOptionContract {
   option_id: string;
-  option_key: string;           // e.g., 'control_type', 'mount_type'
+  option_key: string;
   value_id: string;
-  value_label: string;          // Display name
-  value_code?: string;          // Internal code
+  value_label: string;
+  value_code?: string;
   
   // Pricing - REQUIRED, no defaults
   price: number;
@@ -142,21 +147,18 @@ export interface SelectedOptionContract {
 
 /**
  * Pricing grid structure - supports all 3 existing formats
- * Format A: widthColumns[], dropRows[{drop, prices[]}]
- * Format B: widthRanges[], dropRanges[], prices[][]
- * Format C: widthColumns[], dropRows[], prices{"width_drop": price}
  */
 export interface PricingGridContract {
   // Format A/C style
-  widthColumns?: number[];
-  dropRows?: number[] | { drop: number; prices: number[] }[];
+  widthColumns?: number[] | string[];
+  dropRows?: number[] | string[] | { drop: number | string; prices: (number | string)[] }[];
   
   // Format B style
-  widthRanges?: { min: number; max: number }[];
-  dropRanges?: { min: number; max: number }[];
+  widthRanges?: (number | string)[];
+  dropRanges?: (number | string)[];
   
   // Prices - either 2D array or object with "width_drop" keys
-  prices?: number[][] | Record<string, number>;
+  prices?: (number | string)[][] | Record<string, number | string>;
   
   // Metadata
   unit?: 'cm' | 'mm';
@@ -167,7 +169,7 @@ export interface PricingGridContract {
  * Calculation result from the engine
  */
 export interface CalculationResultContract {
-  // Dimensions used (in display units for transparency)
+  // Dimensions used (in CM for display)
   width_cm: number;
   drop_cm: number;
   
@@ -195,13 +197,8 @@ export interface CalculationResultContract {
 }
 
 export interface FormulaBreakdown {
-  // Human-readable formula steps
   steps: string[];
-  
-  // Values used
   values: Record<string, number | string>;
-  
-  // Final formula as string
   formula_string: string;
 }
 
@@ -209,29 +206,22 @@ export interface FormulaBreakdown {
  * Complete treatment data contract - aligned with windows_summary
  */
 export interface TreatmentDataContract {
-  // Identity
   id?: string;
   surface_id: string;
   project_id: string;
   
-  // Classification
   treatment_category: TreatmentCategoryDbValue;
   
-  // Core data
   measurements: MeasurementsContract;
   template: TemplateContract;
   
-  // Optional based on type
   fabric?: FabricContract;
   material?: MaterialContract;
   
-  // Selected options
   selected_options: SelectedOptionContract[];
   
-  // Calculation results
   calculation_result?: CalculationResultContract;
   
-  // Timestamps
   created_at?: string;
   updated_at?: string;
 }
