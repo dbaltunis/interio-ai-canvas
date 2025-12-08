@@ -855,16 +855,19 @@ export const AdaptiveFabricPricingDisplay = ({
                 calculationText = `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
 
                 // ✅ TRANSPARENT CALCULATION BREAKDOWN
-                // Extract all components to show accurate formula
-                const rawDrop = fabricCalculation.drop || parseFloat(measurements.drop) || 0;
+                // CRITICAL: measurements.drop is in MM (database standard), convert to CM for display
+                // fabricCalculation.drop is already in CM if available
+                const rawDropMm = parseFloat(measurements.drop) || 0;
+                const rawDrop = fabricCalculation.drop || (rawDropMm / 10); // MM → CM
                 const headerHem = fabricCalculation.details?.headerHem || template?.header_allowance || 0;
                 const bottomHem = fabricCalculation.details?.bottomHem || template?.bottom_hem || 0;
-                const pooling = fabricCalculation.details?.pooling || parseFloat(measurements.pooling) || 0;
+                const poolingMm = parseFloat(measurements.pooling) || 0;
+                const pooling = fabricCalculation.details?.pooling || (poolingMm / 10); // MM → CM
                 const patternRepeat = fabricCalculation.details?.patternRepeat || 0;
                 const totalSeamAllowance = fabricCalculation.details?.totalSeamAllowance || 0;
                 const widthsRequired = fabricCalculation.widthsRequired || 0;
 
-                // Calculate ACTUAL drop per width used in calculation
+                // Calculate ACTUAL drop per width used in calculation (all values now in CM)
                 const dropWithAllowances = rawDrop + headerHem + bottomHem + pooling + patternRepeat;
                 const totalAllowances = headerHem + bottomHem + pooling + patternRepeat;
                 console.log('🔍 FABRIC CALCULATION BREAKDOWN DEBUG:', {
