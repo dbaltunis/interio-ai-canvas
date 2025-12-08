@@ -15,9 +15,11 @@ interface HeightBasedPricingRangesProps {
 }
 
 export const HeightBasedPricingRanges = ({
-  heightPriceRanges,
+  heightPriceRanges: rawHeightPriceRanges,
   onInputChange
 }: HeightBasedPricingRangesProps) => {
+  // Ensure heightPriceRanges is always an array
+  const heightPriceRanges: PriceRange[] = Array.isArray(rawHeightPriceRanges) ? rawHeightPriceRanges : [];
   const updateRange = (index: number, field: keyof PriceRange, value: number) => {
     const newRanges = [...heightPriceRanges];
     newRanges[index] = { ...newRanges[index], [field]: value };
