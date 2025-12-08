@@ -255,29 +255,8 @@ export const PRICING_FORMULAS = {
 };
 
 // ============================================
-// DEFAULT VALUES
-// ============================================
-
-export const BLIND_DEFAULTS = {
-  headerHemCm: 8,
-  bottomHemCm: 10,
-  sideHemCm: 4,
-  wastePercent: 0
-};
-
-export const CURTAIN_DEFAULTS = {
-  fullness: 2.0,
-  headerHemCm: 15,
-  bottomHemCm: 10,
-  sideHemCm: 5,
-  seamHemCm: 3,
-  poolingCm: 0,
-  returnLeftCm: 0,
-  returnRightCm: 0
-};
-
-// ============================================
 // HELPER: Get formula by category
+// NO DEFAULTS - all values must come from template/settings
 // ============================================
 
 export const getFormulasByCategory = (category: string) => {
@@ -285,31 +264,26 @@ export const getFormulasByCategory = (category: string) => {
   
   if (categoryLower.includes('blind') || categoryLower.includes('shade')) {
     return {
-      type: 'sqm',
+      type: 'sqm' as const,
       formula: BLIND_FORMULA,
-      defaults: BLIND_DEFAULTS
     };
   }
   
-  if (categoryLower.includes('curtain') || categoryLower.includes('drape')) {
+  if (categoryLower.includes('curtain') || categoryLower.includes('drape') || categoryLower.includes('roman')) {
     return {
-      type: 'linear',
+      type: 'linear' as const,
       verticalFormula: CURTAIN_VERTICAL_FORMULA,
       horizontalFormula: CURTAIN_HORIZONTAL_FORMULA,
-      defaults: CURTAIN_DEFAULTS
     };
   }
   
-  // Default to blind formula for unknown categories
-  return {
-    type: 'sqm',
-    formula: BLIND_FORMULA,
-    defaults: BLIND_DEFAULTS
-  };
+  // Unknown categories must be handled explicitly - no silent fallback
+  throw new Error(`Unknown treatment category: ${category}. Cannot determine formula type.`);
 };
 
 /**
  * Find applicable formula based on treatment category and orientation
+ * THROWS if category is unknown - no silent fallbacks
  */
 export const findApplicableFormula = (
   treatmentCategory: string,

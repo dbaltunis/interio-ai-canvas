@@ -140,13 +140,14 @@ export const extractWindowMetrics = (summary: AnySummary, surface: AnySurface) =
     pickNumber(md.return_right, summary?.return_right) ??
     0;
 
-  const fullness =
-    pickNumber(
-      md.fullness_ratio,
-      md.fullness,
-      summary?.fullness_ratio,
-      summary?.template_details?.fullness_ratio
-    ) ?? 2.0;
+  // Fullness - NO HIDDEN DEFAULT
+  // If missing, calculations should use CalculationEngine instead
+  const fullness = pickNumber(
+    md.fullness_ratio,
+    md.fullness,
+    summary?.fullness_ratio,
+    summary?.template_details?.fullness_ratio
+  );
 
   // Fabric and repeats (cm)
   // Prefer worksheet-saved values, including nested under fabric_details or fabric

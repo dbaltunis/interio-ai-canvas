@@ -5,13 +5,12 @@ export { SecureFormulaEngine as FormulaEngine } from './secureFormulaEngine';
 export type { FormulaResult } from './secureFormulaEngine';
 
 // Re-export centralized calculation formulas (THE source of truth)
+// NOTE: No defaults exported - all values must come from templates
 export { 
   BLIND_FORMULA, 
   CURTAIN_VERTICAL_FORMULA, 
   CURTAIN_HORIZONTAL_FORMULA,
   PRICING_FORMULAS,
-  BLIND_DEFAULTS,
-  CURTAIN_DEFAULTS,
   getFormulasByCategory,
   findApplicableFormula
 } from './calculationFormulas';

@@ -178,44 +178,69 @@ const enrichSummaryForPersistence = (summary: Omit<WindowSummary, "updated_at">)
   const drop = pick(md.drop_cm, md.drop, (summary as any).drop);
   const pooling = pick(md.pooling_amount_cm, md.pooling_cm, md.pooling_amount, md.pooling) ?? 0;
 
-  // Allowances (cm) and fullness
-  const sideHems =
-    pick(md.side_hems_cm, md.side_hems, template.side_hems) ?? 0;
-  const seamHems =
-    pick(md.seam_hems_cm, md.seam_hems, template.seam_hems) ?? 0;
-  const headerHem =
-    pick(md.header_allowance_cm, md.header_hem_cm, md.header_allowance, md.header_hem, template.header_allowance) ?? 0;
-  const bottomHem =
-    pick(md.bottom_hem_cm, md.bottom_hem, template.bottom_hem) ?? 0;
-  const returnLeft =
-    pick(md.return_left_cm, md.return_left, template.return_left) ?? 0;
-  const returnRight =
-    pick(md.return_right_cm, md.return_right, template.return_right) ?? 0;
-  const fullness =
-    pick(md.fullness_ratio, md.fullness, (summary as any).fullness_ratio, template.fullness_ratio) ?? 2.0;
+  // Allowances (cm) and fullness - NO HIDDEN DEFAULTS
+  // If values are missing, they remain undefined and calculations should use engine instead
+  const sideHems = pick(md.side_hems_cm, md.side_hems, template.side_hems);
+  const seamHems = pick(md.seam_hems_cm, md.seam_hems, template.seam_hems);
+  const headerHem = pick(md.header_allowance_cm, md.header_hem_cm, md.header_allowance, md.header_hem, template.header_allowance);
+  const bottomHem = pick(md.bottom_hem_cm, md.bottom_hem, template.bottom_hem);
+  const returnLeft = pick(md.return_left_cm, md.return_left, template.return_left);
+  const returnRight = pick(md.return_right_cm, md.return_right, template.return_right);
+  const fullness = pick(md.fullness_ratio, md.fullness, (summary as any).fullness_ratio, template.fullness_ratio);
 
   // Curtain structure
   const curtainType = md.curtain_type || (summary as any).curtain_type || template.curtain_type || "single";
   const curtainCount = toNum(md.curtain_count) ?? (curtainType === "pair" ? 2 : 1);
 
-  // Fabric width
+  // Fabric width - NO HIDDEN DEFAULT
   const fabricDetails = (summary as any).fabric_details || {};
-  const fabricWidthCm =
-    pick(md.fabric_width_cm, md.fabric_width, fabricDetails.width_cm, fabricDetails.width) ?? 137;
+  const fabricWidthCm = pick(md.fabric_width_cm, md.fabric_width, fabricDetails.width_cm, fabricDetails.width, fabricDetails.fabric_width);
+  
+  // Log warning if critical values are missing
+  if (import.meta.env.DEV && (railWidth !== undefined || drop !== undefined)) {
+    const missingValues: string[] = [];
+    if (fullness == null) missingValues.push('fullness');
+    if (fabricWidthCm == null) missingValues.push('fabricWidth');
+    if (missingValues.length > 0) {
+      console.warn('[useWindowSummary] Missing critical values for calculation:', { 
+        windowId: (summary as any).window_id,
+        missing: missingValues,
+        hint: 'Use CalculationEngine via useCurtainEngine for accurate calculations'
+      });
+    }
+  }
 
-  // Derived steps (guard if essentials missing)
-  if (railWidth !== undefined && drop !== undefined) {
-    const requiredWidth = railWidth * fullness;
-    const totalSideHems = sideHems * 2 * (curtainCount || 1);
-    const totalWidthWithAllowances = requiredWidth + returnLeft + returnRight + totalSideHems;
+  // Derived steps - ONLY if ALL essential values are present
+  // If any critical value is missing, skip derivation and let CalculationEngine handle it
+  const hasAllEssentials = (
+    railWidth !== undefined && 
+    drop !== undefined && 
+    fullness != null && 
+    fabricWidthCm != null
+  );
+  
+  if (hasAllEssentials) {
+    // Safe to do derived calculations - all values are present
+    const safeFullness = fullness!;
+    const safeFabricWidth = fabricWidthCm!;
+    const safeSideHems = sideHems ?? 0;
+    const safeSeamHems = seamHems ?? 0;
+    const safeHeaderHem = headerHem ?? 0;
+    const safeBottomHem = bottomHem ?? 0;
+    const safeReturnLeft = returnLeft ?? 0;
+    const safeReturnRight = returnRight ?? 0;
+    
+    const requiredWidth = railWidth * safeFullness;
+    const totalSideHems = safeSideHems * 2 * (curtainCount || 1);
+    const totalWidthWithAllowances = requiredWidth + safeReturnLeft + safeReturnRight + totalSideHems;
 
-    const widthsRequired = Math.max(1, Math.ceil(totalWidthWithAllowances / fabricWidthCm));
+    const widthsRequired = Math.max(1, Math.ceil(totalWidthWithAllowances / safeFabricWidth));
     const seamsRequired = Math.max(0, widthsRequired - 1);
-    const seamAllowTotalCm = widthsRequired > 1 ? (widthsRequired - 1) * seamHems * 2 : 0;
+    const seamAllowTotalCm = widthsRequired > 1 ? (widthsRequired - 1) * safeSeamHems * 2 : 0;
 
-    const totalDropPerWidth = drop + headerHem + bottomHem + pooling;
+    const totalDropPerWidth = drop + safeHeaderHem + safeBottomHem + pooling;
 
-    const fabricCapacityWidthTotal = widthsRequired * fabricWidthCm;
+    const fabricCapacityWidthTotal = widthsRequired * safeFabricWidth;
     const leftoverWidthTotal = Math.max(0, fabricCapacityWidthTotal - totalWidthWithAllowances);
     const leftoverPerPanel = widthsRequired > 0 ? leftoverWidthTotal / widthsRequired : 0;
 
@@ -226,14 +251,14 @@ const enrichSummaryForPersistence = (summary: Omit<WindowSummary, "updated_at">)
       rail_width_cm: railWidth,
       drop_cm: drop,
       pooling_amount_cm: pooling,
-      fabric_width_cm: fabricWidthCm,
-      side_hems_cm: sideHems,
-      seam_hems_cm: seamHems,
-      header_allowance_cm: headerHem,
-      bottom_hem_cm: bottomHem,
-      return_left_cm: returnLeft,
-      return_right_cm: returnRight,
-      fullness_ratio: fullness,
+      fabric_width_cm: safeFabricWidth,
+      side_hems_cm: safeSideHems,
+      seam_hems_cm: safeSeamHems,
+      header_allowance_cm: safeHeaderHem,
+      bottom_hem_cm: safeBottomHem,
+      return_left_cm: safeReturnLeft,
+      return_right_cm: safeReturnRight,
+      fullness_ratio: safeFullness,
       curtain_type: curtainType,
       curtain_count: curtainCount,
 

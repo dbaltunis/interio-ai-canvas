@@ -1,14 +1,13 @@
 /**
- * Centralized Blind Calculation Defaults
- * Single source of truth for all blind sqm calculations
+ * Blind Calculation Utilities
  * 
- * Re-exports from calculationFormulas.ts for backward compatibility
- * All formulas are now defined in calculationFormulas.ts
+ * NO HIDDEN DEFAULTS - all values must come from template.
+ * If template values are missing, functions throw errors.
  */
 
-import { BLIND_FORMULA, BLIND_DEFAULTS, BlindFormulaInputs, BlindFormulaResult } from './calculationFormulas';
+import { BLIND_FORMULA, BlindFormulaInputs, BlindFormulaResult } from './calculationFormulas';
 
-export interface BlindHemDefaults {
+export interface BlindHemValues {
   headerHemCm: number;
   bottomHemCm: number;
   sideHemCm: number;
@@ -16,38 +15,47 @@ export interface BlindHemDefaults {
 }
 
 /**
- * Get blind hem defaults from template, with sensible fallbacks
- * User's expected calculation: 
- *   width: 120 + 4 + 4 = 128 cm (side = 4cm each)
- *   height: 120 + 8 + 10 = 138 cm (header = 8, bottom = 10)
+ * Extract blind hem values from template
+ * THROWS if any required value is missing - NO DEFAULTS
  */
-export const getBlindHemDefaults = (template?: any): BlindHemDefaults => {
-  // PRIORITY: Template settings → Centralized defaults
+export const getBlindHemValues = (template: any): BlindHemValues => {
+  if (!template) {
+    throw new Error('[getBlindHemValues] Template is required - cannot calculate without manufacturing settings');
+  }
+  
+  const headerRaw = template.blind_header_hem_cm ?? template.header_allowance ?? template.header_hem_cm;
+  const bottomRaw = template.blind_bottom_hem_cm ?? template.bottom_hem ?? template.bottom_hem_cm;
+  const sideRaw = template.blind_side_hem_cm ?? template.side_hem ?? template.side_hem_cm;
+  const wasteRaw = template.waste_percent ?? template.waste_percentage ?? 0;
+  
+  const missing: string[] = [];
+  if (headerRaw == null) missing.push('header_hem');
+  if (bottomRaw == null) missing.push('bottom_hem');
+  if (sideRaw == null) missing.push('side_hem');
+  
+  if (missing.length > 0) {
+    throw new Error(
+      `[getBlindHemValues] Template "${template.name || template.id}" missing required values: ${missing.join(', ')}. ` +
+      `Configure these in template manufacturing settings.`
+    );
+  }
+  
   return {
-    headerHemCm: parseFloat(template?.blind_header_hem_cm) || 
-                 parseFloat(template?.header_allowance) || 
-                 BLIND_DEFAULTS.headerHemCm,
-    
-    bottomHemCm: parseFloat(template?.blind_bottom_hem_cm) || 
-                 parseFloat(template?.bottom_hem) || 
-                 BLIND_DEFAULTS.bottomHemCm,
-    
-    sideHemCm: parseFloat(template?.blind_side_hem_cm) || 
-               parseFloat(template?.side_hem) || 
-               BLIND_DEFAULTS.sideHemCm,
-    
-    wastePercent: parseFloat(template?.waste_percent) || BLIND_DEFAULTS.wastePercent
+    headerHemCm: parseFloat(headerRaw),
+    bottomHemCm: parseFloat(bottomRaw),
+    sideHemCm: parseFloat(sideRaw),
+    wastePercent: parseFloat(wasteRaw) || 0
   };
 };
 
 /**
  * Calculate blind sqm with hems applied
- * This uses the centralized BLIND_FORMULA from calculationFormulas.ts
+ * Uses centralized BLIND_FORMULA
  */
 export const calculateBlindSqm = (
   railWidthCm: number,
   dropCm: number,
-  hems: BlindHemDefaults
+  hems: BlindHemValues
 ): {
   sqm: number;
   sqmRaw?: number;
@@ -57,6 +65,13 @@ export const calculateBlindSqm = (
   heightCalcNote: string;
   formula?: string;
 } => {
+  if (!railWidthCm || railWidthCm <= 0) {
+    throw new Error('[calculateBlindSqm] railWidthCm is required and must be > 0');
+  }
+  if (!dropCm || dropCm <= 0) {
+    throw new Error('[calculateBlindSqm] dropCm is required and must be > 0');
+  }
+  
   const inputs: BlindFormulaInputs = {
     railWidthCm,
     dropCm,
@@ -80,13 +95,13 @@ export const calculateBlindSqm = (
 };
 
 /**
- * Debug logging for blind calculations - use this to trace calculation issues
+ * Debug logging for blind calculations
  */
 export const logBlindCalculation = (
   context: string,
   railWidthCm: number,
   dropCm: number,
-  hems: BlindHemDefaults,
+  hems: BlindHemValues,
   result: { sqm: number; effectiveWidthCm: number; effectiveHeightCm: number; formula?: string }
 ) => {
   console.log(`📐 ${context} Blind Calculation:`, {
@@ -105,3 +120,6 @@ export const logBlindCalculation = (
     formula: result.formula
   });
 };
+
+// Legacy alias for backward compatibility
+export const getBlindHemDefaults = getBlindHemValues;
