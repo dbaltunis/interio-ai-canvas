@@ -43,8 +43,9 @@ export const calculateFabricUsage = (
     (t) => t.id === formData.treatment_type_id
   );
   
-  // ✅ FIX: Get fullness from selected heading or template, NOT hardcoded
-  let fullness = 0; // Default to 0 when nothing is selected
+  // ✅ FIX: Get fullness from selected heading or user selection ONLY
+  // NO template fallback - user must explicitly select heading or fullness
+  let fullness: number | null = null; // Start as null - no guessing
   
   // Get extra fabric from selected heading metadata
   let extraFabric = 0;
@@ -68,26 +69,22 @@ export const calculateFabricUsage = (
     }
   }
   
-  // Priority 2: Use form data if provided
+  // Priority 2: Use form data if provided (user's explicit selection)
   if (formData.heading_fullness && parseFloat(formData.heading_fullness) > 0) {
     fullness = parseFloat(formData.heading_fullness);
   }
   
-  // Priority 3: Use template's default fullness or fullness_ratio
-  if (selectedTemplate && fullness === 0) {
-    const templateFullness = selectedTemplate.default_fullness || selectedTemplate.fullness_ratio;
-    if (templateFullness) {
-      fullness = parseFloat(templateFullness);
-    }
-  }
+  // ❌ REMOVED: Priority 3 template fallback - NO MORE GUESSING
+  // If fullness is still null, calculation will show "Select heading" error
   
-  console.log('🎯 Fullness calculation:', {
+  console.log('🎯 Fullness calculation (NO FALLBACK):', {
     formDataFullness: formData.heading_fullness,
     selectedHeading: formData.selected_heading,
-    templateFullness: selectedTemplate?.default_fullness || selectedTemplate?.fullness_ratio,
+    templateFullnessIgnored: selectedTemplate?.default_fullness || selectedTemplate?.fullness_ratio,
     headingOptionsAvailable: selectedFabricItem?.headingOptions?.length,
     finalFullness: fullness,
-    extraFabric
+    extraFabric,
+    note: fullness === null ? 'REQUIRES USER SELECTION - no template fallback' : 'From user selection'
   });
   
   // Add extra fabric to drop if applicable (from heading metadata)

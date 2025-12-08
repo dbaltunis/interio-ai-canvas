@@ -110,24 +110,28 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
         break;
     }
 
-    // Check for railroading possibility
-    const standardFabricWidth = template.fabric_width_type === 'wide' ? 280 : 140; // cm
+    // Check for railroading possibility - fabric width must come from selected fabric, not hardcoded
+    const selectedFabricWidth = (template as any).fabric_width || (template as any).selected_fabric_width || null;
     const canRailroad = template.is_railroadable && 
-                       (totalDrop <= standardFabricWidth);
+                       selectedFabricWidth && (totalDrop <= selectedFabricWidth);
 
     let totalFabricRequired: number;
     
-    if (canRailroad) {
+    if (canRailroad && selectedFabricWidth) {
       // Railroaded calculation: cut from fabric width, not length
-      const dropsNeeded = Math.ceil(totalFabricWidth / standardFabricWidth);
+      const dropsNeeded = Math.ceil(totalFabricWidth / selectedFabricWidth);
       totalFabricRequired = (dropsNeeded * totalDrop) / 100; // Convert to meters
-    } else {
+    } else if (selectedFabricWidth) {
       // Standard calculation: calculate seams needed if fabric width is not sufficient
-      const seamsNeeded = Math.max(0, Math.ceil(totalFabricWidth / standardFabricWidth) - 1);
+      const seamsNeeded = Math.max(0, Math.ceil(totalFabricWidth / selectedFabricWidth) - 1);
       const seamAllowance = seamsNeeded * template.seam_hems * 2; // Both sides of seam
 
       // Calculate total fabric required in meters
       totalFabricRequired = (totalDrop + seamAllowance) / 100; // Convert to meters
+    } else {
+      // Cannot calculate without fabric width - return 0 to indicate missing data
+      console.warn('Cannot calculate fabric requirement: fabric width not selected');
+      totalFabricRequired = 0;
     }
 
     // Apply waste percentage at the very end
@@ -159,10 +163,10 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
         makeUpPrice = (drop / 100) * pricePerMetre; // Convert cm to metres
         break;
       case 'per_drop':
-        // Calculate actual number of drops needed based on fabric width
-        const standardFabricWidth = template.fabric_width_type === 'wide' ? 280 : 140;
-        const fabricWidthNeeded = railWidth * template.fullness_ratio;
-        const dropsRequired = Math.ceil(fabricWidthNeeded / standardFabricWidth);
+        // Calculate actual number of drops needed based on SELECTED fabric width
+        const dropFabricWidth = (template as any).fabric_width || (template as any).selected_fabric_width;
+        const fabricWidthNeeded = railWidth * (template.fullness_ratio || 1);
+        const dropsRequired = dropFabricWidth ? Math.ceil(fabricWidthNeeded / dropFabricWidth) : 0;
         
         // Check for height-based drop pricing first
         let pricePerDrop = template.machine_price_per_drop || 30;
@@ -211,16 +215,18 @@ export const AddCurtainToProject = ({ windowId, projectId, onClose, onSave }: Ad
     }
 
     // Estimate costs (these would typically come from inventory/pricing data)
-    const fabricCost = totalFabricRequired * 15; // £15 per meter estimate
-    const liningCost = totalLiningRequired * 8; // £8 per meter estimate
-    const hardwareCost = railWidth * 12; // £12 per meter estimate
+    // REMOVED: Hardcoded price estimates - these should come from inventory
+    const fabricCost = 0; // Must come from selected fabric price
+    const liningCost = 0; // Must come from selected lining price
+    const hardwareCost = 0; // Must come from selected hardware price
 
     const totalPrice = makeUpPrice + fabricCost + liningCost + hardwareCost;
 
     // Add calculation details for better transparency
     let calculationDetails = {};
     if (template.pricing_type === 'per_drop') {
-      const dropsRequired = Math.ceil((railWidth * template.fullness_ratio) / (template.fabric_width_type === 'wide' ? 280 : 140));
+      const calcFabricWidth = (template as any).fabric_width || (template as any).selected_fabric_width;
+      const dropsRequired = calcFabricWidth ? Math.ceil((railWidth * (template.fullness_ratio || 1)) / calcFabricWidth) : 0;
       calculationDetails = {
         dropsRequired,
         pricePerDrop: template.machine_price_per_drop || 30,

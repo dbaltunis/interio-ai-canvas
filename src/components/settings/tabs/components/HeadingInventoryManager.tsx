@@ -44,7 +44,7 @@ export const HeadingInventoryManager = () => {
   const [eyeletRings, setEyeletRings] = useState<EyeletRing[]>([]);
   const [formData, setFormData] = useState({
     name: '',
-    fullness_ratio: 2.5,
+    fullness_ratio: '' as number | string, // NO hardcoded default - user must enter
     extra_fabric: 0,
     price_per_linear_unit: 0,
     image_url: '',
@@ -55,13 +55,13 @@ export const HeadingInventoryManager = () => {
     eyelet_diameter: 8,
     eyelet_color: 'antique-brass',
     use_multiple_ratios: false,
-    multiple_fullness_ratios: [2.5] as number[],
+    multiple_fullness_ratios: [] as number[], // NO hardcoded default
   });
 
   const resetForm = () => {
     setFormData({
       name: '',
-      fullness_ratio: 2.5,
+      fullness_ratio: '', // NO hardcoded default - user must enter
       extra_fabric: 0,
       price_per_linear_unit: 0,
       image_url: '',
@@ -71,7 +71,7 @@ export const HeadingInventoryManager = () => {
       eyelet_diameter: 8,
       eyelet_color: 'antique-brass',
       use_multiple_ratios: false,
-      multiple_fullness_ratios: [2.5],
+      multiple_fullness_ratios: [], // NO hardcoded default
     });
     setEyeletRings([]);
     setShowAdvanced(false);
@@ -408,7 +408,7 @@ export const HeadingInventoryManager = () => {
                       onCheckedChange={(checked) => setFormData({ 
                         ...formData, 
                         use_multiple_ratios: checked,
-                        multiple_fullness_ratios: checked ? formData.multiple_fullness_ratios : [formData.fullness_ratio]
+                        multiple_fullness_ratios: checked ? formData.multiple_fullness_ratios : (typeof formData.fullness_ratio === 'number' ? [formData.fullness_ratio] : [])
                       })}
                     />
                     <Label htmlFor="use_multiple_ratios">Multiple Fullness Ratios</Label>
