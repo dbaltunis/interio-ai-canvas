@@ -31,6 +31,13 @@ import {
 
 import { mmToCm, cmToM, roundTo } from '@/utils/lengthUnits';
 import { getPriceFromGrid } from '@/hooks/usePricingGrids';
+import { 
+  CalculationError, 
+  ConfigurationError, 
+  ValidationError,
+  assertRequired,
+  assertPositive 
+} from '@/utils/errorHandling';
 
 // ============================================================
 // Types
@@ -76,7 +83,11 @@ export class CalculationEngine {
     const { category, measurements, template, fabric, material, options } = input;
     
     if (isUnsupportedType(category)) {
-      throw new Error(`Calculation not yet supported for category: ${category}`);
+      throw new CalculationError(
+        `Calculation not yet supported for category: ${category}`,
+        'unsupported_category',
+        { category }
+      );
     }
     
     const width_cm = mmToCm(measurements.rail_width_mm);
@@ -92,7 +103,11 @@ export class CalculationEngine {
     
     if (isLinearType(category)) {
       if (!fabric) {
-        throw new Error(`${category} requires fabric for calculation`);
+        throw new ConfigurationError(
+          `${category} requires fabric for calculation`,
+          'fabric',
+          ['fabric_id', 'fabric_width', 'price_per_meter']
+        );
       }
       
       const linearResult = this.calculateLinear(measurements, template, fabric);
@@ -117,7 +132,11 @@ export class CalculationEngine {
       }
       
     } else {
-      throw new Error(`Unknown category type: ${category}`);
+      throw new CalculationError(
+        `Unknown category type: ${category}`,
+        'unknown_category',
+        { category }
+      );
     }
     
     const options_cost = this.calculateOptionsCost(
@@ -176,7 +195,11 @@ export class CalculationEngine {
     // Fullness: user override > template default > error
     const fullness = measurements.heading_fullness ?? template.default_fullness_ratio;
     if (!fullness) {
-      throw new Error('Fullness ratio is required for linear calculation (no default allowed)');
+      throw new ConfigurationError(
+        'Fullness ratio is required for linear calculation (no default allowed)',
+        'template',
+        ['fullness_ratio', 'default_fullness_ratio']
+      );
     }
     values['fullness'] = fullness;
     steps.push(`Fullness ratio: ${fullness}`);
@@ -447,22 +470,27 @@ export class CalculationEngine {
         
       case 'per_meter':
         if (!isLinearType(category)) {
-          throw new Error(
-            `Option "${option.option_key}" uses per_meter pricing but category "${category}" is not a linear type. ` +
-            `per_meter pricing is only valid for: ${LINEAR_TYPES.join(', ')}`
+          throw new CalculationError(
+            `Option "${option.option_key}" uses per_meter pricing but category "${category}" is not a linear type`,
+            'option_pricing',
+            { option_key: option.option_key, category, valid_types: LINEAR_TYPES }
           );
         }
         if (!linear_meters) {
-          throw new Error(
-            `Option "${option.option_key}" requires linear_meters but calculation did not produce it`
+          throw new CalculationError(
+            `Option "${option.option_key}" requires linear_meters but calculation did not produce it`,
+            'option_pricing',
+            { option_key: option.option_key }
           );
         }
         return roundTo(price * linear_meters, 2);
         
       case 'per_sqm':
         if (!sqm) {
-          throw new Error(
-            `Option "${option.option_key}" requires sqm but calculation did not produce it`
+          throw new CalculationError(
+            `Option "${option.option_key}" requires sqm but calculation did not produce it`,
+            'option_pricing',
+            { option_key: option.option_key }
           );
         }
         return roundTo(price * sqm, 2);
