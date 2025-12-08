@@ -202,14 +202,15 @@ export const useVisualMeasurementAdapter = (originalProps: any) => {
           id: originalProps.selectedTemplate.id,
           name: originalProps.selectedTemplate.name,
           panel_configuration: originalProps.selectedTemplate.panel_configuration || 'pair',
-          fullness_ratio: originalProps.selectedTemplate.fullness_ratio || 2.0,
-          header_allowance: originalProps.selectedTemplate.header_allowance || 8,
-          bottom_hem: originalProps.selectedTemplate.bottom_hem || 8,
-          side_hems: originalProps.selectedTemplate.side_hems || 0,
-          seam_hems: originalProps.selectedTemplate.seam_hems || 0,
-          return_left: originalProps.selectedTemplate.return_left || 0,
-          return_right: originalProps.selectedTemplate.return_right || 0,
-          waste_percent: originalProps.selectedTemplate.waste_percent || 0,
+          // No hardcoded defaults - use actual template values
+          fullness_ratio: originalProps.selectedTemplate.fullness_ratio,
+          header_allowance: originalProps.selectedTemplate.header_allowance,
+          bottom_hem: originalProps.selectedTemplate.bottom_hem,
+          side_hems: originalProps.selectedTemplate.side_hems,
+          seam_hems: originalProps.selectedTemplate.seam_hems,
+          return_left: originalProps.selectedTemplate.return_left,
+          return_right: originalProps.selectedTemplate.return_right,
+          waste_percent: originalProps.selectedTemplate.waste_percent,
           compatible_hardware: originalProps.selectedTemplate.compatible_hardware || []
         }
       }));

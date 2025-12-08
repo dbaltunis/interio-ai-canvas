@@ -1,10 +1,67 @@
-// CRITICAL: Option pricing calculations
-// Currency symbol must be passed from user settings via useCurrencyAwarePricing hook
-// Fullness and fabricWidth should ideally come from template/item settings
-// IMPORTANT: Blinds (venetian, cellular, vertical) should NOT use fullness - fullness = 1.0 for blinds
+/**
+ * Option pricing calculations
+ * 
+ * ARCHITECTURE RULES:
+ * - Fullness and fabricWidth MUST come from template/formData - no hardcoded defaults
+ * - Blinds use fullness = 1.0 (no multiplication)
+ * - All values must be explicitly provided or calculation should warn
+ */
 
 import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
 import { calculatePrice, resolvePricingMethod, type PricingMethod, type PricingContext } from "@/utils/pricing/pricingStrategies";
+
+/**
+ * Determines if treatment is a blind type (fullness = 1.0)
+ */
+const isBlindType = (formData: any): boolean => {
+  const treatmentType = formData.treatment_type?.toLowerCase() || '';
+  const treatmentCategory = formData.treatment_category?.toLowerCase() || '';
+  
+  return treatmentType.includes('blind') || 
+         treatmentCategory.includes('blind') ||
+         treatmentCategory === 'roller_blinds' ||
+         treatmentCategory === 'venetian_blinds' ||
+         treatmentCategory === 'cellular_blinds' ||
+         treatmentCategory === 'vertical_blinds' ||
+         formData.curtain_type === 'blind';
+};
+
+/**
+ * Gets fullness value - MUST come from template, no hardcoded defaults
+ */
+const getFullness = (formData: any, isBlind: boolean): number => {
+  // Blinds always use 1.0 - no fullness multiplication
+  if (isBlind) return 1.0;
+  
+  // For curtains/romans, fullness MUST come from formData (which comes from template)
+  const fullness = parseFloat(formData.heading_fullness) || 
+                   parseFloat(formData.fullness_ratio) ||
+                   parseFloat(formData.template_fullness);
+  
+  if (!fullness || fullness <= 0) {
+    console.warn('[OPTION_CALC] Missing fullness value - should come from template. formData:', {
+      heading_fullness: formData.heading_fullness,
+      fullness_ratio: formData.fullness_ratio,
+      template_fullness: formData.template_fullness
+    });
+  }
+  
+  return fullness || 1.0; // Return 1.0 as safe fallback but log warning
+};
+
+/**
+ * Gets fabric width - MUST come from fabric item or template
+ */
+const getFabricWidth = (formData: any, isBlind: boolean): number => {
+  const fabricWidth = parseFloat(formData.fabric_width) ||
+                      parseFloat(formData.fabric_width_cm);
+  
+  if (!fabricWidth || fabricWidth <= 0) {
+    console.warn('[OPTION_CALC] Missing fabric width - should come from fabric item');
+  }
+  
+  return fabricWidth || (isBlind ? 100 : 137); // Log warning but provide reasonable fallback
+};
 
 export const calculateOptionCost = (option: any, formData: any, currencySymbol: string = '$') => {
   const baseCost = getOptionPrice(option);
@@ -15,23 +72,18 @@ export const calculateOptionCost = (option: any, formData: any, currencySymbol: 
     method = resolvePricingMethod(method, option.window_covering_pricing_method as PricingMethod);
   }
 
-  // CRITICAL: Detect if this is a blind type to avoid applying curtain-style fullness
-  const isBlind = formData.treatment_type?.toLowerCase().includes('blind') ||
-                  formData.treatment_category?.toLowerCase().includes('blind') ||
-                  formData.curtain_type === 'blind';
+  const isBlind = isBlindType(formData);
   
   const context: PricingContext = {
     baseCost,
     railWidth: parseFloat(formData.rail_width) || 0,
     drop: parseFloat(formData.drop) || 0,
     quantity: formData.quantity || 1,
-    // CRITICAL: Blinds use fullness = 1.0 (no multiplication), curtains use 2.5 or custom value
-    fullness: isBlind ? 1.0 : (parseFloat(formData.heading_fullness) || 2.5),
-    fabricWidth: parseFloat(formData.fabric_width) || (isBlind ? 100 : 137),
+    fullness: getFullness(formData, isBlind),
+    fabricWidth: getFabricWidth(formData, isBlind),
     fabricCost: parseFloat(formData.fabric_cost_per_yard || "0") || 0,
     fabricUsage: parseFloat(formData.fabric_usage || "0") || 0,
     windowCoveringPricingMethod: option.window_covering_pricing_method as PricingMethod,
-    // CRITICAL: Pass pricing grid data for options
     pricingGridData: option.extra_data?.pricing_grid_data || option.pricing_grid_data,
     currencySymbol
   };
@@ -50,23 +102,18 @@ export const calculateHierarchicalOptionCost = (option: any, formData: any, curr
     method = resolvePricingMethod(method, option.category_calculation_method as PricingMethod);
   }
 
-  // CRITICAL: Detect if this is a blind type to avoid applying curtain-style fullness
-  const isBlind = formData.treatment_type?.toLowerCase().includes('blind') ||
-                  formData.treatment_category?.toLowerCase().includes('blind') ||
-                  formData.curtain_type === 'blind';
+  const isBlind = isBlindType(formData);
 
   const context: PricingContext = {
     baseCost,
     railWidth: parseFloat(formData.rail_width) || 0,
     drop: parseFloat(formData.drop) || 0,
     quantity: formData.quantity || 1,
-    // CRITICAL: Blinds use fullness = 1.0 (no multiplication), curtains use 2.5 or custom value
-    fullness: isBlind ? 1.0 : (parseFloat(formData.heading_fullness) || 2.5),
-    fabricWidth: parseFloat(formData.fabric_width) || (isBlind ? 100 : 137),
+    fullness: getFullness(formData, isBlind),
+    fabricWidth: getFabricWidth(formData, isBlind),
     fabricCost: parseFloat(formData.fabric_cost_per_yard || "0") || 0,
     fabricUsage: parseFloat(formData.fabric_usage || "0") || 0,
     windowCoveringPricingMethod: option.window_covering_pricing_method as PricingMethod,
-    // CRITICAL: Pass pricing grid data for options
     pricingGridData: option.extra_data?.pricing_grid_data || option.pricing_grid_data,
     currencySymbol
   };

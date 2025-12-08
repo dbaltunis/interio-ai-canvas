@@ -237,7 +237,8 @@ export const HeadingInventoryManager = () => {
       eyelet_diameter: 8,
       eyelet_color: 'antique-brass',
       use_multiple_ratios: false,
-      multiple_fullness_ratios: [heading.fullness_ratio || 2.5]
+      // Use actual value, no hardcoded fallback
+      multiple_fullness_ratios: heading.fullness_ratio ? [heading.fullness_ratio] : []
     };
 
     // Try to parse from metadata field first, then fall back to description for legacy data
@@ -275,7 +276,8 @@ export const HeadingInventoryManager = () => {
 
     setFormData({
       name: heading.name,
-      fullness_ratio: heading.fullness_ratio || 2.5,
+      // No hardcoded fallback - use actual value or undefined
+      fullness_ratio: heading.fullness_ratio || 0,
       extra_fabric: heading.labor_hours || 0,
       price_per_linear_unit: heading.price_per_meter || 0,
       image_url: heading.image_url || '',

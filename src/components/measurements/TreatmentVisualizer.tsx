@@ -22,7 +22,8 @@ export const TreatmentVisualizer = ({
   const height = measurements.measurement_b || measurements.drop || (units.length === 'cm' ? 120 : 48);
 
   const renderCurtainVisualization = () => {
-    const fullness = parseFloat(treatmentData.fullness_ratio || "2.0");
+    // Fullness must come from treatmentData - no hardcoded default
+    const fullness = parseFloat(treatmentData.fullness_ratio) || 1.0;
     const fabricWidth = width * fullness;
     const pooling = treatmentData.pooling || 0;
     const totalDrop = height + pooling;

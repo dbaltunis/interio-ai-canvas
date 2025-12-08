@@ -179,19 +179,24 @@ export const MeasurementWorksheet = ({
           // Get template to use its configured defaults
           const template = templates.find(t => t.id === templateId) as any;
           
-          // Calculate fabric requirements using template defaults when measurements don't have values
-          const fullnessRatio = measurements.fullness ?? template?.fullness_ratio ?? 2.0;
-          const returnLeft = cmToM(measurements.return_left ?? template?.return_left ?? 7.5);
-          const returnRight = cmToM(measurements.return_right ?? template?.return_right ?? 7.5);
-          const overlap = cmToM(measurements.overlap ?? template?.overlap ?? 10);
-          const bottomHem = cmToM(measurements.bottom_hem ?? template?.bottom_hem ?? 15);
-          const headerHem = cmToM(measurements.header_allowance ?? template?.header_allowance ?? 8);
-          const sideHems = cmToM(measurements.side_hems ?? template?.side_hems ?? 7.5);
-          const seamHems = cmToM(measurements.seam_hems ?? template?.seam_hems ?? 1.5);
-          const wastePercent = measurements.waste_percent ?? template?.waste_percent ?? 5;
+          // Calculate fabric requirements - values MUST come from template, no hardcoded fallbacks
+          const fullnessRatio = measurements.fullness ?? template?.fullness_ratio;
+          const returnLeft = cmToM(measurements.return_left ?? template?.return_left ?? 0);
+          const returnRight = cmToM(measurements.return_right ?? template?.return_right ?? 0);
+          const overlap = cmToM(measurements.overlap ?? template?.overlap ?? 0);
+          const bottomHem = cmToM(measurements.bottom_hem ?? template?.bottom_hem ?? 0);
+          const headerHem = cmToM(measurements.header_allowance ?? template?.header_allowance ?? 0);
+          const sideHems = cmToM(measurements.side_hems ?? template?.side_hems ?? 0);
+          const seamHems = cmToM(measurements.seam_hems ?? template?.seam_hems ?? 0);
+          const wastePercent = measurements.waste_percent ?? template?.waste_percent ?? 0;
           
-          // Required width calculation
-          const requiredWidthM = railWidthM * fullnessRatio + returnLeft + returnRight + overlap;
+          if (!fullnessRatio) {
+            console.warn('[MEASUREMENT_WORKSHEET] Missing fullness ratio - template may be incomplete');
+          }
+          
+          // Required width calculation - use 1.0 as safe fallback if no fullness (blinds)
+          const effectiveFullness = fullnessRatio || 1.0;
+          const requiredWidthM = railWidthM * effectiveFullness + returnLeft + returnRight + overlap;
           
           // Calculate widths needed (round up)
           const widthsRequired = Math.ceil(requiredWidthM / fabricWidthM);

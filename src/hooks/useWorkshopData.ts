@@ -258,11 +258,18 @@ export const useWorkshopData = (projectId?: string) => {
         seam: summary?.measurements_details?.seam_hem || summary?.template_details?.seam_hems || 0,
       };
       
-      const fullness = {
-        ratio: summary?.measurements_details?.fullness_ratio || 
+      // Get fullness from data - no hardcoded fallback, log warning if missing
+      const fullnessRatio = summary?.measurements_details?.fullness_ratio || 
                summary?.measurements_details?.heading_fullness || 
                summary?.heading_details?.fullness_ratio ||
-               summary?.template_details?.fullness_ratio || 2.5,
+               summary?.template_details?.fullness_ratio;
+      
+      if (!fullnessRatio) {
+        console.warn('[WORKSHOP_DATA] Missing fullness ratio for surface:', s.id);
+      }
+      
+      const fullness = {
+        ratio: fullnessRatio || 1.0, // Safe fallback but warning logged
         headingType: summary?.heading_details?.heading_name || summary?.template_details?.heading_type || 'Standard',
         extraFabric: summary?.heading_details?.extra_fabric || 0,
         hardware: summary?.heading_details?.hardware || undefined,

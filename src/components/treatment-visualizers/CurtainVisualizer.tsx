@@ -19,7 +19,8 @@ export const CurtainVisualizer = ({
 }: CurtainVisualizerProps) => {
   const curtainType = measurements.panel_configuration || template?.panel_configuration || "pair";
   const hardwareType = hardware?.type || "rod";
-  const fullnessRatio = template?.fullness_ratio || 2.0;
+  // Fullness must come from template - no hardcoded default for calculations
+  const fullnessRatio = template?.fullness_ratio || 1.0;
   const poolingAmount = parseFloat(measurements.pooling_amount || "0");
   const hasPooling = poolingAmount > 0;
 

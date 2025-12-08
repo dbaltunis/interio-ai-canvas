@@ -28,12 +28,20 @@ export const useOptionPricing = (params: OptionPricingParams): OptionPricingResu
     let totalCost = 0;
     const optionDetails: Array<{ name: string; cost: number; method: string; calculation: string }> = [];
 
+    // Get fullness from formData - MUST come from template, no hardcoded defaults
+    const fullness = parseFloat(formData.heading_fullness) || parseFloat(formData.fullness_ratio);
+    const fabricWidth = parseFloat(formData.fabric_width) || parseFloat(formData.fabric_width_cm);
+    
+    if (!fullness) {
+      console.warn('[OPTION_PRICING] Missing fullness - should come from template');
+    }
+    
     const pricingContext: Partial<PricingContext> = {
       railWidth: parseFloat(formData.rail_width) || 0,
       drop: parseFloat(formData.drop) || 0,
       quantity: formData.quantity || 1,
-      fullness: parseFloat(formData.heading_fullness) || 2.5,
-      fabricWidth: parseFloat(formData.fabric_width) || 137,
+      fullness: fullness || 1.0, // Safe fallback but warning logged
+      fabricWidth: fabricWidth || 137, // Log warning above
       fabricCost: parseFloat(formData.fabric_cost_per_yard) || 0,
       fabricUsage: parseFloat(formData.fabric_usage) || 0,
       windowCoveringPricingMethod
