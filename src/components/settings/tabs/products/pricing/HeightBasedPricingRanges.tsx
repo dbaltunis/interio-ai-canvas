@@ -30,13 +30,13 @@ export const HeightBasedPricingRanges = ({
   };
 
   const addRange = () => {
-    const lastRange = heightPriceRanges[heightPriceRanges.length - 1];
+    const lastRange = heightPriceRanges?.[heightPriceRanges.length - 1];
     const newRange = {
-      min_height: lastRange.max_height + 1,
-      max_height: lastRange.max_height + 50,
-      price: lastRange.price + 5
+      min_height: lastRange ? lastRange.max_height + 1 : 1,
+      max_height: lastRange ? lastRange.max_height + 50 : 200,
+      price: lastRange ? lastRange.price + 5 : 20
     };
-    onInputChange("height_price_ranges", [...heightPriceRanges, newRange]);
+    onInputChange("height_price_ranges", [...(heightPriceRanges || []), newRange]);
   };
 
   return (
