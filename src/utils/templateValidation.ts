@@ -1,5 +1,8 @@
 /**
  * Template validation utilities to ensure complete configuration
+ * 
+ * CRITICAL: The app should "fail loud" with clear errors instead of guessing values.
+ * These utilities validate templates have required configuration before calculations.
  */
 
 export interface TemplateValidationResult {
@@ -11,6 +14,7 @@ export interface TemplateValidationResult {
 
 /**
  * Validates that a treatment template is properly configured
+ * NO HARDCODED FALLBACKS - missing values are errors, not warnings
  */
 export const validateTreatmentTemplate = (template: any): TemplateValidationResult => {
   const errors: string[] = [];
@@ -136,6 +140,75 @@ export const validateTreatmentTemplate = (template: any): TemplateValidationResu
 };
 
 /**
+ * Validates curtain-specific template fields
+ * CRITICAL: These are REQUIRED for accurate calculations
+ */
+export const validateCurtainTemplate = (template: any): TemplateValidationResult => {
+  const result = validateTreatmentTemplate(template);
+  
+  if (!template) return result;
+
+  // CRITICAL: Fullness ratio is REQUIRED for curtain calculations
+  const hasFullness = 
+    template.fullness_ratio != null ||
+    template.default_fullness != null ||
+    template.default_fullness_ratio != null;
+  
+  if (!hasFullness) {
+    result.errors.push('Fullness ratio is not configured - required for fabric calculations');
+    result.missingConfigurations.push('fullness_ratio');
+    result.isValid = false;
+  }
+
+  // CRITICAL: Hem values are REQUIRED for accurate fabric calculations
+  const hasHeaderHem = template.header_hem != null || template.header_allowance != null;
+  const hasBottomHem = template.bottom_hem != null || template.bottom_allowance != null;
+  const hasSideHem = template.side_hem != null || template.side_hems != null;
+
+  if (!hasHeaderHem) {
+    result.errors.push('Header hem is not configured');
+    result.missingConfigurations.push('header_hem');
+    result.isValid = false;
+  }
+
+  if (!hasBottomHem) {
+    result.errors.push('Bottom hem is not configured');
+    result.missingConfigurations.push('bottom_hem');
+    result.isValid = false;
+  }
+
+  if (!hasSideHem) {
+    result.warnings.push('Side hem is not configured');
+    result.missingConfigurations.push('side_hem');
+  }
+
+  // Seam allowance is important but not blocking
+  if (template.seam_allowance == null && template.seam_hem == null) {
+    result.warnings.push('Seam allowance not configured');
+  }
+
+  return result;
+};
+
+/**
+ * Validates blind-specific template fields
+ */
+export const validateBlindTemplate = (template: any): TemplateValidationResult => {
+  const result = validateTreatmentTemplate(template);
+  
+  if (!template) return result;
+
+  // Blinds need pricing method configured
+  if (!template.pricing_type && !template.pricing_method) {
+    result.errors.push('Pricing method is not configured');
+    result.missingConfigurations.push('pricing_type');
+    result.isValid = false;
+  }
+
+  return result;
+};
+
+/**
  * Get a human-readable summary of template issues
  */
 export const getTemplateValidationSummary = (validation: TemplateValidationResult): string => {
@@ -154,4 +227,19 @@ export const getTemplateValidationSummary = (validation: TemplateValidationResul
   }
 
   return parts.join(', ');
+};
+
+/**
+ * Quick check if template is ready for calculations
+ */
+export const isTemplateReadyForCalculations = (template: any, category: string): boolean => {
+  if (!template) return false;
+
+  if (category === 'curtains' || category === 'roman_blinds') {
+    const validation = validateCurtainTemplate(template);
+    return validation.isValid;
+  }
+
+  const validation = validateTreatmentTemplate(template);
+  return validation.isValid;
 };

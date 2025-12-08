@@ -448,15 +448,33 @@ export const VisualMeasurementSheet = ({
       
       // Calculate total width with fullness and all allowances for manufacturing cost calculation
       // ✅ CRITICAL FIX: Prioritize template fullness, then measurements
-      // NEVER allow fullness < 1 (minimum is 1x, not 0.15 which was a parsing bug)
-      const fullnessFromTemplate = selectedTemplate.fullness_ratio;
+      // NO HARDCODED FALLBACKS - if fullness is missing, log error and use 1 (no fullness)
+      const fullnessFromTemplate = selectedTemplate.fullness_ratio ?? selectedTemplate.default_fullness ?? selectedTemplate.default_fullness_ratio;
       const fullnessFromMeasurements = parseFloat(enrichedMeasurements.heading_fullness as any);
       
-      // Use first valid value, ensuring minimum of 1.0
-      let fullnessRatioValue = fullnessFromTemplate || fullnessFromMeasurements || 1.5;
-      if (fullnessRatioValue < 1) {
-        console.warn('⚠️ Invalid fullness ratio detected:', fullnessRatioValue, '- using 1.5 as fallback');
-        fullnessRatioValue = 1.5; // Industry standard minimum for curtains
+      // Use first valid value - DO NOT use hardcoded fallback
+      let fullnessRatioValue: number | null = null;
+      let fullnessSource = 'not_configured';
+      
+      if (fullnessFromMeasurements != null && !isNaN(fullnessFromMeasurements) && fullnessFromMeasurements >= 1) {
+        fullnessRatioValue = fullnessFromMeasurements;
+        fullnessSource = 'measurements';
+      } else if (fullnessFromTemplate != null && !isNaN(fullnessFromTemplate) && fullnessFromTemplate >= 1) {
+        fullnessRatioValue = fullnessFromTemplate;
+        fullnessSource = 'template';
+      }
+      
+      // FAIL LOUD: If no valid fullness, log error and use 1 (no fullness multiplication)
+      if (fullnessRatioValue == null) {
+        console.error('❌ [CONFIG_ERROR] No valid fullness ratio configured', {
+          templateName: selectedTemplate?.name,
+          fullnessFromTemplate,
+          fullnessFromMeasurements,
+          action: 'Using 1 (no fullness) - configure in template settings'
+        });
+        fullnessRatioValue = 1; // No fullness multiplication - makes the missing config obvious in results
+      } else {
+        console.log('✅ Fullness ratio source:', fullnessSource, 'value:', fullnessRatioValue);
       }
       
       const requiredWidth = width * fullnessRatioValue;

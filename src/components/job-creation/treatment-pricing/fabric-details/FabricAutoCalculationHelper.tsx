@@ -10,7 +10,13 @@ interface FabricAutoCalculationHelperProps {
 }
 
 export const FabricAutoCalculationHelper = ({ formData, onInputChange }: FabricAutoCalculationHelperProps) => {
-  const fabricWidth = parseFloat(formData.fabric_width) || 137;
+  const fabricWidth = parseFloat(formData.fabric_width) || null;
+  
+  // FAIL LOUD: If fabric width not configured, show nothing (FabricCalculationStatus handles error)
+  if (fabricWidth == null) {
+    return null;
+  }
+  
   const isNarrowFabric = fabricWidth <= 200;
   const isPlainFabric = formData.fabric_type?.toLowerCase().includes('plain') || 
                         formData.fabric_type?.toLowerCase().includes('solid') ||

@@ -36,8 +36,9 @@ export const FabricDetailsCard = ({ formData, onInputChange, fabricUsage, costs 
         
         <FabricAutoCalculationHelper formData={formData} onInputChange={onInputChange} />
         
+        {/* CRITICAL: No hardcoded fallback for fabric_width - show error if missing */}
         <FabricCalculationStatus 
-          fabricWidth={parseFloat(formData.fabric_width) || 137}
+          fabricWidth={formData.fabric_width ? parseFloat(formData.fabric_width) : null}
           fabricType={formData.fabric_type || ''}
           rollDirection={formData.roll_direction || 'vertical'}
           isAutoSelected={!formData.roll_direction || formData.roll_direction === 'auto'}

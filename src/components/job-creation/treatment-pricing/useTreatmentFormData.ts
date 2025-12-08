@@ -44,25 +44,28 @@ export const useTreatmentFormData = (treatmentType: string = "Curtains", windowC
     fabric_type: existingData?.fabric_details?.fabric_type || "",
     fabric_code: existingData?.fabric_details?.fabric_code || "",
     fabric_cost_per_yard: existingData?.fabric_details?.fabric_cost_per_yard || "",
-    fabric_width: existingData?.fabric_details?.fabric_width || (isBlindOrShutter ? "100" : "137"),
+    // CRITICAL: NO hardcoded fabric width - must come from selected fabric or template
+    fabric_width: existingData?.fabric_details?.fabric_width || "",
     roll_direction: existingData?.fabric_details?.roll_direction || "vertical",
-    // CRITICAL: Blinds don't use fullness - set to 1.0 (no multiplication)
-    heading_fullness: existingData?.fabric_details?.heading_fullness || (isBlindOrShutter ? "1.0" : "2.5"),
+    // CRITICAL: NO hardcoded fullness - must come from template
+    heading_fullness: existingData?.fabric_details?.heading_fullness || "",
     selected_heading: existingData?.fabric_details?.selected_heading,
-    // CRITICAL: Blinds don't use fabric hems - these should be 0 unless explicitly set in template
-    header_hem: existingData?.measurements?.header_hem || (isBlindOrShutter ? "0" : "15"),
-    bottom_hem: existingData?.measurements?.bottom_hem || (isBlindOrShutter ? "0" : "10"),
-    side_hem: existingData?.measurements?.side_hem || (isBlindOrShutter ? "0" : "5"),
-    seam_hem: existingData?.measurements?.seam_hem || (isBlindOrShutter ? "0" : "3"),
+    // CRITICAL: NO hardcoded hems - must come from template
+    header_hem: existingData?.measurements?.header_hem || "",
+    bottom_hem: existingData?.measurements?.bottom_hem || "",
+    side_hem: existingData?.measurements?.side_hem || "",
+    seam_hem: existingData?.measurements?.seam_hem || "",
     custom_labor_rate: existingData?.custom_labor_rate || "",
     selected_options: existingData?.selected_options || [],
     notes: existingData?.notes || "",
     images: existingData?.images || []
   });
 
-  // Auto-set roll direction based on fabric width
+  // Auto-set roll direction based on fabric width - only if fabric width is provided
   useEffect(() => {
-    const fabricWidth = parseFloat(formData.fabric_width) || 137;
+    const fabricWidth = parseFloat(formData.fabric_width);
+    if (!fabricWidth || isNaN(fabricWidth)) return; // Don't auto-set if no fabric width
+    
     const newRollDirection = fabricWidth <= 200 ? "vertical" : "horizontal";
     
     if (formData.roll_direction !== newRollDirection) {
