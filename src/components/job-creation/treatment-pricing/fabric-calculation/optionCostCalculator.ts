@@ -50,17 +50,18 @@ const getFullness = (formData: any, isBlind: boolean): number => {
 };
 
 /**
- * Gets fabric width - MUST come from fabric item or template
+ * Gets fabric width - MUST come from fabric item or template, NO hardcoded fallbacks
  */
-const getFabricWidth = (formData: any, isBlind: boolean): number => {
+const getFabricWidth = (formData: any, isBlind: boolean): number | null => {
   const fabricWidth = parseFloat(formData.fabric_width) ||
                       parseFloat(formData.fabric_width_cm);
   
   if (!fabricWidth || fabricWidth <= 0) {
-    console.warn('[OPTION_CALC] Missing fabric width - should come from fabric item');
+    console.warn('[OPTION_CALC] Missing fabric width - should come from fabric item. Calculations may be incomplete.');
+    return null; // NO hardcoded 137/100 - fail loud
   }
   
-  return fabricWidth || (isBlind ? 100 : 137); // Log warning but provide reasonable fallback
+  return fabricWidth;
 };
 
 export const calculateOptionCost = (option: any, formData: any, currencySymbol: string = '$') => {

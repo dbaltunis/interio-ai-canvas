@@ -56,7 +56,12 @@ export const SimpleFabricCalculator = ({ product, storeData, onSubmitQuote, onAd
     }
 
     const fullnessMultiplier = fullness === "light" ? 1.5 : fullness === "medium" ? 2.0 : 2.5;
-    const fabricWidth = product.inventory_item?.fabric_width || 137;
+    const fabricWidth = product.inventory_item?.fabric_width; // NO hardcoded 137
+    
+    // Cannot calculate without fabric width
+    if (!fabricWidth || fabricWidth <= 0) {
+      return null; // Fail loud - no calculation without fabric width
+    }
     
     // Calculate fabric needed
     const fabricWidthCm = railWidthNum * fullnessMultiplier;

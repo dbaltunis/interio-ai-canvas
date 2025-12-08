@@ -1446,14 +1446,14 @@ export const DynamicWindowWorksheet = forwardRef<{
               horizontal_pieces_needed: fabricCalculation?.horizontalPiecesNeeded || 1,
               fabric_orientation: fabricCalculation?.fabricOrientation || 'vertical',
               
-              // CRITICAL: Store ALL template-specific values so they're not lost on reload
-              header_hem: measurements.header_hem || selectedTemplate?.header_allowance || selectedTemplate?.header_hem || 8,
-              bottom_hem: measurements.bottom_hem || selectedTemplate?.bottom_hem || selectedTemplate?.bottom_allowance || 15,
-              side_hems: measurements.side_hem || selectedTemplate?.side_hem || selectedTemplate?.side_hems || 7.5,
-              seam_hems: measurements.seam_hem || selectedTemplate?.seam_allowance || selectedTemplate?.seam_hems || 1.5,
+              // CRITICAL: Store ALL template-specific values - NO hardcoded fallbacks, must come from template
+              header_hem: measurements.header_hem || selectedTemplate?.header_allowance || selectedTemplate?.header_hem || null,
+              bottom_hem: measurements.bottom_hem || selectedTemplate?.bottom_hem || selectedTemplate?.bottom_allowance || null,
+              side_hems: measurements.side_hem || selectedTemplate?.side_hem || selectedTemplate?.side_hems || null,
+              seam_hems: measurements.seam_hem || selectedTemplate?.seam_allowance || selectedTemplate?.seam_hems || null,
               return_left: measurements.return_left || selectedTemplate?.return_left || 0,
               return_right: measurements.return_right || selectedTemplate?.return_right || 0,
-              waste_percent: measurements.waste_percent || selectedTemplate?.waste_percent || 5,
+              waste_percent: measurements.waste_percent || selectedTemplate?.waste_percent || 0,
               
               // CRITICAL: Store dimensions in MM (database standard), save null instead of 0 for empty values
               rail_width: measurements.rail_width && parseFloat(measurements.rail_width) > 0 

@@ -185,7 +185,7 @@ export const useWorkshopData = (projectId?: string) => {
       
       const fabricDetails = summary?.fabric_details ? {
         name: summary.fabric_details.name || 'Unknown Fabric',
-        fabricWidth: summary.fabric_details.fabric_width || 137,
+        fabricWidth: summary.fabric_details.fabric_width || null, // NO hardcoded 137 - must come from fabric
         imageUrl: summary.fabric_details.image_url,
         pricePerUnit: summary.fabric_details.selling_price,
         rollDirection: summary.measurements_details?.fabric_rotated ? 'Horizontal' : 'Vertical',
@@ -227,7 +227,8 @@ export const useWorkshopData = (projectId?: string) => {
       const widthsRequired = summary?.widths_required || 1;
       const md = summary?.measurements_details || {};
       const isHorizontal = md.fabric_rotated === true || md.roll_direction === 'horizontal';
-      const horizontalPiecesNeeded = md.horizontal_pieces_needed || (isHorizontal ? Math.ceil((heightMM || 0) / ((fabricDetails?.fabricWidth || 137) * 10)) : 0);
+      // NO hardcoded 137 - must come from fabric details, calculate only if fabric width is known
+      const horizontalPiecesNeeded = md.horizontal_pieces_needed || (isHorizontal && fabricDetails?.fabricWidth ? Math.ceil((heightMM || 0) / (fabricDetails.fabricWidth * 10)) : 0);
       const usesLeftover = md.uses_leftover_for_horizontal === true || md.uses_leftover_for_horizontal === 'true';
       
       // Total drop with hems for manufacturing

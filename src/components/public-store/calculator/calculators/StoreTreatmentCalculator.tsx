@@ -100,7 +100,7 @@ export const StoreTreatmentCalculator = ({ product, storeData, onSubmitQuote, on
       unit_price: product.inventory_item?.unit_price,
       selling_price: product.inventory_item?.selling_price,
       price_per_meter: product.inventory_item?.price_per_meter,
-      fabric_width: product.inventory_item?.fabric_width || 137,
+      fabric_width: product.inventory_item?.fabric_width || null, // NO hardcoded 137 - must come from inventory
       pricing_grid_data: product.inventory_item?.pricing_grid_data,
       price_group: product.inventory_item?.price_group,
       product_category: product.inventory_item?.product_category,
@@ -145,7 +145,7 @@ export const StoreTreatmentCalculator = ({ product, storeData, onSubmitQuote, on
       fabric: {
         id: product.inventory_item?.id,
         name: product.inventory_item?.name,
-        fabric_width: product.inventory_item?.fabric_width || 137,
+        fabric_width: product.inventory_item?.fabric_width || null, // NO hardcoded 137
         price_per_meter: product.inventory_item?.selling_price || product.inventory_item?.unit_price || 0,
         unit_price: product.inventory_item?.unit_price,
         selling_price: product.inventory_item?.selling_price,

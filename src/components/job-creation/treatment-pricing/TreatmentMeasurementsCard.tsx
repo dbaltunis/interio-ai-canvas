@@ -68,9 +68,9 @@ export const TreatmentMeasurementsCard = ({ formData, onInputChange }: Treatment
                 id="header_hem"
                 type="number"
                 step="0.5"
-                value={formData.header_hem || "15"}
+                value={formData.header_hem || ""}
                 onChange={(e) => onInputChange("header_hem", e.target.value)}
-                placeholder="15"
+                placeholder="From template"
               />
             </div>
             <div className="space-y-2">
@@ -79,9 +79,9 @@ export const TreatmentMeasurementsCard = ({ formData, onInputChange }: Treatment
                 id="bottom_hem"
                 type="number"
                 step="0.5"
-                value={formData.bottom_hem || "10"}
+                value={formData.bottom_hem || ""}
                 onChange={(e) => onInputChange("bottom_hem", e.target.value)}
-                placeholder="10"
+                placeholder="From template"
               />
             </div>
             <div className="space-y-2">
@@ -90,9 +90,9 @@ export const TreatmentMeasurementsCard = ({ formData, onInputChange }: Treatment
                 id="side_hem"
                 type="number"
                 step="0.5"
-                value={formData.side_hem || "5"}
+                value={formData.side_hem || ""}
                 onChange={(e) => onInputChange("side_hem", e.target.value)}
-                placeholder="5"
+                placeholder="From template"
               />
             </div>
             <div className="space-y-2">
@@ -101,9 +101,9 @@ export const TreatmentMeasurementsCard = ({ formData, onInputChange }: Treatment
                 id="seam_hem"
                 type="number"
                 step="0.5"
-                value={formData.seam_hem || "3"}
+                value={formData.seam_hem || ""}
                 onChange={(e) => onInputChange("seam_hem", e.target.value)}
-                placeholder="3"
+                placeholder="From template"
               />
             </div>
           </div>
