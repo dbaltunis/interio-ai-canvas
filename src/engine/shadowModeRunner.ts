@@ -5,6 +5,8 @@
  * WITHOUT changing any visible prices or save logic.
  * 
  * DEV ONLY: Controlled by import.meta.env.DEV or VITE_ENABLE_ENGINE_SHADOW
+ * 
+ * NO HIDDEN DEFAULTS: If data is missing, we skip and log - no fake zeros.
  */
 import { CalculationEngine, CalculationInput } from './CalculationEngine';
 import {
@@ -18,9 +20,7 @@ import {
   TemplateContract,
   FabricContract,
   SelectedOptionContract,
-  isValidTreatmentCategory,
 } from '@/contracts/TreatmentContract';
-import { convertLength } from '@/hooks/useBusinessSettings';
 
 // ============================================================
 // Feature Flag Check
@@ -41,6 +41,7 @@ export function isShadowModeEnabled(): boolean {
 
 // ============================================================
 // Data Adapters - Build contracts from existing worksheet data
+// NO HIDDEN DEFAULTS - if data is missing, return null and log
 // ============================================================
 
 interface WorksheetData {
@@ -69,6 +70,10 @@ function buildMeasurements(
     const drop_mm = parseFloat(measurements.drop);
     
     if (!rail_width_mm || !drop_mm || isNaN(rail_width_mm) || isNaN(drop_mm)) {
+      console.warn('[ENGINE_SHADOW_MEASUREMENTS_MISSING]', { 
+        rail_width: measurements.rail_width, 
+        drop: measurements.drop 
+      });
       return null;
     }
     
@@ -77,22 +82,34 @@ function buildMeasurements(
       drop_mm,
     };
     
-    // Optional fields
-    if (measurements.heading_fullness) {
-      result.heading_fullness = parseFloat(measurements.heading_fullness);
+    // Optional fields - only add if they exist
+    if (measurements.heading_fullness != null) {
+      const fullness = parseFloat(measurements.heading_fullness);
+      if (!isNaN(fullness)) {
+        result.heading_fullness = fullness;
+      }
     }
     
     // Returns - stored in CM in measurements_details, convert to MM
-    if (measurements.return_left) {
-      result.return_left_mm = parseFloat(measurements.return_left) * 10;
+    if (measurements.return_left != null) {
+      const val = parseFloat(measurements.return_left);
+      if (!isNaN(val)) {
+        result.return_left_mm = val * 10;
+      }
     }
-    if (measurements.return_right) {
-      result.return_right_mm = parseFloat(measurements.return_right) * 10;
+    if (measurements.return_right != null) {
+      const val = parseFloat(measurements.return_right);
+      if (!isNaN(val)) {
+        result.return_right_mm = val * 10;
+      }
     }
     
     // Pooling - stored in CM, convert to MM
-    if (measurements.pooling_amount) {
-      result.pooling_mm = parseFloat(measurements.pooling_amount) * 10;
+    if (measurements.pooling_amount != null) {
+      const val = parseFloat(measurements.pooling_amount);
+      if (!isNaN(val)) {
+        result.pooling_mm = val * 10;
+      }
     }
     
     return result;
@@ -104,6 +121,7 @@ function buildMeasurements(
 
 /**
  * Build TemplateContract from selected template
+ * NO HIDDEN DEFAULTS - all required fields must be present
  */
 function buildTemplate(
   template: any,
@@ -112,28 +130,61 @@ function buildTemplate(
   if (!template) return null;
   
   try {
-    // Extract values with fallbacks to various property names
-    const header_hem_cm = parseFloat(
-      template.header_hem_cm ?? template.header_hem ?? template.header_allowance ?? 0
-    );
-    const bottom_hem_cm = parseFloat(
-      template.bottom_hem_cm ?? template.bottom_hem ?? template.bottom_allowance ?? 0
-    );
-    const side_hem_cm = parseFloat(
-      template.side_hem_cm ?? template.side_hem ?? template.side_hems ?? 0
-    );
-    const seam_hem_cm = parseFloat(
-      template.seam_hem_cm ?? template.seam_hem ?? template.seam_allowance ?? template.seam_hems ?? 0
-    );
-    const waste_percentage = parseFloat(
-      template.waste_percentage ?? template.waste_percent ?? template.waste ?? 0
-    );
+    // Extract raw values - NO defaults
+    const headerRaw = template.header_hem_cm ?? template.header_hem ?? template.header_allowance;
+    const bottomRaw = template.bottom_hem_cm ?? template.bottom_hem ?? template.bottom_allowance;
+    const sideRaw = template.side_hem_cm ?? template.side_hem ?? template.side_hems;
+    const seamRaw = template.seam_hem_cm ?? template.seam_hem ?? template.seam_allowance ?? template.seam_hems;
+    const wasteRaw = template.waste_percentage ?? template.waste_percent ?? template.waste;
+    
+    // Check for missing required fields
+    if (
+      headerRaw == null ||
+      bottomRaw == null ||
+      sideRaw == null ||
+      seamRaw == null ||
+      wasteRaw == null ||
+      !template.pricing_type
+    ) {
+      console.warn('[ENGINE_SHADOW_TEMPLATE_MISSING]', {
+        templateId: template.id,
+        templateName: template.name,
+        missing: {
+          header_hem: headerRaw == null,
+          bottom_hem: bottomRaw == null,
+          side_hem: sideRaw == null,
+          seam_hem: seamRaw == null,
+          waste: wasteRaw == null,
+          pricing_type: !template.pricing_type,
+        }
+      });
+      return null;
+    }
+    
+    const header_hem_cm = parseFloat(headerRaw);
+    const bottom_hem_cm = parseFloat(bottomRaw);
+    const side_hem_cm = parseFloat(sideRaw);
+    const seam_hem_cm = parseFloat(seamRaw);
+    const waste_percentage = parseFloat(wasteRaw);
+    
+    // Check for invalid numbers
+    if (
+      [header_hem_cm, bottom_hem_cm, side_hem_cm, seam_hem_cm, waste_percentage].some(
+        v => isNaN(v)
+      )
+    ) {
+      console.warn('[ENGINE_SHADOW_TEMPLATE_INVALID]', {
+        templateId: template.id,
+        values: { header_hem_cm, bottom_hem_cm, side_hem_cm, seam_hem_cm, waste_percentage }
+      });
+      return null;
+    }
     
     const result: TemplateContract = {
       id: template.id || 'unknown',
       name: template.name || 'Unknown Template',
       treatment_category: category,
-      pricing_type: template.pricing_type || 'per_running_meter',
+      pricing_type: template.pricing_type, // NO default
       header_hem_cm,
       bottom_hem_cm,
       side_hem_cm,
@@ -141,18 +192,18 @@ function buildTemplate(
       waste_percentage,
     };
     
-    if (template.base_price) {
+    if (template.base_price != null) {
       result.base_price = parseFloat(template.base_price);
     }
     
-    if (template.fullness_ratio || template.default_fullness_ratio) {
-      result.default_fullness_ratio = parseFloat(template.fullness_ratio ?? template.default_fullness_ratio);
+    if (template.fullness_ratio != null || template.default_fullness_ratio != null) {
+      result.default_fullness_ratio = parseFloat(
+        template.fullness_ratio ?? template.default_fullness_ratio
+      );
     }
     
-    if (template.default_returns_cm || template.return_left || template.return_right) {
-      result.default_returns_cm = parseFloat(
-        template.default_returns_cm ?? template.return_left ?? template.return_right ?? 0
-      );
+    if (template.default_returns_cm != null) {
+      result.default_returns_cm = parseFloat(template.default_returns_cm);
     }
     
     if (template.pricing_grid_data) {
@@ -168,16 +219,35 @@ function buildTemplate(
 
 /**
  * Build FabricContract from selected fabric item
+ * NO HIDDEN DEFAULTS - width and pricing_method are required
  */
 function buildFabric(fabric: any): FabricContract | null {
   if (!fabric) return null;
   
   try {
-    const width_cm = parseFloat(
-      fabric.fabric_width ?? fabric.width_cm ?? fabric.width ?? 140
-    );
+    const widthRaw = fabric.fabric_width ?? fabric.width_cm ?? fabric.width;
+    if (widthRaw == null) {
+      console.warn('[ENGINE_SHADOW_FABRIC_MISSING_WIDTH]', { 
+        fabricId: fabric.id,
+        fabricName: fabric.name 
+      });
+      return null;
+    }
     
+    const width_cm = parseFloat(widthRaw);
     if (!width_cm || isNaN(width_cm)) {
+      console.warn('[ENGINE_SHADOW_FABRIC_INVALID_WIDTH]', { 
+        fabricId: fabric.id, 
+        widthRaw 
+      });
+      return null;
+    }
+    
+    if (!fabric.pricing_method) {
+      console.warn('[ENGINE_SHADOW_FABRIC_MISSING_PRICING_METHOD]', { 
+        fabricId: fabric.id,
+        fabricName: fabric.name 
+      });
       return null;
     }
     
@@ -185,22 +255,22 @@ function buildFabric(fabric: any): FabricContract | null {
       id: fabric.id || fabric.fabric_id || 'unknown',
       name: fabric.name || 'Unknown Fabric',
       width_cm,
-      pricing_method: fabric.pricing_method || 'per_running_meter',
+      pricing_method: fabric.pricing_method, // NO default
     };
     
-    if (fabric.price_per_meter || fabric.selling_price || fabric.unit_price) {
+    if (fabric.price_per_meter != null || fabric.selling_price != null || fabric.unit_price != null) {
       result.price_per_meter = parseFloat(
-        fabric.price_per_meter ?? fabric.selling_price ?? fabric.unit_price ?? 0
+        fabric.price_per_meter ?? fabric.selling_price ?? fabric.unit_price
       );
     }
     
-    if (fabric.price_per_sqm) {
+    if (fabric.price_per_sqm != null) {
       result.price_per_sqm = parseFloat(fabric.price_per_sqm);
     }
     
-    if (fabric.pattern_repeat_cm || fabric.pattern_repeat_vertical) {
+    if (fabric.pattern_repeat_cm != null || fabric.pattern_repeat_vertical != null) {
       result.pattern_repeat_cm = parseFloat(
-        fabric.pattern_repeat_cm ?? fabric.pattern_repeat_vertical ?? 0
+        fabric.pattern_repeat_cm ?? fabric.pattern_repeat_vertical
       );
     }
     
@@ -217,30 +287,50 @@ function buildFabric(fabric: any): FabricContract | null {
 
 /**
  * Build SelectedOptionContract array from worksheet options
+ * Skip options with missing price or pricing_method - log and exclude
  */
 function buildOptions(options: any[]): SelectedOptionContract[] {
   if (!options || !Array.isArray(options)) return [];
   
-  return options.map((opt, index) => {
+  return options.flatMap((opt, index) => {
     try {
-      return {
+      const rawPrice = opt.price;
+      const pricing_method = opt.pricingMethod || opt.pricing_method;
+      
+      // Skip options with missing required fields
+      if (rawPrice == null || pricing_method == null) {
+        console.warn('[ENGINE_SHADOW_OPTION_SKIPPED]', { 
+          optionName: opt.name,
+          optionKey: opt.optionKey || opt.option_key,
+          index,
+          missingPrice: rawPrice == null,
+          missingPricingMethod: pricing_method == null,
+        });
+        return [];
+      }
+      
+      const price = parseFloat(rawPrice);
+      if (isNaN(price)) {
+        console.warn('[ENGINE_SHADOW_OPTION_INVALID_PRICE]', { 
+          optionName: opt.name,
+          rawPrice,
+          index 
+        });
+        return [];
+      }
+      
+      return [{
         option_id: opt.option_id || opt.id || `option_${index}`,
         option_key: opt.optionKey || opt.option_key || opt.name || `key_${index}`,
         value_id: opt.value_id || opt.id || `value_${index}`,
         value_label: opt.value_label || opt.name || 'Unknown',
-        price: parseFloat(opt.price) || 0,
-        pricing_method: (opt.pricingMethod || opt.pricing_method || 'fixed') as SelectedOptionContract['pricing_method'],
+        price,
+        pricing_method: pricing_method as SelectedOptionContract['pricing_method'],
         pricing_grid_data: opt.pricingGridData || opt.pricing_grid_data,
-      };
-    } catch {
-      return {
-        option_id: `option_${index}`,
-        option_key: `key_${index}`,
-        value_id: `value_${index}`,
-        value_label: 'Unknown',
-        price: 0,
-        pricing_method: 'fixed' as const,
-      };
+      }];
+    } catch (error) {
+      console.warn('[ENGINE_SHADOW_OPTION_ERROR]', { opt, index, error });
+      return [];
     }
   });
 }
@@ -284,18 +374,18 @@ export function runShadowComparison(
     // Step 1: Build contracts from worksheet data
     const measContract = buildMeasurements(measurements, units);
     if (!measContract) {
-      throw new Error('Failed to build measurements contract');
+      throw new Error('Failed to build measurements contract - missing or invalid data');
     }
     
     const category = treatmentCategory as TreatmentCategoryDbValue;
     const templateContract = buildTemplate(selectedTemplate, category);
     if (!templateContract) {
-      throw new Error('Failed to build template contract');
+      throw new Error('Failed to build template contract - missing required fields');
     }
     
     const fabricContract = buildFabric(selectedFabric);
     if (!fabricContract) {
-      throw new Error('Fabric is required for curtains/roman_blinds');
+      throw new Error('Fabric is required for curtains/roman_blinds - missing or invalid');
     }
     
     const optionsContract = buildOptions(selectedOptions);
