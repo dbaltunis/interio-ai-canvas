@@ -78,14 +78,17 @@ export const AdaptiveFabricPricingDisplay = ({
     !!engineResult &&
     (treatmentCategory === "curtains" || treatmentCategory === "roman_blinds");
 
+  // CRITICAL: No hardcoded fallbacks - use engine or fabricCalculation values only
   const displayFullness =
     isCurtainEngineActive && engineResult.fullness != null
       ? engineResult.fullness
       : (fabricCalculation?.fullnessRatio ??
          fabricCalculation?.fullness ??
          template?.fullness_ratio ??
-         template?.default_fullness_ratio ??
-         2.5);
+         template?.default_fullness_ratio);
+  
+  // Flag for missing fullness - show error instead of guessing
+  const isFullnessMissing = displayFullness == null && isCurtainEngineActive;
 
   const displayTotalWidthMm =
     isCurtainEngineActive && engineResult.totalWidthCm != null
@@ -241,10 +244,12 @@ export const AdaptiveFabricPricingDisplay = ({
           Fabric: {fabricToUse.name}
         </h4>
         <div className="text-xs space-y-1 text-muted-foreground">
-          <div className="flex justify-between">
-            <span>Width:</span>
-            <span className="font-medium text-foreground">{formatFabricWidth(fabricToUse.fabric_width || 300)}</span>
-          </div>
+            <div className="flex justify-between">
+              <span>Width:</span>
+              <span className={`font-medium ${fabricToUse.fabric_width ? 'text-foreground' : 'text-destructive'}`}>
+                {fabricToUse.fabric_width ? formatFabricWidth(fabricToUse.fabric_width) : 'Not set - check inventory'}
+              </span>
+            </div>
           {fabricHasGrid && fabricToUse.resolved_grid_name && <div className="flex justify-between">
               <span>Pricing Grid:</span>
               <span className="font-medium text-foreground text-green-600">{fabricToUse.resolved_grid_name}</span>
@@ -289,7 +294,9 @@ export const AdaptiveFabricPricingDisplay = ({
           <div className="text-xs space-y-1 text-muted-foreground">
             <div className="flex justify-between">
               <span>Width:</span>
-              <span className="font-medium text-foreground">{formatFabricWidth(fabricToUse.fabric_width || 300)}</span>
+              <span className={`font-medium ${fabricToUse.fabric_width ? 'text-foreground' : 'text-destructive'}`}>
+                {fabricToUse.fabric_width ? formatFabricWidth(fabricToUse.fabric_width) : 'Not set - check inventory'}
+              </span>
             </div>
             {fabricHasGrid && fabricToUse.resolved_grid_name && <div className="flex justify-between">
                 <span>Pricing Grid:</span>
@@ -370,7 +377,9 @@ export const AdaptiveFabricPricingDisplay = ({
               </div>
               <div className="flex justify-between">
                 <span>Width:</span>
-                <span className="font-medium text-foreground">{formatFabricWidth(selectedFabricItem?.fabric_width || 137)}</span>
+                <span className={`font-medium ${selectedFabricItem?.fabric_width ? 'text-foreground' : 'text-destructive'}`}>
+                  {selectedFabricItem?.fabric_width ? formatFabricWidth(selectedFabricItem.fabric_width) : 'Not set - check inventory'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Price/sqm:</span>
@@ -429,7 +438,9 @@ export const AdaptiveFabricPricingDisplay = ({
             </div>
             <div className="flex justify-between">
               <span>Width:</span>
-              <span className="font-medium text-foreground">{formatFabricWidth(selectedFabricItem?.fabric_width || 137)}</span>
+              <span className={`font-medium ${selectedFabricItem?.fabric_width ? 'text-foreground' : 'text-destructive'}`}>
+                {selectedFabricItem?.fabric_width ? formatFabricWidth(selectedFabricItem.fabric_width) : 'Not set - check inventory'}
+              </span>
             </div>
             <div className="flex justify-between">
               <span>Price/meter:</span>
@@ -444,7 +455,9 @@ export const AdaptiveFabricPricingDisplay = ({
           <div className="text-xs space-y-1 text-muted-foreground">
             <div className="flex justify-between">
               <span>Fabric Width:</span>
-              <span className="font-medium text-foreground">{formatFabricWidth(selectedFabricItem?.fabric_width || 137)}</span>
+              <span className={`font-medium ${selectedFabricItem?.fabric_width ? 'text-foreground' : 'text-destructive'}`}>
+                {selectedFabricItem?.fabric_width ? formatFabricWidth(selectedFabricItem.fabric_width) : 'Not set - check inventory'}
+              </span>
             </div>
             
             {fabricCalculation.fabricOrientation === 'vertical' ? <>
@@ -510,8 +523,10 @@ export const AdaptiveFabricPricingDisplay = ({
                   </span>
                 </div>
                 <div className="flex justify-between pl-2">
-                  <span>Fullness:</span>
-                  <span className="font-medium text-foreground">{displayFullness?.toFixed(1) || '1.0'}x</span>
+              <span>Fullness:</span>
+              <span className={`font-medium ${displayFullness != null ? 'text-foreground' : 'text-destructive'}`}>
+                {displayFullness != null ? `${displayFullness.toFixed(1)}x` : 'Select heading style'}
+              </span>
                 </div>
                 <div className="flex justify-between pl-2">
                   <span>Returns (L+R):</span>
@@ -573,7 +588,8 @@ export const AdaptiveFabricPricingDisplay = ({
                         </p>
                         <p className="text-amber-700 dark:text-amber-300 text-xs mt-0.5">
                           Drop height exceeds fabric width by ~{(() => {
-                      const fabricWidthCM = selectedFabricItem?.fabric_width || 137;
+                      const fabricWidthCM = selectedFabricItem?.fabric_width;
+                      if (!fabricWidthCM) return 'unknown (fabric width not set)';
                       const dropCM = fabricCalculation.drop || parseFloat(measurements.drop) / 10 || 0;
                       const shortfallCM = Math.max(0, dropCM - fabricWidthCM);
                       return formatMeasurement(shortfallCM, 'cm');
