@@ -306,9 +306,9 @@ function mapCategoryToTreatment(category: string): string {
   if (categoryLower.includes('curtain')) return 'curtains';
   if (categoryLower.includes('roman')) return 'roman_blinds';
   if (categoryLower.includes('shutter')) return 'shutters';
-  if (categoryLower.includes('awning')) return 'awnings';
-  if (categoryLower.includes('panel')) return 'panel_glides';
+  if (categoryLower.includes('awning')) return 'awning';
+  if (categoryLower.includes('panel')) return 'panel_glide';
   
-  // Default to blinds for most TWC products
-  return 'blinds';
+  // Default to roller_blinds for most TWC products (valid category)
+  return 'roller_blinds';
 }
