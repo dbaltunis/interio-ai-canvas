@@ -95,8 +95,9 @@ export const fetchMakingCostWithOptions = async (makingCostId: string): Promise<
       include_fabric_selection: true,
       measurement_type: 'standard',
       heading_options: [
-        { name: 'Pencil Pleat', fullness: 2.5, cost: 0 },
-        { name: 'Eyelet', fullness: 2.0, cost: 10 }
+        // NO hardcoded fullness values - these come from inventory/settings
+        // { name: 'Pencil Pleat', fullness: null, cost: 0 },
+        // { name: 'Eyelet', fullness: null, cost: 10 }
       ],
       hardware_options: [
         { name: 'Standard Track', cost: 25 },

@@ -15,20 +15,10 @@ export interface HeadingOption {
   updated_at: string;
 }
 
-// Mock data store
+// Mock data store - NO hardcoded fullness values
+// Fullness must come from user's configured heading inventory
 let mockHeadingOptions: HeadingOption[] = [
-  {
-    id: 'heading-1',
-    user_id: 'mock-user',
-    name: 'Pencil Pleat',
-    fullness: 2.5,
-    price: 25.00,
-    type: 'gathered',
-    description: 'Classic pencil pleat heading',
-    active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
+  // Empty - headings should come from inventory, not mock data
 ];
 
 export const useHeadingOptions = () => {
