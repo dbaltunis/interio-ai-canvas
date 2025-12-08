@@ -29,6 +29,7 @@ import { MeasurementWorksheetSkeleton } from "./skeleton/MeasurementWorksheetSke
 import { ColorSelector } from "./ColorSelector";
 import { calculateOptionPrices, getOptionEffectivePrice } from "@/utils/calculateOptionPrices";
 import { runShadowComparison } from "@/engine/shadowModeRunner";
+import { useCurtainEngine } from "@/engine/useCurtainEngine";
 
 /**
  * CRITICAL MEASUREMENT UNIT STANDARD
@@ -171,6 +172,19 @@ export const DynamicWindowWorksheet = forwardRef<{
     isLoading: headingOptionsLoading
   } = useHeadingOptions();
   const queryClient = useQueryClient();
+
+  // ✅ NEW ENGINE: Single source of truth for curtain/roman calculations
+  // This replaces multiple scattered calculation paths with one authoritative engine
+  const engineResult = useCurtainEngine({
+    treatmentCategory,
+    surfaceId,
+    projectId,
+    measurements,
+    selectedTemplate,
+    selectedFabric: selectedItems.fabric || selectedItems.material,
+    selectedOptions,
+    units,
+  });
 
   // Combined loading state
   const isInitialLoading = windowCoveringsLoading || headingInventoryLoading || headingOptionsLoading;
@@ -2115,10 +2129,30 @@ export const DynamicWindowWorksheet = forwardRef<{
                       );
                     }
 
-                    // ✅ SINGLE CALCULATION POINT: Calculate once, save to state
-                    const linearMeters = fabricCalculation.linearMeters || 0;
-                    const horizontalPiecesNeeded = fabricCalculation.horizontalPiecesNeeded || 1;
-                    const pricePerMeter = fabricCalculation.pricePerMeter || 0;
+                    // ✅ SINGLE SOURCE OF TRUTH: Use engine result when available for curtains/romans
+                    // This ensures all displays use identical values from the authoritative calculation
+                    const isCurtainOrRoman = treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds';
+                    const linearMeters = (isCurtainOrRoman && engineResult?.linear_meters != null) 
+                      ? engineResult.linear_meters 
+                      : (fabricCalculation?.linearMeters || 0);
+                    const horizontalPiecesNeeded = fabricCalculation?.horizontalPiecesNeeded || 1;
+                    // Get price from fabric item or fabricCalculation - never calculate from total/meters
+                    const selectedFabricItem = selectedItems.fabric || selectedItems.material;
+                    const pricePerMeter = selectedFabricItem?.price_per_meter 
+                      || selectedFabricItem?.selling_price 
+                      || fabricCalculation?.pricePerMeter 
+                      || 0;
+                    
+                    // Debug: Log which source is being used
+                    if (import.meta.env.DEV && isCurtainOrRoman) {
+                      console.log('📊 [DynamicWorksheet] Linear Meters Source:', {
+                        usingEngine: engineResult?.linear_meters != null,
+                        engineValue: engineResult?.linear_meters,
+                        fabricCalcValue: fabricCalculation?.linearMeters,
+                        finalValue: linearMeters,
+                        pricePerMeter,
+                      });
+                    }
                     
                     // CRITICAL FIX: Check if using leftover fabric for horizontal seaming
                     const usesLeftover = measurements.uses_leftover_for_horizontal === true || 
