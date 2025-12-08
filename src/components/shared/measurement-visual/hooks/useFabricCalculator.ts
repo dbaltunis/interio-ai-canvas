@@ -26,19 +26,20 @@ export const useFabricCalculator = ({
     try {
       const { fabric, template } = treatmentData;
       
-      // Parse measurements - these are in the user's preferred unit
-      const widthInUserUnit = parseFloat(measurements.rail_width);
-      const heightInUserUnit = parseFloat(measurements.drop);
-      const poolingInUserUnit = parseFloat(measurements.pooling_amount || "0");
+      // CRITICAL FIX: Measurements are stored in MM in database, NOT user's display unit
+      // Convert MM → CM for calculations
+      const widthMM = parseFloat(measurements.rail_width);
+      const heightMM = parseFloat(measurements.drop);
+      const poolingMM = parseFloat(measurements.pooling_amount || "0");
       
-      if (isNaN(widthInUserUnit) || isNaN(heightInUserUnit)) {
+      if (isNaN(widthMM) || isNaN(heightMM)) {
         return null;
       }
 
-      // Convert all measurements to cm (internal calculation unit)
-      const width = convertLength(widthInUserUnit, units.length, 'cm');
-      const height = convertLength(heightInUserUnit, units.length, 'cm');
-      const pooling = convertLength(poolingInUserUnit, units.length, 'cm');
+      // Convert MM → CM (database stores MM, fabric calculations use CM)
+      const width = widthMM / 10;
+      const height = heightMM / 10;
+      const pooling = poolingMM / 10;
 
       // CRITICAL: Fabric width MUST come from inventory - no hardcoded fallbacks
       const fabricWidthCm = fabric.fabric_width;
@@ -124,14 +125,37 @@ export const useFabricCalculator = ({
       // Apply waste multiplier
       const wasteMultiplier = 1 + (wastePercent / 100);
       
-      // Calculate linear metres needed (actual fabric used)
-      const linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier;
+      // CRITICAL FIX: Check if fabric is rotated (railroaded/horizontal)
+      const measurementsAny = measurements as any;
+      const isRailroaded = measurementsAny.fabric_rotated === true || measurementsAny.fabric_rotated === 'true';
       
-      // 🆕 Calculate ORDERED fabric (full widths must be purchased)
-      const dropPerWidthMeters = (totalDrop / 100) * wasteMultiplier;
-      const orderedLinearMeters = dropPerWidthMeters * widthsRequired;
+      let linearMeters: number;
+      let orderedLinearMeters: number;
       
-      // 🆕 Calculate remnant (difference between ordered and used)
+      if (isRailroaded) {
+        // HORIZONTAL/RAILROADED: Fabric width covers drop, buy length for curtain width
+        // Linear meters = total curtain width (with fullness + allowances)
+        const horizontalPiecesNeeded = Math.ceil(totalDrop / fabricWidthCm);
+        linearMeters = (totalWidthWithAllowances / 100) * horizontalPiecesNeeded * wasteMultiplier;
+        orderedLinearMeters = linearMeters;
+        
+        console.log('📐 RAILROADED calculation:', {
+          totalWidthWithAllowances,
+          totalDrop,
+          fabricWidthCm,
+          horizontalPiecesNeeded,
+          linearMeters: `${linearMeters.toFixed(2)}m`
+        });
+      } else {
+        // VERTICAL/STANDARD: Calculate linear metres needed (actual fabric used)
+        linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier;
+        
+        // Calculate ORDERED fabric (full widths must be purchased)
+        const dropPerWidthMeters = (totalDrop / 100) * wasteMultiplier;
+        orderedLinearMeters = dropPerWidthMeters * widthsRequired;
+      }
+      
+      // Calculate remnant (difference between ordered and used)
       const remnantMeters = orderedLinearMeters - linearMeters;
       
       // 🆕 Calculate seaming labor (if multiple widths)
