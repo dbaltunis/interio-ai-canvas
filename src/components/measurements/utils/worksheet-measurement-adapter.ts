@@ -30,20 +30,20 @@ export const transformWorksheetData = (
     ...measurements // Include any additional measurements
   };
 
-  // Transform treatment data
+  // Transform treatment data - values MUST come from template, no hardcoded defaults
   const treatmentData: TreatmentData = {
     template: selectedTemplate ? {
       id: selectedTemplate.id?.toString() || "template-1",
       name: selectedTemplate.name || "Custom Template",
       panel_configuration: selectedTemplate.panel_configuration || "pair",
-      fullness_ratio: selectedTemplate.fullness_ratio || 2.0,
-      header_allowance: selectedTemplate.header_allowance || 8,
-      bottom_hem: selectedTemplate.bottom_hem || 8,
-      side_hems: selectedTemplate.side_hems || 0,
-      seam_hems: selectedTemplate.seam_hems || 0,
-      return_left: selectedTemplate.return_left || 0,
-      return_right: selectedTemplate.return_right || 0,
-      waste_percent: selectedTemplate.waste_percent || 0,
+      fullness_ratio: selectedTemplate.fullness_ratio, // No fallback - must come from template
+      header_allowance: selectedTemplate.header_allowance,
+      bottom_hem: selectedTemplate.bottom_hem,
+      side_hems: selectedTemplate.side_hems,
+      seam_hems: selectedTemplate.seam_hems,
+      return_left: selectedTemplate.return_left,
+      return_right: selectedTemplate.return_right,
+      waste_percent: selectedTemplate.waste_percent,
       compatible_hardware: selectedTemplate.compatible_hardware || []
     } : undefined,
     

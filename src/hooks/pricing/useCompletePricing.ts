@@ -83,11 +83,16 @@ export const useCompletePricing = (params: CompletePricingParams): CompletePrici
     const customLaborRate = parseFloat(formData.custom_labor_rate) || 0;
     const effectiveLaborRate = laborRate || customLaborRate || defaultLaborRate;
 
-    // Calculate labor cost
+    // Calculate labor cost - fullness MUST come from formData (template)
+    const fullness = parseFloat(formData.heading_fullness) || parseFloat(formData.fullness_ratio);
+    if (!fullness && formData.treatment_category !== 'blinds') {
+      console.warn('[COMPLETE_PRICING] Missing fullness for labor calculation');
+    }
+    
     const laborParams: LaborCalculationParams = {
       railWidth: parseFloat(formData.rail_width) || 0,
       drop: parseFloat(formData.drop) || 0,
-      fullness: parseFloat(formData.heading_fullness) || 2.5,
+      fullness: fullness || 1.0, // Safe fallback but warning logged
       laborRate: effectiveLaborRate,
       seamLaborHours: fabricPricing.fabricUsageResult.seamLaborHours || 0,
       treatmentComplexity

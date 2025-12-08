@@ -1867,19 +1867,20 @@ export const DynamicWindowWorksheet = forwardRef<{
       const templateAny = template as any;
       return {
         ...prev,
-        // Only set template defaults if value doesn't exist in saved measurements
-        header_hem: prev.header_hem ?? (templateAny.header_allowance || templateAny.header_hem || 8),
-        bottom_hem: prev.bottom_hem ?? (templateAny.bottom_hem || templateAny.bottom_allowance || 15),
-        side_hems: prev.side_hems ?? prev.side_hem ?? (templateAny.side_hem || template.side_hems || 7.5),
-        seam_hems: prev.seam_hems ?? prev.seam_hem ?? (templateAny.seam_allowance || template.seam_hems || 1.5),
-        return_left: prev.return_left ?? (template.return_left || 0),
-        return_right: prev.return_right ?? (template.return_right || 0),
-        waste_percent: prev.waste_percent ?? (template.waste_percent || 5),
-        heading_fullness: prev.heading_fullness ?? (templateAny.default_fullness || template.fullness_ratio || 2.0),
+        // Only set template defaults if value doesn't exist - NO hardcoded fallbacks
+        // Values MUST come from template settings
+        header_hem: prev.header_hem ?? templateAny.header_allowance ?? templateAny.header_hem,
+        bottom_hem: prev.bottom_hem ?? templateAny.bottom_hem ?? templateAny.bottom_allowance,
+        side_hems: prev.side_hems ?? prev.side_hem ?? templateAny.side_hem ?? template.side_hems,
+        seam_hems: prev.seam_hems ?? prev.seam_hem ?? templateAny.seam_allowance ?? template.seam_hems,
+        return_left: prev.return_left ?? template.return_left,
+        return_right: prev.return_right ?? template.return_right,
+        waste_percent: prev.waste_percent ?? template.waste_percent,
+        heading_fullness: prev.heading_fullness ?? templateAny.default_fullness ?? template.fullness_ratio,
       };
     });
     
-    console.log('🎯 Template selected - initialized defaults only for missing values');
+    console.log('🎯 Template selected - initialized defaults from template (no hardcoded fallbacks)');
   };
   const canProceedToMeasurements = selectedWindowType && (selectedTemplate || selectedTreatmentType);
   const canShowPreview = canProceedToMeasurements && Object.keys(measurements).length > 0;
