@@ -88,14 +88,21 @@ export const fetchTraditionalOptions = async (
         settings?.map(s => [s.treatment_option_id, s.is_enabled]) || []
       );
       
-      // Filter options based on settings (default to enabled if no setting exists)
+      // WHITELIST: Only show options explicitly enabled in template_option_settings
+      // If no settings exist for template, show NO options (forces configuration)
+      if (!settings || settings.length === 0) {
+        console.log('⚠️ WHITELIST: No template_option_settings found - returning NO options (template needs configuration)');
+        return [];
+      }
+      
       const enabledOptions = options.filter(opt => {
-        const isEnabled = settingsMap.has(opt.id) ? settingsMap.get(opt.id) : true;
-        console.log(`🔍 Option "${opt.label}" (${opt.id}): ${isEnabled ? 'ENABLED' : 'DISABLED'}`);
+        // WHITELIST: Must be explicitly enabled (is_enabled === true)
+        const isEnabled = settingsMap.get(opt.id) === true;
+        console.log(`🔍 Option "${opt.label}" (${opt.id}): ${isEnabled ? 'ENABLED' : 'DISABLED (not in whitelist)'}`);
         return isEnabled;
       });
       
-      console.log(`✅ Filtered ${options.length} options to ${enabledOptions.length} enabled options`);
+      console.log(`✅ WHITELIST: Filtered ${options.length} options to ${enabledOptions.length} explicitly enabled options`);
       
       return enabledOptions.map(mapToWindowCoveringOption);
     }

@@ -3,29 +3,34 @@ import { useTemplateOptionSettings } from "./useTemplateOptionSettings";
 
 /**
  * Hook to get enabled option IDs for a template
- * If template has no settings, all options are enabled by default
+ * WHITELIST approach: Only options explicitly enabled in template_option_settings are shown
+ * If template has no settings configured, NO options are shown (forces configuration)
  */
 export const useEnabledTemplateOptions = (templateId?: string) => {
-  const { data: templateSettings = [] } = useTemplateOptionSettings(templateId);
+  const { data: templateSettings = [], isLoading } = useTemplateOptionSettings(templateId);
 
-  // Blacklist approach: only store explicitly disabled options
-  // Options without records are enabled by default
-  const disabledOptionIds = useMemo(() => {
+  // WHITELIST: Only explicitly enabled options are shown
+  const enabledOptionIds = useMemo(() => {
     return new Set(
       templateSettings
-        .filter(setting => !setting.is_enabled)
+        .filter(setting => setting.is_enabled === true)
         .map(setting => setting.treatment_option_id)
     );
   }, [templateSettings]);
 
   const isOptionEnabled = (optionId: string) => {
-    // If NOT in disabled set, it's enabled
-    return !disabledOptionIds.has(optionId);
+    // WHITELIST: Must be explicitly enabled in settings
+    // If no settings exist, nothing is enabled (forces template configuration)
+    if (templateSettings.length === 0) {
+      return false;
+    }
+    return enabledOptionIds.has(optionId);
   };
 
   return {
-    disabledOptionIds,
+    enabledOptionIds,
     isOptionEnabled,
     hasSettings: templateSettings.length > 0,
+    isLoading,
   };
 };
