@@ -21,6 +21,7 @@ import {
   FabricContract,
   SelectedOptionContract,
 } from '@/contracts/TreatmentContract';
+import { logError, CalculationError } from '@/utils/errorHandling';
 
 // ============================================================
 // Feature Flag Check
@@ -380,18 +381,30 @@ export function runShadowComparison(
     // Step 1: Build contracts from worksheet data
     const measContract = buildMeasurements(measurements, units);
     if (!measContract) {
-      throw new Error('Failed to build measurements contract - missing or invalid data');
+      throw new CalculationError(
+        'Failed to build measurements contract - missing or invalid data',
+        'measurements_build',
+        { measurements }
+      );
     }
     
     const category = treatmentCategory as TreatmentCategoryDbValue;
     const templateContract = buildTemplate(selectedTemplate, category);
     if (!templateContract) {
-      throw new Error('Failed to build template contract - missing required fields');
+      throw new CalculationError(
+        'Failed to build template contract - missing required fields',
+        'template_build',
+        { templateId: selectedTemplate?.id }
+      );
     }
     
     const fabricContract = buildFabric(selectedFabric);
     if (!fabricContract) {
-      throw new Error('Fabric is required for curtains/roman_blinds - missing or invalid');
+      throw new CalculationError(
+        'Fabric is required for curtains/roman_blinds - missing or invalid',
+        'fabric_build',
+        { fabricId: selectedFabric?.id }
+      );
     }
     
     const optionsContract = buildOptions(selectedOptions);
@@ -404,12 +417,12 @@ export function runShadowComparison(
       validateTemplate(templateContract, category);
       validateFabric(fabricContract, category);
     } catch (validationError) {
-      console.warn('[ENGINE_SHADOW_VALIDATION]', {
-        windowId: surfaceId,
-        projectId,
+      logError(validationError, { 
+        windowId: surfaceId, 
+        projectId, 
         category,
-        error: validationError,
-      });
+        phase: 'shadow_validation'
+      }, 'warn');
       // Continue anyway for comparison purposes
     }
     
