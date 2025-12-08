@@ -25,7 +25,7 @@ export const PerMetrePricing = ({
   machinePricePerMetre,
   handPricePerMetre,
   offersHandFinished,
-  heightPriceRanges = [],
+  heightPriceRanges: rawHeightPriceRanges,
   onInputChange
 }: PerMetrePricingProps) => {
   const { units } = useMeasurementUnits();
@@ -33,6 +33,9 @@ export const PerMetrePricing = ({
   const isImperial = units.system === 'imperial';
   const lengthUnitLabel = isImperial ? 'inches' : 'cm';
   const pricingUnitLabel = isImperial ? 'Yard' : 'Metre';
+  
+  // Ensure heightPriceRanges is always an array
+  const heightPriceRanges: PriceRange[] = Array.isArray(rawHeightPriceRanges) ? rawHeightPriceRanges : [];
 
   const updateRange = (index: number, field: keyof PriceRange, value: number) => {
     const updated = [...heightPriceRanges];
