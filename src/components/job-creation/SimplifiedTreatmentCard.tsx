@@ -116,14 +116,15 @@ export const SimplifiedTreatmentCard = ({ treatment, projectId }: SimplifiedTrea
       if (!user) throw new Error("User not authenticated");
 
       // Create a new surface for the copied treatment
+      // CRITICAL: No hardcoded dimensions - copy actual values or null
       const surfaceData = {
         name: `${currentWindowName} (Copy)`,
         project_id: projectId,
         room_id: treatment.room_id,
         surface_type: 'window',
         user_id: user.id,
-        width: surface?.width || 60,
-        height: surface?.height || 48
+        width: surface?.width ?? null,
+        height: surface?.height ?? null
       };
 
       const { data: newSurface } = await supabase
