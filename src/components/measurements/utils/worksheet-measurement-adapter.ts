@@ -50,7 +50,8 @@ export const transformWorksheetData = (
     fabric: selectedItems.fabric ? {
       id: selectedItems.fabric.id?.toString() || "fabric-1",
       name: selectedItems.fabric.name || "Selected Fabric",
-      fabric_width: selectedItems.fabric.fabric_width || 137,
+      // No hardcoded default - use actual value from fabric item
+      fabric_width: selectedItems.fabric.fabric_width,
       price_per_meter: selectedItems.fabric.selling_price || selectedItems.fabric.unit_price || selectedItems.fabric.price_per_meter || 0,
       unit_price: selectedItems.fabric.unit_price,
       selling_price: selectedItems.fabric.selling_price

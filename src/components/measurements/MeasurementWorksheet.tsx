@@ -172,9 +172,13 @@ export const MeasurementWorksheet = ({
           
           // Get fabric details with fallback pricing
           const fabricItem = measurements.fabric_item || measurements.selected_fabric || null;
-          const fabricPricePerMeter = fabricItem?.price_per_meter ?? measurements.fabric_price_per_meter ?? 45;
-          const fabricWidthCm = measurements.fabric_width ?? fabricItem?.fabric_width ?? 140;
-          const fabricWidthM = cmToM(fabricWidthCm);
+          const fabricPricePerMeter = fabricItem?.price_per_meter ?? measurements.fabric_price_per_meter;
+          const fabricWidthCm = measurements.fabric_width ?? fabricItem?.fabric_width;
+          
+          if (!fabricPricePerMeter || !fabricWidthCm) {
+            console.warn('[MEASUREMENT_WORKSHEET] Missing fabric price or width');
+          }
+          const fabricWidthM = cmToM(fabricWidthCm || 0);
           
           // Get template to use its configured defaults
           const template = templates.find(t => t.id === templateId) as any;

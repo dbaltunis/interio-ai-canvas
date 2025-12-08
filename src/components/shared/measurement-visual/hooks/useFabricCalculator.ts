@@ -64,16 +64,21 @@ export const useFabricCalculator = ({
         USED: fullnessRatio
       });
       
-      // Manufacturing allowances - prioritize measurements, fallback to template
-      // Use nullish coalescing (??) to ONLY apply defaults when value is null/undefined, NOT when it's 0
+      // Manufacturing allowances - MUST come from template, no hardcoded defaults
+      // Use nullish coalescing (??) to ONLY apply defaults when value is null/undefined
       const templateAny = template as any;
-      const headerHem = measurementsAny.header_hem ?? measurementsAny.header_allowance ?? templateAny.header_allowance ?? templateAny.header_hem ?? 8;
-      const bottomHem = measurementsAny.bottom_hem ?? measurementsAny.bottom_allowance ?? templateAny.bottom_hem ?? templateAny.bottom_allowance ?? 15;
-      const sideHems = measurementsAny.side_hems ?? measurementsAny.side_hem ?? templateAny.side_hem ?? template.side_hems ?? 7.5;
-      const seamHems = measurementsAny.seam_hems ?? measurementsAny.seam_hem ?? templateAny.seam_allowance ?? template.seam_hems ?? 1.5;
+      const headerHem = measurementsAny.header_hem ?? measurementsAny.header_allowance ?? templateAny.header_allowance ?? templateAny.header_hem;
+      const bottomHem = measurementsAny.bottom_hem ?? measurementsAny.bottom_allowance ?? templateAny.bottom_hem ?? templateAny.bottom_allowance;
+      const sideHems = measurementsAny.side_hems ?? measurementsAny.side_hem ?? templateAny.side_hem ?? template.side_hems;
+      const seamHems = measurementsAny.seam_hems ?? measurementsAny.seam_hem ?? templateAny.seam_allowance ?? template.seam_hems;
       const returnLeft = measurementsAny.return_left ?? template.return_left ?? 0;
       const returnRight = measurementsAny.return_right ?? template.return_right ?? 0;
-      const wastePercent = measurementsAny.waste_percent ?? template.waste_percent ?? 5;
+      const wastePercent = measurementsAny.waste_percent ?? template.waste_percent ?? 0;
+      
+      // Log warning if critical values are missing
+      if (headerHem === undefined || bottomHem === undefined) {
+        console.warn('[FABRIC_CALC] Missing hem values - template may be incomplete:', { headerHem, bottomHem });
+      }
       
       console.log('📏 Fabric calculator using values:', {
         headerHem, bottomHem, sideHems, seamHems, returnLeft, returnRight, wastePercent,

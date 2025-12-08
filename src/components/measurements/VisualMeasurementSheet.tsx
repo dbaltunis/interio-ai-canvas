@@ -247,7 +247,11 @@ export const VisualMeasurementSheet = ({
     if (treatmentCategory !== 'curtains' && treatmentCategory !== 'roman_blinds') return;
     if (!selectedFabricItem || readOnly) return;
     
-    const fabricWidthCm = selectedFabricItem.fabric_width || 137;
+    const fabricWidthCm = selectedFabricItem.fabric_width;
+    if (!fabricWidthCm) {
+      console.warn('[VISUAL_SHEET] Missing fabric_width on selected fabric item');
+      return;
+    }
     const fabricChanged = previousFabricIdRef.current !== selectedFabric;
     
     // Only auto-select when fabric CHANGES (not on every render)
@@ -386,11 +390,14 @@ export const VisualMeasurementSheet = ({
       const result = calculateFabricUsage(enrichedMeasurementsWithConversion, [selectedTemplate], fabricItemWithHeadings);
 
       // Transform the result to match the expected format for display
-      const fabricWidthCm = selectedFabricItem.fabric_width || 137;
+      const fabricWidthCm = selectedFabricItem.fabric_width;
+      if (!fabricWidthCm) {
+        console.warn('[VISUAL_SHEET] Missing fabric_width for calculation');
+      }
 
-      // ✅ FIX: Read hems from measurements (which get initialized from template)
-      const headerHem = parseFloat(enrichedMeasurements.header_hem as any) || 8;
-      const bottomHem = parseFloat(enrichedMeasurements.bottom_hem as any) || 8;
+      // Hems should come from measurements (initialized from template) - no hardcoded defaults
+      const headerHem = parseFloat(enrichedMeasurements.header_hem as any) || 0;
+      const bottomHem = parseFloat(enrichedMeasurements.bottom_hem as any) || 0;
       const sideHems = parseFloat(enrichedMeasurements.side_hem as any) || 0;
       const seamHems = parseFloat(enrichedMeasurements.seam_hem as any) || 0;
       // ✅ Returns should come from template (user confirmed this is correct)
@@ -967,13 +974,15 @@ export const VisualMeasurementSheet = ({
                       </Label>
                       <div className="text-xs text-muted-foreground mt-1 space-y-1">
                       {(() => {
-                      const fabricWidthCm = selectedFabricItem.fabric_width || 137;
+                      const fabricWidthCm = selectedFabricItem.fabric_width;
+                      if (!fabricWidthCm) return <div>Fabric width not set</div>;
                       // CRITICAL FIX: measurements.drop is in MM (database standard)
                       // Convert to CM for fabric rotation calculation
                       const dropMM = parseFloat(measurements.drop) || 0;
                       const drop = dropMM / 10; // Convert MM to CM
-                      const headerHem = parseFloat(measurements.header_allowance_cm) || 8;
-                      const bottomHem = parseFloat(measurements.bottom_hem_cm) || 15;
+                      // Hems from measurements (template-initialized) - no hardcoded defaults
+                      const headerHem = parseFloat(measurements.header_allowance_cm) || parseFloat(measurements.header_hem) || 0;
+                      const bottomHem = parseFloat(measurements.bottom_hem_cm) || parseFloat(measurements.bottom_hem) || 0;
                       const pooling = parseFloat(measurements.pooling_amount_cm) || 0;
                       const totalDrop = drop + headerHem + bottomHem + pooling;
                       

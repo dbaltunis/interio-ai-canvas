@@ -15,20 +15,20 @@ interface FabricOrientationSelectorProps {
 const FABRIC_WIDTH_THRESHOLD_CM = 200;
 
 export const FabricOrientationSelector = ({ formData, onInputChange }: FabricOrientationSelectorProps) => {
-  const fabricWidthCm = parseFloat(formData.fabric_width) || 137;
+  const fabricWidthCm = parseFloat(formData.fabric_width) || 0;
+  const hasValidWidth = fabricWidthCm > 0;
   const isNarrowFabric = fabricWidthCm <= FABRIC_WIDTH_THRESHOLD_CM;
   const recommendedOrientation = isNarrowFabric ? "vertical" : "horizontal";
   const isAutoSelected = formData.roll_direction === recommendedOrientation;
-  const previousWidthRef = useRef<number | null>(null); // Start as null to trigger on first valid fabric
+  const previousWidthRef = useRef<number | null>(null);
 
   // Auto-select orientation when fabric width changes OR on initial load with fabric selected
   useEffect(() => {
-    // Only auto-select if fabric width is valid (not default 137)
-    const hasValidFabricWidth = formData.fabric_width && parseFloat(formData.fabric_width) !== 137;
+    // Only auto-select if fabric width is valid (not 0)
     const isFirstLoad = previousWidthRef.current === null;
     const widthChanged = previousWidthRef.current !== fabricWidthCm;
     
-    if (hasValidFabricWidth && (isFirstLoad || widthChanged)) {
+    if (hasValidWidth && (isFirstLoad || widthChanged)) {
       const correctOrientation = fabricWidthCm > FABRIC_WIDTH_THRESHOLD_CM ? "horizontal" : "vertical";
       
       // Auto-apply the correct orientation

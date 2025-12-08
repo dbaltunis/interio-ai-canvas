@@ -916,7 +916,8 @@ export const AdaptiveFabricPricingDisplay = ({
                   
                   {/* Show leftover information for horizontal/railroaded fabric */}
                   {isHorizontal && fabricCalculation.horizontalPiecesNeeded && (() => {
-                const fabricWidthCm = selectedFabricItem?.fabric_width || 137;
+                const fabricWidthCm = selectedFabricItem?.fabric_width;
+                if (!fabricWidthCm) return null;
                 const totalDropCm = fabricCalculation.totalDrop || 0;
                 const piecesNeeded = fabricCalculation.horizontalPiecesNeeded;
                 const requiredWidthM = parseFloat(calculationText.split('×')[0]) / piecesNeeded || 0;
