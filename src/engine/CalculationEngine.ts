@@ -6,9 +6,11 @@
  * 
  * Unit standards:
  * - Input measurements: MM (from database)
- * - Template values: CM
- * - Fabric widths: CM
+ * - Template values: CM (from template records)
+ * - Fabric widths: CM (industry standard)
  * - Output: appropriate units with formula transparency
+ * 
+ * CRITICAL: No hidden defaults. All values must come from validated inputs.
  */
 
 import {
@@ -20,6 +22,7 @@ import {
   SelectedOptionContract,
   CalculationResultContract,
   FormulaBreakdown,
+  PricingGridContract,
   isLinearType,
   isAreaType,
   isUnsupportedType,
@@ -27,6 +30,7 @@ import {
 } from '@/contracts/TreatmentContract';
 
 import { mmToCm, cmToM, roundTo } from '@/utils/lengthUnits';
+import { getPriceFromGrid } from '@/hooks/usePricingGrids';
 
 // ============================================================
 // Types
@@ -71,12 +75,10 @@ export class CalculationEngine {
   static calculate(input: CalculationInput): CalculationResultContract {
     const { category, measurements, template, fabric, material, options } = input;
     
-    // Check for unsupported types
     if (isUnsupportedType(category)) {
       throw new Error(`Calculation not yet supported for category: ${category}`);
     }
     
-    // Convert measurements from MM to CM for calculations
     const width_cm = mmToCm(measurements.rail_width_mm);
     const drop_cm = mmToCm(measurements.drop_mm);
     
@@ -89,63 +91,50 @@ export class CalculationEngine {
     let formula_breakdown: FormulaBreakdown;
     
     if (isLinearType(category)) {
-      // Curtains / Roman Blinds - linear meter calculation
       if (!fabric) {
         throw new Error(`${category} requires fabric for calculation`);
       }
       
-      const linearResult = this.calculateLinear(
-        measurements,
-        template,
-        fabric
-      );
+      const linearResult = this.calculateLinear(measurements, template, fabric);
       
       linear_meters = linearResult.linear_meters;
       widths_required = linearResult.widths_required;
       drops_per_width = linearResult.drops_per_width;
       formula_breakdown = linearResult.formula;
       
-      // Calculate fabric cost
-      fabric_cost = this.calculateFabricCost(fabric, linear_meters);
+      fabric_cost = this.calculateFabricCost(fabric, linear_meters, width_cm, drop_cm);
       
     } else if (isAreaType(category)) {
-      // Blinds - SQM calculation
       const areaResult = this.calculateArea(measurements, template);
       
       sqm = areaResult.sqm;
       formula_breakdown = areaResult.formula;
       
-      // Calculate material/fabric cost
       if (material) {
         material_cost = this.calculateMaterialCost(material, sqm, width_cm, drop_cm);
       } else if (fabric) {
-        fabric_cost = this.calculateFabricCostSqm(fabric, sqm);
+        fabric_cost = this.calculateFabricCost(fabric, undefined, width_cm, drop_cm);
       }
       
     } else {
       throw new Error(`Unknown category type: ${category}`);
     }
     
-    // Calculate options cost
     const options_cost = this.calculateOptionsCost(
       options || [],
       category,
       linear_meters,
       sqm,
-      fabric_cost + material_cost
+      fabric_cost + material_cost,
+      width_cm,
+      drop_cm
     );
     
-    // Calculate base cost from template
     const base_cost = template.base_price || 0;
-    
-    // Subtotal before waste
     const subtotal = fabric_cost + material_cost + options_cost + base_cost;
     
-    // Apply waste factor
-    const waste_percentage = template.waste_percentage || 0;
+    const waste_percentage = template.waste_percentage;
     const waste_amount = roundTo(subtotal * (waste_percentage / 100), 2);
-    
-    // Final total
     const total = roundTo(subtotal + waste_amount, 2);
     
     return {
@@ -170,10 +159,6 @@ export class CalculationEngine {
   // Linear Calculation (Curtains / Romans)
   // ============================================================
   
-  /**
-   * Calculate linear meters for curtains/roman blinds
-   * Uses the centralized formula from calculationFormulas.ts concepts
-   */
   static calculateLinear(
     measurements: MeasurementsContract,
     template: TemplateContract,
@@ -182,71 +167,77 @@ export class CalculationEngine {
     const steps: string[] = [];
     const values: Record<string, number | string> = {};
     
-    // Convert measurements to CM
     const rail_width_cm = mmToCm(measurements.rail_width_mm);
     const drop_cm = mmToCm(measurements.drop_mm);
     
     values['rail_width_cm'] = rail_width_cm;
     values['drop_cm'] = drop_cm;
     
-    // Get fullness - user override takes priority
-    const fullness = measurements.heading_fullness || template.default_fullness_ratio || 2.5;
+    // Fullness: user override > template default > error
+    const fullness = measurements.heading_fullness ?? template.default_fullness_ratio;
+    if (!fullness) {
+      throw new Error('Fullness ratio is required for linear calculation (no default allowed)');
+    }
     values['fullness'] = fullness;
     steps.push(`Fullness ratio: ${fullness}`);
     
-    // Get hem allowances from template (already in CM)
+    // Template values (already validated, no defaults here)
     const header_hem_cm = template.header_hem_cm;
     const bottom_hem_cm = template.bottom_hem_cm;
     const side_hem_cm = template.side_hem_cm;
-    const seam_hem_cm = template.seam_hem_cm;
+    const seam_hem_cm = template.seam_hem_cm; // Total per join, NOT per side
     
     values['header_hem_cm'] = header_hem_cm;
     values['bottom_hem_cm'] = bottom_hem_cm;
     values['side_hem_cm'] = side_hem_cm;
     values['seam_hem_cm'] = seam_hem_cm;
     
-    // Returns (in CM)
-    const return_left_cm = measurements.return_left_cm || template.default_returns_cm || 0;
-    const return_right_cm = measurements.return_right_cm || template.default_returns_cm || 0;
+    // Returns (convert from mm if provided)
+    const return_left_cm = measurements.return_left_mm 
+      ? mmToCm(measurements.return_left_mm) 
+      : (template.default_returns_cm ?? 0);
+    const return_right_cm = measurements.return_right_mm 
+      ? mmToCm(measurements.return_right_mm) 
+      : (template.default_returns_cm ?? 0);
     const total_returns_cm = return_left_cm + return_right_cm;
     values['total_returns_cm'] = total_returns_cm;
     
     // Pooling
-    const pooling_cm = measurements.pooling_cm || 0;
+    const pooling_cm = measurements.pooling_mm ? mmToCm(measurements.pooling_mm) : 0;
     values['pooling_cm'] = pooling_cm;
     
     // Fabric width
     const fabric_width_cm = fabric.width_cm;
     values['fabric_width_cm'] = fabric_width_cm;
     
-    // Calculate total drop with hems and pooling
+    // Total drop with hems and pooling
     const total_drop_cm = drop_cm + header_hem_cm + bottom_hem_cm + pooling_cm;
     values['total_drop_cm'] = total_drop_cm;
     steps.push(`Total drop: ${drop_cm} + ${header_hem_cm} + ${bottom_hem_cm} + ${pooling_cm} = ${total_drop_cm}cm`);
     
-    // Calculate finished width with fullness
+    // Finished width with fullness
     const finished_width_cm = rail_width_cm * fullness;
     values['finished_width_cm'] = finished_width_cm;
     steps.push(`Finished width: ${rail_width_cm} × ${fullness} = ${finished_width_cm}cm`);
     
-    // Add returns and side hems
+    // Total width with returns and side hems
     const total_width_cm = finished_width_cm + total_returns_cm + (side_hem_cm * 2);
     values['total_width_cm'] = total_width_cm;
     steps.push(`Total width: ${finished_width_cm} + ${total_returns_cm} + ${side_hem_cm * 2} = ${total_width_cm}cm`);
     
-    // Calculate number of widths (drops of fabric needed)
+    // Number of widths (fabric drops needed)
     const widths_required = Math.ceil(total_width_cm / fabric_width_cm);
     values['widths_required'] = widths_required;
     steps.push(`Widths required: ceil(${total_width_cm} / ${fabric_width_cm}) = ${widths_required}`);
     
-    // Calculate seams
+    // Seam allowance: seam_hem_cm is TOTAL per join (not per side)
     const seams_count = Math.max(0, widths_required - 1);
-    const seam_allowance_cm = seams_count * seam_hem_cm * 2;
+    const seam_allowance_cm = seams_count * seam_hem_cm;
     values['seams_count'] = seams_count;
     values['seam_allowance_cm'] = seam_allowance_cm;
-    steps.push(`Seam allowance: ${seams_count} seams × ${seam_hem_cm * 2}cm = ${seam_allowance_cm}cm`);
+    steps.push(`Seam allowance: ${seams_count} seams × ${seam_hem_cm}cm = ${seam_allowance_cm}cm`);
     
-    // Total fabric length in CM
+    // Total fabric length
     const total_fabric_cm = (widths_required * total_drop_cm) + seam_allowance_cm;
     values['total_fabric_cm'] = total_fabric_cm;
     steps.push(`Total fabric: (${widths_required} × ${total_drop_cm}) + ${seam_allowance_cm} = ${total_fabric_cm}cm`);
@@ -261,7 +252,7 @@ export class CalculationEngine {
       linear_meters,
       linear_meters_raw,
       widths_required,
-      drops_per_width: 1, // Standard calculation
+      drops_per_width: 1,
       total_drop_cm,
       total_width_cm,
       seams_count,
@@ -277,9 +268,6 @@ export class CalculationEngine {
   // Area Calculation (Blinds)
   // ============================================================
   
-  /**
-   * Calculate square meters for blinds
-   */
   static calculateArea(
     measurements: MeasurementsContract,
     template: TemplateContract
@@ -287,23 +275,22 @@ export class CalculationEngine {
     const steps: string[] = [];
     const values: Record<string, number | string> = {};
     
-    // Convert measurements to CM
     const rail_width_cm = mmToCm(measurements.rail_width_mm);
     const drop_cm = mmToCm(measurements.drop_mm);
     
     values['rail_width_cm'] = rail_width_cm;
     values['drop_cm'] = drop_cm;
     
-    // Get hem allowances (for blinds, typically smaller or zero)
-    const header_hem_cm = template.header_hem_cm || 8;
-    const bottom_hem_cm = template.bottom_hem_cm || 10;
-    const side_hem_cm = template.side_hem_cm || 4;
+    // Template values (already validated)
+    const header_hem_cm = template.header_hem_cm;
+    const bottom_hem_cm = template.bottom_hem_cm;
+    const side_hem_cm = template.side_hem_cm;
     
     values['header_hem_cm'] = header_hem_cm;
     values['bottom_hem_cm'] = bottom_hem_cm;
     values['side_hem_cm'] = side_hem_cm;
     
-    // Calculate effective dimensions
+    // Effective dimensions
     const effective_width_cm = rail_width_cm + (side_hem_cm * 2);
     const effective_height_cm = drop_cm + header_hem_cm + bottom_hem_cm;
     
@@ -312,21 +299,12 @@ export class CalculationEngine {
     steps.push(`Effective width: ${rail_width_cm} + (${side_hem_cm} × 2) = ${effective_width_cm}cm`);
     steps.push(`Effective height: ${drop_cm} + ${header_hem_cm} + ${bottom_hem_cm} = ${effective_height_cm}cm`);
     
-    // Calculate square meters
-    // Convert CM to M: divide by 100 for each dimension
+    // Square meters
     const sqm_raw = (effective_width_cm / 100) * (effective_height_cm / 100);
     const sqm = roundTo(sqm_raw, 2);
     
     values['sqm'] = sqm;
     steps.push(`Area: (${effective_width_cm}/100) × (${effective_height_cm}/100) = ${sqm}m²`);
-    
-    // Apply waste factor
-    const waste = template.waste_percentage || 0;
-    if (waste > 0) {
-      const sqm_with_waste = roundTo(sqm_raw * (1 + waste / 100), 2);
-      values['sqm_with_waste'] = sqm_with_waste;
-      steps.push(`With ${waste}% waste: ${sqm} × ${1 + waste / 100} = ${sqm_with_waste}m²`);
-    }
     
     return {
       sqm,
@@ -342,23 +320,46 @@ export class CalculationEngine {
   }
   
   // ============================================================
-  // Pricing Calculations
+  // Pricing Calculations with Grid Support
   // ============================================================
   
   /**
-   * Calculate fabric cost for linear meter pricing
+   * Calculate fabric cost - supports grid, per-meter, per-sqm, and fixed
    */
-  static calculateFabricCost(fabric: FabricContract, linear_meters: number): number {
-    if (fabric.pricing_method === 'per_running_meter' && fabric.price_per_meter) {
+  static calculateFabricCost(
+    fabric: FabricContract, 
+    linear_meters?: number,
+    width_cm?: number,
+    drop_cm?: number
+  ): number {
+    // PRIORITY 1: Grid pricing
+    if (fabric.pricing_method === 'pricing_grid' && fabric.pricing_grid_data) {
+      if (width_cm && drop_cm) {
+        const gridPrice = this.lookupGridPrice(fabric.pricing_grid_data, width_cm, drop_cm);
+        if (gridPrice !== null && gridPrice > 0) {
+          return roundTo(gridPrice, 2);
+        }
+      }
+    }
+    
+    // PRIORITY 2: Per running meter
+    if (fabric.pricing_method === 'per_running_meter' && fabric.price_per_meter && linear_meters) {
       return roundTo(fabric.price_per_meter * linear_meters, 2);
     }
     
+    // PRIORITY 3: Per sqm
+    if (fabric.pricing_method === 'per_sqm' && fabric.price_per_sqm && width_cm && drop_cm) {
+      const sqm = (width_cm / 100) * (drop_cm / 100);
+      return roundTo(fabric.price_per_sqm * sqm, 2);
+    }
+    
+    // PRIORITY 4: Fixed price
     if (fabric.pricing_method === 'fixed' && fabric.price_per_meter) {
       return fabric.price_per_meter;
     }
     
-    // Fallback to price_per_meter if available
-    if (fabric.price_per_meter) {
+    // Fallback: try available prices
+    if (fabric.price_per_meter && linear_meters) {
       return roundTo(fabric.price_per_meter * linear_meters, 2);
     }
     
@@ -366,22 +367,7 @@ export class CalculationEngine {
   }
   
   /**
-   * Calculate fabric cost for SQM pricing
-   */
-  static calculateFabricCostSqm(fabric: FabricContract, sqm: number): number {
-    if (fabric.pricing_method === 'per_sqm' && fabric.price_per_sqm) {
-      return roundTo(fabric.price_per_sqm * sqm, 2);
-    }
-    
-    if (fabric.price_per_sqm) {
-      return roundTo(fabric.price_per_sqm * sqm, 2);
-    }
-    
-    return 0;
-  }
-  
-  /**
-   * Calculate material cost for blinds
+   * Calculate material cost - supports grid, per-sqm, and fixed
    */
   static calculateMaterialCost(
     material: MaterialContract,
@@ -389,16 +375,20 @@ export class CalculationEngine {
     width_cm: number,
     drop_cm: number
   ): number {
+    // PRIORITY 1: Grid pricing
+    if (material.pricing_method === 'pricing_grid' && material.pricing_grid_data) {
+      const gridPrice = this.lookupGridPrice(material.pricing_grid_data, width_cm, drop_cm);
+      if (gridPrice !== null && gridPrice > 0) {
+        return roundTo(gridPrice, 2);
+      }
+    }
+    
+    // PRIORITY 2: Per sqm
     if (material.pricing_method === 'per_sqm' && material.price) {
       return roundTo(material.price * sqm, 2);
     }
     
-    if (material.pricing_method === 'pricing_grid' && material.pricing_grid_data) {
-      // Grid lookup would happen here
-      // For now, return 0 - grid lookup will be integrated later
-      return 0;
-    }
-    
+    // PRIORITY 3: Fixed
     if (material.pricing_method === 'fixed' && material.price) {
       return material.price;
     }
@@ -414,7 +404,9 @@ export class CalculationEngine {
     category: TreatmentCategoryDbValue,
     linear_meters?: number,
     sqm?: number,
-    base_amount?: number
+    base_amount?: number,
+    width_cm?: number,
+    drop_cm?: number
   ): number {
     let total = 0;
     
@@ -424,7 +416,9 @@ export class CalculationEngine {
         category,
         linear_meters,
         sqm,
-        base_amount
+        base_amount,
+        width_cm,
+        drop_cm
       );
       total += cost;
     }
@@ -440,7 +434,9 @@ export class CalculationEngine {
     category: TreatmentCategoryDbValue,
     linear_meters?: number,
     sqm?: number,
-    base_amount?: number
+    base_amount?: number,
+    width_cm?: number,
+    drop_cm?: number
   ): number {
     const { price, pricing_method } = option;
     
@@ -450,7 +446,6 @@ export class CalculationEngine {
         return price;
         
       case 'per_meter':
-        // per_meter only valid for linear types
         if (!isLinearType(category)) {
           throw new Error(
             `Option "${option.option_key}" uses per_meter pricing but category "${category}" is not a linear type. ` +
@@ -479,66 +474,97 @@ export class CalculationEngine {
         return roundTo(base_amount * (price / 100), 2);
         
       case 'pricing_grid':
-        // Grid lookup would happen here
-        // For now, return the base price
+        if (option.pricing_grid_data && width_cm && drop_cm) {
+          const gridPrice = this.lookupGridPrice(option.pricing_grid_data, width_cm, drop_cm);
+          if (gridPrice !== null && gridPrice > 0) {
+            return roundTo(gridPrice, 2);
+          }
+        }
         return price;
         
       default:
-        // Unknown pricing method - return base price
         return price;
     }
   }
   
   // ============================================================
-  // Grid Pricing Integration Point
+  // Grid Pricing - Uses existing getPriceFromGrid
   // ============================================================
   
   /**
    * Lookup price from a pricing grid
-   * This will integrate with existing getPriceFromGrid
+   * Uses the existing getPriceFromGrid function from usePricingGrids
+   * 
+   * @param grid - The pricing grid data (supports all 3 formats)
+   * @param width_cm - Width in centimeters
+   * @param drop_cm - Drop/height in centimeters
+   * @returns The price from the grid, or null if not found
    */
   static lookupGridPrice(
-    grid: unknown,
+    grid: PricingGridContract | unknown,
     width_cm: number,
     drop_cm: number
   ): number | null {
-    // This will be implemented when we integrate with usePricingGrids
-    // For now, return null to indicate grid lookup not available
-    return null;
+    if (!grid) {
+      return null;
+    }
+    
+    try {
+      // Use the existing getPriceFromGrid function
+      // It expects width and drop in CM
+      const price = getPriceFromGrid(grid, width_cm, drop_cm);
+      return price > 0 ? price : null;
+    } catch (error) {
+      console.error('Grid price lookup failed:', error);
+      return null;
+    }
   }
 }
 
 // ============================================================
-// Convenience Functions
+// Convenience Functions for Testing
 // ============================================================
 
 /**
- * Quick calculation for curtains
+ * Quick calculation for curtains (for testing only)
+ * In production, use full CalculationEngine.calculate with validated inputs
  */
 export function calculateCurtain(
   rail_width_mm: number,
   drop_mm: number,
   fabric_width_cm: number,
-  fullness: number = 2.5,
-  template?: Partial<TemplateContract>
+  fullness: number,
+  template: {
+    header_hem_cm: number;
+    bottom_hem_cm: number;
+    side_hem_cm: number;
+    seam_hem_cm: number;
+    waste_percentage: number;
+    default_returns_cm?: number;
+  }
 ): LinearCalculationResult {
   return CalculationEngine.calculateLinear(
-    { rail_width_mm, drop_mm, heading_fullness: fullness },
-    {
-      id: 'temp',
-      name: 'Curtain',
-      treatment_category: 'curtains',
-      pricing_type: 'per_running_meter',
-      header_hem_cm: template?.header_hem_cm ?? 8,
-      bottom_hem_cm: template?.bottom_hem_cm ?? 10,
-      side_hem_cm: template?.side_hem_cm ?? 4,
-      seam_hem_cm: template?.seam_hem_cm ?? 2,
-      waste_percentage: template?.waste_percentage ?? 0,
-      default_fullness_ratio: fullness,
+    { 
+      rail_width_mm, 
+      drop_mm, 
+      heading_fullness: fullness 
     },
     {
-      id: 'temp',
-      name: 'Fabric',
+      id: 'test',
+      name: 'Test Curtain',
+      treatment_category: 'curtains',
+      pricing_type: 'per_running_meter',
+      header_hem_cm: template.header_hem_cm,
+      bottom_hem_cm: template.bottom_hem_cm,
+      side_hem_cm: template.side_hem_cm,
+      seam_hem_cm: template.seam_hem_cm,
+      waste_percentage: template.waste_percentage,
+      default_fullness_ratio: fullness,
+      default_returns_cm: template.default_returns_cm,
+    },
+    {
+      id: 'test',
+      name: 'Test Fabric',
       width_cm: fabric_width_cm,
       pricing_method: 'per_running_meter',
     }
@@ -546,25 +572,30 @@ export function calculateCurtain(
 }
 
 /**
- * Quick calculation for blinds
+ * Quick calculation for blinds (for testing only)
  */
 export function calculateBlind(
   rail_width_mm: number,
   drop_mm: number,
-  template?: Partial<TemplateContract>
+  template: {
+    header_hem_cm: number;
+    bottom_hem_cm: number;
+    side_hem_cm: number;
+    waste_percentage: number;
+  }
 ): AreaCalculationResult {
   return CalculationEngine.calculateArea(
     { rail_width_mm, drop_mm },
     {
-      id: 'temp',
-      name: 'Blind',
+      id: 'test',
+      name: 'Test Blind',
       treatment_category: 'roller_blinds',
       pricing_type: 'per_sqm',
-      header_hem_cm: template?.header_hem_cm ?? 8,
-      bottom_hem_cm: template?.bottom_hem_cm ?? 10,
-      side_hem_cm: template?.side_hem_cm ?? 4,
-      seam_hem_cm: template?.seam_hem_cm ?? 0,
-      waste_percentage: template?.waste_percentage ?? 0,
+      header_hem_cm: template.header_hem_cm,
+      bottom_hem_cm: template.bottom_hem_cm,
+      side_hem_cm: template.side_hem_cm,
+      seam_hem_cm: 0,
+      waste_percentage: template.waste_percentage,
     }
   );
 }

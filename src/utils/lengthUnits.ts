@@ -38,9 +38,6 @@ const FROM_MM: Record<LengthUnit, number> = {
 
 /**
  * Convert any length unit to millimeters
- * @param value - The numeric value to convert
- * @param fromUnit - The source unit
- * @returns Value in millimeters
  */
 export function toMm(value: number, fromUnit: LengthUnit): number {
   if (typeof value !== 'number' || isNaN(value)) {
@@ -51,9 +48,6 @@ export function toMm(value: number, fromUnit: LengthUnit): number {
 
 /**
  * Convert millimeters to any length unit
- * @param mm - Value in millimeters
- * @param toUnit - The target unit
- * @returns Value in target unit
  */
 export function fromMm(mm: number, toUnit: LengthUnit): number {
   if (typeof mm !== 'number' || isNaN(mm)) {
@@ -64,10 +58,6 @@ export function fromMm(mm: number, toUnit: LengthUnit): number {
 
 /**
  * Convert between any two length units
- * @param value - The numeric value to convert
- * @param fromUnit - The source unit
- * @param toUnit - The target unit
- * @returns Value in target unit
  */
 export function convertLength(value: number, fromUnit: LengthUnit, toUnit: LengthUnit): number {
   if (fromUnit === toUnit) return value;
@@ -77,7 +67,6 @@ export function convertLength(value: number, fromUnit: LengthUnit, toUnit: Lengt
 
 /**
  * Convert millimeters to centimeters
- * Commonly used for template values
  */
 export function mmToCm(mm: number): number {
   return mm / 10;
@@ -85,7 +74,6 @@ export function mmToCm(mm: number): number {
 
 /**
  * Convert centimeters to millimeters
- * Commonly used for database storage
  */
 export function cmToMm(cm: number): number {
   return cm * 10;
@@ -93,7 +81,6 @@ export function cmToMm(cm: number): number {
 
 /**
  * Convert centimeters to meters
- * Commonly used for linear meter calculations
  */
 export function cmToM(cm: number): number {
   return cm / 100;
@@ -122,8 +109,6 @@ export function sqftToSqm(sqft: number): number {
 
 /**
  * Round to specified decimal places
- * @param value - Number to round
- * @param decimals - Number of decimal places (default 2)
  */
 export function roundTo(value: number, decimals: number = 2): number {
   const factor = Math.pow(10, decimals);
@@ -132,9 +117,6 @@ export function roundTo(value: number, decimals: number = 2): number {
 
 /**
  * Format a measurement with unit label
- * @param value - The numeric value
- * @param unit - The unit
- * @param decimals - Decimal places (default 1)
  */
 export function formatWithUnit(value: number, unit: LengthUnit, decimals: number = 1): string {
   const labels: Record<LengthUnit, string> = {
@@ -164,8 +146,6 @@ export function isMetric(unit: LengthUnit): boolean {
 
 /**
  * Get the preferred display unit based on measurement system
- * @param system - 'metric' or 'imperial'
- * @param context - 'length' | 'width' | 'fabric' to determine appropriate unit
  */
 export function getDisplayUnit(
   system: 'metric' | 'imperial',

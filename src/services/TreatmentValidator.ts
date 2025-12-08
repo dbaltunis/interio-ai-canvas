@@ -4,6 +4,9 @@
  * Strict validation for treatment data.
  * FAILS LOUD - no silent defaults, no fallbacks.
  * Missing data = ValidationError thrown.
+ * 
+ * CRITICAL: No hard-coded defaults (8, 10, 4, 2, 0, etc.)
+ * Defaults belong in template records or account settings, not here.
  */
 
 import {
@@ -15,7 +18,6 @@ import {
   SelectedOptionContract,
   TreatmentDataContract,
   ALL_DB_VALUES,
-  LINEAR_TYPES,
   AREA_TYPES,
   isValidTreatmentCategory,
   isLinearType,
@@ -46,9 +48,6 @@ export type ValidationErrorCode =
   | 'MISSING_MATERIAL'
   | 'INVALID_PRICING';
 
-/**
- * Validation result for non-throwing checks
- */
 export interface ValidationResult {
   valid: boolean;
   errors: ValidationError[];
@@ -59,9 +58,6 @@ export interface ValidationResult {
 // Helper Functions - Throw on Invalid
 // ============================================================
 
-/**
- * Require a value to be a number
- */
 export function requireNumber(
   value: unknown,
   field: string,
@@ -89,9 +85,6 @@ export function requireNumber(
   return num;
 }
 
-/**
- * Require a value to be a positive number (> 0)
- */
 export function requirePositiveNumber(
   value: unknown,
   field: string,
@@ -111,9 +104,6 @@ export function requirePositiveNumber(
   return num;
 }
 
-/**
- * Require a value to be a non-negative number (>= 0)
- */
 export function requireNonNegativeNumber(
   value: unknown,
   field: string,
@@ -133,9 +123,6 @@ export function requireNonNegativeNumber(
   return num;
 }
 
-/**
- * Require a value to be a non-empty string
- */
 export function requireString(
   value: unknown,
   field: string,
@@ -165,9 +152,6 @@ export function requireString(
 // Core Validators
 // ============================================================
 
-/**
- * Validate treatment category
- */
 export function validateCategory(
   value: unknown,
   field: string = 'treatment_category'
@@ -193,12 +177,11 @@ export function validateCategory(
 }
 
 /**
- * Validate measurements object
- * All values expected in MM
+ * Validate measurements object - ALL values in MM
  */
 export function validateMeasurements(
   measurements: unknown,
-  category: TreatmentCategoryDbValue
+  _category: TreatmentCategoryDbValue
 ): MeasurementsContract {
   if (!measurements || typeof measurements !== 'object') {
     throw new ValidationError(
@@ -210,7 +193,7 @@ export function validateMeasurements(
   
   const m = measurements as Record<string, unknown>;
   
-  // Core required measurements
+  // Core required measurements - NO DEFAULTS
   const rail_width_mm = requirePositiveNumber(
     m.rail_width_mm ?? m.rail_width ?? m.width,
     'rail_width_mm',
@@ -228,7 +211,7 @@ export function validateMeasurements(
     drop_mm,
   };
   
-  // Optional fields - validate if present
+  // Optional fields - validate if present, NO DEFAULTS
   if (m.heading_fullness !== undefined && m.heading_fullness !== null) {
     const fullness = requirePositiveNumber(m.heading_fullness, 'heading_fullness');
     if (fullness < 1 || fullness > 5) {
@@ -242,27 +225,24 @@ export function validateMeasurements(
     result.heading_fullness = fullness;
   }
   
-  if (m.return_left_cm !== undefined) {
-    result.return_left_cm = requireNonNegativeNumber(m.return_left_cm, 'return_left_cm');
+  if (m.return_left_mm !== undefined) {
+    result.return_left_mm = requireNonNegativeNumber(m.return_left_mm, 'return_left_mm');
   }
   
-  if (m.return_right_cm !== undefined) {
-    result.return_right_cm = requireNonNegativeNumber(m.return_right_cm, 'return_right_cm');
+  if (m.return_right_mm !== undefined) {
+    result.return_right_mm = requireNonNegativeNumber(m.return_right_mm, 'return_right_mm');
   }
   
-  if (m.pooling_cm !== undefined) {
-    result.pooling_cm = requireNonNegativeNumber(m.pooling_cm, 'pooling_cm');
+  if (m.pooling_mm !== undefined) {
+    result.pooling_mm = requireNonNegativeNumber(m.pooling_mm, 'pooling_mm');
   }
-  
-  // Store raw for reference
-  result.raw = m;
   
   return result;
 }
 
 /**
- * Validate template configuration
- * All hem values expected in CM
+ * Validate template configuration - ALL values in CM
+ * NO HIDDEN DEFAULTS - if a field is missing, throw error
  */
 export function validateTemplate(
   template: unknown,
@@ -281,42 +261,55 @@ export function validateTemplate(
   const id = requireString(t.id, 'template.id');
   const name = requireString(t.name, 'template.name');
   
-  // Validate pricing type
+  // Pricing type - REQUIRED, no default
   const validPricingTypes = ['per_running_meter', 'per_sqm', 'per_drop', 'pricing_grid', 'fixed'];
-  const pricing_type = (t.pricing_type as string) || 'fixed';
-  if (!validPricingTypes.includes(pricing_type)) {
+  const pricing_type = t.pricing_type;
+  if (!pricing_type) {
     throw new ValidationError(
-      `Invalid pricing type: "${pricing_type}"`,
+      'Template pricing_type is required',
+      'template.pricing_type',
+      'MISSING_REQUIRED'
+    );
+  }
+  if (!validPricingTypes.includes(pricing_type as string)) {
+    throw new ValidationError(
+      `Invalid pricing type: "${pricing_type}". Valid: ${validPricingTypes.join(', ')}`,
       'template.pricing_type',
       'INVALID_VALUE',
       { validValues: validPricingTypes }
     );
   }
   
-  // Manufacturing values - defaults if not specified, but warn
+  // Manufacturing values - REQUIRED, NO DEFAULTS
+  // These must come from the template record
   const header_hem_cm = requireNonNegativeNumber(
-    t.header_hem_cm ?? t.header_hem ?? t.headerHem ?? 8,
-    'template.header_hem_cm'
+    t.header_hem_cm ?? t.header_hem ?? t.headerHem,
+    'template.header_hem_cm',
+    'Template header_hem_cm is required (no default allowed)'
   );
   
   const bottom_hem_cm = requireNonNegativeNumber(
-    t.bottom_hem_cm ?? t.bottom_hem ?? t.bottomHem ?? 10,
-    'template.bottom_hem_cm'
+    t.bottom_hem_cm ?? t.bottom_hem ?? t.bottomHem,
+    'template.bottom_hem_cm',
+    'Template bottom_hem_cm is required (no default allowed)'
   );
   
   const side_hem_cm = requireNonNegativeNumber(
-    t.side_hem_cm ?? t.side_hem ?? t.sideHem ?? 4,
-    'template.side_hem_cm'
+    t.side_hem_cm ?? t.side_hem ?? t.sideHem,
+    'template.side_hem_cm',
+    'Template side_hem_cm is required (no default allowed)'
   );
   
   const seam_hem_cm = requireNonNegativeNumber(
-    t.seam_hem_cm ?? t.seam_hem ?? t.seamHem ?? 2,
-    'template.seam_hem_cm'
+    t.seam_hem_cm ?? t.seam_hem ?? t.seamHem,
+    'template.seam_hem_cm',
+    'Template seam_hem_cm is required (no default allowed)'
   );
   
   const waste_percentage = requireNonNegativeNumber(
-    t.waste_percentage ?? t.waste ?? 0,
-    'template.waste_percentage'
+    t.waste_percentage ?? t.waste,
+    'template.waste_percentage',
+    'Template waste_percentage is required (no default allowed)'
   );
   
   const result: TemplateContract = {
@@ -331,7 +324,7 @@ export function validateTemplate(
     waste_percentage,
   };
   
-  // Optional fields
+  // Optional fields - no defaults, just capture if present
   if (t.base_price !== undefined) {
     result.base_price = requireNonNegativeNumber(t.base_price, 'template.base_price');
   }
@@ -361,13 +354,11 @@ export function validateTemplate(
 
 /**
  * Validate fabric for curtains/romans
- * Width expected in CM
  */
 export function validateFabric(
   fabric: unknown,
   category: TreatmentCategoryDbValue
 ): FabricContract {
-  // Fabric is REQUIRED for linear types
   if (isLinearType(category)) {
     if (!fabric || typeof fabric !== 'object') {
       throw new ValidationError(
@@ -377,7 +368,6 @@ export function validateFabric(
       );
     }
   } else if (!fabric) {
-    // For non-linear types, fabric is optional
     throw new ValidationError(
       'Fabric object is null/undefined',
       'fabric',
@@ -390,17 +380,24 @@ export function validateFabric(
   const id = requireString(f.id, 'fabric.id');
   const name = requireString(f.name ?? f.fabric_name, 'fabric.name');
   
-  // Width is critical for linear calculations
+  // Width is REQUIRED - no default
   const width_cm = requirePositiveNumber(
     f.width_cm ?? f.width ?? f.fabricWidth,
     'fabric.width_cm',
-    'Fabric width is required for calculations'
+    'Fabric width is required for calculations (no default allowed)'
   );
   
-  // Pricing method
-  const validMethods = ['per_running_meter', 'per_sqm', 'fixed'];
-  const pricing_method = (f.pricing_method as string) || 'per_running_meter';
-  if (!validMethods.includes(pricing_method)) {
+  // Pricing method - REQUIRED
+  const validMethods = ['per_running_meter', 'per_sqm', 'pricing_grid', 'fixed'];
+  const pricing_method = f.pricing_method;
+  if (!pricing_method) {
+    throw new ValidationError(
+      'Fabric pricing_method is required',
+      'fabric.pricing_method',
+      'MISSING_REQUIRED'
+    );
+  }
+  if (!validMethods.includes(pricing_method as string)) {
     throw new ValidationError(
       `Invalid fabric pricing method: "${pricing_method}"`,
       'fabric.pricing_method',
@@ -416,7 +413,7 @@ export function validateFabric(
     pricing_method: pricing_method as FabricContract['pricing_method'],
   };
   
-  // Pricing - at least one should be set
+  // Prices - capture if present
   if (f.price_per_meter !== undefined) {
     result.price_per_meter = requireNonNegativeNumber(f.price_per_meter, 'fabric.price_per_meter');
   }
@@ -425,7 +422,6 @@ export function validateFabric(
     result.price_per_sqm = requireNonNegativeNumber(f.price_per_sqm, 'fabric.price_per_sqm');
   }
   
-  // Pattern info
   if (f.pattern_repeat_cm !== undefined || f.pattern_repeat !== undefined) {
     result.pattern_repeat_cm = requireNonNegativeNumber(
       f.pattern_repeat_cm ?? f.pattern_repeat,
@@ -464,8 +460,15 @@ export function validateMaterial(
   const name = requireString(m.name ?? m.material_name, 'material.name');
   
   const validMethods = ['per_sqm', 'pricing_grid', 'fixed'];
-  const pricing_method = (m.pricing_method as string) || 'pricing_grid';
-  if (!validMethods.includes(pricing_method)) {
+  const pricing_method = m.pricing_method;
+  if (!pricing_method) {
+    throw new ValidationError(
+      'Material pricing_method is required',
+      'material.pricing_method',
+      'MISSING_REQUIRED'
+    );
+  }
+  if (!validMethods.includes(pricing_method as string)) {
     throw new ValidationError(
       `Invalid material pricing method: "${pricing_method}"`,
       'material.pricing_method',
@@ -532,13 +535,20 @@ export function validateOptions(
     const value_id = requireString(o.value_id, `options[${index}].value_id`);
     const value_label = requireString(o.value_label ?? o.label, `options[${index}].value_label`);
     
-    // Price is REQUIRED - no silent 0 defaults
-    const price = requireNumber(o.price ?? 0, `options[${index}].price`);
+    // Price is REQUIRED
+    const price = requireNumber(o.price, `options[${index}].price`);
     
-    // Pricing method
+    // Pricing method is REQUIRED
     const validMethods = ['fixed', 'per_unit', 'per_meter', 'per_sqm', 'percentage', 'pricing_grid'];
-    const pricing_method = (o.pricing_method as string) || 'fixed';
-    if (!validMethods.includes(pricing_method)) {
+    const pricing_method = o.pricing_method;
+    if (!pricing_method) {
+      throw new ValidationError(
+        `Option pricing_method is required`,
+        `options[${index}].pricing_method`,
+        'MISSING_REQUIRED'
+      );
+    }
+    if (!validMethods.includes(pricing_method as string)) {
       throw new ValidationError(
         `Invalid option pricing method: "${pricing_method}"`,
         `options[${index}].pricing_method`,
@@ -578,47 +588,35 @@ export function validateOptions(
 
 /**
  * Comprehensive validation before saving to windows_summary
- * This is the main entry point for validation
  */
 export function validateForSave(
   data: Partial<TreatmentDataContract>
 ): TreatmentDataContract {
-  const errors: ValidationError[] = [];
-  
-  // Required fields
   const surface_id = requireString(data.surface_id, 'surface_id');
   const project_id = requireString(data.project_id, 'project_id');
   const treatment_category = validateCategory(data.treatment_category);
   
-  // Validate measurements
   const measurements = validateMeasurements(data.measurements, treatment_category);
-  
-  // Validate template
   const template = validateTemplate(data.template, treatment_category);
   
-  // Validate fabric/material based on type
   let fabric: FabricContract | undefined;
   let material: MaterialContract | undefined;
   
   if (isLinearType(treatment_category)) {
-    // Curtains/Romans REQUIRE fabric
     fabric = validateFabric(data.fabric, treatment_category);
   } else if (AREA_TYPES.includes(treatment_category)) {
-    // Blinds may have material
     if (data.material) {
       material = validateMaterial(data.material);
     }
-    // Fabric is optional for blinds
     if (data.fabric) {
       try {
         fabric = validateFabric(data.fabric, treatment_category);
       } catch {
-        // Optional for blinds, ignore validation errors
+        // Optional for blinds
       }
     }
   }
   
-  // Validate options
   const selected_options = validateOptions(data.selected_options || []);
   
   return {
@@ -639,7 +637,6 @@ export function validateForSave(
 
 /**
  * Non-throwing validation that returns a result object
- * Use this when you want to collect all errors, not fail on first
  */
 export function validateWithResult(
   data: Partial<TreatmentDataContract>
