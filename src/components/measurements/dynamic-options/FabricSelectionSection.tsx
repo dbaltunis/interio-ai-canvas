@@ -128,7 +128,7 @@ export const FabricSelectionSection = ({
           {/* Compact Fabric Info */}
           <div className="grid grid-cols-3 gap-2 text-xs">
             <div className="text-center p-1 bg-muted/50 rounded">
-              <div className="font-medium">{selectedFabricItem.fabric_width || 137}{units.fabric}</div>
+              <div className="font-medium">{selectedFabricItem.fabric_width || '-'}{units.fabric}</div>
               <div className="text-muted-foreground">Width</div>
             </div>
             <div className="text-center p-1 bg-muted/50 rounded">
@@ -188,7 +188,7 @@ export const FabricSelectionSection = ({
               {showDetails && (
               <div className="mt-2 p-2 bg-background/50 rounded border text-xs space-y-1">
                 <div className="font-medium text-muted-foreground mb-1">Calculation breakdown:</div>
-                <div>• Fabric width: {formatFromCM(selectedFabricItem.fabric_width || 137, units.length)}</div>
+                <div>• Fabric width: {selectedFabricItem.fabric_width ? formatFromCM(selectedFabricItem.fabric_width, units.length) : 'Not set'}</div>
                 <div>• Rail width: {fabricCalculation.railWidth ? formatFromCM(fabricCalculation.railWidth, units.length) : 'Not set'}</div>
                 <div>• Fullness multiplier: {fabricCalculation.fullnessRatio || 0}x</div>
                 <div>• Required width: {fabricCalculation.railWidth ? formatFromCM(Math.round((fabricCalculation.railWidth || 0) * (fabricCalculation.fullnessRatio || 0)), units.length) : 'Calculating...'}</div>
