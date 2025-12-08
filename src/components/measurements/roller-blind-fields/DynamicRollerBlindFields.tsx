@@ -158,7 +158,8 @@ export const DynamicRollerBlindFields = ({
       // Check if it's a simple width-only array format
       if (Array.isArray(pricingGridData) && pricingGridData.length > 0 && 'width' in pricingGridData[0]) {
         // Simple width-based pricing
-        const widthCm = measurements.rail_width || 0;
+        // ✅ CRITICAL: measurements.rail_width is stored in MM, convert to CM for grid lookup
+        const widthCm = (parseFloat(measurements.rail_width) || 0) / 10;
         const widthValues = pricingGridData.map((entry: any) => parseInt(entry.width));
         const closestWidth = widthValues.reduce((prev: number, curr: number) => {
           return Math.abs(curr - widthCm) < Math.abs(prev - widthCm) ? curr : prev;
@@ -167,8 +168,9 @@ export const DynamicRollerBlindFields = ({
         return matchingEntry ? parseFloat(matchingEntry.price) : 0;
       } else {
         // Full 2D pricing grid with width and drop
-        const widthCm = measurements.rail_width || 0;
-        const heightCm = measurements.drop || 0;
+        // ✅ CRITICAL: measurements stored in MM, convert to CM for grid lookup
+        const widthCm = (parseFloat(measurements.rail_width) || 0) / 10;
+        const heightCm = (parseFloat(measurements.drop) || 0) / 10;
         return getPriceFromGrid(pricingGridData, widthCm, heightCm);
       }
     }
@@ -192,7 +194,7 @@ export const DynamicRollerBlindFields = ({
         if (pricingMethod === 'pricing-grid' && pricingGridData) {
           console.log(`💰 Calculated pricing-grid price for "${key}":`, {
             method: Array.isArray(pricingGridData) && 'width' in pricingGridData[0] ? 'width-based' : '2D grid',
-            dimensions: `${measurements.rail_width || 0}cm × ${measurements.drop || 0}cm`,
+            dimensions: `${(parseFloat(measurements.rail_width) || 0) / 10}cm × ${(parseFloat(measurements.drop) || 0) / 10}cm`,
             calculatedPrice: actualPrice
           });
         }

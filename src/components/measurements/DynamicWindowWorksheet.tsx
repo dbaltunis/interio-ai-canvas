@@ -931,8 +931,9 @@ export const DynamicWindowWorksheet = forwardRef<{
               const headingOptionFromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
               console.log("🎯 Found heading in settings:", headingOptionFromSettings);
               if (headingOptionFromSettings) {
-                const width = parseFloat(measurements.rail_width) || 0;
-                const additionalCost = headingOptionFromSettings.price * width / 100; // Convert cm to m
+                // ✅ CRITICAL: measurements.rail_width is in MM, convert to meters
+                const widthMM = parseFloat(measurements.rail_width) || 0;
+                const additionalCost = headingOptionFromSettings.price * widthMM / 1000; // MM to meters
                 headingCost += additionalCost;
                 headingName = headingOptionFromSettings.name;
                 console.log("🎯 Settings heading cost:", additionalCost, "name:", headingName);
@@ -940,8 +941,9 @@ export const DynamicWindowWorksheet = forwardRef<{
                 const headingItem = headingInventory?.find(item => item.id === selectedHeading);
                 console.log("🎯 Found heading in inventory:", headingItem);
                 if (headingItem) {
-                  const width = parseFloat(measurements.rail_width) || 0;
-                  const additionalCost = (headingItem.price_per_meter || headingItem.selling_price || 0) * width / 100;
+                  // ✅ CRITICAL: measurements.rail_width is in MM, convert to meters
+                  const widthMM = parseFloat(measurements.rail_width) || 0;
+                  const additionalCost = (headingItem.price_per_meter || headingItem.selling_price || 0) * widthMM / 1000;
                   headingCost += additionalCost;
                   headingName = headingItem.name;
                   console.log("🎯 Inventory heading cost:", additionalCost, "name:", headingName);
@@ -1037,7 +1039,8 @@ export const DynamicWindowWorksheet = forwardRef<{
               quantity: pricingType === 'per_panel' ? fabricCalculation.curtainCount : 
                        pricingType === 'per_drop' ? fabricCalculation.widthsRequired : 
                        pricingType === 'per_metre' ? (() => {
-                         const railWidthCm = parseFloat(measurements.rail_width || '0');
+                         // ✅ CRITICAL: measurements.rail_width is in MM, convert to CM first
+                         const railWidthCm = (parseFloat(measurements.rail_width || '0')) / 10;
                          const fullness = fabricCalculation.fullnessRatio || 0;
                          const sideHemsCm = fabricCalculation.totalSideHems || 0;
                          const returnsCm = fabricCalculation.returns || 0;
@@ -1132,7 +1135,8 @@ export const DynamicWindowWorksheet = forwardRef<{
           // Calculate hardware quantity if applicable
           let hardwareQuantity = 0;
           if (headingMetadata?.spacing && parseFloat(measurements.rail_width) > 0) {
-            const railWidthCm = parseFloat(measurements.rail_width);
+            // ✅ CRITICAL: measurements.rail_width is in MM, convert to CM for spacing calculation
+            const railWidthCm = parseFloat(measurements.rail_width) / 10;
             const spacingCm = parseFloat(headingMetadata.spacing);
             hardwareQuantity = Math.ceil(railWidthCm / spacingCm) + 1;
           }
