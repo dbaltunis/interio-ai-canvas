@@ -30,6 +30,12 @@ interface AdaptiveFabricPricingDisplayProps {
   // Use leftover for horizontal seaming
   useLeftoverForHorizontal?: boolean;
   onToggleLeftoverForHorizontal?: () => void;
+  /**
+   * NEW: Pre-computed engine result from parent
+   * When provided, this is used instead of calling useCurtainEngine internally
+   * This ensures SINGLE SOURCE OF TRUTH - engine called once at parent level
+   */
+  engineResult?: any | null;
 }
 export const AdaptiveFabricPricingDisplay = ({
   selectedFabricItem,
@@ -41,7 +47,8 @@ export const AdaptiveFabricPricingDisplay = ({
   leftoverFabricIds = [],
   usedLeftoverCount = 0,
   useLeftoverForHorizontal = false,
-  onToggleLeftoverForHorizontal
+  onToggleLeftoverForHorizontal,
+  engineResult: engineResultProp,
 }: AdaptiveFabricPricingDisplayProps) => {
   const {
     units,
@@ -49,8 +56,9 @@ export const AdaptiveFabricPricingDisplay = ({
     getFabricUnitLabel
   } = useMeasurementUnits();
 
-  // NEW ENGINE: Use calculation engine for curtains/roman_blinds
-  const engineResult = useCurtainEngine({
+  // NEW ENGINE: Use pre-computed result from parent if provided, otherwise calculate locally
+  // This ensures a single source of truth when parent passes the result
+  const localEngineResult = useCurtainEngine({
     treatmentCategory,
     measurements,
     selectedTemplate: template,
@@ -58,6 +66,9 @@ export const AdaptiveFabricPricingDisplay = ({
     selectedOptions: [], // Options handled separately in this component
     units,
   });
+  
+  // Use prop if provided (single source from parent), otherwise use local calculation
+  const engineResult = engineResultProp !== undefined ? engineResultProp : localEngineResult;
 
   // Log engine result for comparison (dev mode)
   if (engineResult && import.meta.env.DEV) {

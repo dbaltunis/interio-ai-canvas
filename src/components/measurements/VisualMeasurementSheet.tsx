@@ -62,6 +62,11 @@ interface VisualMeasurementSheetProps {
     optionKey?: string;
   }>) => void;
   selectedMaterial?: any; // For blinds that use materials (venetian, vertical)
+  /**
+   * Pre-computed engine result from parent (SINGLE SOURCE OF TRUTH)
+   * When provided, passed to AdaptiveFabricPricingDisplay
+   */
+  engineResult?: any | null;
 }
 export const VisualMeasurementSheet = ({
   measurements,
@@ -81,7 +86,8 @@ export const VisualMeasurementSheet = ({
   treatmentCategory = 'curtains' as import("@/utils/treatmentTypeDetection").TreatmentCategory,
   selectedOptions = [],
   onSelectedOptionsChange,
-  selectedMaterial
+  selectedMaterial,
+  engineResult,
 }: VisualMeasurementSheetProps) => {
   // Use ref to track latest options during batch initialization
   const selectedOptionsRef = useRef(selectedOptions);
@@ -948,6 +954,7 @@ export const VisualMeasurementSheet = ({
                   treatmentCategory={treatmentCategory}
                   useLeftoverForHorizontal={useLeftoverForHorizontal}
                   onToggleLeftoverForHorizontal={handleToggleLeftoverForHorizontal}
+                  engineResult={engineResult}
                 />
               )}
               

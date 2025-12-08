@@ -49,6 +49,34 @@ interface ManufacturingDetails {
   manufacturingType: 'hand' | 'machine';
 }
 
+/**
+ * Engine result from useCurtainEngine - the SINGLE SOURCE OF TRUTH
+ * All calculation values come from here, display components ONLY render
+ */
+interface EngineResult {
+  linear_meters?: number;
+  widths_required?: number;
+  drops_per_width?: number;
+  sqm?: number;
+  fabric_cost: number;
+  material_cost: number;
+  options_cost: number;
+  base_cost: number;
+  subtotal: number;
+  waste_amount: number;
+  total: number;
+  width_cm: number;
+  drop_cm: number;
+  fullness?: number;
+  totalWidthCm?: number;
+  totalDropCm?: number;
+  formula_breakdown?: {
+    steps: string[];
+    values: Record<string, number | string>;
+    formula_string: string;
+  };
+}
+
 interface CostCalculationSummaryProps {
   template: CurtainTemplate;
   measurements: any;
@@ -79,6 +107,11 @@ interface CostCalculationSummaryProps {
     usesLeftover?: boolean;
   };
   manufacturingDetails?: ManufacturingDetails;
+  /** 
+   * NEW: Engine result - when provided, this is the SINGLE SOURCE OF TRUTH
+   * All display values come from here, no local calculations
+   */
+  engineResult?: EngineResult | null;
 }
 
 export const CostCalculationSummary = ({
@@ -97,7 +130,8 @@ export const CostCalculationSummary = ({
   calculatedOptionsCost,
   calculatedTotalCost,
   fabricDisplayData,
-  manufacturingDetails
+  manufacturingDetails,
+  engineResult,
 }: CostCalculationSummaryProps) => {
   const { units } = useMeasurementUnits();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
@@ -447,21 +481,45 @@ export const CostCalculationSummary = ({
     }
   }
 
-  // CURTAINS: Use fabricCalculation for display details but NOT to override calculated costs
-  // fabricCalculation.totalCost is ONLY the fabric cost, not the total treatment cost
-  const fabricCost = safeParseFloat(calculatedFabricCost, 0);
+  // ============================================================
+  // CURTAINS/ROMANS: Use engineResult as SINGLE SOURCE OF TRUTH
+  // ============================================================
   
-  console.log('💰 CostSummary - Fabric Pricing:', {
-    calculatedFabricCostProp: calculatedFabricCost,
-    finalFabricCost: fabricCost,
-    fabricOrientation: fabricCalculation?.fabricOrientation,
-    linearMeters: fabricCalculation?.linearMeters,
-    orderedLinearMeters: fabricCalculation?.orderedLinearMeters,
-    pricePerMeter: fabricCalculation?.pricePerMeter,
-    metersUsedForCost: (fabricCalculation?.orderedLinearMeters || fabricCalculation?.linearMeters),
-    formula: fabricCalculation && calculatedFabricCost ? 
-      `${(fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters).toFixed(2)}m × ${fabricCalculation.pricePerMeter?.toFixed(2)}/m = ${calculatedFabricCost}` : 'N/A'
-  });
+  // When engineResult is provided, use it exclusively - no fallbacks
+  const useEngine = engineResult != null;
+  
+  // Fabric cost: engine > prop > 0
+  const fabricCost = useEngine 
+    ? engineResult.fabric_cost 
+    : safeParseFloat(calculatedFabricCost, 0);
+  
+  // Linear meters: engine > fabricCalculation > 0
+  const linearMeters = useEngine 
+    ? (engineResult.linear_meters ?? 0)
+    : (fabricCalculation?.linearMeters ?? 0);
+  
+  // Widths required: engine > fabricCalculation > 1
+  const widthsRequired = useEngine
+    ? (engineResult.widths_required ?? 1)
+    : (fabricCalculation?.widthsRequired ?? 1);
+  
+  // Fullness: engine > fabricCalculation > show error
+  const displayFullness = useEngine
+    ? engineResult.fullness
+    : fabricCalculation?.fullnessRatio;
+  
+  if (import.meta.env.DEV) {
+    console.log('💰 CostSummary - Source:', {
+      usingEngine: useEngine,
+      engineLinearMeters: engineResult?.linear_meters,
+      fabricCalcLinearMeters: fabricCalculation?.linearMeters,
+      finalLinearMeters: linearMeters,
+      engineFabricCost: engineResult?.fabric_cost,
+      propFabricCost: calculatedFabricCost,
+      finalFabricCost: fabricCost,
+      fullness: displayFullness,
+    });
+  }
   
   const liningCost = safeParseFloat(calculatedLiningCost, 0);
   const manufacturingCost = safeParseFloat(calculatedManufacturingCost, 0);
