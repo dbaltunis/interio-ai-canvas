@@ -69,10 +69,16 @@ function buildMeasurements(
     const rail_width_mm = parseFloat(measurements.rail_width);
     const drop_mm = parseFloat(measurements.drop);
     
-    if (!rail_width_mm || !drop_mm || isNaN(rail_width_mm) || isNaN(drop_mm)) {
-      console.warn('[ENGINE_SHADOW_MEASUREMENTS_MISSING]', { 
-        rail_width: measurements.rail_width, 
-        drop: measurements.drop 
+    // Explicit numeric checks - not truthy checks
+    if (
+      isNaN(rail_width_mm) ||
+      isNaN(drop_mm) ||
+      rail_width_mm <= 0 ||
+      drop_mm <= 0
+    ) {
+      console.warn('[ENGINE_SHADOW_MEASUREMENTS_MISSING]', {
+        rail_width: measurements.rail_width,
+        drop: measurements.drop,
       });
       return null;
     }
