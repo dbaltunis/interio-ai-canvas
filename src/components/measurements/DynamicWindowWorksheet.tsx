@@ -28,6 +28,7 @@ import { calculateWallpaperCost } from "@/utils/wallpaperCalculations";
 import { MeasurementWorksheetSkeleton } from "./skeleton/MeasurementWorksheetSkeleton";
 import { ColorSelector } from "./ColorSelector";
 import { calculateOptionPrices, getOptionEffectivePrice } from "@/utils/calculateOptionPrices";
+import { runShadowComparison } from "@/engine/shadowModeRunner";
 
 /**
  * CRITICAL MEASUREMENT UNIT STANDARD
@@ -1058,6 +1059,26 @@ export const DynamicWindowWorksheet = forwardRef<{
           } else {
             // Curtains - recalculate with all components including options
             totalCost = fabricCost + liningCost + headingCost + manufacturingCost + curtainOptionsCost;
+          }
+
+          // ============================================================
+          // SHADOW MODE: Compare new CalculationEngine vs old calculation
+          // DEV ONLY - does NOT change any visible prices
+          // ============================================================
+          if (displayCategory === 'curtains' || specificTreatmentType === 'roman_blinds') {
+            runShadowComparison(
+              {
+                surfaceId,
+                projectId,
+                treatmentCategory: specificTreatmentType,
+                measurements,
+                selectedTemplate,
+                selectedFabric: selectedItems.fabric,
+                selectedOptions,
+                units,
+              },
+              totalCost
+            );
           }
 
           // Create comprehensive calculation object for display consistency
