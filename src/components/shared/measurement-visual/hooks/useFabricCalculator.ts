@@ -40,14 +40,22 @@ export const useFabricCalculator = ({
       const height = convertLength(heightInUserUnit, units.length, 'cm');
       const pooling = convertLength(poolingInUserUnit, units.length, 'cm');
 
-      // Fabric width is stored in cm, no conversion needed
-      const fabricWidthCm = fabric.fabric_width || 137;
+      // CRITICAL: Fabric width MUST come from inventory - no hardcoded fallbacks
+      const fabricWidthCm = fabric.fabric_width;
+      if (!fabricWidthCm) {
+        console.error('❌ FABRIC_WIDTH_MISSING: Fabric width not set in inventory for', fabric.name);
+        return null; // Return null to show error in UI instead of guessing
+      }
       
       // CRITICAL FIX: Prioritize user's heading_fullness selection over template default
       // measurements.heading_fullness = what user selected in fullness dropdown
       // template.fullness_ratio = template default (fallback only)
       const measurementsAny = measurements as any;
-      const fullnessRatio = measurementsAny.heading_fullness || measurementsAny.fullness_ratio || template.fullness_ratio || 2.0;
+      const fullnessRatio = measurementsAny.heading_fullness || measurementsAny.fullness_ratio || template.fullness_ratio;
+      if (!fullnessRatio) {
+        console.error('❌ FULLNESS_MISSING: No fullness ratio set - select a heading style');
+        return null; // Return null to show error in UI instead of guessing
+      }
       
       console.log('📐 Fullness calculation:', {
         userSelection: measurementsAny.heading_fullness,
