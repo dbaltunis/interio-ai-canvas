@@ -18,9 +18,10 @@ export const toTreatmentVisualizerData = (item: WorkshopRoomItem) => {
   const covering = { id: String(coveringName), name: String(coveringName) };
 
   // Attempt to pull some helpful fields from summary if present
+  // CRITICAL: No hardcoded fallbacks - undefined means "not configured"
   const md = (item.summary?.measurements_details as Record<string, any>) || {};
   const treatmentData = {
-    fullness_ratio: md.fullness_ratio || item.summary?.fullness_ratio || "2.0",
+    fullness_ratio: md.fullness_ratio || item.summary?.fullness_ratio || undefined, // NO "2.0" fallback
     heading_type: md.heading_type || item.summary?.heading_type || undefined,
     pooling: md.pooling || item.summary?.pooling || 0,
     slat_size: md.slat_size || item.summary?.slat_size || undefined,

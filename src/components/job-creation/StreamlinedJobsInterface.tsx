@@ -84,13 +84,15 @@ export const StreamlinedJobsInterface = ({
       const roomSurfaces = getRoomSurfaces(roomId);
       const windowNumber = roomSurfaces.length + 1;
       
+      // CRITICAL: No hardcoded dimensions - new windows start with null dimensions
+      // User must enter measurements before calculations can proceed
       await createSurface.mutateAsync({
         name: `Window ${windowNumber}`,
         surface_type: 'window',
         room_id: roomId,
         project_id: project.id,
-        width: 60,
-        height: 48
+        width: null,
+        height: null
       });
       
       toast({

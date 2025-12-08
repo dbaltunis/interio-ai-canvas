@@ -90,16 +90,17 @@ export const AdaptiveFabricPricingDisplay = ({
     (treatmentCategory === "curtains" || treatmentCategory === "roman_blinds");
 
   // CRITICAL: No hardcoded fallbacks - use engine or fabricCalculation values only
+  // If not found anywhere, displayFullness will be undefined and we show error state
   const displayFullness =
     isCurtainEngineActive && engineResult.fullness != null
       ? engineResult.fullness
       : (fabricCalculation?.fullnessRatio ??
          fabricCalculation?.fullness ??
-         template?.fullness_ratio ??
-         template?.default_fullness_ratio);
+         null); // NO template fallback here - user must select heading
   
   // Flag for missing fullness - show error instead of guessing
-  const isFullnessMissing = displayFullness == null && isCurtainEngineActive;
+  const isFullnessMissing = displayFullness == null && 
+    (treatmentCategory === "curtains" || treatmentCategory === "roman_blinds");
 
   const displayTotalWidthMm =
     isCurtainEngineActive && engineResult.totalWidthCm != null
@@ -432,6 +433,19 @@ export const AdaptiveFabricPricingDisplay = ({
     }
 
     // Regular curtain display
+    // CRITICAL: Show error state if fullness is missing
+    if (isFullnessMissing) {
+      return <div className="container-level-3 rounded-md p-3 border-destructive border bg-destructive/10">
+          <div className="flex items-center gap-2 text-destructive">
+            <Ruler className="w-4 h-4" />
+            <span className="font-semibold text-sm">Fullness Not Configured</span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Select a heading style to determine fullness ratio, or configure fullness in template settings.
+          </p>
+        </div>;
+    }
+    
     return <div className="space-y-4">
         {/* Pool Usage Display - Show fabric source */}
         {poolUsage && <PoolUsageDisplay poolUsage={poolUsage} fabricName={selectedFabricItem?.name || fabricToUse.name} unit={getFabricUnitLabel()} />}

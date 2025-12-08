@@ -81,15 +81,8 @@ export const useTreatmentFormData = (treatmentType: string = "Curtains", windowC
   };
 
   const resetForm = () => {
-    const isBlindOrShutter = treatmentType.toLowerCase().includes('blind') || 
-                             treatmentType.toLowerCase().includes('shutter') ||
-                             treatmentType.toLowerCase().includes('venetian') ||
-                             treatmentType.toLowerCase().includes('cellular') ||
-                             treatmentType.toLowerCase().includes('honeycomb') ||
-                             treatmentType.toLowerCase().includes('vertical') ||
-                             windowCovering?.category === 'blinds' || 
-                             windowCovering?.category === 'shutters';
-    
+    // CRITICAL: No hardcoded fallbacks in resetForm either
+    // Form fields start empty - user/template must provide values
     setFormData({
       product_name: existingData?.product_name || windowCovering?.name || treatmentType || "Curtains",
       rail_width: existingData?.measurements?.rail_width || "",
@@ -99,14 +92,14 @@ export const useTreatmentFormData = (treatmentType: string = "Curtains", windowC
       fabric_type: existingData?.fabric_details?.fabric_type || "",
       fabric_code: existingData?.fabric_details?.fabric_code || "",
       fabric_cost_per_yard: existingData?.fabric_details?.fabric_cost_per_yard || "",
-      fabric_width: existingData?.fabric_details?.fabric_width || (isBlindOrShutter ? "100" : "137"),
+      fabric_width: existingData?.fabric_details?.fabric_width || "", // NO hardcoded 137/100
       roll_direction: existingData?.fabric_details?.roll_direction || "vertical",
-      heading_fullness: existingData?.fabric_details?.heading_fullness || (isBlindOrShutter ? "1.0" : "2.5"),
+      heading_fullness: existingData?.fabric_details?.heading_fullness || "", // NO hardcoded 2.5/1.0
       selected_heading: existingData?.fabric_details?.selected_heading,
-      header_hem: existingData?.measurements?.header_hem || (isBlindOrShutter ? "0" : "15"),
-      bottom_hem: existingData?.measurements?.bottom_hem || (isBlindOrShutter ? "0" : "10"),
-      side_hem: existingData?.measurements?.side_hem || (isBlindOrShutter ? "0" : "5"),
-      seam_hem: existingData?.measurements?.seam_hem || (isBlindOrShutter ? "0" : "3"),
+      header_hem: existingData?.measurements?.header_hem || "", // NO hardcoded 15/0
+      bottom_hem: existingData?.measurements?.bottom_hem || "", // NO hardcoded 10/0
+      side_hem: existingData?.measurements?.side_hem || "", // NO hardcoded 5/0
+      seam_hem: existingData?.measurements?.seam_hem || "", // NO hardcoded 3/0
       custom_labor_rate: existingData?.custom_labor_rate || "",
       selected_options: existingData?.selected_options || [],
       notes: existingData?.notes || "",
