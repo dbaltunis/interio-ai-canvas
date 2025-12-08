@@ -120,7 +120,7 @@ export const TreatmentPricingForm = ({
           name: opt.name,
           cost: opt.price,
           method: 'fixed',
-          calculation: `Fixed price: £${opt.price}`
+          calculation: `Fixed price: ${opt.price}`
         })),
         warnings: result.warnings || [],
         costComparison: null

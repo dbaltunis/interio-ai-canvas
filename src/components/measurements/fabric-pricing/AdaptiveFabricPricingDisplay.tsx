@@ -238,12 +238,16 @@ export const AdaptiveFabricPricingDisplay = ({
     return blindCalc.sqm;
   };
 
-  // Calculate linear meters for roller blinds (drop + 5% waste)
+  // Calculate linear meters for roller blinds - waste comes from template
   const calculateLinearMeters = () => {
     if (!measurements.drop) return 0;
     const dropMm = parseFloat(measurements.drop);
     const dropM = dropMm / 1000;
-    return dropM * 1.05; // 5% waste
+    // Use template waste if configured, otherwise no waste (fail explicit)
+    const wasteMultiplier = template?.waste_percent 
+      ? 1 + (template.waste_percent / 100) 
+      : 1; // No hidden waste if not configured
+    return dropM * wasteMultiplier;
   };
   const renderPricingGridDisplay = () => <div className="space-y-4">
       {/* Pool Usage Display */}
@@ -330,19 +334,19 @@ export const AdaptiveFabricPricingDisplay = ({
               {isFabricPerSqm ? <>
                   <div className="flex justify-between">
                     <span>Area:</span>
-                    <span className="font-medium text-foreground">{sqm.toFixed(2)} sqm</span>
+                    <span className="font-medium text-foreground">{sqm.toFixed(2)} {units.area === 'sq_feet' ? 'sq ft' : 'sqm'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Price per sqm:</span>
+                    <span>Price per {units.area === 'sq_feet' ? 'sq ft' : 'sqm'}:</span>
                     <span className="font-medium text-foreground">{formatPrice(fabricToUse.price_per_meter || 0)}</span>
                   </div>
                 </> : <>
                   <div className="flex justify-between">
-                    <span>Linear Meters:</span>
-                    <span className="font-medium text-foreground">{linearM.toFixed(2)} m</span>
+                    <span>Linear {getFabricUnitLabel('long')}:</span>
+                    <span className="font-medium text-foreground">{linearM.toFixed(2)} {getFabricUnitLabel()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Price per meter:</span>
+                    <span>Price per {getFabricUnitLabel()}:</span>
                     <span className="font-medium text-foreground">{formatPrice(fabricToUse.price_per_meter || 0)}</span>
                   </div>
                 </>}
