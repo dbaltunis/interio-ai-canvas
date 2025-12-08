@@ -302,13 +302,12 @@ export const findApplicableFormulaInArray = (formulas: any[], treatmentType: str
 };
 
 // Re-export centralized formulas (THE source of truth - from calculationFormulas.ts)
+// NOTE: No defaults exported - all values must come from templates
 export { 
   BLIND_FORMULA, 
   CURTAIN_VERTICAL_FORMULA, 
   CURTAIN_HORIZONTAL_FORMULA,
   PRICING_FORMULAS,
-  BLIND_DEFAULTS,
-  CURTAIN_DEFAULTS,
   getFormulasByCategory,
   findApplicableFormula
 } from './calculationFormulas';
