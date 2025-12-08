@@ -73,6 +73,40 @@ export const AdaptiveFabricPricingDisplay = ({
     });
   }
 
+  // NEW ENGINE: Determine if curtain engine is active and extract display values
+  const isCurtainEngineActive =
+    !!engineResult &&
+    (treatmentCategory === "curtains" || treatmentCategory === "roman_blinds");
+
+  const displayFullness =
+    isCurtainEngineActive && engineResult.fullness != null
+      ? engineResult.fullness
+      : (fabricCalculation?.fullnessRatio ??
+         fabricCalculation?.fullness ??
+         template?.fullness_ratio ??
+         template?.default_fullness_ratio ??
+         2.5);
+
+  const displayTotalWidthMm =
+    isCurtainEngineActive && engineResult.totalWidthCm != null
+      ? engineResult.totalWidthCm * 10 // cm → mm
+      : fabricCalculation?.totalWidthMm;
+
+  const displayTotalDropMm =
+    isCurtainEngineActive && engineResult.totalDropCm != null
+      ? engineResult.totalDropCm * 10 // cm → mm
+      : fabricCalculation?.totalDropMm;
+
+  const displayLinearMeters =
+    isCurtainEngineActive && engineResult.linear_meters != null
+      ? engineResult.linear_meters
+      : fabricCalculation?.linearMeters;
+
+  const displayFabricCost =
+    isCurtainEngineActive && engineResult.fabric_cost != null
+      ? engineResult.fabric_cost
+      : fabricCalculation?.fabricCost ?? fabricCalculation?.totalCost;
+
   // Detect treatment type and get measurement labels
   const treatmentType = detectTreatmentType(template);
   const measurementLabels = getMeasurementLabels(treatmentType);
@@ -417,20 +451,19 @@ export const AdaptiveFabricPricingDisplay = ({
                 <div className="flex justify-between pt-2 mt-2 border-t border-border/30">
                   <span className="font-medium">Total Width:</span>
                   <span className="font-medium text-foreground">
-                    {(() => {
-                  // CRITICAL FIX: All calculations in MM, then format to user's unit
-                  // rail_width is in MM from database
-                  // fabricCalculation values (returns, totalSideHems) are in CM - convert to MM
-                  const railWidthMM = parseFloat(measurements.rail_width) || 0;
-                  // Use fabricCalculation.fullnessRatio (calculated value) FIRST, not raw input
-                  const fullness = fabricCalculation.fullnessRatio || parseFloat(measurements.heading_fullness) || 1.5;
-                  const returnsMM = (fabricCalculation.returns || 0) * 10; // CM → MM
-                  const sideHemsMM = (fabricCalculation.totalSideHems || 0) * 10; // CM → MM
-                  const seamHemMM = (parseFloat(measurements.seam_hems) || 1) * 10; // CM → MM
-                  const seamAllowanceMM = (fabricCalculation.seamsRequired || 0) * seamHemMM * 2;
-                  const totalWidthMM = railWidthMM * fullness + returnsMM + sideHemsMM + seamAllowanceMM;
-                  return formatMeasurement(totalWidthMM, 'mm');
-                })()}
+                    {displayTotalWidthMm != null 
+                      ? formatMeasurement(displayTotalWidthMm, 'mm')
+                      : (() => {
+                          // Fallback calculation if engine not active
+                          const railWidthMM = parseFloat(measurements.rail_width) || 0;
+                          const fullness = displayFullness;
+                          const returnsMM = (fabricCalculation?.returns || 0) * 10;
+                          const sideHemsMM = (fabricCalculation?.totalSideHems || 0) * 10;
+                          const seamHemMM = (parseFloat(measurements.seam_hems) || 1) * 10;
+                          const seamAllowanceMM = (fabricCalculation?.seamsRequired || 0) * seamHemMM * 2;
+                          const totalWidthMM = railWidthMM * fullness + returnsMM + sideHemsMM + seamAllowanceMM;
+                          return formatMeasurement(totalWidthMM, 'mm');
+                        })()}
                   </span>
                 </div>
                 <div className="flex justify-between pl-2 text-muted-foreground/70">
@@ -438,8 +471,7 @@ export const AdaptiveFabricPricingDisplay = ({
                   <span>
                     {(() => {
                   const railWidthMM = parseFloat(measurements.rail_width) || 0;
-                  const fullness = fabricCalculation.fullnessRatio || parseFloat(measurements.heading_fullness) || 1.5;
-                  return formatMeasurement(railWidthMM * fullness, 'mm');
+                  return formatMeasurement(railWidthMM * displayFullness, 'mm');
                 })()}
                   </span>
                 </div>
@@ -479,7 +511,7 @@ export const AdaptiveFabricPricingDisplay = ({
                 </div>
                 <div className="flex justify-between pl-2">
                   <span>Fullness:</span>
-                  <span className="font-medium text-foreground">{fabricCalculation.fullnessRatio || measurements.heading_fullness || 1}x</span>
+                  <span className="font-medium text-foreground">{displayFullness?.toFixed(1) || '1.0'}x</span>
                 </div>
                 <div className="flex justify-between pl-2">
                   <span>Returns (L+R):</span>
@@ -492,15 +524,15 @@ export const AdaptiveFabricPricingDisplay = ({
                 <div className="flex justify-between border-t border-border/30 pt-2 mt-2">
                   <span className="font-medium">Total Width:</span>
                   <span className="font-medium text-foreground">
-                    {(() => {
-                  // All fabricCalculation values are in CM, raw measurements are in MM
-                  const railWidthCM = fabricCalculation.railWidth || (measurements.rail_width || 0) / 10;
-                  const fullness = fabricCalculation.fullnessRatio || measurements.heading_fullness || 1;
-                  const returnsCM = fabricCalculation.returns || 0;
-                  const sideHemsCM = fabricCalculation.totalSideHems || 0;
-                  const totalCM = railWidthCM * fullness + returnsCM + sideHemsCM;
-                  return formatMeasurement(totalCM, 'cm');
-                })()}
+                    {displayTotalWidthMm != null
+                      ? formatMeasurement(displayTotalWidthMm, 'mm')
+                      : (() => {
+                          const railWidthCM = fabricCalculation?.railWidth || (measurements.rail_width || 0) / 10;
+                          const returnsCM = fabricCalculation?.returns || 0;
+                          const sideHemsCM = fabricCalculation?.totalSideHems || 0;
+                          const totalCM = railWidthCM * displayFullness + returnsCM + sideHemsCM;
+                          return formatMeasurement(totalCM, 'cm');
+                        })()}
                   </span>
                 </div>
                 
@@ -586,7 +618,11 @@ export const AdaptiveFabricPricingDisplay = ({
               </div>}
             <div className="flex justify-between border-t border-border pt-1 mt-1">
               <span>Total Drop:</span>
-              <span className="font-medium text-foreground">{formatMeasurement(fabricCalculation.totalDrop || 0, 'cm')}</span>
+              <span className="font-medium text-foreground">
+                {displayTotalDropMm != null 
+                  ? formatMeasurement(displayTotalDropMm, 'mm') 
+                  : formatMeasurement(fabricCalculation.totalDrop || 0, 'cm')}
+              </span>
             </div>
             {(fabricCalculation.wastePercent || 0) > 0 && <div className="flex justify-between">
                 <span>Waste ({fabricCalculation.wastePercent}%):</span>
@@ -714,9 +750,11 @@ export const AdaptiveFabricPricingDisplay = ({
               // For vertical, show total length needed
               pricePerUnit = fabricCalculation.pricePerMeter || selectedFabricItem?.selling_price || 0;
               if (isHorizontal) {
-                // ✅ USE fabricCalculation.linearMeters DIRECTLY - SINGLE SOURCE OF TRUTH
-                // orientationCalculator already includes ALL allowances: side hems, returns, AND seam allowances
-                const linearMeters = fabricCalculation.linearMeters || 0;
+                // ✅ USE engine result or fabricCalculation.linearMeters
+                // Use engine result if available, otherwise fall back to fabricCalculation
+                const linearMeters = isCurtainEngineActive && displayLinearMeters != null
+                  ? displayLinearMeters
+                  : (fabricCalculation.linearMeters || 0);
                 const horizontalPiecesNeeded = fabricCalculation.horizontalPiecesNeeded || 1;
 
                 // ✅ CRITICAL FIX: When using leftover fabric, only charge for 1 piece
@@ -733,10 +771,12 @@ export const AdaptiveFabricPricingDisplay = ({
                   calculation: `${linearMeters.toFixed(2)}m × ${piecesToCharge} pieces = ${totalLinearMetersToOrder.toFixed(2)}m`,
                   pricePerUnit: formatPrice(pricePerUnit),
                   totalCost: formatPrice(totalLinearMetersToOrder * pricePerUnit),
-                  fabricCalculation
+                  usingEngine: isCurtainEngineActive
                 });
                 quantity = totalLinearMetersToOrder;
-                totalCost = quantity * pricePerUnit;
+                totalCost = isCurtainEngineActive && displayFabricCost != null
+                  ? displayFabricCost
+                  : quantity * pricePerUnit;
                 unitLabel = 'Linear Meters to Order';
                 unitSuffix = 'm';
                 if (horizontalPiecesNeeded > 1) {
@@ -754,11 +794,16 @@ export const AdaptiveFabricPricingDisplay = ({
                 }
               } else {
                 // Vertical/Standard: Show ORDERED fabric (full widths)
-                const orderedMeters = fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters || 0;
+                // Use engine result if available, otherwise fall back to fabricCalculation
+                const orderedMeters = isCurtainEngineActive && displayLinearMeters != null 
+                  ? displayLinearMeters 
+                  : (fabricCalculation.orderedLinearMeters || fabricCalculation.linearMeters || 0);
                 const usedMeters = fabricCalculation.linearMeters || 0;
                 const remnantMeters = fabricCalculation.remnantMeters || 0;
                 quantity = orderedMeters;
-                totalCost = quantity * pricePerUnit;
+                totalCost = isCurtainEngineActive && displayFabricCost != null 
+                  ? displayFabricCost 
+                  : quantity * pricePerUnit;
                 unitLabel = 'Linear Meters to Order';
                 unitSuffix = 'm';
                 calculationText = `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
