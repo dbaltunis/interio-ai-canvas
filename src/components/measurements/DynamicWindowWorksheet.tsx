@@ -2074,6 +2074,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                     selectedOptions={selectedOptions}
                     onSelectedOptionsChange={setSelectedOptions}
                     selectedMaterial={selectedItems.material}
+                    engineResult={engineResult}
                   />
                 </div>
 
@@ -2125,6 +2126,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                           inventory={[]} 
                           fabricCalculation={fabricCalculation}
                           selectedOptions={allDisplayOptions}
+                          engineResult={engineResult}
                         />
                       );
                     }
@@ -2294,25 +2296,37 @@ export const DynamicWindowWorksheet = forwardRef<{
                     const totalCost = fabricCost + liningCost + manufacturingCost + headingCost + optionsCost;
 
                     // ✅ SAVE TO STATE: Single source of truth for all displays
-                    // Calculate total meters to order (for horizontal pieces) - account for leftover usage
+                    // Use engine values when available
+                    const isCurtainOrRomanForCosts = treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds';
                     const totalMetersToOrder = linearMeters * piecesToCharge;
+                    
                     const newCalculatedCosts = {
+                      // Use engine values when available
                       fabricLinearMeters: linearMeters,
                       fabricTotalMeters: totalMetersToOrder,
                       fabricCostPerMeter: pricePerMeter,
-                      fabricTotalCost: fabricCost,
+                      fabricTotalCost: (isCurtainOrRomanForCosts && engineResult) 
+                        ? engineResult.fabric_cost 
+                        : fabricCost,
                       liningCost,
                       manufacturingCost,
                       headingCost,
-                      optionsCost,
-                      totalCost,
-                      // CRITICAL: Show actual pieces needed but indicate we're only charging for piecesToCharge
-                      horizontalPiecesNeeded: piecesToCharge, // Use piecesToCharge so Cost Summary shows correct pieces
+                      optionsCost: (isCurtainOrRomanForCosts && engineResult) 
+                        ? engineResult.options_cost 
+                        : optionsCost,
+                      totalCost: (isCurtainOrRomanForCosts && engineResult) 
+                        ? (engineResult.total + liningCost + manufacturingCost + headingCost)
+                        : totalCost,
+                      horizontalPiecesNeeded: piecesToCharge,
                       fabricOrientation: (fabricCalculation.fabricOrientation || 'vertical') as 'horizontal' | 'vertical',
-                      seamsRequired: fabricCalculation.seamsRequired || 0,
-                      widthsRequired: fabricCalculation.widthsRequired || 0,
+                      seamsRequired: (isCurtainOrRomanForCosts && engineResult?.formula_breakdown?.values?.seams_count != null)
+                        ? Number(engineResult.formula_breakdown.values.seams_count)
+                        : (fabricCalculation.seamsRequired || 0),
+                      widthsRequired: (isCurtainOrRomanForCosts && engineResult?.widths_required != null)
+                        ? engineResult.widths_required
+                        : (fabricCalculation.widthsRequired || 0),
                       manufacturingDetails,
-                      usesLeftover // Include this for downstream components
+                      usesLeftover
                     };
                     
                     // Only update if values changed to prevent infinite loops
@@ -2345,6 +2359,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                           usesLeftover: calculatedCosts.usesLeftover
                         }}
                         manufacturingDetails={manufacturingDetails}
+                        engineResult={engineResult}
                       />
                     );
                   })()}
