@@ -351,17 +351,18 @@ export const InventorySelectionPanel = ({
   };
 
   // Calculate estimated cost for an item
+  // NOTE: This is for preview only - actual calculation uses template fullness
   const calculateEstimatedCost = (item: any, category: string) => {
     if (!measurements.rail_width || !measurements.drop) return 0;
-    const width = parseFloat(measurements.rail_width) / 100; // Convert to meters
-    const height = parseFloat(measurements.drop) / 100;
+    const width = parseFloat(measurements.rail_width) / 1000; // Convert mm to meters
+    const height = parseFloat(measurements.drop) / 1000; // Convert mm to meters
     const area = width * height;
     const price = item.selling_price || item.unit_price || item.price_per_meter || 0;
     switch (category) {
       case "fabric":
-        // For fabric, calculate based on linear meters needed
-        const linearMeters = height * 2.5; // Approximate with fullness
-        return linearMeters * price;
+        // For fabric preview, use height only (no fullness guess - that comes from heading selection)
+        // This is just a rough estimate for browsing, actual calc uses selected heading fullness
+        return height * price;
       case "hardware":
         // For hardware, typically per linear meter of width
         return width * price;

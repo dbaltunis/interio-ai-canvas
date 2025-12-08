@@ -1,9 +1,10 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Info, AlertTriangle, RotateCw, Scissors } from "lucide-react";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface CostSummaryCardProps {
   costs: {
@@ -35,9 +36,13 @@ export const CostSummaryCard = ({
   hierarchicalOptions,
   formData 
 }: CostSummaryCardProps) => {
+  const { units, getFabricUnitLabel } = useMeasurementUnits();
+  const currencySymbol = getCurrencySymbol(units.currency);
+  const fabricUnitLabel = getFabricUnitLabel();
+  
   const formatCurrency = (amount: string | number) => {
     const value = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return `£${value.toFixed(2)}`;
+    return `${currencySymbol}${value.toFixed(2)}`;
   };
 
   return (
@@ -97,7 +102,7 @@ export const CostSummaryCard = ({
             <span className="text-sm">Fabric Cost:</span>
             <div className="text-right">
               <div className="font-medium">{formatCurrency(costs.fabricCost)}</div>
-              <div className="text-xs text-gray-500">{costs.fabricUsage} yards</div>
+              <div className="text-xs text-gray-500">{costs.fabricUsage} {fabricUnitLabel}</div>
             </div>
           </div>
           

@@ -1,5 +1,6 @@
-
 import { TrendingDown } from "lucide-react";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 
 interface FabricCostComparisonProps {
   costComparison: {
@@ -19,7 +20,11 @@ interface FabricCostComparisonProps {
 }
 
 export const FabricCostComparison = ({ costComparison }: FabricCostComparisonProps) => {
-  const formatCurrency = (amount: number) => `£${amount.toFixed(2)}`;
+  const { units, getFabricUnitLabel } = useMeasurementUnits();
+  const currencySymbol = getCurrencySymbol(units.currency);
+  const fabricUnitLabel = getFabricUnitLabel();
+  
+  const formatCurrency = (amount: number) => `${currencySymbol}${amount.toFixed(2)}`;
 
   return (
     <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
@@ -30,13 +35,13 @@ export const FabricCostComparison = ({ costComparison }: FabricCostComparisonPro
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div className="bg-white p-2 rounded border">
           <div className="font-medium">Horizontal Orientation</div>
-          <div>Fabric: {costComparison.horizontal.totalYards.toFixed(1)} yards</div>
+          <div>Fabric: {costComparison.horizontal.totalYards.toFixed(1)} {fabricUnitLabel}</div>
           <div>Cost: {formatCurrency(costComparison.horizontal.totalCost)}</div>
           <div>Seams: {costComparison.horizontal.seamsRequired}</div>
         </div>
         <div className="bg-white p-2 rounded border">
           <div className="font-medium">Vertical Orientation</div>
-          <div>Fabric: {costComparison.vertical.totalYards.toFixed(1)} yards</div>
+          <div>Fabric: {costComparison.vertical.totalYards.toFixed(1)} {fabricUnitLabel}</div>
           <div>Cost: {formatCurrency(costComparison.vertical.totalCost)}</div>
           <div>Seams: {costComparison.vertical.seamsRequired}</div>
         </div>

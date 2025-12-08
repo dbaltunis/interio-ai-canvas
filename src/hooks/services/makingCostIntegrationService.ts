@@ -281,7 +281,7 @@ const calculateDropRangePrice = (dropRanges: any[], drop: number): number => {
   return highestRange?.price || 0;
 };
 
-const calculateOptionCost = (option: any, params: any) => {
+const calculateOptionCost = (option: any, params: any, currencySymbol: string = '') => {
   const { railWidth, drop, quantity, fabricCostPerYard, fabricUsage } = params;
   const baseCost = getOptionPrice(option);
   let cost = 0;
@@ -291,25 +291,25 @@ const calculateOptionCost = (option: any, params: any) => {
     case 'per-meter':
       const widthInMeters = railWidth / 100;
       cost = baseCost * widthInMeters * quantity;
-      calculation = `${baseCost} × ${widthInMeters.toFixed(2)}m × ${quantity} = £${cost.toFixed(2)}`;
+      calculation = `${baseCost} × ${widthInMeters.toFixed(2)}m × ${quantity} = ${currencySymbol}${cost.toFixed(2)}`;
       break;
     
     case 'per-yard':
       const widthInYards = railWidth / 91.44;
       cost = baseCost * widthInYards * quantity;
-      calculation = `${baseCost} × ${widthInYards.toFixed(2)} yards × ${quantity} = £${cost.toFixed(2)}`;
+      calculation = `${baseCost} × ${widthInYards.toFixed(2)} yd × ${quantity} = ${currencySymbol}${cost.toFixed(2)}`;
       break;
     
     case 'percentage':
       const totalFabricCost = fabricCostPerYard * fabricUsage;
       cost = (baseCost / 100) * totalFabricCost;
-      calculation = `${baseCost}% × £${totalFabricCost.toFixed(2)} fabric cost = £${cost.toFixed(2)}`;
+      calculation = `${baseCost}% × ${currencySymbol}${totalFabricCost.toFixed(2)} fabric = ${currencySymbol}${cost.toFixed(2)}`;
       break;
     
     case 'fixed':
     default:
       cost = baseCost * quantity;
-      calculation = `Fixed cost: £${baseCost} × ${quantity} = £${cost.toFixed(2)}`;
+      calculation = `Fixed: ${currencySymbol}${baseCost} × ${quantity} = ${currencySymbol}${cost.toFixed(2)}`;
       break;
   }
 
