@@ -174,23 +174,17 @@ export const DynamicCurtainOptions = ({
     setSubCategoryRestored(true);
   }, [treatmentOptions.length, measurements, treatmentOptionSelections, subCategoryRestored]);
   
-  // Filter for heading items from inventory - ONLY heading/pleat types, NOT hardware/tracks
+  // Filter for heading items from inventory - EXACT match on 'heading' category
   const headingOptions = useMemo(() => {
-    const filtered = inventory.filter(item => {
-      const category = item.category?.toLowerCase() || '';
-      // Only include items specifically categorized as headings or pleats
-      // Exclude general hardware, tracks, rods, etc.
-      const isHeading = (category.includes('heading') || category.includes('pleat')) 
-             && !category.includes('track') 
-             && !category.includes('rod')
-             && !category.includes('hardware');
-      return isHeading;
-    });
+    // ✅ CRITICAL FIX: Use exact match 'heading' instead of includes()
+    // Database stores category as 'heading' exactly
+    const filtered = inventory.filter(item => item.category === 'heading');
     
-    console.log('🎯 [v2.0.4] headingOptions filter result:', {
-      inputCount: inventory.length,
-      outputCount: filtered.length,
-      filtered: filtered.map(h => ({ id: h.id, name: h.name, category: h.category }))
+    console.log('🔴 [v2.0.5] headingOptions filter - EXACT MATCH:', {
+      inventoryTotal: inventory.length,
+      headingsFound: filtered.length,
+      allCategories: [...new Set(inventory.map(i => i.category))],
+      headingItems: filtered.map(h => ({ id: h.id, name: h.name, category: h.category, fullness: h.fullness_ratio }))
     });
     
     return filtered;
