@@ -26,20 +26,20 @@ export const useFabricCalculator = ({
     try {
       const { fabric, template } = treatmentData;
       
-      // CRITICAL FIX: Measurements contain values in USER'S DISPLAY UNIT (what they typed)
-      // NOT MM - we must convert from display unit to CM for calculations
-      const rawWidth = parseFloat(measurements.rail_width);
-      const rawHeight = parseFloat(measurements.drop);
-      const rawPooling = parseFloat(measurements.pooling_amount || "0");
+      // CRITICAL FIX: measurements are NOW stored in MM (converted at input boundary)
+      // Convert MM → CM for fabric calculations
+      const widthMM = parseFloat(measurements.rail_width);
+      const heightMM = parseFloat(measurements.drop);
+      const poolingMM = parseFloat(measurements.pooling_amount || "0");
       
-      if (isNaN(rawWidth) || isNaN(rawHeight)) {
+      if (isNaN(widthMM) || isNaN(heightMM)) {
         return null;
       }
 
-      // Convert from user's display unit to CM for calculations
-      const width = convertLength(rawWidth, units.length, 'cm');
-      const height = convertLength(rawHeight, units.length, 'cm');
-      const pooling = convertLength(rawPooling, units.length, 'cm');
+      // Convert MM → CM (internal state is MM, fabric calculations use CM)
+      const width = widthMM / 10;
+      const height = heightMM / 10;
+      const pooling = poolingMM / 10;
 
       // CRITICAL: Fabric width MUST come from inventory - no hardcoded fallbacks
       const fabricWidthCm = fabric.fabric_width;
