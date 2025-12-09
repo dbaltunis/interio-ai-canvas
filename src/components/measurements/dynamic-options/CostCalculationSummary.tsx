@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calculator, Info, Settings, AlertCircle } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { convertLength } from "@/hooks/useBusinessSettings";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import { calculateBlindCosts, isBlindCategory } from "./utils/blindCostCalculator";
 import { calculateWallpaperCost } from "@/utils/wallpaperCalculations";
@@ -163,12 +162,12 @@ export const CostCalculationSummary = ({
 
   // Use proper treatment detection instead of template.treatment_category
   const treatmentCategory = detectTreatmentType(template);
-  // CRITICAL FIX: Measurements contain values in USER'S DISPLAY UNIT (what they typed)
-  // NOT MM - we must convert from display unit to CM for calculations
-  const rawWidth = safeParseFloat(measurements.rail_width, 0);
-  const rawHeight = safeParseFloat(measurements.drop, 0);
-  const width = convertLength(rawWidth, units.length, 'cm');
-  const height = convertLength(rawHeight, units.length, 'cm');
+  // CRITICAL FIX: measurements are NOW stored in MM (converted at input boundary)
+  // Convert MM → CM for calculations
+  const widthMM = safeParseFloat(measurements.rail_width, 0);
+  const heightMM = safeParseFloat(measurements.drop, 0);
+  const width = widthMM / 10; // MM → CM
+  const height = heightMM / 10; // MM → CM
 
   console.log('🔍 CostCalculationSummary Debug:', {
     treatmentCategory,
