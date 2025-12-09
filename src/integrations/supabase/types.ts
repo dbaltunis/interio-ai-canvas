@@ -9774,8 +9774,8 @@ export type Database = {
         }[]
       }
       get_user_account_id:
-        | { Args: { p_user_id: string }; Returns: string }
         | { Args: never; Returns: string }
+        | { Args: { p_user_id: string }; Returns: string }
       get_user_effective_permissions: {
         Args: { user_id_param: string }
         Returns: string[]

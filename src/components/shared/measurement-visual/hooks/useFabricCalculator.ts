@@ -126,11 +126,11 @@ export const useFabricCalculator = ({
       const wasteMultiplier = 1 + (wastePercent / 100);
       
       // CRITICAL FIX: Check if fabric is rotated (railroaded/horizontal)
-      const measurementsAny = measurements as any;
       const isRailroaded = measurementsAny.fabric_rotated === true || measurementsAny.fabric_rotated === 'true';
       
       let linearMeters: number;
       let orderedLinearMeters: number;
+      let dropPerWidthMeters: number;
       
       if (isRailroaded) {
         // HORIZONTAL/RAILROADED: Fabric width covers drop, buy length for curtain width
@@ -138,6 +138,7 @@ export const useFabricCalculator = ({
         const horizontalPiecesNeeded = Math.ceil(totalDrop / fabricWidthCm);
         linearMeters = (totalWidthWithAllowances / 100) * horizontalPiecesNeeded * wasteMultiplier;
         orderedLinearMeters = linearMeters;
+        dropPerWidthMeters = (totalWidthWithAllowances / 100) * wasteMultiplier;
         
         console.log('📐 RAILROADED calculation:', {
           totalWidthWithAllowances,
@@ -151,7 +152,7 @@ export const useFabricCalculator = ({
         linearMeters = ((totalDrop + totalSeamAllowance) / 100) * widthsRequired * wasteMultiplier;
         
         // Calculate ORDERED fabric (full widths must be purchased)
-        const dropPerWidthMeters = (totalDrop / 100) * wasteMultiplier;
+        dropPerWidthMeters = (totalDrop / 100) * wasteMultiplier;
         orderedLinearMeters = dropPerWidthMeters * widthsRequired;
       }
       
