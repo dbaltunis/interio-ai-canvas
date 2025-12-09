@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useTemplateOptionSettings } from "./useTemplateOptionSettings";
 
 /**
@@ -18,13 +18,32 @@ export const useEnabledTemplateOptions = (templateId?: string) => {
     );
   }, [templateSettings]);
 
+  // Debug logging for options filtering
+  useEffect(() => {
+    if (!isLoading && templateId) {
+      console.log('🔍 useEnabledTemplateOptions Debug:', {
+        templateId,
+        totalSettings: templateSettings.length,
+        enabledCount: enabledOptionIds.size,
+        enabledIds: Array.from(enabledOptionIds),
+        allSettings: templateSettings.map(s => ({
+          optionId: s.treatment_option_id,
+          enabled: s.is_enabled
+        }))
+      });
+    }
+  }, [templateId, templateSettings, enabledOptionIds, isLoading]);
+
   const isOptionEnabled = (optionId: string) => {
     // WHITELIST: Must be explicitly enabled in settings
     // If no settings exist, nothing is enabled (forces template configuration)
     if (templateSettings.length === 0) {
+      console.log('⚠️ isOptionEnabled: No settings exist for template, returning false for:', optionId);
       return false;
     }
-    return enabledOptionIds.has(optionId);
+    const enabled = enabledOptionIds.has(optionId);
+    console.log(`🎯 isOptionEnabled(${optionId}): ${enabled}`);
+    return enabled;
   };
 
   return {

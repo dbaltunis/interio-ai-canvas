@@ -424,7 +424,20 @@ export const DynamicCurtainOptions = ({
         />
       )}
 
-      {/* Heading Type - Removed misleading alert */}
+      {/* Heading Type - Debug logging added */}
+      {(() => {
+        console.log('🎯 DynamicCurtainOptions - Heading Section Debug:', {
+          treatmentCategory,
+          isCurtains: treatmentCategory === 'curtains',
+          totalInventoryItems: inventory.length,
+          headingOptionsCount: headingOptions.length,
+          availableHeadingsCount: availableHeadings.length,
+          templateSelectedHeadingIds: template.selected_heading_ids,
+          headingOptions: headingOptions.map(h => ({ id: h.id, name: h.name, category: h.category })),
+          availableHeadings: availableHeadings.map(h => ({ id: h.id, name: h.name }))
+        });
+        return null;
+      })()}
       
       {treatmentCategory === 'curtains' && availableHeadings.length > 0 && (
         <div className="space-y-3">
@@ -715,16 +728,38 @@ export const DynamicCurtainOptions = ({
       )}
 
       {/* Dynamic Treatment Options from Database - Filtered by template settings */}
+      {(() => {
+        // Debug: Log options filtering
+        console.log('🔍 DynamicCurtainOptions - Options Filtering Debug:', {
+          totalOptions: treatmentOptions.length,
+          hasSettings,
+          settingsLoading,
+          options: treatmentOptions.map(opt => ({
+            id: opt.id,
+            key: opt.key,
+            label: opt.label,
+            visible: opt.visible,
+            valuesCount: opt.option_values?.length || 0,
+            isEnabled: isOptionEnabled(opt.id)
+          }))
+        });
+        return null;
+      })()}
       {treatmentOptions.length > 0 && treatmentOptions.map(option => {
         // Filter: check visibility AND template-level enabled setting
         if (!option.visible || !option.option_values || option.option_values.length === 0) {
+          console.log(`⏭️ Skipping option ${option.key}: visible=${option.visible}, values=${option.option_values?.length || 0}`);
           return null;
         }
         
         // Check if option is enabled in template settings
         if (!isOptionEnabled(option.id)) {
+          console.log(`⏭️ Skipping option ${option.key}: NOT enabled in template settings`);
           return null;
         }
+        
+        console.log(`✅ Rendering option: ${option.key} (${option.label})`);
+
 
         const selectedValueId = treatmentOptionSelections[option.key] || measurements[`treatment_option_${option.key}`];
         const selectedValue = option.option_values.find(v => v.id === selectedValueId);
