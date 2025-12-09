@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { invalidateWindowSummaryCache } from "@/utils/cacheInvalidation";
+import { useRef, useCallback } from "react";
 
 export interface WindowSummary {
   window_id: string;
@@ -44,11 +45,37 @@ export interface WindowSummary {
   drop?: number;
 }
 
+// Track fetch count to detect excessive fetching (dev only)
+const fetchCountRef = { current: 0 };
+const lastLogTimeRef = { current: 0 };
+
 export const useWindowSummary = (windowId: string | undefined) => {
+  // Use ref to prevent duplicate logs in React Strict Mode
+  const hasLoggedRef = useRef(false);
+  
   return useQuery({
     queryKey: ["window-summary", windowId],
     queryFn: async () => {
       if (!windowId) return null;
+      
+      // Performance tracking: limit console spam
+      fetchCountRef.current++;
+      const now = Date.now();
+      const shouldLog = now - lastLogTimeRef.current > 5000; // Log at most every 5 seconds
+      
+      if (shouldLog && import.meta.env.DEV) {
+        console.log('🔄 Fetched window summary:', { 
+          windowId, 
+          fetchCount: fetchCountRef.current 
+        });
+        lastLogTimeRef.current = now;
+        
+        // Warn if fetching too frequently
+        if (fetchCountRef.current > 10) {
+          console.warn('⚠️ [Performance] Window summary fetched', fetchCountRef.current, 'times. Consider memoization.');
+          fetchCountRef.current = 0; // Reset counter after warning
+        }
+      }
       
       const { data, error } = await supabase
         .from("windows_summary")
@@ -74,19 +101,27 @@ export const useWindowSummary = (windowId: string | undefined) => {
         (data as any).drop = md.drop_cm || md.drop;
       }
 
-      console.log('📖 Loaded summary data:', {
-        window_id: data.window_id,
-        treatment_category: data.treatment_category,
-        fabric_name: (data.fabric_details as any)?.name,
-        options_cost: data.options_cost,
-        selected_options_count: (data.selected_options as any)?.length,
-        total_cost: data.total_cost
-      });
+      // Only log full summary details once per component lifecycle
+      if (!hasLoggedRef.current) {
+        console.log('📖 Loaded summary data:', {
+          window_id: data.window_id,
+          treatment_category: data.treatment_category,
+          fabric_name: (data.fabric_details as any)?.name,
+          options_cost: data.options_cost,
+          selected_options_count: (data.selected_options as any)?.length,
+          total_cost: data.total_cost
+        });
+        hasLoggedRef.current = true;
+      }
 
       return data as WindowSummary | null;
     },
     enabled: !!windowId,
-    staleTime: 5000, // Cache for 5 seconds - ensures fresh data after saves
+    staleTime: 10000, // Increased to 10 seconds - reduces refetch frequency
+    gcTime: 60000, // Keep in cache for 1 minute
+    refetchOnWindowFocus: false, // Prevent refetch on tab focus
+    refetchOnMount: false, // Prevent refetch on every mount
+    refetchInterval: false, // Disable automatic refetching
   });
 };
 

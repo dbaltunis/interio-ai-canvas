@@ -424,8 +424,21 @@ export const DynamicCurtainOptions = ({
         />
       )}
 
-      {/* Heading Type - Debug logging added */}
+      {/* Heading Configuration State Detection and Validation */}
       {(() => {
+        const hasTemplateHeadings = (template.selected_heading_ids || []).length > 0;
+        const hasInventoryHeadings = headingOptions.length > 0;
+        const hasAnyAvailableHeadings = availableHeadings.length > 0;
+        
+        // Determine configuration state
+        const headingConfigState = (() => {
+          if (!hasTemplateHeadings && !hasInventoryHeadings) return 'none';
+          if (hasTemplateHeadings && !hasInventoryHeadings) return 'template_only';
+          if (!hasTemplateHeadings && hasInventoryHeadings) return 'inventory_only';
+          if (hasTemplateHeadings && hasInventoryHeadings && !hasAnyAvailableHeadings) return 'mismatch';
+          return 'ok';
+        })();
+        
         console.log('🎯 DynamicCurtainOptions - Heading Section Debug:', {
           treatmentCategory,
           isCurtains: treatmentCategory === 'curtains',
@@ -433,9 +446,50 @@ export const DynamicCurtainOptions = ({
           headingOptionsCount: headingOptions.length,
           availableHeadingsCount: availableHeadings.length,
           templateSelectedHeadingIds: template.selected_heading_ids,
+          headingConfigState,
           headingOptions: headingOptions.map(h => ({ id: h.id, name: h.name, category: h.category })),
           availableHeadings: availableHeadings.map(h => ({ id: h.id, name: h.name }))
         });
+        
+        // Only show alerts for curtains treatment type
+        if (treatmentCategory !== 'curtains') return null;
+        
+        if (headingConfigState === 'template_only') {
+          return (
+            <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800 dark:text-amber-200 text-sm">
+                This template has heading styles selected ({template.selected_heading_ids?.length} configured), 
+                but no heading items exist in your inventory. Please add heading items in Settings → Products → Headings.
+              </AlertDescription>
+            </Alert>
+          );
+        }
+        
+        if (headingConfigState === 'inventory_only') {
+          return (
+            <Alert className="border-blue-500/50 bg-blue-50 dark:bg-blue-950/20">
+              <AlertCircle className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800 dark:text-blue-200 text-sm">
+                You have {headingOptions.length} heading item(s) in inventory, but none are linked to this template. 
+                Open Settings → Products → Templates → Headings tab and select which headings to offer.
+              </AlertDescription>
+            </Alert>
+          );
+        }
+        
+        if (headingConfigState === 'mismatch') {
+          return (
+            <Alert className="border-destructive/50 bg-destructive/10">
+              <AlertCircle className="h-4 w-4 text-destructive" />
+              <AlertDescription className="text-destructive text-sm">
+                Template references {template.selected_heading_ids?.length} heading(s) that don't match inventory items. 
+                This may happen if heading items were deleted. Please reconfigure the Headings tab in template settings.
+              </AlertDescription>
+            </Alert>
+          );
+        }
+        
         return null;
       })()}
       

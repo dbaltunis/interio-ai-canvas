@@ -103,6 +103,8 @@ export const useEnhancedInventory = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      console.log('📦 [useEnhancedInventory] Fetching inventory for user:', user.id);
+
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
         .select(`
@@ -114,7 +116,24 @@ export const useEnhancedInventory = () => {
         .eq("active", true)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [useEnhancedInventory] Error fetching inventory:', error);
+        throw error;
+      }
+      
+      // Debug: Log inventory summary with heading items highlighted
+      const headingItems = (data || []).filter(item => 
+        item.category?.toLowerCase().includes('heading') || 
+        item.category?.toLowerCase().includes('pleat')
+      );
+      
+      console.log('✅ [useEnhancedInventory] Fetched inventory:', {
+        totalItems: data?.length || 0,
+        headingItemsCount: headingItems.length,
+        headingItems: headingItems.map(h => ({ id: h.id, name: h.name, category: h.category })),
+        categories: [...new Set((data || []).map(i => i.category))]
+      });
+      
       return data || [];
     },
   });
