@@ -94,11 +94,13 @@ export interface EnhancedInventoryItem {
   updated_at: string;
 }
 
-export const useEnhancedInventory = () => {
+export const useEnhancedInventory = (options?: { forceRefresh?: boolean }) => {
   return useQuery({
     queryKey: ["enhanced-inventory"],
-    staleTime: 5 * 60 * 1000, // 5 minutes - prevent redundant fetches
+    // ✅ CRITICAL FIX: Force fresh data when worksheet opens
+    staleTime: options?.forceRefresh ? 0 : 5 * 60 * 1000, // 0 = always refetch, 5 min = cache
     gcTime: 10 * 60 * 1000, // 10 minutes cache
+    refetchOnMount: options?.forceRefresh ? 'always' : true,
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -122,16 +124,14 @@ export const useEnhancedInventory = () => {
       }
       
       // Debug: Log inventory summary with heading items highlighted
-      const headingItems = (data || []).filter(item => 
-        item.category?.toLowerCase().includes('heading') || 
-        item.category?.toLowerCase().includes('pleat')
-      );
+      // ✅ CRITICAL FIX: Use exact match for 'heading' category
+      const headingItems = (data || []).filter(item => item.category === 'heading');
       
-      console.log('✅ [useEnhancedInventory] Fetched inventory:', {
+      console.log('✅ [v2.3.5] useEnhancedInventory Fetched:', {
         totalItems: data?.length || 0,
         headingItemsCount: headingItems.length,
-        headingItems: headingItems.map(h => ({ id: h.id, name: h.name, category: h.category })),
-        categories: [...new Set((data || []).map(i => i.category))]
+        headingItems: headingItems.map(h => ({ id: h.id, name: h.name, category: h.category, fullness: h.fullness_ratio })),
+        allCategories: [...new Set((data || []).map(i => i.category))]
       });
       
       return data || [];
@@ -139,11 +139,13 @@ export const useEnhancedInventory = () => {
   });
 };
 
-export const useEnhancedInventoryByCategory = (category: string) => {
+export const useEnhancedInventoryByCategory = (category: string, options?: { forceRefresh?: boolean }) => {
   return useQuery({
     queryKey: ["enhanced-inventory", category],
-    staleTime: 5 * 60 * 1000, // 5 minutes - prevent redundant fetches
+    // ✅ CRITICAL FIX: Support force refresh for heading inventory
+    staleTime: options?.forceRefresh ? 0 : 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000, // 10 minutes cache
+    refetchOnMount: options?.forceRefresh ? 'always' : true,
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
