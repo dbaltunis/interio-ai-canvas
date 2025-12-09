@@ -369,16 +369,21 @@ export const VisualMeasurementSheet = ({
         }
       });
 
-      // ✅ CRITICAL: measurements are stored in MM (converted at input boundary)
-      // Convert MM → CM for calculations (divide by 10)
-      const rawWidthMM = parseFloat(measurements.rail_width) || 0;
-      const rawHeightMM = parseFloat(measurements.drop) || 0;
-      const rawPoolingMM = parseFloat(measurements.pooling_amount || "0") || 0;
+      // ✅ CRITICAL: measurements are in USER'S DISPLAY UNIT (inches, cm, mm, etc.)
+      // Convert from user's display unit → CM at calculation boundary
+      const rawWidth = parseFloat(measurements.rail_width) || 0;
+      const rawHeight = parseFloat(measurements.drop) || 0;
+      const rawPooling = parseFloat(measurements.pooling_amount || "0") || 0;
       
-      // MM to CM for fabric calculations
-      const width = rawWidthMM / 10;
-      const height = rawHeightMM / 10;
-      const pooling = rawPoolingMM / 10;
+      // Convert from user's display unit to CM for fabric calculations
+      const width = convertLength(rawWidth, units.length, 'cm');
+      const height = convertLength(rawHeight, units.length, 'cm');
+      const pooling = convertLength(rawPooling, units.length, 'cm');
+      
+      console.log('📐 FABRIC CALC CONVERSION:', { 
+        input: { rawWidth, rawHeight, unit: units.length },
+        output: { widthCm: width, heightCm: height }
+      });
 
       // ✅ Create enriched measurements with converted values
       const enrichedMeasurementsWithConversion = {
@@ -1078,17 +1083,9 @@ export const VisualMeasurementSheet = ({
                     </div>
                     <div className="relative">
                         <Input id="rail_width" type="number" inputMode="decimal" step="0.25" 
-                      value={measurements.rail_width ? convertLength(parseFloat(measurements.rail_width), 'mm', units.length).toFixed(1) : ""} 
-                      onChange={e => {
-                        console.log("🔧 Rail width input change:", e.target.value, "Current measurements:", measurements);
-                        handleInputChange("rail_width", e.target.value);
-                      }} 
-                      onFocus={e => {
-                        e.target.scrollIntoView({
-                          behavior: 'smooth',
-                          block: 'center'
-                        });
-                      }} 
+                      value={measurements.rail_width || ""} 
+                      onChange={e => handleInputChange("rail_width", e.target.value)} 
+                      onFocus={e => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })} 
                       placeholder="0.00" readOnly={readOnly} className="h-11 pr-14 text-base font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground" />
                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-xs bg-muted px-2 py-0.5 rounded">
                          {units.length}
@@ -1111,17 +1108,9 @@ export const VisualMeasurementSheet = ({
                     </div>
                     <div className="relative">
                         <Input id="drop" type="number" inputMode="decimal" step="0.25" 
-                      value={measurements.drop ? convertLength(parseFloat(measurements.drop), 'mm', units.length).toFixed(1) : ""} 
-                      onChange={e => {
-                        console.log("🔧 Drop input change:", e.target.value, "Current measurements:", measurements);
-                        handleInputChange("drop", e.target.value);
-                      }} 
-                      onFocus={e => {
-                        e.target.scrollIntoView({
-                          behavior: 'smooth',
-                          block: 'center'
-                        });
-                      }} 
+                      value={measurements.drop || ""} 
+                      onChange={e => handleInputChange("drop", e.target.value)} 
+                      onFocus={e => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })} 
                       placeholder="0.00" readOnly={readOnly} className="h-11 pr-14 text-base font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground" />
                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-xs bg-muted px-2 py-0.5 rounded">
                         {units.length}
