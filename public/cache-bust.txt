@@ -1,6 +1,7 @@
-Build timestamp: 2025-12-07T11:15:00Z
-Version: 2.3.2
+Build timestamp: 2025-12-09T23:30:00Z
+Version: 2.3.3
 Changes:
+- FIX: Heading inventory now force refetched when worksheet opens
 - CRITICAL FIX: Fullness dropdown now correctly updates calculations
 - CRITICAL FIX: User's fullness selection saved instead of template default
 - Added logging to track fullness changes for debugging

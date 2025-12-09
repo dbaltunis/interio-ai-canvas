@@ -66,10 +66,21 @@ export const DynamicCurtainOptions = ({
 
   // Hooks MUST be called unconditionally after early returns
   const { units } = useMeasurementUnits();
-  const { data: inventory = [], isLoading: headingsLoading } = useEnhancedInventory();
+  const { data: inventory = [], isLoading: headingsLoading, refetch: refetchInventory } = useEnhancedInventory();
   // Use template's treatment_category to fetch the correct options (e.g., 'roman_blinds', 'curtains')
   const treatmentCategory = template?.treatment_category || 'curtains';
   const { data: treatmentOptions = [], isLoading: treatmentOptionsLoading } = useTreatmentOptions(treatmentCategory, 'category');
+  
+  // AGGRESSIVE DEBUG: Log inventory state on every render
+  console.log('🔍 [v2.0.4] DynamicCurtainOptions - Inventory Debug:', {
+    inventoryLength: inventory.length,
+    isLoading: headingsLoading,
+    allCategories: [...new Set(inventory.map(i => i.category))],
+    headingItemsRaw: inventory.filter(i => i.category === 'heading').map(h => ({ id: h.id, name: h.name, category: h.category })),
+    templateSelectedHeadingIds: template?.selected_heading_ids,
+    templateId: template?.id,
+    templateName: template?.name
+  });
   
   // Debug: Log TWC options in component
   console.log('🎯 DynamicCurtainOptions - TWC Debug:', {
@@ -87,6 +98,12 @@ export const DynamicCurtainOptions = ({
   
   // Get template option settings to filter hidden options
   const { isOptionEnabled, hasSettings, isLoading: settingsLoading } = useEnabledTemplateOptions(template?.id);
+  
+  // CRITICAL: Force refetch inventory when component mounts to ensure fresh data
+  useEffect(() => {
+    console.log('🔄 [v2.0.4] Force refetching inventory on mount');
+    refetchInventory();
+  }, [refetchInventory]);
   
   // Initialize treatmentOptionSelections from saved measurements
   useEffect(() => {
@@ -158,15 +175,26 @@ export const DynamicCurtainOptions = ({
   }, [treatmentOptions.length, measurements, treatmentOptionSelections, subCategoryRestored]);
   
   // Filter for heading items from inventory - ONLY heading/pleat types, NOT hardware/tracks
-  const headingOptions = inventory.filter(item => {
-    const category = item.category?.toLowerCase() || '';
-    // Only include items specifically categorized as headings or pleats
-    // Exclude general hardware, tracks, rods, etc.
-    return (category.includes('heading') || category.includes('pleat')) 
-           && !category.includes('track') 
-           && !category.includes('rod')
-           && !category.includes('hardware');
-  });
+  const headingOptions = useMemo(() => {
+    const filtered = inventory.filter(item => {
+      const category = item.category?.toLowerCase() || '';
+      // Only include items specifically categorized as headings or pleats
+      // Exclude general hardware, tracks, rods, etc.
+      const isHeading = (category.includes('heading') || category.includes('pleat')) 
+             && !category.includes('track') 
+             && !category.includes('rod')
+             && !category.includes('hardware');
+      return isHeading;
+    });
+    
+    console.log('🎯 [v2.0.4] headingOptions filter result:', {
+      inputCount: inventory.length,
+      outputCount: filtered.length,
+      filtered: filtered.map(h => ({ id: h.id, name: h.name, category: h.category }))
+    });
+    
+    return filtered;
+  }, [inventory]);
   
   // ❌ REMOVED: Auto-select first heading logic
   // WHITELIST approach: User must explicitly select heading
