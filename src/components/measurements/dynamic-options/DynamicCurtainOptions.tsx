@@ -66,17 +66,23 @@ export const DynamicCurtainOptions = ({
 
   // Hooks MUST be called unconditionally after early returns
   const { units } = useMeasurementUnits();
-  const { data: inventory = [], isLoading: headingsLoading, refetch: refetchInventory } = useEnhancedInventory();
+  // ✅ CRITICAL FIX: Force refresh inventory when worksheet loads to get fresh heading data
+  const { data: inventory = [], isLoading: headingsLoading, refetch: refetchInventory } = useEnhancedInventory({ forceRefresh: true });
   // Use template's treatment_category to fetch the correct options (e.g., 'roman_blinds', 'curtains')
   const treatmentCategory = template?.treatment_category || 'curtains';
   const { data: treatmentOptions = [], isLoading: treatmentOptionsLoading } = useTreatmentOptions(treatmentCategory, 'category');
   
-  // AGGRESSIVE DEBUG: Log inventory state on every render
-  console.log('🔍 [v2.0.4] DynamicCurtainOptions - Inventory Debug:', {
-    inventoryLength: inventory.length,
+  // ✅ [v2.3.5] DEBUG: Log inventory state with heading filter verification
+  console.log('🎯 [v2.3.5] DynamicCurtainOptions - Heading Debug:', {
+    inventoryTotal: inventory.length,
     isLoading: headingsLoading,
     allCategories: [...new Set(inventory.map(i => i.category))],
-    headingItemsRaw: inventory.filter(i => i.category === 'heading').map(h => ({ id: h.id, name: h.name, category: h.category })),
+    headingItemsExact: inventory.filter(i => i.category === 'heading').map(h => ({ 
+      id: h.id, 
+      name: h.name, 
+      category: h.category,
+      fullness: h.fullness_ratio 
+    })),
     templateSelectedHeadingIds: template?.selected_heading_ids,
     templateId: template?.id,
     templateName: template?.name

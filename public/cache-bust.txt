@@ -1,11 +1,13 @@
-Build timestamp: 2025-12-09T21:45:00Z
-Version: 2.3.4
+Build timestamp: 2025-12-09T22:15:00Z
+Version: 2.3.5
 Changes:
-- FIX: Heading filter now uses EXACT category match ('heading') instead of includes()
-- FIX: Heading inventory force refetched when worksheet opens
-- CRITICAL FIX: Fullness dropdown now correctly updates calculations
-- CRITICAL FIX: User's fullness selection saved instead of template default
-- Added logging to track fullness changes for debugging
+- CRITICAL FIX: useHeadingOptions now returns REAL inventory data (was returning empty mock array)
+- CRITICAL FIX: useEnhancedInventory now supports forceRefresh option to bypass stale cache
+- CRITICAL FIX: DynamicCurtainOptions forces fresh inventory fetch on load
+- CRITICAL FIX: Heading filter uses exact category === 'heading' match
+- FIX: Debug logs updated to v2.3.5 for deployment verification
+- Previous: Fullness dropdown now correctly updates calculations
+- Previous: User's fullness selection saved instead of template default
 - Custom document template creation with drag-and-drop blocks
 - Hardware category for inventory management
 - Products & Services can be added to projects and quotes
