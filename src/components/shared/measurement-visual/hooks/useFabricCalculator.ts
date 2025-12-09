@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { MeasurementData, TreatmentData, FabricCalculation } from "../types";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { convertLength } from "@/hooks/useBusinessSettings";
 
 interface UseFabricCalculatorProps {
   measurements: MeasurementData;
@@ -26,20 +25,20 @@ export const useFabricCalculator = ({
     try {
       const { fabric, template } = treatmentData;
       
-      // CRITICAL FIX: measurements are in USER'S DISPLAY UNIT
-      // Convert from display unit → CM at calculation boundary
-      const rawWidth = parseFloat(measurements.rail_width);
-      const rawHeight = parseFloat(measurements.drop);
-      const rawPooling = parseFloat(measurements.pooling_amount || "0");
+      // CRITICAL: measurements are stored in MM (converted at input boundary)
+      // Convert MM → CM for calculations (divide by 10)
+      const rawWidthMM = parseFloat(measurements.rail_width);
+      const rawHeightMM = parseFloat(measurements.drop);
+      const rawPoolingMM = parseFloat(measurements.pooling_amount || "0");
       
-      if (isNaN(rawWidth) || isNaN(rawHeight)) {
+      if (isNaN(rawWidthMM) || isNaN(rawHeightMM)) {
         return null;
       }
 
-      // Convert from user's display unit to CM for calculations
-      const width = convertLength(rawWidth, units.length, 'cm');
-      const height = convertLength(rawHeight, units.length, 'cm');
-      const pooling = convertLength(rawPooling, units.length, 'cm');
+      // MM to CM for fabric calculations
+      const width = rawWidthMM / 10;
+      const height = rawHeightMM / 10;
+      const pooling = rawPoolingMM / 10;
 
       // CRITICAL: Fabric width MUST come from inventory - no hardcoded fallbacks
       const fabricWidthCm = fabric.fabric_width;

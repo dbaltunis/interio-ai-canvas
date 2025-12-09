@@ -1719,18 +1719,32 @@ export const DynamicWindowWorksheet = forwardRef<{
     }
   }));
   const handleMeasurementChange = (field: string, value: string) => {
-    console.log('🔥🔥🔥 LEVEL 1: handleMeasurementChange called:', { field, value });
+    console.log('🔥🔥🔥 LEVEL 1: handleMeasurementChange called:', { field, value, userUnit: units.length });
     
     // PHASE 4: Mark that user is actively editing to prevent data reloads
     isUserEditing.current = true;
     
-    // Store value AS-IS in user's display unit - conversion happens at calculation boundary
+    // CRITICAL: Convert dimension fields from user's display unit → MM for storage
+    // All internal calculations assume MM - only convert at input/output boundaries
+    const dimensionFields = ['rail_width', 'drop', 'pooling_amount', 'stackback_left', 'stackback_right', 'return_left', 'return_right'];
+    let storedValue = value;
+    
+    if (dimensionFields.includes(field)) {
+      const numericValue = parseFloat(value) || 0;
+      if (numericValue > 0) {
+        // Convert from user's display unit (inches, cm, etc.) → MM for internal storage
+        const mmValue = convertLength(numericValue, units.length, 'mm');
+        storedValue = mmValue.toString();
+        console.log(`📐 Unit conversion: ${value} ${units.length} → ${mmValue.toFixed(1)} mm`);
+      }
+    }
+    
     setMeasurements(prev => {
       const newMeasurements = {
         ...prev,
-        [field]: value
+        [field]: storedValue
       };
-      console.log('🔥🔥🔥 LEVEL 2: State updated:', { field, oldValue: prev[field], newValue: value });
+      console.log('🔥🔥🔥 LEVEL 2: State updated:', { field, inputValue: value, storedValue, oldValue: prev[field] });
       return newMeasurements;
     });
     
