@@ -22,6 +22,7 @@ import {
   SelectedOptionContract,
 } from '@/contracts/TreatmentContract';
 import { logError, CalculationError } from '@/utils/errorHandling';
+import { convertLength, type LengthUnit } from '@/utils/lengthUnits';
 
 // ============================================================
 // Feature Flag Check
@@ -59,30 +60,47 @@ interface WorksheetData {
 
 /**
  * Build MeasurementsContract from worksheet measurements
- * Worksheet stores measurements in MM in the database
+ * 
+ * UNIT CONVERSION: Measurements are stored in user's display unit (inches, cm, mm)
+ * This function converts from display unit → MM for internal calculations
  */
 export function buildMeasurements(
   measurements: Record<string, any>,
   units: { length: string }
 ): MeasurementsContract | null {
   try {
-    // rail_width and drop are stored in MM in the database
-    const rail_width_mm = parseFloat(measurements.rail_width);
-    const drop_mm = parseFloat(measurements.drop);
+    const userUnit = (units.length || 'mm') as LengthUnit;
+    
+    // Parse raw values in user's display unit
+    const rawWidth = parseFloat(measurements.rail_width);
+    const rawDrop = parseFloat(measurements.drop);
     
     // Explicit numeric checks - not truthy checks
     if (
-      isNaN(rail_width_mm) ||
-      isNaN(drop_mm) ||
-      rail_width_mm <= 0 ||
-      drop_mm <= 0
+      isNaN(rawWidth) ||
+      isNaN(rawDrop) ||
+      rawWidth <= 0 ||
+      rawDrop <= 0
     ) {
       console.warn('[ENGINE_SHADOW_MEASUREMENTS_MISSING]', {
         rail_width: measurements.rail_width,
         drop: measurements.drop,
+        userUnit,
       });
       return null;
     }
+    
+    // Convert from user's display unit → MM
+    const rail_width_mm = convertLength(rawWidth, userUnit, 'mm');
+    const drop_mm = convertLength(rawDrop, userUnit, 'mm');
+    
+    console.debug('[ENGINE_SHADOW_UNIT_CONVERSION]', {
+      userUnit,
+      rawWidth,
+      rawDrop,
+      rail_width_mm,
+      drop_mm,
+    });
     
     const result: MeasurementsContract = {
       rail_width_mm,
@@ -97,25 +115,25 @@ export function buildMeasurements(
       }
     }
     
-    // Returns - stored in CM in measurements_details, convert to MM
+    // Returns - stored in user's display unit, convert to MM
     if (measurements.return_left != null) {
       const val = parseFloat(measurements.return_left);
       if (!isNaN(val)) {
-        result.return_left_mm = val * 10;
+        result.return_left_mm = convertLength(val, userUnit, 'mm');
       }
     }
     if (measurements.return_right != null) {
       const val = parseFloat(measurements.return_right);
       if (!isNaN(val)) {
-        result.return_right_mm = val * 10;
+        result.return_right_mm = convertLength(val, userUnit, 'mm');
       }
     }
     
-    // Pooling - stored in CM, convert to MM
+    // Pooling - stored in user's display unit, convert to MM
     if (measurements.pooling_amount != null) {
       const val = parseFloat(measurements.pooling_amount);
       if (!isNaN(val)) {
-        result.pooling_mm = val * 10;
+        result.pooling_mm = convertLength(val, userUnit, 'mm');
       }
     }
     
