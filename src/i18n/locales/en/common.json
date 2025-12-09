@@ -1,0 +1,21 @@
+{
+    "buttons": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "delete": "Delete",
+      "add": "Add"
+    },
+    "navigation": {
+      "dashboard": "Dashboard",
+      "settings": "Settings",
+      "projects": "Projects",
+      "clients": "Clients"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "error": "An error occurred",
+      "success": "Success",
+      "confirmDelete": "Are you sure you want to delete this item?"
+    }
+}

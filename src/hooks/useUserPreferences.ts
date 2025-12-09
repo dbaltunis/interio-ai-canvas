@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { invalidatePreferencesCache } from "@/utils/dateFormatUtils";
+import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface UserPreferences {
   id: string;
@@ -102,4 +104,25 @@ export const useUpdateUserPreferences = () => {
       console.error("Error updating preferences:", error);
     },
   });
+};
+
+export const useLanguageSync = () => {
+  const { i18n } = useTranslation();
+  const { data: preferences } = useUserPreferences();
+  const updateUserPreferences = useUpdateUserPreferences();
+
+  useEffect(() => {
+    if (preferences?.language && i18n.language !== preferences.language) {
+      i18n.changeLanguage(preferences.language);
+    }
+  }, [preferences?.language, i18n]);
+
+  return {
+    currentLanguage: i18n.language,
+    changeLanguage: (lang: string) => {
+      i18n.changeLanguage(lang);
+      // Update user preferences
+      updateUserPreferences.mutate({ language: lang });
+    }
+  };
 };

@@ -1,0 +1,21 @@
+{
+    "buttons": {
+      "save": "Guardar",
+      "cancel": "Cancel",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "add": "Agregar"
+    },
+    "navigation": {
+      "dashboard": "Panel de control",
+      "settings": "Configuración",
+      "projects": "Proyectos",
+      "clients": "Clientes"
+    },
+    "messages": {
+      "loading": "Cargando...",
+      "error": "Ocurrió un error",
+      "success": "Éxito",
+      "confirmDelete": "¿Estás seguro de querer eliminar este item?"
+    }
+}

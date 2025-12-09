@@ -1,0 +1,30 @@
+{
+    "settings": {
+        "language": {
+            "title": "Idioma y Localización",
+            "system_language":{
+                "label": "Idioma del sistema",
+                "additional_languages": "Idiomas adicionales disponibles solo por solicitud. Contacta al soporte para obtener soporte para idiomas personalizados."
+            },
+            "date_format": {
+                "label": "Formato de fecha"
+            },
+            "time_zone": {
+                "label": "Zona horaria",
+                "format_preview": "Vista previa de formato",
+                "timezone_preview_description": "Esta vista previa muestra cómo aparecerán las fechas y horas en toda la aplicación según tus ajustes actuales.",
+                "date_only": "Fecha solo",
+                "time_only": "Hora solo",
+                "date_and_time": "Fecha y hora"
+            }
+        }
+    },
+    "dashboard": {
+        "title": "Panel de control",
+        "description": "Panel de control de la aplicación",
+        "welcome": "Bienvenido a la aplicación",
+        "welcome_message": "Esta es la página de inicio de la aplicación",
+        "welcome_message_2": "Esta es la página de inicio de la aplicación",
+        "welcome_message_3": "Esta es la página de inicio de la aplicación"
+    }
+}

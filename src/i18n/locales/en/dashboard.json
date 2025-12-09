@@ -1,0 +1,141 @@
+{
+    "settings": {
+        "language": {
+            "title": "Language & Localization",
+            "system_language": {
+                "label": "System Language",
+                "placeholder": "Select language",
+                "additional_languages": "Additional languages available per request only. Contact support for custom language support."
+            },
+            "date_format": {
+                "label": "Date Format"
+            },
+            "time_zone": {
+                "label": "Time Zone",
+                "format_preview": "Format Preview",
+                "timezone_preview_description": "This preview shows how dates and times will appear throughout the app based on your current settings.",
+                "date_only": "Date only",
+                "time_only": "Time only",
+                "date_and_time": "Date + time"
+            }
+        },
+        "profile": {
+            "title": "Profile Information",
+            "description": "Update your personal information and profile picture",
+            "picture": {
+                "title": "Profile Picture",
+                "change": "Change Photo",
+                "upload": "Upload Photo"
+            },
+            "first_name": {
+                "label": "First Name",
+                "placeholder": "Your first name"
+            },
+            "last_name": {
+                "label": "Last Name",
+                "placeholder": "Your last name"
+            },
+            "display_name": {
+                "label": "Display Name",
+                "placeholder": "Your display name"
+            },
+            "phone_number": {
+                "label": "Phone Number",
+                "placeholder": "+1 (555) 123-4567"
+            },
+            "email": {
+                "label": "Email Address",
+                "change_button": "Change Email",
+                "current_placeholder": "Current email",
+                "new_placeholder": "Enter new email address",
+                "send_verification": "Send Verification",
+                "sending": "Sending..."
+            },
+            "account_role": "Account Role",
+            "role_staff": "Staff",
+            "loading": "Loading personal settings..."
+        },
+        "notifications": {
+            "title": "Notification Preferences",
+            "email": {
+                "label": "Email Notifications",
+                "test_button": "Test Email"
+            },
+            "sms": {
+                "label": "SMS Notifications",
+                "test_button": "Test SMS"
+            }
+        },
+        "security": {
+            "title": "Password & Security",
+            "description": "Update your password and security settings",
+            "current_password": {
+                "label": "Current Password",
+                "placeholder": "Enter current password"
+            },
+            "new_password": {
+                "label": "New Password",
+                "placeholder": "Enter new password"
+            },
+            "confirm_password": {
+                "label": "Confirm New Password",
+                "placeholder": "Confirm new password"
+            },
+            "password_requirements": "Password Requirements"
+        },
+        "buttons": {
+            "cancel": "Cancel",
+            "save": "Save",
+            "edit": "Edit",
+            "test": "Test"
+        },
+        "messages": {
+            "error": {
+                "email_required": "Please enter a new email address.",
+                "invalid_email": "Please enter a valid email address.",
+                "password_required": "Please fill in all password fields.",
+                "password_mismatch": "New passwords do not match.",
+                "password_too_short": "Password must be at least 6 characters long.",
+                "phone_required": "Phone number required",
+                "phone_required_desc": "Please add a phone number to test SMS notifications.",
+                "update_failed": "Error",
+                "email_update_failed": "Failed to update email. Please try again.",
+                "password_update_failed": "Failed to update password. Please try again.",
+                "preferences_update_failed": "Failed to update preferences. Please try again.",
+                "notification_update_failed": "Failed to update notification settings. Please try again.",
+                "photo_upload_failed": "Failed to upload profile picture",
+                "test_email_failed": "Failed to send test email. Please check your email settings.",
+                "test_sms_failed": "Failed to send test SMS. Please check your phone number and SMS settings."
+            },
+            "success": {
+                "email_changed": "Email Change Requested",
+                "email_verification_sent": "A verification email has been sent to your new email address. Please check your inbox and click the confirmation link.",
+                "password_updated": "Password updated successfully.",
+                "profile_updated": "Preferences updated",
+                "profile_updated_desc": "Your preferences have been updated successfully.",
+                "photo_uploaded": "Profile picture uploaded successfully",
+                "test_email_sent": "A test email has been sent to",
+                "test_sms_sent": "A test SMS has been sent to"
+            },
+            "loading": {
+                "saving": "Saving...",
+                "uploading": "Uploading...",
+                "optimizing": "Optimizing image...",
+                "optimized": "Image optimized",
+                "using_original": "Using original image",
+                "compression_failed": "Compression failed, uploading original image",
+                "for_better_performance": "for better performance",
+                "size_reduced_from": "Size reduced from",
+                "to": "to"
+            }
+        }
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "description": "Dashboard of the application",
+        "welcome": "Welcome to the application",
+        "welcome_message": "This is the home page of the application",
+        "welcome_message_2": "This is the home page of the application",
+        "welcome_message_3": "This is the home page of the application"
+    }
+}
