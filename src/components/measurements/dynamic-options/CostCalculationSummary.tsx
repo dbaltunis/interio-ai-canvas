@@ -161,6 +161,34 @@ export const CostCalculationSummary = ({
     return `${symbol}${price.toFixed(2)}`;
   };
 
+  // ✅ UNIT-AWARE DISPLAY: Convert internal meters to user's fabric unit
+  const fabricUnit = units.fabric || 'm'; // User's preferred fabric unit (m, yd, inches, cm)
+  const fabricUnitLabel = fabricUnit === 'yards' ? 'yd' : fabricUnit === 'inches' ? 'in' : fabricUnit === 'cm' ? 'cm' : 'm';
+  
+  // Convert meters to user's fabric unit for display
+  const metersToFabricUnit = (meters: number): number => {
+    if (fabricUnit === 'yards') return meters * 1.09361;
+    if (fabricUnit === 'inches') return meters * 39.3701;
+    if (fabricUnit === 'cm') return meters * 100;
+    return meters; // Default to meters
+  };
+  
+  // Format fabric length with unit
+  const formatFabricLength = (meters: number): string => {
+    const converted = metersToFabricUnit(meters);
+    return `${converted.toFixed(2)}${fabricUnitLabel}`;
+  };
+  
+  // Format price per fabric unit (adjust price when unit changes)
+  const formatPricePerFabricUnit = (pricePerMeter: number): string => {
+    // Price per meter → price per user's unit
+    let pricePerUnit = pricePerMeter;
+    if (fabricUnit === 'yards') pricePerUnit = pricePerMeter / 1.09361; // $/m → $/yd
+    if (fabricUnit === 'inches') pricePerUnit = pricePerMeter / 39.3701; // $/m → $/in
+    if (fabricUnit === 'cm') pricePerUnit = pricePerMeter / 100; // $/m → $/cm
+    return `${formatPrice(pricePerUnit)}/${fabricUnitLabel}`;
+  };
+
   // Use proper treatment detection instead of template.treatment_category
   const treatmentCategory = detectTreatmentType(template);
   // CRITICAL: measurements are in USER'S DISPLAY UNIT
@@ -616,12 +644,12 @@ export const CostCalculationSummary = ({
                   {fabricDisplayData ? (
                     <>
                       <span className="text-xs text-muted-foreground truncate">
-                        {/* ✅ USE PRE-CALCULATED VALUES - SINGLE SOURCE OF TRUTH */}
+                        {/* ✅ UNIT-AWARE DISPLAY: Convert meters to user's fabric unit */}
                         {fabricDisplayData.orientation === 'horizontal' && fabricDisplayData.horizontalPieces > 1
-                          ? `${fabricDisplayData.linearMeters.toFixed(2)}m × ${fabricDisplayData.horizontalPieces} pieces = ${fabricDisplayData.totalMeters.toFixed(2)}m × ${formatPrice(fabricDisplayData.pricePerMeter)}/m`
+                          ? `${formatFabricLength(fabricDisplayData.linearMeters)} × ${fabricDisplayData.horizontalPieces} pieces = ${formatFabricLength(fabricDisplayData.totalMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
                           : fabricDisplayData.usesLeftover 
-                            ? `${fabricDisplayData.linearMeters.toFixed(2)}m × 1 piece (using leftover) × ${formatPrice(fabricDisplayData.pricePerMeter)}/m`
-                            : `${fabricDisplayData.linearMeters.toFixed(2)}m × ${formatPrice(fabricDisplayData.pricePerMeter)}/m`
+                            ? `${formatFabricLength(fabricDisplayData.linearMeters)} × 1 piece (using leftover) × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
+                            : `${formatFabricLength(fabricDisplayData.linearMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
                         }
                       </span>
                       <span className="text-xs text-muted-foreground/80 mt-0.5">
@@ -636,7 +664,7 @@ export const CostCalculationSummary = ({
                   ) : fabricCalculation && (
                     <>
                       <span className="text-xs text-muted-foreground truncate">
-                        {/* FALLBACK: Use fabricCalculation if fabricDisplayData not provided */}
+                        {/* FALLBACK: Use fabricCalculation if fabricDisplayData not provided - UNIT-AWARE */}
                         {(() => {
                           const orientation = fabricCalculation.fabricOrientation || 'vertical';
                           const horizontalPieces = fabricCalculation.horizontalPiecesNeeded || 1;
@@ -645,9 +673,9 @@ export const CostCalculationSummary = ({
                           
                           if (orientation === 'horizontal' && horizontalPieces > 1) {
                             const totalMeters = linearMeters * horizontalPieces;
-                            return `${linearMeters.toFixed(2)}m × ${horizontalPieces} pieces = ${totalMeters.toFixed(2)}m × ${formatPrice(pricePerM)}/m`;
+                            return `${formatFabricLength(linearMeters)} × ${horizontalPieces} pieces = ${formatFabricLength(totalMeters)} × ${formatPricePerFabricUnit(pricePerM)}`;
                           }
-                          return `${linearMeters.toFixed(2)}m × ${formatPrice(pricePerM)}/m`;
+                          return `${formatFabricLength(linearMeters)} × ${formatPricePerFabricUnit(pricePerM)}`;
                         })()}
                       </span>
                       {/* Orientation indicator */}
@@ -688,7 +716,8 @@ export const CostCalculationSummary = ({
                     const { pricingType, pricePerUnit, quantity, quantityLabel } = manufacturingDetails;
                     
                     if (pricingType === 'per_metre') {
-                      return `${formatPrice(pricePerUnit)}/m × ${quantity.toFixed(2)}m`;
+                      // ✅ UNIT-AWARE: Convert meters to user's fabric unit
+                      return `${formatPricePerFabricUnit(pricePerUnit)} × ${formatFabricLength(quantity)}`;
                     } else if (pricingType === 'per_panel') {
                       return `${formatPrice(pricePerUnit)}/panel × ${quantity} ${quantity === 1 ? 'panel' : 'panels'}`;
                     } else if (pricingType === 'per_drop') {
@@ -745,7 +774,8 @@ export const CostCalculationSummary = ({
                       
                       const parts = [];
                       if (pricePerMetre > 0 && linearMeters > 0) {
-                        parts.push(`${formatPrice(pricePerMetre)}/m × ${linearMeters.toFixed(2)}m = ${formatPrice(pricePerMetre * linearMeters)}`);
+                        // ✅ UNIT-AWARE: Convert meters to user's fabric unit
+                        parts.push(`${formatPricePerFabricUnit(pricePerMetre)} × ${formatFabricLength(linearMeters)} = ${formatPrice(pricePerMetre * linearMeters)}`);
                       }
                       if (labourPerCurtain > 0) {
                         parts.push(`${formatPrice(labourPerCurtain)}/curtain × ${curtainCount} = ${formatPrice(labourPerCurtain * curtainCount)}`);
