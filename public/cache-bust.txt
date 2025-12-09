@@ -1,7 +1,8 @@
-Build timestamp: 2025-12-09T23:30:00Z
-Version: 2.3.3
+Build timestamp: 2025-12-09T21:45:00Z
+Version: 2.3.4
 Changes:
-- FIX: Heading inventory now force refetched when worksheet opens
+- FIX: Heading filter now uses EXACT category match ('heading') instead of includes()
+- FIX: Heading inventory force refetched when worksheet opens
 - CRITICAL FIX: Fullness dropdown now correctly updates calculations
 - CRITICAL FIX: User's fullness selection saved instead of template default
 - Added logging to track fullness changes for debugging
