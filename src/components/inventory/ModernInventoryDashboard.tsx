@@ -272,6 +272,10 @@ export const ModernInventoryDashboard = () => {
                 <Minus className="h-4 w-4" />
                 Hardware
               </TabsTrigger>
+              <TabsTrigger value="headings" className="flex items-center gap-2">
+                <Minus className="h-4 w-4" />
+                Headings
+              </TabsTrigger>
               <TabsTrigger value="wallcoverings" className="flex items-center gap-2">
                 <Wallpaper className="h-4 w-4" />
                 Wallcoverings
