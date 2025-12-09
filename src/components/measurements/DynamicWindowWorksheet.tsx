@@ -1855,14 +1855,26 @@ export const DynamicWindowWorksheet = forwardRef<{
     }));
   };
   const handleTemplateSelect = (template: any) => {
+    // ✅ FIX: Only clear options when user manually changes to a DIFFERENT template
+    // Don't clear when restoring same template from saved data
+    const previousTemplateId = selectedTemplate?.id;
+    const newTemplateId = template?.id;
+    const isTemplateChange = previousTemplateId && newTemplateId && previousTemplateId !== newTemplateId;
+    
     setSelectedTemplate(template);
     // Set treatment type based on template category
     const category = template?.treatment_category || 'curtains';
     setSelectedTreatmentType(category === 'wallpaper' ? 'wallpaper' : category);
     setTreatmentCategory(category);
     
-    // ✅ CRITICAL: Clear old options when template changes to prevent stale data
-    setSelectedOptions([]);
+    // ✅ CRITICAL: Only clear options when user MANUALLY switches to a different template
+    // This prevents clearing restored options when editing existing projects
+    if (isTemplateChange) {
+      console.log('🔄 Template changed from', previousTemplateId, 'to', newTemplateId, '- clearing old options');
+      setSelectedOptions([]);
+    } else {
+      console.log('✅ Same template or initial load - keeping existing options');
+    }
     
     // ✅ FIX: Initialize measurements with template defaults ONLY if not already set
     // Don't overwrite existing saved values
