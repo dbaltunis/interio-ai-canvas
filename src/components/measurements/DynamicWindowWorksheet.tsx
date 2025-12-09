@@ -268,23 +268,39 @@ export const DynamicWindowWorksheet = forwardRef<{
         // STEP 2: Restore Treatment/Template
         let detectedCategory: TreatmentCategory = 'curtains';
         if (templateDetails) {
-          // CRITICAL FIX: If template_details is missing selected_heading_ids, fetch full template
+          console.log('🔧 [v2.0.3] Template details from snapshot:', {
+            id: templateDetails.id,
+            name: templateDetails.name,
+            has_selected_heading_ids: !!templateDetails.selected_heading_ids,
+            selected_heading_ids_count: templateDetails.selected_heading_ids?.length || 0
+          });
+          
+          // CRITICAL FIX: ALWAYS fetch full template to ensure we have selected_heading_ids
           let fullTemplate = templateDetails;
-          if (templateDetails.id && (!templateDetails.selected_heading_ids || templateDetails.selected_heading_ids.length === 0)) {
-            console.log('🔍 Template snapshot missing selected_heading_ids, fetching full template:', templateDetails.id);
+          if (templateDetails.id) {
+            console.log('🔍 [v2.0.3] Fetching full template to get selected_heading_ids:', templateDetails.id);
             try {
-              const { data: fetchedTemplate } = await supabase
+              const { data: fetchedTemplate, error: fetchError } = await supabase
                 .from('curtain_templates')
                 .select('*')
                 .eq('id', templateDetails.id)
                 .maybeSingle();
               
-              if (fetchedTemplate) {
-                console.log('✅ Fetched full template with heading IDs:', fetchedTemplate.selected_heading_ids);
+              if (fetchError) {
+                console.error('❌ [v2.0.3] Error fetching template:', fetchError);
+              } else if (fetchedTemplate) {
+                console.log('✅ [v2.0.3] Fetched full template:', {
+                  id: fetchedTemplate.id,
+                  name: fetchedTemplate.name,
+                  selected_heading_ids: fetchedTemplate.selected_heading_ids,
+                  headingIdsCount: fetchedTemplate.selected_heading_ids?.length || 0
+                });
                 fullTemplate = { ...templateDetails, ...fetchedTemplate };
+              } else {
+                console.warn('⚠️ [v2.0.3] Template not found in curtain_templates:', templateDetails.id);
               }
             } catch (err) {
-              console.warn('⚠️ Failed to fetch full template:', err);
+              console.error('❌ [v2.0.3] Exception fetching full template:', err);
             }
           }
           
