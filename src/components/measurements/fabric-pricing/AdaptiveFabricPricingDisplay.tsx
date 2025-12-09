@@ -158,6 +158,44 @@ export const AdaptiveFabricPricingDisplay = ({
     return `${converted.toFixed(1)}${getFabricUnitLabel()}`;
   };
 
+  // ============= UNIT-AWARE FABRIC DISPLAY HELPERS =============
+  // Convert meters to user's fabric unit
+  const metersToFabricUnit = (meters: number): number => {
+    if (units.fabric === 'yards') return meters * 1.09361;
+    if (units.fabric === 'inches') return meters * 39.3701;
+    if (units.fabric === 'cm') return meters * 100;
+    return meters; // meters
+  };
+
+  // Get fabric unit suffix for display
+  const getFabricUnitSuffix = (): string => {
+    if (units.fabric === 'yards') return 'yd';
+    if (units.fabric === 'inches') return 'in';
+    if (units.fabric === 'cm') return 'cm';
+    return 'm';
+  };
+
+  // Get full fabric unit label for headers
+  const getFabricUnitFullLabel = (): string => {
+    if (units.fabric === 'yards') return 'Linear Yards to Order';
+    if (units.fabric === 'inches') return 'Linear Inches to Order';
+    if (units.fabric === 'cm') return 'Linear Centimeters to Order';
+    return 'Linear Meters to Order';
+  };
+
+  // Format price per fabric unit (adjusts price based on unit)
+  const formatPricePerFabricUnit = (pricePerMeter: number): string => {
+    let adjustedPrice = pricePerMeter;
+    if (units.fabric === 'yards') adjustedPrice = pricePerMeter / 1.09361;
+    else if (units.fabric === 'cm') adjustedPrice = pricePerMeter / 100;
+    return `${formatPrice(adjustedPrice)}/${getFabricUnitSuffix()}`;
+  };
+
+  // Format fabric quantity with unit
+  const formatFabricQuantity = (meters: number, decimals: number = 2): string => {
+    return `${metersToFabricUnit(meters).toFixed(decimals)}${getFabricUnitSuffix()}`;
+  };
+
   // Check if this treatment uses pricing grid - look at FABRIC item, not template
   // Templates just specify pricing_type, but the actual grid data comes from fabric
   const fabricUsesPricingGrid = fabricToUse?.pricing_grid_data || fabricToUse?.resolved_grid_data;
@@ -823,20 +861,23 @@ export const AdaptiveFabricPricingDisplay = ({
                 totalCost = isCurtainEngineActive && displayFabricCost != null
                   ? displayFabricCost
                   : quantity * pricePerUnit;
-                unitLabel = 'Linear Meters to Order';
-                unitSuffix = 'm';
+                unitLabel = getFabricUnitFullLabel();
+                unitSuffix = getFabricUnitSuffix();
+                const linearInUserUnit = metersToFabricUnit(linearMeters);
+                const quantityInUserUnit = metersToFabricUnit(quantity);
                 if (horizontalPiecesNeeded > 1) {
                   if (useLeftoverForHorizontal) {
                     // ✅ Using leftover - only charging for 1 piece
-                    calculationText = `${linearMeters.toFixed(2)}m × 1 piece (using leftover) = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
-                    calculationBreakdown = `Using leftover fabric for second piece. Charging for 1 piece: ${linearMeters.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
+                    calculationText = `${linearInUserUnit.toFixed(2)}${unitSuffix} × 1 piece (using leftover) = ${quantityInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)}`;
+                    calculationBreakdown = `Using leftover fabric for second piece. Charging for 1 piece: ${linearInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(totalCost)}`;
                   } else {
-                    calculationText = `${linearMeters.toFixed(2)}m × ${horizontalPiecesNeeded} pieces = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
-                    calculationBreakdown = `Railroaded fabric requiring ${horizontalPiecesNeeded} horizontal pieces. ${linearMeters.toFixed(2)}m per piece × ${horizontalPiecesNeeded} = ${(linearMeters * horizontalPiecesNeeded).toFixed(2)}m total × ${formatPrice(pricePerUnit)}/m = ${formatPrice(linearMeters * horizontalPiecesNeeded * pricePerUnit)}`;
+                    const totalInUserUnit = metersToFabricUnit(linearMeters * horizontalPiecesNeeded);
+                    calculationText = `${linearInUserUnit.toFixed(2)}${unitSuffix} × ${horizontalPiecesNeeded} pieces = ${quantityInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)}`;
+                    calculationBreakdown = `Railroaded fabric requiring ${horizontalPiecesNeeded} horizontal pieces. ${linearInUserUnit.toFixed(2)}${unitSuffix} per piece × ${horizontalPiecesNeeded} = ${totalInUserUnit.toFixed(2)}${unitSuffix} total × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(linearMeters * horizontalPiecesNeeded * pricePerUnit)}`;
                   }
                 } else {
-                  calculationText = `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
-                  calculationBreakdown = `${linearMeters.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
+                  calculationText = `${quantityInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)}`;
+                  calculationBreakdown = `${linearInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(totalCost)}`;
                 }
               } else {
                 // Vertical/Standard: Show ORDERED fabric (full widths)
@@ -850,9 +891,10 @@ export const AdaptiveFabricPricingDisplay = ({
                 totalCost = isCurtainEngineActive && displayFabricCost != null 
                   ? displayFabricCost 
                   : quantity * pricePerUnit;
-                unitLabel = 'Linear Meters to Order';
-                unitSuffix = 'm';
-                calculationText = `${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m`;
+                unitLabel = getFabricUnitFullLabel();
+                unitSuffix = getFabricUnitSuffix();
+                const quantityInUserUnit = metersToFabricUnit(quantity);
+                calculationText = `${quantityInUserUnit.toFixed(2)}${unitSuffix} × ${formatPricePerFabricUnit(pricePerUnit)}`;
 
                 // ✅ TRANSPARENT CALCULATION BREAKDOWN
                 // CRITICAL: measurements.drop is in MM (database standard), convert to CM for display
@@ -886,6 +928,8 @@ export const AdaptiveFabricPricingDisplay = ({
                 });
 
                 // Build transparent breakdown showing ALL components
+                // quantityInUserUnit already declared above for calculationText
+                const breakdownQuantity = metersToFabricUnit(quantity);
                 if (totalAllowances > 0 || totalSeamAllowance > 0) {
                   let breakdownParts = `${widthsRequired} width(s) × ${dropWithAllowances.toFixed(0)}cm`;
                   if (totalAllowances > 0) {
@@ -894,10 +938,10 @@ export const AdaptiveFabricPricingDisplay = ({
                   if (totalSeamAllowance > 0) {
                     breakdownParts += ` + ${totalSeamAllowance.toFixed(0)}cm seams`;
                   }
-                  calculationBreakdown = `${breakdownParts} = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
+                  calculationBreakdown = `${breakdownParts} = ${breakdownQuantity.toFixed(2)}${getFabricUnitSuffix()} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(totalCost)}`;
                 } else {
                   // Fallback for simple cases
-                  calculationBreakdown = `${widthsRequired} width(s) × ${dropWithAllowances.toFixed(0)}cm = ${quantity.toFixed(2)}m × ${formatPrice(pricePerUnit)}/m = ${formatPrice(totalCost)}`;
+                  calculationBreakdown = `${widthsRequired} width(s) × ${dropWithAllowances.toFixed(0)}cm = ${breakdownQuantity.toFixed(2)}${getFabricUnitSuffix()} × ${formatPricePerFabricUnit(pricePerUnit)} = ${formatPrice(totalCost)}`;
                 }
               }
             }
@@ -932,7 +976,7 @@ export const AdaptiveFabricPricingDisplay = ({
                   <div className="flex justify-between font-medium pt-1 border-t border-border/50">
                     <span>{unitLabel}:</span>
                     <span className="text-foreground">
-                      {isByDrop || isByPanel ? quantity.toFixed(0) : quantity.toFixed(2)}{unitSuffix}
+                      {isByDrop || isByPanel ? quantity.toFixed(0) : metersToFabricUnit(quantity).toFixed(2)}{unitSuffix}
                     </span>
                   </div>
                   
