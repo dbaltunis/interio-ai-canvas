@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { MeasurementData, TreatmentData, FabricCalculation } from "../types";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { convertLength } from "@/hooks/useBusinessSettings";
 
 interface UseFabricCalculatorProps {
   measurements: MeasurementData;
@@ -25,20 +26,25 @@ export const useFabricCalculator = ({
     try {
       const { fabric, template } = treatmentData;
       
-      // CRITICAL: measurements are stored in MM (converted at input boundary)
-      // Convert MM → CM for calculations (divide by 10)
-      const rawWidthMM = parseFloat(measurements.rail_width);
-      const rawHeightMM = parseFloat(measurements.drop);
-      const rawPoolingMM = parseFloat(measurements.pooling_amount || "0");
+      // CRITICAL: measurements are in USER'S DISPLAY UNIT (inches, cm, mm, etc.)
+      // Convert from user's display unit → CM at calculation boundary
+      const rawWidth = parseFloat(measurements.rail_width);
+      const rawHeight = parseFloat(measurements.drop);
+      const rawPooling = parseFloat(measurements.pooling_amount || "0");
       
-      if (isNaN(rawWidthMM) || isNaN(rawHeightMM)) {
+      if (isNaN(rawWidth) || isNaN(rawHeight)) {
         return null;
       }
 
-      // MM to CM for fabric calculations
-      const width = rawWidthMM / 10;
-      const height = rawHeightMM / 10;
-      const pooling = rawPoolingMM / 10;
+      // Convert from user's display unit to CM for fabric calculations
+      const width = convertLength(rawWidth, units.length, 'cm');
+      const height = convertLength(rawHeight, units.length, 'cm');
+      const pooling = convertLength(rawPooling, units.length, 'cm');
+      
+      console.log('📐 useFabricCalculator CONVERSION:', { 
+        input: { rawWidth, rawHeight, unit: units.length },
+        output: { widthCm: width, heightCm: height }
+      });
 
       // CRITICAL: Fabric width MUST come from inventory - no hardcoded fallbacks
       const fabricWidthCm = fabric.fabric_width;
