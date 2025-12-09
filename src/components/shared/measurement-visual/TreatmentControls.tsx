@@ -4,6 +4,7 @@ import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { TreatmentData } from "./types";
 
 interface TreatmentControlsProps {
@@ -25,7 +26,26 @@ export const TreatmentControls = ({
   const { data: inventory = [] } = useEnhancedInventory();
   const { units } = useMeasurementUnits();
 
-  const fabrics = inventory.filter(item => 
+  // Unit-aware formatting helpers
+  const getFabricUnitSuffix = (): string => {
+    const fabricUnit = units.fabric || 'm';
+    if (fabricUnit === 'yards') return 'yd';
+    if (fabricUnit === 'inches') return 'in';
+    if (fabricUnit === 'cm') return 'cm';
+    return 'm';
+  };
+
+  const formatPricePerFabricUnit = (pricePerMeter: number): string => {
+    const fabricUnit = units.fabric || 'm';
+    const symbol = getCurrencySymbol(units.currency);
+    let pricePerUnit = pricePerMeter;
+    if (fabricUnit === 'yards') pricePerUnit = pricePerMeter / 1.09361;
+    if (fabricUnit === 'inches') pricePerUnit = pricePerMeter / 39.3701;
+    if (fabricUnit === 'cm') pricePerUnit = pricePerMeter / 100;
+    return `${symbol}${pricePerUnit.toFixed(2)}/${getFabricUnitSuffix()}`;
+  };
+
+  const fabrics = inventory.filter(item =>
     item.category === 'fabric' || item.name?.toLowerCase().includes('fabric')
   );
 
@@ -116,7 +136,7 @@ export const TreatmentControls = ({
                     <span>{fabric.name}</span>
                     <span className="text-xs text-muted-foreground">
                       {fabric.fabric_width ? formatFromCM(fabric.fabric_width, units.length) : '--'} wide • 
-                      ${(fabric.price_per_meter || fabric.selling_price || 0).toFixed(2)}/m
+                      {formatPricePerFabricUnit(fabric.price_per_meter || fabric.selling_price || 0)}
                     </span>
                   </div>
                 </SelectItem>
@@ -146,7 +166,7 @@ export const TreatmentControls = ({
           <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground">
             <div>Name: {treatmentData.fabric.name}</div>
             <div>Width: {formatFromCM(treatmentData.fabric.fabric_width, units.length)}</div>
-            <div>Price: ${treatmentData.fabric.price_per_meter.toFixed(2)}/m</div>
+            <div>Price: {formatPricePerFabricUnit(treatmentData.fabric.price_per_meter)}</div>
           </div>
         </div>
       )}

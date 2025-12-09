@@ -395,11 +395,12 @@ export const CostCalculationSummary = ({
                     
                     if (option.pricingMethod === 'per-meter') {
                       displayPrice = (option.price || 0) * (width / 100);
-                      pricingDetails = ` (${(option.price || 0).toFixed(2)}/m × ${(width / 100).toFixed(2)}m)`;
+                      // ✅ UNIT-AWARE: Convert to user's fabric unit
+                      pricingDetails = ` (${formatPricePerFabricUnit(option.price || 0)} × ${formatFabricLength(width / 100)})`;
                     } else if (option.pricingMethod === 'per-sqm') {
                       const sqm = blindCosts.squareMeters;
                       displayPrice = (option.price || 0) * sqm;
-                      pricingDetails = ` (${(option.price || 0).toFixed(2)}/sqm × ${sqm.toFixed(2)}sqm)`;
+                      pricingDetails = ` (${formatPrice(option.price || 0)}/sqm × ${sqm.toFixed(2)}sqm)`;
                     } else if (option.pricingMethod === 'pricing-grid' && option.pricingGridData) {
                       // Check if it's width-only grid
                       if (Array.isArray(option.pricingGridData) && option.pricingGridData.length > 0 && 'width' in option.pricingGridData[0]) {
@@ -836,11 +837,12 @@ export const CostCalculationSummary = ({
           
           if (option.pricingMethod === 'per-meter' && basePrice > 0) {
             calculatedPrice = basePrice * metersForCalculation;
-            pricingDetails = `${basePrice.toFixed(2)}/${lengthUnit} × ${metersForCalculation.toFixed(2)}${lengthUnit}`;
+            // ✅ UNIT-AWARE: Convert to user's fabric unit
+            pricingDetails = `${formatPricePerFabricUnit(basePrice)} × ${formatFabricLength(metersForCalculation)}`;
           } else if (option.pricingMethod === 'per-sqm' && basePrice > 0) {
             const sqm = (widthCm * heightCm) / 10000;
             calculatedPrice = basePrice * sqm;
-            pricingDetails = `${basePrice.toFixed(2)}/${areaUnit} × ${sqm.toFixed(2)}${areaUnit}`;
+            pricingDetails = `${formatPrice(basePrice)}/sqm × ${sqm.toFixed(2)}sqm`;
           } else if (option.pricingMethod === 'pricing-grid' && option.pricingGridData) {
             calculatedPrice = getPriceFromGrid(option.pricingGridData, widthCm, heightCm);
             pricingDetails = `Grid lookup`;
