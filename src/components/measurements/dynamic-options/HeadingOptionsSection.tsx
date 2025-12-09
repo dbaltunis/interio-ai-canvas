@@ -48,6 +48,25 @@ export const HeadingOptionsSection = ({
     return `${symbol}${price.toFixed(2)}`;
   };
 
+  // Unit-aware fabric unit label
+  const getFabricUnitSuffix = (): string => {
+    const fabricUnit = units.fabric || 'm';
+    if (fabricUnit === 'yards') return 'yd';
+    if (fabricUnit === 'inches') return 'in';
+    if (fabricUnit === 'cm') return 'cm';
+    return 'm';
+  };
+
+  // Format price per fabric unit (adjust price when unit changes)
+  const formatPricePerFabricUnit = (pricePerMeter: number): string => {
+    const fabricUnit = units.fabric || 'm';
+    let pricePerUnit = pricePerMeter;
+    if (fabricUnit === 'yards') pricePerUnit = pricePerMeter / 1.09361;
+    if (fabricUnit === 'inches') pricePerUnit = pricePerMeter / 39.3701;
+    if (fabricUnit === 'cm') pricePerUnit = pricePerMeter / 100;
+    return `${formatPrice(pricePerUnit)}/${getFabricUnitSuffix()}`;
+  };
+
   // Get fullness ratio from selected heading option or fallback to template
   const getSelectedFullnessRatio = () => {
     if (selectedHeading === 'standard') {
@@ -191,7 +210,7 @@ export const HeadingOptionsSection = ({
                     <div className="flex items-center justify-between w-full">
                       <span className="text-sm font-medium">{option.name}</span>
                       <span className="text-xs text-primary ml-2 font-semibold">
-                        {formatPrice(option.price)}/m
+                        {formatPricePerFabricUnit(option.price)}
                       </span>
                     </div>
                   </SelectItem>
@@ -201,7 +220,7 @@ export const HeadingOptionsSection = ({
                     <div className="flex items-center justify-between w-full">
                       <span className="text-sm font-medium">{option.name}</span>
                       <span className="text-xs text-primary ml-2 font-semibold">
-                        {formatPrice(option.price_per_meter || option.selling_price || 0)}/m
+                        {formatPricePerFabricUnit(option.price_per_meter || option.selling_price || 0)}
                       </span>
                     </div>
                   </SelectItem>
