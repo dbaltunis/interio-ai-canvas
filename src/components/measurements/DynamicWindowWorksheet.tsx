@@ -268,10 +268,30 @@ export const DynamicWindowWorksheet = forwardRef<{
         // STEP 2: Restore Treatment/Template
         let detectedCategory: TreatmentCategory = 'curtains';
         if (templateDetails) {
-          setSelectedTemplate(templateDetails);
+          // CRITICAL FIX: If template_details is missing selected_heading_ids, fetch full template
+          let fullTemplate = templateDetails;
+          if (templateDetails.id && (!templateDetails.selected_heading_ids || templateDetails.selected_heading_ids.length === 0)) {
+            console.log('🔍 Template snapshot missing selected_heading_ids, fetching full template:', templateDetails.id);
+            try {
+              const { data: fetchedTemplate } = await supabase
+                .from('curtain_templates')
+                .select('*')
+                .eq('id', templateDetails.id)
+                .maybeSingle();
+              
+              if (fetchedTemplate) {
+                console.log('✅ Fetched full template with heading IDs:', fetchedTemplate.selected_heading_ids);
+                fullTemplate = { ...templateDetails, ...fetchedTemplate };
+              }
+            } catch (err) {
+              console.warn('⚠️ Failed to fetch full template:', err);
+            }
+          }
+          
+          setSelectedTemplate(fullTemplate);
           
           // Detect treatment category from template (prioritize curtain_type for wallpaper)
-          detectedCategory = detectTreatmentType(templateDetails);
+          detectedCategory = detectTreatmentType(fullTemplate);
           setTreatmentCategory(detectedCategory);
           setSelectedTreatmentType(detectedCategory);
         }
@@ -1374,7 +1394,9 @@ export const DynamicWindowWorksheet = forwardRef<{
               unit_price: selectedTemplate?.unit_price,
               machine_price_per_metre: selectedTemplate?.machine_price_per_metre,
               waste_percent: selectedTemplate?.waste_percent,
-              manufacturing_type: selectedTemplate?.manufacturing_type
+              manufacturing_type: selectedTemplate?.manufacturing_type,
+              // CRITICAL: Include heading IDs for curtain templates
+              selected_heading_ids: selectedTemplate?.selected_heading_ids || []
             },
             treatment_type: specificTreatmentType,
             treatment_category: specificTreatmentType, // CRITICAL: Use specific type, not generic
