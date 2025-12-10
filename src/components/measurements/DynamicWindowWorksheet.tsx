@@ -2274,23 +2274,15 @@ export const DynamicWindowWorksheet = forwardRef<{
                       manufacturingQuantityLabel = manufacturingQuantity === 1 ? 'drop' : 'drops';
                       manufacturingCost = pricePerUnit * manufacturingQuantity;
                     } else if (pricingType === 'per_metre') {
-                      // ✅ CRITICAL FIX: Use fabricCalculation.totalWidthWithAllowances which is already in CM
-                      // (rail_width in MM → converted to CM → fullness applied → hems/returns added)
+                      // ✅ CRITICAL FIX: Use SAME linearMeters as fabric calculation for consistency
+                      // This ensures manufacturing cost matches fabric cost display
                       pricePerUnit = manufacturingType === 'hand'
                         ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
                         : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
                       
-                      // totalWidthWithAllowances is already in CM with fullness, hems, returns applied
-                      const widthWithAllowancesCm = fabricCalculation.totalWidthWithAllowances || 0;
-                      const wastePercent = fabricCalculation.wastePercent || selectedTemplate.waste_percent || 0;
-                      
-                      // Apply waste and convert to meters
-                      const finalWidthCm = widthWithAllowancesCm * (1 + wastePercent / 100);
-                      const finalWidthM = finalWidthCm / 100;
-                      
-                      // Use user's unit preference for label
+                      // Use linearMeters from fabric calculation - same source for both fabric and manufacturing
                       const unitIsMetric = units?.length === 'mm' || units?.length === 'cm' || units?.length === 'm';
-                      manufacturingQuantity = finalWidthM;
+                      manufacturingQuantity = fabricCalculation.linearMeters || 0;
                       manufacturingQuantityLabel = unitIsMetric ? 'm' : 'yd';
                       manufacturingCost = pricePerUnit * manufacturingQuantity;
                     } else {
