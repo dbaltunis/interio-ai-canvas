@@ -654,10 +654,11 @@ export const CostCalculationSummary = ({
                     <>
                       <span className="text-xs text-muted-foreground truncate">
                         {/* ✅ UNIT-AWARE DISPLAY: Convert meters to user's fabric unit */}
-                        {fabricDisplayData.orientation === 'horizontal' && fabricDisplayData.horizontalPieces > 1
-                          ? `${formatFabricLength(fabricDisplayData.linearMeters)} × ${fabricDisplayData.horizontalPieces} pieces = ${formatFabricLength(fabricDisplayData.totalMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
-                          : fabricDisplayData.usesLeftover 
-                            ? `${formatFabricLength(fabricDisplayData.linearMeters)} × 1 piece (using leftover) × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
+                        {/* CRITICAL: Check usesLeftover FIRST for horizontal fabric */}
+                        {fabricDisplayData.usesLeftover && fabricDisplayData.orientation === 'horizontal'
+                          ? `${formatFabricLength(fabricDisplayData.linearMeters)} × 1 piece (using leftover) = ${formatFabricLength(fabricDisplayData.totalMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
+                          : fabricDisplayData.orientation === 'horizontal' && fabricDisplayData.horizontalPieces > 1
+                            ? `${formatFabricLength(fabricDisplayData.linearMeters)} × ${fabricDisplayData.horizontalPieces} pieces = ${formatFabricLength(fabricDisplayData.totalMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
                             : `${formatFabricLength(fabricDisplayData.linearMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
                         }
                       </span>
