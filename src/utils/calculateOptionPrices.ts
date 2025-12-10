@@ -24,6 +24,8 @@ interface FabricCalculation {
  * Calculate the actual prices for options based on their pricing method.
  * This function enriches options with calculatedPrice field that should be saved to DB.
  * 
+ * UNIT STANDARD: Measurements come from database in MM (millimeters)
+ * 
  * @param options - Array of selected options with base prices
  * @param measurements - Width/height measurements in MM (rail_width, drop)
  * @param fabricCalculation - Optional fabric calculation with linear meters
@@ -36,12 +38,30 @@ export const calculateOptionPrices = (
 ): OptionWithPrice[] => {
   if (!options || options.length === 0) return [];
 
-  // Convert measurements from MM to CM
-  const widthMM = Number(measurements?.rail_width) || Number(measurements?.width) || 0;
-  const heightMM = Number(measurements?.drop) || Number(measurements?.height) || 0;
-  const widthCm = widthMM / 10;
-  const heightCm = heightMM / 10;
-  const linearMeters = fabricCalculation?.linearMeters || (widthCm / 100);
+  // Get raw measurement values (stored in MM in database)
+  const rawWidth = Number(measurements?.rail_width) || Number(measurements?.width) || 0;
+  const rawHeight = Number(measurements?.drop) || Number(measurements?.height) || 0;
+  
+  // CRITICAL: Database stores measurements in MM
+  // Convert MM to CM for calculations (divide by 10)
+  const widthCm = rawWidth / 10;
+  const heightCm = rawHeight / 10;
+  
+  // Convert to meters for per-meter calculations
+  const widthM = widthCm / 100;
+  const heightM = heightCm / 100;
+  
+  // Linear meters from fabric calculation (already in meters)
+  const linearMeters = fabricCalculation?.linearMeters || widthM;
+
+  console.log(`📐 Option price calc context:`, {
+    rawWidth,
+    rawHeight,
+    widthCm,
+    heightCm,
+    widthM,
+    linearMeters
+  });
 
   return options.map(option => {
     const basePrice = Number(option.price) || 0;
@@ -64,11 +84,21 @@ export const calculateOptionPrices = (
                        optionKeyLower.includes('track') ||
                        optionKeyLower.includes('pole');
     
+    // Check if hardware has a FIXED LENGTH in its name (e.g., "2.4m", "3m", "1.8m")
+    // These should be priced as fixed units, not per-meter
+    const fixedLengthMatch = optionNameLower.match(/(\d+\.?\d*)\s*m\b/);
+    const hasFixedLength = isHardware && fixedLengthMatch;
+    
     // Hardware uses actual rail width in meters, fabric uses fullness-adjusted linear meters
-    const actualRailMeters = widthCm / 100;
+    const actualRailMeters = widthM;
     const metersForCalculation = isHardware ? actualRailMeters : linearMeters;
     
-    if (method === 'per-meter' || method === 'per-metre' || method === 'per-linear-meter') {
+    // FIXED-LENGTH HARDWARE: Don't apply per-meter, use as single unit
+    if (hasFixedLength && (method === 'per-meter' || method === 'per-metre' || method === 'per-linear-meter')) {
+      // Fixed-length item like "Curtain Track white 2.4m" - price is per unit
+      calculatedPrice = basePrice;
+      pricingDetails = `${basePrice.toFixed(2)} per unit (fixed length item)`;
+    } else if (method === 'per-meter' || method === 'per-metre' || method === 'per-linear-meter') {
       if (basePrice > 0 && metersForCalculation > 0) {
         calculatedPrice = basePrice * metersForCalculation;
         pricingDetails = `${basePrice.toFixed(2)}/m × ${metersForCalculation.toFixed(2)}m`;
@@ -98,6 +128,7 @@ export const calculateOptionPrices = (
       calculatedPrice,
       pricingMethod: method,
       isHardware,
+      hasFixedLength,
       metersForCalculation,
       pricingDetails,
       widthCm,
