@@ -113,7 +113,7 @@ serve(async (req) => {
           email: order.customer_email,
           phone: order.customer_phone,
           lead_source: "Online Store",
-          funnel_stage: paymentStatus === "paid" ? "approved" : "lead",
+          funnel_stage: paymentStatus === "paid" ? "client" : "lead",
           source: "online_store",
           notes: order.message ? `Order message: ${order.message}` : "Online store order",
         })
