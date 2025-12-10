@@ -808,10 +808,28 @@ export const CostCalculationSummary = ({
           let pricingDetails = '';
           
           // Get dimensions from measurements for calculation
-          const widthCm = safeParseFloat(measurements?.rail_width, 0) / 10 || 
-                          safeParseFloat(measurements?.width, 0);
-          const heightCm = safeParseFloat(measurements?.drop, 0) / 10 || 
-                           safeParseFloat(measurements?.height, 0);
+          // CRITICAL: Check the unit field - measurements may come in CM (user's unit) not MM
+          const rawWidth = safeParseFloat(measurements?.rail_width, 0) || safeParseFloat(measurements?.width, 0);
+          const rawHeight = safeParseFloat(measurements?.drop, 0) || safeParseFloat(measurements?.height, 0);
+          const measurementUnit = measurements?.unit?.toLowerCase() || 'mm';
+          
+          // Convert to CM based on the actual unit
+          let widthCm: number, heightCm: number;
+          if (measurementUnit === 'cm') {
+            // Already in CM - use directly
+            widthCm = rawWidth;
+            heightCm = rawHeight;
+          } else if (measurementUnit === 'm') {
+            // In meters - multiply by 100
+            widthCm = rawWidth * 100;
+            heightCm = rawHeight * 100;
+          } else {
+            // Assume MM (database standard) - divide by 10
+            // But if value < 1000, it's likely already in CM
+            widthCm = rawWidth > 10000 ? rawWidth / 10 : rawWidth;
+            heightCm = rawHeight > 10000 ? rawHeight / 10 : rawHeight;
+          }
+          
           const fabricLinearMeters = fabricCalculation?.linearMeters || (widthCm / 100);
           
           // CRITICAL: Hardware uses ACTUAL rail width, NOT fullness-adjusted fabric meters!
@@ -830,15 +848,26 @@ export const CostCalculationSummary = ({
           // Hardware uses actual rail width in meters, fabric uses fullness-adjusted linear meters
           const metersForCalculation = isHardware ? (widthCm / 100) : fabricLinearMeters;
           
+          // Check if hardware has a FIXED LENGTH in its name (e.g., "2.4m", "3m")
+          // These should be priced as fixed units, not per-meter
+          const fixedLengthMatch = optionNameLower.match(/(\d+\.?\d*)\s*m\b/);
+          const hasFixedLength = isHardware && fixedLengthMatch;
+          
           // Determine if metric based on units settings
           const isMetric = units?.length?.toLowerCase() !== 'imperial' && units?.length?.toLowerCase() !== 'in' && units?.length?.toLowerCase() !== 'ft';
           const lengthUnit = getLengthUnitLabel(isMetric);
           const areaUnit = getAreaUnitLabel(isMetric);
           
           if (option.pricingMethod === 'per-meter' && basePrice > 0) {
-            calculatedPrice = basePrice * metersForCalculation;
-            // ✅ UNIT-AWARE: Convert to user's fabric unit
-            pricingDetails = `${formatPricePerFabricUnit(basePrice)} × ${formatFabricLength(metersForCalculation)}`;
+            if (hasFixedLength) {
+              // Fixed-length item like "Curtain Track white 2.4m" - price is per unit
+              calculatedPrice = basePrice;
+              pricingDetails = `${formatPrice(basePrice)} per unit`;
+            } else {
+              calculatedPrice = basePrice * metersForCalculation;
+              // ✅ UNIT-AWARE: Convert to user's fabric unit
+              pricingDetails = `${formatPricePerFabricUnit(basePrice)} × ${formatFabricLength(metersForCalculation)}`;
+            }
           } else if (option.pricingMethod === 'per-sqm' && basePrice > 0) {
             const sqm = (widthCm * heightCm) / 10000;
             calculatedPrice = basePrice * sqm;
