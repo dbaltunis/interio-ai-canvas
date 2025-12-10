@@ -519,10 +519,12 @@ export const CostCalculationSummary = ({
   // When engineResult is provided, use it exclusively - no fallbacks
   const useEngine = engineResult != null;
   
-  // Fabric cost: engine > prop > 0
-  const fabricCost = useEngine 
-    ? engineResult.fabric_cost 
-    : safeParseFloat(calculatedFabricCost, 0);
+  // Fabric cost: prop > engine > 0
+  // CRITICAL: calculatedFabricCost includes leftover adjustment from DynamicWindowWorksheet
+  // engineResult.fabric_cost is always full cost (engine doesn't know about leftover logic)
+  const fabricCost = (calculatedFabricCost != null && calculatedFabricCost > 0)
+    ? calculatedFabricCost
+    : (useEngine ? engineResult.fabric_cost : 0);
   
   // Linear meters: engine > fabricCalculation > 0
   const linearMeters = useEngine 
