@@ -13,7 +13,8 @@ import {
   Star,
   MessageCircle,
   Edit,
-  MoreHorizontal
+  MoreHorizontal,
+  Trash2
 } from 'lucide-react';
 
 interface ClientCardProps {
@@ -34,6 +35,7 @@ interface ClientCardProps {
   onClick?: () => void;
   onEdit?: () => void;
   onMessage?: () => void;
+  onDelete?: () => void;
   className?: string;
 }
 
@@ -41,7 +43,8 @@ export const ClientCard = ({
   client, 
   onClick, 
   onEdit, 
-  onMessage, 
+  onMessage,
+  onDelete,
   className 
 }: ClientCardProps) => {
   const statusConfig = {
@@ -65,6 +68,11 @@ export const ClientCard = ({
   const handleMessage = (e: React.MouseEvent) => {
     e.stopPropagation();
     onMessage?.();
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete?.();
   };
 
   return (
@@ -108,6 +116,9 @@ export const ClientCard = ({
             </Button>
             <Button variant="ghost" size="sm" onClick={handleEdit}>
               <Edit className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleDelete} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+              <Trash2 className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="sm">
               <MoreHorizontal className="h-4 w-4" />
