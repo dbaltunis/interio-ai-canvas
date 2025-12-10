@@ -275,15 +275,17 @@ export const DynamicWindowWorksheet = forwardRef<{
             selected_heading_ids_count: templateDetails.selected_heading_ids?.length || 0
           });
           
-          // CRITICAL FIX: ALWAYS fetch full template to ensure we have selected_heading_ids
-          let fullTemplate = templateDetails;
-          if (templateDetails.id) {
-            console.log('🔍 [v2.0.3] Fetching full template to get selected_heading_ids:', templateDetails.id);
+          // CRITICAL FIX: ALWAYS fetch full template to ensure we have selected_heading_ids AND manufacturing pricing
+          // FIX: Use template_id from windows_summary as fallback if template_details.id is missing
+          const templateIdToFetch = templateDetails?.id || existingWindowSummary.template_id;
+          let fullTemplate = templateDetails || {};
+          if (templateIdToFetch) {
+            console.log('🔍 [v2.0.3] Fetching full template to get selected_heading_ids and manufacturing pricing:', templateIdToFetch);
             try {
               const { data: fetchedTemplate, error: fetchError } = await supabase
                 .from('curtain_templates')
                 .select('*')
-                .eq('id', templateDetails.id)
+                .eq('id', templateIdToFetch)
                 .maybeSingle();
               
               if (fetchError) {
@@ -297,7 +299,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                 });
                 fullTemplate = { ...templateDetails, ...fetchedTemplate };
               } else {
-                console.warn('⚠️ [v2.0.3] Template not found in curtain_templates:', templateDetails.id);
+                console.warn('⚠️ [v2.0.3] Template not found in curtain_templates:', templateIdToFetch);
               }
             } catch (err) {
               console.error('❌ [v2.0.3] Exception fetching full template:', err);
@@ -2091,6 +2093,19 @@ export const DynamicWindowWorksheet = forwardRef<{
                             treatment_type: detectedCategory,
                             treatment_category: detectedCategory,
                             description_text: '', // Clear description when changing template
+                            // ✅ CRITICAL: Save template_details immediately with manufacturing pricing
+                            template_details: {
+                              id: template.id,
+                              name: template.name,
+                              pricing_type: template.pricing_type,
+                              machine_price_per_metre: template.machine_price_per_metre,
+                              hand_price_per_metre: template.hand_price_per_metre,
+                              machine_price_per_drop: template.machine_price_per_drop,
+                              hand_price_per_drop: template.hand_price_per_drop,
+                              manufacturing_type: template.manufacturing_type,
+                              waste_percent: template.waste_percent,
+                              selected_heading_ids: template.selected_heading_ids || []
+                            },
                             // ✅ CRITICAL: Clear old options when treatment changes
                             selected_options: [],
                             cost_breakdown: [],
