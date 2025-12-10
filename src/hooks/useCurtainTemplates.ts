@@ -230,8 +230,39 @@ export const useCreateCurtainTemplate = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (newTemplate: any) => {
+      // AUTO-SYNC: Create template_option_settings for ALL options of this category
+      if (newTemplate?.id && newTemplate?.treatment_category && newTemplate?.user_id) {
+        try {
+          // Find all treatment options for this category and account
+          const { data: options } = await supabase
+            .from('treatment_options')
+            .select('id')
+            .eq('account_id', newTemplate.user_id)
+            .eq('treatment_category', newTemplate.treatment_category)
+            .is('template_id', null); // Only category-based options
+          
+          if (options?.length) {
+            // Create template_option_settings for each option
+            const settingsToInsert = options.map(opt => ({
+              template_id: newTemplate.id,
+              treatment_option_id: opt.id,
+              is_enabled: true
+            }));
+            
+            await supabase
+              .from('template_option_settings')
+              .upsert(settingsToInsert, { onConflict: 'template_id,treatment_option_id' });
+            
+            console.log(`✅ Auto-created template_option_settings for ${options.length} options`);
+          }
+        } catch (syncError) {
+          console.error('Failed to auto-sync template_option_settings:', syncError);
+        }
+      }
+      
       queryClient.invalidateQueries({ queryKey: ["curtain-templates"] });
+      queryClient.invalidateQueries({ queryKey: ["template-option-settings"] });
       toast.success("Curtain template created successfully");
     },
     onError: (error) => {
