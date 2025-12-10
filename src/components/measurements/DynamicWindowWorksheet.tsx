@@ -903,30 +903,54 @@ export const DynamicWindowWorksheet = forwardRef<{
               totalCost: blindCalc.totalCost
             });
           } else {
-            // Original curtain calculations
-            linearMeters = fabricCalculation?.linearMeters || 0;
+            // Original curtain calculations - use engineResult when available
+            const isCurtainOrRoman = treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds';
             
-            // CRITICAL FIX: Calculate fabric cost with horizontal pieces AND leftover logic
-            const horizontalPiecesNeeded = fabricCalculation?.horizontalPiecesNeeded || 1;
+            // Get horizontal pieces from engine or fabricCalculation
+            const horizontalPiecesNeeded = (isCurtainOrRoman && engineResult?.formula_breakdown?.values?.['horizontal_pieces'] as number) 
+              || fabricCalculation?.horizontalPiecesNeeded 
+              || 1;
             
-            // Check if using leftover fabric - only charge for 1 piece instead of 2
+            // Check if using leftover fabric - only charge for 1 piece instead of multiple
             const usesLeftover = measurements.uses_leftover_for_horizontal === true || 
                                  measurements.uses_leftover_for_horizontal === 'true';
-            const piecesToCharge = (usesLeftover && horizontalPiecesNeeded > 1) ? 1 : horizontalPiecesNeeded;
             
-            const totalMetersOrdered = piecesToCharge > 1 
-              ? linearMeters * piecesToCharge  // Horizontal: multiply by pieces to charge
-              : (fabricCalculation?.orderedLinearMeters || linearMeters); // Single piece or vertical
+            // ✅ SINGLE SOURCE OF TRUTH: Engine returns TOTAL linear meters (includes all pieces for railroaded)
+            const engineTotalMeters = (isCurtainOrRoman && engineResult?.linear_meters != null) 
+              ? engineResult.linear_meters 
+              : null;
+            const fabricCalcMeters = fabricCalculation?.linearMeters || 0;
+            const usingEngine = engineTotalMeters != null;
             
             const pricePerMeter = fabricCalculation?.pricePerMeter || 0;
-            fabricCost = totalMetersOrdered * pricePerMeter;
+            
+            // Calculate fabric cost with proper leftover handling
+            if (usingEngine && engineTotalMeters != null) {
+              // ENGINE PATH: linear_meters already includes all pieces
+              if (usesLeftover && horizontalPiecesNeeded > 1) {
+                // Only charge for 1 piece
+                linearMeters = engineTotalMeters / horizontalPiecesNeeded;
+                fabricCost = linearMeters * pricePerMeter;
+              } else {
+                // Charge for all
+                linearMeters = engineTotalMeters;
+                fabricCost = linearMeters * pricePerMeter;
+              }
+            } else {
+              // LEGACY PATH: fabricCalculation returns per-width meters
+              linearMeters = fabricCalcMeters;
+              const piecesToCharge = (usesLeftover && horizontalPiecesNeeded > 1) ? 1 : horizontalPiecesNeeded;
+              const totalMetersOrdered = piecesToCharge > 1 
+                ? linearMeters * piecesToCharge
+                : (fabricCalculation?.orderedLinearMeters || linearMeters);
+              fabricCost = totalMetersOrdered * pricePerMeter;
+            }
             
             console.log('💰 [SAVE] Using fabric calculation:', {
+              usingEngine,
               linearMeters,
               horizontalPiecesNeeded,
               usesLeftover,
-              piecesToCharge,
-              totalMetersOrdered,
               pricePerMeter,
               fabricCost,
               widthsRequired: fabricCalculation?.widthsRequired
@@ -2188,10 +2212,24 @@ export const DynamicWindowWorksheet = forwardRef<{
                     // ✅ SINGLE SOURCE OF TRUTH: Use engine result when available for curtains/romans
                     // This ensures all displays use identical values from the authoritative calculation
                     const isCurtainOrRoman = treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds';
-                    const linearMeters = (isCurtainOrRoman && engineResult?.linear_meters != null) 
+                    
+                    // Get horizontal pieces from engine or fabricCalculation
+                    const horizontalPiecesNeeded = (engineResult?.formula_breakdown?.values?.['horizontal_pieces'] as number) 
+                      || fabricCalculation?.horizontalPiecesNeeded 
+                      || 1;
+                    
+                    // CRITICAL: Engine returns TOTAL linear meters (already includes all pieces for railroaded)
+                    // So we DON'T multiply by horizontalPiecesNeeded when using engineResult
+                    const engineTotalMeters = (isCurtainOrRoman && engineResult?.linear_meters != null) 
                       ? engineResult.linear_meters 
-                      : (fabricCalculation?.linearMeters || 0);
-                    const horizontalPiecesNeeded = fabricCalculation?.horizontalPiecesNeeded || 1;
+                      : null;
+                    
+                    // Old fabricCalculation returns per-width meters that need multiplication
+                    const fabricCalcMeters = fabricCalculation?.linearMeters || 0;
+                    
+                    // Determine which source we're using
+                    const usingEngine = engineTotalMeters != null;
+                    
                     // Get price from fabric item or fabricCalculation - never calculate from total/meters
                     const selectedFabricItem = selectedItems.fabric || selectedItems.material;
                     const pricePerMeter = selectedFabricItem?.price_per_meter 
@@ -2202,10 +2240,10 @@ export const DynamicWindowWorksheet = forwardRef<{
                     // Debug: Log which source is being used
                     if (import.meta.env.DEV && isCurtainOrRoman) {
                       console.log('📊 [DynamicWorksheet] Linear Meters Source:', {
-                        usingEngine: engineResult?.linear_meters != null,
-                        engineValue: engineResult?.linear_meters,
-                        fabricCalcValue: fabricCalculation?.linearMeters,
-                        finalValue: linearMeters,
+                        usingEngine,
+                        engineValue: engineTotalMeters,
+                        fabricCalcValue: fabricCalcMeters,
+                        horizontalPiecesNeeded,
                         pricePerMeter,
                       });
                     }
@@ -2214,11 +2252,28 @@ export const DynamicWindowWorksheet = forwardRef<{
                     const usesLeftover = measurements.uses_leftover_for_horizontal === true || 
                                         measurements.uses_leftover_for_horizontal === 'true';
                     
-                    // CRITICAL FIX: For horizontal orientation, linearMeters is the WIDTH to order
-                    // horizontalPiecesNeeded tells us how many pieces are needed to cover the HEIGHT
-                    // If usesLeftover is true, only charge for 1 piece (leftover covers extra)
-                    const piecesToCharge = usesLeftover && horizontalPiecesNeeded > 1 ? 1 : horizontalPiecesNeeded;
-                    const fabricCost = (linearMeters * piecesToCharge) * pricePerMeter;
+                    // Calculate fabric cost with proper leftover handling
+                    let fabricCost: number;
+                    let linearMeters: number;
+                    
+                    if (usingEngine && engineTotalMeters != null) {
+                      // ENGINE PATH: linear_meters already includes all pieces
+                      // For leftover: only charge for 1 piece worth
+                      if (usesLeftover && horizontalPiecesNeeded > 1) {
+                        // Total meters / pieces = per-piece meters, charge for 1
+                        linearMeters = engineTotalMeters / horizontalPiecesNeeded;
+                        fabricCost = linearMeters * pricePerMeter;
+                      } else {
+                        // No leftover: charge for total
+                        linearMeters = engineTotalMeters;
+                        fabricCost = linearMeters * pricePerMeter;
+                      }
+                    } else {
+                      // LEGACY PATH: fabricCalculation returns per-width meters
+                      linearMeters = fabricCalcMeters;
+                      const piecesToCharge = usesLeftover && horizontalPiecesNeeded > 1 ? 1 : horizontalPiecesNeeded;
+                      fabricCost = (linearMeters * piecesToCharge) * pricePerMeter;
+                    }
 
                     // Calculate lining cost - DYNAMIC based on template configuration
                     let liningCost = 0;
@@ -2347,7 +2402,15 @@ export const DynamicWindowWorksheet = forwardRef<{
                     // ✅ SAVE TO STATE: Single source of truth for all displays
                     // Use engine values when available
                     const isCurtainOrRomanForCosts = treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds';
-                    const totalMetersToOrder = linearMeters * piecesToCharge;
+                    
+                    // Calculate pieces charged for display (1 if using leftover, else horizontalPiecesNeeded)
+                    const piecesCharged = usesLeftover && horizontalPiecesNeeded > 1 ? 1 : horizontalPiecesNeeded;
+                    
+                    // Total meters: for engine path linearMeters might be adjusted for leftover
+                    // For legacy path, multiply by pieces
+                    const totalMetersToOrder = usingEngine 
+                      ? (usesLeftover && horizontalPiecesNeeded > 1 ? linearMeters : engineTotalMeters || linearMeters)
+                      : linearMeters * piecesCharged;
                     
                     const newCalculatedCosts = {
                       // Use engine values when available
@@ -2366,7 +2429,7 @@ export const DynamicWindowWorksheet = forwardRef<{
                       totalCost: (isCurtainOrRomanForCosts && engineResult) 
                         ? (engineResult.total + liningCost + manufacturingCost + headingCost)
                         : totalCost,
-                      horizontalPiecesNeeded: piecesToCharge,
+                      horizontalPiecesNeeded: piecesCharged,
                       fabricOrientation: (fabricCalculation.fabricOrientation || 'vertical') as 'horizontal' | 'vertical',
                       seamsRequired: (isCurtainOrRomanForCosts && engineResult?.formula_breakdown?.values?.seams_count != null)
                         ? Number(engineResult.formula_breakdown.values.seams_count)
