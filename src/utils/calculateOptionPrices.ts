@@ -14,6 +14,7 @@ interface Measurements {
   drop?: number;
   width?: number;
   height?: number;
+  unit?: string;
 }
 
 interface FabricCalculation {
@@ -38,14 +39,28 @@ export const calculateOptionPrices = (
 ): OptionWithPrice[] => {
   if (!options || options.length === 0) return [];
 
-  // Get raw measurement values (stored in MM in database)
+  // Get raw measurement values
   const rawWidth = Number(measurements?.rail_width) || Number(measurements?.width) || 0;
   const rawHeight = Number(measurements?.drop) || Number(measurements?.height) || 0;
+  const measurementUnit = (measurements?.unit || 'mm')?.toLowerCase();
   
-  // CRITICAL: Database stores measurements in MM
-  // Convert MM to CM for calculations (divide by 10)
-  const widthCm = rawWidth / 10;
-  const heightCm = rawHeight / 10;
+  // CRITICAL: Convert to CM based on the actual unit
+  // Measurements can come in user's display unit (CM) OR database unit (MM)
+  let widthCm: number, heightCm: number;
+  if (measurementUnit === 'cm') {
+    // Already in CM - use directly
+    widthCm = rawWidth;
+    heightCm = rawHeight;
+  } else if (measurementUnit === 'm') {
+    // In meters - multiply by 100
+    widthCm = rawWidth * 100;
+    heightCm = rawHeight * 100;
+  } else {
+    // Assume MM (database standard) - divide by 10
+    // But if value < 1000, it's likely already in CM (safety check)
+    widthCm = rawWidth > 10000 ? rawWidth / 10 : rawWidth;
+    heightCm = rawHeight > 10000 ? rawHeight / 10 : rawHeight;
+  }
   
   // Convert to meters for per-meter calculations
   const widthM = widthCm / 100;
