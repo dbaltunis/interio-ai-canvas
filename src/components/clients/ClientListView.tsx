@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { Mail, Phone, User, Building2, MoreHorizontal, Star, TrendingUp, Clock, AlertCircle, Target, Calendar, MessageSquare, Briefcase, Package } from "lucide-react";
+import { Mail, Phone, User, Building2, MoreHorizontal, Star, TrendingUp, Clock, AlertCircle, Target, Calendar, MessageSquare, Briefcase, Package, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow, isPast } from "date-fns";
 import { useIsTablet } from "@/hooks/use-tablet";
 import { ClientDetailDrawer } from "./ClientDetailDrawer";
+import { useDeleteClient } from "@/hooks/useClients";
+import { toast } from "sonner";
 
 interface Client {
   id: string;
@@ -49,6 +52,31 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
   const isTablet = useIsTablet();
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const deleteClient = useDeleteClient();
+
+  const handleDeleteClick = (e: React.MouseEvent, client: Client) => {
+    e.stopPropagation();
+    setClientToDelete(client);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (clientToDelete) {
+      deleteClient.mutate(clientToDelete.id, {
+        onSuccess: () => {
+          toast.success(`Client "${clientToDelete.name}" has been deleted`);
+          setDeleteDialogOpen(false);
+          setClientToDelete(null);
+        },
+        onError: (error) => {
+          toast.error("Failed to delete client");
+          console.error("Delete error:", error);
+        }
+      });
+    }
+  };
 
   const handleClientClick = (client: Client) => {
     setSelectedClient(client);
@@ -334,6 +362,14 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                             <Calendar className="mr-2 h-4 w-4" />
                             Schedule Meeting
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={(e) => handleDeleteClick(e, client)}
+                            className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Client
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -351,6 +387,40 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
         onOpenChange={setDrawerOpen}
         client={selectedClient}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Client</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Are you sure you want to delete <strong>{clientToDelete?.name}</strong>?
+              </p>
+              <p className="text-destructive font-medium">
+                This action cannot be undone. The following data will be permanently deleted:
+              </p>
+              <ul className="list-disc list-inside text-sm space-y-1 mt-2">
+                <li>All client details and contact information</li>
+                <li>All attachments and files</li>
+                <li>All scheduled events and meetings</li>
+                <li>All associated jobs and projects</li>
+                <li>All quotes and invoices</li>
+                <li>All activity history and notes</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteClient.isPending}
+            >
+              {deleteClient.isPending ? "Deleting..." : "Delete Client"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
