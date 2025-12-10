@@ -129,7 +129,56 @@ export const useDeleteClient = () => {
 
       if (projectUpdateError) {
         console.error("Failed to update projects:", projectUpdateError);
-        // Continue with client deletion even if project update fails
+      }
+
+      // Update quotes to remove client reference
+      const { error: quotesUpdateError } = await supabase
+        .from("quotes")
+        .update({ client_id: null })
+        .eq("client_id", id);
+
+      if (quotesUpdateError) {
+        console.error("Failed to update quotes:", quotesUpdateError);
+      }
+
+      // Update appointments to remove client reference
+      const { error: appointmentsUpdateError } = await supabase
+        .from("appointments")
+        .update({ client_id: null })
+        .eq("client_id", id);
+
+      if (appointmentsUpdateError) {
+        console.error("Failed to update appointments:", appointmentsUpdateError);
+      }
+
+      // Delete client activity logs
+      const { error: activityLogError } = await supabase
+        .from("client_activity_log")
+        .delete()
+        .eq("client_id", id);
+
+      if (activityLogError) {
+        console.error("Failed to delete activity logs:", activityLogError);
+      }
+
+      // Delete client files
+      const { error: filesError } = await supabase
+        .from("client_files")
+        .delete()
+        .eq("client_id", id);
+
+      if (filesError) {
+        console.error("Failed to delete client files:", filesError);
+      }
+
+      // Delete client measurements
+      const { error: measurementsError } = await supabase
+        .from("client_measurements")
+        .delete()
+        .eq("client_id", id);
+
+      if (measurementsError) {
+        console.error("Failed to delete client measurements:", measurementsError);
       }
 
       // Then delete the client
