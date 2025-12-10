@@ -1075,11 +1075,18 @@ export const DynamicWindowWorksheet = forwardRef<{
                 : (selectedPricingMethod?.machine_price_per_drop ?? selectedTemplate.machine_price_per_drop ?? 0);
               manufacturingCost = pricePerUnit * (fabricCalculation.widthsRequired || 1);
             } else if (pricingType === 'per_metre') {
-              // ✅ FIX: Use fabricCalculation.totalWidthWithAllowances directly
-              // This is the SAME value used in the display logic (CostCalculationSummary)
-              // Already correctly calculated in CM with fullness, hems, returns applied
-              const widthWithAllowancesCm = fabricCalculation.totalWidthWithAllowances || 0;
-              const wastePercent = fabricCalculation.wastePercent || selectedTemplate.waste_percent || 0;
+              // ✅ FIX: Calculate totalWidthWithAllowances directly from raw measurements
+              // Never rely on potentially-stale fabricCalculation state
+              const railWidthCm = (parseFloat(measurements.rail_width || '0')) / 10; // MM to CM
+              const fullness = fabricCalculation?.fullnessRatio || parseFloat(measurements.heading_fullness || '0') || selectedTemplate?.fullness_ratio || 2;
+              const sideHemCm = fabricCalculation?.sideHems || parseFloat(String(measurements.side_hem || selectedTemplate?.side_hem || 4));
+              const returnLeftCm = parseFloat(measurements.return_left || '0');
+              const returnRightCm = parseFloat(measurements.return_right || '0');
+              const returnsCm = fabricCalculation?.returns || (returnLeftCm + returnRightCm);
+              
+              // Calculate total width with allowances directly
+              const widthWithAllowancesCm = (railWidthCm * fullness) + (sideHemCm * 2) + returnsCm;
+              const wastePercent = fabricCalculation?.wastePercent || selectedTemplate?.waste_percent || 0;
               
               // Add waste percentage and convert to meters
               const finalWidthCm = widthWithAllowancesCm * (1 + wastePercent / 100);
