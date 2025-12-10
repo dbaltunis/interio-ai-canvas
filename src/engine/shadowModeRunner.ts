@@ -107,6 +107,13 @@ export function buildMeasurements(
       drop_mm,
     };
     
+    // Fabric rotation/orientation - critical for railroaded calculation
+    if (measurements.fabric_rotated != null) {
+      result.fabric_rotated = measurements.fabric_rotated === true || measurements.fabric_rotated === 'true';
+    } else if (measurements.roll_direction === 'horizontal') {
+      result.fabric_rotated = true;
+    }
+    
     // Optional fields - only add if they exist
     if (measurements.heading_fullness != null) {
       const fullness = parseFloat(measurements.heading_fullness);

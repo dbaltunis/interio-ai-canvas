@@ -248,28 +248,73 @@ export class CalculationEngine {
     values['total_width_cm'] = total_width_cm;
     steps.push(`Total width: ${finished_width_cm} + ${total_returns_cm} + ${side_hem_cm * 2} = ${total_width_cm}cm`);
     
-    // Number of widths (fabric drops needed)
-    const widths_required = Math.ceil(total_width_cm / fabric_width_cm);
-    values['widths_required'] = widths_required;
-    steps.push(`Widths required: ceil(${total_width_cm} / ${fabric_width_cm}) = ${widths_required}`);
+    // Check if fabric is railroaded/horizontal
+    const is_railroaded = measurements.fabric_rotated === true;
+    values['is_railroaded'] = is_railroaded ? 'yes' : 'no';
+    steps.push(`Fabric orientation: ${is_railroaded ? 'RAILROADED (horizontal)' : 'VERTICAL'}`);
     
-    // Seam allowance: seam_hem_cm is TOTAL per join (not per side)
-    const seams_count = Math.max(0, widths_required - 1);
-    const seam_allowance_cm = seams_count * seam_hem_cm;
-    values['seams_count'] = seams_count;
-    values['seam_allowance_cm'] = seam_allowance_cm;
-    steps.push(`Seam allowance: ${seams_count} seams × ${seam_hem_cm}cm = ${seam_allowance_cm}cm`);
+    let linear_meters_raw: number;
+    let linear_meters: number;
+    let widths_required: number;
+    let seams_count: number;
+    let seam_allowance_cm: number;
+    let total_fabric_cm: number;
     
-    // Total fabric length
-    const total_fabric_cm = (widths_required * total_drop_cm) + seam_allowance_cm;
-    values['total_fabric_cm'] = total_fabric_cm;
-    steps.push(`Total fabric: (${widths_required} × ${total_drop_cm}) + ${seam_allowance_cm} = ${total_fabric_cm}cm`);
+    if (is_railroaded) {
+      // RAILROADED/HORIZONTAL: Fabric width covers drop, buy length for curtain width
+      // horizontal_pieces = ceil(total_drop_cm / fabric_width_cm)
+      // total_fabric_cm = total_width_cm * horizontal_pieces + seam allowance
+      
+      const horizontal_pieces = Math.ceil(total_drop_cm / fabric_width_cm);
+      values['horizontal_pieces'] = horizontal_pieces;
+      steps.push(`Horizontal pieces: ceil(${total_drop_cm} / ${fabric_width_cm}) = ${horizontal_pieces}`);
+      
+      seams_count = Math.max(0, horizontal_pieces - 1);
+      seam_allowance_cm = seams_count * seam_hem_cm;
+      values['seams_count'] = seams_count;
+      values['seam_allowance_cm'] = seam_allowance_cm;
+      steps.push(`Seam allowance: ${seams_count} seams × ${seam_hem_cm}cm = ${seam_allowance_cm}cm`);
+      
+      // Total fabric = total width × horizontal pieces + seam allowance
+      total_fabric_cm = (total_width_cm * horizontal_pieces) + seam_allowance_cm;
+      values['total_fabric_cm'] = total_fabric_cm;
+      steps.push(`Total fabric (railroaded): (${total_width_cm} × ${horizontal_pieces}) + ${seam_allowance_cm} = ${total_fabric_cm}cm`);
+      
+      widths_required = horizontal_pieces; // For railroaded, "widths" are horizontal pieces
+      
+      linear_meters_raw = cmToM(total_fabric_cm);
+      linear_meters = roundTo(linear_meters_raw, 2);
+      values['linear_meters'] = linear_meters;
+      steps.push(`Linear meters: ${total_fabric_cm} / 100 = ${linear_meters}m`);
+      
+    } else {
+      // VERTICAL: Standard calculation - fabric width covers curtain width, buy length for drop
+      // widths_required = ceil(total_width_cm / fabric_width_cm)
+      // total_fabric_cm = widths_required × total_drop_cm + seam allowance
+      
+      widths_required = Math.ceil(total_width_cm / fabric_width_cm);
+      values['widths_required'] = widths_required;
+      steps.push(`Widths required: ceil(${total_width_cm} / ${fabric_width_cm}) = ${widths_required}`);
+      
+      seams_count = Math.max(0, widths_required - 1);
+      seam_allowance_cm = seams_count * seam_hem_cm;
+      values['seams_count'] = seams_count;
+      values['seam_allowance_cm'] = seam_allowance_cm;
+      steps.push(`Seam allowance: ${seams_count} seams × ${seam_hem_cm}cm = ${seam_allowance_cm}cm`);
+      
+      total_fabric_cm = (widths_required * total_drop_cm) + seam_allowance_cm;
+      values['total_fabric_cm'] = total_fabric_cm;
+      steps.push(`Total fabric (vertical): (${widths_required} × ${total_drop_cm}) + ${seam_allowance_cm} = ${total_fabric_cm}cm`);
+      
+      linear_meters_raw = cmToM(total_fabric_cm);
+      linear_meters = roundTo(linear_meters_raw, 2);
+      values['linear_meters'] = linear_meters;
+      steps.push(`Linear meters: ${total_fabric_cm} / 100 = ${linear_meters}m`);
+    }
     
-    // Convert to linear meters
-    const linear_meters_raw = cmToM(total_fabric_cm);
-    const linear_meters = roundTo(linear_meters_raw, 2);
-    values['linear_meters'] = linear_meters;
-    steps.push(`Linear meters: ${total_fabric_cm} / 100 = ${linear_meters}m`);
+    const formula_string = is_railroaded
+      ? `RAILROADED: (${total_width_cm}cm × ${values['horizontal_pieces']} pieces) + ${seam_allowance_cm}cm seams = ${linear_meters}m`
+      : `VERTICAL: (${widths_required} widths × ${total_drop_cm}cm drop) + ${seam_allowance_cm}cm seams = ${linear_meters}m`;
     
     return {
       linear_meters,
@@ -282,7 +327,7 @@ export class CalculationEngine {
       formula: {
         steps,
         values,
-        formula_string: `(${widths_required} widths × ${total_drop_cm}cm drop) + ${seam_allowance_cm}cm seams = ${linear_meters}m`,
+        formula_string,
       },
     };
   }
