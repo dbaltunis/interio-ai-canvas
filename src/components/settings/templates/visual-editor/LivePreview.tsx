@@ -1237,8 +1237,8 @@ const LivePreviewBlock = ({
                 </div>
               )}
               
-              {/* GST/Tax */}
-              {content.showTax && (
+              {/* GST/Tax - show by default unless explicitly disabled */}
+              {content.showTax !== false && (
                 <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
                   <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
                     <span style={{ fontSize: '14px', color: '#111827 !important' }}>
