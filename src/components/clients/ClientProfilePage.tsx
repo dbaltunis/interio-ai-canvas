@@ -30,6 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { ClientFilesManager } from "./ClientFilesManager";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { FUNNEL_STAGES, getStageByValue } from "@/constants/clientConstants";
 
 interface ClientProfilePageProps {
   clientId: string;
@@ -101,20 +102,8 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   };
 
   const getStageColor = (stage: string) => {
-    switch (stage?.toLowerCase()) {
-      case 'lead':
-        return 'bg-blue-100 text-blue-700';
-      case 'contacted':
-        return 'bg-purple-100 text-purple-700';
-      case 'qualified':
-        return 'bg-green-100 text-green-700';
-      case 'proposal':
-        return 'bg-yellow-100 text-yellow-700';
-      case 'client':
-        return 'bg-primary/10 text-primary';
-      default:
-        return 'bg-muted text-muted-foreground';
-    }
+    const stageData = getStageByValue(stage);
+    return stageData?.color || 'bg-muted text-muted-foreground';
   };
 
   const currentClient = isEditing ? editedClient : client;
@@ -197,11 +186,14 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="lead">Lead</SelectItem>
-                      <SelectItem value="contacted">Contacted</SelectItem>
-                      <SelectItem value="qualified">Qualified</SelectItem>
-                      <SelectItem value="proposal">Proposal</SelectItem>
-                      <SelectItem value="client">Client</SelectItem>
+                      {FUNNEL_STAGES.map((stage) => (
+                        <SelectItem key={stage.value} value={stage.value}>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${stage.color.split(' ')[0]}`} />
+                            {stage.label}
+                          </div>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -277,7 +269,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Stage</p>
                 <Badge className={getStageColor(currentClient.funnel_stage || 'lead')}>
-                  {(currentClient.funnel_stage || 'lead').replace('_', ' ').toUpperCase()}
+                  {getStageByValue(currentClient.funnel_stage || 'lead')?.label || 'Lead'}
                 </Badge>
               </div>
               <div>
