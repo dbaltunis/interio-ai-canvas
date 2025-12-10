@@ -3,14 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useClients } from "@/hooks/useClients";
 import { Building2, User, DollarSign } from "lucide-react";
-
-const FUNNEL_STAGES = [
-  { value: 'lead', label: 'Lead', color: 'bg-gray-100 text-gray-700' },
-  { value: 'contacted', label: 'Contacted', color: 'bg-blue-100 text-blue-700' },
-  { value: 'measuring_scheduled', label: 'Measuring', color: 'bg-purple-100 text-purple-700' },
-  { value: 'quoted', label: 'Quoted', color: 'bg-orange-100 text-orange-700' },
-  { value: 'approved', label: 'Won', color: 'bg-green-100 text-green-700' },
-];
+import { FUNNEL_STAGES } from "@/constants/clientConstants";
 
 interface CRMPipelineViewProps {
   onClientClick?: (clientId: string) => void;
@@ -28,14 +21,17 @@ export const CRMPipelineView = ({ onClientClick }: CRMPipelineViewProps) => {
     return clients.reduce((sum, c) => sum + (c.deal_value || 0), 0);
   };
 
+  // Filter out 'lost' from pipeline view - lost clients shown separately
+  const pipelineStages = FUNNEL_STAGES.filter(s => s.value !== 'lost');
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Sales Pipeline</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-5 gap-3">
-          {FUNNEL_STAGES.map((stage) => {
+        <div className="grid grid-cols-7 gap-3">
+          {pipelineStages.map((stage) => {
             const clients = getStageClients(stage.value);
             const stageValue = getStageValue(stage.value);
 
