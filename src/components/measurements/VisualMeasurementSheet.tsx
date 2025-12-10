@@ -979,17 +979,27 @@ export const VisualMeasurementSheet = ({
               })()}
               
               {/* Fabric & Pricing Calculations Section - Below Visual - Only for curtains/romans with fabric calculations */}
-              {(treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && selectedFabricItem && selectedTemplate && (
-                <AdaptiveFabricPricingDisplay 
-                  selectedFabricItem={selectedFabricItem} 
-                  fabricCalculation={fabricCalculation} 
-                  template={selectedTemplate} 
-                  measurements={measurements} 
-                  treatmentCategory={treatmentCategory}
-                  useLeftoverForHorizontal={useLeftoverForHorizontal}
-                  onToggleLeftoverForHorizontal={handleToggleLeftoverForHorizontal}
-                  engineResult={engineResult}
-                />
+              {(treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && selectedTemplate && (
+                selectedFabricItem ? (
+                  <AdaptiveFabricPricingDisplay 
+                    selectedFabricItem={selectedFabricItem} 
+                    fabricCalculation={fabricCalculation} 
+                    template={selectedTemplate} 
+                    measurements={measurements} 
+                    treatmentCategory={treatmentCategory}
+                    useLeftoverForHorizontal={useLeftoverForHorizontal}
+                    onToggleLeftoverForHorizontal={handleToggleLeftoverForHorizontal}
+                    engineResult={engineResult}
+                  />
+                ) : (
+                  <div className="container-level-1 rounded-lg p-4 text-center">
+                    <div className="text-muted-foreground">
+                      <span className="text-2xl mb-2 block">🧵</span>
+                      <p className="font-medium">No Fabric Selected</p>
+                      <p className="text-sm mt-1">Select a fabric in the Inventory tab to see pricing calculations</p>
+                    </div>
+                  </div>
+                )
               )}
               
               {/* Fabric Rotation Toggle - Moved from Curtain Configuration - Only for curtains/romans */}
