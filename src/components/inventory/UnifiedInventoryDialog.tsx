@@ -145,6 +145,7 @@ export const UnifiedInventoryDialog = ({
     { value: "fabric", label: "Fabrics" },
     { value: "material", label: "Blind Materials" },
     { value: "hardware", label: "Hardware" },
+    { value: "heading", label: "Headings" },
     { value: "wallcovering", label: "Wallcoverings" },
     { value: "service", label: "Services" }
   ];
@@ -183,6 +184,17 @@ export const UnifiedInventoryDialog = ({
       { value: "installation", label: "Installation Services" },
       { value: "fitting", label: "Fitting Services" },
       { value: "other_service", label: "Other Services" }
+    ],
+    heading: [
+      { value: "pencil_pleat", label: "Pencil Pleat" },
+      { value: "pinch_pleat", label: "Pinch Pleat" },
+      { value: "wave", label: "Wave/S-Fold" },
+      { value: "eyelet", label: "Eyelet/Grommet" },
+      { value: "goblet", label: "Goblet" },
+      { value: "cartridge", label: "Cartridge" },
+      { value: "box_pleat", label: "Box Pleat" },
+      { value: "tab_top", label: "Tab Top" },
+      { value: "other_heading", label: "Other" }
     ]
   };
 
