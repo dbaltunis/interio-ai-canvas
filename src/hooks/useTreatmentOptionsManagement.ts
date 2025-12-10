@@ -69,10 +69,41 @@ export const useCreateTreatmentOption = () => {
       
       return option;
     },
-    onSuccess: () => {
+    onSuccess: async (newOption: any) => {
+      // AUTO-SYNC: Create template_option_settings for ALL templates of this category
+      if (newOption?.id && newOption?.treatment_category && newOption?.account_id) {
+        try {
+          // Find all active templates for this category
+          const { data: templates } = await supabase
+            .from('curtain_templates')
+            .select('id')
+            .eq('user_id', newOption.account_id)
+            .eq('treatment_category', newOption.treatment_category)
+            .eq('active', true);
+          
+          if (templates?.length) {
+            // Create template_option_settings for each template
+            const settingsToInsert = templates.map(t => ({
+              template_id: t.id,
+              treatment_option_id: newOption.id,
+              is_enabled: true
+            }));
+            
+            await supabase
+              .from('template_option_settings')
+              .upsert(settingsToInsert, { onConflict: 'template_id,treatment_option_id' });
+            
+            console.log(`✅ Auto-created template_option_settings for ${templates.length} templates`);
+          }
+        } catch (syncError) {
+          console.error('Failed to auto-sync template_option_settings:', syncError);
+        }
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
       queryClient.invalidateQueries({ queryKey: ['all-treatment-options'] });
       queryClient.invalidateQueries({ queryKey: ['available-treatment-options-from-manager'] });
+      queryClient.invalidateQueries({ queryKey: ['template-option-settings'] });
     },
   });
 };
