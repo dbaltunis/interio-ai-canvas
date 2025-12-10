@@ -574,7 +574,8 @@ export const DynamicWindowWorksheet = forwardRef<{
         console.log('✅ Initial data load complete - will not reload again');
         
         // Set fabric calculation if available - CRITICAL: Include hems and returns AND totalWidthWithAllowances
-        if (existingWindowSummary.linear_meters && existingWindowSummary.fabric_cost) {
+        // FIX: Set fabricCalculation even when linear_meters is null so manufacturing can calculate
+        if (existingWindowSummary.template_id) {
           const md = existingWindowSummary.measurements_details as any || {};
           
           // CRITICAL FIX: Calculate totalWidthWithAllowances from restored values
