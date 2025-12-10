@@ -41,6 +41,9 @@ export interface MeasurementsContract {
   /** Pooling/puddle allowance in millimeters */
   pooling_mm?: number;
   
+  /** Fabric orientation: true = railroaded/horizontal (width covers drop) */
+  fabric_rotated?: boolean;
+  
   // Blind-specific
   stack_position?: 'left' | 'right' | 'center' | 'split';
   control_side?: 'left' | 'right';
