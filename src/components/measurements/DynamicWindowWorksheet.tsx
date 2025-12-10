@@ -915,6 +915,10 @@ export const DynamicWindowWorksheet = forwardRef<{
             const usesLeftover = measurements.uses_leftover_for_horizontal === true || 
                                  measurements.uses_leftover_for_horizontal === 'true';
             
+            // Check if railroaded from engine
+            const isRailroaded = engineResult?.formula_breakdown?.values?.['is_railroaded'] === 'yes' 
+              || fabricCalculation?.fabricOrientation === 'horizontal';
+            
             // ✅ SINGLE SOURCE OF TRUTH: Engine returns TOTAL linear meters (includes all pieces for railroaded)
             const engineTotalMeters = (isCurtainOrRoman && engineResult?.linear_meters != null) 
               ? engineResult.linear_meters 
@@ -924,30 +928,41 @@ export const DynamicWindowWorksheet = forwardRef<{
             
             const pricePerMeter = fabricCalculation?.pricePerMeter || 0;
             
-            // Calculate fabric cost with proper leftover handling
+            // Calculate per-piece and total meters for consistent handling
+            let perPieceMeters: number;
+            let totalMetersToOrder: number;
+            
             if (usingEngine && engineTotalMeters != null) {
-              // ENGINE PATH: linear_meters already includes all pieces
-              if (usesLeftover && horizontalPiecesNeeded > 1) {
-                // Only charge for 1 piece
-                linearMeters = engineTotalMeters / horizontalPiecesNeeded;
-                fabricCost = linearMeters * pricePerMeter;
+              // ENGINE PATH: linear_meters is TOTAL
+              if (isRailroaded && horizontalPiecesNeeded > 1) {
+                perPieceMeters = engineTotalMeters / horizontalPiecesNeeded;
               } else {
-                // Charge for all
-                linearMeters = engineTotalMeters;
-                fabricCost = linearMeters * pricePerMeter;
+                perPieceMeters = engineTotalMeters;
               }
+              
+              // Total to order: charge for 1 piece if using leftover, else total
+              if (usesLeftover && horizontalPiecesNeeded > 1) {
+                totalMetersToOrder = perPieceMeters;
+                fabricCost = perPieceMeters * pricePerMeter;
+              } else {
+                totalMetersToOrder = engineTotalMeters;
+                fabricCost = engineTotalMeters * pricePerMeter;
+              }
+              linearMeters = totalMetersToOrder; // Save the total being ordered
             } else {
               // LEGACY PATH: fabricCalculation returns per-width meters
-              linearMeters = fabricCalcMeters;
+              perPieceMeters = fabricCalcMeters;
               const piecesToCharge = (usesLeftover && horizontalPiecesNeeded > 1) ? 1 : horizontalPiecesNeeded;
-              const totalMetersOrdered = piecesToCharge > 1 
-                ? linearMeters * piecesToCharge
-                : (fabricCalculation?.orderedLinearMeters || linearMeters);
-              fabricCost = totalMetersOrdered * pricePerMeter;
+              totalMetersToOrder = perPieceMeters * piecesToCharge;
+              fabricCost = totalMetersToOrder * pricePerMeter;
+              linearMeters = totalMetersToOrder; // Save the total being ordered
             }
             
             console.log('💰 [SAVE] Using fabric calculation:', {
               usingEngine,
+              isRailroaded,
+              perPieceMeters,
+              totalMetersToOrder,
               linearMeters,
               horizontalPiecesNeeded,
               usesLeftover,
@@ -2219,7 +2234,6 @@ export const DynamicWindowWorksheet = forwardRef<{
                       || 1;
                     
                     // CRITICAL: Engine returns TOTAL linear meters (already includes all pieces for railroaded)
-                    // So we DON'T multiply by horizontalPiecesNeeded when using engineResult
                     const engineTotalMeters = (isCurtainOrRoman && engineResult?.linear_meters != null) 
                       ? engineResult.linear_meters 
                       : null;
@@ -2237,42 +2251,63 @@ export const DynamicWindowWorksheet = forwardRef<{
                       || fabricCalculation?.pricePerMeter 
                       || 0;
                     
+                    // CRITICAL FIX: Check if using leftover fabric for horizontal seaming
+                    const usesLeftover = measurements.uses_leftover_for_horizontal === true || 
+                                        measurements.uses_leftover_for_horizontal === 'true';
+                    
+                    // Check if railroaded from engine
+                    const isRailroaded = engineResult?.formula_breakdown?.values?.['is_railroaded'] === 'yes' 
+                      || fabricCalculation?.fabricOrientation === 'horizontal';
+                    
+                    // Calculate per-piece and total meters for display
+                    // CRITICAL: Engine returns TOTAL, display expects PER-PIECE × pieces = TOTAL
+                    let perPieceMeters: number;
+                    let totalMeters: number;
+                    let fabricCost: number;
+                    
+                    if (usingEngine && engineTotalMeters != null) {
+                      // ENGINE PATH: linear_meters is TOTAL
+                      totalMeters = engineTotalMeters;
+                      
+                      if (isRailroaded && horizontalPiecesNeeded > 1) {
+                        // Railroaded: per-piece = total / pieces
+                        perPieceMeters = engineTotalMeters / horizontalPiecesNeeded;
+                      } else {
+                        // Vertical or single piece: per-piece = total
+                        perPieceMeters = engineTotalMeters;
+                      }
+                      
+                      // Fabric cost: charge for total unless using leftover
+                      if (usesLeftover && horizontalPiecesNeeded > 1) {
+                        fabricCost = perPieceMeters * pricePerMeter; // Charge for 1 piece
+                        totalMeters = perPieceMeters; // Only ordering 1 piece worth
+                      } else {
+                        fabricCost = totalMeters * pricePerMeter;
+                      }
+                    } else {
+                      // LEGACY PATH: fabricCalculation returns per-width meters
+                      perPieceMeters = fabricCalcMeters;
+                      const piecesToCharge = usesLeftover && horizontalPiecesNeeded > 1 ? 1 : horizontalPiecesNeeded;
+                      totalMeters = perPieceMeters * piecesToCharge;
+                      fabricCost = totalMeters * pricePerMeter;
+                    }
+                    
+                    // For backward compatibility, linearMeters = perPieceMeters
+                    const linearMeters = perPieceMeters;
+                    
                     // Debug: Log which source is being used
                     if (import.meta.env.DEV && isCurtainOrRoman) {
                       console.log('📊 [DynamicWorksheet] Linear Meters Source:', {
                         usingEngine,
                         engineValue: engineTotalMeters,
-                        fabricCalcValue: fabricCalcMeters,
+                        isRailroaded,
                         horizontalPiecesNeeded,
+                        perPieceMeters,
+                        totalMeters,
+                        usesLeftover,
+                        fabricCost,
                         pricePerMeter,
                       });
-                    }
-                    
-                    // CRITICAL FIX: Check if using leftover fabric for horizontal seaming
-                    const usesLeftover = measurements.uses_leftover_for_horizontal === true || 
-                                        measurements.uses_leftover_for_horizontal === 'true';
-                    
-                    // Calculate fabric cost with proper leftover handling
-                    let fabricCost: number;
-                    let linearMeters: number;
-                    
-                    if (usingEngine && engineTotalMeters != null) {
-                      // ENGINE PATH: linear_meters already includes all pieces
-                      // For leftover: only charge for 1 piece worth
-                      if (usesLeftover && horizontalPiecesNeeded > 1) {
-                        // Total meters / pieces = per-piece meters, charge for 1
-                        linearMeters = engineTotalMeters / horizontalPiecesNeeded;
-                        fabricCost = linearMeters * pricePerMeter;
-                      } else {
-                        // No leftover: charge for total
-                        linearMeters = engineTotalMeters;
-                        fabricCost = linearMeters * pricePerMeter;
-                      }
-                    } else {
-                      // LEGACY PATH: fabricCalculation returns per-width meters
-                      linearMeters = fabricCalcMeters;
-                      const piecesToCharge = usesLeftover && horizontalPiecesNeeded > 1 ? 1 : horizontalPiecesNeeded;
-                      fabricCost = (linearMeters * piecesToCharge) * pricePerMeter;
                     }
 
                     // Calculate lining cost - DYNAMIC based on template configuration
@@ -2403,34 +2438,25 @@ export const DynamicWindowWorksheet = forwardRef<{
                     // Use engine values when available
                     const isCurtainOrRomanForCosts = treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds';
                     
-                    // Calculate pieces charged for display (1 if using leftover, else horizontalPiecesNeeded)
-                    const piecesCharged = usesLeftover && horizontalPiecesNeeded > 1 ? 1 : horizontalPiecesNeeded;
-                    
-                    // Total meters: for engine path linearMeters might be adjusted for leftover
-                    // For legacy path, multiply by pieces
-                    const totalMetersToOrder = usingEngine 
-                      ? (usesLeftover && horizontalPiecesNeeded > 1 ? linearMeters : engineTotalMeters || linearMeters)
-                      : linearMeters * piecesCharged;
+                    // Calculate pieces to display (actual pieces, not piecesCharged which is for costing)
+                    const piecesToDisplay = isRailroaded ? horizontalPiecesNeeded : 1;
                     
                     const newCalculatedCosts = {
-                      // Use engine values when available
-                      fabricLinearMeters: linearMeters,
-                      fabricTotalMeters: totalMetersToOrder,
+                      // linearMeters is now per-piece, totalMeters is the total to order
+                      fabricLinearMeters: perPieceMeters,
+                      fabricTotalMeters: totalMeters,
                       fabricCostPerMeter: pricePerMeter,
-                      fabricTotalCost: (isCurtainOrRomanForCosts && engineResult) 
-                        ? engineResult.fabric_cost 
-                        : fabricCost,
+                      fabricTotalCost: fabricCost,
                       liningCost,
                       manufacturingCost,
                       headingCost,
                       optionsCost: (isCurtainOrRomanForCosts && engineResult) 
                         ? engineResult.options_cost 
                         : optionsCost,
-                      totalCost: (isCurtainOrRomanForCosts && engineResult) 
-                        ? (engineResult.total + liningCost + manufacturingCost + headingCost)
-                        : totalCost,
-                      horizontalPiecesNeeded: piecesCharged,
-                      fabricOrientation: (fabricCalculation.fabricOrientation || 'vertical') as 'horizontal' | 'vertical',
+                      totalCost: fabricCost + liningCost + manufacturingCost + headingCost + 
+                        ((isCurtainOrRomanForCosts && engineResult) ? engineResult.options_cost : optionsCost),
+                      horizontalPiecesNeeded: piecesToDisplay,
+                      fabricOrientation: (isRailroaded ? 'horizontal' : 'vertical') as 'horizontal' | 'vertical',
                       seamsRequired: (isCurtainOrRomanForCosts && engineResult?.formula_breakdown?.values?.seams_count != null)
                         ? Number(engineResult.formula_breakdown.values.seams_count)
                         : (fabricCalculation.seamsRequired || 0),
