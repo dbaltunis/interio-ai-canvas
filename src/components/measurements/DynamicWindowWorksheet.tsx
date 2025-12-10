@@ -2280,9 +2280,12 @@ export const DynamicWindowWorksheet = forwardRef<{
                         ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
                         : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
                       
-                      // Use linearMeters from fabric calculation - same source for both fabric and manufacturing
+                      // ✅ UNIFIED SOURCE: Use engineResult.linear_meters when available (same as fabric display)
+                      // This ensures manufacturing cost matches fabric cost display exactly
                       const unitIsMetric = units?.length === 'mm' || units?.length === 'cm' || units?.length === 'm';
-                      manufacturingQuantity = fabricCalculation.linearMeters || 0;
+                      manufacturingQuantity = (isCurtainOrRoman && engineResult?.linear_meters != null)
+                        ? engineResult.linear_meters
+                        : (fabricCalculation?.linearMeters || 0);
                       manufacturingQuantityLabel = unitIsMetric ? 'm' : 'yd';
                       manufacturingCost = pricePerUnit * manufacturingQuantity;
                     } else {
