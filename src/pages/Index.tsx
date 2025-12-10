@@ -5,7 +5,7 @@ import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { AIBackground } from "@/components/common/AIBackground";
 import { OnboardingProvider } from "@/components/onboarding/OnboardingProvider";
-import { useSessionTimeout } from "@/hooks/useSessionTimeout";
+// Session timeout removed - users stay logged in via Supabase auto-refresh (v2.3.7)
 import { useEnsureDefaultSequences } from "@/hooks/useNumberSequences";
 import { OrderingHubPage } from "@/components/ordering/OrderingHubPage";
 import { Button } from "@/components/ui/button";
@@ -213,8 +213,7 @@ const Index = () => {
   });
   const { signOut, user } = useAuth();
   
-  // Enable session timeout tracking
-  useSessionTimeout();
+  // Session timeout removed in v2.3.7 - users stay logged in via Supabase auto-refresh
   
   // Ensure default number sequences exist for all new users
   useEnsureDefaultSequences();

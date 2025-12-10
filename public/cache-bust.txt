@@ -1,11 +1,11 @@
-Build timestamp: 2025-12-09T22:15:00Z
-Version: 2.3.5
+Build timestamp: 2025-12-10T12:00:00Z
+Version: 2.3.7
 Changes:
-- CRITICAL FIX: useHeadingOptions now returns REAL inventory data (was returning empty mock array)
-- CRITICAL FIX: useEnhancedInventory now supports forceRefresh option to bypass stale cache
-- CRITICAL FIX: DynamicCurtainOptions forces fresh inventory fetch on load
-- CRITICAL FIX: Heading filter uses exact category === 'heading' match
-- FIX: Debug logs updated to v2.3.5 for deployment verification
+- CRITICAL FIX: Removed 30-minute session timeout - users stay logged in via Supabase auto-refresh
+- CRITICAL FIX: Added userId to ALL inventory cache keys for multi-account isolation
+- CRITICAL FIX: Clear ALL cached data on logout to prevent cross-account data leakage
+- CRITICAL FIX: Invalidate all queries on sign-in to force fresh data fetch
+- Previous: Heading options now available for all fabric treatments (curtains, sheers, romans)
 - Previous: Fullness dropdown now correctly updates calculations
 - Previous: User's fullness selection saved instead of template default
 - Custom document template creation with drag-and-drop blocks
