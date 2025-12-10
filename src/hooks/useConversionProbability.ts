@@ -32,9 +32,10 @@ export const useConversionProbability = (client: any) => {
     const stageWeights: Record<string, number> = {
       'lead': 5,
       'contacted': 10,
-      'measuring_scheduled': 20,
-      'quoted': 30,
-      'approved': 35,
+      'qualified': 20,
+      'proposal': 30,
+      'negotiation': 32,
+      'client': 35,
       'lost': 0
     };
     probability += stageWeights[client.funnel_stage || 'lead'] || 5;
