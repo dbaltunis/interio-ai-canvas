@@ -580,16 +580,22 @@ export const CostCalculationSummary = ({
       </div>
 
       {/* Fabric calculation explanation */}
-      {fabricCalculation && fabricCalculation.fabricOrientation && (
+      {(fabricDisplayData || fabricCalculation?.fabricOrientation) && (
         <Alert className="py-2 px-3">
           <Info className="h-4 w-4" />
           <AlertDescription className="text-xs leading-relaxed">
             {(() => {
-              const orientation = fabricCalculation.fabricOrientation;
-              const widthsReq = fabricCalculation.widthsRequired || 1;
-              const horizontalPieces = fabricCalculation.horizontalPiecesNeeded;
-              const meters = fabricCalculation.linearMeters || 0;
-              const pricePerM = fabricCalculation.pricePerMeter || 0;
+              // ✅ SINGLE SOURCE OF TRUTH: Use engineResult → fabricDisplayData → fabricCalculation (in order)
+              const orientation = fabricDisplayData?.orientation || fabricCalculation?.fabricOrientation || 'vertical';
+              const widthsReq = fabricDisplayData?.horizontalPieces || fabricCalculation?.widthsRequired || 1;
+              const horizontalPieces = fabricDisplayData?.horizontalPieces || fabricCalculation?.horizontalPiecesNeeded || 1;
+              
+              // ✅ CRITICAL FIX: Use unified source for meters - SAME as fabric line display
+              const meters = engineResult?.linear_meters 
+                ?? fabricDisplayData?.linearMeters 
+                ?? fabricCalculation?.linearMeters 
+                ?? 0;
+              const pricePerM = fabricDisplayData?.pricePerMeter || fabricCalculation?.pricePerMeter || 0;
               
               if (orientation === 'horizontal') {
                 if (horizontalPieces && horizontalPieces > 1) {
@@ -599,7 +605,7 @@ export const CostCalculationSummary = ({
                       <br />
                       Curtain height exceeds fabric width, requiring {horizontalPieces} horizontal pieces per panel with {horizontalPieces - 1} seam(s).
                       Total: {widthsReq} piece(s) × {meters.toFixed(2)}m = {formatPrice(meters * pricePerM)}
-                      {fabricCalculation.leftoverFromLastPiece && fabricCalculation.leftoverFromLastPiece > 0 && (
+                      {fabricCalculation?.leftoverFromLastPiece && fabricCalculation.leftoverFromLastPiece > 0 && (
                         <><br />Leftover: {formatFromCM(fabricCalculation.leftoverFromLastPiece, units.length)} tracked for future use</>
                       )}
                     </>
@@ -830,7 +836,11 @@ export const CostCalculationSummary = ({
             heightCm = rawHeight > 10000 ? rawHeight / 10 : rawHeight;
           }
           
-          const fabricLinearMeters = fabricCalculation?.linearMeters || (widthCm / 100);
+          // ✅ SINGLE SOURCE OF TRUTH: Use engineResult → fabricDisplayData → fabricCalculation
+          const fabricLinearMeters = engineResult?.linear_meters 
+            ?? fabricDisplayData?.linearMeters 
+            ?? fabricCalculation?.linearMeters 
+            ?? (widthCm / 100);
           
           // CRITICAL: Hardware uses ACTUAL rail width, NOT fullness-adjusted fabric meters!
           // Hardware = tracks, poles, rods, rails - these are physical items matching window width
