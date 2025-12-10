@@ -672,6 +672,7 @@ export const useQuotationSync = ({
       await updateQuote.mutateAsync({
         id: existingQuote.id,
         subtotal: quotationData.subtotal,
+        tax_rate: taxRate, // CRITICAL: Also update tax_rate so tax line displays
         tax_amount: quotationData.taxAmount,
         total_amount: quotationData.total,
         notes: `Updated with ${quotationData.items.length} items - ${new Date().toISOString()}`,

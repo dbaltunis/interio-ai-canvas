@@ -42,10 +42,11 @@ export const useMeasurementUnitsForm = () => {
     const newUnits = { ...units, system };
     
     // Auto-adjust units based on system
+    // CRITICAL: Database standard is MM - use mm for metric length to prevent 10x calculation errors
     if (system === 'metric') {
-      newUnits.length = 'cm';
-      newUnits.area = 'sq_cm';
-      newUnits.fabric = 'cm';
+      newUnits.length = 'mm';  // ✅ Database standard is MM
+      newUnits.area = 'sq_m';  // ✅ sq_m is more practical than sq_cm
+      newUnits.fabric = 'm';   // ✅ meters for fabric is industry standard
     } else {
       newUnits.length = 'inches';
       newUnits.area = 'sq_inches';
