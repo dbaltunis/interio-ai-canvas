@@ -11,6 +11,7 @@ import { useCreateClient, useUpdateClient } from "@/hooks/useClients";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { LeadSourceSelect } from "@/components/crm/LeadSourceSelect";
+import { FUNNEL_STAGES, COUNTRIES } from "@/constants/clientConstants";
 
 interface ClientFormWithLeadIntelligenceProps {
   onCancel: () => void;
@@ -20,6 +21,7 @@ interface ClientFormWithLeadIntelligenceProps {
 
 export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingClient }: ClientFormWithLeadIntelligenceProps) => {
   const [clientType, setClientType] = useState<"B2B" | "B2C">(editingClient?.client_type || "B2C");
+  const [funnelStage, setFunnelStage] = useState(editingClient?.funnel_stage || "lead");
   const [companyName, setCompanyName] = useState(editingClient?.company_name || "");
   const [contactPerson, setContactPerson] = useState(editingClient?.contact_person || "");
   const [name, setName] = useState(editingClient?.name || "");
@@ -73,6 +75,7 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingCli
         country,
         notes: notes || null,
         client_type: clientType,
+        funnel_stage: funnelStage,
         company_name: clientType === "B2B" ? companyName || null : null,
         contact_person: clientType === "B2B" ? contactPerson || null : null,
         tags: tags.length > 0 ? tags : null,
@@ -103,17 +106,38 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingCli
           <CardTitle>Client Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <FormFieldGroup label="Client Type" required>
-            <Select value={clientType} onValueChange={(value: "B2B" | "B2C") => setClientType(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="z-[9999] bg-background border border-border shadow-lg" position="popper" sideOffset={4}>
-                <SelectItem value="B2C">Individual (B2C)</SelectItem>
-                <SelectItem value="B2B">Business (B2B)</SelectItem>
-              </SelectContent>
-            </Select>
-          </FormFieldGroup>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormFieldGroup label="Client Type" required>
+              <Select value={clientType} onValueChange={(value: "B2B" | "B2C") => setClientType(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="z-[9999] bg-background border border-border shadow-lg" position="popper" sideOffset={4}>
+                  <SelectItem value="B2C">Individual (B2C)</SelectItem>
+                  <SelectItem value="B2B">Business (B2B)</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormFieldGroup>
+
+            <FormFieldGroup label="Stage" description="Current stage in the sales funnel">
+              <Select value={funnelStage} onValueChange={setFunnelStage}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="z-[9999] bg-background border border-border shadow-lg max-h-[300px]" position="popper" sideOffset={4}>
+                  {FUNNEL_STAGES.map((stage) => (
+                    <SelectItem key={stage.value} value={stage.value}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${stage.color.split(' ')[0]}`} />
+                        <span>{stage.label}</span>
+                        <span className="text-xs text-muted-foreground">- {stage.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormFieldGroup>
+          </div>
 
           {clientType === "B2B" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -190,30 +214,10 @@ export const ClientFormWithLeadIntelligence = ({ onCancel, onSuccess, editingCli
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="z-[9999] bg-background border border-border shadow-lg" position="popper" sideOffset={4}>
-                <SelectItem value="United States">United States</SelectItem>
-                <SelectItem value="United Kingdom">United Kingdom</SelectItem>
-                <SelectItem value="Canada">Canada</SelectItem>
-                <SelectItem value="Australia">Australia</SelectItem>
-                <SelectItem value="New Zealand">New Zealand</SelectItem>
-                <SelectItem value="Singapore">Singapore</SelectItem>
-                <SelectItem value="India">India</SelectItem>
-                <SelectItem value="Germany">Germany</SelectItem>
-                <SelectItem value="France">France</SelectItem>
-                <SelectItem value="Spain">Spain</SelectItem>
-                <SelectItem value="Italy">Italy</SelectItem>
-                <SelectItem value="Netherlands">Netherlands</SelectItem>
-                <SelectItem value="Belgium">Belgium</SelectItem>
-                <SelectItem value="Switzerland">Switzerland</SelectItem>
-                <SelectItem value="Austria">Austria</SelectItem>
-                <SelectItem value="Poland">Poland</SelectItem>
-                <SelectItem value="Ireland">Ireland</SelectItem>
-                <SelectItem value="Portugal">Portugal</SelectItem>
-                <SelectItem value="Sweden">Sweden</SelectItem>
-                <SelectItem value="Norway">Norway</SelectItem>
-                <SelectItem value="Denmark">Denmark</SelectItem>
-                <SelectItem value="Finland">Finland</SelectItem>
-                <SelectItem value="Czech Republic">Czech Republic</SelectItem>
+              <SelectContent className="z-[9999] bg-background border border-border shadow-lg max-h-[300px]" position="popper" sideOffset={4}>
+                {COUNTRIES.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </FormFieldGroup>

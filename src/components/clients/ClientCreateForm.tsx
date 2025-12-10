@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Save } from "lucide-react";
 import { useCreateClient } from "@/hooks/useClients";
+import { FUNNEL_STAGES } from "@/constants/clientConstants";
 
 interface ClientCreateFormProps {
   onBack: () => void;
@@ -15,6 +16,7 @@ interface ClientCreateFormProps {
 
 export const ClientCreateForm = ({ onBack }: ClientCreateFormProps) => {
   const [clientType, setClientType] = useState<"B2C" | "B2B">("B2C");
+  const [funnelStage, setFunnelStage] = useState("lead");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -43,7 +45,7 @@ export const ClientCreateForm = ({ onBack }: ClientCreateFormProps) => {
     const clientData = {
       ...formData,
       client_type: clientType,
-      funnel_stage: 'lead'
+      funnel_stage: funnelStage
     };
 
     await createClient.mutateAsync(clientData);
@@ -62,17 +64,37 @@ export const ClientCreateForm = ({ onBack }: ClientCreateFormProps) => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <Label htmlFor="clientType">Client Type</Label>
-            <Select value={clientType} onValueChange={(value: "B2C" | "B2B") => setClientType(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="B2C">Individual (B2C)</SelectItem>
-                <SelectItem value="B2B">Business (B2B)</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="clientType">Client Type</Label>
+              <Select value={clientType} onValueChange={(value: "B2C" | "B2B") => setClientType(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="B2C">Individual (B2C)</SelectItem>
+                  <SelectItem value="B2B">Business (B2B)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="stage">Stage</Label>
+              <Select value={funnelStage} onValueChange={setFunnelStage}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FUNNEL_STAGES.map((stage) => (
+                    <SelectItem key={stage.value} value={stage.value}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${stage.color.split(' ')[0]}`} />
+                        {stage.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
