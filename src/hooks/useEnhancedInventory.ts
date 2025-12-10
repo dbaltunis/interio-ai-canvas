@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -95,11 +96,21 @@ export interface EnhancedInventoryItem {
 }
 
 export const useEnhancedInventory = (options?: { forceRefresh?: boolean }) => {
+  // Get user ID synchronously from auth state for cache key isolation
+  const [userId, setUserId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data?.user?.id || null);
+    });
+  }, []);
+
   return useQuery({
-    queryKey: ["enhanced-inventory"],
-    // ✅ CRITICAL FIX: Force fresh data when worksheet opens
-    staleTime: options?.forceRefresh ? 0 : 5 * 60 * 1000, // 0 = always refetch, 5 min = cache
-    gcTime: 10 * 60 * 1000, // 10 minutes cache
+    // ✅ CRITICAL FIX v2.3.7: Include userId in cache key for multi-account isolation
+    queryKey: ["enhanced-inventory", userId],
+    enabled: !!userId, // Don't fetch until we have userId
+    staleTime: options?.forceRefresh ? 0 : 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     refetchOnMount: options?.forceRefresh ? 'always' : true,
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -140,11 +151,21 @@ export const useEnhancedInventory = (options?: { forceRefresh?: boolean }) => {
 };
 
 export const useEnhancedInventoryByCategory = (category: string, options?: { forceRefresh?: boolean }) => {
+  // Get user ID synchronously from auth state for cache key isolation
+  const [userId, setUserId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data?.user?.id || null);
+    });
+  }, []);
+
   return useQuery({
-    queryKey: ["enhanced-inventory", category],
-    // ✅ CRITICAL FIX: Support force refresh for heading inventory
+    // ✅ CRITICAL FIX v2.3.7: Include userId in cache key for multi-account isolation
+    queryKey: ["enhanced-inventory", category, userId],
+    enabled: !!userId, // Don't fetch until we have userId
     staleTime: options?.forceRefresh ? 0 : 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000, // 10 minutes cache
+    gcTime: 10 * 60 * 1000,
     refetchOnMount: options?.forceRefresh ? 'always' : true,
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();

@@ -46,7 +46,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(session?.user ?? null);
         setLoading(false);
 
+        // ✅ v2.3.7: Clear ALL cache on logout to prevent cross-account data leakage
+        if (event === 'SIGNED_OUT') {
+          console.log('🔒 [v2.3.7] User signed out - clearing ALL cached data');
+          queryClient.clear(); // Nuclear option: remove ALL cached queries
+          sessionStorage.clear(); // Clear tab state
+          return;
+        }
+
         if (event === 'SIGNED_IN') {
+          // ✅ v2.3.7: Invalidate all queries on sign-in to force fresh fetch
+          console.log('🔑 [v2.3.7] User signed in - invalidating all queries for fresh data');
+          queryClient.invalidateQueries();
+          
           // Only navigate to home on initial sign-in, not on session refresh
           const currentPath = window.location.pathname;
           const isAuthPage = currentPath === '/auth' || currentPath === '/reset-password';
