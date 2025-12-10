@@ -256,8 +256,28 @@ export const useCreateCurtainTemplate = () => {
             
             console.log(`✅ Auto-created template_option_settings for ${options.length} options`);
           }
+          
+          // AUTO-SYNC HEADINGS: Link all heading inventory items to new template
+          if (['curtains', 'roman_blinds'].includes(newTemplate.treatment_category)) {
+            const { data: headings } = await supabase
+              .from('enhanced_inventory_items')
+              .select('id')
+              .eq('user_id', newTemplate.user_id)
+              .eq('category', 'heading')
+              .eq('active', true);
+            
+            if (headings?.length) {
+              const headingIds = headings.map(h => h.id);
+              await supabase
+                .from('curtain_templates')
+                .update({ selected_heading_ids: headingIds })
+                .eq('id', newTemplate.id);
+              
+              console.log(`✅ Auto-linked ${headings.length} headings to new template`);
+            }
+          }
         } catch (syncError) {
-          console.error('Failed to auto-sync template_option_settings:', syncError);
+          console.error('Failed to auto-sync template data:', syncError);
         }
       }
       
