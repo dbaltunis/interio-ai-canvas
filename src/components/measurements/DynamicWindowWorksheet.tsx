@@ -2401,6 +2401,29 @@ export const DynamicWindowWorksheet = forwardRef<{
                       }
                     }
                     
+                    // 🔍 DEBUG: Manufacturing cost calculation trace
+                    console.log('🏭 Manufacturing Cost Debug:', {
+                      templateName: selectedTemplate?.name,
+                      pricingType,
+                      manufacturingType,
+                      pricePerUnit,
+                      manufacturingQuantity,
+                      manufacturingCost,
+                      sources: {
+                        engineLinearMeters: engineResult?.linear_meters,
+                        fabricCalcLinearMeters: fabricCalculation?.linearMeters,
+                        widthsRequired: fabricCalculation?.widthsRequired,
+                        curtainCount: fabricCalculation?.curtainCount
+                      },
+                      templatePrices: {
+                        machine_price_per_metre: selectedTemplate?.machine_price_per_metre,
+                        machine_price_per_drop: selectedTemplate?.machine_price_per_drop,
+                        machine_price_per_panel: selectedTemplate?.machine_price_per_panel,
+                        hand_price_per_metre: selectedTemplate?.hand_price_per_metre
+                      },
+                      selectedPricingMethod
+                    });
+                    
                     // Store manufacturing details for display breakdown
                     const manufacturingDetails = {
                       pricingType,

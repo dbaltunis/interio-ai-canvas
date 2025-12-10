@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { MeasurementData, TreatmentData, FabricCalculation } from "../types";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { convertLength } from "@/hooks/useBusinessSettings";
+// Note: convertLength removed - we now always assume MM input from database
 
 interface UseFabricCalculatorProps {
   measurements: MeasurementData;
@@ -26,8 +26,8 @@ export const useFabricCalculator = ({
     try {
       const { fabric, template } = treatmentData;
       
-      // CRITICAL: measurements are in USER'S DISPLAY UNIT (inches, cm, mm, etc.)
-      // Convert from user's display unit → CM at calculation boundary
+      // CRITICAL: measurements are ALWAYS stored in MM in the database
+      // Convert from MM → CM at calculation boundary (MM / 10 = CM)
       const rawWidth = parseFloat(measurements.rail_width);
       const rawHeight = parseFloat(measurements.drop);
       const rawPooling = parseFloat(measurements.pooling_amount || "0");
@@ -36,14 +36,16 @@ export const useFabricCalculator = ({
         return null;
       }
 
-      // Convert from user's display unit to CM for fabric calculations
-      const width = convertLength(rawWidth, units.length, 'cm');
-      const height = convertLength(rawHeight, units.length, 'cm');
-      const pooling = convertLength(rawPooling, units.length, 'cm');
+      // FIXED: Always assume MM input (database standard), convert to CM for calculations
+      // This is the THREE-BOUNDARY PATTERN: DB stores MM, calculations use CM
+      const width = rawWidth / 10;   // MM to CM
+      const height = rawHeight / 10; // MM to CM
+      const pooling = rawPooling / 10; // MM to CM
       
-      console.log('📐 useFabricCalculator CONVERSION:', { 
-        input: { rawWidth, rawHeight, unit: units.length },
-        output: { widthCm: width, heightCm: height }
+      console.log('📐 useFabricCalculator CONVERSION (MM→CM):', { 
+        input: { rawWidthMM: rawWidth, rawHeightMM: rawHeight },
+        output: { widthCm: width, heightCm: height },
+        userDisplayUnit: units.length // for reference only, not used in calculation
       });
 
       // CRITICAL: Fabric width MUST come from inventory - no hardcoded fallbacks
