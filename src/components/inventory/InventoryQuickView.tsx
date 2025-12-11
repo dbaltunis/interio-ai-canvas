@@ -19,12 +19,14 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
   const [showEditDialog, setShowEditDialog] = useState(false);
   const { formatCurrency } = useFormattedCurrency();
 
-  const handleEditClick = () => {
-    onOpenChange(false); // Close quick view first
-    // Small delay to allow quick view to close before opening edit dialog
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    // Close quick view and wait for animation to complete before opening edit
+    onOpenChange(false);
     setTimeout(() => {
       setShowEditDialog(true);
-    }, 100);
+    }, 200);
   };
 
   const handleEditSuccess = () => {
@@ -33,7 +35,9 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
   };
 
   const handleEditDialogClose = (open: boolean) => {
-    setShowEditDialog(open);
+    if (!open) {
+      setShowEditDialog(false);
+    }
   };
 
   // Get color information

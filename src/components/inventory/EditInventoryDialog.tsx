@@ -1,8 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
-import { usePersistedDialogState } from "@/hooks/usePersistedDialogState";
 
 interface EditInventoryDialogProps {
   item: any;
@@ -11,13 +10,23 @@ interface EditInventoryDialogProps {
 }
 
 export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryDialogProps) => {
-  const itemId = item?.id ?? 'new';
-  const [open, setOpen] = usePersistedDialogState(`edit_inventory_${itemId}`);
+  const [open, setOpen] = useState(false);
 
   const handleOpen = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     setOpen(true);
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      setOpen(false);
+    }
+  };
+
+  const handleSuccess = () => {
+    setOpen(false);
+    onSuccess?.();
   };
 
   // If no trigger provided, use default button with onClick directly attached
@@ -36,13 +45,15 @@ export const EditInventoryDialog = ({ item, trigger, onSuccess }: EditInventoryD
     <>
       {triggerElement}
       
-      <UnifiedInventoryDialog
-        open={open}
-        onOpenChange={setOpen}
-        mode="edit"
-        item={item}
-        onSuccess={onSuccess}
-      />
+      {open && (
+        <UnifiedInventoryDialog
+          open={open}
+          onOpenChange={handleOpenChange}
+          mode="edit"
+          item={item}
+          onSuccess={handleSuccess}
+        />
+      )}
     </>
   );
 };
