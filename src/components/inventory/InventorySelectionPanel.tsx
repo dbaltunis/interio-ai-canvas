@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Package, Palette, Wrench, Check, X, Plus, Edit3, ScanLine } from "lucide-react";
+import { Search, Package, Palette, Wrench, Check, X, Plus, Edit3, ScanLine, Loader2 } from "lucide-react";
 import { FilterButton } from "@/components/library/FilterButton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
@@ -35,6 +35,9 @@ import { getAcceptedSubcategories, getTreatmentPrimaryCategory } from "@/constan
 import { toast } from "sonner";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { VirtualizedInventoryGrid } from "@/components/inventory/VirtualizedInventoryGrid";
+
 interface InventorySelectionPanelProps {
   treatmentType: string;
   selectedItems: {
@@ -84,10 +87,15 @@ export const InventorySelectionPanel = ({
 
   const createInventoryItem = useCreateEnhancedInventoryItem();
 
-  // Use treatment-specific fabrics
+  // Debounce search for server-side filtering (300ms delay)
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
+
+  // Use treatment-specific fabrics with server-side search
   const {
-    data: treatmentFabrics = []
-  } = useTreatmentSpecificFabrics(treatmentCategory);
+    data: treatmentFabrics = [],
+    isLoading: isFabricsLoading,
+    isFetching: isFabricsFetching
+  } = useTreatmentSpecificFabrics(treatmentCategory, debouncedSearchTerm);
 
   // Auto-scroll to selected item when category changes or selection changes
   useEffect(() => {
@@ -238,23 +246,17 @@ export const InventorySelectionPanel = ({
 
   // Filter inventory by treatment type and category
   const getInventoryByCategory = (category: string) => {
-    console.log('🔍 getInventoryByCategory called:', { category, treatmentCategory, inventoryCount: inventory.length });
-    
-    // For fabric category, ALWAYS use treatment-specific fabrics
+    // For fabric category, use server-side filtered treatmentFabrics
+    // Only apply client-side filters for vendor/collection/tags
     if (category === "fabric") {
-      const searchLower = searchTerm.toLowerCase();
       const filtered = treatmentFabrics.filter(item => {
-        const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
-                             item.description?.toLowerCase().includes(searchLower) ||
-                             item.sku?.toLowerCase().includes(searchLower) ||
-                             item.supplier?.toLowerCase().includes(searchLower) ||
-                             item.vendor?.name?.toLowerCase().includes(searchLower);
         const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
-        return matchesSearch && matchesVendor && matchesCollection && matchesTags;
+        return matchesVendor && matchesCollection && matchesTags;
       });
       // Sort results: items starting with search term first, then alphabetically
+      const searchLower = searchTerm.toLowerCase();
       const sorted = searchTerm ? filtered.sort((a, b) => {
         const aName = a.name?.toLowerCase() || '';
         const bName = b.name?.toLowerCase() || '';
@@ -263,7 +265,6 @@ export const InventorySelectionPanel = ({
         if (aStartsWith !== bStartsWith) return aStartsWith - bStartsWith;
         return aName.localeCompare(bName);
       }) : filtered;
-      console.log('📦 Fabric tab filtered:', sorted.length, 'items');
       return sorted;
     }
 
@@ -634,6 +635,10 @@ export const InventorySelectionPanel = ({
             onChange={e => setSearchTerm(e.target.value)} 
             className="pl-12 h-12 text-base transition-all duration-200 focus:scale-[1.02]"
           />
+          {/* Loading indicator for server-side search */}
+          {isFabricsFetching && (
+            <Loader2 className="absolute right-4 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+          )}
         </div>
         
         <FilterButton
@@ -831,26 +836,49 @@ export const InventorySelectionPanel = ({
         label
       }) => {
           const categoryItems = getInventoryByCategory(key);
+          const shouldUseVirtualization = categoryItems.length > 50; // Use virtual scrolling for 50+ items
+          
           return <TabsContent key={key} value={key} className="flex-1 overflow-hidden">
-            <ScrollArea className="h-full">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 pr-3">
-                {categoryItems.map(item => renderInventoryItem(item, key))}
+            {/* Loading state */}
+            {key === 'fabric' && isFabricsLoading && categoryItems.length === 0 && (
+              <div className="flex items-center justify-center h-32">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
+            )}
+            
+            {/* Virtualized rendering for large lists (50+ items) */}
+            {shouldUseVirtualization ? (
+              <VirtualizedInventoryGrid
+                items={categoryItems}
+                selectedItemId={selectedItems[key as keyof typeof selectedItems]?.id}
+                onItemSelect={(item) => onItemSelect(key, item)}
+                onItemDeselect={() => onItemDeselect(key)}
+                units={units}
+                cardRefMap={selectedCardRefs}
+              />
+            ) : (
+              <ScrollArea className="h-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 pr-3">
+                  {categoryItems.map(item => renderInventoryItem(item, key))}
+                </div>
+              </ScrollArea>
+            )}
 
-              {categoryItems.length === 0 && <div className="text-center py-12 text-muted-foreground">
-                  <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm">
-                    {treatmentCategory === 'wallpaper' && key === 'fabric' 
-                      ? 'No wallpaper items found. Add items with subcategory "wallcovering" or "wallpaper" in inventory.'
-                      : key === 'material'
-                      ? `No ${label.toLowerCase()} found. Add items with category "material" and subcategory "${getAcceptedSubcategories(treatmentCategory).join('" or "')}" in inventory.`
-                      : key === 'hardware'
-                      ? 'No hardware found. Add items with category "treatment_option", "top_system", "track", or "pole" in inventory.'
-                      : `No ${label.toLowerCase()} items found. Add items with subcategory "${getAcceptedSubcategories(treatmentCategory).join('" or "')}" in inventory.`}
-                  </p>
-                  {searchTerm && <p className="text-xs mt-1">Try different search terms</p>}
-                </div>}
-            </ScrollArea>
+            {categoryItems.length === 0 && !isFabricsLoading && (
+              <div className="text-center py-12 text-muted-foreground">
+                <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                <p className="text-sm">
+                  {treatmentCategory === 'wallpaper' && key === 'fabric' 
+                    ? 'No wallpaper items found. Add items with subcategory "wallcovering" or "wallpaper" in inventory.'
+                    : key === 'material'
+                    ? `No ${label.toLowerCase()} found. Add items with category "material" and subcategory "${getAcceptedSubcategories(treatmentCategory).join('" or "')}" in inventory.`
+                    : key === 'hardware'
+                    ? 'No hardware found. Add items with category "treatment_option", "top_system", "track", or "pole" in inventory.'
+                    : `No ${label.toLowerCase()} items found. Add items with subcategory "${getAcceptedSubcategories(treatmentCategory).join('" or "')}" in inventory.`}
+                </p>
+                {searchTerm && <p className="text-xs mt-1">Try different search terms</p>}
+              </div>
+            )}
           </TabsContent>;
         })}
       </Tabs>
