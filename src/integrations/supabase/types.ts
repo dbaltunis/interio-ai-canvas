@@ -5981,14 +5981,18 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          draft_number: string | null
           due_date: string | null
           fabric_pools: Json | null
           funnel_stage: string | null
           id: string
+          invoice_number: string | null
           job_number: string | null
           name: string
+          order_number: string | null
           parent_job_id: string | null
           priority: string | null
+          quote_number: string | null
           shopify_order_id: string | null
           shopify_order_number: string | null
           source: string | null
@@ -6004,14 +6008,18 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          draft_number?: string | null
           due_date?: string | null
           fabric_pools?: Json | null
           funnel_stage?: string | null
           id?: string
+          invoice_number?: string | null
           job_number?: string | null
           name: string
+          order_number?: string | null
           parent_job_id?: string | null
           priority?: string | null
+          quote_number?: string | null
           shopify_order_id?: string | null
           shopify_order_number?: string | null
           source?: string | null
@@ -6027,14 +6035,18 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          draft_number?: string | null
           due_date?: string | null
           fabric_pools?: Json | null
           funnel_stage?: string | null
           id?: string
+          invoice_number?: string | null
           job_number?: string | null
           name?: string
+          order_number?: string | null
           parent_job_id?: string | null
           priority?: string | null
+          quote_number?: string | null
           shopify_order_id?: string | null
           shopify_order_number?: string | null
           source?: string | null
