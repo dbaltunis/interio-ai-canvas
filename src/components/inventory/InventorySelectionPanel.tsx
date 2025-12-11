@@ -857,7 +857,7 @@ export const InventorySelectionPanel = ({
                 cardRefMap={selectedCardRefs}
               />
             ) : (
-              <ScrollArea className="max-h-[60vh] min-h-[400px]">
+              <ScrollArea className="h-full">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 pr-3">
                   {categoryItems.map(item => renderInventoryItem(item, key))}
                 </div>
