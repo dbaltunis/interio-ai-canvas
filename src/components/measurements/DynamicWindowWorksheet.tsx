@@ -65,9 +65,15 @@ interface DynamicWindowWorksheetProps {
   onSaveTreatment?: (treatmentData: any) => void;
   readOnly?: boolean;
 }
-export const DynamicWindowWorksheet = forwardRef<{
+export interface DynamicWindowWorksheetRef {
   autoSave: () => Promise<void>;
-}, DynamicWindowWorksheetProps>(({
+  hasUnsavedChanges: () => boolean;
+  getDraftData: () => any;
+  saveDraftNow: () => void;
+  clearDraft: () => void;
+}
+
+export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, DynamicWindowWorksheetProps>(({
   clientId,
   projectId,
   surfaceId,
@@ -694,66 +700,83 @@ export const DynamicWindowWorksheet = forwardRef<{
     }
   }, [selectedTemplate]);
 
-  // Load draft on mount
+  // AUTO-RESTORE draft on mount (no confirmation needed)
   useEffect(() => {
     if (!surfaceId || existingWindowSummary) return;
 
     const draft = draftService.loadDraft(surfaceId);
     if (draft) {
       const age = draftService.getDraftAge(surfaceId);
-      toast.info(`Draft found from ${age} minutes ago`, {
-        description: "Would you like to restore it?",
-        action: {
-          label: "Restore",
-          onClick: () => {
-            if (draft.templateId) {
-              // Template will be loaded from windows_summary instead
-              setSelectedTemplate(draft.templateId);
-            }
-            if (draft.measurements) setMeasurements(draft.measurements);
-            if (draft.selectedOptions) setSelectedOptions(draft.selectedOptions);
-            if (draft.selectedHeading) setSelectedHeading(draft.selectedHeading);
-            if (draft.selectedLining) setSelectedLining(draft.selectedLining);
-            if (draft.windowType) setSelectedWindowType(draft.windowType);
-            toast.success("Draft restored");
-          }
-        },
-        duration: 10000
+      console.log(`📥 [Draft] Auto-restoring draft from ${age} minutes ago`);
+      
+      // Auto-restore without confirmation
+      if (draft.templateId) {
+        setSelectedTemplate(draft.templateId);
+      }
+      if (draft.measurements && Object.keys(draft.measurements).length > 0) {
+        setMeasurements(draft.measurements);
+      }
+      if (draft.selectedOptions && draft.selectedOptions.length > 0) {
+        setSelectedOptions(draft.selectedOptions);
+      }
+      if (draft.selectedHeading) setSelectedHeading(draft.selectedHeading);
+      if (draft.selectedLining) setSelectedLining(draft.selectedLining);
+      if (draft.windowType) setSelectedWindowType(draft.windowType);
+      if (draft.treatmentCategory) {
+        setTreatmentCategory(draft.treatmentCategory as TreatmentCategory);
+        setSelectedTreatmentType(draft.treatmentCategory);
+      }
+      
+      // Show subtle notification
+      toast.success("Previous work restored", {
+        description: `Draft from ${age} minutes ago`,
+        duration: 3000
       });
     }
     draftService.clearExpiredDrafts();
   }, [surfaceId, existingWindowSummary]);
 
-  // Auto-save draft every 30 seconds
+  // DEBOUNCED draft save - saves 500ms after any change
   useEffect(() => {
-    if (!surfaceId || !hasUnsavedChanges) return;
+    if (!surfaceId) return;
+    
+    // Only save if there's meaningful data
+    const hasData = selectedTemplate || selectedWindowType || selectedItems.fabric || 
+                   selectedItems.hardware || selectedItems.material || 
+                   Object.keys(measurements).length > 0 || selectedOptions.length > 0;
+    
+    if (!hasData) return;
 
-    const autoSaveInterval = setInterval(() => {
+    const timeoutId = setTimeout(() => {
       draftService.saveDraft(surfaceId, {
         windowId: surfaceId,
         templateId: selectedTemplate?.id,
+        templateName: selectedTemplate?.name,
         fabricId: selectedItems.fabric?.id,
+        fabricName: selectedItems.fabric?.name,
         hardwareId: selectedItems.hardware?.id,
         materialId: selectedItems.material?.id,
         measurements,
         selectedOptions,
         selectedHeading,
         selectedLining,
-        windowType: selectedWindowType
+        windowType: selectedWindowType,
+        windowTypeName: selectedWindowType?.name,
+        treatmentCategory
       });
-    }, 30000);
+    }, 500); // 500ms debounce
 
-    return () => clearInterval(autoSaveInterval);
+    return () => clearTimeout(timeoutId);
   }, [
     surfaceId,
-    hasUnsavedChanges,
     selectedTemplate,
+    selectedWindowType,
     selectedItems,
     measurements,
     selectedOptions,
     selectedHeading,
     selectedLining,
-    selectedWindowType
+    treatmentCategory
   ]);
 
   // Track unsaved changes - compare with last saved state
@@ -1802,6 +1825,48 @@ export const DynamicWindowWorksheet = forwardRef<{
       } catch (error) {
         console.error("❌ Auto-save failed:", error);
         throw error;
+      }
+    },
+    // New methods for draft management
+    hasUnsavedChanges: () => hasUnsavedChanges,
+    getDraftData: () => ({
+      windowId: surfaceId,
+      templateId: selectedTemplate?.id,
+      templateName: selectedTemplate?.name,
+      fabricId: selectedItems.fabric?.id,
+      fabricName: selectedItems.fabric?.name,
+      hardwareId: selectedItems.hardware?.id,
+      materialId: selectedItems.material?.id,
+      measurements,
+      selectedOptions,
+      selectedHeading,
+      selectedLining,
+      windowType: selectedWindowType,
+      windowTypeName: selectedWindowType?.name,
+      treatmentCategory
+    }),
+    saveDraftNow: () => {
+      if (!surfaceId) return;
+      draftService.saveDraft(surfaceId, {
+        windowId: surfaceId,
+        templateId: selectedTemplate?.id,
+        templateName: selectedTemplate?.name,
+        fabricId: selectedItems.fabric?.id,
+        fabricName: selectedItems.fabric?.name,
+        hardwareId: selectedItems.hardware?.id,
+        materialId: selectedItems.material?.id,
+        measurements,
+        selectedOptions,
+        selectedHeading,
+        selectedLining,
+        windowType: selectedWindowType,
+        windowTypeName: selectedWindowType?.name,
+        treatmentCategory
+      });
+    },
+    clearDraft: () => {
+      if (surfaceId) {
+        draftService.clearDraft(surfaceId);
       }
     }
   }));

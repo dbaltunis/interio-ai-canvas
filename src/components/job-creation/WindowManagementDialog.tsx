@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Ruler, Save, Pencil, Check, X } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { MeasurementBridge } from "../measurements/MeasurementBridge";
+import { MeasurementBridge, MeasurementBridgeRef } from "../measurements/MeasurementBridge";
 import { convertLegacyToDynamic, validateMeasurement } from "../measurements/utils/measurementMigration";
 import { TreatmentPricingForm } from "./TreatmentPricingForm";
 import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
@@ -14,6 +14,7 @@ import { useInventory } from "@/hooks/useInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { WindowRenameButton } from "./WindowRenameButton";
 import { useToast } from "@/hooks/use-toast";
+import { UnsavedChangesDialog } from "./UnsavedChangesDialog";
 interface WindowManagementDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -76,7 +77,9 @@ export const WindowManagementDialog = ({
   const [showTreatmentForm, setShowTreatmentForm] = useState(false);
   const [calculatedCost, setCalculatedCost] = useState(0);
   // Reference to access worksheet's save function
-  const worksheetRef = useRef<any>(null);
+  const worksheetRef = useRef<MeasurementBridgeRef>(null);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [isSavingOnClose, setIsSavingOnClose] = useState(false);
   const {
     data: inventoryItems = []
   } = useInventory();
@@ -285,12 +288,42 @@ export const WindowManagementDialog = ({
     }
   };
 
-  // Dialog close handler - no auto-save, just close immediately
+  // Dialog close handler - check for unsaved changes
   const handleDialogClose = async (open: boolean) => {
     if (!open) {
+      // Check if there are unsaved changes
+      if (worksheetRef.current?.hasUnsavedChanges()) {
+        setShowUnsavedDialog(true);
+        return; // Don't close yet
+      }
       onClose();
     }
   };
+
+  const handleSaveAndClose = async () => {
+    setIsSavingOnClose(true);
+    try {
+      await handleSaveData();
+      worksheetRef.current?.clearDraft();
+      setShowUnsavedDialog(false);
+      onClose();
+    } catch (error) {
+      console.error('Save failed:', error);
+    } finally {
+      setIsSavingOnClose(false);
+    }
+  };
+
+  const handleDiscardChanges = () => {
+    worksheetRef.current?.clearDraft();
+    setShowUnsavedDialog(false);
+    onClose();
+  };
+
+  const handleCancelClose = () => {
+    setShowUnsavedDialog(false);
+  };
+
   const queryClient = useQueryClient();
   const {
     toast
@@ -636,5 +669,14 @@ export const WindowManagementDialog = ({
           </div>
         </DialogContent>
       </Dialog>
-    </>;
+      
+      <UnsavedChangesDialog
+        isOpen={showUnsavedDialog}
+        onSaveAndClose={handleSaveAndClose}
+        onDiscard={handleDiscardChanges}
+        onCancel={handleCancelClose}
+        isSaving={isSavingOnClose}
+      />
+    </>
+  );
 };
