@@ -321,12 +321,15 @@ export const VisualMeasurementSheet = ({
       units_length: units.length,
       timestamp: new Date().toISOString()
     });
-    if (!selectedFabric || !measurements.rail_width || !measurements.drop || !selectedTemplate) {
-      console.log('⚠️ LEVEL 3: Missing required data for fabric calculation');
-      return null;
-    }
-    const selectedFabricItem = inventory.find(item => item.id === selectedFabric);
-    if (!selectedFabricItem) {
+    // CRITICAL FIX: Use the already-resolved selectedFabricItem from line 229 (which prioritizes prop over inventory lookup)
+    // This eliminates the race condition where inventory.find() returns undefined while prop has the data
+    if (!selectedFabricItem || !measurements.rail_width || !measurements.drop || !selectedTemplate) {
+      console.log('⚠️ LEVEL 3: Missing required data for fabric calculation', {
+        hasSelectedFabricItem: !!selectedFabricItem,
+        rail_width: measurements.rail_width,
+        drop: measurements.drop,
+        hasSelectedTemplate: !!selectedTemplate
+      });
       return null;
     }
     try {
@@ -546,6 +549,8 @@ export const VisualMeasurementSheet = ({
   }, [
     recalcTrigger, // CRITICAL: Force recalc when trigger changes
     selectedFabric, 
+    selectedFabricItem, // CRITICAL: Use resolved fabric item directly to avoid race condition
+    propSelectedFabricItem, // CRITICAL: Include prop to recalculate when parent passes new fabric
     selectedTemplate, 
     inventory,
     measurements, // CRITICAL: Must include measurements to get fresh values
