@@ -36,7 +36,7 @@ import { toast } from "sonner";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { VirtualizedInventoryGrid } from "@/components/inventory/VirtualizedInventoryGrid";
+// Virtualization disabled - using standard grid for stability
 
 interface InventorySelectionPanelProps {
   treatmentType: string;
@@ -821,22 +821,22 @@ export const InventorySelectionPanel = ({
 
       {/* Category tabs */}
       <Tabs value={activeCategory} onValueChange={setActiveCategory} className="flex-1 flex flex-col overflow-hidden mt-2">
-        <TabsList className="w-full grid" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, minmax(0, 1fr))` }}>
-          {availableTabs.map(({
-          key,
-          label,
-          icon: Icon
-        }) => <TabsTrigger key={key} value={key} className="flex items-center justify-center gap-1.5 text-sm">
-              <Icon className="h-4 w-4" />
-            </TabsTrigger>)}
-        </TabsList>
+        {availableTabs.length > 1 && (
+          <TabsList className="w-full grid" style={{ gridTemplateColumns: `repeat(${availableTabs.length}, minmax(0, 1fr))` }}>
+            {availableTabs.map(({ key, label, icon: Icon }) => (
+              <TabsTrigger key={key} value={key} className="flex items-center justify-center gap-1.5 text-sm">
+                <Icon className="h-4 w-4" />
+                <span className="hidden sm:inline">{label}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        )}
 
         {availableTabs.map(({
         key,
         label
       }) => {
           const categoryItems = getInventoryByCategory(key);
-          const shouldUseVirtualization = false; // Disabled - virtualization causes layout issues
           
           return <TabsContent key={key} value={key} className="flex-1 overflow-hidden">
             {/* Loading state */}
@@ -846,23 +846,11 @@ export const InventorySelectionPanel = ({
               </div>
             )}
             
-            {/* Virtualized rendering for large lists (50+ items) */}
-            {shouldUseVirtualization ? (
-              <VirtualizedInventoryGrid
-                items={categoryItems}
-                selectedItemId={selectedItems[key as keyof typeof selectedItems]?.id}
-                onItemSelect={(item) => onItemSelect(key, item)}
-                onItemDeselect={() => onItemDeselect(key)}
-                units={units}
-                cardRefMap={selectedCardRefs}
-              />
-            ) : (
-              <ScrollArea className="h-full">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 pr-3">
-                  {categoryItems.map(item => renderInventoryItem(item, key))}
-                </div>
-              </ScrollArea>
-            )}
+            <ScrollArea className="h-full">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 pr-3">
+                {categoryItems.map(item => renderInventoryItem(item, key))}
+              </div>
+            </ScrollArea>
 
             {categoryItems.length === 0 && !isFabricsLoading && (
               <div className="text-center py-12 text-muted-foreground">
