@@ -514,7 +514,8 @@ export const WindowManagementDialog = ({
     }
   };
   
-  return <>
+  return (
+    <>
       <Dialog open={isOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="max-w-[95vw] sm:max-w-7xl max-h-[95vh] flex flex-col bg-background border-2 p-2 sm:p-4">
           <DialogHeader className="flex-shrink-0 pb-1 sm:pb-2 border-b border-border">
@@ -662,10 +663,23 @@ export const WindowManagementDialog = ({
           </DialogHeader>
 
           <div className="flex-1 min-h-0 overflow-y-auto bg-background/50 rounded-md p-1 sm:p-2 pointer-events-auto">
-            <MeasurementBridge key={surface?.id} // Stable key for consistent state
-          ref={worksheetRef} mode="dynamic" // Always use dynamic mode
-          clientId={clientId || ""} projectId={projectId} surfaceId={surface?.id} surfaceData={surface} currentRoomId={surface?.room_id} visualKey={windowTypeData?.visual_key} existingMeasurement={existingMeasurement} existingTreatments={existingTreatments} onSave={handleSaveData} onSaveTreatment={handleTreatmentSave} onClose={() => handleDialogClose(false)} // Ensure dialog closes after save
-          readOnly={false} />
+            <MeasurementBridge
+              key={surface?.id}
+              ref={worksheetRef}
+              mode="dynamic"
+              clientId={clientId || ""}
+              projectId={projectId}
+              surfaceId={surface?.id}
+              surfaceData={surface}
+              currentRoomId={surface?.room_id}
+              visualKey={windowTypeData?.visual_key}
+              existingMeasurement={existingMeasurement}
+              existingTreatments={existingTreatments}
+              onSave={handleSaveData}
+              onSaveTreatment={handleTreatmentSave}
+              onClose={() => handleDialogClose(false)}
+              readOnly={false}
+            />
           </div>
         </DialogContent>
       </Dialog>
