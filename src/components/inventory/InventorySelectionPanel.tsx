@@ -25,15 +25,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { useEnhancedInventory, useCreateEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
+import { useCreateEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { usePaginatedInventory, flattenPaginatedResults } from "@/hooks/usePaginatedInventory";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
-import { supabase } from "@/integrations/supabase/client";
 import { TreatmentCategory, getTreatmentConfig } from "@/utils/treatmentTypeDetection";
-import { useTreatmentSpecificFabrics } from "@/hooks/useTreatmentSpecificFabrics";
 import { getAcceptedSubcategories, getTreatmentPrimaryCategory } from "@/constants/inventorySubcategories";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
@@ -76,9 +75,7 @@ export const InventorySelectionPanel = ({
     pattern_repeat_vertical: ""
   });
   const selectedCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-  const {
-    data: inventory = []
-  } = useEnhancedInventory();
+  
   const {
     units,
     formatLength
@@ -87,10 +84,28 @@ export const InventorySelectionPanel = ({
 
   const createInventoryItem = useCreateEnhancedInventoryItem();
 
-  // Use treatment-specific fabrics
+  // Determine primary category for this treatment
+  const primaryCategory = getTreatmentPrimaryCategory(treatmentCategory);
+  const acceptedSubcategories = getAcceptedSubcategories(treatmentCategory);
+
+  // Use paginated inventory with server-side filtering
   const {
-    data: treatmentFabrics = []
-  } = useTreatmentSpecificFabrics(treatmentCategory);
+    data: paginatedData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: isPaginatedLoading,
+  } = usePaginatedInventory({
+    category: primaryCategory === 'material' ? 'material' : 'fabric',
+    subcategories: acceptedSubcategories,
+    searchTerm: debouncedSearchTerm,
+    vendorId: selectedVendor,
+    collectionId: selectedCollection,
+    tags: selectedTags,
+  });
+
+  // Flatten paginated results
+  const paginatedItems = flattenPaginatedResults(paginatedData);
 
   // Auto-scroll to selected item when category changes or selection changes
   useEffect(() => {
@@ -109,7 +124,7 @@ export const InventorySelectionPanel = ({
       }, 100);
       return () => clearTimeout(scrollTimeout);
     }
-  }, [activeCategory, selectedItems, treatmentFabrics, inventory]);
+  }, [activeCategory, selectedItems, paginatedItems]);
 
   // Handle manual entry submission
   const handleManualEntrySubmit = async () => {
@@ -187,9 +202,8 @@ export const InventorySelectionPanel = ({
   // Handle QR code scan
   const handleQRScan = async (itemId: string) => {
     try {
-      // Look up the item in inventory
-      const allItems = [...inventory, ...treatmentFabrics];
-      const scannedItem = allItems.find(item => item.id === itemId);
+      // Look up the item in paginated inventory
+      const scannedItem = paginatedItems.find(item => item.id === itemId);
       
       if (scannedItem) {
         // Determine which category this item belongs to
@@ -239,148 +253,17 @@ export const InventorySelectionPanel = ({
     return [];
   };
 
-  // Filter inventory by treatment type and category
+  // Get inventory items - now using server-side filtered paginatedItems
   const getInventoryByCategory = (category: string) => {
-    console.log('🔍 getInventoryByCategory called:', { category, treatmentCategory, inventoryCount: inventory.length });
+    console.log('🔍 getInventoryByCategory called:', { category, treatmentCategory, paginatedCount: paginatedItems.length });
     
-    // For fabric category, ALWAYS use treatment-specific fabrics
-    if (category === "fabric") {
-      const searchLower = debouncedSearchTerm.toLowerCase();
-      const filtered = treatmentFabrics.filter(item => {
-        const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
-                             item.description?.toLowerCase().includes(searchLower) ||
-                             item.sku?.toLowerCase().includes(searchLower) ||
-                             item.supplier?.toLowerCase().includes(searchLower) ||
-                             item.vendor?.name?.toLowerCase().includes(searchLower);
-        const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
-        const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
-        const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
-        return matchesSearch && matchesVendor && matchesCollection && matchesTags;
-      });
-      // Sort results: items starting with search term first, then alphabetically
-      const sorted = debouncedSearchTerm ? filtered.sort((a, b) => {
-        const aName = a.name?.toLowerCase() || '';
-        const bName = b.name?.toLowerCase() || '';
-        const aStartsWith = aName.startsWith(searchLower) ? 0 : 1;
-        const bStartsWith = bName.startsWith(searchLower) ? 0 : 1;
-        if (aStartsWith !== bStartsWith) return aStartsWith - bStartsWith;
-        return aName.localeCompare(bName);
-      }) : filtered;
-      console.log('📦 Fabric tab filtered:', sorted.length, 'items');
-      return sorted;
-    }
-
-    // For "both" category (vertical blinds with fabric AND material vanes)
-    if (category === "both") {
-      const searchLower = debouncedSearchTerm.toLowerCase();
-      // Get both fabric items from treatment-specific fabrics
-      const fabricItems = treatmentFabrics.filter(item => {
-        const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
-                             item.description?.toLowerCase().includes(searchLower) ||
-                             item.sku?.toLowerCase().includes(searchLower) ||
-                             item.supplier?.toLowerCase().includes(searchLower) ||
-                             item.vendor?.name?.toLowerCase().includes(searchLower);
-        const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
-        const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
-        const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
-        return matchesSearch && matchesVendor && matchesCollection && matchesTags;
-      });
-
-      // Get material items from inventory
-      const requiredSubcategories = getTreatmentMaterialSubcategories();
-      const materialItems = inventory.filter(item => {
-        const matchesCategory = item.category?.toLowerCase() === 'material' || 
-                               item.category?.toLowerCase() === 'hard_coverings';
-        const matchesSubcategory = requiredSubcategories.length === 0 || 
-                                   requiredSubcategories.some(subcat => 
-                                     item.subcategory?.toLowerCase() === subcat.toLowerCase()
-                                   );
-        const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
-                             item.description?.toLowerCase().includes(searchLower) ||
-                             item.sku?.toLowerCase().includes(searchLower) ||
-                             item.supplier?.toLowerCase().includes(searchLower) ||
-                             item.vendor?.name?.toLowerCase().includes(searchLower);
-        const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
-        const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
-        const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
-        
-        return matchesCategory && matchesSubcategory && matchesSearch && matchesVendor && matchesCollection && matchesTags;
-      });
-
-      console.log('📦 Both tab filtered:', fabricItems.length, 'fabric items +', materialItems.length, 'material items');
-      return [...fabricItems, ...materialItems];
-    }
-
-    // For material category, filter by treatment-specific material subcategories
-    // CRITICAL FIX: Use enriched materials from treatmentFabrics (which now includes materials with pricing grids)
-    if (category === "material") {
-      const requiredSubcategories = getTreatmentMaterialSubcategories();
-      
-      console.log('🔍 Filtering materials - Required subcategories:', requiredSubcategories);
-      console.log('📊 treatmentFabrics count:', treatmentFabrics.length, '| Raw inventory count:', inventory.length);
-      
-      // CRITICAL: Use treatmentFabrics if available (already enriched with pricing grids)
-      // treatmentFabrics now includes materials for material-based treatments
-      const sourceData = treatmentFabrics.length > 0 ? treatmentFabrics : inventory;
-      const dataSource = treatmentFabrics.length > 0 ? 'treatmentFabrics (enriched)' : 'raw inventory';
-      
-      console.log('📦 Using data source:', dataSource);
-      
-      const filtered = sourceData.filter(item => {
-        // Must be in material or hard_coverings category
-        const matchesCategory = item.category?.toLowerCase() === 'material' || 
-                               item.category?.toLowerCase() === 'hard_coverings';
-        
-        // Must match one of the required subcategories for this treatment
-        const matchesSubcategory = requiredSubcategories.length === 0 || 
-                                   requiredSubcategories.some(subcat => 
-                                     item.subcategory?.toLowerCase() === subcat.toLowerCase()
-                                   );
-        
-        const searchLower = debouncedSearchTerm.toLowerCase();
-        const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
-                             item.description?.toLowerCase().includes(searchLower) ||
-                             item.sku?.toLowerCase().includes(searchLower) ||
-                             item.supplier?.toLowerCase().includes(searchLower) ||
-                             item.vendor?.name?.toLowerCase().includes(searchLower);
-        const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
-        const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
-        const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
-        
-        return matchesCategory && matchesSubcategory && matchesSearch && matchesVendor && matchesCollection && matchesTags;
-      });
-      
-      // Log enrichment status
-      const enrichedCount = filtered.filter(i => i.pricing_grid_data || i.resolved_grid_id).length;
-      console.log(`📦 Found ${filtered.length} material items (${enrichedCount} with pricing grids). Subcategories:`, 
-        [...new Set(filtered.map(i => i.subcategory || 'none'))]);
-      
-      return filtered;
-    }
-
-    // For hardware category, show all hardware items (not treatment-specific)
-    if (category === "hardware") {
-      const searchLower = debouncedSearchTerm.toLowerCase();
-      const filtered = inventory.filter(item => {
-        const matchesCategory = item.category?.toLowerCase() === 'hardware';
-        const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
-                             item.description?.toLowerCase().includes(searchLower) ||
-                             item.sku?.toLowerCase().includes(searchLower) ||
-                             item.supplier?.toLowerCase().includes(searchLower) ||
-                             item.vendor?.name?.toLowerCase().includes(searchLower);
-        const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
-        const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
-        const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
-        
-        return matchesCategory && matchesSearch && matchesVendor && matchesCollection && matchesTags;
-      });
-      
-      console.log(`📦 Found ${filtered.length} hardware items`);
-      return filtered;
-    }
-    
-    console.log('⚠️ Unknown category:', category);
-    return [];
+    // All filtering is now done server-side via usePaginatedInventory
+    // Just return the paginated items which are already filtered by:
+    // - category (fabric/material)
+    // - subcategories (treatment-specific)
+    // - search term
+    // - vendor, collection, tags
+    return paginatedItems;
   };
 
   // Calculate estimated cost for an item
@@ -839,6 +722,10 @@ export const InventorySelectionPanel = ({
               items={categoryItems}
               renderItem={renderInventoryItem}
               category={key}
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+              fetchNextPage={fetchNextPage}
+              isLoading={isPaginatedLoading}
               emptyMessage={
                 treatmentCategory === 'wallpaper' && key === 'fabric' 
                   ? 'No wallpaper items found. Add items with subcategory "wallcovering" or "wallpaper" in inventory.'
