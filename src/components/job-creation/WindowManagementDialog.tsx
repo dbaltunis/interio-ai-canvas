@@ -326,15 +326,25 @@ export const WindowManagementDialog = ({
 
   const deleteSurface = useDeleteSurface();
 
+  // Track if this was a new window (no treatment when dialog opened)
+  const isNewWindow = existingTreatments.length === 0;
+
   const handleDiscardChanges = async () => {
     worksheetRef.current?.clearDraft();
     setShowUnsavedDialog(false);
     
-    // If no treatment was ever saved (windowSummary is null/undefined), 
-    // delete the ghost surface entirely
-    if (!windowSummary && surface?.id) {
+    // If this was a NEW window (no treatment when dialog opened), 
+    // delete the ghost surface and any auto-saved windowSummary entirely
+    if (isNewWindow && surface?.id) {
       console.log('🗑️ Deleting ghost window that was never saved:', surface.id);
       try {
+        // First delete any auto-saved windows_summary entry
+        await supabase
+          .from('windows_summary')
+          .delete()
+          .eq('window_id', surface.id);
+        
+        // Then delete the ghost surface
         await deleteSurface.mutateAsync(surface.id);
       } catch (error) {
         console.error('Failed to delete ghost surface:', error);
