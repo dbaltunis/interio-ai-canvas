@@ -243,7 +243,12 @@ export const InventorySelectionPanel = ({
     // For fabric category, ALWAYS use treatment-specific fabrics
     if (category === "fabric") {
       const filtered = treatmentFabrics.filter(item => {
-        const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        const searchLower = searchTerm.toLowerCase();
+        const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
+                             item.description?.toLowerCase().includes(searchLower) ||
+                             item.sku?.toLowerCase().includes(searchLower) ||
+                             item.supplier?.toLowerCase().includes(searchLower) ||
+                             item.vendor?.name?.toLowerCase().includes(searchLower);
         const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
@@ -255,9 +260,14 @@ export const InventorySelectionPanel = ({
 
     // For "both" category (vertical blinds with fabric AND material vanes)
     if (category === "both") {
+      const searchLower = searchTerm.toLowerCase();
       // Get both fabric items from treatment-specific fabrics
       const fabricItems = treatmentFabrics.filter(item => {
-        const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
+                             item.description?.toLowerCase().includes(searchLower) ||
+                             item.sku?.toLowerCase().includes(searchLower) ||
+                             item.supplier?.toLowerCase().includes(searchLower) ||
+                             item.vendor?.name?.toLowerCase().includes(searchLower);
         const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
@@ -273,8 +283,11 @@ export const InventorySelectionPanel = ({
                                    requiredSubcategories.some(subcat => 
                                      item.subcategory?.toLowerCase() === subcat.toLowerCase()
                                    );
-        const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                             item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
+                             item.description?.toLowerCase().includes(searchLower) ||
+                             item.sku?.toLowerCase().includes(searchLower) ||
+                             item.supplier?.toLowerCase().includes(searchLower) ||
+                             item.vendor?.name?.toLowerCase().includes(searchLower);
         const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
@@ -312,8 +325,12 @@ export const InventorySelectionPanel = ({
                                      item.subcategory?.toLowerCase() === subcat.toLowerCase()
                                    );
         
-        const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                             item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        const searchLower = searchTerm.toLowerCase();
+        const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
+                             item.description?.toLowerCase().includes(searchLower) ||
+                             item.sku?.toLowerCase().includes(searchLower) ||
+                             item.supplier?.toLowerCase().includes(searchLower) ||
+                             item.vendor?.name?.toLowerCase().includes(searchLower);
         const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
@@ -331,10 +348,14 @@ export const InventorySelectionPanel = ({
 
     // For hardware category, show all hardware items (not treatment-specific)
     if (category === "hardware") {
+      const searchLower = searchTerm.toLowerCase();
       const filtered = inventory.filter(item => {
         const matchesCategory = item.category?.toLowerCase() === 'hardware';
-        const matchesSearch = item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                             item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
+                             item.description?.toLowerCase().includes(searchLower) ||
+                             item.sku?.toLowerCase().includes(searchLower) ||
+                             item.supplier?.toLowerCase().includes(searchLower) ||
+                             item.vendor?.name?.toLowerCase().includes(searchLower);
         const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
