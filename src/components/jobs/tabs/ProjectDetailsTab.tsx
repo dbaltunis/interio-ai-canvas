@@ -11,10 +11,8 @@ import { useUpdateProject } from "@/hooks/useProjects";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarDays, User, Edit, Save, X, Search, Mail, MapPin, Package, FileText, DollarSign, Calendar as CalendarIcon, Hash } from "lucide-react";
-import { EditableDocumentNumber } from "../EditableDocumentNumber";
-import { syncSequenceCounter, getEntityTypeFromStatus, shouldRegenerateNumber, generateSequenceNumber, getDocumentLabel } from "@/hooks/useNumberSequenceGeneration";
+import { syncSequenceCounter, getEntityTypeFromStatus, getDocumentLabel } from "@/hooks/useNumberSequenceGeneration";
 import { useEnsureDefaultSequences, type EntityType } from "@/hooks/useNumberSequences";
-import { useUpdateQuote } from "@/hooks/useQuotes";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -57,7 +55,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const { data: rooms = [] } = useRooms(project.id);
   const { data: surfaces = [] } = useSurfaces(project.id);
   const { data: treatments = [] } = useTreatments(project.id);
-  const updateQuote = useUpdateQuote();
+  
   
   // Ensure default sequences exist for this user
   useEnsureDefaultSequences();
@@ -73,127 +71,36 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const documentEntityType: EntityType = getEntityTypeFromStatus(projectStatusName) || 'draft';
   const documentLabel = getDocumentLabel(documentEntityType);
   
-  // Helper to get stored number for entity type from quote
-  const getStoredNumberForType = (quote: any, entityType: EntityType): string | null => {
-    if (!quote) return null;
-    switch (entityType) {
-      case 'draft': return quote.draft_number || null;
-      case 'quote': return quote.quote_number || null;
-      case 'order': return quote.order_number || null;
-      case 'invoice': return quote.invoice_number || null;
-      default: return null;
-    }
-  };
-  
-  // Helper to get the column name for entity type
-  const getNumberColumnForType = (entityType: EntityType): string => {
-    switch (entityType) {
-      case 'draft': return 'draft_number';
-      case 'quote': return 'quote_number';
-      case 'order': return 'order_number';
-      case 'invoice': return 'invoice_number';
-      default: return 'quote_number';
-    }
-  };
-  
-  // State for editable document numbers
+  // State for editable job number
   const [jobNumber, setJobNumber] = useState(project.job_number || "");
-  const [documentNumber, setDocumentNumber] = useState(
-    getStoredNumberForType(currentQuote, documentEntityType) || ""
-  );
-  const [previousStatus, setPreviousStatus] = useState(projectStatusName);
   
-  // Update document number when quotes load or entity type changes
+  // Update local state when project changes
   useEffect(() => {
-    const storedNumber = getStoredNumberForType(currentQuote, documentEntityType);
-    if (storedNumber) {
-      setDocumentNumber(storedNumber);
-    }
-  }, [currentQuote, documentEntityType]);
+    setJobNumber(project.job_number || "");
+  }, [project.job_number]);
   
-  // Handle status change - only generate new number if one doesn't already exist for that stage
-  useEffect(() => {
-    const handleStatusChange = async () => {
-      if (previousStatus !== projectStatusName && shouldRegenerateNumber(previousStatus, projectStatusName)) {
-        // Check if we already have a number for this entity type
-        const existingNumber = getStoredNumberForType(currentQuote, documentEntityType);
-        
-        if (existingNumber) {
-          // Reuse existing number - don't generate a new one
-          setDocumentNumber(existingNumber);
-          toast({
-            title: "Document Number Restored",
-            description: `Using existing ${documentLabel} Number: ${existingNumber}`,
-          });
-        } else {
-          // No existing number - generate a new one
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const newNumber = await generateSequenceNumber(user.id, documentEntityType, documentEntityType.toUpperCase());
-            setDocumentNumber(newNumber);
-            
-            // Auto-save the new number to the quote in the correct column
-            if (currentQuote) {
-              try {
-                const updateData: any = {
-                  id: currentQuote.id,
-                  [getNumberColumnForType(documentEntityType)]: newNumber,
-                };
-                await updateQuote.mutateAsync(updateData);
-                toast({
-                  title: "Document Number Generated",
-                  description: `New ${documentLabel} Number: ${newNumber}`,
-                });
-              } catch (error) {
-                console.error("Failed to update document number:", error);
-              }
-            }
-          }
-        }
-      }
-      setPreviousStatus(projectStatusName);
-    };
-    
-    handleStatusChange();
-  }, [projectStatusName]);
-  
-  // Handle saving document numbers
-  const handleSaveDocumentNumbers = async () => {
+  // Handle saving document number
+  const handleSaveDocumentNumber = async () => {
     try {
-      // Update job number on project
       if (jobNumber !== project.job_number) {
         await updateProject.mutateAsync({
           id: project.id,
           job_number: jobNumber,
         });
-        project.job_number = jobNumber;
         
-        // Sync sequence counter for jobs
-        await syncSequenceCounter('job', jobNumber);
-      }
-      
-      // Update document number on quote in the correct column for the entity type
-      const storedNumber = getStoredNumberForType(currentQuote, documentEntityType);
-      if (currentQuote && documentNumber !== storedNumber) {
-        const updateData: any = {
-          id: currentQuote.id,
-          [getNumberColumnForType(documentEntityType)]: documentNumber,
-        };
-        await updateQuote.mutateAsync(updateData);
+        // Sync sequence counter
+        await syncSequenceCounter(documentEntityType, jobNumber);
         
-        // Sync sequence counter for the current entity type
-        await syncSequenceCounter(documentEntityType, documentNumber);
+        toast({
+          title: "Success",
+          description: "Document number updated",
+        });
       }
-      
-      toast({
-        title: "Success",
-        description: "Document numbers updated",
-      });
     } catch (error) {
-      console.error("Failed to update document numbers:", error);
+      console.error("Failed to update document number:", error);
       toast({
         title: "Error",
-        description: "Failed to update document numbers",
+        description: "Failed to update document number",
         variant: "destructive",
       });
     }
@@ -605,57 +512,41 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
         </div>
       </div>
 
-      {/* Document Numbers - Editable Section */}
+      {/* Document Number - Single Editable Field */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-medium flex items-center gap-2">
               <Hash className="h-4 w-4" />
-              Document Numbers
+              {documentLabel} Number
             </CardTitle>
-            {/* Status badge hidden per user request - keeping for potential future use */}
-            {/* <Badge variant="outline" className="text-xs">
-              Status: {projectStatusName}
-            </Badge> */}
+            <Badge variant="outline" className="text-xs capitalize">
+              {projectStatusName}
+            </Badge>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Job Number - Always visible, constant for the project */}
-            <EditableDocumentNumber
-              entityType="job"
-              value={jobNumber}
-              onChange={setJobNumber}
-              autoLabel
-            />
-            
-            {/* Dynamic Document Number - Changes based on project status */}
-            <div className="space-y-2">
-              <EditableDocumentNumber
-                entityType={documentEntityType}
-                value={documentNumber}
-                onChange={setDocumentNumber}
-                label={`${documentLabel} Number`}
-                disabled={!currentQuote}
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Input
+                value={jobNumber}
+                onChange={(e) => setJobNumber(e.target.value)}
+                placeholder={`Enter ${documentLabel.toLowerCase()} number`}
+                className="text-lg font-mono"
               />
-              {!currentQuote && (
-                <p className="text-xs text-muted-foreground">Create a quote to generate document number</p>
-              )}
             </div>
+            {jobNumber !== project.job_number && (
+              <Button 
+                onClick={handleSaveDocumentNumber}
+                size="sm"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save
+              </Button>
+            )}
           </div>
-          
-          {(jobNumber !== project.job_number || (currentQuote && documentNumber !== getStoredNumberForType(currentQuote, documentEntityType))) && (
-            <Button 
-              onClick={handleSaveDocumentNumbers}
-              className="mt-4"
-              size="sm"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Save Numbers
-            </Button>
-          )}
           <p className="text-xs text-muted-foreground mt-2">
-            Document type changes automatically with status. Previously used numbers are preserved when switching back.
+            Number changes with status. Previously assigned numbers are preserved when switching back.
           </p>
         </CardContent>
       </Card>
