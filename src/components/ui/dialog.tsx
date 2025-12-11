@@ -23,6 +23,7 @@ const DialogOverlay = React.forwardRef<
       "fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:pointer-events-auto data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:pointer-events-none",
       className
     )}
+    onClick={(e) => e.stopPropagation()}
     {...props}
   />
 ))
@@ -40,6 +41,7 @@ const DialogContent = React.forwardRef<
         style={style}
         onPointerDownOutside={onPointerDownOutside}
         onInteractOutside={onInteractOutside}
+        onClick={(e) => e.stopPropagation()}
         className={cn(
           "fixed left-[50%] top-[50%] z-[9999] flex flex-col w-[calc(100%-2rem)] max-w-[95vw] md:max-w-4xl lg:max-w-5xl xl:max-w-6xl translate-x-[-50%] translate-y-[-50%] gap-3 md:gap-4 lg:gap-6 border-2 bg-card text-card-foreground border-border p-4 md:p-6 lg:p-8 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-98 data-[state=open]:zoom-in-98 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg md:rounded-xl will-change-transform max-h-[85vh] md:max-h-[90vh] overflow-y-auto pointer-events-auto",
           className
