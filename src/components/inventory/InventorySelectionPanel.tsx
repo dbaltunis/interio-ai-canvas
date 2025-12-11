@@ -452,23 +452,23 @@ export const InventorySelectionPanel = ({
       className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/30'}`} 
       onClick={() => isSelected ? onItemDeselect(category) : onItemSelect(category, item)}
     >
-        <CardContent className="p-1.5">
-          <div className="flex flex-col space-y-1.5">
-            {/* Image or Color Swatch - Using universal component */}
-            <div className="aspect-square w-full relative overflow-hidden rounded-sm">
+        <CardContent className="p-1">
+          <div className="flex flex-col space-y-1">
+            {/* Image or Color Swatch - fills entire card width */}
+            <div className="aspect-square w-full relative overflow-hidden rounded-sm bg-muted">
               <ProductImageWithColorFallback
                 imageUrl={imageUrl}
                 color={item.color}
                 productName={item.name}
                 category={category}
-                className="w-full h-full"
-                size={180}
+                className="w-full h-full object-cover"
+                fillContainer={true}
                 showColorName={true}
                 rounded="sm"
               />
               {isSelected && <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full z-10" />}
               
-              {/* Pricing Grid Badge Overlay - Check price_group, pricing_grid_id, OR metadata.pricing_grid_data for TWC */}
+              {/* Pricing Grid Badge Overlay */}
               {(category === 'fabric' || category === 'material') && (item.price_group || item.pricing_grid_id || item.metadata?.pricing_grid_data) && (
                 <div className="absolute bottom-1 left-1 right-1 z-10">
                   <Badge variant="default" className="text-[9px] px-1.5 py-0.5 h-5 bg-green-600 hover:bg-green-700 text-white w-full justify-center">
