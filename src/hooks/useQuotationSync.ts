@@ -115,6 +115,18 @@ export const useQuotationSync = ({
       // Use window summaries (most accurate)
       projectSummaries.windows.forEach((window) => {
         if (window.summary && window.summary.total_cost > 0) {
+          // CRITICAL FIX: Skip windows with missing or invalid treatment type
+          // This prevents auto-generated "curtains" from appearing when treatment type wasn't properly saved
+          const windowTreatmentType = window.summary.treatment_category || window.summary.treatment_type;
+          if (!windowTreatmentType || windowTreatmentType === 'unknown' || windowTreatmentType === 'null') {
+            console.warn('[QUOTE] Skipping window with invalid treatment type:', {
+              windowId: window.window_id,
+              treatmentCategory: windowTreatmentType,
+              treatmentType: window.summary.treatment_type
+            });
+            return;
+          }
+          
           const roomId = window.room_id || 'no-room';
           
           // Find the actual room data
