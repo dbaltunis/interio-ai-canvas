@@ -6,8 +6,7 @@ import { useVendors } from "@/hooks/useVendors";
 import { useCollections, useCollectionsByVendor } from "@/hooks/useCollections";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
-import { useMemo } from "react";
+import { useInventoryTags, useInventoryLocations } from "@/hooks/useInventoryTags";
 
 interface FilterButtonProps {
   selectedVendor?: string;
@@ -33,31 +32,10 @@ export const FilterButton = ({
   const { data: vendors } = useVendors();
   const { data: allCollections } = useCollections();
   const { data: vendorCollections } = useCollectionsByVendor(selectedVendor);
-  const { data: inventory } = useEnhancedInventory();
-
-  // Extract all unique tags from inventory
-  const availableTags = useMemo(() => {
-    if (!inventory) return [];
-    const tagsSet = new Set<string>();
-    inventory.forEach(item => {
-      if (item.tags && Array.isArray(item.tags)) {
-        item.tags.forEach(tag => tagsSet.add(tag));
-      }
-    });
-    return Array.from(tagsSet).sort();
-  }, [inventory]);
-
-  // Extract all unique storage locations from inventory
-  const availableLocations = useMemo(() => {
-    if (!inventory) return [];
-    const locationsSet = new Set<string>();
-    inventory.forEach(item => {
-      if (item.location) {
-        locationsSet.add(item.location);
-      }
-    });
-    return Array.from(locationsSet).sort();
-  }, [inventory]);
+  
+  // Use lightweight hooks instead of loading full inventory
+  const { data: availableTags = [] } = useInventoryTags();
+  const { data: availableLocations = [] } = useInventoryLocations();
 
   // Show vendor-specific collections if vendor is selected, otherwise show all
   const displayCollections = selectedVendor ? vendorCollections : allCollections;

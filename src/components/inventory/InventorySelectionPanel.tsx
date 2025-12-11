@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +36,7 @@ import { toast } from "sonner";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-// Virtualization disabled - using standard grid for stability
+import { InventoryCardSkeleton } from "@/components/inventory/InventoryCardSkeleton";
 
 interface InventorySelectionPanelProps {
   treatmentType: string;
@@ -90,12 +90,21 @@ export const InventorySelectionPanel = ({
   // Debounce search for server-side filtering (300ms delay)
   const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
 
-  // Use treatment-specific fabrics with server-side search
+  // Use treatment-specific fabrics with server-side search and pagination
   const {
-    data: treatmentFabrics = [],
+    data: fabricsData,
     isLoading: isFabricsLoading,
-    isFetching: isFabricsFetching
+    isFetching: isFabricsFetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
   } = useTreatmentSpecificFabrics(treatmentCategory, debouncedSearchTerm);
+
+  // Flatten paginated data into single array
+  const treatmentFabrics = useMemo(() => {
+    if (!fabricsData?.pages) return [];
+    return fabricsData.pages.flatMap(page => page.items);
+  }, [fabricsData]);
 
   // Auto-scroll to selected item when category changes or selection changes
   useEffect(() => {
@@ -443,18 +452,19 @@ export const InventorySelectionPanel = ({
       className={`cursor-pointer transition-all duration-200 hover:shadow-sm ${isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/30'}`} 
       onClick={() => isSelected ? onItemDeselect(category) : onItemSelect(category, item)}
     >
-        <CardContent className="p-2">
-          <div className="flex flex-col space-y-2">
+        <CardContent className="p-1.5">
+          <div className="flex flex-col space-y-1.5">
             {/* Image or Color Swatch - Using universal component */}
-            <div className="aspect-square w-full relative">
+            <div className="aspect-square w-full relative overflow-hidden rounded-sm">
               <ProductImageWithColorFallback
                 imageUrl={imageUrl}
                 color={item.color}
                 productName={item.name}
                 category={category}
                 className="w-full h-full"
-                size={200}
+                size={180}
                 showColorName={true}
+                rounded="sm"
               />
               {isSelected && <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full z-10" />}
               
@@ -839,18 +849,44 @@ export const InventorySelectionPanel = ({
           const categoryItems = getInventoryByCategory(key);
           
           return <TabsContent key={key} value={key} className="flex-1 overflow-hidden">
-            {/* Loading state */}
+            {/* Skeleton loading state */}
             {key === 'fabric' && isFabricsLoading && categoryItems.length === 0 && (
-              <div className="flex items-center justify-center h-32">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
+              <ScrollArea className="h-full">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 pr-3">
+                  <InventoryCardSkeleton count={8} />
+                </div>
+              </ScrollArea>
             )}
             
-            <ScrollArea className="h-full">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 pr-3">
-                {categoryItems.map(item => renderInventoryItem(item, key))}
-              </div>
-            </ScrollArea>
+            {/* Items grid */}
+            {(!isFabricsLoading || categoryItems.length > 0) && (
+              <ScrollArea className="h-full">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 pr-3">
+                  {categoryItems.map(item => renderInventoryItem(item, key))}
+                </div>
+                
+                {/* Load More button */}
+                {key === 'fabric' && hasNextPage && (
+                  <div className="flex justify-center py-4">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => fetchNextPage()}
+                      disabled={isFetchingNextPage}
+                    >
+                      {isFetchingNextPage ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        `Load More (${categoryItems.length} shown)`
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </ScrollArea>
+            )}
 
             {categoryItems.length === 0 && !isFabricsLoading && (
               <div className="text-center py-12 text-muted-foreground">
