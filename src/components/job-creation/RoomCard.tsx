@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -70,7 +70,18 @@ export const RoomCard = ({
   const { compact } = useCompactMode();
 
   const [isCreatingSurface, setIsCreatingSurface] = useState(false);
-  const [isOpen, setIsOpen] = useState(true);
+  
+  // Persist collapse state in localStorage
+  const storageKey = `room-collapsed-${room.id}`;
+  const [isOpen, setIsOpen] = useState(() => {
+    const stored = localStorage.getItem(storageKey);
+    return stored !== null ? stored === 'true' : true;
+  });
+  
+  // Save collapse state to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem(storageKey, String(isOpen));
+  }, [isOpen, storageKey]);
   
   const [showWorksheetDialog, setShowWorksheetDialog] = useState(false);
   const [showProductDialog, setShowProductDialog] = useState(false);
