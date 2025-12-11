@@ -33,6 +33,7 @@ import { ColorSelector } from "./ColorSelector";
 import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { MeasurementSizeWarning } from "./MeasurementSizeWarning";
+import { PoolingButton } from "./PoolingButton";
 interface VisualMeasurementSheetProps {
   measurements: Record<string, any>;
   onMeasurementChange: (field: string, value: string) => void;
@@ -1198,68 +1199,24 @@ export const VisualMeasurementSheet = ({
                     </RadioGroup>
                   </div>}
 
-                {/* Pooling Configuration - Moved from below */}
-                {selectedFabricItem && measurements.rail_width && measurements.drop && <div className="mt-4 pt-3 border-t border-border">
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-xs font-medium mb-2 block">Pooling Position</Label>
-                        <RadioGroup value={poolingOption} onValueChange={value => {
+                {/* Pooling Configuration - Compact Button */}
+                {selectedFabricItem && measurements.rail_width && measurements.drop && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <PoolingButton
+                      poolingOption={poolingOption}
+                      poolingAmount={poolingAmount}
+                      onPoolingOptionChange={(value) => {
                         console.log("Pooling option changed to:", value);
                         handleInputChange("pooling_option", value);
-
-                        // Set default pooling amount when "below_floor" is selected
-                        if (value === "below_floor" && (!poolingAmount || poolingAmount === "0")) {
-                          const defaultValue = units.system === "imperial" ? "1" : "2"; // 1 inch or 2 cm
-                          handleInputChange("pooling_amount", defaultValue);
-                        }
-                        // Clear pooling amount when not below floor
-                        if (value !== "below_floor") {
-                          handleInputChange("pooling_amount", "");
-                        }
-                      }} disabled={readOnly} className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="above_floor" id="above_floor" />
-                            <Label htmlFor="above_floor" className="text-xs">Above floor (hanging)</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="touching_floor" id="touching_floor" />
-                            <Label htmlFor="touching_floor" className="text-xs">Touching floor</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="below_floor" id="below_floor" />
-                            <Label htmlFor="below_floor" className="text-xs">Below floor (pooling)</Label>
-                          </div>
-                        </RadioGroup>
-                      </div>
-
-                      {poolingOption === "below_floor" && <div className="space-y-3">
-                          <div>
-                            <Label htmlFor="pooling_amount" className="text-xs font-medium">Pooling Amount</Label>
-                            <p className="text-[10px] text-muted-foreground mb-1">How much fabric pools on the floor</p>
-                            <Input id="pooling_amount" type="number" step="0.25" value={poolingAmount} onChange={e => handleInputChange("pooling_amount", e.target.value)} placeholder="2.00" readOnly={readOnly} className="font-semibold text-sm" />
-                          </div>
-                          
-                          {/* Fabric Usage Impact Indicator */}
-                          {hasValue(poolingAmount) && selectedFabric && fabricCalculation && <div className="p-2 bg-amber-100/50 border border-amber-300 rounded text-[10px]">
-                              <div className="font-medium text-amber-800 mb-1">
-                                ✓ Pooling included in fabric calculation
-                              </div>
-                              <div className="text-amber-700 space-y-1">
-                                <div>• Pooling amount: {displayValue(poolingAmount)} added to drop</div>
-                                <div>• Extra fabric: ~{(parseFloat(poolingAmount) / 100 * fabricCalculation.widthsRequired).toFixed(2)}{units.fabric}</div>
-                                <div>• Total fabric: {fabricCalculation.linearMeters.toFixed(2)}{units.fabric} (includes pooling)</div>
-                              </div>
-                            </div>}
-                          
-                          {hasValue(poolingAmount) && !selectedFabric && <div className="p-2 bg-amber-100/50 border border-amber-300 rounded text-[10px]">
-                              <div className="text-amber-700">
-                                💡 Select a fabric above to see how pooling affects fabric usage
-                              </div>
-                            </div>}
-                        </div>}
-                    </div>
-                  </div>}
+                      }}
+                      onPoolingAmountChange={(value) => handleInputChange("pooling_amount", value)}
+                      units={units}
+                      readOnly={readOnly}
+                      fabricCalculation={fabricCalculation}
+                      selectedFabric={selectedFabric}
+                    />
+                  </div>
+                )}
               </div>
             </div>}
 
