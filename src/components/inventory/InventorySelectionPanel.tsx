@@ -242,8 +242,8 @@ export const InventorySelectionPanel = ({
     
     // For fabric category, ALWAYS use treatment-specific fabrics
     if (category === "fabric") {
+      const searchLower = searchTerm.toLowerCase();
       const filtered = treatmentFabrics.filter(item => {
-        const searchLower = searchTerm.toLowerCase();
         const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
                              item.description?.toLowerCase().includes(searchLower) ||
                              item.sku?.toLowerCase().includes(searchLower) ||
@@ -254,8 +254,17 @@ export const InventorySelectionPanel = ({
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
         return matchesSearch && matchesVendor && matchesCollection && matchesTags;
       });
-      console.log('📦 Fabric tab filtered:', filtered.length, 'items');
-      return filtered;
+      // Sort results: items starting with search term first, then alphabetically
+      const sorted = searchTerm ? filtered.sort((a, b) => {
+        const aName = a.name?.toLowerCase() || '';
+        const bName = b.name?.toLowerCase() || '';
+        const aStartsWith = aName.startsWith(searchLower) ? 0 : 1;
+        const bStartsWith = bName.startsWith(searchLower) ? 0 : 1;
+        if (aStartsWith !== bStartsWith) return aStartsWith - bStartsWith;
+        return aName.localeCompare(bName);
+      }) : filtered;
+      console.log('📦 Fabric tab filtered:', sorted.length, 'items');
+      return sorted;
     }
 
     // For "both" category (vertical blinds with fabric AND material vanes)

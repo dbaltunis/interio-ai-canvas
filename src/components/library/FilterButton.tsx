@@ -126,7 +126,12 @@ export const FilterButton = ({
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="All Vendors" />
                 </SelectTrigger>
-                <SelectContent className="bg-background border-border" style={{ zIndex: 10000 }}>
+                <SelectContent 
+                  className="bg-background border-border" 
+                  style={{ zIndex: 10000 }}
+                  position="popper"
+                  sideOffset={4}
+                >
                   <SelectItem value="all">All Vendors</SelectItem>
                   {vendors?.map((vendor) => (
                     <SelectItem key={vendor.id} value={vendor.id}>
@@ -147,7 +152,12 @@ export const FilterButton = ({
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="All Collections" />
                 </SelectTrigger>
-                <SelectContent className="bg-background border-border" style={{ zIndex: 10000 }}>
+                <SelectContent 
+                  className="bg-background border-border" 
+                  style={{ zIndex: 10000 }}
+                  position="popper"
+                  sideOffset={4}
+                >
                   <SelectItem value="all">All Collections</SelectItem>
                   {displayCollections?.map((collection: any) => (
                     <SelectItem key={collection.id} value={collection.id}>
@@ -169,7 +179,12 @@ export const FilterButton = ({
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="All Locations" />
                   </SelectTrigger>
-                  <SelectContent className="bg-background border-border" style={{ zIndex: 10000 }}>
+                  <SelectContent 
+                    className="bg-background border-border" 
+                    style={{ zIndex: 10000 }}
+                    position="popper"
+                    sideOffset={4}
+                  >
                     <SelectItem value="all">All Locations</SelectItem>
                     {availableLocations.map((location) => (
                       <SelectItem key={location} value={location}>
