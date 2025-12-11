@@ -1,13 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getTreatmentConfig, TreatmentCategory } from "@/utils/treatmentTypeDetection";
 import { resolveGridForProduct } from "@/utils/pricing/gridResolver";
 import { getAcceptedSubcategories, getTreatmentPrimaryCategory, TREATMENT_SUBCATEGORIES } from "@/constants/inventorySubcategories";
 
+const PAGE_SIZE = 50;
+
 /**
  * Enterprise-grade hook for fetching treatment-specific fabrics/materials
  * Features:
  * - Server-side search (filters at database level)
+ * - Pagination with "Load More" (50 items per page)
  * - Batch grid queries (eliminates N+1 problem)
  * - Optimized for large inventories (1000+ items)
  */
@@ -17,13 +20,14 @@ export const useTreatmentSpecificFabrics = (
 ) => {
   const treatmentConfig = getTreatmentConfig(treatmentCategory);
   
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["treatment-specific-fabrics", treatmentCategory, searchTerm || ""],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 0 }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
       const primaryCategory = getTreatmentPrimaryCategory(treatmentCategory);
+      const offset = pageParam * PAGE_SIZE;
       
       // Build base query with server-side search
       const buildSearchQuery = (query: any) => {
@@ -37,6 +41,7 @@ export const useTreatmentSpecificFabrics = (
       };
 
       let items: any[] = [];
+      let hasMore = false;
 
       // CRITICAL FIX: Handle material-based treatments that have inventoryCategory === 'none'
       if (treatmentConfig.inventoryCategory === 'none' && primaryCategory === 'material') {
@@ -49,16 +54,18 @@ export const useTreatmentSpecificFabrics = (
           .in("subcategory", subcategories)
           .eq("active", true)
           .order("name")
-          .limit(200); // Server-side limit for performance
+          .range(offset, offset + PAGE_SIZE);
 
         query = buildSearchQuery(query);
         const { data, error } = await query;
         if (error) throw error;
         items = data || [];
+        hasMore = items.length === PAGE_SIZE + 1;
+        if (hasMore) items.pop(); // Remove extra item used for hasMore check
       }
       // Return empty for treatments that truly don't need inventory
       else if (treatmentConfig.inventoryCategory === 'none') {
-        return [];
+        return { items: [], nextPage: undefined, hasMore: false };
       }
       // Handle wallpaper separately
       else if (treatmentCategory === 'wallpaper') {
@@ -68,19 +75,23 @@ export const useTreatmentSpecificFabrics = (
           .eq("category", treatmentConfig.inventoryCategory)
           .eq("active", true)
           .order("name")
-          .limit(200);
+          .range(offset, offset + PAGE_SIZE);
 
         query = buildSearchQuery(query);
         const { data, error } = await query;
         if (error) throw error;
-        return data || [];
+        items = data || [];
+        hasMore = items.length === PAGE_SIZE + 1;
+        if (hasMore) items.pop();
       }
       // Handle treatments that support both fabric and material
       else if (primaryCategory === 'both') {
         const subcategoryConfig = TREATMENT_SUBCATEGORIES[treatmentCategory];
         
         if (subcategoryConfig?.fabricSubcategories && subcategoryConfig?.materialSubcategories) {
-          // Fetch fabric items
+          // Fetch fabric items (half the page size each)
+          const halfLimit = Math.floor(PAGE_SIZE / 2);
+          
           let fabricQuery = supabase
             .from("enhanced_inventory_items")
             .select("*")
@@ -88,7 +99,7 @@ export const useTreatmentSpecificFabrics = (
             .in("subcategory", subcategoryConfig.fabricSubcategories)
             .eq("active", true)
             .order("name")
-            .limit(100);
+            .range(offset, offset + halfLimit);
 
           fabricQuery = buildSearchQuery(fabricQuery);
           const { data: fabricData, error: fabricError } = await fabricQuery;
@@ -102,13 +113,14 @@ export const useTreatmentSpecificFabrics = (
             .in("subcategory", subcategoryConfig.materialSubcategories)
             .eq("active", true)
             .order("name")
-            .limit(100);
+            .range(offset, offset + halfLimit);
 
           materialQuery = buildSearchQuery(materialQuery);
           const { data: materialData, error: materialError } = await materialQuery;
           if (materialError) throw materialError;
 
           items = [...(fabricData || []), ...(materialData || [])];
+          hasMore = (fabricData?.length === halfLimit + 1) || (materialData?.length === halfLimit + 1);
         }
       }
       // Standard category-based fetch
@@ -122,12 +134,14 @@ export const useTreatmentSpecificFabrics = (
           .in("subcategory", categories)
           .eq("active", true)
           .order("name")
-          .limit(200);
+          .range(offset, offset + PAGE_SIZE);
 
         query = buildSearchQuery(query);
         const { data, error } = await query;
         if (error) throw error;
         items = data || [];
+        hasMore = items.length === PAGE_SIZE + 1;
+        if (hasMore) items.pop();
       }
 
       // =====================================================
@@ -197,8 +211,14 @@ export const useTreatmentSpecificFabrics = (
         return item;
       }));
       
-      return enrichedItems;
+      return {
+        items: enrichedItems,
+        nextPage: hasMore ? pageParam + 1 : undefined,
+        hasMore
+      };
     },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 0,
     enabled: !!treatmentCategory,
     staleTime: 30000, // Cache for 30 seconds to reduce re-fetches
   });
