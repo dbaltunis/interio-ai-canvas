@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Package, Palette, Wrench, Check, X, Plus, Edit3, ScanLine } from "lucide-react";
 import { FilterButton } from "@/components/library/FilterButton";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
+import { VirtualizedInventoryGrid } from "@/components/inventory/VirtualizedInventoryGrid";
 import {
   Select,
   SelectContent,
@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useEnhancedInventory, useCreateEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
+import { usePaginatedInventory, flattenPaginatedResults } from "@/hooks/usePaginatedInventory";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,6 +60,7 @@ export const InventorySelectionPanel = ({
   treatmentCategory = 'curtains'
 }: InventorySelectionPanelProps) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300); // Debounce search for performance
   const [activeCategory, setActiveCategory] = useState("fabric");
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -242,7 +245,7 @@ export const InventorySelectionPanel = ({
     
     // For fabric category, ALWAYS use treatment-specific fabrics
     if (category === "fabric") {
-      const searchLower = searchTerm.toLowerCase();
+      const searchLower = debouncedSearchTerm.toLowerCase();
       const filtered = treatmentFabrics.filter(item => {
         const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
                              item.description?.toLowerCase().includes(searchLower) ||
@@ -255,7 +258,7 @@ export const InventorySelectionPanel = ({
         return matchesSearch && matchesVendor && matchesCollection && matchesTags;
       });
       // Sort results: items starting with search term first, then alphabetically
-      const sorted = searchTerm ? filtered.sort((a, b) => {
+      const sorted = debouncedSearchTerm ? filtered.sort((a, b) => {
         const aName = a.name?.toLowerCase() || '';
         const bName = b.name?.toLowerCase() || '';
         const aStartsWith = aName.startsWith(searchLower) ? 0 : 1;
@@ -269,7 +272,7 @@ export const InventorySelectionPanel = ({
 
     // For "both" category (vertical blinds with fabric AND material vanes)
     if (category === "both") {
-      const searchLower = searchTerm.toLowerCase();
+      const searchLower = debouncedSearchTerm.toLowerCase();
       // Get both fabric items from treatment-specific fabrics
       const fabricItems = treatmentFabrics.filter(item => {
         const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
@@ -334,7 +337,7 @@ export const InventorySelectionPanel = ({
                                      item.subcategory?.toLowerCase() === subcat.toLowerCase()
                                    );
         
-        const searchLower = searchTerm.toLowerCase();
+        const searchLower = debouncedSearchTerm.toLowerCase();
         const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
                              item.description?.toLowerCase().includes(searchLower) ||
                              item.sku?.toLowerCase().includes(searchLower) ||
@@ -357,7 +360,7 @@ export const InventorySelectionPanel = ({
 
     // For hardware category, show all hardware items (not treatment-specific)
     if (category === "hardware") {
-      const searchLower = searchTerm.toLowerCase();
+      const searchLower = debouncedSearchTerm.toLowerCase();
       const filtered = inventory.filter(item => {
         const matchesCategory = item.category?.toLowerCase() === 'hardware';
         const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
@@ -832,25 +835,21 @@ export const InventorySelectionPanel = ({
       }) => {
           const categoryItems = getInventoryByCategory(key);
           return <TabsContent key={key} value={key} className="flex-1 overflow-hidden">
-            <ScrollArea className="h-full">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 pr-3">
-                {categoryItems.map(item => renderInventoryItem(item, key))}
-              </div>
-
-              {categoryItems.length === 0 && <div className="text-center py-12 text-muted-foreground">
-                  <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                  <p className="text-sm">
-                    {treatmentCategory === 'wallpaper' && key === 'fabric' 
-                      ? 'No wallpaper items found. Add items with subcategory "wallcovering" or "wallpaper" in inventory.'
-                      : key === 'material'
-                      ? `No ${label.toLowerCase()} found. Add items with category "material" and subcategory "${getAcceptedSubcategories(treatmentCategory).join('" or "')}" in inventory.`
-                      : key === 'hardware'
-                      ? 'No hardware found. Add items with category "treatment_option", "top_system", "track", or "pole" in inventory.'
-                      : `No ${label.toLowerCase()} items found. Add items with subcategory "${getAcceptedSubcategories(treatmentCategory).join('" or "')}" in inventory.`}
-                  </p>
-                  {searchTerm && <p className="text-xs mt-1">Try different search terms</p>}
-                </div>}
-            </ScrollArea>
+            <VirtualizedInventoryGrid
+              items={categoryItems}
+              renderItem={renderInventoryItem}
+              category={key}
+              emptyMessage={
+                treatmentCategory === 'wallpaper' && key === 'fabric' 
+                  ? 'No wallpaper items found. Add items with subcategory "wallcovering" or "wallpaper" in inventory.'
+                  : key === 'material'
+                  ? `No ${label.toLowerCase()} found. Add items with category "material" and subcategory "${getAcceptedSubcategories(treatmentCategory).join('" or "')}" in inventory.`
+                  : key === 'hardware'
+                  ? 'No hardware found. Add items with category "treatment_option", "top_system", "track", or "pole" in inventory.'
+                  : `No ${label.toLowerCase()} items found. Add items with subcategory "${getAcceptedSubcategories(treatmentCategory).join('" or "')}" in inventory.`
+              }
+              searchTerm={debouncedSearchTerm}
+            />
           </TabsContent>;
         })}
       </Tabs>
