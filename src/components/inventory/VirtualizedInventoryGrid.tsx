@@ -166,7 +166,7 @@ export const VirtualizedInventoryGrid = ({
   return (
     <div
       ref={parentRef}
-      className="h-full overflow-auto"
+      className="overflow-auto max-h-[60vh] min-h-[400px]"
       style={{ contain: 'strict' }}
     >
       <div
