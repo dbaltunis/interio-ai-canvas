@@ -137,6 +137,17 @@ export const useCreateProject = () => {
   });
 };
 
+// Helper to get the column name for storing a number by entity type
+const getNumberColumnForEntityType = (entityType: string): string => {
+  switch (entityType) {
+    case 'draft': return 'draft_number';
+    case 'quote': return 'quote_number';
+    case 'order': return 'order_number';
+    case 'invoice': return 'invoice_number';
+    default: return 'draft_number';
+  }
+};
+
 export const useUpdateProject = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -146,11 +157,12 @@ export const useUpdateProject = () => {
       let statusChanged = false;
       let newStatusName = '';
       
-      // Check if status is changing and if we need to regenerate the number
+      // Check if status is changing and if we need to handle document numbers
       if (updates.status_id) {
+        // Fetch ALL stage-specific numbers so we can reuse them
         const { data: oldProject } = await supabase
           .from("projects")
-          .select("job_number, status_id, job_statuses(name)")
+          .select("job_number, status_id, draft_number, quote_number, order_number, invoice_number, job_statuses(name)")
           .eq("id", id)
           .single();
         
@@ -168,13 +180,29 @@ export const useUpdateProject = () => {
           // IMPORTANT: Always sync the status name field with the status_id
           updates.status = newStatusName;
           
+          // Only handle document numbers if the entity type actually changes
           if (shouldRegenerateNumber(oldStatusName, newStatusName)) {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-              const entityType = getEntityTypeFromStatus(newStatusName);
-              if (entityType) {
-                const newNumber = await generateSequenceNumber(user.id, entityType, 'JOB');
-                updates.job_number = newNumber;
+            const entityType = getEntityTypeFromStatus(newStatusName);
+            
+            if (entityType) {
+              const numberColumn = getNumberColumnForEntityType(entityType);
+              const existingNumber = (oldProject as any)[numberColumn];
+              
+              if (existingNumber) {
+                // REUSE the existing number for this stage
+                updates.job_number = existingNumber;
+                console.log(`Reusing existing ${entityType} number: ${existingNumber}`);
+              } else {
+                // Generate a NEW number and store it for future reuse
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                  const newNumber = await generateSequenceNumber(user.id, entityType, 'JOB');
+                  updates.job_number = newNumber;
+                  
+                  // Store the new number in the appropriate column for future reuse
+                  (updates as any)[numberColumn] = newNumber;
+                  console.log(`Generated new ${entityType} number: ${newNumber}, stored in ${numberColumn}`);
+                }
               }
             }
           }
