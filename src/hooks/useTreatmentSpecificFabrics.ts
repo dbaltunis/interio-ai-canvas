@@ -220,6 +220,8 @@ export const useTreatmentSpecificFabrics = (
     getNextPageParam: (lastPage) => lastPage.nextPage,
     initialPageParam: 0,
     enabled: !!treatmentCategory,
-    staleTime: 30000, // Cache for 30 seconds to reduce re-fetches
+    staleTime: 30000, // Cache for 30 seconds
+    gcTime: 300000, // Keep in cache for 5 minutes
+    refetchOnWindowFocus: false,
   });
 };

@@ -30,7 +30,11 @@ export const useInventoryTags = () => {
 
       return Array.from(tagsSet).sort();
     },
-    staleTime: 60000, // Cache for 1 minute
+    staleTime: 300000, // Cache for 5 minutes
+    gcTime: 600000, // Keep in cache for 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    placeholderData: (previousData) => previousData ?? [],
   });
 };
 
@@ -63,6 +67,10 @@ export const useInventoryLocations = () => {
 
       return Array.from(locationsSet).sort();
     },
-    staleTime: 60000, // Cache for 1 minute
+    staleTime: 300000, // Cache for 5 minutes
+    gcTime: 600000, // Keep in cache for 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    placeholderData: (previousData) => previousData ?? [],
   });
 };
