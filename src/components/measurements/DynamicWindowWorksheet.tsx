@@ -1020,6 +1020,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           }
 
           // Calculate lining cost (for curtains only)
+          // CRITICAL: Use the same linearMeters used for fabric cost (accounts for leftover logic)
           let liningCost = 0;
           if (treatmentCategory !== 'wallpaper' && selectedLining && selectedLining !== 'none' && selectedTemplate && fabricCalculation) {
             const liningTypes = selectedTemplate.lining_types || [];
@@ -1028,9 +1029,18 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               const liningPricePerMeter = liningOption.price_per_metre || 0;
               const liningLaborPerCurtain = liningOption.labour_per_curtain || 0;
               const curtainCount = fabricCalculation.curtainCount || 1;
-              // Material cost: price per meter × linear meters used
+              // Material cost: price per meter × linear meters used (SAME as fabric calculation)
               // Labor cost: price per curtain × number of curtains
-              liningCost = (liningPricePerMeter * fabricCalculation.linearMeters) + (liningLaborPerCurtain * curtainCount);
+              // CRITICAL FIX: Use linearMeters (which accounts for leftover/pieces logic) not fabricCalculation.linearMeters
+              liningCost = (liningPricePerMeter * linearMeters) + (liningLaborPerCurtain * curtainCount);
+              console.log('💰 [SAVE] Lining cost calculation:', {
+                liningPricePerMeter,
+                linearMeters,
+                fabricCalculationLinearMeters: fabricCalculation.linearMeters,
+                curtainCount,
+                liningLaborPerCurtain,
+                liningCost
+              });
             }
           }
 
@@ -1047,7 +1057,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             if (selectedHeading && selectedHeading !== 'standard' && selectedTemplate && fabricCalculation) {
               const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
               const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
-              headingCost = headingUpchargePerCurtain + headingUpchargePerMetre * fabricCalculation.linearMeters;
+              // CRITICAL FIX: Use linearMeters (which accounts for leftover/pieces logic) not fabricCalculation.linearMeters
+              headingCost = headingUpchargePerCurtain + headingUpchargePerMetre * linearMeters;
 
               // Add additional heading costs from settings/inventory
               const headingOptionFromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
