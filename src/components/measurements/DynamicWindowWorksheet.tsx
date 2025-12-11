@@ -1486,13 +1486,27 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                 category: 'hardware'
               }] : []),
               // All selected options - INCLUDE ALL (even price:0 "included" items)
-              ...selectedOptions.map((opt, idx) => ({
-                id: opt.name || `option-${idx}`,
-                name: opt.name || 'Option',
-                total_cost: opt.price || 0,
-                category: 'option',
-                description: opt.pricingMethod === 'included' ? 'Included' : undefined
-              }))
+              // CRITICAL FIX: Calculate proper price for per-meter options (especially lining)
+              ...selectedOptions.map((opt, idx) => {
+                let optionTotalCost = opt.price || 0;
+                const isPerMeterOption = opt.pricingMethod === 'per-meter' || opt.pricingMethod === 'per-metre' || 
+                                        opt.pricingMethod === 'per_meter' || opt.pricingMethod === 'per_metre' ||
+                                        opt.name?.toLowerCase().includes('lining');
+                
+                // If it's a per-meter option (like lining), calculate price × linear meters
+                if (isPerMeterOption && linearMeters > 0 && opt.price > 0) {
+                  optionTotalCost = opt.price * linearMeters;
+                  console.log(`💰 [COST_BREAKDOWN] Per-meter option "${opt.name}": ${opt.price}/m × ${linearMeters}m = ${optionTotalCost}`);
+                }
+                
+                return {
+                  id: opt.name || `option-${idx}`,
+                  name: opt.name || 'Option',
+                  total_cost: optionTotalCost,
+                  category: 'option',
+                  description: opt.pricingMethod === 'included' ? 'Included' : undefined
+                };
+              })
             ];})(),
             template_id: selectedTemplate?.id,
             pricing_type: selectedTemplate?.pricing_type || 'per_metre',
