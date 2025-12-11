@@ -836,7 +836,7 @@ export const InventorySelectionPanel = ({
         label
       }) => {
           const categoryItems = getInventoryByCategory(key);
-          const shouldUseVirtualization = categoryItems.length > 50; // Use virtual scrolling for 50+ items
+          const shouldUseVirtualization = false; // Disabled - virtualization causes layout issues
           
           return <TabsContent key={key} value={key} className="flex-1 overflow-hidden">
             {/* Loading state */}
@@ -857,7 +857,7 @@ export const InventorySelectionPanel = ({
                 cardRefMap={selectedCardRefs}
               />
             ) : (
-              <ScrollArea className="h-full">
+              <ScrollArea className="max-h-[60vh] min-h-[400px]">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 pr-3">
                   {categoryItems.map(item => renderInventoryItem(item, key))}
                 </div>
