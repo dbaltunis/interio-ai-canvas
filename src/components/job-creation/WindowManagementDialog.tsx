@@ -76,10 +76,19 @@ export const WindowManagementDialog = ({
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
   const [showTreatmentForm, setShowTreatmentForm] = useState(false);
   const [calculatedCost, setCalculatedCost] = useState(0);
+  // Local state for window name to update in real-time
+  const [windowName, setWindowName] = useState(surface?.name || 'Untitled');
   // Reference to access worksheet's save function
   const worksheetRef = useRef<MeasurementBridgeRef>(null);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [isSavingOnClose, setIsSavingOnClose] = useState(false);
+
+  // Keep windowName in sync with surface prop
+  useEffect(() => {
+    if (surface?.name) {
+      setWindowName(surface.name);
+    }
+  }, [surface?.name]);
   const {
     data: inventoryItems = []
   } = useInventory();
@@ -338,6 +347,9 @@ export const WindowManagementDialog = ({
       }).eq('id', surface.id);
       if (error) throw error;
 
+      // Update local state immediately for instant feedback
+      setWindowName(newName);
+
       // Invalidate queries to refresh the data
       queryClient.invalidateQueries({
         queryKey: ["surfaces"]
@@ -524,7 +536,7 @@ export const WindowManagementDialog = ({
                 <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[280px] max-w-[320px] h-[32px]">
                   <Ruler className="h-3.5 w-3.5 text-primary shrink-0" />
                   <span className="text-xs font-medium text-muted-foreground shrink-0">Design:</span>
-                  <WindowRenameButton windowName={surface?.name || 'Untitled'} onRename={handleRename} />
+                  <WindowRenameButton windowName={windowName} onRename={handleRename} />
                 </div>
                 
                 <div className="flex items-center gap-1.5 px-2 py-1 bg-background border border-border rounded-md min-w-[280px] max-w-[320px] h-[32px]">
