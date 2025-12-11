@@ -40,7 +40,7 @@ export const FilterButton = ({
   const { data: availableTags = [], isLoading: tagsLoading } = useInventoryTags();
   const { data: availableLocations = [], isLoading: locationsLoading } = useInventoryLocations();
   
-  console.log('[FilterButton] Render state:', { isOpen, vendorsLoading, collectionsLoading, tagsLoading, locationsLoading });
+  
 
   // Show vendor-specific collections if vendor is selected, otherwise show all
   const displayCollections = selectedVendor ? vendorCollections : allCollections;
