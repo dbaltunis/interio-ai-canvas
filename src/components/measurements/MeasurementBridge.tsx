@@ -1,5 +1,5 @@
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
-import { DynamicWindowWorksheet } from './DynamicWindowWorksheet';
+import { DynamicWindowWorksheet, DynamicWindowWorksheetRef } from './DynamicWindowWorksheet';
 import { EnhancedMeasurementWorksheet } from './EnhancedMeasurementWorksheet';
 
 interface MeasurementBridgeProps {
@@ -18,14 +18,19 @@ interface MeasurementBridgeProps {
   readOnly?: boolean;
 }
 
+export interface MeasurementBridgeRef {
+  autoSave: () => Promise<void>;
+  hasUnsavedChanges: () => boolean;
+  getDraftData: () => any;
+  saveDraftNow: () => void;
+  clearDraft: () => void;
+}
+
 /**
  * Bridge component that allows switching between different measurement interfaces
  * while maintaining compatibility with existing code
  */
-export const MeasurementBridge = forwardRef<
-  { autoSave: () => Promise<void> },
-  MeasurementBridgeProps
->(({
+export const MeasurementBridge = forwardRef<MeasurementBridgeRef, MeasurementBridgeProps>(({
   mode = 'dynamic',
   clientId,
   projectId,
@@ -42,7 +47,7 @@ export const MeasurementBridge = forwardRef<
 }, ref) => {
   
   // Create refs for both possible worksheet components
-  const dynamicWorksheetRef = useRef<{ autoSave: () => Promise<void> }>(null);
+  const dynamicWorksheetRef = useRef<DynamicWindowWorksheetRef>(null);
   const enhancedWorksheetRef = useRef<{ autoSave: () => Promise<void> }>(null);
   
   // Forward the ref to the appropriate component
@@ -62,6 +67,28 @@ export const MeasurementBridge = forwardRef<
       } catch (error) {
         console.error(`❌ MeasurementBridge: Auto-save failed for ${mode} mode:`, error);
         throw error;
+      }
+    },
+    hasUnsavedChanges: () => {
+      if (mode === 'dynamic' && dynamicWorksheetRef.current) {
+        return dynamicWorksheetRef.current.hasUnsavedChanges();
+      }
+      return false;
+    },
+    getDraftData: () => {
+      if (mode === 'dynamic' && dynamicWorksheetRef.current) {
+        return dynamicWorksheetRef.current.getDraftData();
+      }
+      return null;
+    },
+    saveDraftNow: () => {
+      if (mode === 'dynamic' && dynamicWorksheetRef.current) {
+        dynamicWorksheetRef.current.saveDraftNow();
+      }
+    },
+    clearDraft: () => {
+      if (mode === 'dynamic' && dynamicWorksheetRef.current) {
+        dynamicWorksheetRef.current.clearDraft();
       }
     }
   }));

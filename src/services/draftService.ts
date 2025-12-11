@@ -6,7 +6,9 @@
 interface DraftData {
   windowId: string;
   templateId?: string;
+  templateName?: string;
   fabricId?: string;
+  fabricName?: string;
   hardwareId?: string;
   materialId?: string;
   measurements: Record<string, any>;
@@ -14,6 +16,8 @@ interface DraftData {
   selectedHeading?: string;
   selectedLining?: string;
   windowType?: any;
+  windowTypeName?: string;
+  treatmentCategory?: string;
   timestamp: number;
 }
 
