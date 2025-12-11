@@ -40,6 +40,8 @@ interface VisualMeasurementSheetProps {
   windowType: string;
   selectedTemplate?: any;
   selectedFabric?: string;
+  /** Full fabric object passed from parent to avoid race condition with async inventory lookup */
+  selectedFabricItem?: any;
   onFabricChange?: (fabricId: string) => void;
   selectedLining?: string;
   onLiningChange?: (liningType: string) => void;
@@ -75,6 +77,7 @@ export const VisualMeasurementSheet = ({
   windowType,
   selectedTemplate,
   selectedFabric,
+  selectedFabricItem: propSelectedFabricItem,
   onFabricChange,
   selectedLining,
   onLiningChange,
@@ -220,11 +223,16 @@ export const VisualMeasurementSheet = ({
   } = useEnhancedInventory();
 
   // Get selected fabric details for visualization
-  const selectedFabricItem = selectedFabric ? inventory.find((item: any) => item.id === selectedFabric) : undefined;
+  // CRITICAL FIX: Prefer prop fabric item (passed from parent) to avoid race condition
+  // where inventory query hasn't loaded yet but parent already has the fabric object
+  const inventoryFabricItem = selectedFabric ? inventory.find((item: any) => item.id === selectedFabric) : undefined;
+  const selectedFabricItem = propSelectedFabricItem || inventoryFabricItem;
   const fabricImageUrl = selectedFabricItem?.image_url ? selectedFabricItem.image_url.startsWith('http') ? selectedFabricItem.image_url : supabase.storage.from('business-assets').getPublicUrl(selectedFabricItem.image_url).data?.publicUrl : undefined;
   const fabricColor = selectedFabricItem?.color || 'hsl(var(--primary))';
   console.log("🎨 Fabric visualization data:", {
     selectedFabricItem,
+    propSelectedFabricItem,
+    inventoryFabricItem,
     fabricImageUrl,
     fabricColor
   });
