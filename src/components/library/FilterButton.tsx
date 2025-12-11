@@ -87,7 +87,7 @@ export const FilterButton = ({
   };
 
   return (
-    <Popover modal={false}>
+    <Popover>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="relative gap-2">
           <Filter className="h-4 w-4" />
@@ -99,18 +99,7 @@ export const FilterButton = ({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent 
-        className="w-80 bg-background border-border shadow-lg" 
-        style={{ zIndex: 9999 }} 
-        align="end"
-        onInteractOutside={(e) => {
-          // Prevent closing when interacting with Select dropdown
-          const target = e.target as HTMLElement;
-          if (target.closest('[data-radix-select-content]')) {
-            e.preventDefault();
-          }
-        }}
-      >
+      <PopoverContent className="w-80 bg-background border-border shadow-lg" style={{ zIndex: 9999 }} align="end">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="font-semibold text-sm">Filter Options</h4>
