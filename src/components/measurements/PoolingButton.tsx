@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Waves } from "lucide-react";
+import { Waves, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface PoolingButtonProps {
   poolingOption: string;
@@ -27,7 +27,7 @@ export const PoolingButton = ({
   fabricCalculation,
   selectedFabric
 }: PoolingButtonProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const getPoolingLabel = () => {
     switch (poolingOption) {
@@ -43,37 +43,37 @@ export const PoolingButton = ({
   const handleOptionChange = (value: string) => {
     onPoolingOptionChange(value);
     
-    // Set default pooling amount when "below_floor" is selected
     if (value === "below_floor" && (!poolingAmount || poolingAmount === "0")) {
       const defaultValue = units.system === "imperial" ? "1" : "2";
       onPoolingAmountChange(defaultValue);
     }
-    // Clear pooling amount when not below floor
     if (value !== "below_floor") {
       onPoolingAmountChange("");
     }
   };
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1.5 text-xs"
-          disabled={readOnly}
-        >
+    <div className="space-y-2">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-8 gap-1.5 text-xs w-full justify-between"
+        disabled={readOnly}
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <span className="flex items-center gap-1.5">
           <Waves className="h-3.5 w-3.5" />
           {getPoolingLabel()}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-64 p-3" align="start">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 pb-2 border-b border-border">
-            <Waves className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Pooling Options</span>
-          </div>
-          
+        </span>
+        {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+      </Button>
+      
+      <div className={cn(
+        "overflow-hidden transition-all duration-200 ease-in-out",
+        isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+      )}>
+        <div className="p-3 bg-muted/50 rounded-md border border-border space-y-3">
           <RadioGroup 
             value={poolingOption} 
             onValueChange={handleOptionChange} 
@@ -98,7 +98,7 @@ export const PoolingButton = ({
             <div className="pt-2 border-t border-border space-y-2">
               <div>
                 <Label htmlFor="pooling_amount_input" className="text-xs font-medium">
-                  Pooling Amount ({units.system === "imperial" ? "inches" : "cm"})
+                  Amount ({units.system === "imperial" ? "in" : "cm"})
                 </Label>
                 <Input 
                   id="pooling_amount_input" 
@@ -115,14 +115,14 @@ export const PoolingButton = ({
               {hasValue(poolingAmount) && selectedFabric && fabricCalculation && (
                 <div className="p-2 bg-amber-100/50 border border-amber-300 rounded text-[10px]">
                   <div className="font-medium text-amber-800">
-                    ✓ Pooling adds ~{(parseFloat(poolingAmount) / 100 * fabricCalculation.widthsRequired).toFixed(2)}{units.fabric}
+                    ✓ Adds ~{(parseFloat(poolingAmount) / 100 * fabricCalculation.widthsRequired).toFixed(2)}{units.fabric}
                   </div>
                 </div>
               )}
             </div>
           )}
         </div>
-      </PopoverContent>
-    </Popover>
+      </div>
+    </div>
   );
 };
