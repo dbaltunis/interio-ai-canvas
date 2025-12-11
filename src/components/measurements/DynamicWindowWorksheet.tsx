@@ -89,8 +89,17 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
   // State management
   const [selectedWindowType, setSelectedWindowType] = useState<any>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
-  const [selectedTreatmentType, setSelectedTreatmentType] = useState("curtains");
-  const [treatmentCategory, setTreatmentCategory] = useState<TreatmentCategory>('curtains');
+  // CRITICAL FIX: Initialize to null when editing to prevent "spontaneous curtain" bug
+  // Treatment type will be restored from database before any auto-navigation happens
+  const [selectedTreatmentType, setSelectedTreatmentType] = useState<string | null>(
+    existingTreatments?.length > 0 ? null : "curtains"
+  );
+  const [treatmentCategory, setTreatmentCategory] = useState<TreatmentCategory | null>(
+    existingTreatments?.length > 0 ? null : 'curtains'
+  );
+  
+  // Track if treatment type has been properly restored from database
+  const hasRestoredTreatmentType = useRef(false);
   
   // Clear treatment selection when window type changes
   useEffect(() => {
@@ -273,6 +282,20 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
         
         // STEP 2: Restore Treatment/Template
         let detectedCategory: TreatmentCategory = 'curtains';
+        // CRITICAL FIX: Set treatment type EARLY from summary columns BEFORE async template fetch
+        // This prevents race condition where auto-navigation happens before treatment type is set
+        if (existingWindowSummary.treatment_category) {
+          setTreatmentCategory(existingWindowSummary.treatment_category as TreatmentCategory);
+          setSelectedTreatmentType(existingWindowSummary.treatment_category);
+          hasRestoredTreatmentType.current = true;
+          console.log('✅ [EARLY] Restored treatment category from summary:', existingWindowSummary.treatment_category);
+        } else if (existingWindowSummary.treatment_type) {
+          setTreatmentCategory(existingWindowSummary.treatment_type as TreatmentCategory);
+          setSelectedTreatmentType(existingWindowSummary.treatment_type);
+          hasRestoredTreatmentType.current = true;
+          console.log('✅ [EARLY] Restored treatment type from summary:', existingWindowSummary.treatment_type);
+        }
+        
         if (templateDetails) {
           console.log('🔧 [v2.0.3] Template details from snapshot:', {
             id: templateDetails.id,
@@ -318,12 +341,16 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           detectedCategory = detectTreatmentType(fullTemplate);
           setTreatmentCategory(detectedCategory);
           setSelectedTreatmentType(detectedCategory);
+          hasRestoredTreatmentType.current = true;
+          console.log('✅ [TEMPLATE] Restored treatment category from template:', detectedCategory);
         }
         if (existingWindowSummary.treatment_type && !templateDetails) {
           setSelectedTreatmentType(existingWindowSummary.treatment_type);
+          hasRestoredTreatmentType.current = true;
         }
         if (existingWindowSummary.treatment_category && !templateDetails) {
           setTreatmentCategory(existingWindowSummary.treatment_category as TreatmentCategory);
+          hasRestoredTreatmentType.current = true;
         }
         
         // STEP 3: Restore Inventory Selections
@@ -702,10 +729,18 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
 
   // AUTO-NAVIGATE to measurements tab when editing existing treatment
   // Skip the wizard steps if template and fabric are already selected
+  // CRITICAL FIX: Only navigate AFTER treatment type is properly restored to prevent spontaneous curtain bug
   const hasNavigatedToMeasurements = useRef(false);
   useEffect(() => {
     // Only run once
     if (hasNavigatedToMeasurements.current) return;
+    
+    // CRITICAL: Wait for treatment type to be restored first
+    // This prevents navigating to measurements with wrong/default treatment type
+    if (!hasRestoredTreatmentType.current && existingWindowSummary) {
+      console.log('⏳ Waiting for treatment type restoration before auto-navigating...');
+      return;
+    }
     
     // Check if we're editing (has existing data with template)
     if (existingWindowSummary && selectedTemplate) {
@@ -713,13 +748,13 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
       const hasFabricOrMaterial = selectedItems.fabric || selectedItems.material || selectedItems.hardware;
       
       if (hasFabricOrMaterial) {
-        console.log('📍 Auto-navigating to measurements tab (editing existing treatment)');
+        console.log('📍 Auto-navigating to measurements tab (editing existing treatment with restored type:', treatmentCategory, ')');
         hasNavigatedToMeasurements.current = true;
         // Small delay to ensure state is settled
         setTimeout(() => setActiveTab('measurements'), 100);
       }
     }
-  }, [existingWindowSummary, selectedTemplate, selectedItems]);
+  }, [existingWindowSummary, selectedTemplate, selectedItems, treatmentCategory]);
 
   // AUTO-RESTORE draft on mount (no confirmation needed)
   useEffect(() => {
