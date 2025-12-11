@@ -700,6 +700,27 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     }
   }, [selectedTemplate]);
 
+  // AUTO-NAVIGATE to measurements tab when editing existing treatment
+  // Skip the wizard steps if template and fabric are already selected
+  const hasNavigatedToMeasurements = useRef(false);
+  useEffect(() => {
+    // Only run once
+    if (hasNavigatedToMeasurements.current) return;
+    
+    // Check if we're editing (has existing data with template)
+    if (existingWindowSummary && selectedTemplate) {
+      // Check if fabric/material is also selected (step 3 complete)
+      const hasFabricOrMaterial = selectedItems.fabric || selectedItems.material || selectedItems.hardware;
+      
+      if (hasFabricOrMaterial) {
+        console.log('📍 Auto-navigating to measurements tab (editing existing treatment)');
+        hasNavigatedToMeasurements.current = true;
+        // Small delay to ensure state is settled
+        setTimeout(() => setActiveTab('measurements'), 100);
+      }
+    }
+  }, [existingWindowSummary, selectedTemplate, selectedItems]);
+
   // AUTO-RESTORE draft on mount (no confirmation needed)
   useEffect(() => {
     if (!surfaceId || existingWindowSummary) return;
