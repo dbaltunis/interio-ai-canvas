@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -29,13 +30,17 @@ export const FilterButton = ({
   onTagsChange,
   onStorageLocationChange,
 }: FilterButtonProps) => {
-  const { data: vendors } = useVendors();
-  const { data: allCollections } = useCollections();
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const { data: vendors, isLoading: vendorsLoading } = useVendors();
+  const { data: allCollections, isLoading: collectionsLoading } = useCollections();
   const { data: vendorCollections } = useCollectionsByVendor(selectedVendor);
   
   // Use lightweight hooks instead of loading full inventory
-  const { data: availableTags = [] } = useInventoryTags();
-  const { data: availableLocations = [] } = useInventoryLocations();
+  const { data: availableTags = [], isLoading: tagsLoading } = useInventoryTags();
+  const { data: availableLocations = [], isLoading: locationsLoading } = useInventoryLocations();
+  
+  console.log('[FilterButton] Render state:', { isOpen, vendorsLoading, collectionsLoading, tagsLoading, locationsLoading });
 
   // Show vendor-specific collections if vendor is selected, otherwise show all
   const displayCollections = selectedVendor ? vendorCollections : allCollections;
@@ -65,7 +70,7 @@ export const FilterButton = ({
   };
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="relative gap-2">
           <Filter className="h-4 w-4" />

@@ -12,6 +12,7 @@ interface ProductImageWithColorFallbackProps {
   showColorName?: boolean;
   category?: 'fabric' | 'material' | 'hardware' | 'service' | string;
   rounded?: 'none' | 'sm' | 'md' | 'lg' | 'full';
+  fillContainer?: boolean; // When true, fills parent container instead of using fixed size
 }
 
 /**
@@ -19,8 +20,6 @@ interface ProductImageWithColorFallbackProps {
  * 1. Try to load image from imageUrl
  * 2. If no image or load fails → display color swatch from color field
  * 3. If no color → show category-appropriate icon with styled background
- * 
- * This component is used across ALL SaaS users for consistent display.
  */
 export const ProductImageWithColorFallback: React.FC<ProductImageWithColorFallbackProps> = ({
   imageUrl,
@@ -31,21 +30,18 @@ export const ProductImageWithColorFallback: React.FC<ProductImageWithColorFallba
   showColorName = false,
   category = 'fabric',
   rounded = 'md',
+  fillContainer = false,
 }) => {
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(!!imageUrl);
 
-  // Convert color name to hex
   const hexColor = colorNameToHex(color);
   const hasValidColor = !!hexColor;
   const hasValidImage = !!imageUrl && !imageError;
-
-  // Get contrasting text color for overlays
   const textColor = getContrastingTextColor(hexColor);
 
-  // Get category icon
   const getCategoryIcon = () => {
-    const iconSize = Math.max(16, size * 0.4);
+    const iconSize = fillContainer ? 24 : Math.max(16, size * 0.4);
     const iconProps = { size: iconSize, className: 'text-muted-foreground' };
     
     switch (category?.toLowerCase()) {
@@ -64,7 +60,6 @@ export const ProductImageWithColorFallback: React.FC<ProductImageWithColorFallba
     }
   };
 
-  // Round class mapping
   const roundedClasses = {
     none: 'rounded-none',
     sm: 'rounded-sm',
@@ -73,12 +68,10 @@ export const ProductImageWithColorFallback: React.FC<ProductImageWithColorFallba
     full: 'rounded-full',
   };
 
-  const containerStyle: React.CSSProperties = {
-    width: size,
-    height: size,
-    minWidth: size,
-    minHeight: size,
-  };
+  // When fillContainer is true, use 100% width/height
+  const containerStyle: React.CSSProperties = fillContainer
+    ? { width: '100%', height: '100%' }
+    : { width: size, height: size, minWidth: size, minHeight: size };
 
   // Render image if available and not errored
   if (hasValidImage) {
