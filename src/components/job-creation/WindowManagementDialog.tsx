@@ -15,6 +15,7 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { WindowRenameButton } from "./WindowRenameButton";
 import { useToast } from "@/hooks/use-toast";
 import { UnsavedChangesDialog } from "./UnsavedChangesDialog";
+import { useDeleteSurface } from "@/hooks/useSurfaces";
 interface WindowManagementDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -323,9 +324,23 @@ export const WindowManagementDialog = ({
     }
   };
 
-  const handleDiscardChanges = () => {
+  const deleteSurface = useDeleteSurface();
+
+  const handleDiscardChanges = async () => {
     worksheetRef.current?.clearDraft();
     setShowUnsavedDialog(false);
+    
+    // If no treatment was ever saved (windowSummary is null/undefined), 
+    // delete the ghost surface entirely
+    if (!windowSummary && surface?.id) {
+      console.log('🗑️ Deleting ghost window that was never saved:', surface.id);
+      try {
+        await deleteSurface.mutateAsync(surface.id);
+      } catch (error) {
+        console.error('Failed to delete ghost surface:', error);
+      }
+    }
+    
     onClose();
   };
 
