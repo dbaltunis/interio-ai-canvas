@@ -98,6 +98,7 @@ interface BlindCostsCallback {
   fabricCost: number;
   manufacturingCost: number;
   optionsCost: number;
+  optionDetails: Array<{ name: string; cost: number; pricingMethod: string }>; // ✅ Individual option costs
   totalCost: number;
   squareMeters: number;
   displayText: string;
@@ -402,6 +403,7 @@ export const CostCalculationSummary = ({
           fabricCost: blindCosts.fabricCost,
           manufacturingCost: blindCosts.manufacturingCost,
           optionsCost: blindCosts.optionsCost,
+          optionDetails: blindCosts.optionDetails, // ✅ Include individual option costs
           totalCost: blindCosts.totalCost,
           squareMeters: blindCosts.squareMeters,
           displayText: blindCosts.displayText,
