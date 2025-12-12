@@ -2701,10 +2701,6 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       setCalculatedCosts(newCalculatedCosts);
                     }
 
-                    // ✅ DISPLAY-ONLY: Pass saved breakdown if viewing existing data
-                    const savedBreakdown = existingWindowSummary?.cost_breakdown as any[] || undefined;
-                    const savedTotal = existingWindowSummary?.total_cost;
-                    
                     return (
                       <CostCalculationSummary
                         template={selectedTemplate} 
@@ -2731,8 +2727,6 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                         }}
                         manufacturingDetails={manufacturingDetails}
                         engineResult={engineResult}
-                        savedCostBreakdown={savedBreakdown}
-                        savedTotalCost={savedTotal}
                         onBlindCostsCalculated={(costs) => setLiveBlindCalcResult(costs)}
                       />
                     );
