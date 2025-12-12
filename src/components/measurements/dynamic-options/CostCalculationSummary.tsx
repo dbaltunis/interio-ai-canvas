@@ -15,6 +15,7 @@ import { getPricingMethodLabel, getPricingMethodSuffix, getLengthUnitLabel, getA
 import { formatDimensionsFromCM, formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { PricingGridPreview } from "@/components/settings/tabs/products/pricing/PricingGridPreview";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
+import { SavedCostBreakdownDisplay } from "./SavedCostBreakdownDisplay";
 
 // Simple SVG icons
 const FabricSwatchIcon = ({ className }: { className?: string }) => (
@@ -78,6 +79,20 @@ interface EngineResult {
   };
 }
 
+interface CostBreakdownItem {
+  id: string;
+  name: string;
+  total_cost: number;
+  category: string;
+  quantity?: number;
+  unit?: string;
+  unit_price?: number;
+  pricing_method?: string;
+  uses_pricing_grid?: boolean;
+  uses_leftover?: boolean;
+  description?: string;
+}
+
 interface CostCalculationSummaryProps {
   template: CurtainTemplate;
   measurements: any;
@@ -113,6 +128,12 @@ interface CostCalculationSummaryProps {
    * All display values come from here, no local calculations
    */
   engineResult?: EngineResult | null;
+  /**
+   * DISPLAY-ONLY MODE: When savedCostBreakdown is provided, display these values directly
+   * without any recalculation. This eliminates the recalculation anti-pattern.
+   */
+  savedCostBreakdown?: CostBreakdownItem[];
+  savedTotalCost?: number;
 }
 
 export const CostCalculationSummary = ({
@@ -133,6 +154,8 @@ export const CostCalculationSummary = ({
   fabricDisplayData,
   manufacturingDetails,
   engineResult,
+  savedCostBreakdown,
+  savedTotalCost,
 }: CostCalculationSummaryProps) => {
   const { units } = useMeasurementUnits();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
@@ -145,6 +168,23 @@ export const CostCalculationSummary = ({
   
   // Use enriched fabric for all calculations
   const fabricToUse = enrichedFabric || selectedFabric;
+
+  // ============================================================
+  // DISPLAY-ONLY MODE: If saved breakdown provided, use it directly
+  // This eliminates recalculation anti-pattern - no unit conversion errors
+  // ============================================================
+  if (savedCostBreakdown && savedCostBreakdown.length > 0 && savedTotalCost != null) {
+    console.log('✅ [DISPLAY-ONLY] Using saved cost breakdown, no recalculation');
+    return (
+      <SavedCostBreakdownDisplay
+        costBreakdown={savedCostBreakdown}
+        totalCost={savedTotalCost}
+        templateName={template?.name}
+        treatmentCategory={detectTreatmentType(template)}
+        selectedColor={measurements?.selected_color}
+      />
+    );
+  }
 
   if (!template) {
     return (

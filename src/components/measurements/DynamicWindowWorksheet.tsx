@@ -2379,6 +2379,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     
                     // Calculate costs for curtains
                     if (!selectedTemplate || !fabricCalculation || treatmentCategory === 'wallpaper') {
+                      // ✅ DISPLAY-ONLY: Pass saved breakdown if viewing existing data
+                      const savedBreakdown = existingWindowSummary?.cost_breakdown as any[] || undefined;
+                      const savedTotal = existingWindowSummary?.total_cost;
+                      
                       return (
                       <CostCalculationSummary
                           template={selectedTemplate} 
@@ -2390,6 +2394,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                           fabricCalculation={fabricCalculation}
                           selectedOptions={allDisplayOptions}
                           engineResult={engineResult}
+                          savedCostBreakdown={savedBreakdown}
+                          savedTotalCost={savedTotal}
                         />
                       );
                     }
@@ -2665,6 +2671,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       setCalculatedCosts(newCalculatedCosts);
                     }
 
+                    // ✅ DISPLAY-ONLY: Pass saved breakdown if viewing existing data
+                    const savedBreakdown = existingWindowSummary?.cost_breakdown as any[] || undefined;
+                    const savedTotal = existingWindowSummary?.total_cost;
+                    
                     return (
                       <CostCalculationSummary
                         template={selectedTemplate} 
@@ -2691,6 +2701,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                         }}
                         manufacturingDetails={manufacturingDetails}
                         engineResult={engineResult}
+                        savedCostBreakdown={savedBreakdown}
+                        savedTotalCost={savedTotal}
                       />
                     );
                   })()}
