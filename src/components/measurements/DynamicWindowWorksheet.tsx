@@ -142,6 +142,17 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     usesLeftover: false
   });
   
+  // ✅ LIVE BLIND COSTS: Stored from CostCalculationSummary callback
+  // Used during autoSave to prevent recalculation with different unit assumptions
+  const [liveBlindCalcResult, setLiveBlindCalcResult] = useState<{
+    fabricCost: number;
+    manufacturingCost: number;
+    optionsCost: number;
+    totalCost: number;
+    squareMeters: number;
+    displayText: string;
+  } | null>(null);
+  
   const [layeredTreatments, setLayeredTreatments] = useState<Array<{
     id: string;
     type: string;
@@ -931,59 +942,66 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               }
             }
           } else if (displayCategory === 'blinds' || displayCategory === 'shutters') {
-            // BLIND/SHUTTER CALCULATIONS
-            // CRITICAL FIX: Convert MM to CM before passing to calculator
-            const width = (parseFloat(measurements.rail_width) || 0) / 10;
-            const height = (parseFloat(measurements.drop) || 0) / 10;
-            
-            // Import blind calculation utility - UNIFIED TO SINGLE CALCULATOR
-            const { calculateBlindCosts, isBlindCategory } = await import('@/components/measurements/dynamic-options/utils/blindCostCalculator');
-            
-            // CRITICAL: Use fabric first (with pricing grid data), then fall back to material or template
-            const materialForCalc = selectedItems.fabric || selectedItems.material || (selectedTemplate ? {
-              unit_price: selectedTemplate.unit_price || 0,
-              selling_price: selectedTemplate.unit_price || 0
-            } : null);
-            
-            console.log('🎯 Calculating blind cost:', {
-              width,
-              height,
-              template: selectedTemplate?.name,
-              templateMachinePrice: selectedTemplate?.machine_price_per_metre,
-              templateUnitPrice: selectedTemplate?.unit_price,
-              material: materialForCalc,
-              hasPricingGrid: !!(materialForCalc?.pricing_grid_data),
-              category: displayCategory,
-              selectedOptions
-            });
-            
-            // Use unified calculator with full measurements data
-            const blindCalc = calculateBlindCosts(width, height, selectedTemplate, materialForCalc, selectedOptions || [], measurements);
-            
-            fabricCost = blindCalc.fabricCost;
-            manufacturingCost = blindCalc.manufacturingCost;
-            linearMeters = blindCalc.squareMeters; // Use sqm for blinds
-            hardwareCost = 0; // Hardware included in options
-            
-            // CRITICAL: Preserve options cost from blind calculation
-            blindOptionsCost = blindCalc.optionsCost || 0;
-            totalCost = blindCalc.totalCost; // Already includes options
-            
-            console.log('💰 Blind calculation result:', {
-              fabricCost: blindCalc.fabricCost,
-              manufacturingCost: blindCalc.manufacturingCost,
-              optionsCost: blindOptionsCost,
-              squareMeters: blindCalc.squareMeters,
-              totalCost: blindCalc.totalCost
-            });
-            
-            console.log('💰 Blind calculation result:', {
-              fabricCost: blindCalc.fabricCost,
-              manufacturingCost: blindCalc.manufacturingCost,
-              optionsCost: blindOptionsCost,
-              squareMeters: blindCalc.squareMeters,
-              totalCost: blindCalc.totalCost
-            });
+            // ✅ CRITICAL FIX: Use live-calculated blind costs from CostCalculationSummary
+            // This ensures save uses IDENTICAL values to what's displayed - no recalculation
+            if (liveBlindCalcResult) {
+              console.log('✅ [SAVE] Using live blind calculation (no recalculation):', liveBlindCalcResult);
+              fabricCost = liveBlindCalcResult.fabricCost;
+              manufacturingCost = liveBlindCalcResult.manufacturingCost;
+              blindOptionsCost = liveBlindCalcResult.optionsCost;
+              totalCost = liveBlindCalcResult.totalCost;
+              linearMeters = liveBlindCalcResult.squareMeters; // Use sqm for blinds
+              hardwareCost = 0; // Hardware included in options
+            } else {
+              // Fallback: Recalculate only if CostCalculationSummary hasn't rendered yet
+              console.log('⚠️ [SAVE] No live blind result, falling back to recalculation');
+              
+              // BLIND/SHUTTER CALCULATIONS
+              // CRITICAL FIX: Convert MM to CM before passing to calculator
+              const width = (parseFloat(measurements.rail_width) || 0) / 10;
+              const height = (parseFloat(measurements.drop) || 0) / 10;
+              
+              // Import blind calculation utility - UNIFIED TO SINGLE CALCULATOR
+              const { calculateBlindCosts, isBlindCategory } = await import('@/components/measurements/dynamic-options/utils/blindCostCalculator');
+              
+              // CRITICAL: Use fabric first (with pricing grid data), then fall back to material or template
+              const materialForCalc = selectedItems.fabric || selectedItems.material || (selectedTemplate ? {
+                unit_price: selectedTemplate.unit_price || 0,
+                selling_price: selectedTemplate.unit_price || 0
+              } : null);
+              
+              console.log('🎯 Calculating blind cost (fallback):', {
+                width,
+                height,
+                template: selectedTemplate?.name,
+                templateMachinePrice: selectedTemplate?.machine_price_per_metre,
+                templateUnitPrice: selectedTemplate?.unit_price,
+                material: materialForCalc,
+                hasPricingGrid: !!(materialForCalc?.pricing_grid_data),
+                category: displayCategory,
+                selectedOptions
+              });
+              
+              // Use unified calculator with full measurements data
+              const blindCalc = calculateBlindCosts(width, height, selectedTemplate, materialForCalc, selectedOptions || [], measurements);
+              
+              fabricCost = blindCalc.fabricCost;
+              manufacturingCost = blindCalc.manufacturingCost;
+              linearMeters = blindCalc.squareMeters; // Use sqm for blinds
+              hardwareCost = 0; // Hardware included in options
+              
+              // CRITICAL: Preserve options cost from blind calculation
+              blindOptionsCost = blindCalc.optionsCost || 0;
+              totalCost = blindCalc.totalCost; // Already includes options
+              
+              console.log('💰 Blind calculation result (fallback):', {
+                fabricCost: blindCalc.fabricCost,
+                manufacturingCost: blindCalc.manufacturingCost,
+                optionsCost: blindOptionsCost,
+                squareMeters: blindCalc.squareMeters,
+                totalCost: blindCalc.totalCost
+              });
+            }
           } else {
             // Original curtain calculations - use engineResult when available
             const isCurtainOrRoman = treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds';
@@ -2396,6 +2414,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                           engineResult={engineResult}
                           savedCostBreakdown={savedBreakdown}
                           savedTotalCost={savedTotal}
+                          onBlindCostsCalculated={(costs) => setLiveBlindCalcResult(costs)}
                         />
                       );
                     }
@@ -2703,6 +2722,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                         engineResult={engineResult}
                         savedCostBreakdown={savedBreakdown}
                         savedTotalCost={savedTotal}
+                        onBlindCostsCalculated={(costs) => setLiveBlindCalcResult(costs)}
                       />
                     );
                   })()}
