@@ -22,8 +22,9 @@ export const CellularShadeVisualizer = ({
   mounted = 'inside'
 }: CellularShadeVisualizerProps) => {
   
-  const width = measurements?.width || 800;
-  const height = measurements?.drop || measurements?.height || 600;
+  // CRITICAL: Check all possible measurement field names - blinds use rail_width/drop, windows use width/height
+  const width = measurements?.rail_width || measurements?.width || measurements?.window_width || 800;
+  const height = measurements?.drop || measurements?.height || measurements?.window_height || 600;
   const materialColor = material?.color || template?.color || '#E8E4D9';
   
   const visualization = useMemo(() => {
