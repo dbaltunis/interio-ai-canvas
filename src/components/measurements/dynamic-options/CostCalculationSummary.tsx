@@ -650,10 +650,10 @@ export const CostCalculationSummary = ({
     ? calculatedFabricCost
     : (useEngine ? engineResult.fabric_cost : 0);
   
-  // Linear meters: engine > fabricCalculation > 0
-  const linearMeters = useEngine 
-    ? (engineResult.linear_meters ?? 0)
-    : (fabricCalculation?.linearMeters ?? 0);
+  // Linear meters: fabricDisplayData.totalMeters > engine > fabricCalculation > 0
+  // ✅ CRITICAL: Use totalMeters from fabricDisplayData (parent passes the correct source)
+  const linearMeters = fabricDisplayData?.totalMeters 
+    ?? (useEngine ? (engineResult.linear_meters ?? 0) : (fabricCalculation?.linearMeters ?? 0));
   
   // Widths required: engine > fabricCalculation > 1
   const widthsRequired = useEngine

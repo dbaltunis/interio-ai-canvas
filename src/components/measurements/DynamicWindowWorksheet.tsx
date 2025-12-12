@@ -2532,6 +2532,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     }
 
                     // Calculate lining cost - DYNAMIC based on template configuration
+                    // ✅ CRITICAL FIX: Use totalMeters (same source as fabric cost) instead of fabricCalculation.linearMeters
                     let liningCost = 0;
                     if (selectedLining && selectedLining !== 'none' && selectedTemplate?.lining_types) {
                       const liningConfig = selectedTemplate.lining_types.find((l: any) => l.type === selectedLining);
@@ -2541,16 +2542,17 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                         const labourPerCurtain = liningConfig.labour_per_curtain || 0;
                         const curtainCount = fabricCalculation.curtainCount || 1;
                         
-                        liningCost = (pricePerMetre * (fabricCalculation.linearMeters || 0)) + (labourPerCurtain * curtainCount);
+                        // ✅ Use totalMeters - consistent with fabric cost calculation (line 2486-2514)
+                        liningCost = (pricePerMetre * totalMeters) + (labourPerCurtain * curtainCount);
                         
                         console.log('💰 Lining cost calculation:', {
                           type: selectedLining,
                           pricePerMetre,
                           labourPerCurtain,
-                          linearMeters: fabricCalculation.linearMeters,
+                          totalMeters, // ✅ Using same source as fabric cost
                           curtainCount,
                           totalCost: liningCost,
-                          formula: `(${pricePerMetre}/m × ${fabricCalculation.linearMeters}m) + (${labourPerCurtain} × ${curtainCount} curtains) = ${liningCost}`
+                          formula: `(${pricePerMetre}/m × ${totalMeters}m) + (${labourPerCurtain} × ${curtainCount} curtains) = ${liningCost}`
                         });
                       }
                     }
@@ -2591,19 +2593,17 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                         ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
                         : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
                       
-                      // ✅ UNIFIED SOURCE: Use engineResult.linear_meters when available (same as fabric display)
+                      // ✅ UNIFIED SOURCE: Use totalMeters (same as fabric cost display)
                       // This ensures manufacturing cost matches fabric cost display exactly
                       const unitIsMetric = units?.length === 'mm' || units?.length === 'cm' || units?.length === 'm';
-                      manufacturingQuantity = (isCurtainOrRoman && engineResult?.linear_meters != null)
-                        ? engineResult.linear_meters
-                        : (fabricCalculation?.linearMeters || 0);
+                      manufacturingQuantity = totalMeters; // ✅ Use totalMeters directly - consistent with fabric cost
                       manufacturingQuantityLabel = unitIsMetric ? 'm' : 'yd';
                       manufacturingCost = pricePerUnit * manufacturingQuantity;
                     } else {
                       pricePerUnit = manufacturingType === 'hand'
                         ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
                         : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
-                      manufacturingQuantity = fabricCalculation.linearMeters || 0;
+                      manufacturingQuantity = totalMeters; // ✅ Use totalMeters - consistent with fabric cost
                       const fallbackUnitIsMetric = units?.length === 'mm' || units?.length === 'cm' || units?.length === 'm';
                       manufacturingQuantityLabel = fallbackUnitIsMetric ? 'm' : 'yd';
                       manufacturingCost = pricePerUnit * manufacturingQuantity;
@@ -2660,7 +2660,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       // Start with template upcharges
                       const headingUpchargePerCurtain = selectedTemplate.heading_upcharge_per_curtain || 0;
                       const headingUpchargePerMetre = selectedTemplate.heading_upcharge_per_metre || 0;
-                      headingCost = headingUpchargePerCurtain + headingUpchargePerMetre * fabricCalculation.linearMeters;
+                      // ✅ Use totalMeters - consistent with fabric cost calculation
+                      headingCost = headingUpchargePerCurtain + headingUpchargePerMetre * totalMeters;
                       
                       // Add heading inventory/settings price - match save calculation exactly
                       const heading = headingOptionsFromSettings.find(h => h.id === selectedHeading || h.name === selectedHeading);
