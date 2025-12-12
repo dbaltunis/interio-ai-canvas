@@ -7,11 +7,18 @@
 import { getPriceFromGrid } from '@/hooks/usePricingGrids';
 import { getBlindHemDefaults, calculateBlindSqm, logBlindCalculation } from '@/utils/blindCalculationDefaults';
 
+interface OptionDetail {
+  name: string;
+  cost: number;
+  pricingMethod: string;
+}
+
 interface BlindCalculationResult {
   squareMeters: number;
   fabricCost: number;
   manufacturingCost: number;
   optionsCost: number;
+  optionDetails: OptionDetail[]; // Individual option costs for consistent save
   totalCost: number;
   displayText: string;
   widthCalcNote?: string;
@@ -121,7 +128,10 @@ export const calculateBlindCosts = (
   
   // Calculate options cost - consider pricing method for each option
   // CRITICAL: Filter out lining options for blinds - they don't use lining
+  // ✅ Also track individual option costs for consistent saving
   console.log('💰 Calculating options cost, selectedOptions:', selectedOptions);
+  
+  const optionDetails: OptionDetail[] = [];
   
   const optionsCost = selectedOptions
     .filter(opt => {
@@ -136,30 +146,31 @@ export const calculateBlindCosts = (
     })
     .reduce((sum, opt) => {
       const basePrice = opt.price || 0;
+      let calculatedCost = 0;
+      let usedMethod = opt.pricingMethod || 'fixed';
       
       // Check pricing method
       if (opt.pricingMethod === 'per-meter') {
         // Price per meter of width
-        const priceForWidth = basePrice * (widthCm / 100);
+        calculatedCost = basePrice * (widthCm / 100);
         console.log(`💰 Option "${opt.name}" pricing:`, {
           method: 'per-meter',
           basePrice,
           widthCm,
           widthMeters: (widthCm / 100).toFixed(2),
-          calculatedPrice: priceForWidth.toFixed(2)
+          calculatedPrice: calculatedCost.toFixed(2)
         });
-        return sum + priceForWidth;
       } else if (opt.pricingMethod === 'per-sqm') {
         // Price per square meter
-        const priceForArea = basePrice * squareMeters;
+        calculatedCost = basePrice * squareMeters;
         console.log(`💰 Option "${opt.name}" pricing:`, {
           method: 'per-sqm',
           basePrice,
           squareMeters: squareMeters.toFixed(2),
-          calculatedPrice: priceForArea.toFixed(2)
+          calculatedPrice: calculatedCost.toFixed(2)
         });
-        return sum + priceForArea;
       } else if (opt.pricingMethod === 'pricing-grid' && opt.pricingGridData) {
+        usedMethod = 'pricing-grid';
         // Check if it's a simple width-only array format
         if (Array.isArray(opt.pricingGridData) && opt.pricingGridData.length > 0 && 'width' in opt.pricingGridData[0]) {
           // Simple width-based pricing: [{ width: 60, price: 300 }, ...]
@@ -168,33 +179,40 @@ export const calculateBlindCosts = (
             return Math.abs(curr - widthCm) < Math.abs(prev - widthCm) ? curr : prev;
           });
           const matchingEntry = opt.pricingGridData.find((entry: any) => parseInt(entry.width) === closestWidth);
-          const gridPrice = matchingEntry ? parseFloat(matchingEntry.price) : 0;
+          calculatedCost = matchingEntry ? parseFloat(matchingEntry.price) : 0;
           
           console.log(`💰 Option "${opt.name}" pricing:`, {
             method: 'pricing-grid (width-based)',
             requestedWidth: widthCm + 'cm',
             closestWidth: closestWidth + 'cm',
-            gridPrice: gridPrice.toFixed(2)
+            gridPrice: calculatedCost.toFixed(2)
           });
-          return sum + gridPrice;
         } else {
           // Full 2D pricing grid with width and drop
-          const gridPrice = getPriceFromGrid(opt.pricingGridData, widthCm, heightCm);
+          calculatedCost = getPriceFromGrid(opt.pricingGridData, widthCm, heightCm);
           console.log(`💰 Option "${opt.name}" pricing:`, {
             method: 'pricing-grid (2D)',
             dimensions: `${widthCm}cm × ${heightCm}cm`,
-            gridPrice: gridPrice.toFixed(2)
+            gridPrice: calculatedCost.toFixed(2)
           });
-          return sum + gridPrice;
         }
       } else {
         // Fixed price (default)
+        calculatedCost = basePrice;
         console.log(`💰 Option "${opt.name}" pricing:`, {
           method: opt.pricingMethod || 'fixed (default)',
           price: basePrice
         });
-        return sum + basePrice;
       }
+      
+      // ✅ Store calculated cost for each option
+      optionDetails.push({
+        name: opt.name || 'Unknown Option',
+        cost: calculatedCost,
+        pricingMethod: usedMethod
+      });
+      
+      return sum + calculatedCost;
     }, 0);
   
   // Total cost
@@ -224,6 +242,7 @@ export const calculateBlindCosts = (
     fabricCost,
     manufacturingCost,
     optionsCost,
+    optionDetails, // ✅ Include individual option costs for consistent save
     totalCost,
     displayText,
     widthCalcNote: blindCalc.widthCalcNote,
