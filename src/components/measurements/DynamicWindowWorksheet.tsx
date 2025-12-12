@@ -2450,12 +2450,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       }] : [])
                     ];
                     
-                    // Calculate costs for curtains
+                    // Calculate costs for curtains - ALWAYS calculate live, never use saved values
                     if (!selectedTemplate || !fabricCalculation || treatmentCategory === 'wallpaper') {
-                      // ✅ DISPLAY-ONLY: Pass saved breakdown if viewing existing data
-                      const savedBreakdown = existingWindowSummary?.cost_breakdown as any[] || undefined;
-                      const savedTotal = existingWindowSummary?.total_cost;
-                      
                       return (
                       <CostCalculationSummary
                           template={selectedTemplate} 
@@ -2467,8 +2463,6 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                           fabricCalculation={fabricCalculation}
                           selectedOptions={allDisplayOptions}
                           engineResult={engineResult}
-                          savedCostBreakdown={savedBreakdown}
-                          savedTotalCost={savedTotal}
                           onBlindCostsCalculated={(costs) => setLiveBlindCalcResult(costs)}
                           onCurtainCostsCalculated={(costs) => setLiveCurtainCalcResult(costs)}
                         />
