@@ -255,6 +255,10 @@ export const isBlindCategory = (category: string, templateName?: string): boolea
   const nameLower = (templateName || '').toLowerCase();
   return categoryLower.includes('blind') || 
          categoryLower.includes('shade') ||
+         categoryLower.includes('shutter') ||  // ✅ Include shutters
+         categoryLower.includes('awning') ||   // ✅ Include awnings
          nameLower.includes('blind') ||
-         nameLower.includes('shade');
+         nameLower.includes('shade') ||
+         nameLower.includes('shutter') ||
+         nameLower.includes('awning');
 };

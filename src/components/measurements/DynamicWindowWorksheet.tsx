@@ -154,6 +154,19 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     displayText: string;
   } | null>(null);
   
+  // ✅ NEW: LIVE CURTAIN COSTS: Stored from CostCalculationSummary callback
+  // Used during autoSave to prevent recalculation with different unit assumptions
+  const [liveCurtainCalcResult, setLiveCurtainCalcResult] = useState<{
+    fabricCost: number;
+    liningCost: number;
+    manufacturingCost: number;
+    headingCost: number;
+    optionsCost: number;
+    optionDetails: Array<{ name: string; cost: number; pricingMethod: string }>;
+    totalCost: number;
+    linearMeters: number;
+  } | null>(null);
+  
   const [layeredTreatments, setLayeredTreatments] = useState<Array<{
     id: string;
     type: string;
@@ -1004,73 +1017,83 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               });
             }
           } else {
-            // Original curtain calculations - use engineResult when available
-            const isCurtainOrRoman = treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds';
-            
-            // Get horizontal pieces from engine or fabricCalculation
-            const horizontalPiecesNeeded = (isCurtainOrRoman && engineResult?.formula_breakdown?.values?.['horizontal_pieces'] as number) 
-              || fabricCalculation?.horizontalPiecesNeeded 
-              || 1;
-            
-            // Check if using leftover fabric - only charge for 1 piece instead of multiple
-            const usesLeftover = measurements.uses_leftover_for_horizontal === true || 
-                                 measurements.uses_leftover_for_horizontal === 'true';
-            
-            // Check if railroaded from engine
-            const isRailroaded = engineResult?.formula_breakdown?.values?.['is_railroaded'] === 'yes' 
-              || fabricCalculation?.fabricOrientation === 'horizontal';
-            
-            // ✅ SINGLE SOURCE OF TRUTH: Engine returns TOTAL linear meters (includes all pieces for railroaded)
-            const engineTotalMeters = (isCurtainOrRoman && engineResult?.linear_meters != null) 
-              ? engineResult.linear_meters 
-              : null;
-            const fabricCalcMeters = fabricCalculation?.linearMeters || 0;
-            const usingEngine = engineTotalMeters != null;
-            
-            const pricePerMeter = fabricCalculation?.pricePerMeter || 0;
-            
-            // Calculate per-piece and total meters for consistent handling
-            let perPieceMeters: number;
-            let totalMetersToOrder: number;
-            
-            if (usingEngine && engineTotalMeters != null) {
-              // ENGINE PATH: linear_meters is TOTAL
-              if (isRailroaded && horizontalPiecesNeeded > 1) {
-                perPieceMeters = engineTotalMeters / horizontalPiecesNeeded;
+            // ✅ CRITICAL FIX: Use live-calculated curtain costs from CostCalculationSummary
+            // This ensures save uses IDENTICAL values to what's displayed - no recalculation
+            if (liveCurtainCalcResult) {
+              console.log('✅ [SAVE] Using live curtain calculation (no recalculation):', liveCurtainCalcResult);
+              fabricCost = liveCurtainCalcResult.fabricCost;
+              linearMeters = liveCurtainCalcResult.linearMeters;
+              // Note: liningCost, headingCost, manufacturingCost calculated below with their own logic
+              // but curtainOptionsCost and totalCost come from live result for consistency
+            } else {
+              // Original curtain calculations - use engineResult when available
+              const isCurtainOrRoman = treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds';
+              
+              // Get horizontal pieces from engine or fabricCalculation
+              const horizontalPiecesNeeded = (isCurtainOrRoman && engineResult?.formula_breakdown?.values?.['horizontal_pieces'] as number) 
+                || fabricCalculation?.horizontalPiecesNeeded 
+                || 1;
+              
+              // Check if using leftover fabric - only charge for 1 piece instead of multiple
+              const usesLeftover = measurements.uses_leftover_for_horizontal === true || 
+                                   measurements.uses_leftover_for_horizontal === 'true';
+              
+              // Check if railroaded from engine
+              const isRailroaded = engineResult?.formula_breakdown?.values?.['is_railroaded'] === 'yes' 
+                || fabricCalculation?.fabricOrientation === 'horizontal';
+              
+              // ✅ SINGLE SOURCE OF TRUTH: Engine returns TOTAL linear meters (includes all pieces for railroaded)
+              const engineTotalMeters = (isCurtainOrRoman && engineResult?.linear_meters != null) 
+                ? engineResult.linear_meters 
+                : null;
+              const fabricCalcMeters = fabricCalculation?.linearMeters || 0;
+              const usingEngine = engineTotalMeters != null;
+              
+              const pricePerMeter = fabricCalculation?.pricePerMeter || 0;
+              
+              // Calculate per-piece and total meters for consistent handling
+              let perPieceMeters: number;
+              let totalMetersToOrder: number;
+              
+              if (usingEngine && engineTotalMeters != null) {
+                // ENGINE PATH: linear_meters is TOTAL
+                if (isRailroaded && horizontalPiecesNeeded > 1) {
+                  perPieceMeters = engineTotalMeters / horizontalPiecesNeeded;
+                } else {
+                  perPieceMeters = engineTotalMeters;
+                }
+                
+                // Total to order: charge for 1 piece if using leftover, else total
+                if (usesLeftover && horizontalPiecesNeeded > 1) {
+                  totalMetersToOrder = perPieceMeters;
+                  fabricCost = perPieceMeters * pricePerMeter;
+                } else {
+                  totalMetersToOrder = engineTotalMeters;
+                  fabricCost = engineTotalMeters * pricePerMeter;
+                }
+                linearMeters = totalMetersToOrder; // Save the total being ordered
               } else {
-                perPieceMeters = engineTotalMeters;
+                // LEGACY PATH: fabricCalculation returns per-width meters
+                perPieceMeters = fabricCalcMeters;
+                const piecesToCharge = (usesLeftover && horizontalPiecesNeeded > 1) ? 1 : horizontalPiecesNeeded;
+                totalMetersToOrder = perPieceMeters * piecesToCharge;
+                fabricCost = totalMetersToOrder * pricePerMeter;
+                linearMeters = totalMetersToOrder; // Save the total being ordered
               }
               
-              // Total to order: charge for 1 piece if using leftover, else total
-              if (usesLeftover && horizontalPiecesNeeded > 1) {
-                totalMetersToOrder = perPieceMeters;
-                fabricCost = perPieceMeters * pricePerMeter;
-              } else {
-                totalMetersToOrder = engineTotalMeters;
-                fabricCost = engineTotalMeters * pricePerMeter;
-              }
-              linearMeters = totalMetersToOrder; // Save the total being ordered
-            } else {
-              // LEGACY PATH: fabricCalculation returns per-width meters
-              perPieceMeters = fabricCalcMeters;
-              const piecesToCharge = (usesLeftover && horizontalPiecesNeeded > 1) ? 1 : horizontalPiecesNeeded;
-              totalMetersToOrder = perPieceMeters * piecesToCharge;
-              fabricCost = totalMetersToOrder * pricePerMeter;
-              linearMeters = totalMetersToOrder; // Save the total being ordered
+              console.log('💰 [SAVE] Using fabric calculation (fallback):', {
+                usingEngine,
+                isRailroaded,
+                perPieceMeters,
+                totalMetersToOrder,
+                linearMeters,
+                horizontalPiecesNeeded,
+                usesLeftover,
+                pricePerMeter,
+                fabricCost,
+                widthsRequired: fabricCalculation?.widthsRequired
+              });
             }
-            
-            console.log('💰 [SAVE] Using fabric calculation:', {
-              usingEngine,
-              isRailroaded,
-              perPieceMeters,
-              totalMetersToOrder,
-              linearMeters,
-              horizontalPiecesNeeded,
-              usesLeftover,
-              pricePerMeter,
-              fabricCost,
-              widthsRequired: fabricCalculation?.widthsRequired
-            });
           }
 
           // Calculate lining cost (for curtains only)
@@ -1257,8 +1280,14 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           // Calculate options cost for curtains (if any selected)
           let curtainOptionsCost = 0;
           if (displayCategory === 'curtains' && selectedOptions && selectedOptions.length > 0) {
-            curtainOptionsCost = selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0);
-            console.log('💰 [SAVE] Curtain options cost:', curtainOptionsCost, 'from', selectedOptions.length, 'options');
+            // ✅ CRITICAL: Use pre-calculated options cost from liveCurtainCalcResult if available
+            if (liveCurtainCalcResult) {
+              curtainOptionsCost = liveCurtainCalcResult.optionsCost;
+              console.log('✅ [SAVE] Using live curtain options cost:', curtainOptionsCost);
+            } else {
+              curtainOptionsCost = selectedOptions.reduce((sum, opt) => sum + (opt.price || 0), 0);
+              console.log('💰 [SAVE] Curtain options cost (fallback):', curtainOptionsCost, 'from', selectedOptions.length, 'options');
+            }
           }
 
           // Calculate total cost 
@@ -1267,8 +1296,13 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           } else if (displayCategory === 'blinds' || displayCategory === 'shutters') {
             // Blinds/shutters totalCost already calculated and includes options
             // DO NOT RECALCULATE - use blindCalc.totalCost which includes all components
+          } else if (liveCurtainCalcResult) {
+            // ✅ CRITICAL: Use pre-calculated total from liveCurtainCalcResult
+            // This ensures popup display === saved values
+            totalCost = liveCurtainCalcResult.totalCost;
+            console.log('✅ [SAVE] Using live curtain total cost:', totalCost);
           } else {
-            // Curtains - recalculate with all components including options
+            // Curtains - recalculate with all components including options (fallback)
             totalCost = fabricCost + liningCost + headingCost + manufacturingCost + curtainOptionsCost;
           }
 
@@ -1550,26 +1584,36 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     category: 'option',
                     pricing_method: opt.pricingMethod
                   }))
-                : selectedOptions.map((opt, idx) => {
-                    let optionTotalCost = opt.price || 0;
-                    const isPerMeterOption = opt.pricingMethod === 'per-meter' || opt.pricingMethod === 'per-metre' || 
-                                            opt.pricingMethod === 'per_meter' || opt.pricingMethod === 'per_metre' ||
-                                            opt.name?.toLowerCase().includes('lining');
-                    
-                    // If it's a per-meter option (like lining), calculate price × linear meters
-                    if (isPerMeterOption && linearMeters > 0 && opt.price > 0) {
-                      optionTotalCost = opt.price * linearMeters;
-                      console.log(`💰 [COST_BREAKDOWN] Per-meter option "${opt.name}": ${opt.price}/m × ${linearMeters}m = ${optionTotalCost}`);
-                    }
-                    
-                    return {
+                // ✅ NEW: For curtains/romans, use pre-calculated optionDetails from liveCurtainCalcResult
+                : (displayCategory === 'curtains' && liveCurtainCalcResult?.optionDetails
+                  ? liveCurtainCalcResult.optionDetails.map((opt, idx) => ({
                       id: opt.name || `option-${idx}`,
                       name: opt.name || 'Option',
-                      total_cost: optionTotalCost,
+                      total_cost: opt.cost,
                       category: 'option',
-                      description: opt.pricingMethod === 'included' ? 'Included' : undefined
-                    };
-                  })
+                      pricing_method: opt.pricingMethod
+                    }))
+                  : selectedOptions.map((opt, idx) => {
+                      let optionTotalCost = opt.price || 0;
+                      const isPerMeterOption = opt.pricingMethod === 'per-meter' || opt.pricingMethod === 'per-metre' || 
+                                              opt.pricingMethod === 'per_meter' || opt.pricingMethod === 'per_metre' ||
+                                              opt.name?.toLowerCase().includes('lining');
+                      
+                      // If it's a per-meter option (like lining), calculate price × linear meters
+                      if (isPerMeterOption && linearMeters > 0 && opt.price > 0) {
+                        optionTotalCost = opt.price * linearMeters;
+                        console.log(`💰 [COST_BREAKDOWN] Per-meter option "${opt.name}": ${opt.price}/m × ${linearMeters}m = ${optionTotalCost}`);
+                      }
+                      
+                      return {
+                        id: opt.name || `option-${idx}`,
+                        name: opt.name || 'Option',
+                        total_cost: optionTotalCost,
+                        category: 'option',
+                        description: opt.pricingMethod === 'included' ? 'Included' : undefined
+                      };
+                    })
+                )
               )
             ];})(),
             template_id: selectedTemplate?.id,
@@ -2426,6 +2470,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                           savedCostBreakdown={savedBreakdown}
                           savedTotalCost={savedTotal}
                           onBlindCostsCalculated={(costs) => setLiveBlindCalcResult(costs)}
+                          onCurtainCostsCalculated={(costs) => setLiveCurtainCalcResult(costs)}
                         />
                       );
                     }
@@ -2728,6 +2773,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                         manufacturingDetails={manufacturingDetails}
                         engineResult={engineResult}
                         onBlindCostsCalculated={(costs) => setLiveBlindCalcResult(costs)}
+                        onCurtainCostsCalculated={(costs) => setLiveCurtainCalcResult(costs)}
                       />
                     );
                   })()}
