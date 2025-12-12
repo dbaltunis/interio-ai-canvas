@@ -84,7 +84,7 @@ export const SortableOptionItem = ({
             <div className="font-medium uppercase">{value.label}</div>
             
             {/* Visibility Indicator */}
-            {value.extra_data?.visible === false ? (
+            {value.hidden_by_user ? (
               <Badge variant="outline" className="flex items-center gap-1 text-xs bg-muted text-muted-foreground">
                 <EyeOff className="h-3 w-3" />
                 Hidden
