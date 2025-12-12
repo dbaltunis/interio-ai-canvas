@@ -161,6 +161,7 @@ export const TreatmentPreviewEngine = ({
             louverSize={template?.louver_size || '63mm'}
             frameStyle={template?.frame_style || 'L-frame'}
             mounted={template?.mount_type || 'inside'}
+            selectedColor={selectedItems.material?.color}
           />
         );
       
