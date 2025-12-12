@@ -149,17 +149,19 @@ export const SimplifiedTemplateFormPricing = ({
         </CardContent>
       </Card>
 
-      {/* Size Constraints Section */}
+      {/* Size Range Section */}
       <Card>
         <CardContent className="pt-6 space-y-4">
           <div>
-            <Label className="text-sm font-medium">Size Constraints (Optional)</Label>
-            <p className="text-xs text-muted-foreground mb-3">Leave empty to allow any size</p>
+            <Label className="text-sm font-medium">Typical Size Range (Optional)</Label>
+            <p className="text-xs text-muted-foreground mb-3">
+              Values outside this range will show a warning during quoting, but won't block saving
+            </p>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-xs">Min Width ({unitLabel})</Label>
+              <Label className="text-xs">Typical Min Width ({unitLabel})</Label>
               <Input
                 type="number"
                 step="1"
@@ -169,7 +171,7 @@ export const SimplifiedTemplateFormPricing = ({
               />
             </div>
             <div>
-              <Label className="text-xs">Max Width ({unitLabel})</Label>
+              <Label className="text-xs">Typical Max Width ({unitLabel})</Label>
               <Input
                 type="number"
                 step="1"
@@ -182,7 +184,7 @@ export const SimplifiedTemplateFormPricing = ({
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-xs">Min Height ({unitLabel})</Label>
+              <Label className="text-xs">Typical Min Height ({unitLabel})</Label>
               <Input
                 type="number"
                 step="1"
@@ -192,7 +194,7 @@ export const SimplifiedTemplateFormPricing = ({
               />
             </div>
             <div>
-              <Label className="text-xs">Max Height ({unitLabel})</Label>
+              <Label className="text-xs">Typical Max Height ({unitLabel})</Label>
               <Input
                 type="number"
                 step="1"
