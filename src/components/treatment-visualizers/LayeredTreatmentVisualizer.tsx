@@ -88,6 +88,7 @@ export const LayeredTreatmentVisualizer = ({
           </div>
         );
       
+      case "shutter":
       case "shutters":
       case "plantation_shutters":
         return (

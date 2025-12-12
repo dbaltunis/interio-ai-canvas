@@ -147,6 +147,7 @@ export const TreatmentPreviewEngine = ({
           />
         );
       
+      case "shutter":
       case "shutters":
       case "plantation_shutters":
         return (

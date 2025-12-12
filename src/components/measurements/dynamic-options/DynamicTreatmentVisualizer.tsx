@@ -276,6 +276,7 @@ export const DynamicTreatmentVisualizer = ({
           />
         );
       
+      case 'shutter':
       case 'shutters':
       case 'plantation_shutters':
         return (
