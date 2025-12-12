@@ -32,7 +32,7 @@ export const PanelGlideVisualizer = ({
   const panelHeight = height - frameThickness * 2 - trackHeight - 10;
   
   return (
-    <div className={`relative w-full h-full bg-muted/20 rounded-lg overflow-hidden ${className}`}>
+    <div className={`relative w-full min-h-[350px] bg-muted/20 rounded-lg overflow-hidden ${className}`}>
       <svg 
         viewBox={`0 0 ${width} ${height}`} 
         className="w-full h-full"
