@@ -3,10 +3,12 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Camera, Trash2, Package } from "lucide-react";
+import { Camera, Trash2, Package, Loader2 } from "lucide-react";
 import { WorkshopRoomSection } from "@/hooks/useWorkshopData";
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
 import { WorkItemPhotoGallery } from "@/components/workroom/components/WorkItemPhotoGallery";
+import { compressImage, needsCompression, formatFileSize } from "@/utils/imageUtils";
+import { toast } from "sonner";
 
 interface RoomSectionProps {
   section: WorkshopRoomSection;
@@ -23,6 +25,7 @@ type VisualProps = {
 
 const Visual: React.FC<VisualProps> = ({ width, height, unit, itemId, treatment, defaultImageUrl }) => {
   const [imageSrc, setImageSrc] = React.useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const storageKey = React.useMemo(() => `workshop:photo:${itemId}`, [itemId]);
@@ -35,7 +38,12 @@ const Visual: React.FC<VisualProps> = ({ width, height, unit, itemId, treatment,
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     if (imageSrc) {
-      window.localStorage.setItem(storageKey, imageSrc);
+      try {
+        window.localStorage.setItem(storageKey, imageSrc);
+      } catch (e) {
+        // localStorage quota exceeded - image too large
+        console.warn('localStorage quota exceeded, image not saved locally');
+      }
     } else {
       window.localStorage.removeItem(storageKey);
     }
@@ -45,15 +53,58 @@ const Visual: React.FC<VisualProps> = ({ width, height, unit, itemId, treatment,
 
   const onRemove = () => setImageSrc(null);
 
-  const onFileChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+  const onFileChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const data = typeof reader.result === "string" ? reader.result : null;
-      if (data) setImageSrc(data);
-    };
-    reader.readAsDataURL(file);
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    
+    // Check if file is too large (>10MB is unreasonable)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error(`Image is too large (${formatFileSize(file.size)}). Maximum size is 10MB.`);
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    try {
+      let fileToProcess = file;
+      
+      // Compress if larger than 1MB to prevent localStorage issues
+      if (needsCompression(file, 1024)) {
+        toast.info(`Optimizing image (${formatFileSize(file.size)})...`);
+        fileToProcess = await compressImage(file, {
+          maxWidth: 800,
+          maxHeight: 800,
+          quality: 0.7,
+          format: 'jpeg'
+        });
+        console.log(`Image compressed: ${formatFileSize(file.size)} → ${formatFileSize(fileToProcess.size)}`);
+      }
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        const data = typeof reader.result === "string" ? reader.result : null;
+        if (data) {
+          setImageSrc(data);
+          setIsProcessing(false);
+        }
+      };
+      reader.onerror = () => {
+        toast.error('Failed to read image file');
+        setIsProcessing(false);
+      };
+      reader.readAsDataURL(fileToProcess);
+    } catch (error) {
+      console.error('Error processing image:', error);
+      toast.error('Failed to process image');
+      setIsProcessing(false);
+    }
   };
 
   const hasDims = width !== undefined && height !== undefined;
@@ -122,8 +173,10 @@ const Visual: React.FC<VisualProps> = ({ width, height, unit, itemId, treatment,
           onChange={onFileChange}
           className="hidden"
         />
-        <Button variant="secondary" size="sm" className="h-6 px-2" onClick={onPick}>
-          {imageSrc ? "Change" : "Upload"}
+        <Button variant="secondary" size="sm" className="h-6 px-2" onClick={onPick} disabled={isProcessing}>
+          {isProcessing ? (
+            <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Processing...</>
+          ) : imageSrc ? "Change" : "Upload"}
         </Button>
         {imageSrc && (
           <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={onRemove} aria-label="Remove photo">
