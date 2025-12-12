@@ -916,6 +916,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           let totalCost = 0;
           let linearMeters = 0;
           let manufacturingCost = 0;
+          let liningCost = 0;
+          let headingCost = 0;
           let hardwareCost = 0;
           let blindOptionsCost = 0;
           let wallpaperDetails = null;
@@ -1023,8 +1025,11 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               console.log('✅ [SAVE] Using live curtain calculation (no recalculation):', liveCurtainCalcResult);
               fabricCost = liveCurtainCalcResult.fabricCost;
               linearMeters = liveCurtainCalcResult.linearMeters;
-              // Note: liningCost, headingCost, manufacturingCost calculated below with their own logic
-              // but curtainOptionsCost and totalCost come from live result for consistency
+              // ✅ CRITICAL: Also use lining, heading, manufacturing from live result!
+              // DO NOT recalculate - this was causing display/save mismatch
+              liningCost = liveCurtainCalcResult.liningCost;
+              headingCost = liveCurtainCalcResult.headingCost;
+              manufacturingCost = liveCurtainCalcResult.manufacturingCost;
             } else {
               // Original curtain calculations - use engineResult when available
               const isCurtainOrRoman = treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds';
@@ -1096,10 +1101,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             }
           }
 
-          // Calculate lining cost (for curtains only)
+          // Calculate lining cost (for curtains only) - ONLY if not using liveCurtainCalcResult
           // CRITICAL: Use the same linearMeters used for fabric cost (accounts for leftover logic)
-          let liningCost = 0;
-          if (treatmentCategory !== 'wallpaper' && selectedLining && selectedLining !== 'none' && selectedTemplate && fabricCalculation) {
+          // Note: liningCost already declared at line 919, and set from liveCurtainCalcResult if available
+          if (!liveCurtainCalcResult && treatmentCategory !== 'wallpaper' && selectedLining && selectedLining !== 'none' && selectedTemplate && fabricCalculation) {
             const liningTypes = selectedTemplate.lining_types || [];
             const liningOption = liningTypes.find(l => l.type === selectedLining);
             if (liningOption) {
@@ -1110,7 +1115,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               // Labor cost: price per curtain × number of curtains
               // CRITICAL FIX: Use linearMeters (which accounts for leftover/pieces logic) not fabricCalculation.linearMeters
               liningCost = (liningPricePerMeter * linearMeters) + (liningLaborPerCurtain * curtainCount);
-              console.log('💰 [SAVE] Lining cost calculation:', {
+              console.log('💰 [SAVE] Lining cost calculation (fallback):', {
                 liningPricePerMeter,
                 linearMeters,
                 fabricCalculationLinearMeters: fabricCalculation.linearMeters,
@@ -1121,10 +1126,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             }
           }
 
-          // Calculate heading cost (for curtains only)
-          let headingCost = 0;
+          // Calculate heading cost (for curtains only) - ONLY if not using liveCurtainCalcResult
+          // Note: headingCost already declared at line 920, and set from liveCurtainCalcResult if available
           let headingName = 'Standard';
-          if (treatmentCategory !== 'wallpaper') {
+          if (!liveCurtainCalcResult && treatmentCategory !== 'wallpaper') {
             console.log("🎯 AutoSave heading calculation:", {
               selectedHeading,
               headingOptionsFromSettings: headingOptionsFromSettings.length,
@@ -1171,8 +1176,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             }
           }
 
-          // ✅ Calculate manufacturing cost dynamically using selected pricing method
-          if (displayCategory === 'curtains' && selectedTemplate && fabricCalculation) {
+          // ✅ Calculate manufacturing cost dynamically - ONLY if not using liveCurtainCalcResult
+          // Note: manufacturingCost set from liveCurtainCalcResult if available (line ~1030)
+          if (!liveCurtainCalcResult && displayCategory === 'curtains' && selectedTemplate && fabricCalculation) {
             // Get the selected pricing method (from user's dropdown selection)
             const selectedPricingMethod = measurements.selected_pricing_method 
               ? selectedTemplate.pricing_methods?.find((m: any) => m.id === measurements.selected_pricing_method)
