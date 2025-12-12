@@ -93,6 +93,15 @@ interface CostBreakdownItem {
   description?: string;
 }
 
+interface BlindCostsCallback {
+  fabricCost: number;
+  manufacturingCost: number;
+  optionsCost: number;
+  totalCost: number;
+  squareMeters: number;
+  displayText: string;
+}
+
 interface CostCalculationSummaryProps {
   template: CurtainTemplate;
   measurements: any;
@@ -134,6 +143,11 @@ interface CostCalculationSummaryProps {
    */
   savedCostBreakdown?: CostBreakdownItem[];
   savedTotalCost?: number;
+  /**
+   * Callback to report live-calculated blind costs to parent for use during save.
+   * This eliminates the recalculation anti-pattern by using the same values for display and save.
+   */
+  onBlindCostsCalculated?: (costs: BlindCostsCallback) => void;
 }
 
 export const CostCalculationSummary = ({
@@ -156,6 +170,7 @@ export const CostCalculationSummary = ({
   engineResult,
   savedCostBreakdown,
   savedTotalCost,
+  onBlindCostsCalculated,
 }: CostCalculationSummaryProps) => {
   const { units } = useMeasurementUnits();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
@@ -359,6 +374,19 @@ export const CostCalculationSummary = ({
       const blindCosts = calculateBlindCosts(width, height, template, fabricToUse, selectedOptions, measurements);
       
       console.log('✅ Blind calculator results:', blindCosts);
+      
+      // ✅ CRITICAL FIX: Report calculated costs to parent for use during save
+      // This ensures save uses IDENTICAL values to what's displayed - no recalculation
+      if (onBlindCostsCalculated) {
+        onBlindCostsCalculated({
+          fabricCost: blindCosts.fabricCost,
+          manufacturingCost: blindCosts.manufacturingCost,
+          optionsCost: blindCosts.optionsCost,
+          totalCost: blindCosts.totalCost,
+          squareMeters: blindCosts.squareMeters,
+          displayText: blindCosts.displayText,
+        });
+      }
 
     return (
       <div className="bg-card border border-border rounded-lg p-3 space-y-3">
