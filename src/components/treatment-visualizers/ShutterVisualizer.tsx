@@ -77,7 +77,7 @@ export const ShutterVisualizer = ({
         </defs>
         
         {/* Window opening */}
-        <rect x="45" y="45" width={width * 0.85} height={height * 0.85} fill="#F0F8FF" stroke="#8B7355" strokeWidth="8" rx="4" />
+        <rect x="45" y="45" width={width * 0.85} height={height * 0.85} fill="hsl(var(--background))" stroke="hsl(var(--border))" strokeWidth="4" rx="4" />
         
         {/* Render different panel configurations */}
         {panelConfig === 'single' && renderSinglePanel(width, height, louverCount, louverHeight, louverAngle, openPosition)}
@@ -95,35 +95,12 @@ export const ShutterVisualizer = ({
           rx="1" 
         />
         
-        {/* Panel control */}
-        <g transform="translate(320, 120)">
-          <rect x="-30" y="-40" width="60" height="80" fill="rgba(255,255,255,0.9)" stroke="#CCC" strokeWidth="1" rx="4" />
-          <text x="-25" y="-25" fontSize="8" fill="#666">Controls</text>
-          
-          {/* Louver angle control */}
-          <text x="-20" y="-10" fontSize="7" fill="#666">Louver</text>
-          <circle cx="0" cy="0" r="12" fill="rgba(240,240,240,0.9)" stroke="#AAA" strokeWidth="1" />
-          <line 
-            x1="0" y1="0" 
-            x2={10 * Math.cos((louverAngle - 90) * Math.PI / 180)} 
-            y2={10 * Math.sin((louverAngle - 90) * Math.PI / 180)} 
-            stroke="#333" 
-            strokeWidth="2" 
-            strokeLinecap="round"
-          />
-          
-          {/* Panel open control */}
-          <text x="-15" y="25" fontSize="7" fill="#666">Open</text>
-          <rect x="-15" y="30" width="30" height="6" fill="#DDD" stroke="#AAA" strokeWidth="1" rx="3" />
-          <rect x={-15 + (openPosition * 24 / 100)} y="31" width="6" height="4" fill="#666" rx="2" />
-        </g>
-        
         {/* Material & config info */}
-        <rect x="60" y="250" width="180" height="35" fill="rgba(255,255,255,0.9)" rx="4" />
-        <text x="70" y="265" fontSize="9" fill="#333">
+        <rect x="60" y="250" width="180" height="35" fill="hsl(var(--background))" fillOpacity="0.95" stroke="hsl(var(--border))" strokeWidth="1" rx="4" />
+        <text x="70" y="265" fontSize="9" fill="hsl(var(--foreground))">
           {material?.name || 'Plantation Shutters'}
         </text>
-        <text x="70" y="275" fontSize="8" fill="#666">
+        <text x="70" y="275" fontSize="8" fill="hsl(var(--muted-foreground))">
           {panelConfig.charAt(0).toUpperCase() + panelConfig.slice(1)} • {louverSize} louvers
         </text>
       </svg>
@@ -131,32 +108,32 @@ export const ShutterVisualizer = ({
   }, [windowType, measurements, material, panelConfig, louverSize, frameStyle, mounted, louverAngle, openPosition]);
 
   return (
-    <div className={`relative min-h-[350px] bg-gradient-to-b from-amber-50 to-amber-100 rounded-lg border-2 border-amber-200 ${className}`}>
+    <div className={`relative min-h-[350px] bg-muted/20 rounded-lg border border-border overflow-hidden ${className}`}>
       <div className="absolute inset-0 overflow-hidden rounded-lg">
         {renderShutter}
         
         {/* Interactive controls */}
-        <div className="absolute bottom-4 left-4 bg-white/90 p-3 rounded space-y-2">
+        <div className="absolute bottom-4 left-4 bg-background/95 backdrop-blur-sm rounded-lg border border-border p-3 space-y-2 shadow-sm">
           <div>
-            <label className="text-xs text-gray-600 block mb-1">Louver Angle</label>
+            <label className="text-xs text-muted-foreground block mb-1">Louver Angle</label>
             <input 
               type="range" 
               min="0" 
               max="90" 
               value={louverAngle}
               onChange={(e) => setLouverAngle(Number(e.target.value))}
-              className="w-24 h-2 bg-gray-200 rounded appearance-none cursor-pointer"
+              className="w-24 accent-primary cursor-pointer"
             />
           </div>
           <div>
-            <label className="text-xs text-gray-600 block mb-1">Panel Opening</label>
+            <label className="text-xs text-muted-foreground block mb-1">Panel Opening</label>
             <input 
               type="range" 
               min="0" 
               max="100" 
               value={openPosition}
               onChange={(e) => setOpenPosition(Number(e.target.value))}
-              className="w-24 h-2 bg-gray-200 rounded appearance-none cursor-pointer"
+              className="w-24 accent-primary cursor-pointer"
             />
           </div>
         </div>
