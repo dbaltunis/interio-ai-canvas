@@ -104,6 +104,18 @@ interface BlindCostsCallback {
   displayText: string;
 }
 
+// ✅ NEW: Callback interface for curtains/romans - live calculated values
+interface CurtainCostsCallback {
+  fabricCost: number;
+  liningCost: number;
+  manufacturingCost: number;
+  headingCost: number;
+  optionsCost: number;
+  optionDetails: Array<{ name: string; cost: number; pricingMethod: string }>;
+  totalCost: number;
+  linearMeters: number;
+}
+
 interface CostCalculationSummaryProps {
   template: CurtainTemplate;
   measurements: any;
@@ -150,6 +162,11 @@ interface CostCalculationSummaryProps {
    * This eliminates the recalculation anti-pattern by using the same values for display and save.
    */
   onBlindCostsCalculated?: (costs: BlindCostsCallback) => void;
+  /**
+   * Callback to report live-calculated curtain/roman costs to parent for use during save.
+   * This eliminates the recalculation anti-pattern by using the same values for display and save.
+   */
+  onCurtainCostsCalculated?: (costs: CurtainCostsCallback) => void;
 }
 
 export const CostCalculationSummary = ({
@@ -173,6 +190,7 @@ export const CostCalculationSummary = ({
   savedCostBreakdown,
   savedTotalCost,
   onBlindCostsCalculated,
+  onCurtainCostsCalculated,
 }: CostCalculationSummaryProps) => {
   const { units } = useMeasurementUnits();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
@@ -180,18 +198,33 @@ export const CostCalculationSummary = ({
   // ✅ CRITICAL: Refs for deferred callback to prevent infinite render loop
   // The blind costs are stored here during render, then reported via useEffect AFTER render
   const blindCostsRef = useRef<{ costs: BlindCostsCallback; key: string } | null>(null);
-  const lastReportedKeyRef = useRef<string>('');
+  const lastReportedBlindKeyRef = useRef<string>('');
+  
+  // ✅ NEW: Refs for curtain costs callback (same pattern)
+  const curtainCostsRef = useRef<{ costs: CurtainCostsCallback; key: string } | null>(null);
+  const lastReportedCurtainKeyRef = useRef<string>('');
   
   // ✅ Report blind costs to parent AFTER render, only when values change
   useEffect(() => {
     if (!onBlindCostsCalculated || !blindCostsRef.current) return;
     
     const { costs, key } = blindCostsRef.current;
-    if (key !== lastReportedKeyRef.current) {
-      lastReportedKeyRef.current = key;
+    if (key !== lastReportedBlindKeyRef.current) {
+      lastReportedBlindKeyRef.current = key;
       onBlindCostsCalculated(costs);
     }
   }, [onBlindCostsCalculated, blindCostsRef.current?.key]);
+  
+  // ✅ NEW: Report curtain costs to parent AFTER render, only when values change
+  useEffect(() => {
+    if (!onCurtainCostsCalculated || !curtainCostsRef.current) return;
+    
+    const { costs, key } = curtainCostsRef.current;
+    if (key !== lastReportedCurtainKeyRef.current) {
+      lastReportedCurtainKeyRef.current = key;
+      onCurtainCostsCalculated(costs);
+    }
+  }, [onCurtainCostsCalculated, curtainCostsRef.current?.key]);
   
   // Enrich fabric with pricing grid data if applicable
   const { enrichedFabric } = useFabricEnrichment({
@@ -664,6 +697,32 @@ export const CostCalculationSummary = ({
     totalCost,
     calculatedTotalCostProp: calculatedTotalCost
   });
+
+  // ✅ CRITICAL: Store curtain costs for useEffect to report to parent (NOT during render!)
+  // This ensures save uses IDENTICAL values to what's displayed - no recalculation
+  if (onCurtainCostsCalculated) {
+    const optionDetails = selectedOptions.map(opt => ({
+      name: opt.name || 'Unknown Option',
+      cost: opt.price || 0,
+      pricingMethod: opt.pricingMethod || 'fixed'
+    }));
+    
+    const curtainCostsKey = `${fabricCost}-${liningCost}-${manufacturingCost}-${headingCost}-${optionsCost}-${totalCost}-${linearMeters}`;
+    
+    curtainCostsRef.current = {
+      costs: {
+        fabricCost,
+        liningCost,
+        manufacturingCost,
+        headingCost,
+        optionsCost,
+        optionDetails,
+        totalCost,
+        linearMeters,
+      },
+      key: curtainCostsKey,
+    };
+  }
 
   return (
     <div className="bg-card border border-border rounded-lg p-3 space-y-3">
