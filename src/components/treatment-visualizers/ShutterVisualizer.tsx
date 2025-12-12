@@ -131,7 +131,7 @@ export const ShutterVisualizer = ({
   }, [windowType, measurements, material, panelConfig, louverSize, frameStyle, mounted, louverAngle, openPosition]);
 
   return (
-    <div className={`relative bg-gradient-to-b from-amber-50 to-amber-100 rounded-lg border-2 border-amber-200 ${className}`}>
+    <div className={`relative min-h-[350px] bg-gradient-to-b from-amber-50 to-amber-100 rounded-lg border-2 border-amber-200 ${className}`}>
       <div className="absolute inset-0 overflow-hidden rounded-lg">
         {renderShutter}
         

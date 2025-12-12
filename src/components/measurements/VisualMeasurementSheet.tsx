@@ -623,7 +623,9 @@ export const VisualMeasurementSheet = ({
               <div className="w-full lg:w-2/5 flex-shrink-0 space-y-1.5 md:space-y-2">
                 {/* Original Visual Diagram first */}
                 {/* Specialized visualizers for panel glide, shutters, and awnings */}
-                {treatmentCategory === 'panel_glide' || treatmentCategory === 'plantation_shutters' || treatmentCategory === 'shutters' || treatmentCategory === 'shutter' || treatmentCategory === 'awning' ? <TreatmentPreviewEngine windowType={windowType} treatmentType={treatmentCategory || treatmentType} measurements={{
+                {treatmentCategory === 'panel_glide' || treatmentCategory === 'plantation_shutters' || treatmentCategory === 'shutters' || treatmentCategory === 'shutter' || treatmentCategory === 'awning' ? (
+                  <div className="relative container-level-2 rounded-lg p-4 min-h-[400px] overflow-visible">
+                    <TreatmentPreviewEngine windowType={windowType} treatmentType={treatmentCategory || treatmentType} measurements={{
               ...measurements,
               width: parseFloat(measurements.rail_width || measurements.width || '200'),
               height: parseFloat(measurements.drop || measurements.height || '200'),
@@ -635,7 +637,9 @@ export const VisualMeasurementSheet = ({
               projection: measurements.projection
             }} template={selectedTemplate} selectedItems={{
               material: selectedFabric ? inventory.find(item => item.id === selectedFabric) : undefined
-            }} hideDetails={true} /> : /* Blinds visual */
+            }} hideDetails={true} className="h-full" />
+                  </div>
+                ) :
             treatmentCategory === 'blinds' || treatmentCategory === 'roller_blinds' || treatmentCategory === 'venetian_blinds' || treatmentCategory === 'roman_blinds' || treatmentCategory === 'cellular_blinds' || treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'roller_blind' || selectedTemplate?.curtain_type === 'roman_blind' || selectedTemplate?.curtain_type === 'venetian_blind' || selectedTemplate?.curtain_type === 'vertical_blind' || selectedTemplate?.curtain_type === 'cellular_blind' || selectedTemplate?.curtain_type === 'cellular_shade' ? <DynamicBlindVisual windowType={windowType} measurements={measurements} template={selectedTemplate} blindType={treatmentCategory === 'roller_blinds' || treatmentCategory === 'blinds' || selectedTemplate?.curtain_type === 'roller_blind' ? 'roller' : treatmentCategory === 'venetian_blinds' || selectedTemplate?.curtain_type === 'venetian_blind' ? 'venetian' : treatmentCategory === 'vertical_blinds' || selectedTemplate?.curtain_type === 'vertical_blind' ? 'vertical' : treatmentCategory === 'roman_blinds' || selectedTemplate?.curtain_type === 'roman_blind' ? 'roman' : treatmentCategory === 'cellular_blinds' || selectedTemplate?.curtain_type === 'cellular_blind' || selectedTemplate?.curtain_type === 'cellular_shade' ? 'cellular' : 'roller'} mountType={measurements.mount_type || 'outside'} chainSide={measurements.chain_side || 'right'} controlType={measurements.control_type} material={selectedMaterial || selectedFabricItem} selectedColor={measurements.selected_color} /> : (/* Curtains visual */
             <div className="relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible">
 
