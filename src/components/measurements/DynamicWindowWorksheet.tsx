@@ -2417,43 +2417,19 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                 {/* Bottom Section - Configuration & Cost */}
                 <div className="space-y-4">
                   {(() => {
-                    // Build comprehensive options list for display
-                    const allDisplayOptions = [
-                      // Dynamic options from treatment_options system
-                      ...selectedOptions,
-                      // Add heading if selected and not default
-                      ...(selectedHeading && selectedHeading !== 'standard' && selectedHeading !== 'none' ? [{
-                        name: `Heading: ${(() => {
-                          const headingOpt = headingOptionsFromSettings.find((h: any) => h.id === selectedHeading);
-                          return headingOpt?.name || selectedHeading;
-                        })()}`,
-                        price: calculatedCosts.headingCost || 0,
-                        pricingMethod: 'fixed'
-                      }] : []),
-                      // Add manufacturing finish
-                      ...(measurements.manufacturing_type ? [{
-                        name: `Manufacturing: ${measurements.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished'}`,
-                        price: calculatedCosts.manufacturingCost || 0,
-                        pricingMethod: 'fixed'
-                      }] : []),
-                      // Add fullness ratio ONLY for curtain/roman treatments
-                      ...((treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && fabricCalculation?.fullnessRatio ? [{
-                        name: `Fullness Ratio: ${fabricCalculation.fullnessRatio}x`,
-                        price: 0,
-                        pricingMethod: 'included'
-                      }] : []),
-                      // Add eyelet ring if selected
-                      ...(measurements.selected_eyelet_ring ? [{
-                        name: `Ring Type: ${measurements.selected_eyelet_ring}`,
-                        price: 0,
-                        pricingMethod: 'included'
-                      }] : [])
-                    ];
-                    
-                    // Calculate costs for curtains - ALWAYS calculate live, never use saved values
+                    // Early return for incomplete data - basic options only
                     if (!selectedTemplate || !fabricCalculation || treatmentCategory === 'wallpaper') {
+                      const basicOptions = [
+                        ...selectedOptions,
+                        ...(selectedHeading && selectedHeading !== 'standard' && selectedHeading !== 'none' ? [{
+                          name: `Heading: ${headingOptionsFromSettings.find((h: any) => h.id === selectedHeading)?.name || selectedHeading}`,
+                          price: 0,
+                          pricingMethod: 'fixed'
+                        }] : [])
+                      ];
+                      
                       return (
-                      <CostCalculationSummary
+                        <CostCalculationSummary
                           template={selectedTemplate} 
                           measurements={measurements} 
                           selectedFabric={selectedItems.fabric || selectedItems.material} 
@@ -2461,7 +2437,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                           selectedHeading={selectedHeading} 
                           inventory={[]} 
                           fabricCalculation={fabricCalculation}
-                          selectedOptions={allDisplayOptions}
+                          selectedOptions={basicOptions}
                           engineResult={engineResult}
                           onBlindCostsCalculated={(costs) => setLiveBlindCalcResult(costs)}
                           onCurtainCostsCalculated={(costs) => setLiveCurtainCalcResult(costs)}
@@ -2700,6 +2676,40 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     const enrichedOptions = calculateOptionPrices(selectedOptions, measurements, fabricCalculation);
                     const optionsCost = enrichedOptions.reduce((sum, opt) => sum + getOptionEffectivePrice(opt), 0);
 
+                    // ✅ BUILD allDisplayOptions AFTER enrichedOptions calculated
+                    // Use LOCAL calculated values, NOT stale state!
+                    const allDisplayOptions = [
+                      // Dynamic options with CALCULATED prices from enrichedOptions
+                      ...enrichedOptions.map(opt => ({
+                        ...opt,
+                        price: getOptionEffectivePrice(opt), // Use calculated price!
+                      })),
+                      // Add heading if selected and not default
+                      ...(selectedHeading && selectedHeading !== 'standard' && selectedHeading !== 'none' ? [{
+                        name: `Heading: ${headingOptionsFromSettings.find((h: any) => h.id === selectedHeading)?.name || selectedHeading}`,
+                        price: headingCost, // LOCAL variable, not stale state
+                        pricingMethod: 'fixed'
+                      }] : []),
+                      // Add manufacturing finish - USE LOCAL manufacturingCost
+                      ...(measurements.manufacturing_type ? [{
+                        name: `Manufacturing: ${measurements.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished'}`,
+                        price: manufacturingCost, // LOCAL variable, not stale state
+                        pricingMethod: 'fixed'
+                      }] : []),
+                      // Add fullness ratio ONLY for curtain/roman treatments
+                      ...((treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && fabricCalculation?.fullnessRatio ? [{
+                        name: `Fullness Ratio: ${fabricCalculation.fullnessRatio}x`,
+                        price: 0,
+                        pricingMethod: 'included'
+                      }] : []),
+                      // Add eyelet ring if selected
+                      ...(measurements.selected_eyelet_ring ? [{
+                        name: `Ring Type: ${measurements.selected_eyelet_ring}`,
+                        price: 0,
+                        pricingMethod: 'included'
+                      }] : [])
+                    ];
+
                     const totalCost = fabricCost + liningCost + manufacturingCost + headingCost + optionsCost;
 
                     // ✅ SAVE TO STATE: Single source of truth for all displays
@@ -2750,19 +2760,19 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                         inventory={[]} 
                         fabricCalculation={fabricCalculation}
                         selectedOptions={allDisplayOptions}
-                        calculatedFabricCost={calculatedCosts.fabricTotalCost}
-                        calculatedLiningCost={calculatedCosts.liningCost}
-                        calculatedManufacturingCost={calculatedCosts.manufacturingCost}
-                        calculatedHeadingCost={calculatedCosts.headingCost}
-                        calculatedOptionsCost={calculatedCosts.optionsCost}
-                        calculatedTotalCost={calculatedCosts.totalCost}
+                        calculatedFabricCost={fabricCost}
+                        calculatedLiningCost={liningCost}
+                        calculatedManufacturingCost={manufacturingCost}
+                        calculatedHeadingCost={headingCost}
+                        calculatedOptionsCost={optionsCost}
+                        calculatedTotalCost={totalCost}
                         fabricDisplayData={{
-                          linearMeters: calculatedCosts.fabricLinearMeters,
-                          totalMeters: calculatedCosts.fabricTotalMeters,
-                          pricePerMeter: calculatedCosts.fabricCostPerMeter,
-                          horizontalPieces: calculatedCosts.horizontalPiecesNeeded,
-                          orientation: calculatedCosts.fabricOrientation,
-                          usesLeftover: calculatedCosts.usesLeftover
+                          linearMeters: perPieceMeters,
+                          totalMeters: totalMeters,
+                          pricePerMeter: pricePerMeter,
+                          horizontalPieces: piecesToDisplay,
+                          orientation: isRailroaded ? 'horizontal' : 'vertical',
+                          usesLeftover
                         }}
                         manufacturingDetails={manufacturingDetails}
                         engineResult={engineResult}

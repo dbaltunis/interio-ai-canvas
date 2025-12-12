@@ -703,7 +703,7 @@ export const CostCalculationSummary = ({
   if (onCurtainCostsCalculated) {
     const optionDetails = selectedOptions.map(opt => ({
       name: opt.name || 'Unknown Option',
-      cost: opt.price || 0,
+      cost: (opt as any).calculatedPrice ?? opt.price ?? 0,
       pricingMethod: opt.pricingMethod || 'fixed'
     }));
     
