@@ -1101,30 +1101,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             }
           }
 
-          // Calculate lining cost (for curtains only) - ONLY if not using liveCurtainCalcResult
-          // CRITICAL: Use the same linearMeters used for fabric cost (accounts for leftover logic)
-          // Note: liningCost already declared at line 919, and set from liveCurtainCalcResult if available
-          if (!liveCurtainCalcResult && treatmentCategory !== 'wallpaper' && selectedLining && selectedLining !== 'none' && selectedTemplate && fabricCalculation) {
-            const liningTypes = selectedTemplate.lining_types || [];
-            const liningOption = liningTypes.find(l => l.type === selectedLining);
-            if (liningOption) {
-              const liningPricePerMeter = liningOption.price_per_metre || 0;
-              const liningLaborPerCurtain = liningOption.labour_per_curtain || 0;
-              const curtainCount = fabricCalculation.curtainCount || 1;
-              // Material cost: price per meter × linear meters used (SAME as fabric calculation)
-              // Labor cost: price per curtain × number of curtains
-              // CRITICAL FIX: Use linearMeters (which accounts for leftover/pieces logic) not fabricCalculation.linearMeters
-              liningCost = (liningPricePerMeter * linearMeters) + (liningLaborPerCurtain * curtainCount);
-              console.log('💰 [SAVE] Lining cost calculation (fallback):', {
-                liningPricePerMeter,
-                linearMeters,
-                fabricCalculationLinearMeters: fabricCalculation.linearMeters,
-                curtainCount,
-                liningLaborPerCurtain,
-                liningCost
-              });
-            }
-          }
+          // ✅ LEGACY LINING SAVE CODE REMOVED: Lining is now an OPTION with per-linear-meter pricing
+          // liningCost is already declared at line 919 and set from liveCurtainCalcResult if available
+          // Otherwise it remains 0 - lining cost is included in options cost via calculateOptionPrices()
 
           // Calculate heading cost (for curtains only) - ONLY if not using liveCurtainCalcResult
           // Note: headingCost already declared at line 920, and set from liveCurtainCalcResult if available
@@ -2537,31 +2516,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       });
                     }
 
-                    // Calculate lining cost - DYNAMIC based on template configuration
-                    // ✅ CRITICAL FIX: Use totalMeters (same source as fabric cost) instead of fabricCalculation.linearMeters
-                    let liningCost = 0;
-                    if (selectedLining && selectedLining !== 'none' && selectedTemplate?.lining_types) {
-                      const liningConfig = selectedTemplate.lining_types.find((l: any) => l.type === selectedLining);
-                      if (liningConfig) {
-                        // Calculate based on pricing method: price_per_metre * meters + labour_per_curtain * curtains
-                        const pricePerMetre = liningConfig.price_per_metre || 0;
-                        const labourPerCurtain = liningConfig.labour_per_curtain || 0;
-                        const curtainCount = fabricCalculation.curtainCount || 1;
-                        
-                        // ✅ Use totalMeters - consistent with fabric cost calculation (line 2486-2514)
-                        liningCost = (pricePerMetre * totalMeters) + (labourPerCurtain * curtainCount);
-                        
-                        console.log('💰 Lining cost calculation:', {
-                          type: selectedLining,
-                          pricePerMetre,
-                          labourPerCurtain,
-                          totalMeters, // ✅ Using same source as fabric cost
-                          curtainCount,
-                          totalCost: liningCost,
-                          formula: `(${pricePerMetre}/m × ${totalMeters}m) + (${labourPerCurtain} × ${curtainCount} curtains) = ${liningCost}`
-                        });
-                      }
-                    }
+                    // ✅ LEGACY LINING REMOVED: Lining is now an OPTION with per-linear-meter pricing
+                    // The old selectedLining/template.lining_types system is deprecated
+                    // Lining cost is calculated in calculateOptionPrices() above
+                    let liningCost = 0; // Lining is now part of optionsCost
 
                     // Get the selected pricing method
                     const selectedPricingMethod = measurements.selected_pricing_method 
@@ -2680,7 +2638,11 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
 
                     // Calculate options cost - CRITICAL: Use pricing method calculations!
                     // Hardware uses actual rail width, fabric options use fullness-adjusted linear meters
-                    const enrichedOptions = calculateOptionPrices(selectedOptions, measurements, fabricCalculation);
+                    // ✅ FIX: Pass totalMeters explicitly so per-linear-meter options (like Lining) calculate correctly
+                    const enrichedOptions = calculateOptionPrices(selectedOptions, measurements, { 
+                      ...fabricCalculation, 
+                      linearMeters: totalMeters  // ✅ Use correct linear meters (fullness-adjusted)
+                    });
                     const optionsCost = enrichedOptions.reduce((sum, opt) => sum + getOptionEffectivePrice(opt), 0);
 
                     // ✅ BUILD allDisplayOptions AFTER enrichedOptions calculated
