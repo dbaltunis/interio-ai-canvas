@@ -88,12 +88,38 @@ export const calculateBlindCosts = (
     });
   } else {
     // No grid - use per-unit pricing for fabric only (already uses total squareMeters which includes multiplier)
-    fabricPricePerSqm = fabricItem?.selling_price || fabricItem?.price_per_meter || fabricItem?.unit_price || 0;
+    // CRITICAL: Check ALL price fields - users may enter price in different fields depending on UI
+    fabricPricePerSqm = fabricItem?.selling_price || 
+                        fabricItem?.price_per_sqm ||      // For sqm-based pricing
+                        fabricItem?.price ||              // Base inventory_items field
+                        fabricItem?.price_per_meter || 
+                        fabricItem?.unit_price || 
+                        0;
+    
+    // If price is still 0, log error for debugging
+    if (fabricPricePerSqm === 0) {
+      console.error('⚠️ PRICE IS ZERO! No valid price found on material:', {
+        materialName: fabricItem?.name,
+        materialId: fabricItem?.id,
+        selling_price: fabricItem?.selling_price,
+        price: fabricItem?.price,
+        price_per_sqm: fabricItem?.price_per_sqm,
+        price_per_meter: fabricItem?.price_per_meter,
+        unit_price: fabricItem?.unit_price,
+        hint: 'Please set selling_price on this inventory item in Inventory settings'
+      });
+    }
+    
     fabricCost = squareMeters * fabricPricePerSqm;
     
     console.log('ℹ️ Per-unit fabric pricing (no grid):', {
       blindType: template?.treatment_category || 'unknown',
       fabricPricePerSqm,
+      priceSource: fabricItem?.selling_price ? 'selling_price' : 
+                   fabricItem?.price_per_sqm ? 'price_per_sqm' :
+                   fabricItem?.price ? 'price' :
+                   fabricItem?.price_per_meter ? 'price_per_meter' :
+                   fabricItem?.unit_price ? 'unit_price' : 'none',
       squareMeters: squareMeters.toFixed(2),
       blindMultiplier,
       fabricCost: fabricCost.toFixed(2)
