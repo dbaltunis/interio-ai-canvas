@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
+import { useMeasurementUnits } from '@/hooks/useMeasurementUnits';
 
-// Helper functions defined at the top
+// Helper functions for wood grain effects
 const lightenColor = (color: string, percent: number): string => {
   return color.replace(/[0-9A-F]/gi, (char) => {
     const num = parseInt(char, 16);
@@ -40,312 +41,337 @@ export const ShutterVisualizer = ({
   frameStyle = 'L-frame',
   mounted = 'inside'
 }: ShutterVisualizerProps) => {
-  
+  const { units } = useMeasurementUnits();
   const [louverAngle, setLouverAngle] = useState(45);
-  const [openPosition, setOpenPosition] = useState(0); // 0 = closed, 100 = fully open
-  
-  const renderShutter = useMemo(() => {
-    const width = measurements?.rail_width || measurements?.window_width || 200;
-    const height = measurements?.drop || measurements?.window_height || 150;
-    const frameColor = material?.color || "#D2B48C";
+  const [openPosition, setOpenPosition] = useState(0);
+
+  const hasValue = (value: any) => value && value !== "" && value !== "0";
+
+  // Helper to display measurement with correct unit
+  const displayValue = (value: any) => {
+    const unitLabels: Record<string, string> = {
+      'mm': 'mm',
+      'cm': 'cm',
+      'm': 'm',
+      'inches': '"',
+      'feet': "'"
+    };
+    const unitSymbol = unitLabels[units.length] || units.length;
+    return `${value}${unitSymbol}`;
+  };
+
+  // Get shutter color from material or default
+  const getShutterColor = (): string => {
+    if (material?.color) {
+      if (material.color.startsWith('#')) return material.color;
+      const colorMap: Record<string, string> = {
+        'white': '#FFFFFF',
+        'cream': '#FFFDD0',
+        'ivory': '#FFFFF0',
+        'beige': '#F5F5DC',
+        'natural': '#E8D4A8',
+        'walnut': '#5D432C',
+        'oak': '#806517',
+        'mahogany': '#C04000',
+        'cherry': '#DE3163',
+        'brown': '#8B4513',
+        'black': '#1a1a1a',
+        'grey': '#808080',
+        'gray': '#808080',
+      };
+      return colorMap[material.color.toLowerCase()] || '#D2B48C';
+    }
+    return '#D2B48C'; // Default tan/wood color
+  };
+
+  const shutterColor = getShutterColor();
+
+  const getLouverHeight = (size: string): number => {
+    switch (size) {
+      case '47mm': return 12;
+      case '63mm': return 16;
+      case '89mm': return 22;
+      case '114mm': return 28;
+      default: return 16;
+    }
+  };
+
+  const renderLouvers = (panelWidth: number, panelHeight: number, angle: number) => {
     const louverHeight = getLouverHeight(louverSize);
-    const louverCount = Math.floor((height * 0.7) / (louverHeight + 3));
-    
-    return (
-      <svg viewBox="0 0 400 300" className="w-full h-full">
-        <defs>
-          {/* Wood grain pattern */}
-          <pattern id="woodGrain" patternUnits="userSpaceOnUse" width="4" height="40">
-            <rect width="4" height="40" fill={frameColor} />
-            <line x1="0" y1="10" x2="4" y2="10" stroke={darkenColor(frameColor, 10)} strokeWidth="0.5" />
-            <line x1="0" y1="25" x2="4" y2="25" stroke={darkenColor(frameColor, 15)} strokeWidth="0.3" />
-          </pattern>
+    const count = Math.floor((panelHeight - 40) / (louverHeight + 4));
+    const perspective = Math.sin(angle * Math.PI / 180);
+
+    return Array.from({ length: count }).map((_, i) => (
+      <div
+        key={i}
+        className="absolute left-2 right-2 transition-all duration-200"
+        style={{
+          height: `${louverHeight * perspective}px`,
+          top: `${20 + i * (louverHeight + 4)}px`,
+          background: `linear-gradient(180deg, ${lightenColor(shutterColor, 15)} 0%, ${shutterColor} 50%, ${darkenColor(shutterColor, 10)} 100%)`,
+          borderRadius: '2px',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.2)',
+          transform: `perspective(200px) rotateX(${90 - angle}deg)`,
+          transformOrigin: 'center center',
+        }}
+      />
+    ));
+  };
+
+  const renderShutterPanels = () => {
+    const isInsideMount = mounted === 'inside';
+    const panelWidth = isInsideMount ? 'calc(50% - 16px)' : 'calc(50% - 12px)';
+    const leftOffset = isInsideMount ? 'left-16' : 'left-12';
+    const rightOffset = isInsideMount ? 'right-16' : 'right-12';
+    const topOffset = isInsideMount ? 'top-24' : 'top-20';
+    const openOffset = (openPosition / 100) * 40; // Max 40px opening
+
+    if (panelConfig === 'single') {
+      return (
+        <div 
+          className={`absolute ${topOffset} ${leftOffset} ${rightOffset} bottom-16 rounded-sm border-2 overflow-hidden`}
+          style={{ 
+            borderColor: darkenColor(shutterColor, 20),
+            backgroundColor: shutterColor,
+            transform: `rotateY(${openOffset}deg)`,
+            transformOrigin: 'left center',
+          }}
+        >
+          {renderLouvers(200, 200, louverAngle)}
+          {/* Stiles (vertical frame pieces) */}
+          <div className="absolute left-0 top-0 bottom-0 w-2" style={{ backgroundColor: darkenColor(shutterColor, 5) }} />
+          <div className="absolute right-0 top-0 bottom-0 w-2" style={{ backgroundColor: darkenColor(shutterColor, 5) }} />
+        </div>
+      );
+    }
+
+    if (panelConfig === 'bifold') {
+      return (
+        <>
+          {/* Left Panel */}
+          <div 
+            className={`absolute ${topOffset} bottom-16 rounded-sm border-2 overflow-hidden z-10`}
+            style={{ 
+              left: isInsideMount ? '64px' : '48px',
+              width: panelWidth,
+              borderColor: darkenColor(shutterColor, 20),
+              backgroundColor: shutterColor,
+              transform: `translateX(${-openOffset}px)`,
+            }}
+          >
+            {renderLouvers(150, 200, louverAngle)}
+            <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: darkenColor(shutterColor, 5) }} />
+            <div className="absolute right-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: darkenColor(shutterColor, 5) }} />
+          </div>
           
-          {/* Frame shadow */}
-          <linearGradient id="frameShadow" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={lightenColor(frameColor, 20)} />
-            <stop offset="50%" stopColor={frameColor} />
-            <stop offset="100%" stopColor={darkenColor(frameColor, 15)} />
-          </linearGradient>
+          {/* Right Panel */}
+          <div 
+            className={`absolute ${topOffset} bottom-16 rounded-sm border-2 overflow-hidden z-10`}
+            style={{ 
+              right: isInsideMount ? '64px' : '48px',
+              width: panelWidth,
+              borderColor: darkenColor(shutterColor, 20),
+              backgroundColor: shutterColor,
+              transform: `translateX(${openOffset}px)`,
+            }}
+          >
+            {renderLouvers(150, 200, louverAngle)}
+            <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: darkenColor(shutterColor, 5) }} />
+            <div className="absolute right-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: darkenColor(shutterColor, 5) }} />
+          </div>
+
+          {/* Center Meeting Rail */}
+          <div 
+            className={`absolute ${topOffset} bottom-16 w-1 left-1/2 -translate-x-1/2 z-20`}
+            style={{ backgroundColor: darkenColor(shutterColor, 15) }}
+          />
+        </>
+      );
+    }
+
+    if (panelConfig === 'trifold') {
+      const thirdWidth = 'calc(33.33% - 16px)';
+      return (
+        <>
+          {/* Left Panel */}
+          <div 
+            className={`absolute ${topOffset} bottom-16 rounded-sm border-2 overflow-hidden`}
+            style={{ 
+              left: isInsideMount ? '64px' : '48px',
+              width: thirdWidth,
+              borderColor: darkenColor(shutterColor, 20),
+              backgroundColor: shutterColor,
+              transform: `translateX(${-openOffset * 0.6}px)`,
+            }}
+          >
+            {renderLouvers(100, 200, louverAngle)}
+          </div>
           
-          {/* Louver gradient */}
-          <linearGradient id="louverGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={lightenColor(frameColor, 15)} />
-            <stop offset="50%" stopColor={frameColor} />
-            <stop offset="100%" stopColor={darkenColor(frameColor, 10)} />
-          </linearGradient>
-        </defs>
-        
-        {/* Window opening */}
-        <rect x="45" y="45" width={width * 0.85} height={height * 0.85} fill="hsl(var(--background))" stroke="hsl(var(--border))" strokeWidth="4" rx="4" />
-        
-        {/* Render different panel configurations */}
-        {panelConfig === 'single' && renderSinglePanel(width, height, louverCount, louverHeight, louverAngle, openPosition)}
-        {panelConfig === 'bifold' && renderBifoldPanels(width, height, louverCount, louverHeight, louverAngle, openPosition)}
-        {panelConfig === 'trifold' && renderTrifoldPanels(width, height, louverCount, louverHeight, louverAngle, openPosition)}
-        {panelConfig === 'bypass' && renderBypassPanels(width, height, louverCount, louverHeight, louverAngle, openPosition)}
-        
-        {/* Tilt control rod */}
-        <rect 
-          x={50 + (width * 0.2)} 
-          y="55" 
-          width="3" 
-          height={height * 0.6} 
-          fill="#A0522D" 
-          rx="1" 
-        />
-        
-        {/* Material & config info */}
-        <rect x="60" y="250" width="180" height="35" fill="hsl(var(--background))" fillOpacity="0.95" stroke="hsl(var(--border))" strokeWidth="1" rx="4" />
-        <text x="70" y="265" fontSize="9" fill="hsl(var(--foreground))">
-          {material?.name || 'Plantation Shutters'}
-        </text>
-        <text x="70" y="275" fontSize="8" fill="hsl(var(--muted-foreground))">
-          {panelConfig.charAt(0).toUpperCase() + panelConfig.slice(1)} • {louverSize} louvers
-        </text>
-      </svg>
-    );
-  }, [windowType, measurements, material, panelConfig, louverSize, frameStyle, mounted, louverAngle, openPosition]);
+          {/* Center Panel */}
+          <div 
+            className={`absolute ${topOffset} bottom-16 rounded-sm border-2 overflow-hidden left-1/2 -translate-x-1/2`}
+            style={{ 
+              width: thirdWidth,
+              borderColor: darkenColor(shutterColor, 20),
+              backgroundColor: shutterColor,
+            }}
+          >
+            {renderLouvers(100, 200, louverAngle)}
+          </div>
+          
+          {/* Right Panel */}
+          <div 
+            className={`absolute ${topOffset} bottom-16 rounded-sm border-2 overflow-hidden`}
+            style={{ 
+              right: isInsideMount ? '64px' : '48px',
+              width: thirdWidth,
+              borderColor: darkenColor(shutterColor, 20),
+              backgroundColor: shutterColor,
+              transform: `translateX(${openOffset * 0.6}px)`,
+            }}
+          >
+            {renderLouvers(100, 200, louverAngle)}
+          </div>
+        </>
+      );
+    }
+
+    if (panelConfig === 'bypass') {
+      return (
+        <>
+          {/* Track at top */}
+          <div 
+            className={`absolute ${topOffset} ${leftOffset} ${rightOffset} h-2 bg-muted-foreground/60 rounded-sm z-30`}
+          />
+          
+          {/* Back Panel (stationary) */}
+          <div 
+            className={`absolute bottom-16 rounded-sm border-2 overflow-hidden opacity-80`}
+            style={{ 
+              top: isInsideMount ? 'calc(6rem + 8px)' : 'calc(5rem + 8px)',
+              left: isInsideMount ? '64px' : '48px',
+              width: panelWidth,
+              borderColor: darkenColor(shutterColor, 20),
+              backgroundColor: shutterColor,
+            }}
+          >
+            {renderLouvers(150, 200, louverAngle)}
+          </div>
+          
+          {/* Front Panel (sliding) */}
+          <div 
+            className={`absolute bottom-16 rounded-sm border-2 overflow-hidden z-10`}
+            style={{ 
+              top: isInsideMount ? 'calc(6rem + 8px)' : 'calc(5rem + 8px)',
+              left: `calc(30% + ${openOffset}px)`,
+              width: panelWidth,
+              borderColor: darkenColor(shutterColor, 20),
+              backgroundColor: shutterColor,
+            }}
+          >
+            {renderLouvers(150, 200, louverAngle)}
+          </div>
+        </>
+      );
+    }
+
+    return null;
+  };
 
   return (
-    <div className={`relative min-h-[350px] bg-muted/20 rounded-lg border border-border overflow-hidden ${className}`}>
-      <div className="absolute inset-0 overflow-hidden rounded-lg">
-        {renderShutter}
-        
-        {/* Interactive controls */}
-        <div className="absolute bottom-4 left-4 bg-background/95 backdrop-blur-sm rounded-lg border border-border p-3 space-y-2 shadow-sm">
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1">Louver Angle</label>
-            <input 
-              type="range" 
-              min="0" 
-              max="90" 
-              value={louverAngle}
-              onChange={(e) => setLouverAngle(Number(e.target.value))}
-              className="w-24 accent-primary cursor-pointer"
-            />
+    <div className={`relative container-level-2 rounded-lg p-8 min-h-[400px] overflow-visible ${className}`}>
+      {/* Width Measurement Indicator (Blue) */}
+      {hasValue(measurements.rail_width) && (
+        <div className="absolute left-12 right-12 flex items-center z-30" style={{ top: '12px' }}>
+          <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-r-[6px] border-transparent border-r-blue-600"></div>
+          <div className="flex-1 border-t border-blue-600 relative">
+            <span className="absolute left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold shadow-md whitespace-nowrap" style={{ top: '-18px' }}>
+              W: {displayValue(measurements.rail_width)}
+            </span>
           </div>
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1">Panel Opening</label>
-            <input 
-              type="range" 
-              min="0" 
-              max="100" 
-              value={openPosition}
-              onChange={(e) => setOpenPosition(Number(e.target.value))}
-              className="w-24 accent-primary cursor-pointer"
-            />
+          <div className="w-0 h-0 border-t-[4px] border-b-[4px] border-l-[6px] border-transparent border-l-blue-600"></div>
+        </div>
+      )}
+
+      {/* Height Measurement Indicator (Green) */}
+      {hasValue(measurements.drop) && (
+        <div className="absolute top-20 bottom-16 flex flex-col items-center z-30" style={{ right: '12px' }}>
+          <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[6px] border-transparent border-b-green-600"></div>
+          <div className="flex-1 border-r border-green-600 relative">
+            <span className="absolute top-1/2 transform -translate-y-1/2 bg-green-600 text-white px-1.5 py-0.5 rounded text-[10px] font-semibold shadow-md whitespace-nowrap" style={{ right: '-42px' }}>
+              H: {displayValue(measurements.drop)}
+            </span>
           </div>
+          <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-transparent border-t-green-600"></div>
+        </div>
+      )}
+
+      {/* Window Frame */}
+      <div className="absolute top-24 left-16 right-16 bottom-16">
+        <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
+          {/* Shutter Frame (outer) */}
+          <div 
+            className="absolute inset-1 border-4 rounded-sm"
+            style={{ borderColor: darkenColor(shutterColor, 10), backgroundColor: 'transparent' }}
+          />
+        </div>
+      </div>
+
+      {/* Shutter Panels */}
+      {renderShutterPanels()}
+
+      {/* Tilt Rod */}
+      <div 
+        className="absolute w-1 bg-amber-800 rounded-full z-20"
+        style={{
+          top: mounted === 'inside' ? '6.5rem' : '5.5rem',
+          left: mounted === 'inside' ? '80px' : '64px',
+          height: 'calc(100% - 10rem)',
+        }}
+      />
+
+      {/* Floor Line */}
+      <div className="absolute bottom-4 left-8 right-8 border-t-4 border-muted-foreground">
+        <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-sm font-semibold text-muted-foreground">
+          Floor Line
+        </span>
+      </div>
+
+      {/* Interactive Controls */}
+      <div className="absolute bottom-12 left-4 bg-background/95 backdrop-blur-sm rounded-lg border border-border p-3 space-y-2 shadow-md z-40">
+        <div>
+          <label className="text-xs text-muted-foreground block mb-1">Louver Angle</label>
+          <input 
+            type="range" 
+            min="0" 
+            max="90" 
+            value={louverAngle}
+            onChange={(e) => setLouverAngle(Number(e.target.value))}
+            className="w-20 accent-primary cursor-pointer"
+          />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground block mb-1">Panel Opening</label>
+          <input 
+            type="range" 
+            min="0" 
+            max="100" 
+            value={openPosition}
+            onChange={(e) => setOpenPosition(Number(e.target.value))}
+            className="w-20 accent-primary cursor-pointer"
+          />
+        </div>
+      </div>
+
+      {/* Material/Config Info Badge */}
+      <div className="absolute bottom-12 right-4 bg-background/95 backdrop-blur-sm rounded-lg border border-border px-3 py-2 shadow-md z-40">
+        <div className="text-xs font-medium text-foreground">
+          {material?.name || 'Plantation Shutters'}
+        </div>
+        <div className="text-[10px] text-muted-foreground">
+          {panelConfig.charAt(0).toUpperCase() + panelConfig.slice(1)} • {louverSize}
         </div>
       </div>
     </div>
   );
-};
-
-// Single panel shutter
-const renderSinglePanel = (width: number, height: number, louverCount: number, louverHeight: number, louverAngle: number, openPosition: number) => {
-  const panelWidth = width * 0.8;
-  const rotateAngle = (openPosition / 100) * 120; // Max 120 degree opening
-  
-  return (
-    <g transform={`rotate(${rotateAngle}, 50, ${50 + height * 0.42})`}>
-      {/* Panel frame */}
-      <rect 
-        x="50" y="50" 
-        width={panelWidth} height={height * 0.8} 
-        fill="url(#frameShadow)" 
-        stroke={darkenColor("#D2B48C", 20)} 
-        strokeWidth="2" 
-        rx="4" 
-      />
-      
-      {/* Louvers */}
-      {renderLouvers(50, 50, panelWidth, height * 0.8, louverCount, louverHeight, louverAngle)}
-      
-      {/* Panel stiles */}
-      <rect x="50" y="50" width="8" height={height * 0.8} fill="url(#woodGrain)" />
-      <rect x={50 + panelWidth - 8} y="50" width="8" height={height * 0.8} fill="url(#woodGrain)" />
-    </g>
-  );
-};
-
-// Bifold panels (most common)
-const renderBifoldPanels = (width: number, height: number, louverCount: number, louverHeight: number, louverAngle: number, openPosition: number) => {
-  const panelWidth = (width * 0.8) / 2;
-  const openOffset = (openPosition / 100) * panelWidth * 0.8;
-  
-  return (
-    <g>
-      {/* Left panel */}
-      <g transform={`translate(${-openOffset}, 0)`}>
-        <rect 
-          x="50" y="50" 
-          width={panelWidth} height={height * 0.8} 
-          fill="url(#frameShadow)" 
-          stroke={darkenColor("#D2B48C", 20)} 
-          strokeWidth="2" 
-          rx="4" 
-        />
-        {renderLouvers(50, 50, panelWidth, height * 0.8, louverCount, louverHeight, louverAngle)}
-        <rect x="50" y="50" width="6" height={height * 0.8} fill="url(#woodGrain)" />
-        <rect x={50 + panelWidth - 6} y="50" width="6" height={height * 0.8} fill="url(#woodGrain)" />
-      </g>
-      
-      {/* Right panel */}
-      <g transform={`translate(${openOffset}, 0)`}>
-        <rect 
-          x={50 + panelWidth} y="50" 
-          width={panelWidth} height={height * 0.8} 
-          fill="url(#frameShadow)" 
-          stroke={darkenColor("#D2B48C", 20)} 
-          strokeWidth="2" 
-          rx="4" 
-        />
-        {renderLouvers(50 + panelWidth, 50, panelWidth, height * 0.8, louverCount, louverHeight, louverAngle)}
-        <rect x={50 + panelWidth} y="50" width="6" height={height * 0.8} fill="url(#woodGrain)" />
-        <rect x={50 + panelWidth + panelWidth - 6} y="50" width="6" height={height * 0.8} fill="url(#woodGrain)" />
-      </g>
-      
-      {/* Center meeting rail */}
-      <rect x={50 + panelWidth - 2} y="50" width="4" height={height * 0.8} fill={darkenColor("#D2B48C", 15)} />
-    </g>
-  );
-};
-
-// Trifold panels
-const renderTrifoldPanels = (width: number, height: number, louverCount: number, louverHeight: number, louverAngle: number, openPosition: number) => {
-  const panelWidth = (width * 0.8) / 3;
-  const openOffset = (openPosition / 100) * panelWidth * 0.6;
-  
-  return (
-    <g>
-      {/* Left panel */}
-      <g transform={`translate(${-openOffset}, 0)`}>
-        <rect 
-          x="50" y="50" 
-          width={panelWidth} height={height * 0.8} 
-          fill="url(#frameShadow)" 
-          stroke={darkenColor("#D2B48C", 20)} 
-          strokeWidth="1" 
-          rx="4" 
-        />
-        {renderLouvers(50, 50, panelWidth, height * 0.8, louverCount, louverHeight, louverAngle)}
-      </g>
-      
-      {/* Center panel */}
-      <rect 
-        x={50 + panelWidth} y="50" 
-        width={panelWidth} height={height * 0.8} 
-        fill="url(#frameShadow)" 
-        stroke={darkenColor("#D2B48C", 20)} 
-        strokeWidth="1" 
-        rx="4" 
-      />
-      {renderLouvers(50 + panelWidth, 50, panelWidth, height * 0.8, louverCount, louverHeight, louverAngle)}
-      
-      {/* Right panel */}
-      <g transform={`translate(${openOffset}, 0)`}>
-        <rect 
-          x={50 + panelWidth * 2} y="50" 
-          width={panelWidth} height={height * 0.8} 
-          fill="url(#frameShadow)" 
-          stroke={darkenColor("#D2B48C", 20)} 
-          strokeWidth="1" 
-          rx="4" 
-        />
-        {renderLouvers(50 + panelWidth * 2, 50, panelWidth, height * 0.8, louverCount, louverHeight, louverAngle)}
-      </g>
-    </g>
-  );
-};
-
-// Bypass panels (sliding)
-const renderBypassPanels = (width: number, height: number, louverCount: number, louverHeight: number, louverAngle: number, openPosition: number) => {
-  const panelWidth = (width * 0.8) / 2;
-  const slideOffset = (openPosition / 100) * panelWidth;
-  
-  return (
-    <g>
-      {/* Track */}
-      <rect x="45" y="45" width={width * 0.85} height="4" fill="#999" rx="2" />
-      
-      {/* Back panel */}
-      <rect 
-        x="50" y="50" 
-        width={panelWidth} height={height * 0.8} 
-        fill="url(#frameShadow)" 
-        stroke={darkenColor("#D2B48C", 20)} 
-        strokeWidth="2" 
-        rx="4" 
-        opacity="0.8"
-      />
-      {renderLouvers(50, 50, panelWidth, height * 0.8, louverCount, louverHeight, louverAngle, 0.8)}
-      
-      {/* Front panel (sliding) */}
-      <g transform={`translate(${slideOffset}, 0)`}>
-        <rect 
-          x={50 + panelWidth * 0.5} y="50" 
-          width={panelWidth} height={height * 0.8} 
-          fill="url(#frameShadow)" 
-          stroke={darkenColor("#D2B48C", 20)} 
-          strokeWidth="2" 
-          rx="4" 
-        />
-        {renderLouvers(50 + panelWidth * 0.5, 50, panelWidth, height * 0.8, louverCount, louverHeight, louverAngle)}
-      </g>
-    </g>
-  );
-};
-
-// Render louvers within a panel
-const renderLouvers = (x: number, y: number, panelWidth: number, panelHeight: number, louverCount: number, louverHeight: number, angle: number, opacity: number = 1) => {
-  const louvers = [];
-  const louverSpacing = (panelHeight - 40) / louverCount; // Leave space for top/bottom rails
-  const perspective = Math.sin(angle * Math.PI / 180);
-  
-  for (let i = 0; i < louverCount; i++) {
-    const louverY = y + 20 + (i * louverSpacing);
-    const visibleHeight = louverHeight * perspective;
-    
-    louvers.push(
-      <ellipse 
-        key={`louver-${i}`}
-        cx={x + panelWidth / 2} 
-        cy={louverY} 
-        rx={(panelWidth - 20) / 2} 
-        ry={visibleHeight / 2} 
-        fill="url(#louverGradient)"
-        stroke="rgba(0,0,0,0.2)"
-        strokeWidth="0.5"
-        opacity={opacity}
-      />
-    );
-    
-    // Highlight for 3D effect
-    if (perspective > 0.3) {
-      louvers.push(
-        <ellipse 
-          key={`louver-highlight-${i}`}
-          cx={x + panelWidth / 2} 
-          cy={louverY - 1} 
-          rx={(panelWidth - 24) / 2} 
-          ry={visibleHeight / 4} 
-          fill="rgba(255,255,255,0.4)"
-          opacity={opacity}
-        />
-      );
-    }
-  }
-  
-  return <g>{louvers}</g>;
-};
-
-const getLouverHeight = (size: '47mm' | '63mm' | '89mm' | '114mm'): number => {
-  switch (size) {
-    case '47mm': return 12;
-    case '63mm': return 16;
-    case '89mm': return 22;
-    case '114mm': return 28;
-    default: return 16;
-  }
 };
