@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calculator, Info, Settings, AlertCircle } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
@@ -174,6 +175,22 @@ export const CostCalculationSummary = ({
 }: CostCalculationSummaryProps) => {
   const { units } = useMeasurementUnits();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
+  
+  // ✅ CRITICAL: Refs for deferred callback to prevent infinite render loop
+  // The blind costs are stored here during render, then reported via useEffect AFTER render
+  const blindCostsRef = useRef<{ costs: BlindCostsCallback; key: string } | null>(null);
+  const lastReportedKeyRef = useRef<string>('');
+  
+  // ✅ Report blind costs to parent AFTER render, only when values change
+  useEffect(() => {
+    if (!onBlindCostsCalculated || !blindCostsRef.current) return;
+    
+    const { costs, key } = blindCostsRef.current;
+    if (key !== lastReportedKeyRef.current) {
+      lastReportedKeyRef.current = key;
+      onBlindCostsCalculated(costs);
+    }
+  }, [onBlindCostsCalculated, blindCostsRef.current?.key]);
   
   // Enrich fabric with pricing grid data if applicable
   const { enrichedFabric } = useFabricEnrichment({
@@ -375,18 +392,22 @@ export const CostCalculationSummary = ({
       
       console.log('✅ Blind calculator results:', blindCosts);
       
-      // ✅ CRITICAL FIX: Report calculated costs to parent for use during save
-      // This ensures save uses IDENTICAL values to what's displayed - no recalculation
-      if (onBlindCostsCalculated) {
-        onBlindCostsCalculated({
+      // ✅ CRITICAL FIX: Store costs for useEffect to report to parent (NOT during render!)
+      // The useEffect below will call onBlindCostsCalculated only when values change
+      const blindCostsKey = `${blindCosts.fabricCost}-${blindCosts.manufacturingCost}-${blindCosts.optionsCost}-${blindCosts.totalCost}-${blindCosts.squareMeters}`;
+      
+      // Use ref to track and report changes via useEffect (defined at component level)
+      blindCostsRef.current = {
+        costs: {
           fabricCost: blindCosts.fabricCost,
           manufacturingCost: blindCosts.manufacturingCost,
           optionsCost: blindCosts.optionsCost,
           totalCost: blindCosts.totalCost,
           squareMeters: blindCosts.squareMeters,
           displayText: blindCosts.displayText,
-        });
-      }
+        },
+        key: blindCostsKey,
+      };
 
     return (
       <div className="bg-card border border-border rounded-lg p-3 space-y-3">
