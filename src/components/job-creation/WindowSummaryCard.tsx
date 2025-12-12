@@ -111,77 +111,37 @@ export function WindowSummaryCard({
     });
   }
 
+  // DISPLAY-ONLY ARCHITECTURE: Trust saved cost_breakdown completely, no recalculations
   const enrichedBreakdown = useMemo(() => {
     if (!summary) return [] as any[];
 
-    console.log('🔍 Building enrichedBreakdown from summary:', {
-      fabric_cost: summary.fabric_cost,
-      manufacturing_cost: summary.manufacturing_cost,
-      options_cost: summary.options_cost,
+    console.log('📊 [DISPLAY-ONLY] Loading cost_breakdown from database:', {
+      has_breakdown: Array.isArray(summary.cost_breakdown),
+      breakdown_length: (summary.cost_breakdown as any[])?.length,
       total_cost: summary.total_cost,
-      cost_breakdown: summary.cost_breakdown,
-      userCurrency // CRITICAL: Log the currency being used
+      userCurrency
     });
 
     const raw = Array.isArray(summary.cost_breakdown) ? summary.cost_breakdown : [];
+    
+    // If we have structured cost_breakdown, use it directly - NO recalculations
     const hasStructured = raw.some((it: any) => it && 'category' in it && 'total_cost' in it);
     if (hasStructured) {
-      console.log('✅ Using structured cost_breakdown:', raw);
+      console.log('✅ [DISPLAY-ONLY] Using saved cost_breakdown as-is:', raw.map((i: any) => ({ name: i.name, total: i.total_cost })));
       return raw as any[];
     }
 
-    console.log('🔨 Building breakdown from individual fields');
+    // Fallback: Build display breakdown from summary fields (still no recalculation)
+    console.log('📦 [DISPLAY-ONLY] Building breakdown from saved summary fields (no recalc)');
     const items: any[] = [];
 
-    // CRITICAL: For blinds/shutters, if fabric_cost is 0 but total_cost exists, derive it
     const isBlindsOrShutters = summary.treatment_category === 'blinds' || 
                                 summary.treatment_category === 'shutters' ||
                                 summary.treatment_type?.includes('blind') ||
                                 summary.treatment_type?.includes('shutter');
     
-    let actualFabricCost = Number(summary.fabric_cost) || 0;
-    
-    // CRITICAL: For railroaded fabric, check if cost needs to be multiplied by pieces
-    const measurementDetails = (summary.measurements_details as any) || {};
-    const isRailroaded = measurementDetails.fabric_rotated || measurementDetails.fabric_orientation === 'horizontal';
-    const horizontalPiecesForCalc = measurementDetails.horizontal_pieces_needed || (isRailroaded ? 2 : 1);
-    
-    // If fabric_cost seems wrong for railroaded (doesn't account for pieces), recalculate
-    if (isRailroaded && horizontalPiecesForCalc > 1) {
-      const linearMeters = Number(summary.linear_meters) || 0;
-      const pricePerMeter = Number(summary.price_per_meter) || 0;
-      const expectedTotal = linearMeters * horizontalPiecesForCalc * pricePerMeter;
-      
-      // If saved cost doesn't match expected (tolerance of $1), use recalculated
-      if (Math.abs(actualFabricCost - expectedTotal) > 1) {
-        console.log('🔧 Recalculating fabric cost for railroaded:', {
-          saved: actualFabricCost,
-          expected: expectedTotal,
-          linearMeters,
-          pieces: horizontalPiecesForCalc,
-          pricePerMeter
-        });
-        actualFabricCost = expectedTotal;
-      }
-    }
-    
-    // If fabric_cost is 0 for blinds/shutters, derive it from total minus other costs
-    if (actualFabricCost === 0 && isBlindsOrShutters && Number(summary.total_cost) > 0) {
-      const manufacturingCost = Number(summary.manufacturing_cost) || 0;
-      const optionsCost = Number(summary.options_cost) || 0;
-      const hardwareCost = Number(summary.hardware_cost) || 0;
-      const liningCost = Number(summary.lining_cost) || 0;
-      const headingCost = Number(summary.heading_cost) || 0;
-      
-      actualFabricCost = Number(summary.total_cost) - manufacturingCost - optionsCost - hardwareCost - liningCost - headingCost;
-      console.log('🔧 Derived fabric cost for blinds:', {
-        total: summary.total_cost,
-        manufacturing: manufacturingCost,
-        options: optionsCost,
-        hardware: hardwareCost,
-        derived: actualFabricCost
-      });
-    }
+    // DISPLAY-ONLY: Use saved fabric_cost directly - no recalculation
+    const actualFabricCost = Number(summary.fabric_cost) || 0;
 
     // Detect if using pricing grid (blinds/shutters with both fabric and manufacturing costs)
     const manufacturingCost = Number(summary.manufacturing_cost) || 0;
@@ -204,8 +164,10 @@ export function WindowSummaryCard({
     let fabricUnit = 'm';
     let fabricUnitPrice = Number(summary.price_per_meter) || 0;
     
-    // Use the measurementDetails already declared above (lines 141-143)
-    const horizontalPieces = horizontalPiecesForCalc;
+    // Get orientation info from saved measurements (no recalculation)
+    const measurementDetails = (summary.measurements_details as any) || {};
+    const isRailroaded = measurementDetails.fabric_rotated || measurementDetails.fabric_orientation === 'horizontal';
+    const horizontalPieces = measurementDetails.horizontal_pieces_needed || (isRailroaded ? 1 : 1);
     const fabricOrientation = isRailroaded ? 'horizontal' : 'vertical';
     
     if (treatmentType === 'wallpaper') {
@@ -374,27 +336,22 @@ export function WindowSummaryCard({
     return items;
   }, [summary]);
 
-  // Calculate corrected total if fabric cost was recalculated for railroaded
+  // DISPLAY-ONLY: Use saved total_cost directly - no recalculation
   const displayTotal = useMemo(() => {
     if (!summary) return 0;
     
-    // CRITICAL: Calculate total as sum of all breakdown items (not from saved total_cost)
-    // This ensures the displayed total matches the detailed costs shown below
-    const calculatedTotal = enrichedBreakdown.reduce((sum, item) => {
-      return sum + (Number(item.total_cost) || 0);
-    }, 0);
+    // If we have structured breakdown, sum it for consistency
+    if (enrichedBreakdown.length > 0 && enrichedBreakdown[0]?.total_cost !== undefined) {
+      const breakdownTotal = enrichedBreakdown.reduce((sum, item) => {
+        return sum + (Number(item.total_cost) || 0);
+      }, 0);
+      console.log('💰 [DISPLAY-ONLY] Using breakdown total:', breakdownTotal);
+      return breakdownTotal;
+    }
     
-    console.log('💰 DisplayTotal calculation:', {
-      breakdownItems: enrichedBreakdown.length,
-      calculatedTotal,
-      savedTotal: summary.total_cost,
-      breakdown: enrichedBreakdown.map(i => ({ 
-        name: i.name, 
-        cost: i.total_cost 
-      }))
-    });
-    
-    return calculatedTotal;
+    // Fallback to saved total_cost
+    console.log('💰 [DISPLAY-ONLY] Using saved total_cost:', summary.total_cost);
+    return Number(summary.total_cost) || 0;
   }, [summary, enrichedBreakdown]);
 
   const displayName = treatmentLabel || surface.name;
