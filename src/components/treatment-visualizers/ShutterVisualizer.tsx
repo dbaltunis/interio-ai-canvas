@@ -1,22 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React from "react";
 import { useMeasurementUnits } from '@/hooks/useMeasurementUnits';
-
-// Helper functions for wood grain effects
-const lightenColor = (color: string, percent: number): string => {
-  return color.replace(/[0-9A-F]/gi, (char) => {
-    const num = parseInt(char, 16);
-    const lightened = Math.min(15, num + Math.floor(percent * 15 / 100));
-    return lightened.toString(16).toUpperCase();
-  });
-};
-
-const darkenColor = (color: string, percent: number): string => {
-  return color.replace(/[0-9A-F]/gi, (char) => {
-    const num = parseInt(char, 16);
-    const darkened = Math.max(0, num - Math.floor(percent * 15 / 100));
-    return darkened.toString(16).toUpperCase();
-  });
-};
 
 interface ShutterVisualizerProps {
   windowType: string;
@@ -28,6 +11,7 @@ interface ShutterVisualizerProps {
   louverSize?: '47mm' | '63mm' | '89mm' | '114mm';
   frameStyle?: 'L-frame' | 'Z-frame' | 'deco';
   mounted?: 'inside' | 'outside';
+  selectedColor?: string;
 }
 
 export const ShutterVisualizer = ({
@@ -39,15 +23,13 @@ export const ShutterVisualizer = ({
   panelConfig = 'bifold',
   louverSize = '63mm',
   frameStyle = 'L-frame',
-  mounted = 'inside'
+  mounted = 'inside',
+  selectedColor
 }: ShutterVisualizerProps) => {
   const { units } = useMeasurementUnits();
-  const [louverAngle, setLouverAngle] = useState(45);
-  const [openPosition, setOpenPosition] = useState(0);
 
   const hasValue = (value: any) => value && value !== "" && value !== "0";
 
-  // Helper to display measurement with correct unit
   const displayValue = (value: any) => {
     const unitLabels: Record<string, string> = {
       'mm': 'mm',
@@ -60,216 +42,199 @@ export const ShutterVisualizer = ({
     return `${value}${unitSymbol}`;
   };
 
-  // Get shutter color from material or default
-  const getShutterColor = (): string => {
-    if (material?.color) {
-      if (material.color.startsWith('#')) return material.color;
-      const colorMap: Record<string, string> = {
-        'white': '#FFFFFF',
-        'cream': '#FFFDD0',
-        'ivory': '#FFFFF0',
-        'beige': '#F5F5DC',
-        'natural': '#E8D4A8',
-        'walnut': '#5D432C',
-        'oak': '#806517',
-        'mahogany': '#C04000',
-        'cherry': '#DE3163',
-        'brown': '#8B4513',
-        'black': '#1a1a1a',
-        'grey': '#808080',
-        'gray': '#808080',
-      };
-      return colorMap[material.color.toLowerCase()] || '#D2B48C';
+  // Get color value from selectedColor or material - same pattern as DynamicBlindVisual
+  const getColorValue = (colorName?: string): string => {
+    if (!colorName) return 'hsl(var(--muted-foreground))';
+    if (colorName.startsWith('#') || colorName.startsWith('rgb') || colorName.startsWith('hsl')) {
+      return colorName;
     }
-    return '#D2B48C'; // Default tan/wood color
+    const colorMap: Record<string, string> = {
+      'white': '#FFFFFF',
+      'black': '#1a1a1a',
+      'grey': '#808080',
+      'gray': '#808080',
+      'silver': '#C0C0C0',
+      'cream': '#FFFDD0',
+      'ivory': '#FFFFF0',
+      'beige': '#F5F5DC',
+      'brown': '#8B4513',
+      'tan': '#D2B48C',
+      'natural': '#E8D4A8',
+      'walnut': '#5D432C',
+      'oak': '#806517',
+      'mahogany': '#C04000',
+      'cherry': '#DE3163',
+      'gold': '#D4AF37',
+      'bronze': '#CD7F32',
+      'charcoal': '#36454F',
+    };
+    return colorMap[colorName.toLowerCase()] || colorName;
   };
 
-  const shutterColor = getShutterColor();
+  const shutterColor = getColorValue(selectedColor || material?.color);
+  const hasCustomColor = selectedColor || material?.color;
 
-  const getLouverHeight = (size: string): number => {
+  const isInsideMount = mounted === 'inside';
+  const blindWidth = isInsideMount ? 'left-16 right-16' : 'left-12 right-12';
+  const blindTop = isInsideMount ? 'top-24' : 'top-20';
+
+  const getLouverCount = (size: string): number => {
     switch (size) {
-      case '47mm': return 12;
-      case '63mm': return 16;
-      case '89mm': return 22;
-      case '114mm': return 28;
-      default: return 16;
+      case '47mm': return 18;
+      case '63mm': return 14;
+      case '89mm': return 10;
+      case '114mm': return 8;
+      default: return 14;
     }
   };
 
-  const renderLouvers = (panelWidth: number, panelHeight: number, angle: number) => {
-    const louverHeight = getLouverHeight(louverSize);
-    const count = Math.floor((panelHeight - 40) / (louverHeight + 4));
-    const perspective = Math.sin(angle * Math.PI / 180);
+  const getLouverHeight = (size: string): string => {
+    switch (size) {
+      case '47mm': return 'h-1.5';
+      case '63mm': return 'h-2';
+      case '89mm': return 'h-2.5';
+      case '114mm': return 'h-3';
+      default: return 'h-2';
+    }
+  };
 
-    return Array.from({ length: count }).map((_, i) => (
+  const louverCount = getLouverCount(louverSize);
+  const louverHeight = getLouverHeight(louverSize);
+
+  const renderLouvers = () => {
+    return Array.from({ length: louverCount }).map((_, i) => (
       <div
         key={i}
-        className="absolute left-2 right-2 transition-all duration-200"
-        style={{
-          height: `${louverHeight * perspective}px`,
-          top: `${20 + i * (louverHeight + 4)}px`,
-          background: `linear-gradient(180deg, ${lightenColor(shutterColor, 15)} 0%, ${shutterColor} 50%, ${darkenColor(shutterColor, 10)} 100%)`,
-          borderRadius: '2px',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.2)',
-          transform: `perspective(200px) rotateX(${90 - angle}deg)`,
+        className={`absolute left-1.5 right-1.5 ${louverHeight} transition-all duration-300`}
+        style={{ 
+          top: `${(i / louverCount) * 100}%`,
+          background: hasCustomColor 
+            ? `linear-gradient(180deg, ${shutterColor} 0%, ${shutterColor}CC 40%, ${shutterColor}DD 60%, ${shutterColor}AA 100%)`
+            : `linear-gradient(180deg, hsl(var(--muted-foreground) / 0.7) 0%, hsl(var(--muted-foreground) / 0.5) 40%, hsl(var(--muted-foreground) / 0.6) 60%, hsl(var(--muted-foreground) / 0.45) 100%)`,
+          boxShadow: '0 1px 2px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.15)',
+          borderRadius: '1px',
+          transform: 'perspective(500px) rotateX(45deg)',
           transformOrigin: 'center center',
+          borderTop: hasCustomColor ? `1px solid ${shutterColor}33` : '1px solid hsl(var(--muted-foreground) / 0.3)',
+          borderBottom: hasCustomColor ? `1px solid ${shutterColor}22` : '1px solid hsl(var(--muted-foreground) / 0.2)',
         }}
-      />
+      >
+        <div 
+          className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+          style={{ opacity: 0.3 }}
+        />
+      </div>
     ));
   };
 
+  const renderShutterPanel = (position: 'left' | 'right' | 'center' | 'full', widthStyle: string, leftPos?: string, rightPos?: string) => (
+    <div 
+      className="absolute rounded-sm overflow-hidden shadow-md"
+      style={{ 
+        top: `calc(${blindTop.includes('24') ? '6rem' : '5rem'} + 1rem)`,
+        bottom: '4rem',
+        width: widthStyle,
+        left: leftPos,
+        right: rightPos,
+        backgroundColor: hasCustomColor ? `${shutterColor}30` : 'hsl(var(--muted-foreground) / 0.15)',
+        borderLeft: `3px solid ${hasCustomColor ? `${shutterColor}80` : 'hsl(var(--muted-foreground) / 0.5)'}`,
+        borderRight: `3px solid ${hasCustomColor ? `${shutterColor}80` : 'hsl(var(--muted-foreground) / 0.5)'}`,
+        borderTop: `3px solid ${hasCustomColor ? `${shutterColor}60` : 'hsl(var(--muted-foreground) / 0.4)'}`,
+        borderBottom: `3px solid ${hasCustomColor ? `${shutterColor}90` : 'hsl(var(--muted-foreground) / 0.6)'}`,
+      }}
+    >
+      {renderLouvers()}
+    </div>
+  );
+
   const renderShutterPanels = () => {
-    const isInsideMount = mounted === 'inside';
-    const panelWidth = isInsideMount ? 'calc(50% - 16px)' : 'calc(50% - 12px)';
-    const leftOffset = isInsideMount ? 'left-16' : 'left-12';
-    const rightOffset = isInsideMount ? 'right-16' : 'right-12';
-    const topOffset = isInsideMount ? 'top-24' : 'top-20';
-    const openOffset = (openPosition / 100) * 40; // Max 40px opening
+    const leftOffset = isInsideMount ? '64px' : '48px';
+    const rightOffset = isInsideMount ? '64px' : '48px';
 
     if (panelConfig === 'single') {
-      return (
-        <div 
-          className={`absolute ${topOffset} ${leftOffset} ${rightOffset} bottom-16 rounded-sm border-2 overflow-hidden`}
-          style={{ 
-            borderColor: darkenColor(shutterColor, 20),
-            backgroundColor: shutterColor,
-            transform: `rotateY(${openOffset}deg)`,
-            transformOrigin: 'left center',
-          }}
-        >
-          {renderLouvers(200, 200, louverAngle)}
-          {/* Stiles (vertical frame pieces) */}
-          <div className="absolute left-0 top-0 bottom-0 w-2" style={{ backgroundColor: darkenColor(shutterColor, 5) }} />
-          <div className="absolute right-0 top-0 bottom-0 w-2" style={{ backgroundColor: darkenColor(shutterColor, 5) }} />
-        </div>
-      );
+      return renderShutterPanel('full', `calc(100% - ${isInsideMount ? '128px' : '96px'})`, leftOffset, undefined);
     }
 
     if (panelConfig === 'bifold') {
       return (
         <>
-          {/* Left Panel */}
+          {renderShutterPanel('left', `calc(50% - ${isInsideMount ? '66px' : '50px'})`, leftOffset, undefined)}
+          {renderShutterPanel('right', `calc(50% - ${isInsideMount ? '66px' : '50px'})`, undefined, rightOffset)}
+          {/* Center divider rail */}
           <div 
-            className={`absolute ${topOffset} bottom-16 rounded-sm border-2 overflow-hidden z-10`}
+            className="absolute w-1 left-1/2 -translate-x-1/2 z-20 rounded-sm"
             style={{ 
-              left: isInsideMount ? '64px' : '48px',
-              width: panelWidth,
-              borderColor: darkenColor(shutterColor, 20),
-              backgroundColor: shutterColor,
-              transform: `translateX(${-openOffset}px)`,
+              top: `calc(${blindTop.includes('24') ? '6rem' : '5rem'} + 1rem)`,
+              bottom: '4rem',
+              backgroundColor: hasCustomColor ? `${shutterColor}90` : 'hsl(var(--muted-foreground) / 0.6)',
             }}
-          >
-            {renderLouvers(150, 200, louverAngle)}
-            <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: darkenColor(shutterColor, 5) }} />
-            <div className="absolute right-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: darkenColor(shutterColor, 5) }} />
-          </div>
-          
-          {/* Right Panel */}
-          <div 
-            className={`absolute ${topOffset} bottom-16 rounded-sm border-2 overflow-hidden z-10`}
-            style={{ 
-              right: isInsideMount ? '64px' : '48px',
-              width: panelWidth,
-              borderColor: darkenColor(shutterColor, 20),
-              backgroundColor: shutterColor,
-              transform: `translateX(${openOffset}px)`,
-            }}
-          >
-            {renderLouvers(150, 200, louverAngle)}
-            <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: darkenColor(shutterColor, 5) }} />
-            <div className="absolute right-0 top-0 bottom-0 w-1.5" style={{ backgroundColor: darkenColor(shutterColor, 5) }} />
-          </div>
-
-          {/* Center Meeting Rail */}
-          <div 
-            className={`absolute ${topOffset} bottom-16 w-1 left-1/2 -translate-x-1/2 z-20`}
-            style={{ backgroundColor: darkenColor(shutterColor, 15) }}
           />
         </>
       );
     }
 
     if (panelConfig === 'trifold') {
-      const thirdWidth = 'calc(33.33% - 16px)';
+      const thirdWidth = `calc(33.33% - ${isInsideMount ? '48px' : '36px'})`;
       return (
         <>
-          {/* Left Panel */}
+          {renderShutterPanel('left', thirdWidth, leftOffset, undefined)}
           <div 
-            className={`absolute ${topOffset} bottom-16 rounded-sm border-2 overflow-hidden`}
+            className="absolute rounded-sm overflow-hidden shadow-md left-1/2 -translate-x-1/2"
             style={{ 
-              left: isInsideMount ? '64px' : '48px',
+              top: `calc(${blindTop.includes('24') ? '6rem' : '5rem'} + 1rem)`,
+              bottom: '4rem',
               width: thirdWidth,
-              borderColor: darkenColor(shutterColor, 20),
-              backgroundColor: shutterColor,
-              transform: `translateX(${-openOffset * 0.6}px)`,
+              backgroundColor: hasCustomColor ? `${shutterColor}30` : 'hsl(var(--muted-foreground) / 0.15)',
+              borderLeft: `3px solid ${hasCustomColor ? `${shutterColor}80` : 'hsl(var(--muted-foreground) / 0.5)'}`,
+              borderRight: `3px solid ${hasCustomColor ? `${shutterColor}80` : 'hsl(var(--muted-foreground) / 0.5)'}`,
+              borderTop: `3px solid ${hasCustomColor ? `${shutterColor}60` : 'hsl(var(--muted-foreground) / 0.4)'}`,
+              borderBottom: `3px solid ${hasCustomColor ? `${shutterColor}90` : 'hsl(var(--muted-foreground) / 0.6)'}`,
             }}
           >
-            {renderLouvers(100, 200, louverAngle)}
+            {renderLouvers()}
           </div>
-          
-          {/* Center Panel */}
-          <div 
-            className={`absolute ${topOffset} bottom-16 rounded-sm border-2 overflow-hidden left-1/2 -translate-x-1/2`}
-            style={{ 
-              width: thirdWidth,
-              borderColor: darkenColor(shutterColor, 20),
-              backgroundColor: shutterColor,
-            }}
-          >
-            {renderLouvers(100, 200, louverAngle)}
-          </div>
-          
-          {/* Right Panel */}
-          <div 
-            className={`absolute ${topOffset} bottom-16 rounded-sm border-2 overflow-hidden`}
-            style={{ 
-              right: isInsideMount ? '64px' : '48px',
-              width: thirdWidth,
-              borderColor: darkenColor(shutterColor, 20),
-              backgroundColor: shutterColor,
-              transform: `translateX(${openOffset * 0.6}px)`,
-            }}
-          >
-            {renderLouvers(100, 200, louverAngle)}
-          </div>
+          {renderShutterPanel('right', thirdWidth, undefined, rightOffset)}
         </>
       );
     }
 
     if (panelConfig === 'bypass') {
+      const halfWidth = `calc(50% - ${isInsideMount ? '40px' : '32px'})`;
       return (
         <>
-          {/* Track at top */}
+          {/* Back panel */}
           <div 
-            className={`absolute ${topOffset} ${leftOffset} ${rightOffset} h-2 bg-muted-foreground/60 rounded-sm z-30`}
-          />
-          
-          {/* Back Panel (stationary) */}
-          <div 
-            className={`absolute bottom-16 rounded-sm border-2 overflow-hidden opacity-80`}
+            className="absolute rounded-sm overflow-hidden shadow-md opacity-70"
             style={{ 
-              top: isInsideMount ? 'calc(6rem + 8px)' : 'calc(5rem + 8px)',
-              left: isInsideMount ? '64px' : '48px',
-              width: panelWidth,
-              borderColor: darkenColor(shutterColor, 20),
-              backgroundColor: shutterColor,
+              top: `calc(${blindTop.includes('24') ? '6rem' : '5rem'} + 1.5rem)`,
+              bottom: '4rem',
+              width: halfWidth,
+              left: leftOffset,
+              backgroundColor: hasCustomColor ? `${shutterColor}25` : 'hsl(var(--muted-foreground) / 0.12)',
+              borderLeft: `3px solid ${hasCustomColor ? `${shutterColor}70` : 'hsl(var(--muted-foreground) / 0.45)'}`,
+              borderRight: `3px solid ${hasCustomColor ? `${shutterColor}70` : 'hsl(var(--muted-foreground) / 0.45)'}`,
+              borderTop: `3px solid ${hasCustomColor ? `${shutterColor}50` : 'hsl(var(--muted-foreground) / 0.35)'}`,
+              borderBottom: `3px solid ${hasCustomColor ? `${shutterColor}80` : 'hsl(var(--muted-foreground) / 0.55)'}`,
             }}
           >
-            {renderLouvers(150, 200, louverAngle)}
+            {renderLouvers()}
           </div>
-          
-          {/* Front Panel (sliding) */}
+          {/* Front sliding panel */}
           <div 
-            className={`absolute bottom-16 rounded-sm border-2 overflow-hidden z-10`}
+            className="absolute rounded-sm overflow-hidden shadow-lg z-10"
             style={{ 
-              top: isInsideMount ? 'calc(6rem + 8px)' : 'calc(5rem + 8px)',
-              left: `calc(30% + ${openOffset}px)`,
-              width: panelWidth,
-              borderColor: darkenColor(shutterColor, 20),
-              backgroundColor: shutterColor,
+              top: `calc(${blindTop.includes('24') ? '6rem' : '5rem'} + 1.5rem)`,
+              bottom: '4rem',
+              width: halfWidth,
+              left: 'calc(30% + 16px)',
+              backgroundColor: hasCustomColor ? `${shutterColor}35` : 'hsl(var(--muted-foreground) / 0.18)',
+              borderLeft: `3px solid ${hasCustomColor ? `${shutterColor}80` : 'hsl(var(--muted-foreground) / 0.5)'}`,
+              borderRight: `3px solid ${hasCustomColor ? `${shutterColor}80` : 'hsl(var(--muted-foreground) / 0.5)'}`,
+              borderTop: `3px solid ${hasCustomColor ? `${shutterColor}60` : 'hsl(var(--muted-foreground) / 0.4)'}`,
+              borderBottom: `3px solid ${hasCustomColor ? `${shutterColor}90` : 'hsl(var(--muted-foreground) / 0.6)'}`,
             }}
           >
-            {renderLouvers(150, 200, louverAngle)}
+            {renderLouvers()}
           </div>
         </>
       );
@@ -306,71 +271,48 @@ export const ShutterVisualizer = ({
         </div>
       )}
 
+      {/* Headrail with mounting brackets - same as venetian blinds */}
+      <div className={`absolute ${blindTop} ${blindWidth} h-4 bg-gradient-to-b from-muted-foreground via-muted to-muted-foreground rounded-sm shadow-lg z-20`}>
+        {/* Mounting brackets */}
+        <div className="absolute -left-2 -top-0.5 w-4 h-5 bg-foreground/90 rounded-sm shadow-md">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-3 bg-background/20"></div>
+        </div>
+        <div className="absolute -right-2 -top-0.5 w-4 h-5 bg-foreground/90 rounded-sm shadow-md">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-3 bg-background/20"></div>
+        </div>
+        
+        {/* Center mechanism indicator */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-1 bg-foreground/40 rounded-full"></div>
+      </div>
+
       {/* Window Frame */}
-      <div className="absolute top-24 left-16 right-16 bottom-16">
-        <div className="w-full h-full border-4 border-muted-foreground bg-background relative">
-          {/* Shutter Frame (outer) */}
-          <div 
-            className="absolute inset-1 border-4 rounded-sm"
-            style={{ borderColor: darkenColor(shutterColor, 10), backgroundColor: 'transparent' }}
-          />
+      <div className={`absolute ${blindTop} ${blindWidth} bottom-16`} style={{ marginTop: '1rem' }}>
+        <div className="w-full h-full border-4 border-muted-foreground bg-background/50 relative">
+          {/* Window pane dividers for visual depth */}
+          <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5 p-1">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-sky-100/20 border border-muted-foreground/20"></div>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Shutter Panels */}
       {renderShutterPanels()}
 
-      {/* Tilt Rod */}
+      {/* Bottom rail */}
       <div 
-        className="absolute w-1 bg-amber-800 rounded-full z-20"
-        style={{
-          top: mounted === 'inside' ? '6.5rem' : '5.5rem',
-          left: mounted === 'inside' ? '80px' : '64px',
-          height: 'calc(100% - 10rem)',
-        }}
-      />
+        className={`absolute ${blindWidth} h-2.5 bg-gradient-to-b from-muted-foreground/70 to-muted-foreground/90 rounded-sm shadow-md z-10`}
+        style={{ bottom: 'calc(4rem - 2px)' }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+      </div>
 
       {/* Floor Line */}
       <div className="absolute bottom-4 left-8 right-8 border-t-4 border-muted-foreground">
         <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-sm font-semibold text-muted-foreground">
           Floor Line
         </span>
-      </div>
-
-      {/* Interactive Controls */}
-      <div className="absolute bottom-12 left-4 bg-background/95 backdrop-blur-sm rounded-lg border border-border p-3 space-y-2 shadow-md z-40">
-        <div>
-          <label className="text-xs text-muted-foreground block mb-1">Louver Angle</label>
-          <input 
-            type="range" 
-            min="0" 
-            max="90" 
-            value={louverAngle}
-            onChange={(e) => setLouverAngle(Number(e.target.value))}
-            className="w-20 accent-primary cursor-pointer"
-          />
-        </div>
-        <div>
-          <label className="text-xs text-muted-foreground block mb-1">Panel Opening</label>
-          <input 
-            type="range" 
-            min="0" 
-            max="100" 
-            value={openPosition}
-            onChange={(e) => setOpenPosition(Number(e.target.value))}
-            className="w-20 accent-primary cursor-pointer"
-          />
-        </div>
-      </div>
-
-      {/* Material/Config Info Badge */}
-      <div className="absolute bottom-12 right-4 bg-background/95 backdrop-blur-sm rounded-lg border border-border px-3 py-2 shadow-md z-40">
-        <div className="text-xs font-medium text-foreground">
-          {material?.name || 'Plantation Shutters'}
-        </div>
-        <div className="text-[10px] text-muted-foreground">
-          {panelConfig.charAt(0).toUpperCase() + panelConfig.slice(1)} • {louverSize}
-        </div>
       </div>
     </div>
   );
