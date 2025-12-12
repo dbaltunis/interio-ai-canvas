@@ -187,11 +187,15 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
   
   // PHASE 4: Track user editing to prevent data reload during typing
   const isUserEditing = useRef(false);
+  
+  // PHASE 5: Track if units changed after initial load for re-conversion
+  const previousUnitsRef = useRef<string | null>(null);
 
   // Reset the loaded flag when surfaceId changes (new window being edited)
   useEffect(() => {
     hasLoadedInitialData.current = false;
     isUserEditing.current = false;
+    previousUnitsRef.current = null;
     console.log('🔄 Surface changed, resetting load flag for surfaceId:', surfaceId);
   }, [surfaceId]);
 
@@ -671,6 +675,52 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     // Call the async function
     loadData();
   }, []); // CRITICAL: Empty dependency array - only run on mount
+
+  // PHASE 5: Re-convert measurements when units change AFTER initial load
+  // This handles the race condition where units load after measurements are restored
+  useEffect(() => {
+    // Skip if not yet loaded or user is editing
+    if (!hasLoadedInitialData.current || isUserEditing.current) return;
+    
+    // Skip if this is the first time (units just initialized)
+    if (previousUnitsRef.current === null) {
+      previousUnitsRef.current = units.length;
+      return;
+    }
+    
+    // Skip if units haven't actually changed
+    if (previousUnitsRef.current === units.length) return;
+    
+    console.log('📐 Units changed after initial load:', {
+      from: previousUnitsRef.current,
+      to: units.length,
+      hasLoadedInitialData: hasLoadedInitialData.current
+    });
+    
+    // Re-convert measurements from MM to new unit
+    // Get the stored MM values from existingWindowSummary
+    if (existingWindowSummary) {
+      const measurementsDetails = existingWindowSummary.measurements_details as any || {};
+      const storedRailWidthMM = measurementsDetails.rail_width || existingWindowSummary.rail_width;
+      const storedDropMM = measurementsDetails.drop || existingWindowSummary.drop;
+      
+      if (storedRailWidthMM && storedRailWidthMM > 0) {
+        const convertedWidth = convertLength(storedRailWidthMM, 'mm', units.length).toString();
+        console.log('📏 Re-converting rail_width:', storedRailWidthMM, 'mm →', convertedWidth, units.length);
+        
+        setMeasurements(prev => ({
+          ...prev,
+          rail_width: convertedWidth,
+          drop: storedDropMM && storedDropMM > 0 
+            ? convertLength(storedDropMM, 'mm', units.length).toString()
+            : prev.drop
+        }));
+      }
+    }
+    
+    // Update previous units ref
+    previousUnitsRef.current = units.length;
+  }, [units.length, existingWindowSummary]);
 
   // Priority 2: Load from existingMeasurement (legacy support) - separate effect
   useEffect(() => {
@@ -1778,6 +1828,36 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           }
           
           console.log('✅ Summary data saved successfully');
+          
+          // CRITICAL FIX: Also update the surfaces table with current measurements
+          // This ensures visualizers and cards that read from surfaces table show correct values
+          if (surfaceId && measurements.rail_width && measurements.drop) {
+            const railWidthMM = convertLength(parseFloat(measurements.rail_width), units.length, 'mm');
+            const dropMM = convertLength(parseFloat(measurements.drop), units.length, 'mm');
+            
+            console.log('📐 Updating surfaces table with measurements:', {
+              surfaceId,
+              railWidthMM,
+              dropMM
+            });
+            
+            const { error: surfaceError } = await supabase
+              .from('surfaces')
+              .update({
+                width: railWidthMM,
+                height: dropMM,
+                measurement_a: railWidthMM,
+                measurement_b: dropMM
+              })
+              .eq('id', surfaceId);
+            
+            if (surfaceError) {
+              console.error('⚠️ Failed to update surfaces table:', surfaceError);
+              // Don't throw - this is a non-critical update
+            } else {
+              console.log('✅ Surfaces table updated with measurements');
+            }
+          }
 
           // CRITICAL: Also save to treatments table for material processing
           if (projectId && surfaceId) {

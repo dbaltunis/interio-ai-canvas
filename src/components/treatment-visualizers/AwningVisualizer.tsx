@@ -31,8 +31,9 @@ export const AwningVisualizer = ({
   
   const [extension, setExtension] = useState(initialProjection);
   
-  const width = measurements?.width || measurements?.rail_width || 300;
-  const height = measurements?.drop || measurements?.height || 200;
+  // CRITICAL: Check all possible measurement field names - blinds use rail_width/drop, windows use width/height
+  const width = measurements?.rail_width || measurements?.width || measurements?.window_width || 300;
+  const height = measurements?.drop || measurements?.height || measurements?.window_height || 200;
   
   // Get color from material/fabric
   const materialColor = material?.color || material?.tags?.find((t: string) => t.startsWith('#')) || template?.color || '#D97706';

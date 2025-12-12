@@ -579,13 +579,14 @@ export function WindowSummaryCard({
                       </>
                     )}
 
-                    {/* Shutters Measurements */}
+                    {/* Shutters Measurements - CRITICAL: Check rail_width/drop first (standard for blinds/shutters) */}
                     {treatmentType === 'shutters' && (
                       <>
                         <div className="space-y-0.5">
                           <div className="text-xs text-muted-foreground">Width</div>
                           <div className="font-semibold text-sm">
                             {fmtMeasurement(
+                              Number(summary.measurements_details?.rail_width) || 
                               Number(summary.measurements_details?.width) || 
                               Number(surface.measurement_a) || 
                               Number(surface.width) || 0
@@ -596,6 +597,7 @@ export function WindowSummaryCard({
                           <div className="text-xs text-muted-foreground">Height</div>
                           <div className="font-semibold text-sm">
                             {fmtMeasurement(
+                              Number(summary.measurements_details?.drop) || 
                               Number(summary.measurements_details?.height) || 
                               Number(surface.measurement_b) || 
                               Number(surface.height) || 0
