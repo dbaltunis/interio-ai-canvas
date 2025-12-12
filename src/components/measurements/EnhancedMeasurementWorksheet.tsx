@@ -1464,6 +1464,11 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                     hasCovering: !!selectedCovering,
                     hasFabricItem: !!fabricItem
                   });
+                  
+                  // ✅ DISPLAY-ONLY: Pass saved breakdown if viewing existing data
+                  const savedBreakdown = savedSummary?.cost_breakdown as any[] || undefined;
+                  const savedTotal = savedSummary?.total_cost;
+                  
                   return (
                     <CostCalculationSummary
                       template={selectedCovering}
@@ -1474,6 +1479,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                       inventory={inventoryItems}
                       fabricCalculation={fabricCalculation}
                       selectedOptions={selectedOptions}
+                      savedCostBreakdown={savedBreakdown}
+                      savedTotalCost={savedTotal}
                     />
                   );
                 }
@@ -1499,6 +1506,10 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                   totalCost: pricingResult.totalCost
                 });
 
+                // ✅ DISPLAY-ONLY: Pass saved breakdown if viewing existing data
+                const savedBreakdown = savedSummary?.cost_breakdown as any[] || undefined;
+                const savedTotal = savedSummary?.total_cost;
+                
                 return (
                   <CostCalculationSummary
                     template={selectedCovering}
@@ -1515,6 +1526,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                     calculatedHeadingCost={pricingResult.headingCost}
                     calculatedOptionsCost={pricingResult.optionsCost}
                     calculatedTotalCost={pricingResult.totalCost}
+                    savedCostBreakdown={savedBreakdown}
+                    savedTotalCost={savedTotal}
                   />
                 );
               })()}

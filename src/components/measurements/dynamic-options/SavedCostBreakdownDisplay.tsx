@@ -1,0 +1,232 @@
+/**
+ * SavedCostBreakdownDisplay - Display-Only Component
+ * ===================================================
+ * This component ONLY displays pre-calculated values from cost_breakdown.
+ * It performs ZERO calculations - all values come from the database.
+ * 
+ * This eliminates the recalculation anti-pattern where display components
+ * would recalculate costs with different unit assumptions, causing mismatches.
+ */
+
+import { Calculator, Settings, Info } from "lucide-react";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { getCurrencySymbol } from "@/utils/formatCurrency";
+
+// Simple SVG icons (same as CostCalculationSummary)
+const FabricSwatchIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M6 6 L8 8 L6 10 L8 12 L6 14 L8 16 L6 18 L18 18 L16 16 L18 14 L16 12 L18 10 L16 8 L18 6 Z" />
+    <line x1="8" y1="9" x2="16" y2="9" />
+    <line x1="8" y1="12" x2="16" y2="12" />
+    <line x1="8" y1="15" x2="16" y2="15" />
+  </svg>
+);
+
+const AssemblyIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+  </svg>
+);
+
+interface CostBreakdownItem {
+  id: string;
+  name: string;
+  total_cost: number;
+  category: string;
+  quantity?: number;
+  unit?: string;
+  unit_price?: number;
+  pricing_method?: string;
+  uses_pricing_grid?: boolean;
+  uses_leftover?: boolean;
+  horizontal_pieces_needed?: number;
+  pieces_charged?: number;
+  description?: string;
+}
+
+interface SavedCostBreakdownDisplayProps {
+  costBreakdown: CostBreakdownItem[];
+  totalCost: number;
+  templateName?: string;
+  treatmentCategory?: string;
+  selectedColor?: string;
+}
+
+export const SavedCostBreakdownDisplay = ({
+  costBreakdown,
+  totalCost,
+  templateName,
+  treatmentCategory,
+  selectedColor
+}: SavedCostBreakdownDisplayProps) => {
+  const { units } = useMeasurementUnits();
+  
+  const formatPrice = (price: number) => {
+    const symbol = getCurrencySymbol(units.currency);
+    return `${symbol}${price.toFixed(2)}`;
+  };
+
+  // Group breakdown by category
+  const fabricItem = costBreakdown.find(item => item.category === 'fabric');
+  const manufacturingItem = costBreakdown.find(item => item.category === 'manufacturing');
+  const optionItems = costBreakdown.filter(item => item.category === 'option' && item.total_cost > 0);
+  const liningItem = costBreakdown.find(item => item.category === 'lining');
+  const headingItem = costBreakdown.find(item => item.category === 'heading');
+  const hardwareItem = costBreakdown.find(item => item.category === 'hardware');
+
+  // Calculate options total from saved breakdown
+  const optionsTotal = optionItems.reduce((sum, item) => sum + (item.total_cost || 0), 0);
+
+  return (
+    <div className="bg-card border border-border rounded-lg p-3 space-y-3">
+      <div className="flex items-center gap-2 pb-2 border-b border-border">
+        <Calculator className="h-4 w-4 text-primary" />
+        <h3 className="text-base font-semibold text-card-foreground">Cost Summary</h3>
+      </div>
+
+      <div className="grid gap-2 text-sm">
+        {/* Fabric/Material */}
+        {fabricItem && (
+          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-card-foreground font-medium">{fabricItem.name}</span>
+                  {selectedColor && (
+                    <div className="flex items-center gap-1.5">
+                      <div 
+                        className="w-4 h-4 rounded-full border border-border shadow-sm" 
+                        style={{ backgroundColor: selectedColor.startsWith('#') ? selectedColor : selectedColor.toLowerCase() }}
+                      />
+                      <span className="text-xs text-muted-foreground capitalize">{selectedColor}</span>
+                    </div>
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground truncate">
+                  {fabricItem.uses_pricing_grid 
+                    ? 'Pricing grid applied' 
+                    : fabricItem.quantity && fabricItem.unit_price 
+                      ? `${fabricItem.quantity.toFixed(2)}${fabricItem.unit || 'm'} @ ${formatPrice(fabricItem.unit_price)}/${fabricItem.unit || 'm'}`
+                      : 'Saved calculation'
+                  }
+                  {fabricItem.uses_leftover && ' (using leftover)'}
+                </span>
+              </div>
+            </div>
+            <span className="font-semibold text-card-foreground ml-2">{formatPrice(fabricItem.total_cost)}</span>
+          </div>
+        )}
+
+        {/* Lining */}
+        {liningItem && liningItem.total_cost > 0 && (
+          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <FabricSwatchIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <div className="flex flex-col min-w-0">
+                <span className="text-card-foreground font-medium">{liningItem.name}</span>
+                {liningItem.quantity && (
+                  <span className="text-xs text-muted-foreground truncate">
+                    {liningItem.quantity.toFixed(2)}{liningItem.unit || 'm'}
+                  </span>
+                )}
+              </div>
+            </div>
+            <span className="font-semibold text-card-foreground ml-2">{formatPrice(liningItem.total_cost)}</span>
+          </div>
+        )}
+
+        {/* Manufacturing */}
+        {manufacturingItem && manufacturingItem.total_cost > 0 && (
+          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <AssemblyIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+              <div className="flex flex-col min-w-0">
+                <span className="text-card-foreground font-medium">Assembly & Manufacturing</span>
+                <span className="text-xs text-muted-foreground truncate">{manufacturingItem.name}</span>
+              </div>
+            </div>
+            <span className="font-semibold text-card-foreground ml-2">{formatPrice(manufacturingItem.total_cost)}</span>
+          </div>
+        )}
+
+        {/* Heading */}
+        {headingItem && headingItem.total_cost > 0 && (
+          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span className="text-card-foreground font-medium">{headingItem.name}</span>
+            </div>
+            <span className="font-semibold text-card-foreground ml-2">{formatPrice(headingItem.total_cost)}</span>
+          </div>
+        )}
+
+        {/* Hardware */}
+        {hardwareItem && hardwareItem.total_cost > 0 && (
+          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span className="text-card-foreground font-medium">{hardwareItem.name}</span>
+            </div>
+            <span className="font-semibold text-card-foreground ml-2">{formatPrice(hardwareItem.total_cost)}</span>
+          </div>
+        )}
+
+        {/* Options */}
+        {optionItems.length > 0 && optionsTotal > 0 && (
+          <div className="py-1.5 border-b border-border/50">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="text-card-foreground font-medium">Additional Options</span>
+              </div>
+              <span className="font-semibold text-card-foreground">{formatPrice(optionsTotal)}</span>
+            </div>
+            <div className="pl-6 space-y-1.5">
+              {optionItems.map((option, index) => (
+                <div key={index} className="flex items-start justify-between text-xs">
+                  <div className="flex-1 min-w-0 mr-2">
+                    <div className="text-muted-foreground">• {option.name}</div>
+                    {option.description && (
+                      <div className="text-[10px] text-muted-foreground/70 ml-2 mt-0.5">
+                        {option.description}
+                      </div>
+                    )}
+                  </div>
+                  <span className="font-medium text-card-foreground whitespace-nowrap">
+                    {formatPrice(option.total_cost)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Total */}
+      <div className="border-t-2 border-primary/20 pt-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-bold text-card-foreground">Total</span>
+          <span className="text-xl font-bold text-primary">{formatPrice(totalCost)}</span>
+        </div>
+      </div>
+
+      {/* Details */}
+      {templateName && (
+        <details className="text-xs text-muted-foreground group">
+          <summary className="cursor-pointer font-medium text-card-foreground flex items-center gap-1.5 py-1.5 hover:text-primary transition-colors border-t border-border/50 pt-2">
+            <Info className="h-3.5 w-3.5" />
+            <span>Saved Breakdown</span>
+            <span className="ml-auto text-xs group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div className="space-y-2 mt-3 pl-4 border-l-2 border-primary/20">
+            <div className="space-y-0.5">
+              <div className="text-card-foreground font-medium">Template: {templateName}</div>
+              <div>Items in breakdown: {costBreakdown.length}</div>
+            </div>
+          </div>
+        </details>
+      )}
+    </div>
+  );
+};
