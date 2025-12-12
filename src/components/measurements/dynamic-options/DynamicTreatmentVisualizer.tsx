@@ -292,6 +292,7 @@ export const DynamicTreatmentVisualizer = ({
             louverSize={(template as any).louver_size || '63mm'}
             frameStyle={(template as any).frame_style || 'L-frame'}
             mounted={(template as any).mount_type || 'inside'}
+            selectedColor={selectedFabric?.color}
           />
         );
       
