@@ -40,8 +40,72 @@ export const fetchTraditionalOptions = async (
       console.error('Error fetching template:', templateError);
       return [];
     }
+
+    // If respecting template settings, fetch options DIRECTLY via template_option_settings
+    // This bypasses account_id filtering and gets ALL linked options (including TWC options)
+    if (respectTemplateSettings) {
+      console.log('🔍 Fetching options via template_option_settings for template:', templateId);
+      
+      // CRITICAL FIX: Fetch options through template_option_settings to get ALL linked options
+      // This includes TWC options that may have different account_ids
+      const { data: linkedOptions, error: linkedError } = await supabase
+        .from('template_option_settings')
+        .select(`
+          is_enabled,
+          treatment_options!inner (
+            id,
+            key,
+            label,
+            input_type,
+            description,
+            is_required,
+            is_default,
+            sort_order,
+            order_index,
+            image_url,
+            option_type_category,
+            source,
+            treatment_category,
+            option_values (
+              id,
+              label,
+              code,
+              extra_data,
+              order_index,
+              hidden_by_user
+            )
+          )
+        `)
+        .eq('template_id', templateId)
+        .eq('is_enabled', true);
+      
+      console.log('🔍 Linked options query result:', {
+        templateId,
+        linkedCount: linkedOptions?.length || 0,
+        error: linkedError
+      });
+      
+      if (linkedError) {
+        console.error('Error fetching linked options:', linkedError);
+        return [];
+      }
+      
+      if (!linkedOptions || linkedOptions.length === 0) {
+        console.log('⚠️ No enabled options found for template');
+        return [];
+      }
+      
+      // Extract treatment_options from the joined result
+      const options = linkedOptions
+        .filter(lo => lo.treatment_options)
+        .map(lo => lo.treatment_options);
+      
+      console.log(`✅ Found ${options.length} enabled options for template`);
+      
+      return options.map(mapToWindowCoveringOption);
+    }
     
-    // Query treatment_options for this category AND account
+    // Fallback: Query treatment_options for this category AND account (original logic)
     const { data: options, error: optionsError } = await supabase
       .from('treatment_options')
       .select(`
@@ -56,7 +120,7 @@ export const fetchTraditionalOptions = async (
         )
       `)
       .eq('treatment_category', template.treatment_category)
-      .eq('account_id', accountId)  // 🔐 CRITICAL: Filter by account_id for data isolation
+      .eq('account_id', accountId)
       .order('order_index', { ascending: true });
     
     if (optionsError) {
@@ -67,44 +131,6 @@ export const fetchTraditionalOptions = async (
     if (!options || options.length === 0) {
       console.log('No options found for template category:', template.treatment_category);
       return [];
-    }
-    
-    // If we need to respect template settings, fetch them and filter
-    if (respectTemplateSettings) {
-      console.log('🔍 Fetching template_option_settings for template:', templateId);
-      const { data: settings, error: settingsError } = await supabase
-        .from('template_option_settings')
-        .select('treatment_option_id, is_enabled')
-        .eq('template_id', templateId);
-      
-      console.log('🔍 Template settings:', {
-        templateId,
-        settingsCount: settings?.length || 0,
-        settings: settings,
-        error: settingsError
-      });
-      
-      const settingsMap = new Map(
-        settings?.map(s => [s.treatment_option_id, s.is_enabled]) || []
-      );
-      
-      // WHITELIST: Only show options explicitly enabled in template_option_settings
-      // If no settings exist for template, show NO options (forces configuration)
-      if (!settings || settings.length === 0) {
-        console.log('⚠️ WHITELIST: No template_option_settings found - returning NO options (template needs configuration)');
-        return [];
-      }
-      
-      const enabledOptions = options.filter(opt => {
-        // WHITELIST: Must be explicitly enabled (is_enabled === true)
-        const isEnabled = settingsMap.get(opt.id) === true;
-        console.log(`🔍 Option "${opt.label}" (${opt.id}): ${isEnabled ? 'ENABLED' : 'DISABLED (not in whitelist)'}`);
-        return isEnabled;
-      });
-      
-      console.log(`✅ WHITELIST: Filtered ${options.length} options to ${enabledOptions.length} explicitly enabled options`);
-      
-      return enabledOptions.map(mapToWindowCoveringOption);
     }
     
     return options.map(mapToWindowCoveringOption);
