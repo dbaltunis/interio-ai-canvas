@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Blinds } from 'lucide-react';
 import type { OnboardingData } from '@/hooks/useOnboardingWizard';
+import { getPricingMethodLabel } from '@/constants/pricingMethods';
 
 interface StepProps {
   data: OnboardingData;
@@ -11,26 +12,19 @@ interface StepProps {
   isSaving: boolean;
 }
 
+// STANDARDIZED: Use centralized pricing method codes
 const WINDOW_COVERING_TYPES = [
-  { id: 'curtains', label: 'Curtains', icon: '🪟', pricingOptions: ['per_linear_meter', 'per_width', 'per_drop', 'flat'] },
-  { id: 'roman_blinds', label: 'Roman Blinds', icon: '📐', pricingOptions: ['per_linear_meter', 'per_width', 'per_drop', 'flat'] },
-  { id: 'roller_blinds', label: 'Roller Blinds', icon: '🔲', pricingOptions: ['grid', 'flat'] },
-  { id: 'venetian_blinds', label: 'Venetian Blinds', icon: '📊', pricingOptions: ['grid', 'flat'] },
-  { id: 'cellular_blinds', label: 'Cellular / Honeycomb', icon: '🐝', pricingOptions: ['grid', 'flat'] },
-  { id: 'vertical_blinds', label: 'Vertical Blinds', icon: '📏', pricingOptions: ['grid', 'flat'] },
-  { id: 'shutters', label: 'Shutters', icon: '🚪', pricingOptions: ['grid', 'flat'] },
-  { id: 'awning', label: 'Awnings', icon: '⛱️', pricingOptions: ['grid', 'flat'] },
-  { id: 'panel_glide', label: 'Panel Glide', icon: '🎚️', pricingOptions: ['grid', 'flat'] },
-  { id: 'wallpaper', label: 'Wallpaper', icon: '🎨', pricingOptions: ['per_linear_meter', 'flat'] },
+  { id: 'curtains', label: 'Curtains', icon: '🪟', pricingOptions: ['per-linear-meter', 'per-width', 'per-drop', 'fixed'] },
+  { id: 'roman_blinds', label: 'Roman Blinds', icon: '📐', pricingOptions: ['per-linear-meter', 'per-width', 'per-drop', 'fixed'] },
+  { id: 'roller_blinds', label: 'Roller Blinds', icon: '🔲', pricingOptions: ['pricing-grid', 'per-sqm', 'fixed'] },
+  { id: 'venetian_blinds', label: 'Venetian Blinds', icon: '📊', pricingOptions: ['pricing-grid', 'per-sqm', 'fixed'] },
+  { id: 'cellular_blinds', label: 'Cellular / Honeycomb', icon: '🐝', pricingOptions: ['pricing-grid', 'per-sqm', 'fixed'] },
+  { id: 'vertical_blinds', label: 'Vertical Blinds', icon: '📏', pricingOptions: ['pricing-grid', 'per-sqm', 'fixed'] },
+  { id: 'shutters', label: 'Shutters', icon: '🚪', pricingOptions: ['pricing-grid', 'per-sqm', 'fixed'] },
+  { id: 'awning', label: 'Awnings', icon: '⛱️', pricingOptions: ['pricing-grid', 'per-sqm', 'fixed'] },
+  { id: 'panel_glide', label: 'Panel Glide', icon: '🎚️', pricingOptions: ['pricing-grid', 'per-sqm', 'fixed'] },
+  { id: 'wallpaper', label: 'Wallpaper', icon: '🎨', pricingOptions: ['per-roll', 'per-linear-meter', 'fixed'] },
 ];
-
-const PRICING_METHOD_LABELS: Record<string, string> = {
-  grid: 'Pricing Grid',
-  flat: 'Flat Price',
-  per_linear_meter: 'Per Linear Meter',
-  per_width: 'Per Width',
-  per_drop: 'Per Drop',
-};
 
 export const WindowCoveringsStep = ({ data, updateSection }: StepProps) => {
   const windowCoverings = data.window_coverings || {};
@@ -90,7 +84,7 @@ export const WindowCoveringsStep = ({ data, updateSection }: StepProps) => {
                       <SelectContent>
                         {type.pricingOptions.map((method) => (
                           <SelectItem key={method} value={method}>
-                            {PRICING_METHOD_LABELS[method]}
+                            {getPricingMethodLabel(method)}
                           </SelectItem>
                         ))}
                       </SelectContent>
