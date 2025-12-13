@@ -509,7 +509,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Options: ${totalOptionsCreated} created, ${totalOptionsUpdated} reused`);
 
-    // Phase 4: Create child inventory items for materials/colors
+    // Phase 4: Create child inventory items for materials WITH COLORS AS TAGS (not separate items)
     let totalMaterialsCreated = 0;
     if (insertedItems) {
       for (let i = 0; i < insertedItems.length; i++) {
@@ -519,39 +519,62 @@ const handler = async (req: Request): Promise<Response> => {
         if (product.fabricsAndColours?.itemMaterials) {
           for (const material of product.fabricsAndColours.itemMaterials) {
             if (material.colours && material.colours.length > 0) {
-              for (const colour of material.colours) {
-                // Use PARENT product description for subcategory, not material name
-                const materialCategoryMapping = mapCategoryForMaterial(material.material, product.description);
-                const { error: materialError } = await supabaseClient
-                  .from('enhanced_inventory_items')
-                  .insert({
-                    user_id: user.id,
-                    name: `${parentItem.name} - ${material.material} - ${colour.colour}`,
-                    sku: `${parentItem.sku}-${material.material}-${colour.colour}`.replace(/\s+/g, '-'),
-                    category: materialCategoryMapping.category,
-                    subcategory: materialCategoryMapping.subcategory,
-                    supplier: 'TWC',
-                    active: true,
-                    show_in_quote: true,
-                    description: `Material: ${material.material}, Colour: ${colour.colour}`,
-                    // PHASE 1: Add price_group directly from TWC pricing group
-                    price_group: colour.pricingGroup || null,
-                    metadata: {
-                      parent_product_id: parentItem.id,
-                      twc_material: material.material,
-                      twc_colour: colour.colour,
-                      twc_pricing_group: colour.pricingGroup,
-                      imported_at: new Date().toISOString(),
-                    },
-                    cost_price: 0,
-                    selling_price: 0,
-                  });
+              // CONSOLIDATE: Create ONE material with ALL colors as tags
+              const colorTags = material.colours.map((c: any) => c.colour);
+              const priceGroups = [...new Set(material.colours.map((c: any) => c.pricingGroup).filter(Boolean))];
+              // Use first price group as primary (all colors typically share same group)
+              const primaryPriceGroup = priceGroups[0] || null;
+              
+              // Use PARENT product description for subcategory, not material name
+              const materialCategoryMapping = mapCategoryForMaterial(material.material, product.description);
+              
+              // Check if material already exists (to avoid duplicates)
+              const { data: existingMaterial } = await supabaseClient
+                .from('enhanced_inventory_items')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('name', `${parentItem.name} - ${material.material}`)
+                .maybeSingle();
+              
+              if (existingMaterial) {
+                console.log(`Material "${material.material}" already exists, skipping`);
+                continue;
+              }
+              
+              const { error: materialError } = await supabaseClient
+                .from('enhanced_inventory_items')
+                .insert({
+                  user_id: user.id,
+                  name: `${parentItem.name} - ${material.material}`,
+                  sku: `${parentItem.sku}-${material.material}`.replace(/\s+/g, '-'),
+                  category: materialCategoryMapping.category,
+                  subcategory: materialCategoryMapping.subcategory,
+                  supplier: 'TWC',
+                  active: true,
+                  show_in_quote: true,
+                  description: `Material: ${material.material} | Colors: ${colorTags.join(', ')}`,
+                  // Store ALL colors as tags for the color dropdown
+                  tags: colorTags,
+                  // Use primary price group for grid matching
+                  price_group: primaryPriceGroup,
+                  // Pricing method is grid-based for TWC materials
+                  pricing_method: 'pricing_grid',
+                  metadata: {
+                    parent_product_id: parentItem.id,
+                    twc_material: material.material,
+                    twc_colours: material.colours, // Store full color data for reference
+                    twc_price_groups: priceGroups,
+                    imported_at: new Date().toISOString(),
+                  },
+                  cost_price: 0,
+                  selling_price: 0,
+                });
 
-                if (!materialError) {
-                  totalMaterialsCreated++;
-                } else {
-                  console.error(`Error creating material variant:`, materialError);
-                }
+              if (!materialError) {
+                totalMaterialsCreated++;
+                console.log(`Created consolidated material: ${material.material} with ${colorTags.length} colors`);
+              } else {
+                console.error(`Error creating material:`, materialError);
               }
             }
           }
@@ -559,7 +582,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    console.log(`Successfully created ${totalMaterialsCreated} material variants`);
+    console.log(`Successfully created ${totalMaterialsCreated} consolidated materials (with colors as tags)`);
 
     return new Response(
       JSON.stringify({ 
