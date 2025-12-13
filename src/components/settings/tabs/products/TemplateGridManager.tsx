@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,11 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, Trash2, CheckCircle2, Info, FileText, Download } from 'lucide-react';
+import { Upload, Trash2, CheckCircle2, Info, FileText, Download, Plus, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Textarea } from '@/components/ui/textarea';
-import { useVendors } from '@/hooks/useVendors';
+import { useVendors, useCreateVendor } from '@/hooks/useVendors';
+import { useIntegrations } from '@/hooks/useIntegrations';
 
 interface TemplateGridManagerProps {
   // No props needed - grids are now assigned directly to inventory items
@@ -29,6 +30,12 @@ interface PricingGrid {
   price_group?: string | null;
 }
 
+interface SupplierOption {
+  id: string;
+  name: string;
+  isIntegrated?: boolean;
+}
+
 const PRODUCT_TYPES = [
   { value: 'roller_blinds', label: 'Roller Blinds' },
   { value: 'venetian_blinds', label: 'Venetian Blinds' },
@@ -41,9 +48,15 @@ const PRODUCT_TYPES = [
   { value: 'roman_blinds', label: 'Roman Blinds' },
 ];
 
+// Supplier integrations that provide product data
+const SUPPLIER_INTEGRATION_TYPES = ['twc', 'tigpim', 'somfy'];
+
 export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
   const { toast } = useToast();
   const { data: vendors = [] } = useVendors();
+  const { integrations } = useIntegrations();
+  const createVendor = useCreateVendor();
+  
   const [grids, setGrids] = useState<PricingGrid[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -57,6 +70,49 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
   const [supplierId, setSupplierId] = useState<string>('');
   const [productType, setProductType] = useState<string>('');
   const [priceGroup, setPriceGroup] = useState<string>('');
+  
+  // Inline supplier creation
+  const [showAddSupplier, setShowAddSupplier] = useState(false);
+  const [newSupplierName, setNewSupplierName] = useState('');
+
+  // Merge vendors with active supplier integrations
+  const allSuppliers = useMemo((): SupplierOption[] => {
+    const supplierList: SupplierOption[] = vendors.map(v => ({
+      id: v.id,
+      name: v.name,
+      isIntegrated: false,
+    }));
+    
+    // Add integrated suppliers if active and not already in vendors
+    const activeSupplierIntegrations = integrations.filter(
+      i => SUPPLIER_INTEGRATION_TYPES.includes(i.integration_type) && i.active
+    );
+    
+    for (const integration of activeSupplierIntegrations) {
+      const integrationName = integration.integration_type.toUpperCase();
+      const alreadyExists = supplierList.some(
+        s => s.name.toLowerCase() === integrationName.toLowerCase()
+      );
+      
+      if (!alreadyExists) {
+        // Use integration ID as the supplier ID for integrated suppliers
+        supplierList.push({
+          id: `integration-${integration.id}`,
+          name: integrationName,
+          isIntegrated: true,
+        });
+      }
+    }
+    
+    return supplierList;
+  }, [vendors, integrations]);
+
+  // Auto-select if only one supplier
+  useEffect(() => {
+    if (allSuppliers.length === 1 && !supplierId && showUploadForm) {
+      setSupplierId(allSuppliers[0].id);
+    }
+  }, [allSuppliers, supplierId, showUploadForm]);
 
   useEffect(() => {
     loadGrids();
@@ -153,6 +209,30 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Handle integrated supplier IDs - need to get or create a real vendor record
+      let actualSupplierId = supplierId;
+      if (supplierId.startsWith('integration-')) {
+        // Find the supplier name from our merged list
+        const selectedSupplier = allSuppliers.find(s => s.id === supplierId);
+        if (selectedSupplier) {
+          // Check if a vendor with this name already exists, if not create one
+          const existingVendor = vendors.find(v => 
+            v.name.toLowerCase() === selectedSupplier.name.toLowerCase()
+          );
+          
+          if (existingVendor) {
+            actualSupplierId = existingVendor.id;
+          } else {
+            // Create a new vendor for this integration
+            const newVendor = await createVendor.mutateAsync({
+              name: selectedSupplier.name,
+              active: true,
+            });
+            actualSupplierId = newVendor.id;
+          }
+        }
+      }
+
       // Generate grid code from grid name (sanitize for use as code)
       const gridCode = gridName.trim().replace(/\s+/g, '_').toUpperCase();
 
@@ -165,7 +245,7 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
           grid_code: gridCode,
           description: gridDescription || gridName,
           grid_data: gridData,
-          supplier_id: supplierId,
+          supplier_id: actualSupplierId,
           product_type: productType,
           price_group: priceGroup.toUpperCase(),
           active: true,
@@ -377,22 +457,97 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
           <CardContent className="space-y-4">
             {/* Auto-matching fields */}
             <div className="grid gap-4 md:grid-cols-3">
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="supplier">Supplier *</Label>
-                <Select value={supplierId} onValueChange={setSupplierId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select supplier" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vendors.map((vendor) => (
-                      <SelectItem key={vendor.id} value={vendor.id}>
-                        {vendor.name}
+                {!showAddSupplier ? (
+                  <Select 
+                    value={supplierId} 
+                    onValueChange={(value) => {
+                      if (value === '__new__') {
+                        setShowAddSupplier(true);
+                      } else {
+                        setSupplierId(value);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select supplier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allSuppliers.map((supplier) => (
+                        <SelectItem key={supplier.id} value={supplier.id}>
+                          <span className="flex items-center gap-2">
+                            {supplier.name}
+                            {supplier.isIntegrated && (
+                              <Badge variant="secondary" className="text-xs py-0">Integrated</Badge>
+                            )}
+                          </span>
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="__new__">
+                        <span className="flex items-center gap-1 text-primary">
+                          <Plus className="h-3 w-3" />
+                          Add New Supplier
+                        </span>
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  The supplier this pricing grid is from
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      value={newSupplierName}
+                      onChange={(e) => setNewSupplierName(e.target.value)}
+                      placeholder="Supplier name"
+                      className="flex-1"
+                      autoFocus
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={async () => {
+                        if (!newSupplierName.trim()) return;
+                        try {
+                          const newVendor = await createVendor.mutateAsync({
+                            name: newSupplierName.trim(),
+                            active: true,
+                          });
+                          setSupplierId(newVendor.id);
+                          setNewSupplierName('');
+                          setShowAddSupplier(false);
+                          toast({
+                            title: 'Supplier Created',
+                            description: `"${newSupplierName}" has been added`,
+                          });
+                        } catch (error) {
+                          console.error('Error creating supplier:', error);
+                        }
+                      }}
+                      disabled={createVendor.isPending || !newSupplierName.trim()}
+                    >
+                      {createVendor.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        'Add'
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setShowAddSupplier(false);
+                        setNewSupplierName('');
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {allSuppliers.length === 0 
+                    ? 'No suppliers yet - add your first one above'
+                    : 'The supplier this pricing grid is from'
+                  }
                 </p>
               </div>
 
