@@ -268,9 +268,12 @@ export const UnifiedInventoryDialog = ({
       });
       
       // Detect pricing method from item data
-      if (item.pricing_method) {
+      // PRIORITY: price_group indicates grid pricing (TWC items)
+      if (item.price_group) {
+        setPricingMethod('grid');
+      } else if (item.pricing_method) {
         setPricingMethod(item.pricing_method);
-      } else if (item.pricing_grid_id || item.price_group) {
+      } else if (item.pricing_grid_id) {
         setPricingMethod('grid');
       } else if (item.category === 'fabric' || item.category === 'material') {
         setPricingMethod('linear');
@@ -623,17 +626,39 @@ export const UnifiedInventoryDialog = ({
                     <CardDescription>Choose how this product will be priced</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    {/* Show prominent price group badge if exists */}
+                    {formData.price_group && (
+                      <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="default" className="text-sm px-3 py-1">
+                            Group {formData.price_group}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            Uses pricing grid auto-matching
+                          </span>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setFormData(prev => ({ ...prev, price_group: null }))}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+
                     {/* Context-aware pricing method buttons */}
                     {(() => {
                       const isFabricSubcategory = ['curtain_fabric', 'lining_fabric', 'roman_fabric', 'upholstery_fabric', 'sheer_fabric'].includes(formData.subcategory);
-                      const showGridOption = !isFabricSubcategory;
+                      const isMaterialCategory = formData.category === 'material';
+                      // Show grid option for materials OR if price_group already exists
+                      const showGridOption = !isFabricSubcategory || isMaterialCategory || formData.price_group;
                       const showSqmOption = isFabricSubcategory || formData.category === 'fabric';
                       
-                      // Calculate grid columns: grid + linear + sqm (for fabrics) + fixed
                       const columnCount = (showGridOption ? 1 : 0) + 1 + (showSqmOption ? 1 : 0) + 1;
                       
                       return (
-                        <div className={`grid gap-3 grid-cols-${columnCount}`} style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))` }}>
+                        <div className={`grid gap-3`} style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))` }}>
                           {showGridOption && (
                             <button
                               type="button"
