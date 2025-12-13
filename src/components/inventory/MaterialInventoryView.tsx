@@ -351,10 +351,11 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
         <InventoryQuickView
           item={quickViewItem}
           open={showQuickView}
-          onOpenChange={(open) => {
-            setShowQuickView(open);
-            if (!open) setQuickViewItem(null);
+          onOpenChange={(openState) => {
+            setShowQuickView(openState);
+            if (!openState) setQuickViewItem(null);
           }}
+          onSuccess={refetch}
         />
       )}
     </div>
