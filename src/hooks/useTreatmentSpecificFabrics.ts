@@ -4,7 +4,7 @@ import { getTreatmentConfig, TreatmentCategory } from "@/utils/treatmentTypeDete
 import { resolveGridForProduct } from "@/utils/pricing/gridResolver";
 import { getAcceptedSubcategories, getTreatmentPrimaryCategory, TREATMENT_SUBCATEGORIES } from "@/constants/inventorySubcategories";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 100; // Increased for large TWC inventories
 
 /**
  * Enterprise-grade hook for fetching treatment-specific fabrics/materials
@@ -101,13 +101,12 @@ export const useTreatmentSpecificFabrics = (
         hasMore = items.length === PAGE_SIZE + 1;
         if (hasMore) items.pop();
       }
-      // Handle treatments that support both fabric and material
+      // Handle treatments that support both fabric and material (e.g., roller_blinds)
       else if (primaryCategory === 'both') {
         const subcategoryConfig = TREATMENT_SUBCATEGORIES[treatmentCategory];
         
         if (subcategoryConfig?.fabricSubcategories && subcategoryConfig?.materialSubcategories) {
-          const halfLimit = Math.floor(PAGE_SIZE / 2);
-          
+          // Use FULL page size for each category to ensure we get all items
           let fabricQuery = supabase
             .from("enhanced_inventory_items")
             .select("*")
@@ -115,7 +114,7 @@ export const useTreatmentSpecificFabrics = (
             .in("subcategory", subcategoryConfig.fabricSubcategories)
             .eq("active", true)
             .order("name")
-            .range(offset, offset + halfLimit);
+            .range(offset, offset + PAGE_SIZE);
 
           fabricQuery = addAccountFilter(fabricQuery);
           fabricQuery = buildSearchQuery(fabricQuery);
@@ -129,7 +128,7 @@ export const useTreatmentSpecificFabrics = (
             .in("subcategory", subcategoryConfig.materialSubcategories)
             .eq("active", true)
             .order("name")
-            .range(offset, offset + halfLimit);
+            .range(offset, offset + PAGE_SIZE);
 
           materialQuery = addAccountFilter(materialQuery);
           materialQuery = buildSearchQuery(materialQuery);
@@ -137,7 +136,16 @@ export const useTreatmentSpecificFabrics = (
           if (materialError) throw materialError;
 
           items = [...(fabricData || []), ...(materialData || [])];
-          hasMore = (fabricData?.length === halfLimit + 1) || (materialData?.length === halfLimit + 1);
+          hasMore = (fabricData?.length === PAGE_SIZE + 1) || (materialData?.length === PAGE_SIZE + 1);
+          
+          console.log('🔧 useTreatmentSpecificFabrics (both):', {
+            treatmentCategory,
+            fabricCount: fabricData?.length || 0,
+            materialCount: materialData?.length || 0,
+            totalItems: items.length,
+            fabricSubcategories: subcategoryConfig.fabricSubcategories,
+            materialSubcategories: subcategoryConfig.materialSubcategories
+          });
         }
       }
       // Standard category-based fetch
