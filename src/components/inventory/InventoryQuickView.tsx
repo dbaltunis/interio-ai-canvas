@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Package, DollarSign, Ruler, Store } from "lucide-react";
+import { Edit, Package, DollarSign, Ruler, Store, Grid3X3 } from "lucide-react";
 import { UnifiedInventoryDialog } from "./UnifiedInventoryDialog";
 import { useState } from "react";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
@@ -22,11 +22,12 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    // Close quick view and wait for animation to complete before opening edit
+    // Close quick view first
     onOpenChange(false);
+    // Wait for dialog close animation then open edit
     setTimeout(() => {
       setShowEditDialog(true);
-    }, 200);
+    }, 150);
   };
 
   const handleEditSuccess = () => {
@@ -34,25 +35,39 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
     onSuccess?.();
   };
 
-  const handleEditDialogClose = (open: boolean) => {
-    if (!open) {
+  const handleEditDialogClose = (openState: boolean) => {
+    if (!openState) {
       setShowEditDialog(false);
     }
   };
 
-  // Get color information
+  // Get color information from tags
   const itemColors = item.tags?.filter((tag: string) => 
     COLOR_PALETTE.some(color => color.value === tag)
   ) || [];
+
+  // Check if it's a TWC item
+  const isTWC = item.supplier?.toUpperCase() === 'TWC' || 
+    (item.metadata as any)?.twc_product_id != null;
+
+  // Get price group info
+  const priceGroup = item.price_group || (item.metadata as any)?.pricing_group;
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>{item.name}</span>
-              <Button onClick={handleEditClick} size="sm" variant="outline">
+            <DialogTitle className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="truncate">{item.name}</span>
+                {isTWC && (
+                  <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 shrink-0">
+                    TWC
+                  </Badge>
+                )}
+              </div>
+              <Button onClick={handleEditClick} size="sm" variant="outline" className="shrink-0">
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Full Details
               </Button>
@@ -105,7 +120,7 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Stock</p>
                 <Badge variant={item.quantity && item.quantity > 0 ? "default" : "secondary"}>
-                  {item.quantity || 0} {item.unit || 'units'}
+                  {item.quantity || 0} {item.unit || 'pieces'}
                 </Badge>
               </div>
             </div>
@@ -132,6 +147,19 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
                 </div>
               </div>
             </div>
+
+            {/* Price Group for Grid Pricing */}
+            {priceGroup && (
+              <div className="flex items-start gap-3 p-4 bg-primary/5 rounded-lg border border-primary/10">
+                <div className="p-2 rounded-md bg-primary/10">
+                  <Grid3X3 className="h-4 w-4 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Price Group (Grid Pricing)</p>
+                  <p className="font-bold text-lg text-primary">Group {priceGroup}</p>
+                </div>
+              </div>
+            )}
 
             {/* Available Colors */}
             {itemColors.length > 0 && (
@@ -205,16 +233,18 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
               </div>
             )}
 
-            {/* All Tags */}
-            {item.tags && item.tags.length > 0 && (
+            {/* All Tags (excluding colors already shown) */}
+            {item.tags && item.tags.filter((t: string) => !COLOR_PALETTE.some(c => c.value === t)).length > 0 && (
               <div className="space-y-2">
                 <p className="text-sm font-medium">Tags</p>
                 <div className="flex flex-wrap gap-2">
-                  {item.tags.map((tag: string, idx: number) => (
-                    <Badge key={idx} variant="secondary" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
+                  {item.tags
+                    .filter((tag: string) => !COLOR_PALETTE.some(c => c.value === tag))
+                    .map((tag: string, idx: number) => (
+                      <Badge key={idx} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
                 </div>
               </div>
             )}
@@ -222,7 +252,7 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog - controlled externally */}
+      {/* Edit Dialog - rendered when showEditDialog is true */}
       {showEditDialog && (
         <UnifiedInventoryDialog
           open={showEditDialog}
