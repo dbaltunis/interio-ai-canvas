@@ -54,6 +54,61 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
       
       const accountId = profile?.parent_account_id || user.id;
       
+      // If querying by template ID, fetch options via template_option_settings
+      // This includes TWC options that may have different account_ids but are linked to the template
+      if (templateIdOrCategory && queryType === 'template') {
+        const { data: linkedOptions, error: linkedError } = await supabase
+          .from('template_option_settings')
+          .select(`
+            is_enabled,
+            treatment_options!inner (
+              id,
+              treatment_id,
+              key,
+              label,
+              input_type,
+              required,
+              visible,
+              order_index,
+              validation,
+              template_id,
+              treatment_category,
+              tracks_inventory,
+              pricing_method,
+              base_price,
+              pricing_grid_data,
+              pricing_grid_type,
+              account_id,
+              source,
+              option_values (*)
+            )
+          `)
+          .eq('template_id', templateIdOrCategory);
+        
+        if (linkedError) {
+          console.error('Error fetching linked options:', linkedError);
+          return [];
+        }
+        
+        // Extract treatment_options from the joined result (ALL linked options, regardless of is_enabled)
+        const allLinkedOptions = (linkedOptions || [])
+          .filter(lo => lo.treatment_options)
+          .map(lo => lo.treatment_options as TreatmentOption);
+        
+        console.log('🔧 useTreatmentOptions (template query) loaded:', {
+          templateId: templateIdOrCategory,
+          totalOptions: allLinkedOptions.length,
+          options: allLinkedOptions.map(o => ({
+            key: o.key,
+            label: o.label,
+            valuesCount: o.option_values?.length || 0
+          }))
+        });
+        
+        return allLinkedOptions;
+      }
+      
+      // For category-based queries, use account_id filtering (original logic)
       let query = supabase
         .from('treatment_options')
         .select(`
@@ -61,21 +116,16 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
           option_values (*)
         `)
         .eq('account_id', accountId)
-        .eq('visible', true) // Only get visible options
+        .eq('visible', true)
         .order('order_index');
       
-      // If no specific filter provided, get ALL visible options for this account
-      if (templateIdOrCategory) {
-        if (queryType === 'category') {
-          // Get all equivalent category names (handles cellular_shades vs cellular_blinds etc)
-          const categories = CATEGORY_ALIASES[templateIdOrCategory] || [templateIdOrCategory];
-          
-          // Build OR condition for all equivalent categories + universal options (null)
-          const orConditions = categories.map(cat => `treatment_category.eq.${cat}`).join(',');
-          query = query.or(`${orConditions},treatment_category.is.null`);
-        } else {
-          query = query.eq('template_id', templateIdOrCategory);
-        }
+      if (templateIdOrCategory && queryType === 'category') {
+        // Get all equivalent category names (handles cellular_shades vs cellular_blinds etc)
+        const categories = CATEGORY_ALIASES[templateIdOrCategory] || [templateIdOrCategory];
+        
+        // Build OR condition for all equivalent categories + universal options (null)
+        const orConditions = categories.map(cat => `treatment_category.eq.${cat}`).join(',');
+        query = query.or(`${orConditions},treatment_category.is.null`);
       }
       
       const { data, error } = await query;
@@ -92,7 +142,7 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
       });
       
       // Debug: Log TWC options loaded
-      console.log('🔧 useTreatmentOptions loaded:', {
+      console.log('🔧 useTreatmentOptions (category query) loaded:', {
         queryType,
         category: templateIdOrCategory,
         accountId,

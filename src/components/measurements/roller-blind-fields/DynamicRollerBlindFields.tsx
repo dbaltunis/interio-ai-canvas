@@ -38,10 +38,11 @@ export const DynamicRollerBlindFields = ({
   // Track if sub-category selections have been restored from saved data
   const [subCategoryRestored, setSubCategoryRestored] = useState(false);
 
-  // Query by treatment category to get all available options
+  // Query by templateId (preferred) to get all linked options including TWC options
+  // Fallback to category if no templateId is available
   const { data: allOptions = [], isLoading } = useTreatmentOptions(
-    treatmentCategory || templateId, 
-    treatmentCategory ? 'category' : 'template'
+    templateId || treatmentCategory, 
+    templateId ? 'template' : 'category'
   );
   
   // Filter by template_option_settings if templateId is available
