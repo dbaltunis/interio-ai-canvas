@@ -366,13 +366,18 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Successfully created ${insertedTemplates?.length || 0} templates`);
 
     // Phase 3: Create treatment options from TWC questions
+    // PHASE 1 FIX: Check for existing options by key+account_id to avoid duplicates, but ensure correct account_id
     let totalOptionsCreated = 0;
+    let totalOptionsUpdated = 0;
+    
     if (insertedTemplates) {
       for (let i = 0; i < insertedTemplates.length; i++) {
         const template = insertedTemplates[i];
         const product = products[i];
         
         if (product.questions && product.questions.length > 0) {
+          console.log(`Processing ${product.questions.length} questions for template ${template.name}`);
+          
           for (const question of product.questions) {
             // Skip invalid questions
             if (!question.question || typeof question.question !== 'string') {
@@ -404,41 +409,73 @@ const handler = async (req: Request): Promise<Response> => {
               }
             };
 
-            // Create treatment option with correct column names and TWC source column
-            const { data: option, error: optionError } = await supabaseClient
+            // PHASE 1 FIX: Check if option already exists for THIS account
+            const { data: existingOption, error: checkError } = await supabaseClient
               .from('treatment_options')
-              .insert({
-                account_id: accountId,
-                treatment_category: template.treatment_category,
-                key: optionKey,
-                label: question.question,
-                input_type: mapInputType(question.questionType),
-                order_index: 0,
-                visible: true,
-                required: false,
-                // PHASE 3: Use dedicated source column for TWC identification
-                source: 'twc',
-              })
-              .select()
-              .single();
+              .select('id')
+              .eq('account_id', accountId)
+              .eq('treatment_category', template.treatment_category)
+              .eq('key', optionKey)
+              .maybeSingle();
 
-            if (optionError) {
-              console.error(`Error creating option ${optionKey}:`, optionError);
+            if (checkError) {
+              console.error(`Error checking existing option ${optionKey}:`, checkError);
               continue;
             }
 
-            // Create template_option_settings to enable option for this template
-            if (option) {
+            let optionId: string;
+
+            if (existingOption) {
+              // Option already exists for this account - use existing
+              optionId = existingOption.id;
+              totalOptionsUpdated++;
+              console.log(`Using existing option ${optionKey} (${optionId}) for account ${accountId}`);
+            } else {
+              // Create new option for this account
+              const { data: newOption, error: optionError } = await supabaseClient
+                .from('treatment_options')
+                .insert({
+                  account_id: accountId,
+                  treatment_category: template.treatment_category,
+                  key: optionKey,
+                  label: question.question,
+                  input_type: mapInputType(question.questionType),
+                  order_index: 0,
+                  visible: true,
+                  required: false,
+                  source: 'twc',
+                })
+                .select('id')
+                .single();
+
+              if (optionError) {
+                console.error(`Error creating option ${optionKey}:`, optionError);
+                continue;
+              }
+              
+              optionId = newOption.id;
+              totalOptionsCreated++;
+              console.log(`Created new option ${optionKey} (${optionId}) for account ${accountId}`);
+            }
+
+            // Check if template_option_settings already exists
+            const { data: existingSetting } = await supabaseClient
+              .from('template_option_settings')
+              .select('id')
+              .eq('template_id', template.id)
+              .eq('treatment_option_id', optionId)
+              .maybeSingle();
+
+            if (!existingSetting) {
+              // Create template_option_settings to enable option for this template
               const { error: settingsError } = await supabaseClient
                 .from('template_option_settings')
                 .insert({
                   template_id: template.id,
-                  treatment_option_id: option.id,
+                  treatment_option_id: optionId,
                   is_enabled: true,
                   order_index: 0,
-                })
-                .select()
-                .single();
+                });
 
               if (settingsError) {
                 console.error(`Error enabling option ${optionKey} for template:`, settingsError);
@@ -447,11 +484,11 @@ const handler = async (req: Request): Promise<Response> => {
               }
             }
 
-            // Create option values from answers
-            if (option && question.answers && question.answers.length > 0) {
+            // Create option values from answers (only if option was newly created)
+            if (!existingOption && question.answers && question.answers.length > 0) {
               const optionValues = question.answers.map((answer, idx) => ({
                 account_id: accountId,
-                option_id: option.id,
+                option_id: optionId,
                 code: answer.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
                 label: answer,
                 order_index: idx,
@@ -463,8 +500,6 @@ const handler = async (req: Request): Promise<Response> => {
 
               if (valuesError) {
                 console.error(`Error creating option values for ${optionKey}:`, valuesError);
-              } else {
-                totalOptionsCreated += optionValues.length;
               }
             }
           }
@@ -472,7 +507,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    console.log(`Successfully created ${totalOptionsCreated} option values`);
+    console.log(`Options: ${totalOptionsCreated} created, ${totalOptionsUpdated} reused`);
 
     // Phase 4: Create child inventory items for materials/colors
     let totalMaterialsCreated = 0;
@@ -532,6 +567,7 @@ const handler = async (req: Request): Promise<Response> => {
         imported: insertedItems?.length || 0,
         templates_created: insertedTemplates?.length || 0,
         options_created: totalOptionsCreated,
+        options_reused: totalOptionsUpdated,
         materials_created: totalMaterialsCreated,
         products: insertedItems,
         templates: insertedTemplates,

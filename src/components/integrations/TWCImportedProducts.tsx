@@ -172,50 +172,26 @@ export const TWCImportedProducts = () => {
                           Item #: {twcItemNumber || product.sku}
                         </p>
 
-                        {/* Status Indicators */}
+                        {/* Status Indicators - PHASE 3: Simplified, less misleading */}
                         <div className="flex flex-wrap gap-2 text-xs">
-                          <div className="flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3 text-green-600" />
-                            <span className="text-green-600">In Inventory</span>
-                          </div>
                           {hasTemplate ? (
-                            <div className="flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3 text-green-600" />
-                              <span className="text-green-600">Template Created</span>
-                            </div>
+                            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                              Template Ready
+                            </Badge>
                           ) : (
-                            <div className="flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3 text-amber-600" />
-                              <span className="text-amber-600">No Template</span>
-                            </div>
+                            <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                              Needs Template
+                            </Badge>
                           )}
-                          {/* Price Group indicator - replaces confusing "No Pricing" */}
-                          {priceGroup ? (
-                            <div className="flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3 text-green-600" />
-                              <span className="text-green-600">Group {priceGroup}</span>
-                            </div>
-                          ) : hasPricing ? (
-                            <div className="flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3 text-green-600" />
-                              <span className="text-green-600">Pricing Set</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3 text-amber-600" />
-                              <span className="text-amber-600">Needs Price Group</span>
-                            </div>
+                          {priceGroup && (
+                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                              Group {priceGroup}
+                            </Badge>
                           )}
-                          {hasOptions ? (
-                            <div className="flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3 text-blue-600" />
-                              <span className="text-blue-600">{product.metadata.twc_questions.length} Options</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-muted-foreground">No Options</span>
-                            </div>
+                          {hasOptions && (
+                            <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                              {product.metadata.twc_questions.length} Options
+                            </Badge>
                           )}
                         </div>
                       </div>
@@ -269,7 +245,7 @@ export const TWCImportedProducts = () => {
           </div>
 
           <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
-            💡 "Update Colors" extracts colors from TWC data • "Re-sync Options" creates treatment options
+            💡 Use "Re-sync Options" to import all TWC product options to your account
           </div>
         </CardContent>
       </Card>
