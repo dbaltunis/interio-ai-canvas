@@ -75,6 +75,7 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   
   const [isTemplateEditorOpen, setIsTemplateEditorOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [showAllOptions, setShowAllOptions] = useState(true);
   const printRef = useRef<HTMLDivElement>(null);
   
   const canEditTemplates = businessSettings?.allow_in_app_template_editing && isAdmin;
@@ -259,6 +260,8 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
         showDetailedView={true}
         currency={businessSettings?.measurement_units ? JSON.parse(businessSettings.measurement_units).currency : 'GBP'}
         businessSettings={businessSettings}
+        showAllOptions={showAllOptions}
+        onToggleShowOptions={() => setShowAllOptions(prev => !prev)}
       />
 
       {/* Client Information */}

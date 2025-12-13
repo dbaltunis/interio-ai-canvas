@@ -28,6 +28,7 @@ export const QuotationItemsModal: React.FC<QuotationItemsModalProps> = ({
   markupPercentage = 25
 }) => {
   const [showItemsEditor, setShowItemsEditor] = useState(false);
+  const [showAllOptions, setShowAllOptions] = useState(true);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -70,6 +71,8 @@ export const QuotationItemsModal: React.FC<QuotationItemsModalProps> = ({
             groupByRoom={true}
             showDetailedView={true}
             currency={currency}
+            showAllOptions={showAllOptions}
+            onToggleShowOptions={() => setShowAllOptions(prev => !prev)}
           />
         </div>
       </DialogContent>
