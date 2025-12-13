@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, Eye, EyeOff } from "lucide-react";
+import { ChevronDown, ChevronRight, Eye, EyeOff, List, ListX } from "lucide-react";
 import { formatCurrency } from "@/utils/currency";
 import QuoteItemBreakdown from "@/components/quotes/QuoteItemBreakdown";
 import { QuoteItemImage } from "@/components/quotes/QuoteItemImage";
@@ -12,8 +12,10 @@ interface DetailedQuotationTableProps {
   quotationData: any;
   groupByRoom?: boolean;
   showDetailedView?: boolean;
+  showAllOptions?: boolean;
   onToggleGroupByRoom?: () => void;
   onToggleDetailedView?: () => void;
+  onToggleShowOptions?: () => void;
   currency?: string;
   businessSettings?: any;
 }
@@ -22,30 +24,15 @@ export const DetailedQuotationTable: React.FC<DetailedQuotationTableProps> = ({
   quotationData,
   groupByRoom = true,
   showDetailedView = true,
+  showAllOptions = true,
   onToggleGroupByRoom,
   onToggleDetailedView,
+  onToggleShowOptions,
   currency = 'GBP',
   businessSettings
 }) => {
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-
-  // Debug logging
-  console.log('🔍 DetailedQuotationTable Debug:', {
-    quotationData,
-    itemsCount: quotationData.items?.length,
-    baseSubtotal: quotationData.baseSubtotal,
-    subtotal: quotationData.subtotal,
-    taxAmount: quotationData.taxAmount,
-    total: quotationData.total,
-    timestamp: new Date().toISOString()
-  });
-  
-  console.log('🎨 UI Debug - Text colors applied:', {
-    foreground: 'text-foreground',
-    mutedForeground: 'text-muted-foreground', 
-    cardBackground: 'bg-card'
-  });
 
   const toggleRoom = (roomId: string) => {
     const newExpanded = new Set(expandedRooms);
@@ -72,15 +59,26 @@ export const DetailedQuotationTable: React.FC<DetailedQuotationTableProps> = ({
   return (
     <Card className="mt-4">
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-lg">Quotation Items</CardTitle>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {onToggleShowOptions && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onToggleShowOptions}
+                className="flex items-center gap-1"
+              >
+                {showAllOptions ? <ListX className="h-4 w-4" /> : <List className="h-4 w-4" />}
+                <span>{showAllOptions ? 'Hide $0 Options' : 'Show All Options'}</span>
+              </Button>
+            )}
             {onToggleGroupByRoom && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onToggleGroupByRoom}
-                className="flex items-center space-x-1"
+                className="flex items-center gap-1"
               >
                 {groupByRoom ? 'Show All' : 'Group by Room'}
               </Button>
@@ -90,7 +88,7 @@ export const DetailedQuotationTable: React.FC<DetailedQuotationTableProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={onToggleDetailedView}
-                className="flex items-center space-x-1"
+                className="flex items-center gap-1"
               >
                 {showDetailedView ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 <span>{showDetailedView ? 'Simple' : 'Detailed'}</span>
@@ -126,6 +124,7 @@ export const DetailedQuotationTable: React.FC<DetailedQuotationTableProps> = ({
                       key={item.id}
                       item={item}
                       showDetailedView={showDetailedView}
+                      showAllOptions={showAllOptions}
                       expandedItems={expandedItems}
                       onToggleItem={toggleItem}
                       currency={currency}
@@ -143,6 +142,7 @@ export const DetailedQuotationTable: React.FC<DetailedQuotationTableProps> = ({
                   key={item.id}
                   item={item}
                   showDetailedView={showDetailedView}
+                  showAllOptions={showAllOptions}
                   expandedItems={expandedItems}
                   onToggleItem={toggleItem}
                   currency={currency}
@@ -164,23 +164,36 @@ export const DetailedQuotationTable: React.FC<DetailedQuotationTableProps> = ({
 const QuotationItemRow: React.FC<{
   item: any;
   showDetailedView: boolean;
+  showAllOptions: boolean;
   expandedItems: Set<string>;
   onToggleItem: (id: string) => void;
   currency: string;
-}> = ({ item, showDetailedView, expandedItems, onToggleItem, currency }) => {
+}> = ({ item, showDetailedView, showAllOptions, expandedItems, onToggleItem, currency }) => {
   const isExpanded = expandedItems.has(item.id);
   const hasBreakdown = item.breakdown && Array.isArray(item.breakdown) && item.breakdown.length > 0;
   const hasChildren = item.children && Array.isArray(item.children) && item.children.length > 0;
 
   if (item.isHeader) {
-    return null; // Skip headers in detailed view
+    return null;
   }
+
+  // Filter options based on showAllOptions toggle
+  const filterOptions = (children: any[]) => {
+    if (showAllOptions) return children;
+    return children.filter((c: any) => 
+      (c.category !== 'option' && c.category !== 'options') || (c.total && c.total > 0)
+    );
+  };
 
   // If item has children (detailed breakdown), show parent + children
   if (hasChildren) {
+    const filteredChildren = filterOptions(item.children);
+    const nonOptionChildren = filteredChildren.filter((c: any) => c.category !== 'option' && c.category !== 'options');
+    const optionChildren = filteredChildren.filter((c: any) => c.category === 'option' || c.category === 'options');
+    
     return (
       <div className="border rounded-lg overflow-hidden mb-3">
-        {/* PARENT ROW - Main Product */}
+        {/* PARENT ROW - Main Product with Window Name */}
         <div className="flex items-start gap-4 p-4 bg-card border-b">
           {item.image_url && (
             <QuoteItemImage 
@@ -191,82 +204,93 @@ const QuotationItemRow: React.FC<{
             />
           )}
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-base text-foreground mb-1">{item.name}</div>
+            {/* Product Name + Window Badge */}
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className="font-semibold text-base text-foreground">{item.name}</span>
+              {item.surface_name && (
+                <Badge variant="outline" className="text-xs font-normal">
+                  {item.surface_name}
+                </Badge>
+              )}
+            </div>
             {item.description && item.description !== '-' && (
               <div className="text-sm text-muted-foreground mb-2">{item.description}</div>
             )}
             
-            {/* Breakdown items (Fabric, Manufacturing) */}
-            {item.children.filter((c: any) => c.category !== 'option' && c.category !== 'options').length > 0 && (
+            {/* Breakdown items (Fabric, Manufacturing, etc.) */}
+            {nonOptionChildren.length > 0 && (
               <div className="space-y-1.5 mt-3">
-                {item.children
-                  .filter((child: any) => child.category !== 'option' && child.category !== 'options')
-                  .map((child: any, idx: number) => (
-                    <div key={idx} className="flex items-center gap-3 text-sm">
-                      {child.image_url && (
-                        <QuoteItemImage 
-                          src={child.image_url} 
-                          alt={child.name} 
-                          size={28}
-                          className="flex-shrink-0"
-                        />
+                {nonOptionChildren.map((child: any, idx: number) => (
+                  <div key={idx} className="flex items-center gap-3 text-sm">
+                    {/* Color swatch or image */}
+                    {child.color && !child.image_url ? (
+                      <div 
+                        className="w-7 h-7 rounded border flex-shrink-0" 
+                        style={{ backgroundColor: child.color }}
+                        title={child.color}
+                      />
+                    ) : child.image_url ? (
+                      <QuoteItemImage 
+                        src={child.image_url} 
+                        alt={child.name} 
+                        size={28}
+                        className="flex-shrink-0"
+                      />
+                    ) : null}
+                    <div className="flex-1">
+                      <span className="font-medium text-foreground">{child.name}</span>
+                      {child.description && child.description !== '-' && (
+                        <span className="text-muted-foreground ml-2">- {child.description}</span>
                       )}
-                      <div className="flex-1">
-                        <span className="font-medium text-foreground">{child.name}</span>
-                        {child.description && child.description !== '-' && (
-                          <span className="text-muted-foreground ml-2">- {child.description}</span>
-                        )}
-                        {child.quantity > 0 && (
-                          <span className="text-muted-foreground ml-2">
-                            ({Number(child.quantity).toFixed(2)}{child.unit ? ` ${child.unit}` : ''})
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-right text-sm whitespace-nowrap">
-                        {child.unit_price > 0 && (
-                          <div className="text-muted-foreground">
-                            {formatCurrency(child.unit_price, currency)} × {Number(child.quantity).toFixed(2)}
-                          </div>
-                        )}
-                        <div className="font-medium text-foreground">
-                          {formatCurrency(child.total || 0, currency)}
+                      {child.quantity > 0 && child.unit && (
+                        <span className="text-muted-foreground ml-2">
+                          ({Number(child.quantity).toFixed(2)} {child.unit})
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right text-sm whitespace-nowrap">
+                      {child.unit_price > 0 && child.quantity > 0 && (
+                        <div className="text-muted-foreground text-xs">
+                          {formatCurrency(child.unit_price, currency)}/{child.unit || 'unit'} × {Number(child.quantity).toFixed(2)}
                         </div>
+                      )}
+                      <div className="font-medium text-foreground">
+                        {formatCurrency(child.total || 0, currency)}
                       </div>
                     </div>
-                  ))}
+                  </div>
+                ))}
               </div>
             )}
             
-            {/* Options section - clean bullet list */}
-            {item.children.filter((c: any) => c.category === 'option' || c.category === 'options').length > 0 && (
+            {/* Options section */}
+            {optionChildren.length > 0 && (
               <div className="mt-3 pt-3 border-t">
-                <div className="text-sm font-medium text-foreground mb-2">Options:</div>
+                <div className="text-sm font-medium text-foreground mb-2">
+                  Options {!showAllOptions && <span className="text-muted-foreground font-normal">(priced only)</span>}:
+                </div>
                 <ul className="space-y-1">
-                  {item.children
-                    .filter((opt: any) => opt.category === 'option' || opt.category === 'options')
-                    .map((opt: any, idx: number) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm">
-                        {opt.image_url && (
-                          <QuoteItemImage 
-                            src={opt.image_url} 
-                            alt={opt.name} 
-                            size={20}
-                            className="flex-shrink-0 mt-0.5"
-                          />
-                        )}
-                        <div className="flex-1 flex items-start justify-between gap-3">
-                          <span className="text-foreground">
-                            <span className="font-medium">{opt.name}:</span>{' '}
-                            <span className="text-muted-foreground">{opt.description || opt.value || '-'}</span>
-                          </span>
-                          {opt.total > 0 && (
-                            <span className="font-medium text-foreground whitespace-nowrap">
-                              {formatCurrency(opt.total, currency)}
-                            </span>
-                          )}
-                        </div>
-                      </li>
-                    ))}
+                  {optionChildren.map((opt: any, idx: number) => (
+                    <li key={idx} className="flex items-start gap-2 text-sm">
+                      {opt.image_url && (
+                        <QuoteItemImage 
+                          src={opt.image_url} 
+                          alt={opt.name} 
+                          size={20}
+                          className="flex-shrink-0 mt-0.5"
+                        />
+                      )}
+                      <div className="flex-1 flex items-start justify-between gap-3">
+                        <span className="text-foreground">
+                          <span className="font-medium">{opt.name}:</span>{' '}
+                          <span className="text-muted-foreground">{opt.description || opt.value || '-'}</span>
+                        </span>
+                        <span className="font-medium text-foreground whitespace-nowrap">
+                          {opt.total > 0 ? formatCurrency(opt.total, currency) : 'Included'}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
                 </ul>
               </div>
             )}
@@ -285,7 +309,7 @@ const QuotationItemRow: React.FC<{
   return (
     <div className="border rounded-lg overflow-hidden">
       <div className="flex items-center justify-between p-3 bg-card text-card-foreground">
-        <div className="flex items-center space-x-2 flex-1">
+        <div className="flex items-center gap-2 flex-1">
           {hasBreakdown && showDetailedView && (
             <Button
               variant="ghost"
@@ -304,7 +328,14 @@ const QuotationItemRow: React.FC<{
             />
           )}
           <div className="flex-1">
-            <div className="font-medium text-sm text-foreground">{item.name}</div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium text-sm text-foreground">{item.name}</span>
+              {item.surface_name && (
+                <Badge variant="outline" className="text-xs font-normal">
+                  {item.surface_name}
+                </Badge>
+              )}
+            </div>
             <div className="text-xs text-muted-foreground">{item.description}</div>
             {item.quantity && item.unit_price && (
               <div className="text-xs text-muted-foreground">
