@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Minus, Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Minus, Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet, Filter } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { CategoryImportExport } from "./CategoryImportExport";
 import { ImagePreviewDialog } from "@/components/ui/image-preview-dialog";
@@ -58,10 +59,21 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
   const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
   const [quickViewItem, setQuickViewItem] = useState<any>(null);
   const [showQuickView, setShowQuickView] = useState(false);
+  const [selectedPriceGroup, setSelectedPriceGroup] = useState<string>("all");
 
   const materialItems = inventory?.filter(item => 
     item.category === 'material' || item.category === 'blind_fabric'
   ) || [];
+
+  // Get unique price groups for filter
+  const priceGroups = [...new Set(materialItems.map(i => i.price_group).filter(Boolean))] as string[];
+  priceGroups.sort((a, b) => {
+    // Sort numerically if both are numbers, else alphabetically
+    const aNum = parseInt(a);
+    const bNum = parseInt(b);
+    if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+    return a.localeCompare(b);
+  });
 
   const {
     selectedItems,
@@ -82,8 +94,11 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
     const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
     const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
     const matchesLocation = !selectedStorageLocation || item.location === selectedStorageLocation;
+    
+    const matchesPriceGroup = selectedPriceGroup === "all" || 
+      (selectedPriceGroup === "none" ? !item.price_group : item.price_group === selectedPriceGroup);
 
-    return matchesGlobalSearch && matchesCategory && matchesVendor && matchesCollection && matchesLocation;
+    return matchesGlobalSearch && matchesCategory && matchesVendor && matchesCollection && matchesLocation && matchesPriceGroup;
   });
 
   const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
@@ -167,6 +182,33 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
           onRefetch={refetch}
         />
       )}
+
+      {/* Price Group Filter */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Price Group:</span>
+          <Select value={selectedPriceGroup} onValueChange={setSelectedPriceGroup}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Groups" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Groups ({materialItems.length})</SelectItem>
+              <SelectItem value="none">No Price Group ({materialItems.filter(i => !i.price_group).length})</SelectItem>
+              {priceGroups.map(group => (
+                <SelectItem key={group} value={group}>
+                  Group {group} ({materialItems.filter(i => i.price_group === group).length})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {selectedPriceGroup !== "all" && (
+          <Button variant="ghost" size="sm" onClick={() => setSelectedPriceGroup("all")}>
+            Clear Filter
+          </Button>
+        )}
+      </div>
 
       <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
         <TabsList className="w-full justify-start">

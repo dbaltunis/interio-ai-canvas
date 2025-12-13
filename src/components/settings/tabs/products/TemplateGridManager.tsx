@@ -7,12 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, Trash2, CheckCircle2, Info, FileText, Download, Plus, Loader2 } from 'lucide-react';
+import { Upload, Trash2, CheckCircle2, Info, FileText, Download, Plus, Loader2, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Textarea } from '@/components/ui/textarea';
 import { useVendors, useCreateVendor } from '@/hooks/useVendors';
 import { useIntegrations } from '@/hooks/useIntegrations';
+import { useEnhancedInventory } from '@/hooks/useEnhancedInventory';
 
 interface TemplateGridManagerProps {
   // No props needed - grids are now assigned directly to inventory items
@@ -56,6 +57,7 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
   const { data: vendors = [] } = useVendors();
   const { integrations } = useIntegrations();
   const createVendor = useCreateVendor();
+  const { data: inventory = [] } = useEnhancedInventory();
   
   const [grids, setGrids] = useState<PricingGrid[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +76,17 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
   // Inline supplier creation
   const [showAddSupplier, setShowAddSupplier] = useState(false);
   const [newSupplierName, setNewSupplierName] = useState('');
+  
+  // Price group distribution for reference
+  const priceGroupDistribution = useMemo(() => {
+    const distribution: Record<string, number> = {};
+    inventory.forEach(item => {
+      if (item.price_group) {
+        distribution[item.price_group] = (distribution[item.price_group] || 0) + 1;
+      }
+    });
+    return Object.entries(distribution).sort((a, b) => b[1] - a[1]);
+  }, [inventory]);
 
   // Merge vendors with active supplier integrations
   const allSuppliers = useMemo((): SupplierOption[] => {
@@ -576,10 +589,33 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
                   id="price_group"
                   value={priceGroup}
                   onChange={(e) => setPriceGroup(e.target.value)}
-                  placeholder="e.g., A, B, Premium"
+                  placeholder="e.g., 1, 2, A, B, Premium"
                 />
+                {priceGroupDistribution.length > 0 && (
+                  <div className="mt-2 p-2 bg-muted/50 rounded-md">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                      <BarChart3 className="h-3 w-3" />
+                      <span>Materials by Price Group:</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {priceGroupDistribution.slice(0, 8).map(([group, count]) => (
+                        <Badge 
+                          key={group} 
+                          variant={priceGroup.toUpperCase() === group.toUpperCase() ? "default" : "outline"}
+                          className="text-[10px] cursor-pointer"
+                          onClick={() => setPriceGroup(group)}
+                        >
+                          {group}: {count}
+                        </Badge>
+                      ))}
+                      {priceGroupDistribution.length > 8 && (
+                        <span className="text-[10px] text-muted-foreground">+{priceGroupDistribution.length - 8} more</span>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground mt-1">
-                  Fabrics with this Price Group will use this grid
+                  Materials with this Price Group will auto-match to this grid
                 </p>
               </div>
             </div>

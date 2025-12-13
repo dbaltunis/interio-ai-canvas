@@ -37,13 +37,13 @@ export const TREATMENT_SUBCATEGORIES: Record<TreatmentCategory, {
   
   roller_blinds: {
     category: 'fabric',
-    subcategories: ['roller_fabric', 'roller_blind_fabric', 'roller'],
-    description: 'Roller blind fabrics'
+    subcategories: ['roller_fabric', 'roller_blind_fabric', 'roller', 'blind_material'],
+    description: 'Roller blind fabrics and materials'
   },
   
   blinds: {
     category: 'fabric',
-    subcategories: ['roller_fabric', 'roller_blind_fabric', 'roller'],
+    subcategories: ['roller_fabric', 'roller_blind_fabric', 'roller', 'blind_material'],
     description: 'Generic blind fabrics (defaults to roller)'
   },
   
@@ -61,33 +61,33 @@ export const TREATMENT_SUBCATEGORIES: Record<TreatmentCategory, {
   
   venetian_blinds: {
     category: 'material',
-    subcategories: ['venetian_slats', 'wood_slats', 'aluminum_slats', 'venetian'],
+    subcategories: ['venetian_slats', 'wood_slats', 'aluminum_slats', 'venetian', 'blind_material'],
     description: 'Venetian blind slats (wood, aluminum, etc.)'
   },
   
   vertical_blinds: {
     category: 'both', // Supports both fabric vanes and material slats
-    subcategories: ['vertical_fabric', 'vertical_slats', 'vertical_vanes', 'vertical'], // All combined (for backward compatibility)
+    subcategories: ['vertical_fabric', 'vertical_slats', 'vertical_vanes', 'vertical', 'blind_material'], // All combined (for backward compatibility)
     fabricSubcategories: ['vertical_fabric'], // Fabric vanes only
-    materialSubcategories: ['vertical_slats', 'vertical_vanes', 'vertical'], // Material slats/vanes only
+    materialSubcategories: ['vertical_slats', 'vertical_vanes', 'vertical', 'blind_material'], // Material slats/vanes only
     description: 'Vertical blind vanes (fabric or material)'
   },
   
   shutters: {
     category: 'material',
-    subcategories: ['shutter_material', 'shutter_panels', 'shutter'],
+    subcategories: ['shutter_material', 'shutter_panels', 'shutter', 'blind_material'],
     description: 'Shutter panel materials'
   },
   
   shutter: {
     category: 'material',
-    subcategories: ['shutter_material', 'shutter_panels', 'shutter'],
+    subcategories: ['shutter_material', 'shutter_panels', 'shutter', 'blind_material'],
     description: 'Shutter panel materials (singular alias)'
   },
   
   plantation_shutters: {
     category: 'material',
-    subcategories: ['shutter_material', 'shutter_panels', 'shutter'],
+    subcategories: ['shutter_material', 'shutter_panels', 'shutter', 'blind_material'],
     description: 'Plantation shutter materials (same as shutters)'
   },
   
