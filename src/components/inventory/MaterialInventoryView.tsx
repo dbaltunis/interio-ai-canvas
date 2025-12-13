@@ -35,11 +35,13 @@ interface MaterialInventoryViewProps {
   selectedStorageLocation?: string;
 }
 
+// All blind materials: fabrics for blinds + slats/vanes for venetian/vertical
 const MATERIAL_CATEGORIES = [
   { key: "all", label: "All Materials" },
   { key: "roller_fabric", label: "Roller Blinds" },
   { key: "venetian_slats", label: "Venetian Blinds" },
   { key: "vertical_slats", label: "Vertical Blinds" },
+  { key: "vertical_fabric", label: "Vertical Fabrics" },
   { key: "shutter_material", label: "Plantation Shutters" },
   { key: "cellular", label: "Cellular/Honeycomb" },
   { key: "panel_glide_fabric", label: "Panel Track/Glide" },

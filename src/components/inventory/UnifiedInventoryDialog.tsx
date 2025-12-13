@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Plus, DollarSign, Ruler, Package, Store, Trash2, ImageIcon, Upload, X, QrCode } from "lucide-react";
@@ -150,22 +151,23 @@ export const UnifiedInventoryDialog = ({
     { value: "service", label: "Services" }
   ];
 
-  // Subcategories
+  // Subcategories - Fabrics are for sewn products (curtains/romans), Materials are for manufactured blinds
   const SUBCATEGORIES: Record<string, { value: string; label: string }[]> = {
     fabric: [
       { value: "curtain_fabric", label: "Curtain & Roman Fabrics" },
-      { value: "roller_fabric", label: "Roller Blind Fabrics" },
-      { value: "cellular", label: "Cellular/Honeycomb" },
-      { value: "vertical_fabric", label: "Vertical Blind Fabrics" },
       { value: "awning_fabric", label: "Awning Fabrics" },
       { value: "lining_fabric", label: "Lining Fabrics" },
+      { value: "upholstery_fabric", label: "Upholstery Fabrics" },
     ],
     material: [
-      { value: "venetian", label: "Venetian Blinds" },
-      { value: "vertical", label: "Vertical Blinds" },
-      { value: "shutter", label: "Plantation Shutters" },
+      { value: "roller_fabric", label: "Roller Blind Materials" },
+      { value: "venetian_slats", label: "Venetian Slats" },
+      { value: "vertical_slats", label: "Vertical Slats" },
+      { value: "vertical_fabric", label: "Vertical Fabrics" },
+      { value: "shutter_material", label: "Shutter Materials" },
       { value: "cellular", label: "Cellular/Honeycomb" },
-      { value: "panel_track", label: "Panel Track/Glide" }
+      { value: "panel_glide_fabric", label: "Panel Track/Glide" },
+      { value: "blind_material", label: "Other Blind Materials" },
     ],
     hardware: [
       { value: "rod", label: "Rods/Poles" },
@@ -967,6 +969,63 @@ export const UnifiedInventoryDialog = ({
                             />
                           </div>
                         )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* TWC Product Info - Show for TWC items */}
+                {mode === 'edit' && item?.supplier?.toUpperCase() === 'TWC' && (
+                  <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">TWC</Badge>
+                        TWC Product Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid gap-3 md:grid-cols-2 text-sm">
+                        {item?.metadata?.twc_colour && (
+                          <div>
+                            <span className="text-muted-foreground">TWC Color:</span>
+                            <span className="ml-2 font-medium">{item.metadata.twc_colour}</span>
+                          </div>
+                        )}
+                        {item?.metadata?.twc_pricing_group && (
+                          <div>
+                            <span className="text-muted-foreground">TWC Price Group:</span>
+                            <span className="ml-2 font-medium">{item.metadata.twc_pricing_group}</span>
+                          </div>
+                        )}
+                        {item?.metadata?.twc_code && (
+                          <div>
+                            <span className="text-muted-foreground">TWC Code:</span>
+                            <span className="ml-2 font-medium">{item.metadata.twc_code}</span>
+                          </div>
+                        )}
+                        {item?.metadata?.twc_parent_item && (
+                          <div>
+                            <span className="text-muted-foreground">Parent Product:</span>
+                            <span className="ml-2 font-medium">{item.metadata.twc_parent_item}</span>
+                          </div>
+                        )}
+                        {item?.metadata?.twc_material && (
+                          <div>
+                            <span className="text-muted-foreground">Material:</span>
+                            <span className="ml-2 font-medium">{item.metadata.twc_material}</span>
+                          </div>
+                        )}
+                        {item?.metadata?.twc_description && (
+                          <div className="md:col-span-2">
+                            <span className="text-muted-foreground">Description:</span>
+                            <span className="ml-2">{item.metadata.twc_description}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
+                        <p className="text-xs text-muted-foreground">
+                          This item was imported from The Window Company (TWC). Price group and color are used for automatic pricing grid matching.
+                        </p>
                       </div>
                     </CardContent>
                   </Card>

@@ -45,29 +45,36 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
     }).format(amount);
   };
 
-  // Filter inventory to only show fabrics
+  // Filter inventory to show fabrics AND materials (for blind treatments)
   const fabrics = useMemo(() => {
     if (!inventory) {
       console.log('FabricSelector - No inventory data available');
       return [];
     }
     
+    // Include both fabric category AND material category (for blind materials like roller fabrics, venetian slats)
     const fabricItems = inventory.filter(item => 
       item.category?.toLowerCase() === 'fabric' || 
+      item.category?.toLowerCase() === 'material' ||
       item.description?.toLowerCase().includes('fabric')
-    ).map(item => ({
-      ...item,
-      // Map inventory fields to fabric fields for backward compatibility
-      color: item.description?.includes('color:') ? item.description.split('color:')[1]?.split(',')[0]?.trim() : '',
-      pattern: item.description?.includes('pattern:') ? item.description.split('pattern:')[1]?.split(',')[0]?.trim() : '',
-      type: item.category || 'fabric',
-      width: 137, // Default fabric width
-      cost_per_unit: item.unit_price || 0,
-      unit: 'yard',
-      metadata: (item as any).metadata || {} // Preserve metadata including maxLength
-    }));
+    ).map(item => {
+      const itemAny = item as any;
+      return {
+        ...item,
+        // Map inventory fields to fabric fields for backward compatibility
+        color: itemAny.color || itemAny.metadata?.twc_colour || (item.description?.includes('color:') ? item.description.split('color:')[1]?.split(',')[0]?.trim() : ''),
+        pattern: item.description?.includes('pattern:') ? item.description.split('pattern:')[1]?.split(',')[0]?.trim() : '',
+        type: itemAny.subcategory || item.category || 'fabric',
+        width: itemAny.fabric_width || 137, // Use fabric_width from inventory, fallback to default
+        cost_per_unit: itemAny.price_per_meter || itemAny.selling_price || item.unit_price || 0,
+        unit: 'meter',
+        metadata: itemAny.metadata || {}, // Preserve metadata including maxLength
+        price_group: itemAny.price_group, // Include price_group for grid matching
+        isTWC: itemAny.supplier?.toUpperCase() === 'TWC'
+      };
+    });
     
-    console.log('FabricSelector - Found fabrics:', fabricItems.length);
+    console.log('FabricSelector - Found fabrics/materials:', fabricItems.length);
     return fabricItems;
   }, [inventory]);
 
@@ -329,7 +336,14 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
                           <CardContent className="p-4">
                             <div className="flex justify-between items-start">
                               <div className="space-y-2">
-                                <h3 className="font-medium">{fabric.name}</h3>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-medium">{fabric.name}</h3>
+                                  {(fabric as any).isTWC && (
+                                    <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px]">
+                                      TWC
+                                    </Badge>
+                                  )}
+                                </div>
                                 <div className="flex gap-2 flex-wrap">
                                   {fabric.color && (
                                     <Badge variant="secondary" className="text-xs">{fabric.color}</Badge>
@@ -340,19 +354,24 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
                                   {fabric.type && (
                                     <Badge variant="secondary" className="text-xs">{fabric.type}</Badge>
                                   )}
+                                  {(fabric as any).price_group && (
+                                    <Badge variant="outline" className="text-xs">Group {(fabric as any).price_group}</Badge>
+                                  )}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
-                                  {fabric.width && `${fabric.width}" wide`}
+                                  {fabric.width && `${fabric.width}cm wide`}
                                   {fabric.quantity !== undefined && ` • ${fabric.quantity} ${fabric.unit || 'units'} available`}
                                   {(fabric as any).metadata?.maxLength && ` • Max: ${((fabric as any).metadata.maxLength / 100).toFixed(2)}m`}
                                 </div>
                               </div>
                               <div className="text-right">
-                                {fabric.cost_per_unit && (
+                                {(fabric as any).price_group ? (
+                                  <div className="text-sm text-muted-foreground">Grid pricing</div>
+                                ) : fabric.cost_per_unit ? (
                                   <div className="font-medium">
                                     {formatCurrency(fabric.cost_per_unit, units.currency)}/{fabric.unit || units.fabric}
                                   </div>
-                                )}
+                                ) : null}
                               </div>
                             </div>
                           </CardContent>

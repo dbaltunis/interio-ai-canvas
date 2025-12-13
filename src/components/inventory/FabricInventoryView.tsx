@@ -40,13 +40,11 @@ interface FabricInventoryViewProps {
   selectedStorageLocation?: string;
 }
 
+// Fabrics = soft goods for curtains/romans (sewn products)
+// Blind materials are in MaterialInventoryView (for manufactured products)
 const FABRIC_CATEGORIES = [
   { key: "all", label: "All Fabrics" },
   { key: "curtain_fabric", label: "Curtain & Roman Fabrics" },
-  { key: "roller_fabric", label: "Roller Blind Fabrics" },
-  { key: "cellular", label: "Cellular/Honeycomb" },
-  { key: "vertical_fabric", label: "Vertical Blind Fabrics" },
-  { key: "panel_glide_fabric", label: "Panel Glide Fabrics" },
   { key: "awning_fabric", label: "Awning Fabrics" },
   { key: "lining_fabric", label: "Lining Fabrics" },
   { key: "upholstery_fabric", label: "Upholstery Fabrics" },
