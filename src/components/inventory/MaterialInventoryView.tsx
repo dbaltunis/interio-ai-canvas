@@ -37,11 +37,13 @@ interface MaterialInventoryViewProps {
 
 const MATERIAL_CATEGORIES = [
   { key: "all", label: "All Materials" },
-  { key: "venetian", label: "Venetian Blinds" },
-  { key: "vertical", label: "Vertical Blinds" },
-  { key: "shutter", label: "Plantation Shutters" },
+  { key: "roller_fabric", label: "Roller Blinds" },
+  { key: "venetian_slats", label: "Venetian Blinds" },
+  { key: "vertical_slats", label: "Vertical Blinds" },
+  { key: "shutter_material", label: "Plantation Shutters" },
   { key: "cellular", label: "Cellular/Honeycomb" },
-  { key: "panel_track", label: "Panel Track/Glide" }
+  { key: "panel_glide_fabric", label: "Panel Track/Glide" },
+  { key: "blind_material", label: "Other Materials" }
 ];
 
 const ITEMS_PER_PAGE = 24;
@@ -160,6 +162,7 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
             }
           }}
           selectedItems={filteredItems.filter(item => selectedItems.includes(item.id))}
+          onRefetch={refetch}
         />
       )}
 

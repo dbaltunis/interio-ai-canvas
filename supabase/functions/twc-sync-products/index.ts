@@ -188,6 +188,45 @@ const handler = async (req: Request): Promise<Response> => {
       return { category: 'material', subcategory: 'blind_material' };
     };
 
+    // PHASE 2: Improved mapping using PARENT product description for material subcategory
+    const mapCategoryForMaterial = (materialName: string | undefined | null, parentProductDescription: string | undefined | null): { category: string, subcategory: string } => {
+      // Use parent product description (e.g., "Roller Blinds") for proper subcategory
+      const parentDesc = (parentProductDescription || '').toLowerCase();
+      
+      // Roller blind materials
+      if (parentDesc.includes('roller')) {
+        return { category: 'fabric', subcategory: 'roller_fabric' };
+      }
+      
+      // Venetian blind materials
+      if (parentDesc.includes('venetian') || parentDesc.includes('aluminium') || parentDesc.includes('wood')) {
+        return { category: 'material', subcategory: 'venetian_slats' };
+      }
+      
+      // Vertical blind materials
+      if (parentDesc.includes('vertical')) {
+        return { category: 'material', subcategory: 'vertical_slats' };
+      }
+      
+      // Cellular/Honeycomb materials
+      if (parentDesc.includes('cellular') || parentDesc.includes('honeycomb')) {
+        return { category: 'fabric', subcategory: 'cellular' };
+      }
+      
+      // Panel glide materials
+      if (parentDesc.includes('panel')) {
+        return { category: 'fabric', subcategory: 'panel_glide_fabric' };
+      }
+      
+      // Shutter materials
+      if (parentDesc.includes('shutter')) {
+        return { category: 'material', subcategory: 'shutter_material' };
+      }
+      
+      // Fall back to original logic using material name
+      return mapCategory(materialName);
+    };
+
     // Extract colors from TWC fabricsAndColours data
     const extractColors = (fabricsAndColours: any): string[] => {
       const colors: string[] = [];
@@ -365,7 +404,7 @@ const handler = async (req: Request): Promise<Response> => {
               }
             };
 
-            // Create treatment option with correct column names and TWC source metadata
+            // Create treatment option with correct column names and TWC source column
             const { data: option, error: optionError } = await supabaseClient
               .from('treatment_options')
               .insert({
@@ -377,11 +416,8 @@ const handler = async (req: Request): Promise<Response> => {
                 order_index: 0,
                 visible: true,
                 required: false,
-                metadata: {
-                  source: 'twc',
-                  twc_question_type: question.questionType,
-                  imported_at: new Date().toISOString(),
-                },
+                // PHASE 3: Use dedicated source column for TWC identification
+                source: 'twc',
               })
               .select()
               .single();
@@ -449,7 +485,8 @@ const handler = async (req: Request): Promise<Response> => {
           for (const material of product.fabricsAndColours.itemMaterials) {
             if (material.colours && material.colours.length > 0) {
               for (const colour of material.colours) {
-                const materialCategoryMapping = mapCategory(material.material);
+                // Use PARENT product description for subcategory, not material name
+                const materialCategoryMapping = mapCategoryForMaterial(material.material, product.description);
                 const { error: materialError } = await supabaseClient
                   .from('enhanced_inventory_items')
                   .insert({
@@ -462,6 +499,8 @@ const handler = async (req: Request): Promise<Response> => {
                     active: true,
                     show_in_quote: true,
                     description: `Material: ${material.material}, Colour: ${colour.colour}`,
+                    // PHASE 1: Add price_group directly from TWC pricing group
+                    price_group: colour.pricingGroup || null,
                     metadata: {
                       parent_product_id: parentItem.id,
                       twc_material: material.material,

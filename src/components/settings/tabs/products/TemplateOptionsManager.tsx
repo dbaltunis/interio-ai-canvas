@@ -35,12 +35,25 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId }: Templa
   });
   
   // Filter options for this specific treatment category
-  const categoryOptions = allOptions.filter(opt => opt.treatment_category === treatmentCategory);
+  const filteredOptions = allOptions.filter(opt => opt.treatment_category === treatmentCategory);
+  
+  // PHASE 3: Sort to show TWC options first with badge
+  const categoryOptions = [...filteredOptions].sort((a, b) => {
+    const aIsTWC = (a as any).source === 'twc';
+    const bIsTWC = (b as any).source === 'twc';
+    if (aIsTWC && !bIsTWC) return -1;
+    if (!aIsTWC && bIsTWC) return 1;
+    return 0;
+  });
+  
+  // Check if any TWC options exist
+  const hasTWCOptions = categoryOptions.some(opt => (opt as any).source === 'twc');
   
   console.log('🔍 Filtered categoryOptions:', {
     treatmentCategory,
     categoryOptionsCount: categoryOptions.length,
-    categoryOptions: categoryOptions.map(o => ({ key: o.key, label: o.label, category: o.treatment_category })),
+    hasTWCOptions,
+    categoryOptions: categoryOptions.map(o => ({ key: o.key, label: o.label, category: o.treatment_category, source: (o as any).source })),
   });
   
   // Helper to check if option is enabled (default true if no setting exists)
@@ -121,12 +134,21 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId }: Templa
           </div>
         ) : (
           <>
+            {hasTWCOptions && (
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  <strong>TWC Integration Active:</strong> This template uses imported TWC options (marked with blue badge). 
+                  TWC options are shown first and will appear in quotes for this product.
+                </p>
+              </div>
+            )}
+
             <Accordion type="multiple" className="w-full">
               {categoryOptions.map((option) => {
                 const visibleValues = option.option_values?.filter(v => !v.hidden_by_user) || [];
                 const hiddenValues = option.option_values?.filter(v => v.hidden_by_user) || [];
                 const enabled = isOptionEnabled(option.id);
-                const isTWCOption = (option as any).metadata?.source === 'twc';
+                const isTWCOption = (option as any).source === 'twc';
                 
                 return (
                   <AccordionItem key={option.id} value={option.id}>
@@ -151,23 +173,23 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId }: Templa
                             <Badge variant="destructive" className="text-xs">
                               Disabled
                             </Badge>
-                        )}
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          <Label htmlFor={`toggle-${option.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                            {enabled ? 'Enabled' : 'Disabled'}
+                          </Label>
+                          <Switch
+                            id={`toggle-${option.id}`}
+                            checked={enabled}
+                            onCheckedChange={() => {
+                              console.log('Switch onCheckedChange called for option:', option.id, 'current:', enabled);
+                              handleToggle(option.id, enabled);
+                            }}
+                            disabled={!templateId || toggleOption.isPending}
+                          />
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Label htmlFor={`toggle-${option.id}`} className="text-xs text-muted-foreground cursor-pointer">
-                          {enabled ? 'Enabled' : 'Disabled'}
-                        </Label>
-                        <Switch
-                          id={`toggle-${option.id}`}
-                          checked={enabled}
-                          onCheckedChange={() => {
-                            console.log('Switch onCheckedChange called for option:', option.id, 'current:', enabled);
-                            handleToggle(option.id, enabled);
-                          }}
-                          disabled={!templateId || toggleOption.isPending}
-                        />
-                      </div>
-                    </div>
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="space-y-2 pl-4">
