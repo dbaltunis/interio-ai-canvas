@@ -5537,7 +5537,10 @@ export type Database = {
           id: string
           markup_percentage: number | null
           name: string
+          price_group: string | null
+          product_type: string | null
           replaced_by_grid_id: string | null
+          supplier_id: string | null
           updated_at: string | null
           user_id: string
           version: number | null
@@ -5551,7 +5554,10 @@ export type Database = {
           id?: string
           markup_percentage?: number | null
           name: string
+          price_group?: string | null
+          product_type?: string | null
           replaced_by_grid_id?: string | null
+          supplier_id?: string | null
           updated_at?: string | null
           user_id: string
           version?: number | null
@@ -5565,7 +5571,10 @@ export type Database = {
           id?: string
           markup_percentage?: number | null
           name?: string
+          price_group?: string | null
+          product_type?: string | null
           replaced_by_grid_id?: string | null
+          supplier_id?: string | null
           updated_at?: string | null
           user_id?: string
           version?: number | null
@@ -5576,6 +5585,13 @@ export type Database = {
             columns: ["replaced_by_grid_id"]
             isOneToOne: false
             referencedRelation: "pricing_grids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_grids_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
         ]

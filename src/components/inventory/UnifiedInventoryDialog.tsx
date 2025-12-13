@@ -687,104 +687,66 @@ export const UnifiedInventoryDialog = ({
                       <div className="space-y-4 p-4 border rounded-lg">
                         <Alert>
                           <AlertDescription>
-                            Select which pricing grid to use for this fabric/material. When this item is selected in job creation, prices will be looked up from the assigned grid.
+                            <strong>Auto-matching:</strong> Enter a price group code that matches your uploaded pricing grid. 
+                            The system will automatically find the correct grid based on supplier + product type + price group.
                           </AlertDescription>
                         </Alert>
 
                         <div className="space-y-3">
                           <div>
-                            <Label>Select Pricing Grid</Label>
-                            <Select
-                              value={formData.pricing_grid_id || undefined}
-                              onValueChange={(value) => setFormData(prev => ({ ...prev, pricing_grid_id: value === 'none' ? null : value }))}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Choose a pricing grid" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">None</SelectItem>
-                                {pricingGrids.map(grid => (
-                                  <SelectItem key={grid.id} value={grid.id}>
-                                    {grid.name} {grid.markup_percentage ? `(+${grid.markup_percentage}% markup)` : ''}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {pricingGrids.length === 0 && (
-                              <p className="text-xs text-amber-600 mt-1">
-                                ⚠️ No pricing grids found. Upload grids in Settings → Products → Pricing Grids
-                              </p>
-                            )}
-                            {formData.pricing_grid_id && (
-                              <p className="text-xs text-green-600 mt-1">
-                                ✓ Grid assigned - prices will be calculated automatically during job creation
-                              </p>
-                            )}
+                            <Label>Price Group *</Label>
+                            <Input
+                              placeholder="e.g., A, B, C, GROUP-1"
+                              value={formData.price_group || ''}
+                              onChange={(e) => setFormData(prev => ({ ...prev, price_group: e.target.value.toUpperCase().trim() }))}
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Must match the price group in your pricing grids
+                            </p>
                           </div>
                           
-                          {/* Inline Grid Preview */}
-                          {formData.pricing_grid_id && (() => {
-                            const selectedGrid = pricingGrids.find(g => g.id === formData.pricing_grid_id);
-                            const gridData = selectedGrid?.grid_data as { widthRanges?: string[]; dropRanges?: string[]; prices?: number[][] } | null;
-                            
-                            if (!gridData?.widthRanges || !gridData?.dropRanges || !gridData?.prices) {
-                              return (
-                                <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                                  Grid data not available for preview
-                                </div>
-                              );
-                            }
-                            
-                            // Show compact preview (first 5 columns and rows)
-                            const maxCols = Math.min(gridData.widthRanges.length, 5);
-                            const maxRows = Math.min(gridData.dropRanges.length, 5);
-                            
-                            return (
-                              <div className="border rounded-lg overflow-hidden">
-                                <div className="bg-muted/50 px-3 py-1.5 border-b flex justify-between items-center">
-                                  <span className="text-xs font-medium">{selectedGrid?.name} Preview</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {gridData.dropRanges.length} × {gridData.widthRanges.length} prices
-                                  </span>
-                                </div>
-                                <div className="overflow-auto max-h-48">
-                                  <table className="w-full text-xs">
-                                    <thead>
-                                      <tr className="bg-muted/30">
-                                        <th className="px-2 py-1 text-left border-r font-medium">Drop/Width</th>
-                                        {gridData.widthRanges.slice(0, maxCols).map((w, i) => (
-                                          <th key={i} className="px-2 py-1 text-center font-medium">{w}</th>
-                                        ))}
-                                        {gridData.widthRanges.length > maxCols && (
-                                          <th className="px-2 py-1 text-center text-muted-foreground">...</th>
-                                        )}
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {gridData.dropRanges.slice(0, maxRows).map((d, di) => (
-                                        <tr key={di} className="border-t">
-                                          <td className="px-2 py-1 font-medium bg-muted/20 border-r">{d}</td>
-                                          {gridData.prices[di]?.slice(0, maxCols).map((p, pi) => (
-                                            <td key={pi} className="px-2 py-1 text-center">${p}</td>
-                                          ))}
-                                          {gridData.widthRanges.length > maxCols && (
-                                            <td className="px-2 py-1 text-center text-muted-foreground">...</td>
-                                          )}
-                                        </tr>
-                                      ))}
-                                      {gridData.dropRanges.length > maxRows && (
-                                        <tr className="border-t">
-                                          <td className="px-2 py-1 text-muted-foreground" colSpan={maxCols + 2}>
-                                            ... {gridData.dropRanges.length - maxRows} more rows
-                                          </td>
-                                        </tr>
-                                      )}
-                                    </tbody>
-                                  </table>
-                                </div>
+                          {formData.price_group && (
+                            <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                              <div className="flex items-center gap-2">
+                                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                                <span className="font-medium">Grid will auto-match during quote creation</span>
                               </div>
-                            );
-                          })()}
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Based on: Supplier ({formData.vendor_id ? vendors.find(v => v.id === formData.vendor_id)?.name || 'Selected' : 'Any'}) + Product Type + Group {formData.price_group}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {/* Optional: Manual override for edge cases */}
+                          <details className="text-sm">
+                            <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                              Advanced: Manual grid override
+                            </summary>
+                            <div className="mt-2 pl-4 border-l-2 border-muted">
+                              <Label className="text-xs">Override with specific grid (optional)</Label>
+                              <Select
+                                value={formData.pricing_grid_id || 'auto'}
+                                onValueChange={(value) => setFormData(prev => ({ ...prev, pricing_grid_id: value === 'auto' ? null : value }))}
+                              >
+                                <SelectTrigger className="mt-1">
+                                  <SelectValue placeholder="Auto-match (recommended)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="auto">Auto-match (recommended)</SelectItem>
+                                  {pricingGrids.map(grid => (
+                                    <SelectItem key={grid.id} value={grid.id}>
+                                      {grid.name} {grid.price_group ? `(Group ${grid.price_group})` : ''}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              {formData.pricing_grid_id && (
+                                <p className="text-xs text-amber-600 mt-1">
+                                  ⚠️ Manual override active - auto-matching disabled
+                                </p>
+                              )}
+                            </div>
+                          </details>
                         </div>
                       </div>
                     )}

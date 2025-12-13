@@ -13,6 +13,10 @@ export interface PricingGrid {
   updated_at: string;
   version?: number;
   replaced_by_grid_id?: string;
+  // Auto-matching fields
+  supplier_id?: string;
+  product_type?: string;  // roller_blinds, venetian_blinds, etc.
+  price_group?: string;   // A, B, C, GROUP-1, etc.
 }
 
 export interface WindowCoveringOptionCategory {

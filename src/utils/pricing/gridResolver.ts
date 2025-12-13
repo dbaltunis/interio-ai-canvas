@@ -1,19 +1,24 @@
 /**
  * Grid Resolution Logic for Blind Pricing
  * 
+ * NEW AUTO-MATCHING SYSTEM:
  * Determines which pricing grid to use based on:
- * - Product type (roller, venetian, vertical, etc.)
- * - System type (open, cassette, heavy_duty, etc.)
- * - Fabric price group (A, B, C, D, etc.)
- * - Optional additional conditions
+ * - Supplier (vendor_id from selected fabric/material)
+ * - Product type (roller_blinds, venetian_blinds, etc. from template)
+ * - Price group (A, B, C from fabric/material)
+ * 
+ * LEGACY SUPPORT:
+ * Still supports old pricing_grid_rules table for backwards compatibility
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { autoMatchPricingGrid, AutoMatchResult } from "./gridAutoMatcher";
 
 export interface GridResolutionParams {
   productType: string;           // 'roller_blinds', 'venetian_blinds', etc.
-  systemType?: string;            // 'open', 'cassette', etc.
+  systemType?: string;            // 'open', 'cassette', etc. (legacy)
   fabricPriceGroup?: string;      // 'A', 'B', 'C', 'D'
+  fabricSupplierId?: string;      // Fabric's vendor_id for auto-matching
   selectedOptions?: Record<string, any>; // Additional option filters
   userId: string;
 }
@@ -46,7 +51,7 @@ export interface GridResolutionResult {
 export const resolveGridForProduct = async (
   params: GridResolutionParams
 ): Promise<GridResolutionResult> => {
-  const { productType, systemType, fabricPriceGroup, selectedOptions, userId } = params;
+  const { productType, systemType, fabricPriceGroup, fabricSupplierId, selectedOptions, userId } = params;
 
   // Return null if no price group specified
   if (!fabricPriceGroup) {
@@ -54,6 +59,34 @@ export const resolveGridForProduct = async (
   }
 
   try {
+    // NEW: Try auto-matching first (supplier + product_type + price_group)
+    const autoMatchResult = await autoMatchPricingGrid({
+      supplierId: fabricSupplierId,
+      productType,
+      priceGroup: fabricPriceGroup,
+      userId
+    });
+
+    if (autoMatchResult.gridId) {
+      console.log('📊 Grid resolved via auto-match:', autoMatchResult.matchDetails);
+      return {
+        gridId: autoMatchResult.gridId,
+        gridCode: autoMatchResult.gridCode,
+        gridName: autoMatchResult.gridName,
+        gridData: autoMatchResult.gridData,
+        matchedRule: {
+          id: 'auto-match',
+          product_type: productType,
+          system_type: systemType,
+          price_group: fabricPriceGroup,
+          priority: 100 // Auto-match has highest priority
+        }
+      };
+    }
+
+    // LEGACY: Fall back to pricing_grid_rules table for backwards compatibility
+    console.log('📊 No auto-match found, falling back to legacy rules...');
+    
     // Fetch all matching rules with their grids, ordered by priority
     const { data: rules, error } = await supabase
       .from('pricing_grid_rules')
@@ -79,7 +112,7 @@ export const resolveGridForProduct = async (
     }
 
     if (!rules || rules.length === 0) {
-      console.warn(`No pricing grid rule found for: ${productType} + ${systemType} + Group ${fabricPriceGroup}`);
+      console.warn(`No pricing grid found for: ${productType} + Group ${fabricPriceGroup}`);
       return { gridId: null };
     }
 
