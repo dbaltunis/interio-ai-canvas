@@ -7,10 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, Trash2, CheckCircle2, AlertCircle, Info, FileText, Download } from 'lucide-react';
+import { Upload, Trash2, CheckCircle2, Info, FileText, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Textarea } from '@/components/ui/textarea';
+import { useVendors } from '@/hooks/useVendors';
 
 interface TemplateGridManagerProps {
   // No props needed - grids are now assigned directly to inventory items
@@ -23,16 +24,26 @@ interface PricingGrid {
   description: string;
   grid_data: any;
   created_at: string;
+  supplier_id?: string | null;
+  product_type?: string | null;
+  price_group?: string | null;
 }
 
-interface GridRule {
-  id: string;
-  grid_id: string;
-  price_group: string;
-}
+const PRODUCT_TYPES = [
+  { value: 'roller_blinds', label: 'Roller Blinds' },
+  { value: 'venetian_blinds', label: 'Venetian Blinds' },
+  { value: 'vertical_blinds', label: 'Vertical Blinds' },
+  { value: 'cellular_blinds', label: 'Cellular/Honeycomb Blinds' },
+  { value: 'shutters', label: 'Plantation Shutters' },
+  { value: 'panel_glide', label: 'Panel Track/Glide' },
+  { value: 'awning', label: 'Awnings' },
+  { value: 'curtains', label: 'Curtains' },
+  { value: 'roman_blinds', label: 'Roman Blinds' },
+];
 
 export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
   const { toast } = useToast();
+  const { data: vendors = [] } = useVendors();
   const [grids, setGrids] = useState<PricingGrid[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -43,6 +54,9 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
   const [gridName, setGridName] = useState('');
   const [gridDescription, setGridDescription] = useState('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [supplierId, setSupplierId] = useState<string>('');
+  const [productType, setProductType] = useState<string>('');
+  const [priceGroup, setPriceGroup] = useState<string>('');
 
   useEffect(() => {
     loadGrids();
@@ -55,10 +69,10 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Load all grids for this user (no product/system type filtering)
+      // Load all grids for this user with supplier info
       const { data: gridsList, error } = await supabase
         .from('pricing_grids')
-        .select('*')
+        .select('*, vendors:supplier_id(name)')
         .eq('user_id', user.id)
         .eq('active', true)
         .order('created_at', { ascending: false });
@@ -120,10 +134,10 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
   };
 
   const handleUploadGrid = async () => {
-    if (!gridName || !csvFile) {
+    if (!gridName || !csvFile || !supplierId || !productType || !priceGroup) {
       toast({
         title: 'Missing Information',
-        description: 'Please provide a grid name and CSV file',
+        description: 'Please fill in all required fields: Supplier, Product Type, Price Group, Grid Name, and CSV file',
         variant: 'destructive',
       });
       return;
@@ -135,14 +149,14 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
       // Parse CSV
       const gridData = await parseCSV(csvFile);
 
-      //Get current user
+      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
       // Generate grid code from grid name (sanitize for use as code)
       const gridCode = gridName.trim().replace(/\s+/g, '_').toUpperCase();
 
-      // Create the grid (no routing rules needed - assigned directly in inventory)
+      // Create the grid with auto-matching fields
       const { error: gridError } = await supabase
         .from('pricing_grids')
         .insert([{
@@ -151,6 +165,9 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
           grid_code: gridCode,
           description: gridDescription || gridName,
           grid_data: gridData,
+          supplier_id: supplierId,
+          product_type: productType,
+          price_group: priceGroup.toUpperCase(),
           active: true,
         }]);
 
@@ -158,7 +175,7 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
 
       toast({
         title: 'Success',
-        description: 'Pricing grid uploaded. Assign it to products in Inventory.',
+        description: `Pricing grid "${gridName}" uploaded. Fabrics with Price Group "${priceGroup.toUpperCase()}" from this supplier will auto-match.`,
       });
 
       // Reset form
@@ -166,6 +183,9 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
       setGridName('');
       setGridDescription('');
       setCsvFile(null);
+      setSupplierId('');
+      setProductType('');
+      setPriceGroup('');
 
       // Reload grids
       loadGrids();
@@ -232,14 +252,23 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
     });
   };
 
+  const getVendorName = (grid: any) => {
+    return grid.vendors?.name || 'Not assigned';
+  };
+
+  const getProductTypeLabel = (type: string | null | undefined) => {
+    if (!type) return 'Not assigned';
+    return PRODUCT_TYPES.find(pt => pt.value === type)?.label || type;
+  };
+
   return (
     <div className="space-y-6">
       {/* Visual Explanation */}
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
-          <strong>How it works:</strong> Upload CSV pricing grids with custom names/codes. 
-          Then assign specific grids to products in your Inventory. When creating a job, the system will automatically use the assigned pricing grid.
+          <strong>Auto-Matching:</strong> Upload pricing grids with Supplier + Product Type + Price Group. 
+          When you select a fabric in a quote, the system automatically finds the matching grid based on the fabric's Price Group and Supplier.
         </AlertDescription>
       </Alert>
 
@@ -250,7 +279,7 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
             <div>
               <CardTitle>Your Pricing Grids</CardTitle>
               <CardDescription>
-                Upload grids and assign them to products in Inventory
+                Grids auto-match to fabrics based on Supplier + Price Group
               </CardDescription>
             </div>
             {!showUploadForm && (
@@ -282,9 +311,10 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Grid Code</TableHead>
                   <TableHead>Grid Name</TableHead>
-                  <TableHead>Description</TableHead>
+                  <TableHead>Supplier</TableHead>
+                  <TableHead>Product Type</TableHead>
+                  <TableHead>Price Group</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -293,15 +323,21 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
                 {grids.map((grid) => (
                   <TableRow key={grid.id}>
                     <TableCell>
-                      <Badge variant="outline">{grid.grid_code}</Badge>
-                    </TableCell>
-                    <TableCell>
                       <div className="font-medium">{grid.name}</div>
+                      <div className="text-xs text-muted-foreground">{grid.grid_code}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm text-muted-foreground">
-                        {grid.description || '-'}
-                      </div>
+                      <Badge variant="outline">{getVendorName(grid)}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{getProductTypeLabel(grid.product_type)}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {grid.price_group ? (
+                        <Badge variant="default">{grid.price_group}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="default" className="gap-1">
@@ -335,34 +371,84 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
               Upload New Pricing Grid
             </CardTitle>
             <CardDescription>
-              Upload a CSV file with width × drop pricing matrix
+              Upload a CSV pricing grid and configure auto-matching
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4">
+            {/* Auto-matching fields */}
+            <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <Label htmlFor="grid_name">Grid Name / Code *</Label>
+                <Label htmlFor="supplier">Supplier *</Label>
+                <Select value={supplierId} onValueChange={setSupplierId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select supplier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vendors.map((vendor) => (
+                      <SelectItem key={vendor.id} value={vendor.id}>
+                        {vendor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  The supplier this pricing grid is from
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="product_type">Product Type *</Label>
+                <Select value={productType} onValueChange={setProductType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRODUCT_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  What product type uses this grid
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="price_group">Price Group *</Label>
                 <Input
-                  id="grid_name"
-                  value={gridName}
-                  onChange={(e) => setGridName(e.target.value)}
-                  placeholder="e.g., RollerCassettePremium or A-Premium"
+                  id="price_group"
+                  value={priceGroup}
+                  onChange={(e) => setPriceGroup(e.target.value)}
+                  placeholder="e.g., A, B, Premium"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Enter a unique name or code to identify this pricing grid (e.g., "A", "Premium", "RC-Luxury")
+                  Fabrics with this Price Group will use this grid
                 </p>
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="grid_description">Description</Label>
-              <Textarea
-                id="grid_description"
-                value={gridDescription}
-                onChange={(e) => setGridDescription(e.target.value)}
-                placeholder="Optional description"
-                rows={2}
-              />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label htmlFor="grid_name">Grid Name *</Label>
+                <Input
+                  id="grid_name"
+                  value={gridName}
+                  onChange={(e) => setGridName(e.target.value)}
+                  placeholder="e.g., Roller Blind Premium"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="grid_description">Description</Label>
+                <Input
+                  id="grid_description"
+                  value={gridDescription}
+                  onChange={(e) => setGridDescription(e.target.value)}
+                  placeholder="Optional description"
+                />
+              </div>
             </div>
 
             <div>
@@ -398,12 +484,15 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
                   setGridName('');
                   setGridDescription('');
                   setCsvFile(null);
+                  setSupplierId('');
+                  setProductType('');
+                  setPriceGroup('');
                 }}
               >
                 Cancel
               </Button>
               <Button onClick={handleUploadGrid} disabled={uploading}>
-                {uploading ? 'Uploading...' : 'Upload & Connect'}
+                {uploading ? 'Uploading...' : 'Upload Grid'}
               </Button>
             </div>
           </CardContent>
