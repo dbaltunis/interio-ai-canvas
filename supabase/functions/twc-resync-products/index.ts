@@ -189,6 +189,7 @@ serve(async (req) => {
           .eq('option_id', optionId);
       } else {
         // Create NEW treatment_option with proper account_id
+        // NOTE: treatment_options table does NOT have a 'metadata' column - only use valid columns
         const { data: newOption, error: optionError } = await supabase
           .from('treatment_options')
           .insert({
@@ -200,12 +201,7 @@ serve(async (req) => {
             order_index: 100 + optionsCreated,
             required: questionData.isRequired,
             visible: true,
-            source: 'twc',
-            metadata: {
-              twc_imported: true,
-              imported_at: new Date().toISOString(),
-              options_count: questionData.options.length
-            }
+            source: 'twc'
           })
           .select('id')
           .single();
