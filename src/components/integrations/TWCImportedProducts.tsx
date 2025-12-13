@@ -115,21 +115,21 @@ export const TWCImportedProducts = () => {
               const hasTemplate = product.templates && product.templates.length > 0;
               const twcItemNumber = product.metadata?.twc_item_number || product.sku;
               const optionsCount = product.metadata?.twc_questions?.length || 0;
-              const priceGroup = product.price_group || product.metadata?.pricingGroup;
 
               return (
                 <div key={product.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-sm truncate">{product.name}</span>
-                      {priceGroup && (
-                        <Badge variant="outline" className="text-xs">Group {priceGroup}</Badge>
-                      )}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <span>#{twcItemNumber}</span>
-                      {optionsCount > 0 && <span>• {optionsCount} options</span>}
-                      {hasTemplate && <Badge className="text-[10px] bg-green-100 text-green-700">Template</Badge>}
+                      {optionsCount > 0 && <span>• {optionsCount} options in API</span>}
+                      {hasTemplate ? (
+                        <Badge className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Template Ready</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px]">Needs Template</Badge>
+                      )}
                     </div>
                   </div>
 
