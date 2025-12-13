@@ -74,14 +74,13 @@ export const SimplifiedTemplateFormPricing = ({
                     <SelectItem value="per_metre">Per Running {lengthLabel}</SelectItem>
                     <SelectItem value="per_drop">Per Drop/Width</SelectItem>
                     <SelectItem value="per_panel">Per Panel</SelectItem>
-                    <SelectItem value="per_sqm">Per m²</SelectItem>
                     <SelectItem value="pricing_grid">Grid</SelectItem>
                   </>
                 )}
                 {isWallpaper && (
                   <>
                     <SelectItem value="per_unit">Per Roll</SelectItem>
-                    <SelectItem value="per_sqm">Per m²</SelectItem>
+                    <SelectItem value="per_linear_meter">Per Linear {lengthLabel}</SelectItem>
                   </>
                 )}
               </SelectContent>

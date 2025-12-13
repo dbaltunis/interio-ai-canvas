@@ -1,4 +1,5 @@
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
+import { normalizePricingMethod, PRICING_METHODS } from "@/constants/pricingMethods";
 
 interface OptionWithPrice {
   name: string;
@@ -83,11 +84,11 @@ export const calculateOptionPrices = (
     let calculatedPrice = basePrice;
     let pricingDetails = '';
 
-    // Calculate based on pricing method
-    const method = option.pricingMethod?.toLowerCase();
+    // STANDARDIZED: Use centralized pricing method normalization
+    const rawMethod = option.pricingMethod || '';
+    const method = normalizePricingMethod(rawMethod);
     
     // CRITICAL: Hardware uses ACTUAL rail width, NOT fullness-adjusted fabric linear meters!
-    // Hardware = tracks, poles, rods, rails - physical items matching window width
     const optionNameLower = (option.name || '').toLowerCase();
     const optionKeyLower = (option.optionKey || option.option_key || '').toLowerCase();
     const isHardware = optionNameLower.includes('hardware') || 
@@ -100,7 +101,6 @@ export const calculateOptionPrices = (
                        optionKeyLower.includes('pole');
     
     // Check if hardware has a FIXED LENGTH in its name (e.g., "2.4m", "3m", "1.8m")
-    // These should be priced as fixed units, not per-meter
     const fixedLengthMatch = optionNameLower.match(/(\d+\.?\d*)\s*m\b/);
     const hasFixedLength = isHardware && fixedLengthMatch;
     
@@ -108,55 +108,66 @@ export const calculateOptionPrices = (
     const actualRailMeters = widthM;
     const metersForCalculation = isHardware ? actualRailMeters : linearMeters;
     
-    // FIXED-LENGTH HARDWARE: Don't apply per-meter, use as single unit
-    if (hasFixedLength && (method === 'per-meter' || method === 'per-metre' || method === 'per-linear-meter')) {
-      // Fixed-length item like "Curtain Track white 2.4m" - price is per unit
+    // Calculate based on normalized pricing method
+    const isLinearMethod = method === PRICING_METHODS.PER_LINEAR_METER || 
+                          method === PRICING_METHODS.PER_METRE || 
+                          method === PRICING_METHODS.PER_METER ||
+                          method === PRICING_METHODS.PER_LINEAR_YARD ||
+                          method === PRICING_METHODS.PER_YARD;
+    
+    if (hasFixedLength && isLinearMethod) {
+      // Fixed-length hardware item - price is per unit
       calculatedPrice = basePrice;
       pricingDetails = `${basePrice.toFixed(2)} per unit (fixed length item)`;
-    } else if (method === 'per-meter' || method === 'per-metre' || method === 'per-linear-meter') {
+    } else if (isLinearMethod) {
       if (basePrice > 0 && metersForCalculation > 0) {
         calculatedPrice = basePrice * metersForCalculation;
         pricingDetails = `${basePrice.toFixed(2)}/m × ${metersForCalculation.toFixed(2)}m`;
       }
-    } else if (method === 'per-sqm' || method === 'per-square-meter') {
+    } else if (method === PRICING_METHODS.PER_SQM) {
+      // Per sqm for OPTIONS only (e.g., some blind coatings) - NOT for fabric
       if (basePrice > 0 && widthCm > 0 && heightCm > 0) {
         const sqm = (widthCm * heightCm) / 10000;
         calculatedPrice = basePrice * sqm;
         pricingDetails = `${basePrice.toFixed(2)}/sqm × ${sqm.toFixed(2)}sqm`;
       }
-    } else if (method === 'pricing-grid' && option.pricingGridData) {
+    } else if (method === PRICING_METHODS.PRICING_GRID && option.pricingGridData) {
       const gridPrice = getPriceFromGrid(option.pricingGridData, widthCm, heightCm);
       if (gridPrice > 0) {
         calculatedPrice = gridPrice;
         pricingDetails = 'Grid lookup';
       }
-    } else if (method === 'per-width') {
+    } else if (method === PRICING_METHODS.PER_WIDTH) {
       if (basePrice > 0 && widthCm > 0) {
-        calculatedPrice = basePrice * actualRailMeters; // Per meter width (always actual rail)
+        calculatedPrice = basePrice * actualRailMeters;
         pricingDetails = `${basePrice.toFixed(2)}/m × ${actualRailMeters.toFixed(2)}m`;
       }
+    } else if (method === PRICING_METHODS.PERCENTAGE) {
+      // Percentage of fabric cost
+      const fabricTotal = linearMeters * (option.fabricCostPerUnit || 0);
+      if (basePrice > 0 && fabricTotal > 0) {
+        calculatedPrice = (basePrice / 100) * fabricTotal;
+        pricingDetails = `${basePrice}% of fabric`;
+      }
     }
-    // 'fixed', 'per-unit', 'per-item' - use base price as-is
+    // 'fixed', 'per-unit', 'per-piece', 'per-roll', 'per-panel', 'per-drop' - use base price as-is
 
     console.log(`💰 Option price calc: ${option.name}`, {
       basePrice,
       calculatedPrice,
       pricingMethod: method,
+      rawMethod,
       isHardware,
       hasFixedLength,
       metersForCalculation,
-      pricingDetails,
-      widthCm,
-      heightCm,
-      linearMeters
+      pricingDetails
     });
 
     return {
       ...option,
       calculatedPrice,
       pricingDetails,
-      // Keep original price as basePrice for reference
-      basePrice: basePrice
+      basePrice
     };
   });
 };

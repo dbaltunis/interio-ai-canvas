@@ -94,41 +94,21 @@ export const useFabricPricing = (params: FabricPricingParams): FabricPricingResu
     
     let fabricCost = 0;
     
-    // Calculate cost based on pricing method
-    if (pricingMethod === 'per_sqm') {
-      // Per square meter pricing: calculate fabric area in sqm
-      const widthMm = parseFloat(formData.rail_width) || 0;
-      const dropMm = parseFloat(formData.drop) || 0;
-      
-      // Convert MM to meters for sqm calculation
-      const widthM = widthMm / 1000;
-      const dropM = dropMm / 1000;
-      const areaSqm = widthM * dropM;
-      
-      fabricCost = areaSqm * fabricCostPerUnit;
-      
-      console.log('🔧 FABRIC PRICING (per sqm):', {
-        dimensions: `${widthMm}mm × ${dropMm}mm`,
-        areaSqm: areaSqm.toFixed(4),
-        pricePerSqm: fabricCostPerUnit.toFixed(2),
-        fabricCost: fabricCost.toFixed(2)
-      });
-    } else {
-      // Linear pricing (per meter/yard): multiply by fabric usage
-      // CRITICAL FIX: Multiply by horizontal pieces for railroaded fabric
-      const horizontalPieces = fabricUsageResult.horizontalPiecesNeeded || 1;
-      const totalFabricToOrder = fabricAmount * horizontalPieces;
-      fabricCost = totalFabricToOrder * fabricCostPerUnit;
-      
-      console.log('🔧 FABRIC PRICING (linear):', {
-        fabricAmount: `${fabricAmount.toFixed(2)}${units.fabric}`,
-        horizontalPieces,
-        totalFabricToOrder: `${totalFabricToOrder.toFixed(2)}${units.fabric}`,
-        calculation: `${fabricAmount.toFixed(2)} × ${horizontalPieces} = ${totalFabricToOrder.toFixed(2)}`,
-        costPerUnit: fabricCostPerUnit.toFixed(2),
-        fabricCost: fabricCost.toFixed(2)
-      });
-    }
+    // STANDARDIZED: Fabric is ALWAYS priced per linear meter/yard
+    // per_sqm removed - fabric industry standard is linear pricing
+    // CRITICAL FIX: Multiply by horizontal pieces for railroaded fabric
+    const horizontalPieces = fabricUsageResult.horizontalPiecesNeeded || 1;
+    const totalFabricToOrder = fabricAmount * horizontalPieces;
+    fabricCost = totalFabricToOrder * fabricCostPerUnit;
+    
+    console.log('🔧 FABRIC PRICING (linear - industry standard):', {
+      fabricAmount: `${fabricAmount.toFixed(2)}${units.fabric}`,
+      horizontalPieces,
+      totalFabricToOrder: `${totalFabricToOrder.toFixed(2)}${units.fabric}`,
+      calculation: `${fabricAmount.toFixed(2)} × ${horizontalPieces} = ${totalFabricToOrder.toFixed(2)}`,
+      costPerUnit: fabricCostPerUnit.toFixed(2),
+      fabricCost: fabricCost.toFixed(2)
+    });
 
     return {
       fabricCost,
