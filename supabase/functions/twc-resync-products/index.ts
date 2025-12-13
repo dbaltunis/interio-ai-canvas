@@ -149,7 +149,7 @@ serve(async (req) => {
         optionId = existingOption.id;
         optionsSkipped++;
       } else {
-        // Create treatment_option with account_id and source metadata
+        // Create treatment_option with account_id and source column
         const { data: newOption, error: optionError } = await supabase
           .from('treatment_options')
           .insert({
@@ -161,8 +161,8 @@ serve(async (req) => {
             order_index: 100 + optionsCreated,
             required: questionData.isRequired,
             visible: true,
+            source: 'twc',  // Set the source column for filtering
             metadata: {
-              source: 'twc',
               imported_at: new Date().toISOString()
             }
           })
