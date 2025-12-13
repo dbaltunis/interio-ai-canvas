@@ -110,18 +110,22 @@ export const useTreatmentSpecificFabrics = (
       if (treatmentConfig.inventoryCategory === 'none' && primaryCategory === 'material') {
         const subcategories = getAcceptedSubcategories(treatmentCategory);
         
+        // PHASE 2 FIX: Build query with filters BEFORE pagination
         let query = supabase
           .from("enhanced_inventory_items")
           .select("*")
           .or("category.eq.material,category.eq.hard_coverings")
           .in("subcategory", subcategories)
-          .eq("active", true)
-          .order("name")
-          .range(offset, offset + PAGE_SIZE);
+          .eq("active", true);
 
+        // Apply filters BEFORE range
         query = addAccountFilter(query);
         query = addPriceGroupFilter(query);
         query = buildSearchQuery(query);
+        
+        // Apply ordering and pagination LAST
+        query = query.order("name").range(offset, offset + PAGE_SIZE);
+        
         const { data, error } = await query;
         if (error) throw error;
         items = data || [];
@@ -138,12 +142,15 @@ export const useTreatmentSpecificFabrics = (
           .from("enhanced_inventory_items")
           .select("*")
           .eq("category", treatmentConfig.inventoryCategory)
-          .eq("active", true)
-          .order("name")
-          .range(offset, offset + PAGE_SIZE);
+          .eq("active", true);
 
+        // Apply filters BEFORE pagination
         query = addAccountFilter(query);
         query = buildSearchQuery(query);
+        
+        // Apply ordering and pagination LAST
+        query = query.order("name").range(offset, offset + PAGE_SIZE);
+        
         const { data, error } = await query;
         if (error) throw error;
         items = data || [];
@@ -155,19 +162,22 @@ export const useTreatmentSpecificFabrics = (
         const subcategoryConfig = TREATMENT_SUBCATEGORIES[treatmentCategory];
         
         if (subcategoryConfig?.fabricSubcategories && subcategoryConfig?.materialSubcategories) {
-          // Use FULL page size for each category to ensure we get all items
+          // PHASE 2 FIX: Build queries with filters BEFORE pagination
           let fabricQuery = supabase
             .from("enhanced_inventory_items")
             .select("*")
             .eq("category", "fabric")
             .in("subcategory", subcategoryConfig.fabricSubcategories)
-            .eq("active", true)
-            .order("name")
-            .range(offset, offset + PAGE_SIZE);
+            .eq("active", true);
 
+          // Apply filters BEFORE pagination
           fabricQuery = addAccountFilter(fabricQuery);
           fabricQuery = addPriceGroupFilter(fabricQuery);
           fabricQuery = buildSearchQuery(fabricQuery);
+          
+          // Apply ordering and pagination LAST
+          fabricQuery = fabricQuery.order("name").range(offset, offset + PAGE_SIZE);
+          
           const { data: fabricData, error: fabricError } = await fabricQuery;
           if (fabricError) throw fabricError;
 
@@ -176,13 +186,16 @@ export const useTreatmentSpecificFabrics = (
             .select("*")
             .or("category.eq.material,category.eq.hard_coverings")
             .in("subcategory", subcategoryConfig.materialSubcategories)
-            .eq("active", true)
-            .order("name")
-            .range(offset, offset + PAGE_SIZE);
+            .eq("active", true);
 
+          // Apply filters BEFORE pagination
           materialQuery = addAccountFilter(materialQuery);
           materialQuery = addPriceGroupFilter(materialQuery);
           materialQuery = buildSearchQuery(materialQuery);
+          
+          // Apply ordering and pagination LAST
+          materialQuery = materialQuery.order("name").range(offset, offset + PAGE_SIZE);
+          
           const { data: materialData, error: materialError } = await materialQuery;
           if (materialError) throw materialError;
 
@@ -191,11 +204,10 @@ export const useTreatmentSpecificFabrics = (
           
           console.log('🔧 useTreatmentSpecificFabrics (both):', {
             treatmentCategory,
+            assignedPriceGroups,
             fabricCount: fabricData?.length || 0,
             materialCount: materialData?.length || 0,
             totalItems: items.length,
-            fabricSubcategories: subcategoryConfig.fabricSubcategories,
-            materialSubcategories: subcategoryConfig.materialSubcategories
           });
         }
       }
@@ -203,17 +215,22 @@ export const useTreatmentSpecificFabrics = (
       else {
         const categories = getAcceptedSubcategories(treatmentCategory);
         
+        // PHASE 2 FIX: Build query with filters BEFORE pagination
         let query = supabase
           .from("enhanced_inventory_items")
           .select("*")
           .eq("category", primaryCategory)
           .in("subcategory", categories)
-          .eq("active", true)
-          .order("name")
-          .range(offset, offset + PAGE_SIZE);
+          .eq("active", true);
 
+        // Apply filters BEFORE pagination
         query = addAccountFilter(query);
+        query = addPriceGroupFilter(query);
         query = buildSearchQuery(query);
+        
+        // Apply ordering and pagination LAST
+        query = query.order("name").range(offset, offset + PAGE_SIZE);
+        
         const { data, error } = await query;
         if (error) throw error;
         items = data || [];
