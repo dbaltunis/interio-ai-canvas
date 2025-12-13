@@ -1,4 +1,4 @@
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getTreatmentConfig, TreatmentCategory } from "@/utils/treatmentTypeDetection";
 import { resolveGridForProduct } from "@/utils/pricing/gridResolver";
@@ -12,6 +12,7 @@ const PAGE_SIZE = 50;
  * - Server-side search (filters at database level)
  * - Pagination with "Load More" (50 items per page)
  * - Batch grid queries (eliminates N+1 problem)
+ * - Multi-tenant account isolation
  * - Optimized for large inventories (1000+ items)
  */
 export const useTreatmentSpecificFabrics = (
@@ -26,6 +27,15 @@ export const useTreatmentSpecificFabrics = (
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Get user's account for proper multi-tenant filtering
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('user_id, parent_account_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      const accountId = profile?.parent_account_id || user.id;
+
       const primaryCategory = getTreatmentPrimaryCategory(treatmentCategory);
       const offset = pageParam * PAGE_SIZE;
       
@@ -38,6 +48,11 @@ export const useTreatmentSpecificFabrics = (
           );
         }
         return query;
+      };
+
+      // Helper: add account filtering to query
+      const addAccountFilter = (query: any) => {
+        return query.or(`user_id.eq.${user.id},user_id.eq.${accountId}`);
       };
 
       let items: any[] = [];
@@ -56,12 +71,13 @@ export const useTreatmentSpecificFabrics = (
           .order("name")
           .range(offset, offset + PAGE_SIZE);
 
+        query = addAccountFilter(query);
         query = buildSearchQuery(query);
         const { data, error } = await query;
         if (error) throw error;
         items = data || [];
         hasMore = items.length === PAGE_SIZE + 1;
-        if (hasMore) items.pop(); // Remove extra item used for hasMore check
+        if (hasMore) items.pop();
       }
       // Return empty for treatments that truly don't need inventory
       else if (treatmentConfig.inventoryCategory === 'none') {
@@ -77,6 +93,7 @@ export const useTreatmentSpecificFabrics = (
           .order("name")
           .range(offset, offset + PAGE_SIZE);
 
+        query = addAccountFilter(query);
         query = buildSearchQuery(query);
         const { data, error } = await query;
         if (error) throw error;
@@ -89,7 +106,6 @@ export const useTreatmentSpecificFabrics = (
         const subcategoryConfig = TREATMENT_SUBCATEGORIES[treatmentCategory];
         
         if (subcategoryConfig?.fabricSubcategories && subcategoryConfig?.materialSubcategories) {
-          // Fetch fabric items (half the page size each)
           const halfLimit = Math.floor(PAGE_SIZE / 2);
           
           let fabricQuery = supabase
@@ -101,11 +117,11 @@ export const useTreatmentSpecificFabrics = (
             .order("name")
             .range(offset, offset + halfLimit);
 
+          fabricQuery = addAccountFilter(fabricQuery);
           fabricQuery = buildSearchQuery(fabricQuery);
           const { data: fabricData, error: fabricError } = await fabricQuery;
           if (fabricError) throw fabricError;
 
-          // Fetch material items
           let materialQuery = supabase
             .from("enhanced_inventory_items")
             .select("*")
@@ -115,6 +131,7 @@ export const useTreatmentSpecificFabrics = (
             .order("name")
             .range(offset, offset + halfLimit);
 
+          materialQuery = addAccountFilter(materialQuery);
           materialQuery = buildSearchQuery(materialQuery);
           const { data: materialData, error: materialError } = await materialQuery;
           if (materialError) throw materialError;
@@ -136,6 +153,7 @@ export const useTreatmentSpecificFabrics = (
           .order("name")
           .range(offset, offset + PAGE_SIZE);
 
+        query = addAccountFilter(query);
         query = buildSearchQuery(query);
         const { data, error } = await query;
         if (error) throw error;
@@ -146,16 +164,13 @@ export const useTreatmentSpecificFabrics = (
 
       // =====================================================
       // BATCH GRID QUERIES - Eliminates N+1 problem
-      // Instead of 1 query per item, we do 1 batch query
       // =====================================================
       
-      // Step 1: Collect all unique pricing_grid_ids
       const directGridIds = items
         .filter(item => item.pricing_grid_id)
         .map(item => item.pricing_grid_id);
       const uniqueDirectGridIds = [...new Set(directGridIds)];
 
-      // Step 2: Batch fetch ALL grids in ONE query
       let gridMap = new Map<string, any>();
       if (uniqueDirectGridIds.length > 0) {
         const { data: allGrids, error: gridError } = await supabase
@@ -169,9 +184,9 @@ export const useTreatmentSpecificFabrics = (
         }
       }
 
-      // Step 3: Enrich items using the batch-fetched grid map (instant, no queries)
+      // Enrich items with grid data
       const enrichedItems = await Promise.all(items.map(async (item) => {
-        // Method 1: Direct pricing_grid_id (instant lookup from map)
+        // Method 1: Direct pricing_grid_id
         if (item.pricing_grid_id && gridMap.has(item.pricing_grid_id)) {
           const grid = gridMap.get(item.pricing_grid_id);
           return {
@@ -183,7 +198,7 @@ export const useTreatmentSpecificFabrics = (
           };
         }
         
-        // Method 2: Via price_group (resolve through pricing rules - only for items without direct grid)
+        // Method 2: Via price_group (resolve through pricing rules)
         if (item.price_group && !item.pricing_grid_id) {
           try {
             const productType = item.product_category || treatmentCategory;
@@ -220,8 +235,8 @@ export const useTreatmentSpecificFabrics = (
     getNextPageParam: (lastPage) => lastPage.nextPage,
     initialPageParam: 0,
     enabled: !!treatmentCategory,
-    staleTime: 30000, // Cache for 30 seconds
-    gcTime: 300000, // Keep in cache for 5 minutes
+    staleTime: 30000,
+    gcTime: 300000,
     refetchOnWindowFocus: false,
   });
 };
