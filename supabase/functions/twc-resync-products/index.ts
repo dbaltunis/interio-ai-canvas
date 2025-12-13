@@ -75,8 +75,8 @@ serve(async (req) => {
     }
 
     // Extract unique questions from all TWC items
-    // TWC data format: { question: string, questionType: string, answers: string[] }
-    // OR format: { name: string, options: string[], isRequired: boolean }
+    // TWC data format stored in metadata:
+    // { name: string, options: string[], isRequired: boolean, dependantField?: {...} }
     const uniqueQuestions = new Map<string, {
       key: string;
       label: string;
@@ -86,25 +86,47 @@ serve(async (req) => {
       sourceItemIds: string[];
     }>();
 
+    let totalQuestionsProcessed = 0;
+    let questionsSkipped = 0;
+
     for (const item of twcItems || []) {
       const questions = item.metadata?.twc_questions || [];
       const treatmentCategory = mapCategoryToTreatment(item.category);
       
+      console.log(`Processing item ${item.id} (${item.name}): ${questions.length} questions, category: ${treatmentCategory}`);
+      
       for (const q of questions) {
-        // Handle both TWC API format and stored format
-        // Format 1: { question, questionType, answers }
-        // Format 2: { name, options, isRequired }
-        const questionLabel = q.question || q.name;
-        const answerOptions = q.answers || q.options || [];
-        const isRequired = q.isRequired || false;
+        totalQuestionsProcessed++;
         
-        if (!questionLabel) continue;
+        // TWC stores questions as: { name, options, isRequired, dependantField }
+        // The 'options' field contains the answer choices as an array of strings
+        const questionLabel = q.name || q.question;
+        
+        // TWC uses 'options' array for answer choices
+        let answerOptions: string[] = [];
+        if (Array.isArray(q.options)) {
+          answerOptions = q.options.filter((opt: any) => typeof opt === 'string' && opt.trim() !== '');
+        } else if (Array.isArray(q.answers)) {
+          answerOptions = q.answers.filter((opt: any) => typeof opt === 'string' && opt.trim() !== '');
+        }
+        
+        const isRequired = q.isRequired === true;
+        
+        if (!questionLabel || typeof questionLabel !== 'string') {
+          console.log(`Skipping question without name: ${JSON.stringify(q).substring(0, 100)}`);
+          questionsSkipped++;
+          continue;
+        }
         
         // Use the question label as the key
         const key = generateKey(questionLabel);
         
-        // Skip questions with no options
-        if (!answerOptions || answerOptions.length === 0) continue;
+        // Skip questions with no options - log for debugging
+        if (answerOptions.length === 0) {
+          console.log(`Question "${questionLabel}" has no options, skipping`);
+          questionsSkipped++;
+          continue;
+        }
         
         if (!uniqueQuestions.has(key)) {
           uniqueQuestions.set(key, {
@@ -115,17 +137,20 @@ serve(async (req) => {
             treatmentCategory,
             sourceItemIds: [item.id]
           });
+          console.log(`Added question: ${questionLabel} with ${answerOptions.length} options`);
         } else {
-          // Merge options if same key exists
+          // Merge options if same key exists (deduplicate)
           const existing = uniqueQuestions.get(key)!;
           const mergedOptions = [...new Set([...existing.options, ...answerOptions])];
           existing.options = mergedOptions;
-          existing.sourceItemIds.push(item.id);
+          if (!existing.sourceItemIds.includes(item.id)) {
+            existing.sourceItemIds.push(item.id);
+          }
         }
       }
     }
 
-    console.log(`Found ${uniqueQuestions.size} unique TWC questions to sync`);
+    console.log(`Processed ${totalQuestionsProcessed} total questions, skipped ${questionsSkipped}, found ${uniqueQuestions.size} unique to sync`);
 
     let optionsCreated = 0;
     let valuesCreated = 0;
