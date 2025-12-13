@@ -36,8 +36,10 @@ export const TREATMENT_SUBCATEGORIES: Record<TreatmentCategory, {
   },
   
   roller_blinds: {
-    category: 'fabric',
+    category: 'both', // Supports both fabric AND material (for TWC materials)
     subcategories: ['roller_fabric', 'roller_blind_fabric', 'roller', 'blind_material'],
+    fabricSubcategories: ['roller_fabric', 'roller_blind_fabric', 'roller'],
+    materialSubcategories: ['blind_material', 'roller_fabric'],
     description: 'Roller blind fabrics and materials'
   },
   
