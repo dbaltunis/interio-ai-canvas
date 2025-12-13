@@ -96,8 +96,10 @@ export const useTreatmentSpecificFabrics = (
       // Helper: add price group filter if template has assigned grids
       const addPriceGroupFilter = (query: any) => {
         if (assignedPriceGroups.length > 0) {
+          console.log('🎯 Filtering fabrics by price_groups:', assignedPriceGroups);
           return query.in("price_group", assignedPriceGroups);
         }
+        console.log('⚠️ No assigned price groups - showing all fabrics');
         return query;
       };
 

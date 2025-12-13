@@ -55,7 +55,7 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
       const accountId = profile?.parent_account_id || user.id;
       
       // If querying by template ID, fetch options via template_option_settings
-      // This includes TWC options that may have different account_ids but are linked to the template
+      // CRITICAL: Filter by user's account_id to prevent cross-account data leakage
       if (templateIdOrCategory && queryType === 'template') {
         const { data: linkedOptions, error: linkedError } = await supabase
           .from('template_option_settings')
@@ -90,13 +90,15 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
           return [];
         }
         
-        // Extract treatment_options from the joined result (ALL linked options, regardless of is_enabled)
+        // CRITICAL FIX: Filter to only show options belonging to THIS user's account
         const allLinkedOptions = (linkedOptions || [])
           .filter(lo => lo.treatment_options)
-          .map(lo => lo.treatment_options as TreatmentOption);
+          .map(lo => lo.treatment_options as TreatmentOption & { account_id?: string })
+          .filter(opt => opt.account_id === accountId); // Only show user's own options
         
         console.log('🔧 useTreatmentOptions (template query) loaded:', {
           templateId: templateIdOrCategory,
+          accountId,
           totalOptions: allLinkedOptions.length,
           options: allLinkedOptions.map(o => ({
             key: o.key,
