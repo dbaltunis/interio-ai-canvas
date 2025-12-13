@@ -2446,7 +2446,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
         <TabsContent value="inventory" className="h-full animate-fade-in">
           <Card className="h-full">
             <CardContent className="pt-4 sm:pt-6 h-full space-y-4">
-              <InventorySelectionPanel treatmentType={selectedTreatmentType} selectedItems={selectedItems} onItemSelect={handleItemSelect} onItemDeselect={handleItemDeselect} measurements={measurements} treatmentCategory={treatmentCategory} />
+              <InventorySelectionPanel treatmentType={selectedTreatmentType} selectedItems={selectedItems} onItemSelect={handleItemSelect} onItemDeselect={handleItemDeselect} measurements={measurements} treatmentCategory={treatmentCategory} templateId={selectedTemplate?.id} />
             </CardContent>
           </Card>
         </TabsContent>
