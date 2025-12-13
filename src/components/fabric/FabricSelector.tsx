@@ -9,15 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Palette } from "lucide-react";
-import { useInventory } from "@/hooks/useInventory";
+import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface FabricSelectorProps {
   selectedFabricId?: string;
   onSelectFabric: (fabricId: string, fabric: any) => void;
+  treatmentType?: string; // Optional: filter materials by treatment type
 }
 
-export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelectorProps) => {
+export const FabricSelector = ({ selectedFabricId, onSelectFabric, treatmentType }: FabricSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
@@ -35,7 +36,8 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
     rotation: 'vertical' as 'vertical' | 'horizontal'
   });
 
-  const { data: inventory, isLoading } = useInventory();
+  // ✅ Use useEnhancedInventory for proper account-based filtering (fixes TWC materials not showing)
+  const { data: inventory, isLoading } = useEnhancedInventory();
   const { units } = useMeasurementUnits();
   
   const formatCurrency = (amount: number, currency = 'USD') => {
@@ -53,30 +55,57 @@ export const FabricSelector = ({ selectedFabricId, onSelectFabric }: FabricSelec
     }
     
     // Include both fabric category AND material category (for blind materials like roller fabrics, venetian slats)
-    const fabricItems = inventory.filter(item => 
-      item.category?.toLowerCase() === 'fabric' || 
-      item.category?.toLowerCase() === 'material' ||
-      item.description?.toLowerCase().includes('fabric')
-    ).map(item => {
-      const itemAny = item as any;
+    const fabricItems = inventory.filter(item => {
+      const category = item.category?.toLowerCase();
+      const subcategory = item.subcategory?.toLowerCase();
+      
+      // Base filter: fabric or material categories
+      const isFabricOrMaterial = category === 'fabric' || category === 'material';
+      
+      // If treatmentType is specified, filter materials by subcategory
+      if (treatmentType && category === 'material') {
+        const treatmentLower = treatmentType.toLowerCase();
+        if (treatmentLower.includes('roller')) {
+          return subcategory === 'roller_fabric' || subcategory === 'roller_material' || subcategory === 'roller';
+        }
+        if (treatmentLower.includes('venetian')) {
+          return subcategory === 'venetian_slats' || subcategory === 'venetian';
+        }
+        if (treatmentLower.includes('vertical')) {
+          return subcategory === 'vertical_slats' || subcategory === 'vertical';
+        }
+        if (treatmentLower.includes('cellular') || treatmentLower.includes('honeycomb')) {
+          return subcategory === 'cellular' || subcategory === 'honeycomb';
+        }
+        if (treatmentLower.includes('panel')) {
+          return subcategory === 'panel_glide' || subcategory === 'panel_track';
+        }
+        if (treatmentLower.includes('shutter')) {
+          return subcategory === 'shutter' || subcategory === 'shutter_material';
+        }
+      }
+      
+      return isFabricOrMaterial;
+    }).map(item => {
       return {
         ...item,
-        // Map inventory fields to fabric fields for backward compatibility
-        color: itemAny.color || itemAny.metadata?.twc_colour || (item.description?.includes('color:') ? item.description.split('color:')[1]?.split(',')[0]?.trim() : ''),
+        // Map enhanced inventory fields to fabric fields for backward compatibility
+        color: item.color || (item.metadata as any)?.twc_colour || '',
         pattern: item.description?.includes('pattern:') ? item.description.split('pattern:')[1]?.split(',')[0]?.trim() : '',
-        type: itemAny.subcategory || item.category || 'fabric',
-        width: itemAny.fabric_width || 137, // Use fabric_width from inventory, fallback to default
-        cost_per_unit: itemAny.price_per_meter || itemAny.selling_price || item.unit_price || 0,
+        type: item.subcategory || item.category || 'fabric',
+        width: item.fabric_width || 137, // Use fabric_width from inventory, fallback to default
+        cost_per_unit: item.price_per_meter || item.selling_price || 0,
         unit: 'meter',
-        metadata: itemAny.metadata || {}, // Preserve metadata including maxLength
-        price_group: itemAny.price_group, // Include price_group for grid matching
-        isTWC: itemAny.supplier?.toUpperCase() === 'TWC'
+        metadata: item.metadata || {}, // Preserve metadata including maxLength
+        price_group: item.price_group, // Include price_group for grid matching
+        isTWC: item.supplier?.toUpperCase() === 'TWC',
+        quantity: item.quantity || 0
       };
     });
     
-    console.log('FabricSelector - Found fabrics/materials:', fabricItems.length);
+    console.log('FabricSelector - Found fabrics/materials:', fabricItems.length, 'for treatment:', treatmentType);
     return fabricItems;
-  }, [inventory]);
+  }, [inventory, treatmentType]);
 
   // Filter fabrics based on search and filters
   const filteredFabrics = useMemo(() => {

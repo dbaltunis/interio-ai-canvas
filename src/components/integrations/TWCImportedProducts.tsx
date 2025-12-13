@@ -155,6 +155,7 @@ export const TWCImportedProducts = () => {
               const hasPricing = product.metadata?.pricing_grid_data || (hasTemplate && product.templates[0]?.pricing_grid_data);
               const twcItemNumber = product.metadata?.twc_item_number || product.sku;
               const hasOptions = product.metadata?.twc_questions?.length > 0;
+              const priceGroup = product.price_group || product.metadata?.pricingGroup;
 
               return (
                 <Card key={product.id} className="bg-background">
@@ -188,15 +189,21 @@ export const TWCImportedProducts = () => {
                               <span className="text-amber-600">No Template</span>
                             </div>
                           )}
-                          {hasPricing ? (
+                          {/* Price Group indicator - replaces confusing "No Pricing" */}
+                          {priceGroup ? (
                             <div className="flex items-center gap-1">
                               <CheckCircle2 className="h-3 w-3 text-green-600" />
-                              <span className="text-green-600">Pricing Configured</span>
+                              <span className="text-green-600">Group {priceGroup}</span>
+                            </div>
+                          ) : hasPricing ? (
+                            <div className="flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3 text-green-600" />
+                              <span className="text-green-600">Pricing Set</span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-1">
                               <AlertCircle className="h-3 w-3 text-amber-600" />
-                              <span className="text-amber-600">No Pricing</span>
+                              <span className="text-amber-600">Needs Price Group</span>
                             </div>
                           )}
                           {hasOptions ? (
