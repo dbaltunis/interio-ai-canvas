@@ -50,6 +50,7 @@ interface InventorySelectionPanelProps {
   measurements?: Record<string, any>;
   className?: string;
   treatmentCategory?: TreatmentCategory;
+  templateId?: string; // NEW: For price group filtering
 }
 export const InventorySelectionPanel = ({
   treatmentType,
@@ -58,7 +59,8 @@ export const InventorySelectionPanel = ({
   onItemDeselect,
   measurements = {},
   className = "",
-  treatmentCategory = 'curtains'
+  treatmentCategory = 'curtains',
+  templateId
 }: InventorySelectionPanelProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("fabric");
@@ -90,7 +92,7 @@ export const InventorySelectionPanel = ({
   // Debounce search for server-side filtering (300ms delay)
   const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
 
-  // Use treatment-specific fabrics with server-side search and pagination
+  // Use treatment-specific fabrics with server-side search, pagination, and price group filtering
   const {
     data: fabricsData,
     isLoading: isFabricsLoading,
@@ -98,7 +100,7 @@ export const InventorySelectionPanel = ({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage
-  } = useTreatmentSpecificFabrics(treatmentCategory, debouncedSearchTerm);
+  } = useTreatmentSpecificFabrics(treatmentCategory, debouncedSearchTerm, templateId);
 
   // Flatten paginated data into single array
   const treatmentFabrics = useMemo(() => {

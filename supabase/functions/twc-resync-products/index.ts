@@ -141,6 +141,7 @@ serve(async (req) => {
         .from('treatment_options')
         .select('id')
         .eq('account_id', accountId)
+        .eq('treatment_category', questionData.treatmentCategory)
         .eq('key', key)
         .maybeSingle();
 
