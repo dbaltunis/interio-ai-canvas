@@ -6,20 +6,39 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Upload, Trash2, Grid3x3 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Upload, Trash2, Grid3x3, Building2, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { SampleDataHelper } from './SampleDataHelper';
 import { PricingGridExplainer } from './PricingGridExplainer';
+import { useVendors } from '@/hooks/useVendors';
+
+// Product types that use pricing grids (blinds & shutters)
+const GRID_PRODUCT_TYPES = [
+  { value: 'roller_blinds', label: 'Roller Blinds' },
+  { value: 'venetian_blinds', label: 'Venetian Blinds' },
+  { value: 'cellular_blinds', label: 'Cellular/Honeycomb' },
+  { value: 'vertical_blinds', label: 'Vertical Blinds' },
+  { value: 'shutters', label: 'Shutters' },
+  { value: 'awnings', label: 'Awnings' },
+  { value: 'panel_glide', label: 'Panel Glide' },
+];
 
 export const PricingGridManager = () => {
   const [newGridName, setNewGridName] = useState('');
   const [newGridCode, setNewGridCode] = useState('');
   const [newGridDescription, setNewGridDescription] = useState('');
+  const [newSupplierId, setNewSupplierId] = useState<string>('');
+  const [newProductType, setNewProductType] = useState<string>('');
+  const [newPriceGroup, setNewPriceGroup] = useState('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Fetch pricing grids
+  const { data: vendors = [] } = useVendors();
+
+  // Fetch pricing grids with supplier info
   const { data: grids, isLoading, refetch } = useQuery({
     queryKey: ['pricing-grids'],
     queryFn: async () => {
@@ -28,7 +47,13 @@ export const PricingGridManager = () => {
 
       const { data, error } = await supabase
         .from('pricing_grids')
-        .select('*')
+        .select(`
+          *,
+          vendor:supplier_id (
+            id,
+            name
+          )
+        `)
         .eq('user_id', user.id)
         .eq('active', true)
         .order('created_at', { ascending: false });
@@ -76,6 +101,21 @@ export const PricingGridManager = () => {
       return;
     }
 
+    if (!newSupplierId) {
+      toast.error('Please select a supplier');
+      return;
+    }
+
+    if (!newProductType) {
+      toast.error('Please select a product type');
+      return;
+    }
+
+    if (!newPriceGroup) {
+      toast.error('Please enter a price group (e.g., A, B, C)');
+      return;
+    }
+
     if (!csvFile) {
       toast.error('Please upload a CSV file');
       return;
@@ -91,7 +131,7 @@ export const PricingGridManager = () => {
       const csvText = await csvFile.text();
       const gridData = parseCsvToGridData(csvText);
 
-      // Create grid
+      // Create grid with supplier, product type, and price group
       const { error } = await supabase
         .from('pricing_grids')
         .insert({
@@ -100,6 +140,9 @@ export const PricingGridManager = () => {
           grid_code: newGridCode,
           description: newGridDescription || null,
           grid_data: gridData,
+          supplier_id: newSupplierId,
+          product_type: newProductType,
+          price_group: newPriceGroup.toUpperCase().trim(),
           active: true
         });
 
@@ -109,6 +152,9 @@ export const PricingGridManager = () => {
       setNewGridName('');
       setNewGridCode('');
       setNewGridDescription('');
+      setNewSupplierId('');
+      setNewProductType('');
+      setNewPriceGroup('');
       setCsvFile(null);
       refetch();
     } catch (error: any) {
@@ -138,13 +184,31 @@ export const PricingGridManager = () => {
     }
   };
 
+  const getProductTypeLabel = (value: string) => {
+    return GRID_PRODUCT_TYPES.find(pt => pt.value === value)?.label || value;
+  };
+
   return (
     <div className="space-y-6">
       {/* Help Section */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Global Pricing Grids</h2>
+        <div>
+          <h2 className="text-2xl font-bold">Pricing Grids</h2>
+          <p className="text-sm text-muted-foreground">
+            Upload grids with supplier + product type + price group for automatic matching
+          </p>
+        </div>
         <PricingGridExplainer />
       </div>
+
+      {/* Auto-Match Explanation */}
+      <Alert>
+        <Tag className="h-4 w-4" />
+        <AlertDescription>
+          <strong>Auto-matching:</strong> When you import fabrics/materials with a <code className="bg-muted px-1 rounded">price_group</code> column, 
+          the system automatically finds the matching grid based on Supplier + Product Type + Price Group. No manual assignment needed!
+        </AlertDescription>
+      </Alert>
 
       {/* Sample CSV Helper */}
       <SampleDataHelper />
@@ -157,25 +221,69 @@ export const PricingGridManager = () => {
             Create Pricing Grid
           </CardTitle>
           <CardDescription>
-            Upload a CSV file with pricing data. Format: First column is Drop (cm), header row is Width (cm), cells are prices.
+            Upload a CSV with pricing data. Assign supplier, product type, and price group for auto-matching.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Alert>
-            <AlertDescription>
-              <strong>CSV Format:</strong> First row should be widths (e.g., 50, 100, 150...), first column should be drops (e.g., 100, 150, 200...), and cells contain prices.
-            </AlertDescription>
-          </Alert>
-
+          {/* Supplier and Product Type - Required for matching */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="grid-name">Grid Name *</Label>
+              <Label htmlFor="supplier">
+                <Building2 className="h-3.5 w-3.5 inline mr-1" />
+                Supplier *
+              </Label>
+              <Select value={newSupplierId} onValueChange={setNewSupplierId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select supplier" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vendors.map((vendor) => (
+                    <SelectItem key={vendor.id} value={vendor.id}>
+                      {vendor.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {vendors.length === 0 && (
+                <p className="text-xs text-amber-600">
+                  No suppliers found. Add suppliers in Settings → Vendors first.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="product-type">Product Type *</Label>
+              <Select value={newProductType} onValueChange={setNewProductType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select product type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GRID_PRODUCT_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Price Group and Grid Code */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="price-group">
+                <Tag className="h-3.5 w-3.5 inline mr-1" />
+                Price Group *
+              </Label>
               <Input
-                id="grid-name"
-                placeholder="e.g., Roller Blind - Standard"
-                value={newGridName}
-                onChange={(e) => setNewGridName(e.target.value)}
+                id="price-group"
+                placeholder="e.g., A, B, C, GROUP-1"
+                value={newPriceGroup}
+                onChange={(e) => setNewPriceGroup(e.target.value)}
               />
+              <p className="text-xs text-muted-foreground">
+                Must match the price_group in your fabric/material CSV import
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -189,15 +297,26 @@ export const PricingGridManager = () => {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="grid-description">Description</Label>
-            <Textarea
-              id="grid-description"
-              placeholder="Optional description"
-              value={newGridDescription}
-              onChange={(e) => setNewGridDescription(e.target.value)}
-              rows={2}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="grid-name">Grid Name *</Label>
+              <Input
+                id="grid-name"
+                placeholder="e.g., Roller Blind - Standard"
+                value={newGridName}
+                onChange={(e) => setNewGridName(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="grid-description">Description</Label>
+              <Input
+                id="grid-description"
+                placeholder="Optional description"
+                value={newGridDescription}
+                onChange={(e) => setNewGridDescription(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -225,7 +344,7 @@ export const PricingGridManager = () => {
 
           <Button 
             onClick={handleCreateGrid} 
-            disabled={isUploading || !newGridName || !newGridCode || !csvFile}
+            disabled={isUploading || !newGridName || !newGridCode || !csvFile || !newSupplierId || !newProductType || !newPriceGroup}
             className="w-full"
           >
             <Upload className="h-4 w-4 mr-2" />
@@ -242,7 +361,7 @@ export const PricingGridManager = () => {
             Existing Pricing Grids
           </CardTitle>
           <CardDescription>
-            Manage your pricing grids
+            Grids are auto-matched to fabrics/materials by Supplier + Product Type + Price Group
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -258,9 +377,22 @@ export const PricingGridManager = () => {
                   className="flex items-center justify-between p-3 border border-border rounded-lg bg-card"
                 >
                   <div className="flex-1">
-                    <h4 className="font-medium text-card-foreground">{grid.name}</h4>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-medium text-card-foreground">{grid.name}</h4>
+                      {grid.price_group && (
+                        <Badge variant="secondary" className="text-xs">
+                          Group {grid.price_group}
+                        </Badge>
+                      )}
+                      {grid.product_type && (
+                        <Badge variant="outline" className="text-xs">
+                          {getProductTypeLabel(grid.product_type)}
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       Code: {grid.grid_code}
+                      {(grid as any).vendor?.name && ` • Supplier: ${(grid as any).vendor.name}`}
                       {grid.description && ` • ${grid.description}`}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
