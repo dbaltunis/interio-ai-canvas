@@ -1555,102 +1555,136 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               const piecesToCharge = (usesLeftover && horizontalPiecesNeeded > 1) ? 1 : horizontalPiecesNeeded;
               const fabricQuantity = piecesToCharge > 1 ? linearMeters * piecesToCharge : linearMeters;
               
-              return [
-              // Fabric - CRITICAL: Use the calculated fabricCost (already includes horizontal pieces with leftover logic)
-              ...(fabricCost > 0 ? [{
-                id: 'fabric',
-                name: selectedTemplate?.treatment_category?.includes('blind') || selectedTemplate?.treatment_category?.includes('shutter') ? 'Material' : selectedTemplate?.treatment_category === 'wallpaper' ? 'Wallpaper' : 'Fabric',
-                total_cost: fabricCost,  // CRITICAL: Use fabricCost which already accounts for leftover
-                category: 'fabric',
-                quantity: fabricQuantity,
-                unit: 'm',
-                unit_price: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0,
-                // CRITICAL: Save pricing method for correct quote display terminology
-                pricing_method: selectedTemplate?.pricing_type || 'per_metre',
-                // Save additional context for quote display
-                widths_required: fabricCalculation?.widthsRequired,
-                fabric_orientation: fabricCalculation?.fabricOrientation,
-                uses_pricing_grid: !!(selectedItems.fabric?.pricing_grid_data || selectedItems.material?.pricing_grid_data),
-                uses_leftover: usesLeftover,
-                horizontal_pieces_needed: horizontalPiecesNeeded,
-                pieces_charged: piecesToCharge
-              }] : []),
-              // Lining
-              ...(finalLiningCost > 0 ? [{
-                id: 'lining',
-                name: `Lining: ${selectedLining}`,
-                total_cost: finalLiningCost,
-                category: 'lining',
-                quantity: linearMeters,
-                unit: 'm'
-              }] : []),
-              // Heading - ALWAYS include even if 0
-              ...(selectedHeading && selectedHeading !== 'standard' && selectedHeading !== 'none' ? [{
-                id: 'heading',
-                name: (() => {
-                  const headingOpt = headingOptionsFromSettings.find((h: any) => h.id === selectedHeading);
-                  return `Heading: ${headingOpt?.name || selectedHeading}`;
-                })(),
-                total_cost: finalHeadingCost || 0,
-                category: 'heading'
-              }] : []),
-              // Manufacturing - CRITICAL: Always include manufacturing cost in breakdown
-              ...(manufacturingCost > 0 ? [{
-                id: 'manufacturing',
-                name: `Manufacturing: ${measurements.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished'}`,
-                total_cost: manufacturingCost,
-                category: 'manufacturing'
-              }] : []),
-              // Hardware
-              ...(hardwareCost > 0 ? [{
-                id: 'hardware',
-                name: 'Hardware',
-                total_cost: hardwareCost,
-                category: 'hardware'
-              }] : []),
-              // All selected options - INCLUDE ALL (even price:0 "included" items)
-              // ✅ CRITICAL FIX: For blinds/shutters, use pre-calculated optionDetails from liveBlindCalcResult
-              // to ensure popup costs match saved costs exactly
-              ...((displayCategory === 'blinds' || displayCategory === 'shutters') && liveBlindCalcResult?.optionDetails
-                ? liveBlindCalcResult.optionDetails.map((opt, idx) => ({
+              // CRITICAL FIX: Get actual fabric/material name for display
+              const fabricName = selectedItems.fabric?.name || selectedItems.material?.name || 'Material';
+              const fabricColor = measurements.selected_color || selectedItems.fabric?.tags?.[0] || selectedItems.fabric?.color || 
+                                 selectedItems.material?.tags?.[0] || selectedItems.material?.color || null;
+              const materialLabel = selectedTemplate?.treatment_category?.includes('blind') || selectedTemplate?.treatment_category?.includes('shutter') 
+                ? 'Material' 
+                : selectedTemplate?.treatment_category === 'wallpaper' 
+                  ? 'Wallpaper' 
+                  : 'Fabric';
+              
+              // Build option items with full name:value format for quote display
+              const buildOptionBreakdownItems = () => {
+                // For blinds/shutters, use pre-calculated optionDetails
+                if ((displayCategory === 'blinds' || displayCategory === 'shutters') && liveBlindCalcResult?.optionDetails) {
+                  return liveBlindCalcResult.optionDetails.map((opt: any, idx: number) => ({
                     id: opt.name || `option-${idx}`,
                     name: opt.name || 'Option',
+                    description: opt.value || opt.label || '-',
                     total_cost: opt.cost,
                     category: 'option',
-                    pricing_method: opt.pricingMethod
-                  }))
-                // ✅ NEW: For curtains/romans, use pre-calculated optionDetails from liveCurtainCalcResult
-                : (displayCategory === 'curtains' && liveCurtainCalcResult?.optionDetails
-                  ? liveCurtainCalcResult.optionDetails.map((opt, idx) => ({
-                      id: opt.name || `option-${idx}`,
-                      name: opt.name || 'Option',
-                      total_cost: opt.cost,
-                      category: 'option',
-                      pricing_method: opt.pricingMethod
-                    }))
-                  : selectedOptions.map((opt, idx) => {
-                      let optionTotalCost = opt.price || 0;
-                      const isPerMeterOption = opt.pricingMethod === 'per-meter' || opt.pricingMethod === 'per-metre' || 
-                                              opt.pricingMethod === 'per_meter' || opt.pricingMethod === 'per_metre' ||
-                                              opt.name?.toLowerCase().includes('lining');
-                      
-                      // If it's a per-meter option (like lining), calculate price × linear meters
-                      if (isPerMeterOption && linearMeters > 0 && opt.price > 0) {
-                        optionTotalCost = opt.price * linearMeters;
-                        console.log(`💰 [COST_BREAKDOWN] Per-meter option "${opt.name}": ${opt.price}/m × ${linearMeters}m = ${optionTotalCost}`);
-                      }
-                      
-                      return {
-                        id: opt.name || `option-${idx}`,
-                        name: opt.name || 'Option',
-                        total_cost: optionTotalCost,
-                        category: 'option',
-                        description: opt.pricingMethod === 'included' ? 'Included' : undefined
-                      };
-                    })
-                )
-              )
-            ];})(),
+                    pricing_method: opt.pricingMethod,
+                    image_url: opt.image_url || null
+                  }));
+                }
+                // For curtains/romans, use pre-calculated optionDetails
+                if (displayCategory === 'curtains' && liveCurtainCalcResult?.optionDetails) {
+                  return liveCurtainCalcResult.optionDetails.map((opt: any, idx: number) => ({
+                    id: opt.name || `option-${idx}`,
+                    name: opt.name || 'Option',
+                    description: opt.value || opt.label || '-',
+                    total_cost: opt.cost,
+                    category: 'option',
+                    pricing_method: opt.pricingMethod,
+                    image_url: opt.image_url || null
+                  }));
+                }
+                // Fallback: use selectedOptions with proper formatting
+                return selectedOptions.map((opt: any, idx: number) => {
+                  let optionTotalCost = opt.price || 0;
+                  const isPerMeterOption = opt.pricingMethod === 'per-meter' || opt.pricingMethod === 'per-metre' || 
+                                          opt.pricingMethod === 'per_meter' || opt.pricingMethod === 'per_metre' ||
+                                          opt.name?.toLowerCase().includes('lining');
+                  
+                  if (isPerMeterOption && linearMeters > 0 && opt.price > 0) {
+                    optionTotalCost = opt.price * linearMeters;
+                  }
+                  
+                  // CRITICAL: Parse name to extract key and value
+                  let optionName = opt.optionKey || opt.name || 'Option';
+                  let optionValue = opt.label || opt.value || '-';
+                  
+                  // Format snake_case to Title Case
+                  optionName = optionName
+                    .replace(/_/g, ' ')
+                    .replace(/\b\w/g, (c: string) => c.toUpperCase());
+                  
+                  return {
+                    id: `option-${idx}`,
+                    name: optionName,
+                    description: optionValue,
+                    total_cost: optionTotalCost,
+                    category: 'option',
+                    pricing_method: opt.pricingMethod,
+                    image_url: opt.image_url || null
+                  };
+                });
+              };
+              
+              return [
+                // Fabric/Material - CRITICAL: Include actual name and color
+                ...(fabricCost > 0 ? [{
+                  id: 'fabric',
+                  name: materialLabel,
+                  description: fabricName + (fabricColor ? ` - ${fabricColor}` : ''),
+                  total_cost: fabricCost,
+                  category: 'fabric',
+                  quantity: fabricQuantity,
+                  unit: 'm',
+                  unit_price: fabricCalculation?.pricePerMeter || selectedItems.fabric?.selling_price || 0,
+                  pricing_method: selectedTemplate?.pricing_type || 'per_metre',
+                  widths_required: fabricCalculation?.widthsRequired,
+                  fabric_orientation: fabricCalculation?.fabricOrientation,
+                  uses_pricing_grid: !!(selectedItems.fabric?.pricing_grid_data || selectedItems.material?.pricing_grid_data),
+                  uses_leftover: usesLeftover,
+                  horizontal_pieces_needed: horizontalPiecesNeeded,
+                  pieces_charged: piecesToCharge,
+                  image_url: selectedItems.fabric?.image_url || selectedItems.material?.image_url || null,
+                  color: fabricColor
+                }] : []),
+                // Lining
+                ...(finalLiningCost > 0 ? [{
+                  id: 'lining',
+                  name: 'Lining',
+                  description: selectedLining || 'Standard',
+                  total_cost: finalLiningCost,
+                  category: 'lining',
+                  quantity: linearMeters,
+                  unit: 'm'
+                }] : []),
+                // Heading
+                ...(selectedHeading && selectedHeading !== 'standard' && selectedHeading !== 'none' ? [{
+                  id: 'heading',
+                  name: 'Heading',
+                  description: (() => {
+                    const headingOpt = headingOptionsFromSettings.find((h: any) => h.id === selectedHeading);
+                    return headingOpt?.name || selectedHeading;
+                  })(),
+                  total_cost: finalHeadingCost || 0,
+                  category: 'heading'
+                }] : []),
+                // Manufacturing
+                ...(manufacturingCost > 0 ? [{
+                  id: 'manufacturing',
+                  name: 'Manufacturing',
+                  description: measurements.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished',
+                  total_cost: manufacturingCost,
+                  category: 'manufacturing'
+                }] : []),
+                // Hardware
+                ...(hardwareCost > 0 ? [{
+                  id: 'hardware',
+                  name: 'Hardware',
+                  description: selectedItems.hardware?.name || 'Track/Rod',
+                  total_cost: hardwareCost,
+                  category: 'hardware',
+                  image_url: selectedItems.hardware?.image_url || null
+                }] : []),
+                // All options with full name:value format
+                ...buildOptionBreakdownItems()
+              ];})(),
             template_id: selectedTemplate?.id,
             pricing_type: selectedTemplate?.pricing_type || 'per_metre',
             waste_percent: selectedTemplate?.waste_percent || 5,
