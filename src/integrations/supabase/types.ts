@@ -8268,6 +8268,7 @@ export type Database = {
           pricing_grid_type: string | null
           pricing_method: string | null
           required: boolean | null
+          source: string | null
           template_id: string | null
           tracks_inventory: boolean | null
           treatment_category: string | null
@@ -8289,6 +8290,7 @@ export type Database = {
           pricing_grid_type?: string | null
           pricing_method?: string | null
           required?: boolean | null
+          source?: string | null
           template_id?: string | null
           tracks_inventory?: boolean | null
           treatment_category?: string | null
@@ -8310,6 +8312,7 @@ export type Database = {
           pricing_grid_type?: string | null
           pricing_method?: string | null
           required?: boolean | null
+          source?: string | null
           template_id?: string | null
           tracks_inventory?: boolean | null
           treatment_category?: string | null
