@@ -40,7 +40,7 @@ serve(async (req) => {
     const accountId = profile?.parent_account_id || user.id;
     console.log('Re-syncing TWC products for account:', accountId);
 
-    // Fetch all TWC inventory items with metadata - use user.id not accountId for user_id column
+    // Fetch all TWC inventory items with metadata
     const { data: twcItems, error: itemsError } = await supabase
       .from('enhanced_inventory_items')
       .select('id, name, category, metadata')
@@ -74,9 +74,8 @@ serve(async (req) => {
       }
     }
 
-    // Extract unique questions from all TWC items
-    // TWC data format stored in metadata:
-    // { name: string, options: string[], isRequired: boolean, dependantField?: {...} }
+    // CRITICAL FIX: Extract ALL questions from TWC items properly
+    // The TWC data format is: { name: string, options: string[], isRequired: boolean, dependantField?: {...} }
     const uniqueQuestions = new Map<string, {
       key: string;
       label: string;
@@ -87,46 +86,50 @@ serve(async (req) => {
     }>();
 
     let totalQuestionsProcessed = 0;
-    let questionsSkipped = 0;
+    let questionsWithOptions = 0;
 
     for (const item of twcItems || []) {
       const questions = item.metadata?.twc_questions || [];
       const treatmentCategory = mapCategoryToTreatment(item.category);
       
-      console.log(`Processing item ${item.id} (${item.name}): ${questions.length} questions, category: ${treatmentCategory}`);
+      console.log(`\n=== Processing item: ${item.name} (${item.id}) ===`);
+      console.log(`Category: ${item.category} -> Treatment: ${treatmentCategory}`);
+      console.log(`Total questions in metadata: ${questions.length}`);
       
-      for (const q of questions) {
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
         totalQuestionsProcessed++;
         
-        // TWC stores questions as: { name, options, isRequired, dependantField }
-        // The 'options' field contains the answer choices as an array of strings
         const questionLabel = q.name || q.question;
-        
-        // TWC uses 'options' array for answer choices
-        let answerOptions: string[] = [];
-        if (Array.isArray(q.options)) {
-          answerOptions = q.options.filter((opt: any) => typeof opt === 'string' && opt.trim() !== '');
-        } else if (Array.isArray(q.answers)) {
-          answerOptions = q.answers.filter((opt: any) => typeof opt === 'string' && opt.trim() !== '');
-        }
-        
-        const isRequired = q.isRequired === true;
-        
         if (!questionLabel || typeof questionLabel !== 'string') {
-          console.log(`Skipping question without name: ${JSON.stringify(q).substring(0, 100)}`);
-          questionsSkipped++;
+          console.log(`  [${i}] Skipping - no name`);
           continue;
         }
         
-        // Use the question label as the key
-        const key = generateKey(questionLabel);
+        // CRITICAL: TWC stores options in the 'options' array directly
+        // These are the actual answer choices for the dropdown
+        let answerOptions: string[] = [];
         
-        // Skip questions with no options - log for debugging
+        if (Array.isArray(q.options) && q.options.length > 0) {
+          // Filter to only valid string options
+          answerOptions = q.options.filter((opt: any) => {
+            return opt !== null && opt !== undefined && typeof opt === 'string' && opt.trim() !== '';
+          });
+        }
+        
+        console.log(`  [${i}] "${questionLabel}": ${answerOptions.length} options`);
+        
+        // IMPORTANT: Include questions even with 0 options - they may have dependent options
+        // But for now, only create if we have options
         if (answerOptions.length === 0) {
-          console.log(`Question "${questionLabel}" has no options, skipping`);
-          questionsSkipped++;
+          console.log(`    -> Skipped (no direct options, may have dependent options)`);
           continue;
         }
+        
+        questionsWithOptions++;
+        
+        const key = generateKey(questionLabel);
+        const isRequired = q.isRequired === true;
         
         if (!uniqueQuestions.has(key)) {
           uniqueQuestions.set(key, {
@@ -137,31 +140,35 @@ serve(async (req) => {
             treatmentCategory,
             sourceItemIds: [item.id]
           });
-          console.log(`Added question: ${questionLabel} with ${answerOptions.length} options`);
+          console.log(`    -> Added new question with ${answerOptions.length} options`);
         } else {
-          // Merge options if same key exists (deduplicate)
+          // Merge options if same key exists
           const existing = uniqueQuestions.get(key)!;
           const mergedOptions = [...new Set([...existing.options, ...answerOptions])];
           existing.options = mergedOptions;
           if (!existing.sourceItemIds.includes(item.id)) {
             existing.sourceItemIds.push(item.id);
           }
+          console.log(`    -> Merged into existing (now ${mergedOptions.length} options)`);
         }
       }
     }
 
-    console.log(`Processed ${totalQuestionsProcessed} total questions, skipped ${questionsSkipped}, found ${uniqueQuestions.size} unique to sync`);
+    console.log(`\n=== SUMMARY ===`);
+    console.log(`Total questions processed: ${totalQuestionsProcessed}`);
+    console.log(`Questions with options: ${questionsWithOptions}`);
+    console.log(`Unique questions to sync: ${uniqueQuestions.size}`);
 
     let optionsCreated = 0;
     let valuesCreated = 0;
     let optionsSkipped = 0;
     let templateSettingsCreated = 0;
 
-    // Process each unique question
+    // Process each unique question - CREATE REAL TWC OPTIONS
     for (const [key, questionData] of uniqueQuestions) {
-      // Check if treatment_option already exists for this account
       let optionId: string | null = null;
       
+      // Check if treatment_option already exists for this account with this key
       const { data: existingOption } = await supabase
         .from('treatment_options')
         .select('id')
@@ -171,11 +178,17 @@ serve(async (req) => {
         .maybeSingle();
 
       if (existingOption) {
-        console.log(`Option "${key}" already exists for account, will link to templates`);
+        console.log(`Option "${key}" already exists, updating values...`);
         optionId = existingOption.id;
         optionsSkipped++;
+        
+        // Delete old option values and recreate with correct data
+        await supabase
+          .from('option_values')
+          .delete()
+          .eq('option_id', optionId);
       } else {
-        // Create treatment_option with account_id and source column
+        // Create NEW treatment_option with proper account_id
         const { data: newOption, error: optionError } = await supabase
           .from('treatment_options')
           .insert({
@@ -187,9 +200,11 @@ serve(async (req) => {
             order_index: 100 + optionsCreated,
             required: questionData.isRequired,
             visible: true,
-            source: 'twc',  // Set the source column for filtering
+            source: 'twc',
             metadata: {
-              imported_at: new Date().toISOString()
+              twc_imported: true,
+              imported_at: new Date().toISOString(),
+              options_count: questionData.options.length
             }
           })
           .select('id')
@@ -200,42 +215,44 @@ serve(async (req) => {
           continue;
         }
 
-        console.log(`Created treatment_option: ${key} (id: ${newOption.id})`);
+        console.log(`Created treatment_option: ${key} (id: ${newOption.id}) with ${questionData.options.length} values`);
         optionId = newOption.id;
         optionsCreated++;
+      }
 
-        // Create option_values for each answer choice
-        for (let i = 0; i < questionData.options.length; i++) {
-          const optionValue = questionData.options[i];
-          
-          // Skip empty options
-          if (!optionValue || optionValue.trim() === '') continue;
-          
-          const valueCode = generateKey(optionValue);
+      // Create option_values for EACH answer choice
+      for (let i = 0; i < questionData.options.length; i++) {
+        const optionValue = questionData.options[i];
+        
+        if (!optionValue || optionValue.trim() === '') continue;
+        
+        const valueCode = generateKey(optionValue);
 
-          const { error: valueError } = await supabase
-            .from('option_values')
-            .insert({
-              option_id: optionId,          // Correct column name (not treatment_option_id)
-              account_id: accountId,         // Required column - was missing!
-              code: valueCode,               // Use generated code
-              label: optionValue,            // Human-readable label
-              order_index: i,
-              extra_data: {
-                is_default: i === 0,
-                source: 'twc'
-              }
-            });
+        const { error: valueError } = await supabase
+          .from('option_values')
+          .insert({
+            option_id: optionId,
+            account_id: accountId,
+            code: valueCode,
+            label: optionValue,
+            order_index: i,
+            extra_data: {
+              is_default: i === 0,
+              source: 'twc'
+            }
+          });
 
-          if (valueError) {
-            console.error(`Error creating value "${optionValue}" for option "${key}":`, valueError);
-          } else {
-            valuesCreated++;
+        if (valueError) {
+          // Ignore duplicate errors
+          if (!valueError.message?.includes('duplicate')) {
+            console.error(`Error creating value "${optionValue}":`, valueError);
           }
+        } else {
+          valuesCreated++;
         }
       }
 
-      // Enable option for all related templates
+      // PHASE 4: Link option to all related templates
       if (optionId) {
         for (const sourceItemId of questionData.sourceItemIds) {
           const template = templateMap.get(sourceItemId);
@@ -249,7 +266,6 @@ serve(async (req) => {
               .maybeSingle();
 
             if (!existingSetting) {
-              // Create new setting
               const { error: settingError } = await supabase
                 .from('template_option_settings')
                 .insert({
@@ -262,22 +278,15 @@ serve(async (req) => {
               if (settingError) {
                 console.error(`Error creating template_option_setting:`, settingError);
               } else {
-                console.log(`Created and enabled option "${key}" for template ${template.id}`);
+                console.log(`Linked option "${key}" to template ${template.id}`);
                 templateSettingsCreated++;
               }
             } else if (!existingSetting.is_enabled) {
-              // Update existing setting to enable it
-              const { error: updateError } = await supabase
+              await supabase
                 .from('template_option_settings')
                 .update({ is_enabled: true })
                 .eq('id', existingSetting.id);
-
-              if (updateError) {
-                console.error(`Error enabling template_option_setting:`, updateError);
-              } else {
-                console.log(`Enabled existing option "${key}" for template ${template.id}`);
-                templateSettingsCreated++;
-              }
+              templateSettingsCreated++;
             }
           }
         }
@@ -287,14 +296,17 @@ serve(async (req) => {
     const result = {
       success: true,
       products_processed: twcItems?.length || 0,
-      unique_questions_found: uniqueQuestions.size,
+      total_questions_found: totalQuestionsProcessed,
+      questions_with_options: questionsWithOptions,
+      unique_questions_synced: uniqueQuestions.size,
       options_created: optionsCreated,
-      options_skipped: optionsSkipped,
+      options_updated: optionsSkipped,
       values_created: valuesCreated,
       template_settings_created: templateSettingsCreated
     };
 
-    console.log('Re-sync complete:', result);
+    console.log('\n=== RE-SYNC COMPLETE ===');
+    console.log(JSON.stringify(result, null, 2));
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -335,6 +347,5 @@ function mapCategoryToTreatment(category: string): string {
   if (categoryLower.includes('awning')) return 'awning';
   if (categoryLower.includes('panel')) return 'panel_glide';
   
-  // Default to roller_blinds for most TWC products (valid category)
   return 'roller_blinds';
 }
