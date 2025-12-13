@@ -40,7 +40,7 @@ serve(async (req) => {
     const accountId = profile?.parent_account_id || user.id;
     console.log('Updating existing TWC products for account:', accountId);
 
-    // Fetch all TWC inventory items with metadata
+    // Fetch all TWC inventory items with metadata - use accountId for proper tenant isolation
     const { data: twcItems, error: itemsError } = await supabase
       .from('enhanced_inventory_items')
       .select('id, name, category, metadata, tags')

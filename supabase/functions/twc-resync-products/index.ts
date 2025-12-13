@@ -44,8 +44,8 @@ serve(async (req) => {
     const { data: twcItems, error: itemsError } = await supabase
       .from('enhanced_inventory_items')
       .select('id, name, category, metadata')
-      .eq('user_id', user.id)
-      .not('metadata->twc_item_number', 'is', null);
+      .eq('user_id', accountId)
+      .eq('supplier', 'TWC');
 
     if (itemsError) {
       console.error('Error fetching TWC items:', itemsError);
@@ -54,25 +54,29 @@ serve(async (req) => {
 
     console.log(`Found ${twcItems?.length || 0} TWC inventory items`);
 
-    // Fetch templates linked to these inventory items
-    const itemIds = twcItems?.map(item => item.id) || [];
-    const { data: templates } = await supabase
+    // PHASE 1 FIX: Fetch ALL templates for this account - not just those linked to inventory items
+    // This ensures manually-created templates AND TWC-imported templates all get options linked
+    const { data: allTemplates } = await supabase
       .from('curtain_templates')
       .select('id, name, inventory_item_id, treatment_category')
-      .in('inventory_item_id', itemIds.length > 0 ? itemIds : ['no-match']);
+      .eq('user_id', accountId);
 
-    console.log(`Found ${templates?.length || 0} linked templates`);
+    console.log(`Found ${allTemplates?.length || 0} total templates for account`);
 
-    // Create a map of inventory_item_id to template
-    const templateMap = new Map<string, { id: string; treatment_category: string }>();
-    for (const template of templates || []) {
-      if (template.inventory_item_id) {
-        templateMap.set(template.inventory_item_id, {
-          id: template.id,
-          treatment_category: template.treatment_category
-        });
+    // Create a map of treatment_category to templates (not inventory_item_id)
+    // This allows linking options to ALL templates of the same category
+    const templatesByCategory = new Map<string, Array<{ id: string; name: string }>>();
+    for (const template of allTemplates || []) {
+      const category = template.treatment_category;
+      if (category) {
+        if (!templatesByCategory.has(category)) {
+          templatesByCategory.set(category, []);
+        }
+        templatesByCategory.get(category)!.push({ id: template.id, name: template.name });
       }
     }
+    
+    console.log(`Template categories found:`, [...templatesByCategory.keys()]);
 
     // CRITICAL FIX: Extract ALL questions from TWC items properly
     // The TWC data format is: { name: string, options: string[], isRequired: boolean, dependantField?: {...} }
@@ -248,42 +252,42 @@ serve(async (req) => {
         }
       }
 
-      // PHASE 4: Link option to all related templates
+      // PHASE 1 FIX: Link option to ALL templates with matching treatment_category
+      // This ensures both manually-created and TWC-imported templates get options linked
       if (optionId) {
-        for (const sourceItemId of questionData.sourceItemIds) {
-          const template = templateMap.get(sourceItemId);
-          if (template) {
-            // Check if setting already exists
-            const { data: existingSetting } = await supabase
+        const templatesForCategory = templatesByCategory.get(questionData.treatmentCategory) || [];
+        console.log(`Linking option "${key}" to ${templatesForCategory.length} templates of category "${questionData.treatmentCategory}"`);
+        
+        for (const template of templatesForCategory) {
+          // Check if setting already exists
+          const { data: existingSetting } = await supabase
+            .from('template_option_settings')
+            .select('id, is_enabled')
+            .eq('template_id', template.id)
+            .eq('treatment_option_id', optionId)
+            .maybeSingle();
+
+          if (!existingSetting) {
+            const { error: settingError } = await supabase
               .from('template_option_settings')
-              .select('id, is_enabled')
-              .eq('template_id', template.id)
-              .eq('treatment_option_id', optionId)
-              .maybeSingle();
+              .insert({
+                template_id: template.id,
+                treatment_option_id: optionId,
+                is_enabled: true
+              });
 
-            if (!existingSetting) {
-              // NOTE: template_option_settings does NOT have order_index column
-              const { error: settingError } = await supabase
-                .from('template_option_settings')
-                .insert({
-                  template_id: template.id,
-                  treatment_option_id: optionId,
-                  is_enabled: true
-                });
-
-              if (settingError) {
-                console.error(`Error creating template_option_setting:`, settingError);
-              } else {
-                console.log(`Linked option "${key}" to template ${template.id}`);
-                templateSettingsCreated++;
-              }
-            } else if (!existingSetting.is_enabled) {
-              await supabase
-                .from('template_option_settings')
-                .update({ is_enabled: true })
-                .eq('id', existingSetting.id);
+            if (settingError) {
+              console.error(`Error creating template_option_setting:`, settingError);
+            } else {
+              console.log(`Linked option "${key}" to template "${template.name}" (${template.id})`);
               templateSettingsCreated++;
             }
+          } else if (!existingSetting.is_enabled) {
+            await supabase
+              .from('template_option_settings')
+              .update({ is_enabled: true })
+              .eq('id', existingSetting.id);
+            templateSettingsCreated++;
           }
         }
       }
