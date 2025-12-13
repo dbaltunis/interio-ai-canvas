@@ -2,15 +2,19 @@
  * Centralized pricing method label formatting
  * Maps pricing method codes to user-friendly display labels
  * Supports unit-aware labels based on user's measurement system (metric/imperial)
+ * 
+ * @deprecated Use imports from @/constants/pricingMethods instead
  */
 
-interface UnitSystem {
-  length?: string;
-  area?: string;
-}
+import { 
+  getPricingMethodLabel as getLabel,
+  getPricingMethodSuffix as getSuffix,
+  PRICING_METHOD_LABELS
+} from '@/constants/pricingMethods';
 
 /**
  * Get unit-aware pricing method labels
+ * @deprecated Use PRICING_METHOD_LABELS from @/constants/pricingMethods
  */
 export const getPricingMethodLabels = (isMetric: boolean = true): Record<string, string> => {
   const lengthUnit = isMetric ? 'Meter' : 'Yard';
@@ -28,15 +32,14 @@ export const getPricingMethodLabels = (isMetric: boolean = true): Record<string,
     'per-drop': 'Per Drop',
     'per-width': 'Per Width',
     'per-panel': 'Per Panel',
+    'per-roll': 'Per Roll',
     'fixed': 'Fixed Price',
     'flat': 'Flat Rate',
     'pricing-grid': 'Grid Pricing',
     'grid': 'Grid Pricing',
+    'percentage': 'Percentage',
   };
 };
-
-// Default labels for backward compatibility
-export const PRICING_METHOD_LABELS = getPricingMethodLabels(true);
 
 /**
  * Get display label for a pricing method
@@ -78,6 +81,10 @@ export const getPricingMethodSuffix = (method: string | undefined | null, isMetr
     case 'per-unit':
     case 'per-piece':
       return '/unit';
+    case 'per-roll':
+      return '/roll';
+    case 'percentage':
+      return '%';
     default:
       return '';
   }
@@ -96,3 +103,6 @@ export const getLengthUnitLabel = (isMetric: boolean = true): string => {
 export const getAreaUnitLabel = (isMetric: boolean = true): string => {
   return isMetric ? 'm²' : 'sq ft';
 };
+
+// Re-export from centralized constants for backward compatibility
+export { PRICING_METHOD_LABELS } from '@/constants/pricingMethods';
