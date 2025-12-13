@@ -208,17 +208,36 @@ export const useDeleteTWCProduct = () => {
 
   return useMutation({
     mutationFn: async (productId: string) => {
-      const { error } = await supabase
-        .from('enhanced_inventory_items')
-        .delete()
-        .eq('id', productId);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      // Use cascade delete edge function to remove all related data
+      const { data, error } = await supabase.functions.invoke("twc-delete-product", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: { productId }
+      });
 
       if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Delete failed");
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['twc-imported-products'] });
       queryClient.invalidateQueries({ queryKey: ['enhanced-inventory'] });
-      toast.success('Product deleted');
+      queryClient.invalidateQueries({ queryKey: ['curtain-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+      queryClient.invalidateQueries({ queryKey: ['template-option-settings'] });
+      
+      const deleted = data.deleted;
+      const parts = [`Product "${deleted.product}" deleted`];
+      if (deleted.templates > 0) parts.push(`${deleted.templates} templates`);
+      if (deleted.options > 0) parts.push(`${deleted.options} options`);
+      if (deleted.materials > 0) parts.push(`${deleted.materials} materials`);
+      
+      toast.success('TWC Product Cascade Deleted', {
+        description: parts.join(', '),
+        duration: 5000
+      });
     },
     onError: (error: Error) => {
       toast.error(`Failed to delete: ${error.message}`);

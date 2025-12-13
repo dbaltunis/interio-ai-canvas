@@ -119,3 +119,6 @@ verify_jwt = true
 
 [functions.twc-update-existing]
 verify_jwt = true
+
+[functions.twc-delete-product]
+verify_jwt = true
