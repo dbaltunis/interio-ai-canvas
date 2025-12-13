@@ -383,6 +383,7 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
           <SimplifiedTemplateFormPricing 
             formData={formData}
             template={template}
+            templateId={template?.id}
             handleInputChange={handleInputChange}
           />
         </TabsContent>
