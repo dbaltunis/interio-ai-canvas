@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getTreatmentConfig, TreatmentCategory } from "@/utils/treatmentTypeDetection";
 import { resolveGridForProduct } from "@/utils/pricing/gridResolver";
@@ -7,22 +7,60 @@ import { getAcceptedSubcategories, getTreatmentPrimaryCategory, TREATMENT_SUBCAT
 const PAGE_SIZE = 100; // Increased for large TWC inventories
 
 /**
+ * Hook to fetch assigned price groups for a template
+ */
+const useTemplateAssignedPriceGroups = (templateId: string | undefined) => {
+  return useQuery({
+    queryKey: ["template-assigned-price-groups", templateId],
+    queryFn: async () => {
+      if (!templateId) return [];
+      
+      const { data, error } = await supabase
+        .from("template_grid_assignments")
+        .select(`
+          pricing_grids:pricing_grid_id (
+            price_group
+          )
+        `)
+        .eq("template_id", templateId);
+
+      if (error) {
+        console.error("Error fetching template price groups:", error);
+        return [];
+      }
+      
+      // Extract unique price groups
+      const priceGroups = data
+        ?.map((d: any) => d.pricing_grids?.price_group)
+        .filter(Boolean) as string[];
+      
+      return [...new Set(priceGroups)];
+    },
+    enabled: !!templateId,
+    staleTime: 60000,
+  });
+};
+
+/**
  * Enterprise-grade hook for fetching treatment-specific fabrics/materials
  * Features:
  * - Server-side search (filters at database level)
- * - Pagination with "Load More" (50 items per page)
+ * - Pagination with "Load More" (100 items per page)
  * - Batch grid queries (eliminates N+1 problem)
  * - Multi-tenant account isolation
  * - Optimized for large inventories (1000+ items)
+ * - Filters by template's assigned pricing grids
  */
 export const useTreatmentSpecificFabrics = (
   treatmentCategory: TreatmentCategory,
-  searchTerm?: string
+  searchTerm?: string,
+  templateId?: string
 ) => {
+  const { data: assignedPriceGroups = [] } = useTemplateAssignedPriceGroups(templateId);
   const treatmentConfig = getTreatmentConfig(treatmentCategory);
   
   return useInfiniteQuery({
-    queryKey: ["treatment-specific-fabrics", treatmentCategory, searchTerm || ""],
+    queryKey: ["treatment-specific-fabrics", treatmentCategory, searchTerm || "", templateId || "", assignedPriceGroups.join(",")],
     queryFn: async ({ pageParam = 0 }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -55,6 +93,14 @@ export const useTreatmentSpecificFabrics = (
         return query.or(`user_id.eq.${user.id},user_id.eq.${accountId}`);
       };
 
+      // Helper: add price group filter if template has assigned grids
+      const addPriceGroupFilter = (query: any) => {
+        if (assignedPriceGroups.length > 0) {
+          return query.in("price_group", assignedPriceGroups);
+        }
+        return query;
+      };
+
       let items: any[] = [];
       let hasMore = false;
 
@@ -72,6 +118,7 @@ export const useTreatmentSpecificFabrics = (
           .range(offset, offset + PAGE_SIZE);
 
         query = addAccountFilter(query);
+        query = addPriceGroupFilter(query);
         query = buildSearchQuery(query);
         const { data, error } = await query;
         if (error) throw error;
@@ -117,6 +164,7 @@ export const useTreatmentSpecificFabrics = (
             .range(offset, offset + PAGE_SIZE);
 
           fabricQuery = addAccountFilter(fabricQuery);
+          fabricQuery = addPriceGroupFilter(fabricQuery);
           fabricQuery = buildSearchQuery(fabricQuery);
           const { data: fabricData, error: fabricError } = await fabricQuery;
           if (fabricError) throw fabricError;
@@ -131,6 +179,7 @@ export const useTreatmentSpecificFabrics = (
             .range(offset, offset + PAGE_SIZE);
 
           materialQuery = addAccountFilter(materialQuery);
+          materialQuery = addPriceGroupFilter(materialQuery);
           materialQuery = buildSearchQuery(materialQuery);
           const { data: materialData, error: materialError } = await materialQuery;
           if (materialError) throw materialError;

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { TemplateGridManager } from "./TemplateGridManager";
+import { TemplateGridSelector } from "./TemplateGridSelector";
 import { HandFinishedToggle } from "./pricing/HandFinishedToggle";
 import { PerMetrePricing } from "./pricing/PerMetrePricing";
 import { PerPanelPricing } from "./pricing/PerPanelPricing";
@@ -14,12 +15,14 @@ import { getUnitLabel } from "@/utils/measurementFormatters";
 interface SimplifiedTemplateFormPricingProps {
   formData: any;
   template?: any;
+  templateId?: string;
   handleInputChange: (field: string, value: any) => void;
 }
 
 export const SimplifiedTemplateFormPricing = ({ 
   formData, 
   template,
+  templateId,
   handleInputChange 
 }: SimplifiedTemplateFormPricingProps) => {
   const { units } = useMeasurementUnits();
@@ -88,7 +91,16 @@ export const SimplifiedTemplateFormPricing = ({
           </div>
 
           {formData.pricing_type === "pricing_grid" && (
-            <TemplateGridManager />
+            <div className="space-y-4">
+              {/* Global grid manager for uploading/managing grids */}
+              <TemplateGridManager />
+              
+              {/* Template-specific grid selector */}
+              <TemplateGridSelector 
+                templateId={templateId || template?.id}
+                treatmentCategory={formData.treatment_category}
+              />
+            </div>
           )}
 
           {formData.pricing_type === "per_metre" && isCurtainOrRoman && (

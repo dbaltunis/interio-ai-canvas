@@ -8039,6 +8039,42 @@ export type Database = {
           },
         ]
       }
+      template_grid_assignments: {
+        Row: {
+          created_at: string | null
+          id: string
+          pricing_grid_id: string
+          template_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          pricing_grid_id: string
+          template_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          pricing_grid_id?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_grid_assignments_pricing_grid_id_fkey"
+            columns: ["pricing_grid_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_grids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "template_grid_assignments_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "curtain_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       template_measurements: {
         Row: {
           field_id: string
