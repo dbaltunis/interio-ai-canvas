@@ -262,13 +262,13 @@ serve(async (req) => {
               .maybeSingle();
 
             if (!existingSetting) {
+              // NOTE: template_option_settings does NOT have order_index column
               const { error: settingError } = await supabase
                 .from('template_option_settings')
                 .insert({
                   template_id: template.id,
                   treatment_option_id: optionId,
-                  is_enabled: true,
-                  order_index: 100 + templateSettingsCreated
+                  is_enabled: true
                 });
 
               if (settingError) {
