@@ -56,7 +56,8 @@ interface InventorySelectionPanelProps {
   measurements?: Record<string, any>;
   className?: string;
   treatmentCategory?: TreatmentCategory;
-  templateId?: string; // NEW: For price group filtering
+  templateId?: string; // For price group filtering
+  parentProductId?: string; // NEW: For TWC-linked material filtering (shows ONLY linked materials)
 }
 export const InventorySelectionPanel = ({
   treatmentType,
@@ -66,7 +67,8 @@ export const InventorySelectionPanel = ({
   measurements = {},
   className = "",
   treatmentCategory = 'curtains',
-  templateId
+  templateId,
+  parentProductId // NEW: Filter to exact TWC materials
 }: InventorySelectionPanelProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("fabric");
@@ -101,7 +103,7 @@ export const InventorySelectionPanel = ({
   // Debounce search for server-side filtering (300ms delay)
   const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
 
-  // Use treatment-specific fabrics with server-side search, pagination, and price group filtering
+  // Use treatment-specific fabrics with server-side search, pagination, price group filtering, and TWC parent product filtering
   const {
     data: fabricsData,
     isLoading: isFabricsLoading,
@@ -109,7 +111,7 @@ export const InventorySelectionPanel = ({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage
-  } = useTreatmentSpecificFabrics(treatmentCategory, debouncedSearchTerm, templateId);
+  } = useTreatmentSpecificFabrics(treatmentCategory, debouncedSearchTerm, templateId, parentProductId);
 
   // Flatten paginated data into single array
   const treatmentFabrics = useMemo(() => {
@@ -716,6 +718,19 @@ export const InventorySelectionPanel = ({
           onTagsChange={setSelectedTags}
         />
       </div>
+      
+      {/* TWC Linked Materials Indicator - shows when filtering by parent product */}
+      {parentProductId && (
+        <div className="flex items-center gap-2 py-2 px-3 border border-primary/30 bg-primary/10 rounded-md">
+          <Building2 className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium text-primary">
+            TWC Linked Materials
+          </span>
+          <Badge variant="secondary" className="ml-auto text-xs">
+            {treatmentFabrics.length} items
+          </Badge>
+        </div>
+      )}
       
       {/* Price Group and Quick Type Filters - shown when there are price groups */}
       {(priceGroupStats.length > 0 || availableQuickTypes.length > 0) && (

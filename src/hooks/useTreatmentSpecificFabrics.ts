@@ -50,17 +50,19 @@ const useTemplateAssignedPriceGroups = (templateId: string | undefined) => {
  * - Multi-tenant account isolation
  * - Optimized for large inventories (1000+ items)
  * - Filters by template's assigned pricing grids
+ * - NEW: Filters by parent_product_id for TWC products (exact 32 materials)
  */
 export const useTreatmentSpecificFabrics = (
   treatmentCategory: TreatmentCategory,
   searchTerm?: string,
-  templateId?: string
+  templateId?: string,
+  parentProductId?: string // NEW: Filter to ONLY TWC-linked materials
 ) => {
   const { data: assignedPriceGroups = [] } = useTemplateAssignedPriceGroups(templateId);
   const treatmentConfig = getTreatmentConfig(treatmentCategory);
   
   return useInfiniteQuery({
-    queryKey: ["treatment-specific-fabrics", treatmentCategory, searchTerm || "", templateId || "", assignedPriceGroups.join(",")],
+    queryKey: ["treatment-specific-fabrics", treatmentCategory, searchTerm || "", templateId || "", assignedPriceGroups.join(","), parentProductId || ""],
     queryFn: async ({ pageParam = 0 }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -103,11 +105,45 @@ export const useTreatmentSpecificFabrics = (
         return query;
       };
 
+      // =====================================================
+      // NEW: TWC PARENT PRODUCT FILTER - Shows ONLY linked materials
+      // =====================================================
+      // If parentProductId is provided, filter to ONLY materials that 
+      // have this parent_product_id in their metadata. This is how TWC
+      // links specific materials (e.g., 32) to a specific product (e.g., Romans)
+      
       let items: any[] = [];
       let hasMore = false;
+      
+      if (parentProductId) {
+        console.log('🔗 TWC Filter: Showing only materials linked to parent_product_id:', parentProductId);
+        
+        let query = supabase
+          .from("enhanced_inventory_items")
+          .select("*")
+          .eq("metadata->>parent_product_id", parentProductId)
+          .eq("active", true);
 
+        // Apply filters BEFORE pagination
+        query = addAccountFilter(query);
+        query = buildSearchQuery(query);
+        
+        // Apply ordering and pagination LAST
+        query = query.order("name").range(offset, offset + PAGE_SIZE);
+        
+        const { data, error } = await query;
+        if (error) {
+          console.error('Error fetching TWC-linked materials:', error);
+          throw error;
+        }
+        
+        console.log(`✅ TWC Filter: Found ${data?.length || 0} materials linked to parent product`);
+        items = data || [];
+        hasMore = items.length === PAGE_SIZE + 1;
+        if (hasMore) items.pop();
+      }
       // CRITICAL FIX: Handle material-based treatments that have inventoryCategory === 'none'
-      if (treatmentConfig.inventoryCategory === 'none' && primaryCategory === 'material') {
+      else if (treatmentConfig.inventoryCategory === 'none' && primaryCategory === 'material') {
         const subcategories = getAcceptedSubcategories(treatmentCategory);
         
         // PHASE 2 FIX: Build query with filters BEFORE pagination
