@@ -212,17 +212,18 @@ export const AdaptiveFabricPricingDisplay = ({
   const isCurtainType = treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds' || template?.fullness_ratio > 1;
 
   // CRITICAL: Calculate grid price if applicable
-  // measurements.rail_width and measurements.drop are stored in MM
+  // ✅ FIX: measurements are in USER'S DISPLAY UNIT (cm, inches, mm), NOT always MM
+  // Must convert from user's unit to CM for grid lookup
   let gridPrice = 0;
   let gridWidthCm = 0;
   let gridDropCm = 0;
   if (usesPricingGrid && gridDataToUse && measurements.rail_width && measurements.drop) {
-    // Measurements are in mm from database
-    const gridWidthMm = parseFloat(measurements.rail_width);
-    const gridDropMm = parseFloat(measurements.drop);
-    // Convert mm to cm for grid lookup and display
-    gridWidthCm = gridWidthMm / 10;
-    gridDropCm = gridDropMm / 10;
+    // ✅ CRITICAL FIX: measurements are in user's display unit, convert TO cm
+    const rawWidth = parseFloat(measurements.rail_width);
+    const rawDrop = parseFloat(measurements.drop);
+    // Convert from user's display unit (could be cm, inches, mm) to CM for grid lookup
+    gridWidthCm = convertLength(rawWidth, units.length, 'cm');
+    gridDropCm = convertLength(rawDrop, units.length, 'cm');
     gridPrice = getPriceFromGrid(gridDataToUse, gridWidthCm, gridDropCm);
 
     // ✅ IMPROVED ERROR HANDLING: If grid returns 0, log helpful diagnostic
@@ -234,10 +235,8 @@ export const AdaptiveFabricPricingDisplay = ({
       });
     }
     console.log('📊 GRID PRICE DEBUG:', {
-      railWidthMm: gridWidthMm,
-      dropMm: gridDropMm,
-      gridWidthCm,
-      gridDropCm,
+      rawInput: { width: rawWidth, drop: rawDrop, userUnit: units.length },
+      convertedCm: { gridWidthCm, gridDropCm },
       hasGridData: !!gridDataToUse,
       gridDataStructure: gridDataToUse ? Object.keys(gridDataToUse) : 'NO DATA',
       gridPrice,
@@ -249,13 +248,14 @@ export const AdaptiveFabricPricingDisplay = ({
 
   // CRITICAL: Calculate square meters with hems - measurements are in MM
   // Uses centralized blind calculation defaults for consistency
+  // ✅ FIX: measurements are in USER'S DISPLAY UNIT, convert to CM
   const calculateSquareMeters = () => {
     if (!measurements.rail_width || !measurements.drop) return 0;
-    const widthMm = parseFloat(measurements.rail_width);
-    const dropMm = parseFloat(measurements.drop);
-    // Convert mm to cm for calculation
-    const widthCm = widthMm / 10;
-    const dropCm = dropMm / 10;
+    const rawWidth = parseFloat(measurements.rail_width);
+    const rawDrop = parseFloat(measurements.drop);
+    // ✅ CRITICAL FIX: Convert from user's display unit to CM
+    const widthCm = convertLength(rawWidth, units.length, 'cm');
+    const dropCm = convertLength(rawDrop, units.length, 'cm');
 
     // Get hem defaults from template (centralized source)
     const hems = getBlindHemDefaults(template);
@@ -263,10 +263,8 @@ export const AdaptiveFabricPricingDisplay = ({
     // Calculate sqm with hems using centralized function
     const blindCalc = calculateBlindSqm(widthCm, dropCm, hems);
     console.log('📐 SQM CALCULATION (with hems):', {
-      widthMm,
-      dropMm,
-      widthCm,
-      dropCm,
+      rawInput: { width: rawWidth, drop: rawDrop, userUnit: units.length },
+      convertedCm: { widthCm, dropCm },
       hems,
       effectiveDimensions: `${blindCalc.effectiveWidthCm}cm × ${blindCalc.effectiveHeightCm}cm`,
       sqm: blindCalc.sqm,
@@ -277,10 +275,12 @@ export const AdaptiveFabricPricingDisplay = ({
   };
 
   // Calculate linear meters for roller blinds - waste comes from template
+  // ✅ FIX: measurements are in USER'S DISPLAY UNIT, convert to meters
   const calculateLinearMeters = () => {
     if (!measurements.drop) return 0;
-    const dropMm = parseFloat(measurements.drop);
-    const dropM = dropMm / 1000;
+    const rawDrop = parseFloat(measurements.drop);
+    // ✅ CRITICAL FIX: Convert from user's display unit to meters
+    const dropM = convertLength(rawDrop, units.length, 'cm') / 100; // Convert to meters
     // Use template waste if configured, otherwise no waste (fail explicit)
     const wasteMultiplier = template?.waste_percent 
       ? 1 + (template.waste_percent / 100) 
