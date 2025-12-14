@@ -122,3 +122,6 @@ verify_jwt = true
 
 [functions.twc-delete-product]
 verify_jwt = true
+
+[functions.twc-delete-all-data]
+verify_jwt = true
