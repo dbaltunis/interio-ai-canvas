@@ -392,6 +392,13 @@ const handler = async (req: Request): Promise<Response> => {
               continue;
             }
             
+            // CRITICAL FIX: Skip heading_type questions - these duplicate system headings
+            // Users should recreate TWC headings in Settings → Headings instead
+            if (question.question.toLowerCase().includes('heading')) {
+              console.log(`Skipping heading question "${question.question}" - use Settings → Headings instead`);
+              continue;
+            }
+            
             // Map TWC question to treatment option key
             const optionKey = question.question.toLowerCase()
               .replace(/\s+/g, '_')
@@ -548,6 +555,45 @@ const handler = async (req: Request): Promise<Response> => {
                 continue;
               }
               
+              // Determine default fabric width based on parent product type
+              const getDefaultFabricWidth = (desc: string): number | null => {
+                const d = desc.toLowerCase();
+                // Roller/Roman/Panel/Curtain fabrics are typically 300cm wide
+                if (d.includes('roller') || d.includes('roman') || d.includes('panel') || d.includes('curtain')) {
+                  return 300;
+                }
+                // Curtain sheers are often 330cm
+                if (d.includes('sheer')) {
+                  return 330;
+                }
+                // Cellular materials also 300cm
+                if (d.includes('cellular') || d.includes('honeycomb')) {
+                  return 300;
+                }
+                // Hard materials (venetian/vertical/shutter) don't use fabric width
+                return null;
+              };
+              
+              // Generate opacity/type tags from material name
+              const generateTypeTags = (name: string): string[] => {
+                const n = name.toLowerCase();
+                const typeTags: string[] = [];
+                if (n.includes('blockout') || n.includes('block out')) typeTags.push('blockout');
+                if (n.includes('sheer')) typeTags.push('sheer');
+                if (n.includes('sunscreen')) typeTags.push('sunscreen');
+                if (n.includes('light filter') || n.includes('translucent')) typeTags.push('light_filtering');
+                return typeTags;
+              };
+              
+              const defaultWidth = getDefaultFabricWidth(product.description || '');
+              const typeTags = generateTypeTags(material.material);
+              // Combine color tags with type tags
+              const allTags = [...colorTags, ...typeTags];
+              // Add wide_width tag if applicable
+              if (defaultWidth && defaultWidth >= 250) {
+                allTags.push('wide_width');
+              }
+              
               const { error: materialError } = await supabaseClient
                 .from('enhanced_inventory_items')
                 .insert({
@@ -560,17 +606,20 @@ const handler = async (req: Request): Promise<Response> => {
                   active: true,
                   show_in_quote: true,
                   description: `Material: ${material.material} | Colors: ${colorTags.join(', ')}`,
-                  // Store ALL colors as tags for the color dropdown
-                  tags: colorTags,
+                  // Store ALL colors as tags for the color dropdown (plus type tags)
+                  tags: allTags,
                   // Use primary price group for grid matching
                   price_group: primaryPriceGroup,
                   // Pricing method is grid-based for TWC materials
                   pricing_method: 'pricing_grid',
+                  // CRITICAL: Set default fabric width for calculations
+                  fabric_width: defaultWidth,
                   metadata: {
                     parent_product_id: parentItem.id,
                     twc_material: material.material,
                     twc_colours: material.colours, // Store full color data for reference
                     twc_price_groups: priceGroups,
+                    default_width_applied: defaultWidth ? true : false,
                     imported_at: new Date().toISOString(),
                   },
                   cost_price: 0,
