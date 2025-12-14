@@ -707,6 +707,11 @@ export const QuotationTab = ({
         variant="card"
         showBreakdown={true}
         items={sourceTreatments}
+        discount={currentQuote?.discount_type ? {
+          type: currentQuote.discount_type as 'percentage' | 'fixed',
+          value: currentQuote.discount_value || 0,
+          amount: currentQuote.discount_amount || 0
+        } : undefined}
       />
 
       {/* Quotation Items Modal */}

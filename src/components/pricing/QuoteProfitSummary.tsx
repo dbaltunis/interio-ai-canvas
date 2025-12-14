@@ -1,13 +1,13 @@
 /**
  * Quote Profit Summary Component
  * Displays cost/selling/profit breakdown for authorized users
- * Collapsible with per-treatment breakdown
+ * Collapsible with per-treatment breakdown, markup %, and discount impact
  */
 
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { TrendingUp, TrendingDown, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import { TrendingUp, TrendingDown, Eye, ChevronDown, ChevronUp, AlertTriangle, Percent } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { useMeasurementUnits } from '@/hooks/useMeasurementUnits';
@@ -25,6 +25,12 @@ interface QuoteItem {
   gross_margin?: number;
 }
 
+interface DiscountInfo {
+  type: 'percentage' | 'fixed';
+  value: number;
+  amount: number;
+}
+
 interface QuoteProfitSummaryProps {
   costTotal: number;
   sellingTotal: number;
@@ -32,7 +38,14 @@ interface QuoteProfitSummaryProps {
   variant?: 'card' | 'inline' | 'compact';
   showBreakdown?: boolean;
   items?: QuoteItem[];
+  discount?: DiscountInfo;
 }
+
+// Calculate Markup %: (Sell - Cost) / Cost × 100
+const calculateMarkup = (cost: number, sell: number): number => {
+  if (cost <= 0) return sell > 0 ? 100 : 0;
+  return ((sell - cost) / cost) * 100;
+};
 
 export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
   costTotal,
@@ -40,7 +53,8 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
   className,
   variant = 'card',
   showBreakdown = true,
-  items = []
+  items = [],
+  discount
 }) => {
   const { data: roleData, isLoading: roleLoading } = useUserRole();
   const { units } = useMeasurementUnits();
@@ -54,23 +68,42 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
     return null;
   }
 
+  // Calculate values before and after discount
+  const hasDiscount = discount && discount.amount > 0;
+  const originalSellingTotal = hasDiscount ? sellingTotal + discount.amount : sellingTotal;
+  
   const profit = sellingTotal - costTotal;
+  const originalProfit = originalSellingTotal - costTotal;
+  const profitReduction = hasDiscount ? originalProfit - profit : 0;
+  
   const marginPercentage = calculateGrossMargin(costTotal, sellingTotal);
+  const originalMarginPercentage = hasDiscount ? calculateGrossMargin(costTotal, originalSellingTotal) : marginPercentage;
+  
+  const markupPercentage = calculateMarkup(costTotal, sellingTotal);
+  const originalMarkupPercentage = hasDiscount ? calculateMarkup(costTotal, originalSellingTotal) : markupPercentage;
+  
   const profitStatus = getProfitStatus(marginPercentage);
+  const originalProfitStatus = getProfitStatus(originalMarginPercentage);
 
   if (variant === 'compact') {
     return (
       <div className={cn("flex items-center gap-2 text-sm", className)}>
-        <span className="text-muted-foreground">GP:</span>
+        <span className="text-muted-foreground">↗{markupPercentage.toFixed(0)}% MU</span>
         <Badge 
           variant="outline" 
           className={cn("font-mono", profitStatus.color)}
         >
-          {marginPercentage.toFixed(1)}%
+          {marginPercentage.toFixed(1)}% GP
         </Badge>
         <span className={cn("font-medium", profitStatus.color)}>
           {formatCurrency(profit, currency)}
         </span>
+        {hasDiscount && (
+          <Badge variant="secondary" className="text-xs">
+            <AlertTriangle className="h-3 w-3 mr-1" />
+            Discounted
+          </Badge>
+        )}
       </div>
     );
   }
@@ -90,6 +123,7 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">↗{markupPercentage.toFixed(0)}%</span>
           <Badge 
             variant="secondary" 
             className={cn("font-mono", profitStatus.color)}
@@ -119,12 +153,21 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Eye className="h-4 w-4" />
               <span className="font-medium">Profit Summary</span>
-              <Badge variant="outline" className="text-xs">
-                Internal
-              </Badge>
+              {hasDiscount && (
+                <Badge variant="secondary" className="text-xs bg-amber-500/20 text-amber-700 dark:text-amber-400">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Discount Applied
+                </Badge>
+              )}
             </div>
             
             <div className="flex items-center gap-3">
+              {/* Markup % */}
+              <span className="text-xs text-muted-foreground font-mono">
+                ↗{markupPercentage.toFixed(0)}% MU
+              </span>
+              
+              {/* GP Badge */}
               <Badge 
                 variant="secondary" 
                 className={cn("font-mono", profitStatus.color)}
@@ -136,9 +179,12 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
                 )}
                 {marginPercentage.toFixed(1)}% GP
               </Badge>
+              
+              {/* Profit Amount */}
               <span className={cn("font-semibold text-sm", profitStatus.color)}>
                 {formatCurrency(profit, currency)}
               </span>
+              
               {isExpanded ? (
                 <ChevronUp className="h-4 w-4 text-muted-foreground" />
               ) : (
@@ -153,6 +199,35 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
           <div className="px-3 pb-3 space-y-3">
             <Separator />
             
+            {/* Discount Impact Warning */}
+            {hasDiscount && (
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-md p-2.5">
+                <div className="flex items-start gap-2">
+                  <Percent className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5" />
+                  <div className="flex-1 text-xs">
+                    <p className="font-medium text-amber-700 dark:text-amber-400">
+                      Discount Impact ({discount.type === 'percentage' ? `${discount.value}%` : formatCurrency(discount.value, currency)})
+                    </p>
+                    <div className="mt-1 grid grid-cols-2 gap-2 text-muted-foreground">
+                      <div>
+                        <span className="line-through">{originalMarginPercentage.toFixed(1)}% GP</span>
+                        <span className="mx-1">→</span>
+                        <span className={profitStatus.color}>{marginPercentage.toFixed(1)}% GP</span>
+                      </div>
+                      <div>
+                        <span className="line-through">{formatCurrency(originalProfit, currency)}</span>
+                        <span className="mx-1">→</span>
+                        <span className={profitStatus.color}>{formatCurrency(profit, currency)}</span>
+                      </div>
+                    </div>
+                    <p className="mt-1 text-amber-700 dark:text-amber-400">
+                      Profit reduced by {formatCurrency(profitReduction, currency)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Per-Treatment Breakdown Table */}
             {items.length > 0 && (
               <div className="overflow-x-auto">
@@ -162,6 +237,7 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
                       <th className="text-left py-1.5 font-medium">Treatment</th>
                       <th className="text-right py-1.5 font-medium">Cost</th>
                       <th className="text-right py-1.5 font-medium">Sell</th>
+                      <th className="text-right py-1.5 font-medium">Markup%</th>
                       <th className="text-right py-1.5 font-medium">GP%</th>
                     </tr>
                   </thead>
@@ -170,11 +246,12 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
                       const itemCost = item.cost_price || item.cost_total || 0;
                       const itemSell = item.unit_price || item.total || 0;
                       const itemMargin = item.gross_margin ?? calculateGrossMargin(itemCost, itemSell);
+                      const itemMarkup = calculateMarkup(itemCost, itemSell);
                       const itemStatus = getProfitStatus(itemMargin);
                       
                       return (
                         <tr key={item.id} className="text-xs">
-                          <td className="py-1.5 pr-2 truncate max-w-[150px]" title={item.name}>
+                          <td className="py-1.5 pr-2 truncate max-w-[140px]" title={item.name}>
                             {item.name}
                           </td>
                           <td className="text-right py-1.5 font-mono text-muted-foreground">
@@ -182,6 +259,9 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
                           </td>
                           <td className="text-right py-1.5 font-mono">
                             {formatCurrency(itemSell, currency)}
+                          </td>
+                          <td className="text-right py-1.5 font-mono text-muted-foreground">
+                            {itemMarkup.toFixed(0)}%
                           </td>
                           <td className={cn("text-right py-1.5 font-mono font-medium", itemStatus.color)}>
                             {itemMargin.toFixed(1)}%
@@ -199,6 +279,9 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
                       <td className="text-right py-2 font-mono">
                         {formatCurrency(sellingTotal, currency)}
                       </td>
+                      <td className="text-right py-2 font-mono text-muted-foreground">
+                        {markupPercentage.toFixed(0)}%
+                      </td>
                       <td className={cn("text-right py-2 font-mono", profitStatus.color)}>
                         {marginPercentage.toFixed(1)}%
                       </td>
@@ -210,7 +293,7 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
 
             {/* Summary if no items provided */}
             {items.length === 0 && showBreakdown && (
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground text-xs">Total Cost</p>
                   <p className="font-semibold">{formatCurrency(costTotal, currency)}</p>
@@ -218,6 +301,10 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
                 <div>
                   <p className="text-muted-foreground text-xs">Total Selling</p>
                   <p className="font-semibold">{formatCurrency(sellingTotal, currency)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Markup</p>
+                  <p className="font-semibold">{markupPercentage.toFixed(0)}%</p>
                 </div>
               </div>
             )}
