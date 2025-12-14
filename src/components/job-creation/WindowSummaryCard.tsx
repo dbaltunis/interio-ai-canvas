@@ -86,14 +86,25 @@ export function WindowSummaryCard({
 
   // Unit helpers - CRITICAL: measurements from windows_summary are in MM, not CM!
   const { units, convertToUserUnit, getLengthUnitLabel } = useMeasurementUnits();
+  
+  /**
+   * Format measurement for display - returns "Not set" when no valid measurement
+   * CRITICAL: Only show actual values, never placeholder/static numbers
+   */
   const fmtMeasurement = (mm?: number) => {
-    if (mm === undefined || mm === null) return undefined;
+    // Return "Not set" for undefined, null, zero, or invalid values
+    if (mm === undefined || mm === null) return null;
     const numValue = Number(mm);
-    if (isNaN(numValue)) return undefined;
+    if (isNaN(numValue) || numValue <= 0) return null;
     // Convert from MM to user's preferred unit
     const converted = convertToUserUnit(numValue, 'mm');
     const unitLabel = getLengthUnitLabel();
     return `${converted.toFixed(2)} ${unitLabel}`;
+  };
+  
+  // Helper to display measurement or "Not set" placeholder
+  const displayMeasurement = (value: string | null) => {
+    return value || <span className="text-muted-foreground italic">Not set</span>;
   };
 
   // Simplified logging - reduce console noise
@@ -499,23 +510,23 @@ export function WindowSummaryCard({
                         <div className="space-y-0.5">
                           <div className="text-xs text-muted-foreground">Width</div>
                           <div className="font-semibold text-sm">
-                            {fmtMeasurement(
+                            {displayMeasurement(fmtMeasurement(
                               Number(summary.measurements_details?.rail_width) || 
                               Number(surface.rail_width) || 
                               Number(surface.measurement_a) || 
-                              Number(surface.width) || 0
-                            ) || '—'}
+                              Number(surface.width)
+                            ))}
                           </div>
                         </div>
                         <div className="space-y-0.5">
                           <div className="text-xs text-muted-foreground">Height</div>
                           <div className="font-semibold text-sm">
-                            {fmtMeasurement(
+                            {displayMeasurement(fmtMeasurement(
                               Number(summary.measurements_details?.drop) || 
                               Number(surface.drop) || 
                               Number(surface.measurement_b) || 
-                              Number(surface.height) || 0
-                            ) || '—'}
+                              Number(surface.height)
+                            ))}
                           </div>
                         </div>
                       </>
@@ -527,25 +538,25 @@ export function WindowSummaryCard({
                         <div className="space-y-0.5">
                           <div className="text-xs text-muted-foreground">Width</div>
                           <div className="font-semibold text-sm">
-                            {fmtMeasurement(
+                            {displayMeasurement(fmtMeasurement(
                               Number(summary.measurements_details?.rail_width) || 
                               Number(summary.measurements_details?.width) || 
                               Number(summary.measurements_details?.measurement_a) || 
                               Number(surface.measurement_a) || 
-                              Number(surface.width) || 0
-                            ) || '—'}
+                              Number(surface.width)
+                            ))}
                           </div>
                         </div>
                         <div className="space-y-0.5">
                           <div className="text-xs text-muted-foreground">Height</div>
                           <div className="font-semibold text-sm">
-                            {fmtMeasurement(
+                            {displayMeasurement(fmtMeasurement(
                               Number(summary.measurements_details?.drop) || 
                               Number(summary.measurements_details?.height) || 
                               Number(summary.measurements_details?.measurement_b) || 
                               Number(surface.measurement_b) || 
-                              Number(surface.height) || 0
-                            ) || '—'}
+                              Number(surface.height)
+                            ))}
                           </div>
                         </div>
                       </>
@@ -557,23 +568,23 @@ export function WindowSummaryCard({
                         <div className="space-y-0.5">
                           <div className="text-xs text-muted-foreground">Wall Width</div>
                           <div className="font-semibold text-sm">
-                            {fmtMeasurement(
+                            {displayMeasurement(fmtMeasurement(
                               Number(summary.measurements_details?.wall_width) || 
                               Number(summary.measurements_details?.width) || 
                               Number(surface.measurement_a) || 
-                              Number(surface.width) || 0
-                            ) || '—'}
+                              Number(surface.width)
+                            ))}
                           </div>
                         </div>
                         <div className="space-y-0.5">
                           <div className="text-xs text-muted-foreground">Wall Height</div>
                           <div className="font-semibold text-sm">
-                            {fmtMeasurement(
+                            {displayMeasurement(fmtMeasurement(
                               Number(summary.measurements_details?.wall_height) || 
                               Number(summary.measurements_details?.height) || 
                               Number(surface.measurement_b) || 
-                              Number(surface.height) || 0
-                            ) || '—'}
+                              Number(surface.height)
+                            ))}
                           </div>
                         </div>
                       </>
@@ -585,23 +596,23 @@ export function WindowSummaryCard({
                         <div className="space-y-0.5">
                           <div className="text-xs text-muted-foreground">Width</div>
                           <div className="font-semibold text-sm">
-                            {fmtMeasurement(
+                            {displayMeasurement(fmtMeasurement(
                               Number(summary.measurements_details?.rail_width) || 
                               Number(summary.measurements_details?.width) || 
                               Number(surface.measurement_a) || 
-                              Number(surface.width) || 0
-                            ) || '—'}
+                              Number(surface.width)
+                            ))}
                           </div>
                         </div>
                         <div className="space-y-0.5">
                           <div className="text-xs text-muted-foreground">Height</div>
                           <div className="font-semibold text-sm">
-                            {fmtMeasurement(
+                            {displayMeasurement(fmtMeasurement(
                               Number(summary.measurements_details?.drop) || 
                               Number(summary.measurements_details?.height) || 
                               Number(surface.measurement_b) || 
-                              Number(surface.height) || 0
-                            ) || '—'}
+                              Number(surface.height)
+                            ))}
                           </div>
                         </div>
                       </>
