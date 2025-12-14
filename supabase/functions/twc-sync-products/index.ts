@@ -558,30 +558,31 @@ const handler = async (req: Request): Promise<Response> => {
               // Determine default fabric width based on parent product type
               const getDefaultFabricWidth = (desc: string): number | null => {
                 const d = desc.toLowerCase();
-                // Roller/Roman/Panel/Curtain fabrics are typically 300cm wide
-                if (d.includes('roller') || d.includes('roman') || d.includes('panel') || d.includes('curtain')) {
+                // Roller/Roman/Panel/Curtain/Cellular fabrics are typically 300cm wide
+                if (d.includes('roller') || d.includes('roman') || d.includes('panel') || 
+                    d.includes('curtain') || d.includes('cellular') || d.includes('honeycomb')) {
                   return 300;
                 }
                 // Curtain sheers are often 330cm
                 if (d.includes('sheer')) {
                   return 330;
                 }
-                // Cellular materials also 300cm
-                if (d.includes('cellular') || d.includes('honeycomb')) {
-                  return 300;
-                }
                 // Hard materials (venetian/vertical/shutter) don't use fabric width
                 return null;
               };
               
-              // Generate opacity/type tags from material name
+              // Generate opacity/type tags from material name - enhanced detection
               const generateTypeTags = (name: string): string[] => {
                 const n = name.toLowerCase();
                 const typeTags: string[] = [];
-                if (n.includes('blockout') || n.includes('block out')) typeTags.push('blockout');
+                if (n.includes('blockout') || n.includes('block out') || n.includes('blackout')) typeTags.push('blockout');
                 if (n.includes('sheer')) typeTags.push('sheer');
-                if (n.includes('sunscreen')) typeTags.push('sunscreen');
-                if (n.includes('light filter') || n.includes('translucent')) typeTags.push('light_filtering');
+                if (n.includes('sunscreen') || n.includes('sun screen')) typeTags.push('sunscreen');
+                // Detect standalone 'screen' for sunscreen fabrics
+                if (n.includes('screen') && !typeTags.includes('sunscreen')) typeTags.push('sunscreen');
+                if (n.includes('light filter') || n.includes('translucent') || n.includes('light filtering')) typeTags.push('light_filtering');
+                if (n.includes('dim out') || n.includes('dimout') || n.includes('dim-out')) typeTags.push('dimout');
+                if (n.includes('thermal') || n.includes('insulating') || n.includes('energy')) typeTags.push('thermal');
                 return typeTags;
               };
               

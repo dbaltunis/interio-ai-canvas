@@ -9,6 +9,8 @@ const QUICK_FILTERS = [
   { key: 'sheer', label: 'Sheer', color: 'bg-blue-100 text-blue-800' },
   { key: 'sunscreen', label: 'Sunscreen', color: 'bg-amber-100 text-amber-800' },
   { key: 'light_filtering', label: 'Light Filter', color: 'bg-yellow-100 text-yellow-800' },
+  { key: 'dimout', label: 'Dim Out', color: 'bg-indigo-100 text-indigo-800' },
+  { key: 'thermal', label: 'Thermal', color: 'bg-orange-100 text-orange-800' },
   { key: 'wide_width', label: 'Wide (300cm+)', color: 'bg-green-100 text-green-800' },
 ];
 

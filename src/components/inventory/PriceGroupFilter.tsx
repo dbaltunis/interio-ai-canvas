@@ -36,7 +36,7 @@ export const PriceGroupFilter = ({
             className="h-7 text-xs whitespace-nowrap"
             onClick={() => onGroupChange(null)}
           >
-            All ({totalCount})
+            All Materials ({totalCount})
           </Button>
           {priceGroups.map(({ group, count }) => (
             <Button
