@@ -161,12 +161,7 @@ export const TWCImportedProducts = () => {
                   </div>
 
                   <div className="flex items-center gap-1">
-                    {hasTemplate ? (
-                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => handleViewTemplate(product)}>
-                        <ExternalLink className="h-3.5 w-3.5 mr-1" />
-                        View
-                      </Button>
-                    ) : (
+                    {!hasTemplate && (
                       <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleCreateTemplate(product)}>
                         Create Template
                       </Button>
