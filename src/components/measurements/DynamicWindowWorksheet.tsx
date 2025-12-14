@@ -426,12 +426,46 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               };
             }
           } else {
-            // For non-wallpaper, use saved details
-            restoredItems.fabric = {
-              ...fabricDetails,
-              id: fabricId,
-              fabric_id: fabricId
-            };
+            // CRITICAL FIX: For blinds/shutters, ALSO fetch fresh from inventory to get pricing_grid_data
+            // The saved fabric_details snapshot may not include the full pricing grid needed for calculations
+            const isBlindOrShutter = detectedCategory.includes('blind') || 
+                                     detectedCategory.includes('shutter') || 
+                                     detectedCategory.includes('shade') ||
+                                     detectedCategory.includes('awning');
+            
+            if (isBlindOrShutter) {
+              try {
+                const { data: freshMaterial } = await supabase
+                  .from('enhanced_inventory_items')
+                  .select('*')
+                  .eq('id', fabricId)
+                  .single();
+                
+                if (freshMaterial) {
+                  restoredItems.fabric = freshMaterial;
+                  restoredItems.material = freshMaterial; // Also set as material for blind context
+                  console.log('✅ Restored fresh material for blind/shutter with pricing grid:', {
+                    id: freshMaterial.id,
+                    name: freshMaterial.name,
+                    has_pricing_grid: !!(freshMaterial as any).pricing_grid_data,
+                    resolved_grid_name: (freshMaterial as any).resolved_grid_name
+                  });
+                } else {
+                  // Fallback to saved details if fetch fails
+                  restoredItems.fabric = { ...fabricDetails, id: fabricId, fabric_id: fabricId };
+                }
+              } catch (error) {
+                console.error('Error fetching fresh material for blind:', error);
+                restoredItems.fabric = { ...fabricDetails, id: fabricId, fabric_id: fabricId };
+              }
+            } else {
+              // For curtains/romans, use saved details (they use different pricing model)
+              restoredItems.fabric = {
+                ...fabricDetails,
+                id: fabricId,
+                fabric_id: fabricId
+              };
+            }
           }
         } else if (existingWindowSummary.selected_fabric_id && fabricDetails) {
           restoredItems.fabric = {
@@ -1601,15 +1635,19 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                 if (liveOptions.length > 0) {
                   return liveOptions.map((opt: any, idx: number) => {
                     // UNIVERSAL: Format option name and extract description
-                    let optionName = opt.optionKey || opt.name || 'Option';
-                    let optionValue = opt.value || opt.label || '-';
+                    // PRIORITY: Use pre-extracted value from blindCostCalculator if available
+                    let optionName = opt.name || opt.optionKey || 'Option';
+                    let optionValue = opt.value || opt.label || '';
                     
-                    // Extract from "name: value" format if present
-                    if (optionName.includes(':')) {
+                    // Extract from "name: value" format if value not already extracted
+                    if (!optionValue && optionName.includes(':')) {
                       const colonIndex = optionName.indexOf(':');
-                      optionValue = optionName.substring(colonIndex + 1).trim() || optionValue;
+                      optionValue = optionName.substring(colonIndex + 1).trim();
                       optionName = optionName.substring(0, colonIndex).trim();
                     }
+                    
+                    // Final fallback if still no value
+                    if (!optionValue) optionValue = '-';
                     
                     // Format snake_case to Title Case
                     optionName = optionName
