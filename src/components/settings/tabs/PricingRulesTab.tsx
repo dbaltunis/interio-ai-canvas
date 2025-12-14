@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calculator, Percent, Shield, Receipt } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calculator, Percent, Shield, Receipt, Grid3X3 } from "lucide-react";
 import { PricingRulesSection } from "../pricing/PricingRulesSection";
+import { PricingGridManager } from "../pricing-grids/PricingGridManager";
 import { useMarkupSettings, useUpdateMarkupSettings, MarkupSettings } from "@/hooks/useMarkupSettings";
 import { useBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -126,6 +128,25 @@ export const PricingRulesTab = () => {
         settingsType="pricing and markup" 
         isInheriting={isInheritingSettings}
       />
+      
+      {/* Tabs for Pricing Grids vs Markup/Tax */}
+      <Tabs defaultValue="grids" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="grids" className="flex items-center gap-2">
+            <Grid3X3 className="h-4 w-4" />
+            Pricing Grids
+          </TabsTrigger>
+          <TabsTrigger value="markup" className="flex items-center gap-2">
+            <Calculator className="h-4 w-4" />
+            Markup & Tax
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="grids">
+          <PricingGridManager />
+        </TabsContent>
+
+        <TabsContent value="markup" className="space-y-6">
       
       {/* Tax Settings */}
       <Card>
@@ -389,6 +410,8 @@ export const PricingRulesTab = () => {
           </Button>
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
