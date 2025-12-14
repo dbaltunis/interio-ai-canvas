@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Settings2, Percent, Save, RotateCcw, Eye, EyeOff } from 'lucide-react';
+import { Settings2, Percent, Save, RotateCcw, Eye, EyeOff, Shield } from 'lucide-react';
 import { useMarkupSettings, useUpdateMarkupSettings, MarkupSettings, defaultMarkupSettings } from '@/hooks/useMarkupSettings';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -109,8 +109,25 @@ export const GlobalMarkupSettings: React.FC = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Default Markups */}
-        <div className="grid gap-4 md:grid-cols-3">
+        {/* Markup Hierarchy Info */}
+        <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+          <p className="text-sm font-medium">Markup Priority (highest to lowest):</p>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <Badge variant="default" className="bg-primary">1. Pricing Grid</Badge>
+            <span className="text-muted-foreground">→</span>
+            <Badge variant="secondary">2. Category</Badge>
+            <span className="text-muted-foreground">→</span>
+            <Badge variant="outline">3. Default</Badge>
+            <span className="text-muted-foreground">→</span>
+            <Badge variant="outline" className="border-destructive text-destructive">4. Minimum (floor)</Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Grid markup on a pricing grid overrides everything. If no grid markup, category applies. If no category, default applies. Minimum is always enforced.
+          </p>
+        </div>
+
+        {/* Default & Minimum Markups */}
+        <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="default-markup" className="flex items-center gap-2">
               <Percent className="h-3.5 w-3.5" />
@@ -132,98 +149,16 @@ export const GlobalMarkupSettings: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Applied when no category markup is set
+              Applied when no category or grid markup is set
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="material-markup">Material Markup</Label>
+            <Label htmlFor="min-markup" className="flex items-center gap-2">
+              <Shield className="h-3.5 w-3.5" />
+              Minimum Margin (Floor)
+            </Label>
             <div className="relative">
-              <Input
-                id="material-markup"
-                type="number"
-                min="0"
-                max="500"
-                step="0.5"
-                value={localSettings.material_markup_percentage}
-                onChange={(e) => handleChange('material_markup_percentage', parseFloat(e.target.value) || 0)}
-                className="pr-8"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                %
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Default for physical products
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="labor-markup">Labor Markup</Label>
-            <div className="relative">
-              <Input
-                id="labor-markup"
-                type="number"
-                min="0"
-                max="500"
-                step="0.5"
-                value={localSettings.labor_markup_percentage}
-                onChange={(e) => handleChange('labor_markup_percentage', parseFloat(e.target.value) || 0)}
-                className="pr-8"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                %
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Default for services/installation
-            </p>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Category Markups */}
-        <div className="space-y-4">
-          <Label className="text-base font-medium">Category-Specific Markups</Label>
-          <p className="text-sm text-muted-foreground">
-            Override the default markup for specific product categories
-          </p>
-          
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {categories.map(({ key, label }) => (
-              <div key={key} className="flex items-center gap-2">
-                <Label htmlFor={`cat-${key}`} className="min-w-24 text-sm">
-                  {label}
-                </Label>
-                <div className="relative flex-1">
-                  <Input
-                    id={`cat-${key}`}
-                    type="number"
-                    min="0"
-                    max="500"
-                    step="0.5"
-                    value={localSettings.category_markups[key] || 0}
-                    onChange={(e) => handleCategoryChange(key, parseFloat(e.target.value) || 0)}
-                    className="pr-8 h-9"
-                    placeholder="0"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
-                    %
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Minimum Markup */}
-        <div className="space-y-2">
-          <Label htmlFor="min-markup">Minimum Markup</Label>
-          <div className="flex items-center gap-4">
-            <div className="relative w-32">
               <Input
                 id="min-markup"
                 type="number"
@@ -238,9 +173,63 @@ export const GlobalMarkupSettings: React.FC = () => {
                 %
               </span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Enforced floor - no quote item will have markup below this percentage
+            <p className="text-xs text-muted-foreground">
+              No quote item will ever have markup below this
             </p>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Category Markups */}
+        <div className="space-y-4">
+          <div>
+            <Label className="text-base font-medium">Category Markups</Label>
+            <p className="text-sm text-muted-foreground">
+              Override the default markup for specific product categories. Set to 0 to use the default.
+            </p>
+          </div>
+          
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {categories.map(({ key, label }) => {
+              const categoryValue = localSettings.category_markups[key] || 0;
+              const effectiveMarkup = categoryValue > 0 ? categoryValue : localSettings.default_markup_percentage;
+              const usesDefault = categoryValue === 0;
+              
+              return (
+                <div key={key} className="space-y-1.5 p-3 rounded-lg border bg-card">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor={`cat-${key}`} className="text-sm font-medium">
+                      {label}
+                    </Label>
+                    {usesDefault ? (
+                      <Badge variant="outline" className="text-xs">Uses Default</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-xs">Custom</Badge>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id={`cat-${key}`}
+                      type="number"
+                      min="0"
+                      max="500"
+                      step="0.5"
+                      value={categoryValue}
+                      onChange={(e) => handleCategoryChange(key, parseFloat(e.target.value) || 0)}
+                      className="pr-8 h-9"
+                      placeholder="0"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
+                      %
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Effective: <span className="font-medium">{effectiveMarkup}%</span>
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
 
