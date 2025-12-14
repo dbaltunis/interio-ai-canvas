@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Filter, Grid, List, Package, Home, Minus, Palette, Wallpaper, Lock, QrCode, Upload } from "lucide-react";
+import { Search, Plus, Filter, Grid, List, Package, Home, Minus, Palette, Wallpaper, Lock, QrCode, Upload, Wrench, CircleDot } from "lucide-react";
 import { QRCodeScanner } from "./QRCodeScanner";
 import { QRCodeQuickActions } from "./QRCodeQuickActions";
 import { EditInventoryDialog } from "./EditInventoryDialog";
@@ -16,6 +16,8 @@ import { WallcoveringInventoryView } from "./WallcoveringInventoryView";
 import { HeadingInventoryView } from "./HeadingInventoryView";
 import { TrimmingsInventoryView } from "./TrimmingsInventoryView";
 import { RemnantsInventoryView } from "./RemnantsInventoryView";
+import { ServicesInventoryView } from "./ServicesInventoryView";
+import { AccessoriesInventoryView } from "./AccessoriesInventoryView";
 import { InventoryAnalytics } from "./InventoryAnalytics";
 import { AddInventoryDialog } from "./AddInventoryDialog";
 import { InventoryDemoData } from "./InventoryDemoData";
@@ -272,6 +274,14 @@ export const ModernInventoryDashboard = () => {
                 <Minus className="h-4 w-4" />
                 Hardware
               </TabsTrigger>
+              <TabsTrigger value="accessories" className="flex items-center gap-2">
+                <CircleDot className="h-4 w-4" />
+                Accessories
+              </TabsTrigger>
+              <TabsTrigger value="services" className="flex items-center gap-2">
+                <Wrench className="h-4 w-4" />
+                Services
+              </TabsTrigger>
               <TabsTrigger value="headings" className="flex items-center gap-2">
                 <Minus className="h-4 w-4" />
                 Headings
@@ -446,6 +456,26 @@ export const ModernInventoryDashboard = () => {
 
         <TabsContent value="hardware" className="space-y-6">
           <HardwareInventoryView 
+            searchQuery={searchQuery} 
+            viewMode={viewMode}
+            selectedVendor={selectedVendor}
+            selectedCollection={selectedCollection}
+            selectedStorageLocation={selectedStorageLocation}
+          />
+        </TabsContent>
+
+        <TabsContent value="accessories" className="space-y-6">
+          <AccessoriesInventoryView 
+            searchQuery={searchQuery} 
+            viewMode={viewMode}
+            selectedVendor={selectedVendor}
+            selectedCollection={selectedCollection}
+            selectedStorageLocation={selectedStorageLocation}
+          />
+        </TabsContent>
+
+        <TabsContent value="services" className="space-y-6">
+          <ServicesInventoryView 
             searchQuery={searchQuery} 
             viewMode={viewMode}
             selectedVendor={selectedVendor}
