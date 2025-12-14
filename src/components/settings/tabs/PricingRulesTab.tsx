@@ -58,8 +58,6 @@ export const PricingRulesTab = () => {
     
     await updateMarkupSettings.mutateAsync({
       default_markup_percentage: formData.default_markup_percentage,
-      labor_markup_percentage: formData.labor_markup_percentage,
-      material_markup_percentage: formData.material_markup_percentage,
       minimum_markup_percentage: formData.minimum_markup_percentage,
       dynamic_pricing_enabled: formData.dynamic_pricing_enabled,
       quantity_discounts_enabled: formData.quantity_discounts_enabled,
@@ -254,10 +252,16 @@ export const PricingRulesTab = () => {
             <Calculator className="h-5 w-5 text-brand-primary" />
             Global Pricing Settings
           </CardTitle>
-          <CardDescription>Base settings that apply to all calculations</CardDescription>
+          <CardDescription>Base settings that apply when no grid or category markup is set</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-4 gap-4">
+          {/* Hierarchy Info */}
+          <div className="rounded-lg border bg-muted/30 p-3 text-xs">
+            <span className="font-medium">Priority:</span>{' '}
+            <span className="text-primary font-medium">Grid Markup</span> → Category → Default → Minimum (floor)
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="defaultMarkup">Default Markup (%)</Label>
               <Input 
@@ -267,29 +271,10 @@ export const PricingRulesTab = () => {
                 value={formData.default_markup_percentage}
                 onChange={(e) => setFormData(prev => prev ? {...prev, default_markup_percentage: Number(e.target.value)} : null)}
               />
+              <p className="text-xs text-muted-foreground mt-1">Applied when no category markup is set</p>
             </div>
             <div>
-              <Label htmlFor="laborMarkup">Labor Markup (%)</Label>
-              <Input 
-                id="laborMarkup" 
-                type="number" 
-                step="0.1" 
-                value={formData.labor_markup_percentage}
-                onChange={(e) => setFormData(prev => prev ? {...prev, labor_markup_percentage: Number(e.target.value)} : null)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="materialMarkup">Material Markup (%)</Label>
-              <Input 
-                id="materialMarkup" 
-                type="number" 
-                step="0.1" 
-                value={formData.material_markup_percentage}
-                onChange={(e) => setFormData(prev => prev ? {...prev, material_markup_percentage: Number(e.target.value)} : null)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="minimumMargin">Minimum Margin (%)</Label>
+              <Label htmlFor="minimumMargin">Minimum Margin (Floor) (%)</Label>
               <Input 
                 id="minimumMargin" 
                 type="number" 
@@ -297,6 +282,7 @@ export const PricingRulesTab = () => {
                 value={formData.minimum_markup_percentage}
                 onChange={(e) => setFormData(prev => prev ? {...prev, minimum_markup_percentage: Number(e.target.value)} : null)}
               />
+              <p className="text-xs text-muted-foreground mt-1">No item will ever have markup below this</p>
             </div>
           </div>
 
@@ -320,96 +306,45 @@ export const PricingRulesTab = () => {
             <Percent className="h-5 w-5 text-brand-primary" />
             Category-Specific Markup
           </CardTitle>
-          <CardDescription>Set different markup rates for product categories</CardDescription>
+          <CardDescription>Override default markup for specific categories. Set to 0 to use the default.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="curtainMarkup">Curtains & Drapes (%)</Label>
-              <Input 
-                id="curtainMarkup" 
-                type="number" 
-                step="0.1" 
-                value={formData.category_markups.curtains}
-                onChange={(e) => setFormData(prev => prev ? {
-                  ...prev, 
-                  category_markups: {...prev.category_markups, curtains: Number(e.target.value)}
-                } : null)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="blindMarkup">Blinds (%)</Label>
-              <Input 
-                id="blindMarkup" 
-                type="number" 
-                step="0.1" 
-                value={formData.category_markups.blinds}
-                onChange={(e) => setFormData(prev => prev ? {
-                  ...prev, 
-                  category_markups: {...prev.category_markups, blinds: Number(e.target.value)}
-                } : null)}
-              />
-            </div>
+            {/* Show effective markup indicators */}
+            {[
+              { id: 'curtainMarkup', label: 'Curtains & Drapes', key: 'curtains' },
+              { id: 'blindMarkup', label: 'Blinds', key: 'blinds' },
+              { id: 'shutterMarkup', label: 'Shutters', key: 'shutters' },
+              { id: 'hardwareMarkup', label: 'Hardware', key: 'hardware' },
+              { id: 'fabricMarkup', label: 'Fabrics', key: 'fabric' },
+              { id: 'installationMarkup', label: 'Installation/Labor', key: 'installation' }
+            ].map(({ id, label, key }) => {
+              const value = formData.category_markups[key] || 0;
+              const effective = value > 0 ? value : formData.default_markup_percentage;
+              const usesDefault = value === 0;
+              return (
+                <div key={id} className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor={id}>{label} (%)</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {usesDefault ? `→ Uses Default (${effective}%)` : `→ ${effective}%`}
+                    </span>
+                  </div>
+                  <Input 
+                    id={id} 
+                    type="number" 
+                    step="0.1" 
+                    value={value}
+                    placeholder="0"
+                    onChange={(e) => setFormData(prev => prev ? {
+                      ...prev, 
+                      category_markups: {...prev.category_markups, [key]: Number(e.target.value)}
+                    } : null)}
+                  />
+                </div>
+              );
+            })}
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="shutterMarkup">Shutters (%)</Label>
-              <Input 
-                id="shutterMarkup" 
-                type="number" 
-                step="0.1" 
-                value={formData.category_markups.shutters}
-                onChange={(e) => setFormData(prev => prev ? {
-                  ...prev, 
-                  category_markups: {...prev.category_markups, shutters: Number(e.target.value)}
-                } : null)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="hardwareMarkup">Hardware (%)</Label>
-              <Input 
-                id="hardwareMarkup" 
-                type="number" 
-                step="0.1" 
-                value={formData.category_markups.hardware}
-                onChange={(e) => setFormData(prev => prev ? {
-                  ...prev, 
-                  category_markups: {...prev.category_markups, hardware: Number(e.target.value)}
-                } : null)}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="fabricMarkup">Fabrics (%)</Label>
-              <Input 
-                id="fabricMarkup" 
-                type="number" 
-                step="0.1" 
-                value={formData.category_markups.fabric}
-                onChange={(e) => setFormData(prev => prev ? {
-                  ...prev, 
-                  category_markups: {...prev.category_markups, fabric: Number(e.target.value)}
-                } : null)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="installationMarkup">Installation (%)</Label>
-              <Input 
-                id="installationMarkup" 
-                type="number" 
-                step="0.1" 
-                value={formData.category_markups.installation}
-                onChange={(e) => setFormData(prev => prev ? {
-                  ...prev, 
-                  category_markups: {...prev.category_markups, installation: Number(e.target.value)}
-                } : null)}
-              />
-            </div>
-          </div>
-
           <Button 
             className="bg-brand-primary hover:bg-brand-accent"
             onClick={handleSaveCategorySettings}
