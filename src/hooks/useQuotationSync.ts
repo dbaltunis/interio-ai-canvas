@@ -443,11 +443,10 @@ export const useQuotationSync = ({
             });
           }
 
-          // DETAILED BREAKDOWN - Options (CRITICAL: Display each option separately)
-          if (summary.options_cost && summary.options_cost > 0) {
-            const selectedOptions = summary.selected_options || [];
-            
-            if (Array.isArray(selectedOptions) && selectedOptions.length > 0) {
+          // DETAILED BREAKDOWN - Options (CRITICAL: Display ALL selected options, even €0 ones)
+          const selectedOptions = summary.selected_options || [];
+          
+          if (Array.isArray(selectedOptions) && selectedOptions.length > 0) {
               selectedOptions.forEach((opt: any, index: number) => {
                 // Extract option key and value from name
                 let optionName = '';
@@ -503,7 +502,6 @@ export const useQuotationSync = ({
                   isChild: true
               });
             });
-            }
           }
           } // END else block for building children from scratch
 
