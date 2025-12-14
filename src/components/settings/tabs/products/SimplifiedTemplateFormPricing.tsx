@@ -2,15 +2,17 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { TemplateGridManager } from "./TemplateGridManager";
-import { TemplateGridSelector } from "./TemplateGridSelector";
+import { SimplifiedPricingGridStatus } from "./SimplifiedPricingGridStatus";
 import { HandFinishedToggle } from "./pricing/HandFinishedToggle";
 import { PerMetrePricing } from "./pricing/PerMetrePricing";
 import { PerPanelPricing } from "./pricing/PerPanelPricing";
 import { PerDropPricing } from "./pricing/PerDropPricing";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { getUnitLabel } from "@/utils/measurementFormatters";
+import { Sparkles, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface SimplifiedTemplateFormPricingProps {
   formData: any;
@@ -92,12 +94,20 @@ export const SimplifiedTemplateFormPricing = ({
 
           {formData.pricing_type === "pricing_grid" && (
             <div className="space-y-4">
-              {/* Global grid manager for uploading/managing grids */}
-              <TemplateGridManager />
+              {/* Auto-matching explanation */}
+              <Alert className="bg-primary/5 border-primary/20">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <AlertDescription className="text-sm">
+                  <strong>Auto-matching enabled:</strong> Pricing grids are automatically matched to materials 
+                  based on product type + price group. Upload grids in{" "}
+                  <Link to="/settings?tab=pricing" className="text-primary underline inline-flex items-center gap-1">
+                    Settings → Pricing <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </AlertDescription>
+              </Alert>
               
-              {/* Template-specific grid selector */}
-              <TemplateGridSelector 
-                templateId={templateId || template?.id}
+              {/* Template-specific grid status */}
+              <SimplifiedPricingGridStatus 
                 treatmentCategory={formData.treatment_category}
               />
             </div>
