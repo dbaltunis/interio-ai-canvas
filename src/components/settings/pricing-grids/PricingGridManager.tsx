@@ -35,6 +35,7 @@ export const PricingGridManager = () => {
   const [newSupplierId, setNewSupplierId] = useState<string>('');
   const [newProductType, setNewProductType] = useState<string>('');
   const [newPriceGroup, setNewPriceGroup] = useState('');
+  const [newMarkupPercentage, setNewMarkupPercentage] = useState<string>('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -146,7 +147,7 @@ export const PricingGridManager = () => {
       const csvText = await csvFile.text();
       const gridData = parseCsvToGridData(csvText);
 
-      // Create grid with supplier, product type, and price group
+      // Create grid with supplier, product type, price group, and markup
       const { error } = await supabase
         .from('pricing_grids')
         .insert({
@@ -158,6 +159,7 @@ export const PricingGridManager = () => {
           supplier_id: newSupplierId,
           product_type: newProductType,
           price_group: newPriceGroup.toUpperCase().trim(),
+          markup_percentage: parseFloat(newMarkupPercentage) || 0,
           active: true
         });
 
@@ -170,6 +172,7 @@ export const PricingGridManager = () => {
       setNewSupplierId('');
       setNewProductType('');
       setNewPriceGroup('');
+      setNewMarkupPercentage('');
       setCsvFile(null);
       refetch();
     } catch (error: any) {
@@ -354,7 +357,7 @@ export const PricingGridManager = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="grid-name">Grid Name *</Label>
               <Input
@@ -373,6 +376,31 @@ export const PricingGridManager = () => {
                 value={newGridDescription}
                 onChange={(e) => setNewGridDescription(e.target.value)}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="markup-percentage">
+                Default Markup %
+              </Label>
+              <div className="relative">
+                <Input
+                  id="markup-percentage"
+                  type="number"
+                  min="0"
+                  max="500"
+                  step="0.5"
+                  placeholder="0"
+                  value={newMarkupPercentage}
+                  onChange={(e) => setNewMarkupPercentage(e.target.value)}
+                  className="pr-8"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                  %
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Markup for items using this grid (0 = use global)
+              </p>
             </div>
           </div>
 
@@ -446,6 +474,11 @@ export const PricingGridManager = () => {
                       {grid.product_type && (
                         <Badge variant="outline" className="text-xs">
                           {getProductTypeLabel(grid.product_type)}
+                        </Badge>
+                      )}
+                      {(grid as any).markup_percentage > 0 && (
+                        <Badge variant="default" className="text-xs bg-emerald-500">
+                          +{(grid as any).markup_percentage}% markup
                         </Badge>
                       )}
                     </div>
