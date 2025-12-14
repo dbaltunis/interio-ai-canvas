@@ -1,11 +1,10 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Minus, Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet, Filter } from "lucide-react";
+import { Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet, Filter } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { CategoryImportExport } from "./CategoryImportExport";
 import { ImagePreviewDialog } from "@/components/ui/image-preview-dialog";
@@ -36,7 +35,6 @@ interface MaterialInventoryViewProps {
   selectedStorageLocation?: string;
 }
 
-// All blind materials: fabrics for blinds + slats/vanes for venetian/vertical
 const MATERIAL_CATEGORIES = [
   { key: "all", label: "All Materials" },
   { key: "roller_fabric", label: "Roller Blinds" },
@@ -65,10 +63,8 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
     item.category === 'material' || item.category === 'blind_fabric'
   ) || [];
 
-  // Get unique price groups for filter
   const priceGroups = [...new Set(materialItems.map(i => i.price_group).filter(Boolean))] as string[];
   priceGroups.sort((a, b) => {
-    // Sort numerically if both are numbers, else alphabetically
     const aNum = parseInt(a);
     const bNum = parseInt(b);
     if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
@@ -133,20 +129,50 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
     setShowQuickView(true);
   };
 
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      paginatedItems.forEach(item => selectItem(item.id, true));
+    } else {
+      clearSelection();
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Blind Materials</h2>
-          <p className="text-sm text-muted-foreground">
-            Slats, vanes, and cellular fabrics for window blinds
-          </p>
+    <div className="space-y-4">
+      {/* Header row with count, filter, and import */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-muted-foreground">
+            {filteredItems.length} materials found
+          </span>
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={selectedPriceGroup} onValueChange={setSelectedPriceGroup}>
+              <SelectTrigger className="w-[160px] h-8 text-xs">
+                <SelectValue placeholder="All Groups" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Groups ({materialItems.length})</SelectItem>
+                <SelectItem value="none">No Price Group ({materialItems.filter(i => !i.price_group).length})</SelectItem>
+                {priceGroups.map(group => (
+                  <SelectItem key={group} value={group}>
+                    Group {group} ({materialItems.filter(i => i.price_group === group).length})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedPriceGroup !== "all" && (
+              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setSelectedPriceGroup("all")}>
+                Clear
+              </Button>
+            )}
+          </div>
         </div>
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline">
+            <Button variant="outline" size="sm">
               <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Import CSV for Blind Materials
+              Import/Export
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -183,146 +209,184 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
         />
       )}
 
-      {/* Price Group Filter */}
-      <div className="flex items-center gap-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Price Group:</span>
-          <Select value={selectedPriceGroup} onValueChange={setSelectedPriceGroup}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Groups" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Groups ({materialItems.length})</SelectItem>
-              <SelectItem value="none">No Price Group ({materialItems.filter(i => !i.price_group).length})</SelectItem>
-              {priceGroups.map(group => (
-                <SelectItem key={group} value={group}>
-                  Group {group} ({materialItems.filter(i => i.price_group === group).length})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        {selectedPriceGroup !== "all" && (
-          <Button variant="ghost" size="sm" onClick={() => setSelectedPriceGroup("all")}>
-            Clear Filter
-          </Button>
-        )}
-      </div>
-
       <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
-        <TabsList className="w-full justify-start">
+        <TabsList className="bg-background border-b border-border/50 rounded-none p-0 h-auto flex w-full justify-start gap-0 overflow-x-auto">
           {MATERIAL_CATEGORIES.map(cat => (
-            <TabsTrigger key={cat.key} value={cat.key} className="flex items-center gap-2">
+            <TabsTrigger 
+              key={cat.key} 
+              value={cat.key} 
+              className="px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold rounded-none text-muted-foreground hover:text-foreground whitespace-nowrap"
+            >
               {cat.label}
-              <Badge variant="secondary" className="ml-2">
-                {cat.key === 'all' 
-                  ? materialItems.length 
-                  : materialItems.filter(i => i.subcategory === cat.key).length}
-              </Badge>
             </TabsTrigger>
           ))}
         </TabsList>
 
         {MATERIAL_CATEGORIES.map(cat => (
-          <TabsContent key={cat.key} value={cat.key} className="space-y-4">
-            {viewMode === "list" && (
-              <div className="space-y-2">
-                {paginatedItems.length === 0 ? (
-                  <Card>
-                    <CardContent className="p-8 text-center">
-                      <p className="text-muted-foreground">No materials found</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  paginatedItems.map(item => (
-                    <Card 
-                      key={item.id} 
-                      className="hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => handleCardClick(item)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-4">
-                          <Checkbox
-                            checked={selectedItems.includes(item.id)}
-                            onCheckedChange={(checked) => selectItem(item.id, checked === true)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          {item.image_url ? (
-                            <img 
-                              src={item.image_url} 
-                              alt={item.name}
-                              className="w-16 h-16 object-cover rounded"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPreviewImage({ url: item.image_url!, title: item.name });
-                              }}
+          <TabsContent key={cat.key} value={cat.key} className="mt-4">
+            <div className="rounded-md border bg-card">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-muted/20 border-b">
+                    <tr>
+                      <th className="px-2 py-2 text-left w-10">
+                        <Checkbox 
+                          checked={paginatedItems.length > 0 && paginatedItems.every(item => selectedItems.includes(item.id))}
+                          onCheckedChange={handleSelectAll}
+                        />
+                      </th>
+                      <th className="px-2 py-2 text-left w-16">
+                        <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                      </th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground">Name</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground">SKU</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground">Supplier</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground">Price Group</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground">Stock</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground">Tags</th>
+                      <th className="px-2 py-2 text-center text-xs font-medium text-muted-foreground w-10">QR</th>
+                      <th className="px-2 py-2 text-right text-xs font-medium text-muted-foreground w-20">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedItems.length === 0 ? (
+                      <tr>
+                        <td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">
+                          No materials found
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedItems.map(item => (
+                        <tr 
+                          key={item.id} 
+                          className="border-b hover:bg-accent/50 transition-colors cursor-pointer"
+                          onClick={() => handleCardClick(item)}
+                        >
+                          <td className="px-2 py-1">
+                            <Checkbox
+                              checked={selectedItems.includes(item.id)}
+                              onCheckedChange={(checked) => selectItem(item.id, checked === true)}
+                              onClick={(e) => e.stopPropagation()}
                             />
-                          ) : item.category === 'material' && item.tags?.some((tag: string) => 
-                            COLOR_PALETTE.some(c => c.value === tag)
-                          ) ? (
-                          <ColorSlatPreview 
-                              hexColor={getColorHex(
-                                item.tags.find((tag: string) => COLOR_PALETTE.some(c => c.value === tag)) || '',
-                                [...COLOR_PALETTE],
-                                []
-                              )}
-                              slatWidth={(item.specifications as Record<string, any>)?.slat_width}
-                              materialType={(item.specifications as Record<string, any>)?.material_type}
-                              orientation={item.subcategory === 'vertical' ? 'vertical' : 'horizontal'}
-                              size="sm"
-                              className="w-16 h-16"
-                            />
-                          ) : null}
-                          <div className="flex-1">
+                          </td>
+                          <td className="px-2 py-1">
+                            {item.image_url ? (
+                              <img 
+                                src={item.image_url} 
+                                alt={item.name}
+                                className="w-10 h-10 object-cover rounded"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPreviewImage({ url: item.image_url!, title: item.name });
+                                }}
+                              />
+                            ) : item.category === 'material' && item.tags?.some((tag: string) => 
+                              COLOR_PALETTE.some(c => c.value === tag)
+                            ) ? (
+                              <ColorSlatPreview 
+                                hexColor={getColorHex(
+                                  item.tags.find((tag: string) => COLOR_PALETTE.some(c => c.value === tag)) || '',
+                                  [...COLOR_PALETTE],
+                                  []
+                                )}
+                                slatWidth={(item.specifications as Record<string, any>)?.slat_width}
+                                materialType={(item.specifications as Record<string, any>)?.material_type}
+                                orientation={item.subcategory === 'vertical' ? 'vertical' : 'horizontal'}
+                                size="sm"
+                                className="w-10 h-10"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+                                <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-2 py-1">
                             <div className="flex items-center gap-2">
-                              <h3 className="font-semibold">{item.name}</h3>
+                              <span className="text-sm font-medium">{item.name}</span>
                               {item.supplier?.toUpperCase() === 'TWC' && (
-                                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px]">
+                                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px] px-1 py-0">
                                   TWC
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground">{item.sku}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
+                          </td>
+                          <td className="px-2 py-1 text-xs text-muted-foreground">{item.sku || '-'}</td>
+                          <td className="px-2 py-1 text-xs text-muted-foreground">{item.supplier || '-'}</td>
+                          <td className="px-2 py-1">
+                            {item.price_group ? (
+                              <Badge variant="outline" className="text-[10px]">
+                                Group {item.price_group}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          <td className="px-2 py-1">
+                            <Badge 
+                              variant={item.quantity === 0 ? "destructive" : "secondary"} 
+                              className="text-[10px]"
+                            >
+                              {item.quantity ?? 0}
+                            </Badge>
+                          </td>
+                          <td className="px-2 py-1">
+                            <div className="flex flex-wrap gap-1 max-w-[150px]">
+                              {item.tags?.slice(0, 2).map((tag: string, idx: number) => (
+                                <Badge key={idx} variant="outline" className="text-[10px] px-1 py-0">
+                                  {tag}
+                                </Badge>
+                              ))}
+                              {item.tags?.length > 2 && (
+                                <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                  +{item.tags.length - 2}
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-2 py-1 text-center">
                             <Popover>
                               <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                <Button variant="ghost" size="sm">
-                                  <QrCode className="h-4 w-4" />
+                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                  <QrCode className="h-3 w-3" />
                                 </Button>
                               </PopoverTrigger>
                               <PopoverContent className="w-auto p-4">
                                 <QRCodeDisplay itemId={item.id} itemName={item.name} />
                               </PopoverContent>
                             </Popover>
-                            <EditInventoryDialog
-                              item={item}
-                              trigger={
-                                <Button variant="ghost" size="sm">
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              }
-                              onSuccess={refetch}
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(item.id);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
+                          </td>
+                          <td className="px-2 py-1 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <EditInventoryDialog
+                                item={item}
+                                trigger={
+                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                    <Edit className="h-3 w-3" />
+                                  </Button>
+                                }
+                                onSuccess={refetch}
+                              />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(item.id);
+                                }}
+                              >
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
-            )}
+            </div>
 
             {totalPages > 1 && (
               <div className="flex justify-center mt-4">
