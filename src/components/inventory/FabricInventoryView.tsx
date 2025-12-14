@@ -31,6 +31,8 @@ import { InventoryQuickView } from "./InventoryQuickView";
 import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
+import { InventorySupplierFilter, matchesSupplierFilter } from "./InventorySupplierFilter";
+import { useVendors } from "@/hooks/useVendors";
 
 interface FabricInventoryViewProps {
   searchQuery: string;
@@ -39,7 +41,6 @@ interface FabricInventoryViewProps {
   selectedCollection?: string;
   selectedStorageLocation?: string;
 }
-
 // Fabrics = soft goods for curtains/romans (sewn products)
 // Blind materials are in MaterialInventoryView (for manufactured products)
 const FABRIC_CATEGORIES = [
@@ -53,8 +54,9 @@ const FABRIC_CATEGORIES = [
 
 const ITEMS_PER_PAGE = 24;
 
-export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection, selectedStorageLocation }: FabricInventoryViewProps) => {
+export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: externalVendor, selectedCollection, selectedStorageLocation }: FabricInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
+  const { data: vendors = [] } = useVendors();
   const { toast } = useToast();
   const { formatCurrency: formatPrice } = useFormattedCurrency();
   const { units } = useMeasurementUnits();
@@ -64,6 +66,10 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
   const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
   const [quickViewItem, setQuickViewItem] = useState<any>(null);
   const [showQuickView, setShowQuickView] = useState(false);
+  const [localSelectedVendor, setLocalSelectedVendor] = useState<string | undefined>(externalVendor);
+  
+  // Use local vendor state, sync with external if provided
+  const selectedVendor = externalVendor ?? localSelectedVendor;
   
   // Get leftover fabric totals for inventory badges
   const { data: leftovers = [] } = useInventoryLeftovers();
@@ -105,7 +111,8 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
     const matchesCategory = activeCategory === "all" || 
       item.subcategory === activeCategory;
 
-    const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
+    // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
+    const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
     const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
     const matchesLocation = !selectedStorageLocation || item.location === selectedStorageLocation;
 
@@ -174,11 +181,19 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor, sel
 
   return (
     <div className="space-y-6">
-      {/* Action Bar */}
+      {/* Action Bar with Supplier Filter */}
       <div className="flex justify-between items-center gap-4 flex-wrap">
-        <p className="text-sm text-muted-foreground">
-          {filteredItems.length} fabric{filteredItems.length !== 1 ? 's' : ''} found
-        </p>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-muted-foreground">
+            {filteredItems.length} fabric{filteredItems.length !== 1 ? 's' : ''} found
+          </p>
+          <InventorySupplierFilter
+            value={selectedVendor}
+            onChange={setLocalSelectedVendor}
+            showCounts={true}
+            category="fabric"
+          />
+        </div>
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline">
