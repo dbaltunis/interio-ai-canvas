@@ -18,35 +18,14 @@ import { BulkGridUploader } from './BulkGridUploader';
 import { GridCoverageDashboard } from './GridCoverageDashboard';
 import { CategoryProductTypeGuide } from './CategoryProductTypeGuide';
 import { useVendors } from '@/hooks/useVendors';
+import { 
+  UNIFIED_CATEGORIES, 
+  getTreatmentOptions, 
+  getUnifiedConfig 
+} from '@/types/treatmentCategories';
 
-// Categories that organize product types
-const GRID_CATEGORIES = [
-  { value: 'material', label: 'Material (Hard Coverings)' },
-  { value: 'fabric', label: 'Fabric (Soft Furnishings)' },
-];
-
-// Product types organized by category
-const PRODUCT_TYPES_BY_CATEGORY: Record<string, Array<{ value: string; label: string; subcategory: string }>> = {
-  material: [
-    { value: 'roller_blinds', label: 'Roller Blinds', subcategory: 'roller_fabric' },
-    { value: 'venetian_blinds', label: 'Venetian Blinds', subcategory: 'venetian_slats' },
-    { value: 'cellular_blinds', label: 'Cellular/Honeycomb', subcategory: 'cellular' },
-    { value: 'vertical_blinds', label: 'Vertical Blinds', subcategory: 'vertical_fabric' },
-    { value: 'shutters', label: 'Shutters', subcategory: 'shutter_material' },
-    { value: 'panel_glide', label: 'Panel Glide', subcategory: 'panel_glide_fabric' },
-  ],
-  fabric: [
-    { value: 'curtains', label: 'Curtains', subcategory: 'curtain_fabric' },
-    { value: 'roman_blinds', label: 'Roman Blinds', subcategory: 'roman_fabric' },
-    { value: 'awnings', label: 'Awnings', subcategory: 'awning_fabric' },
-  ],
-};
-
-// All product types flattened for backward compatibility
-const GRID_PRODUCT_TYPES = [
-  ...PRODUCT_TYPES_BY_CATEGORY.material,
-  ...PRODUCT_TYPES_BY_CATEGORY.fabric,
-];
+// Get treatment options from unified categories (single source of truth)
+const TREATMENT_OPTIONS = getTreatmentOptions();
 
 export const PricingGridManager = () => {
   const [activeTab, setActiveTab] = useState('single');
@@ -54,30 +33,20 @@ export const PricingGridManager = () => {
   const [newGridCode, setNewGridCode] = useState('');
   const [newGridDescription, setNewGridDescription] = useState('');
   const [newSupplierId, setNewSupplierId] = useState<string>('');
-  const [newCategory, setNewCategory] = useState<string>('');
   const [newProductType, setNewProductType] = useState<string>('');
   const [newPriceGroup, setNewPriceGroup] = useState('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Filter product types based on selected category
-  const filteredProductTypes = useMemo(() => {
-    if (!newCategory) return GRID_PRODUCT_TYPES;
-    return PRODUCT_TYPES_BY_CATEGORY[newCategory] || [];
-  }, [newCategory]);
-
-  // Get the subcategory hint for selected product type
-  const selectedProductTypeInfo = useMemo(() => {
-    return GRID_PRODUCT_TYPES.find(pt => pt.value === newProductType);
+  // Get selected treatment config for display
+  const selectedTreatmentConfig = useMemo(() => {
+    return newProductType ? getUnifiedConfig(newProductType) : null;
   }, [newProductType]);
 
   const { data: vendors = [] } = useVendors();
   
   // Handler for coverage dashboard clicks
   const handleCoverageUploadClick = (productType: string, priceGroup: string) => {
-    // Auto-set category based on product type
-    const isMaterial = PRODUCT_TYPES_BY_CATEGORY.material.some(p => p.value === productType);
-    setNewCategory(isMaterial ? 'material' : 'fabric');
     setNewProductType(productType);
     setNewPriceGroup(priceGroup);
     setActiveTab('single');
@@ -199,7 +168,6 @@ export const PricingGridManager = () => {
       setNewGridCode('');
       setNewGridDescription('');
       setNewSupplierId('');
-      setNewCategory('');
       setNewProductType('');
       setNewPriceGroup('');
       setCsvFile(null);
@@ -232,7 +200,8 @@ export const PricingGridManager = () => {
   };
 
   const getProductTypeLabel = (value: string) => {
-    return GRID_PRODUCT_TYPES.find(pt => pt.value === value)?.label || value;
+    const config = getUnifiedConfig(value);
+    return config?.display_name || value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   return (
@@ -285,9 +254,6 @@ export const PricingGridManager = () => {
       <CategoryProductTypeGuide 
         onSelectProductType={(pt) => {
           setNewProductType(pt);
-          // Auto-set category based on product type
-          const isMaterial = PRODUCT_TYPES_BY_CATEGORY.material.some(p => p.value === pt);
-          setNewCategory(isMaterial ? 'material' : 'fabric');
         }} 
       />
 
@@ -299,7 +265,7 @@ export const PricingGridManager = () => {
             Create Pricing Grid
           </CardTitle>
           <CardDescription>
-            Upload a CSV with pricing data. Assign supplier, category, product type, and price group for auto-matching.
+            Upload a CSV with pricing data. Assign supplier, treatment type, and price group for auto-matching.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -328,60 +294,35 @@ export const PricingGridManager = () => {
             )}
           </div>
 
-          {/* Category and Product Type - Side by side */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="category">
-                <FolderOpen className="h-3.5 w-3.5 inline mr-1" />
-                Category *
-              </Label>
-              <Select 
-                value={newCategory} 
-                onValueChange={(val) => {
-                  setNewCategory(val);
-                  setNewProductType(''); // Reset product type when category changes
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {GRID_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* Treatment Type - Single dropdown replacing Category + Product Type */}
+          <div className="space-y-2">
+            <Label htmlFor="treatment-type">
+              <FolderOpen className="h-3.5 w-3.5 inline mr-1" />
+              Treatment Type *
+            </Label>
+            <Select 
+              value={newProductType} 
+              onValueChange={setNewProductType}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select treatment type" />
+              </SelectTrigger>
+              <SelectContent>
+                {TREATMENT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedTreatmentConfig && (
               <p className="text-xs text-muted-foreground">
-                Match your inventory category
+                {selectedTreatmentConfig.description} • 
+                <span className="ml-1">
+                  Compatible with: <code className="bg-muted px-1 rounded">{selectedTreatmentConfig.inventory_subcategories.join(', ')}</code>
+                </span>
               </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="product-type">Product Type *</Label>
-              <Select 
-                value={newProductType} 
-                onValueChange={setNewProductType}
-                disabled={!newCategory}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={newCategory ? "Select product type" : "Select category first"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredProductTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedProductTypeInfo && (
-                <p className="text-xs text-muted-foreground">
-                  Matches inventory subcategory: <code className="bg-muted px-1 rounded">{selectedProductTypeInfo.subcategory}</code>
-                </p>
-              )}
-            </div>
+            )}
           </div>
 
           {/* Price Group and Grid Code */}

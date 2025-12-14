@@ -2936,6 +2936,7 @@ export type Database = {
           collection_id: string | null
           collection_name: string | null
           color: string | null
+          compatible_treatments: string[] | null
           cost_price: number
           coverage_per_roll: number | null
           created_at: string
@@ -3019,6 +3020,7 @@ export type Database = {
           collection_id?: string | null
           collection_name?: string | null
           color?: string | null
+          compatible_treatments?: string[] | null
           cost_price?: number
           coverage_per_roll?: number | null
           created_at?: string
@@ -3102,6 +3104,7 @@ export type Database = {
           collection_id?: string | null
           collection_name?: string | null
           color?: string | null
+          compatible_treatments?: string[] | null
           cost_price?: number
           coverage_per_roll?: number | null
           created_at?: string
