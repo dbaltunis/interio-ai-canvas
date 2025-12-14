@@ -229,7 +229,8 @@ export const VisualMeasurementSheet = ({
   const inventoryFabricItem = selectedFabric ? inventory.find((item: any) => item.id === selectedFabric) : undefined;
   const selectedFabricItem = propSelectedFabricItem || inventoryFabricItem;
   const fabricImageUrl = selectedFabricItem?.image_url ? selectedFabricItem.image_url.startsWith('http') ? selectedFabricItem.image_url : supabase.storage.from('business-assets').getPublicUrl(selectedFabricItem.image_url).data?.publicUrl : undefined;
-  const fabricColor = selectedFabricItem?.color || 'hsl(var(--primary))';
+  // Priority: user-selected color > fabric item color > fallback
+  const fabricColor = measurements.selected_color || selectedFabricItem?.color || 'hsl(var(--primary))';
   console.log("🎨 Fabric visualization data:", {
     selectedFabricItem,
     propSelectedFabricItem,
