@@ -43,15 +43,20 @@ export const SUBCATEGORY_TO_PRODUCT_TYPES: Record<string, string[]> = {
   // Fabric subcategories
   curtain_fabric: ['curtains', 'roman_blinds'],
   curtain: ['curtains', 'roman_blinds'],
+  roman_fabric: ['roman_blinds', 'curtains'],
+  roman_blind_fabric: ['roman_blinds'],
   roller_fabric: ['roller_blinds'],
   roller_blind_fabric: ['roller_blinds'],
   roller: ['roller_blinds'],
-  blind_material: ['roller_blinds', 'venetian_blinds', 'vertical_blinds', 'cellular_blinds'],
+  blind_fabric: ['roller_blinds'],
+  // Note: blind_material is too generic - handled specially in components
   cellular: ['cellular_blinds'],
   cellular_fabric: ['cellular_blinds'],
   honeycomb: ['cellular_blinds'],
+  honeycomb_fabric: ['cellular_blinds'],
   panel_glide_fabric: ['panel_glide'],
   panel_fabric: ['panel_glide'],
+  panel: ['panel_glide'],
   
   // Material subcategories
   venetian_slats: ['venetian_blinds'],
@@ -71,6 +76,9 @@ export const SUBCATEGORY_TO_PRODUCT_TYPES: Record<string, string[]> = {
   awning: ['awning'],
   wallcovering: ['wallpaper'],
   wallpaper: ['wallpaper'],
+  
+  // InterioApp and other generic categories - excluded from auto-matching
+  interioapp: [],
 };
 
 /**
