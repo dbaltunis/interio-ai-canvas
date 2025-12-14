@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet, Filter } from "lucide-react";
+import { Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet, Filter, Package } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { CategoryImportExport } from "./CategoryImportExport";
 import { ImagePreviewDialog } from "@/components/ui/image-preview-dialog";
@@ -21,6 +21,7 @@ import { ColorSlatPreview, getColorHex } from "./ColorSlatPreview";
 import { COLOR_PALETTE } from "@/constants/inventoryCategories";
 import { InventorySupplierFilter, matchesSupplierFilter } from "./InventorySupplierFilter";
 import { useVendors } from "@/hooks/useVendors";
+import { TagFilterChips } from "./TagFilterChips";
 import {
   Dialog,
   DialogContent,
@@ -66,6 +67,7 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
   const [showQuickView, setShowQuickView] = useState(false);
   const [selectedPriceGroup, setSelectedPriceGroup] = useState<string>("all");
   const [localSelectedVendor, setLocalSelectedVendor] = useState<string | undefined>(externalVendor);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   // Use local vendor state, sync with external if provided
   const selectedVendor = externalVendor ?? localSelectedVendor;
@@ -112,7 +114,11 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
     const matchesPriceGroup = selectedPriceGroup === "all" || 
       (selectedPriceGroup === "none" ? !item.price_group : item.price_group === selectedPriceGroup);
 
-    return matchesGlobalSearch && matchesCategory && matchesVendor && matchesCollection && matchesLocation && matchesPriceGroup;
+    // Tag-based filtering
+    const matchesTags = selectedTags.length === 0 || 
+      (item.tags && selectedTags.every(tag => item.tags.includes(tag)));
+
+    return matchesGlobalSearch && matchesCategory && matchesVendor && matchesCollection && matchesLocation && matchesPriceGroup && matchesTags;
   });
 
   const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
@@ -123,6 +129,14 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
   
   const handleCategoryChange = (category: string) => {
     setActiveCategory(category);
+    setCurrentPage(1);
+    setSelectedTags([]); // Clear tags when category changes
+  };
+
+  const handleTagToggle = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
     setCurrentPage(1);
   };
 
@@ -157,61 +171,77 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
 
   return (
     <div className="space-y-4">
-      {/* Header row with count, supplier filter, price group filter, and import */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-sm text-muted-foreground">
-            {filteredItems.length} materials found
-          </span>
-          <InventorySupplierFilter
-            value={selectedVendor}
-            onChange={setLocalSelectedVendor}
-            showCounts={true}
-            category="material"
-          />
-          <Select value={selectedPriceGroup} onValueChange={setSelectedPriceGroup}>
-            <SelectTrigger className="w-auto h-9 text-sm gap-2 border-dashed">
-              <Filter className="h-3 w-3" />
-              <SelectValue placeholder="All Groups" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Groups ({materialItems.length})</SelectItem>
-              <SelectItem value="none">No Price Group ({materialItems.filter(i => !i.price_group).length})</SelectItem>
-              {priceGroups.map(group => (
-                <SelectItem key={group} value={group}>
-                  Group {group} ({materialItems.filter(i => i.price_group === group).length})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {(selectedPriceGroup !== "all" || selectedVendor) && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-7 text-xs px-2" 
-              onClick={() => {
-                setSelectedPriceGroup("all");
-                setLocalSelectedVendor(undefined);
-              }}
-            >
-              Clear Filters
-            </Button>
-          )}
+      {/* Modern Header with filters */}
+      <div className="bg-card/50 backdrop-blur-sm border rounded-xl p-4 space-y-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
+              <Package className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">{filteredItems.length}</span>
+              <span className="text-sm text-muted-foreground">materials</span>
+            </div>
+            <InventorySupplierFilter
+              value={selectedVendor}
+              onChange={setLocalSelectedVendor}
+              showCounts={true}
+              category="material"
+            />
+            <Select value={selectedPriceGroup} onValueChange={setSelectedPriceGroup}>
+              <SelectTrigger className="w-auto h-9 text-sm gap-2 border-dashed">
+                <Filter className="h-3 w-3" />
+                <SelectValue placeholder="All Groups" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Groups ({materialItems.length})</SelectItem>
+                <SelectItem value="none">No Price Group ({materialItems.filter(i => !i.price_group).length})</SelectItem>
+                {priceGroups.map(group => (
+                  <SelectItem key={group} value={group}>
+                    Group {group} ({materialItems.filter(i => i.price_group === group).length})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {(selectedPriceGroup !== "all" || selectedVendor || selectedTags.length > 0) && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 text-xs px-2" 
+                onClick={() => {
+                  setSelectedPriceGroup("all");
+                  setLocalSelectedVendor(undefined);
+                  setSelectedTags([]);
+                }}
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <FileSpreadsheet className="h-4 w-4" />
+                Import/Export
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Import/Export Blind Materials</DialogTitle>
+              </DialogHeader>
+              <CategoryImportExport category="hardware" onImportComplete={refetch} />
+            </DialogContent>
+          </Dialog>
         </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Import/Export
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Import/Export Blind Materials</DialogTitle>
-            </DialogHeader>
-            <CategoryImportExport category="hardware" onImportComplete={refetch} />
-          </DialogContent>
-        </Dialog>
+        
+        {/* Tag Filter Chips */}
+        {activeCategory !== "all" && (
+          <TagFilterChips
+            subcategory={activeCategory}
+            selectedTags={selectedTags}
+            onTagToggle={handleTagToggle}
+            onClearAll={() => setSelectedTags([])}
+            showQuickFilters={true}
+          />
+        )}
       </div>
 
       {selectionStats.selected > 0 && (

@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Home, Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet } from "lucide-react";
+import { Package, Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet, Home } from "lucide-react";
+import { TagFilterChips } from "./TagFilterChips";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { CategoryImportExport } from "./CategoryImportExport";
 import { ImagePreviewDialog } from "@/components/ui/image-preview-dialog";
@@ -73,6 +74,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
   const [quickViewItem, setQuickViewItem] = useState<any>(null);
   const [showQuickView, setShowQuickView] = useState(false);
   const [localSelectedVendor, setLocalSelectedVendor] = useState<string | undefined>(externalVendor);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   
   // Use local vendor state, sync with external if provided
   const selectedVendor = externalVendor ?? localSelectedVendor;
@@ -127,8 +129,12 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
     const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
     const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
     const matchesLocation = !selectedStorageLocation || item.location === selectedStorageLocation;
+    
+    // Tag-based filtering
+    const matchesTags = selectedTags.length === 0 || 
+      (item.tags && selectedTags.every(tag => item.tags.includes(tag)));
 
-    return matchesSearch && matchesCategory && matchesVendor && matchesCollection && matchesLocation;
+    return matchesSearch && matchesCategory && matchesVendor && matchesCollection && matchesLocation && matchesTags;
   });
 
   // Pagination
@@ -141,6 +147,14 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
   // Reset to page 1 when filters change
   const handleCategoryChange = (category: string) => {
     setActiveCategory(category);
+    setCurrentPage(1);
+    setSelectedTags([]); // Clear tags when category changes
+  };
+
+  const handleTagToggle = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
     setCurrentPage(1);
   };
 
@@ -193,33 +207,61 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
 
   return (
     <div className="space-y-6">
-      {/* Action Bar with Supplier Filter */}
-      <div className="flex justify-between items-center gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <p className="text-sm text-muted-foreground">
-            {filteredItems.length} fabric{filteredItems.length !== 1 ? 's' : ''} found
-          </p>
-          <InventorySupplierFilter
-            value={selectedVendor}
-            onChange={setLocalSelectedVendor}
-            showCounts={true}
-            category="fabric"
-          />
+      {/* Modern Action Bar */}
+      <div className="bg-card/50 backdrop-blur-sm border rounded-xl p-4 space-y-4">
+        <div className="flex justify-between items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
+              <Package className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">{filteredItems.length}</span>
+              <span className="text-sm text-muted-foreground">fabrics</span>
+            </div>
+            <InventorySupplierFilter
+              value={selectedVendor}
+              onChange={setLocalSelectedVendor}
+              showCounts={true}
+              category="fabric"
+            />
+            {(selectedVendor || selectedTags.length > 0) && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 text-xs"
+                onClick={() => {
+                  setLocalSelectedVendor(undefined);
+                  setSelectedTags([]);
+                }}
+              >
+                Clear filters
+              </Button>
+            )}
+          </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <FileSpreadsheet className="h-4 w-4" />
+                Import/Export
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Import/Export Fabrics</DialogTitle>
+              </DialogHeader>
+              <CategoryImportExport category="fabrics" onImportComplete={refetch} />
+            </DialogContent>
+          </Dialog>
         </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline">
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Import/Export
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Import/Export Fabrics</DialogTitle>
-            </DialogHeader>
-            <CategoryImportExport category="fabrics" onImportComplete={refetch} />
-          </DialogContent>
-        </Dialog>
+        
+        {/* Tag Filter Chips */}
+        {activeCategory !== "all" && (
+          <TagFilterChips
+            subcategory={activeCategory}
+            selectedTags={selectedTags}
+            onTagToggle={handleTagToggle}
+            onClearAll={() => setSelectedTags([])}
+            showQuickFilters={true}
+          />
+        )}
       </div>
 
       {/* Category Tabs */}
