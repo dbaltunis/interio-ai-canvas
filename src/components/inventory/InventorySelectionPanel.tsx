@@ -133,7 +133,7 @@ export const InventorySelectionPanel = ({
     const types = new Set<string>();
     treatmentFabrics.forEach(item => {
       if (item.tags) {
-        ['blockout', 'sheer', 'sunscreen', 'light_filtering', 'wide_width'].forEach(t => {
+        ['blockout', 'sheer', 'sunscreen', 'light_filtering', 'dimout', 'thermal', 'wide_width'].forEach(t => {
           if (item.tags.includes(t)) types.add(t);
         });
       }
