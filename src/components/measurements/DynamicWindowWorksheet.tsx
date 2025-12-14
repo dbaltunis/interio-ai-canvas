@@ -459,12 +459,30 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                 restoredItems.fabric = { ...fabricDetails, id: fabricId, fabric_id: fabricId };
               }
             } else {
-              // For curtains/romans, use saved details (they use different pricing model)
-              restoredItems.fabric = {
-                ...fabricDetails,
-                id: fabricId,
-                fabric_id: fabricId
-              };
+              // ✅ FIX: For curtains/romans, ALSO fetch fresh from inventory to get pricing_grid_data
+              // Grid-priced curtains need the full pricing grid data for calculations
+              try {
+                const { data: freshFabric } = await supabase
+                  .from('enhanced_inventory_items')
+                  .select('*')
+                  .eq('id', fabricId)
+                  .single();
+                
+                if (freshFabric) {
+                  restoredItems.fabric = freshFabric;
+                  console.log('✅ Restored fresh fabric for curtain/roman with pricing grid:', {
+                    id: freshFabric.id,
+                    name: freshFabric.name,
+                    has_pricing_grid: !!(freshFabric as any).pricing_grid_data,
+                    resolved_grid_name: (freshFabric as any).resolved_grid_name
+                  });
+                } else {
+                  restoredItems.fabric = { ...fabricDetails, id: fabricId, fabric_id: fabricId };
+                }
+              } catch (error) {
+                console.error('Error fetching fresh fabric for curtain:', error);
+                restoredItems.fabric = { ...fabricDetails, id: fabricId, fabric_id: fabricId };
+              }
             }
           }
         } else if (existingWindowSummary.selected_fabric_id && fabricDetails) {

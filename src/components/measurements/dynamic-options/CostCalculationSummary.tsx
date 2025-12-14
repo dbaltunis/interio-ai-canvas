@@ -704,13 +704,28 @@ export const CostCalculationSummary = ({
   // ✅ CRITICAL: Store curtain costs for useEffect to report to parent (NOT during render!)
   // This ensures save uses IDENTICAL values to what's displayed - no recalculation
   if (onCurtainCostsCalculated) {
+    // ✅ FIX: Add value field to optionDetails matching blind pattern
     const optionDetails = selectedOptions.map(opt => ({
       name: opt.name || 'Unknown Option',
+      // Extract value from "name: value" format or use available fields
+      value: (() => {
+        if ((opt as any).value) return (opt as any).value;
+        if ((opt as any).label) return (opt as any).label;
+        if (opt.name && opt.name.includes(':')) {
+          return opt.name.substring(opt.name.indexOf(':') + 1).trim();
+        }
+        return (opt as any).optionKey || opt.name || '-';
+      })(),
       cost: (opt as any).calculatedPrice ?? opt.price ?? 0,
       pricingMethod: opt.pricingMethod || 'fixed'
     }));
     
-    const curtainCostsKey = `${fabricCost}-${liningCost}-${manufacturingCost}-${headingCost}-${optionsCost}-${totalCost}-${linearMeters}`;
+    // ✅ FIX: Include selection changes in key for real-time updates
+    const optionSelectionKey = selectedOptions.map(o => `${o.name}-${(o as any).value || (o as any).label || ''}`).join(',');
+    const measurementKey = `${measurements?.rail_width || 0}-${measurements?.drop || 0}`;
+    const headingKey = selectedHeading || 'none';
+    
+    const curtainCostsKey = `${fabricCost}-${liningCost}-${manufacturingCost}-${headingCost}-${optionsCost}-${totalCost}-${linearMeters}-${optionSelectionKey}-${measurementKey}-${headingKey}`;
     
     curtainCostsRef.current = {
       costs: {
