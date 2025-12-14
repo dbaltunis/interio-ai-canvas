@@ -950,19 +950,61 @@ export const VisualMeasurementSheet = ({
               </div>)}
               {/* End of curtain visual conditional */}
               
-              {/* Color Selection - for fabric or material with colors (from tags array or colors field) */}
+              {/* Color Selection - for fabric or material with colors (from tags array, colors field, or TWC metadata) */}
               {(() => {
-                // Helper to extract colors from an item - check tags array, colors array, or colors string
+                // Helper to extract colors from an item - check tags array, colors array, colors string, or TWC metadata
                 const getColorsFromItem = (item: any): string[] => {
                   if (!item) return [];
+                  
                   // Check tags array first (primary storage)
                   if (Array.isArray(item.tags) && item.tags.length > 0) return item.tags;
+                  
                   // Check colors array
                   if (Array.isArray(item.colors) && item.colors.length > 0) return item.colors;
+                  
                   // Check colors as comma-separated string
                   if (typeof item.colors === 'string' && item.colors.trim()) {
                     return item.colors.split(',').map((c: string) => c.trim()).filter(Boolean);
                   }
+                  
+                  // Check color field directly
+                  if (item.color && typeof item.color === 'string' && item.color.trim()) {
+                    return [item.color.trim()];
+                  }
+                  
+                  // ✅ CRITICAL FIX: Extract colors from TWC metadata for imported materials
+                  // TWC stores colors in metadata.twc_fabrics_and_colours.itemMaterials[].colours[]
+                  const twcData = item.metadata?.twc_fabrics_and_colours || item.twc_fabrics_and_colours;
+                  if (twcData?.itemMaterials && Array.isArray(twcData.itemMaterials)) {
+                    const allColors: string[] = [];
+                    for (const mat of twcData.itemMaterials) {
+                      if (mat.colours && Array.isArray(mat.colours)) {
+                        for (const c of mat.colours) {
+                          if (c.colour && typeof c.colour === 'string') {
+                            allColors.push(c.colour);
+                          }
+                        }
+                      }
+                    }
+                    if (allColors.length > 0) return allColors;
+                  }
+                  
+                  // ✅ Also check for TWC colors in nested metadata (saved material_details)
+                  const savedTwcData = item.pricing_grid_data?.twc_fabrics_and_colours;
+                  if (savedTwcData?.itemMaterials && Array.isArray(savedTwcData.itemMaterials)) {
+                    const allColors: string[] = [];
+                    for (const mat of savedTwcData.itemMaterials) {
+                      if (mat.colours && Array.isArray(mat.colours)) {
+                        for (const c of mat.colours) {
+                          if (c.colour && typeof c.colour === 'string') {
+                            allColors.push(c.colour);
+                          }
+                        }
+                      }
+                    }
+                    if (allColors.length > 0) return allColors;
+                  }
+                  
                   return [];
                 };
                 
