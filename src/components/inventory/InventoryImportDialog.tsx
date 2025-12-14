@@ -25,7 +25,8 @@ export const InventoryImportDialog: React.FC = () => {
       "price_per_yard","price_per_meter","price_per_unit","markup_percentage",
       "width","height","depth","weight","color","finish","collection_name","image_url",
       "labor_hours","fullness_ratio","service_rate",
-      "price_group","product_category","tags"
+      "price_group","product_category","tags",
+      "compatible_treatments","subcategory" // NEW: Added compatible_treatments and subcategory
     ],
     []
   );
@@ -75,7 +76,7 @@ export const InventoryImportDialog: React.FC = () => {
       if (key === "active") {
         val = String(val).toLowerCase() === "true";
       }
-      if (key === "tags") {
+      if (key === "tags" || key === "compatible_treatments") {
         val = String(val).split(',').map(t => t.trim()).filter(t => t);
       }
       obj[key] = val;
@@ -137,12 +138,12 @@ export const InventoryImportDialog: React.FC = () => {
 
   const downloadSample = () => {
     const headers = [
-      "name","sku","category","quantity","unit","cost_price","selling_price","unit_price","supplier","location","reorder_point","price_group","product_category"
+      "name","sku","category","subcategory","quantity","unit","cost_price","selling_price","unit_price","supplier","location","reorder_point","price_group","product_category","compatible_treatments"
     ];
     const sample = [
-      ["Wave Track - 2.4m","WT-2400","hardware","10","pcs","35","59","59","DrapeCo","A1","2","",""],
-      ["Linen Fabric - White","LINEN-WHITE","fabric","120","m","12","22","22","Textiles Ltd","Rack B","20","GRID001","roller_blind"],
-      ["Sheer Fabric - Ivory","SHEER-IVY","fabric","85","m","","","","Fabrics Inc","Rack C","15","GRID002","roller_blind"],
+      ["Wave Track - 2.4m","WT-2400","hardware","tracks","10","pcs","35","59","59","DrapeCo","A1","2","","",""],
+      ["Linen Fabric - White","LINEN-WHITE","fabric","curtain_fabric","120","m","12","22","22","Textiles Ltd","Rack B","20","GRID001","roller_blind","curtains,roman_blinds"],
+      ["Roller Material - Grey","ROLL-GRY","material","roller_fabric","85","m","","","","Fabrics Inc","Rack C","15","GRID002","roller_blind","roller_blinds"],
     ];
     const csv = [headers.join(","), ...sample.map((r) => r.map((v) => `"${v}"`).join(","))].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -236,10 +237,10 @@ export const InventoryImportDialog: React.FC = () => {
                     <th className="text-left p-1">name</th>
                     <th className="text-left p-1">sku</th>
                     <th className="text-left p-1">category</th>
-                    <th className="text-left p-1">quantity</th>
+                    <th className="text-left p-1 text-primary font-bold">subcategory</th>
                     <th className="text-left p-1">unit_price</th>
-                    <th className="text-left p-1 text-primary font-bold">price_group</th>
-                    <th className="text-left p-1 text-primary font-bold">product_category</th>
+                    <th className="text-left p-1">price_group</th>
+                    <th className="text-left p-1 text-primary font-bold">compatible_treatments</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -247,25 +248,25 @@ export const InventoryImportDialog: React.FC = () => {
                     <td className="p-1">Fabric White</td>
                     <td className="p-1">FAB-001</td>
                     <td className="p-1">fabric</td>
-                    <td className="p-1">100</td>
+                    <td className="p-1 text-primary font-bold">curtain_fabric</td>
                     <td className="p-1">25</td>
-                    <td className="p-1 text-primary font-bold">GRID001</td>
-                    <td className="p-1 text-primary font-bold">roller_blind</td>
+                    <td className="p-1">GRID001</td>
+                    <td className="p-1 text-primary font-bold">curtains,roman_blinds</td>
                   </tr>
                   <tr>
-                    <td className="p-1">Track 2.4m</td>
-                    <td className="p-1">TRK-2400</td>
-                    <td className="p-1">hardware</td>
-                    <td className="p-1">20</td>
-                    <td className="p-1">65</td>
-                    <td className="p-1 text-muted-foreground">(empty)</td>
-                    <td className="p-1 text-muted-foreground">(empty)</td>
+                    <td className="p-1">Roller Material</td>
+                    <td className="p-1">ROLL-001</td>
+                    <td className="p-1">material</td>
+                    <td className="p-1 text-primary font-bold">roller_fabric</td>
+                    <td className="p-1">35</td>
+                    <td className="p-1">GRID002</td>
+                    <td className="p-1 text-primary font-bold">roller_blinds</td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              <strong>Pricing Grid columns:</strong> Use <code className="bg-background px-1 rounded">price_group</code> for grid code and <code className="bg-background px-1 rounded">product_category</code> for category (e.g., roller_blind). Leave empty if no grid.
+              <strong>New columns:</strong> <code className="bg-background px-1 rounded">subcategory</code> (e.g., curtain_fabric, roller_fabric) and <code className="bg-background px-1 rounded">compatible_treatments</code> (comma-separated: curtains, roman_blinds, roller_blinds, etc.).
             </p>
           </div>
         </div>

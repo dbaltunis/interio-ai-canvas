@@ -152,6 +152,10 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
     const colorsRaw = getValue(values, lookup, 'colors', 'color', 'colour', 'colours');
     const colorValues = parseCommaSeparated(colorsRaw);
     
+    // Compatible treatments - supports multiple column names
+    const compatibleTreatmentsRaw = getValue(values, lookup, 'compatible_treatments', 'treatments', 'compatible_with', 'works_with');
+    const compatibleTreatments = parseCommaSeparated(compatibleTreatmentsRaw);
+    
     const item: any = {
       category: 'fabric',
       name: getValue(values, lookup, 'name', 'product_name', 'fabric_name'),
@@ -160,6 +164,7 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
       subcategory: getValue(values, lookup, 'subcategory', 'sub_category', 'type', 'fabric_type'),
       product_category: getValue(values, lookup, 'product_category', 'category', 'treatment_type'),
       tags: colorValues,
+      compatible_treatments: compatibleTreatments.length > 0 ? compatibleTreatments : null,
       supplier: getValue(values, lookup, 'supplier', 'vendor', 'manufacturer', 'brand'),
       collection_name: getValue(values, lookup, 'collection_name', 'collection', 'range', 'series'),
       location: getValue(values, lookup, 'location', 'warehouse', 'storage', 'bin'),
@@ -586,7 +591,7 @@ const extractColorsFromTags = (tags: string[] | undefined): { colors: string[], 
 export const exportCategoryInventory = (items: any[], category: string): string => {
   if (category === 'fabrics') {
     const headers = [
-      'name', 'sku', 'description', 'subcategory', 'product_category', 'colors', 'track_inventory',
+      'name', 'sku', 'description', 'subcategory', 'product_category', 'compatible_treatments', 'colors', 'track_inventory',
       'supplier', 'collection_name', 'location', 'quantity', 'unit', 'reorder_point', 'cost_price', 'selling_price', 'price_group',
       'fabric_width', 'fabric_composition', 'fabric_grade', 'pattern_repeat_vertical',
       'pattern_repeat_horizontal', 'max_length', 'rotation_allowance', 'image_url'
@@ -597,6 +602,10 @@ export const exportCategoryInventory = (items: any[], category: string): string 
       // Extract colors from tags for export
       const { colors } = extractColorsFromTags(item.tags);
       const colorsStr = colors.join(',');
+      // Compatible treatments
+      const compatibleTreatments = Array.isArray(item.compatible_treatments) 
+        ? item.compatible_treatments.join(',') 
+        : '';
       
       return [
         `"${item.name || ''}"`,
@@ -604,6 +613,7 @@ export const exportCategoryInventory = (items: any[], category: string): string 
         `"${item.description || ''}"`,
         `"${item.subcategory || ''}"`,
         `"${item.product_category || ''}"`,
+        `"${compatibleTreatments}"`,
         `"${colorsStr}"`,
         isTracked,
         `"${item.supplier || ''}"`,
