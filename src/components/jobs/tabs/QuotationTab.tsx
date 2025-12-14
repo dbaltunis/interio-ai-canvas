@@ -700,12 +700,13 @@ export const QuotationTab = ({
         />
       )}
 
-      {/* Profit Summary for Authorized Users */}
+      {/* Profit Summary for Authorized Users - Collapsible with per-treatment breakdown */}
       <QuoteProfitSummary 
         costTotal={quotationData.costTotal || 0} 
         sellingTotal={quotationData.sellingTotal || subtotal} 
         variant="card"
         showBreakdown={true}
+        items={sourceTreatments}
       />
 
       {/* Quotation Items Modal */}
