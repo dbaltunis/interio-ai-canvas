@@ -1,60 +1,187 @@
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { ExternalLink, Loader2 } from "lucide-react";
+import { ExternalLink, Loader2, RefreshCw, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAllTreatmentOptions } from "@/hooks/useTreatmentOptionsManagement";
 import { useTemplateOptionSettings, useToggleTemplateOption } from "@/hooks/useTemplateOptionSettings";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface TWCQuestion {
+  name: string;
+  options: string[];
+  isRequired: boolean;
+}
 
 interface TemplateOptionsManagerProps {
   treatmentCategory: string;
   templateId?: string;
+  linkedTWCProduct?: any; // Pass linked TWC product for option sync
 }
 
-export const TemplateOptionsManager = ({ treatmentCategory, templateId }: TemplateOptionsManagerProps) => {
+export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTWCProduct }: TemplateOptionsManagerProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isSyncing, setIsSyncing] = useState(false);
   
   // Fetch all treatment options and filter by category
-  const { data: allOptions = [], isLoading, error } = useAllTreatmentOptions();
+  const { data: allOptions = [], isLoading, error, refetch } = useAllTreatmentOptions();
   
   // Fetch template option settings
   const { data: templateSettings = [] } = useTemplateOptionSettings(templateId);
   const toggleOption = useToggleTemplateOption();
   
-  // Debug logging
-  console.log('🎯 TemplateOptionsManager:', {
-    treatmentCategory,
-    templateId,
-    isLoading,
-    error: error?.message,
-    allOptionsCount: allOptions.length,
-    allOptionsCategories: [...new Set(allOptions.map(o => o.treatment_category))],
-  });
+  // Get TWC questions from linked product
+  const twcQuestions: TWCQuestion[] = useMemo(() => {
+    if (!linkedTWCProduct?.metadata?.twc_questions) return [];
+    return linkedTWCProduct.metadata.twc_questions || [];
+  }, [linkedTWCProduct]);
   
   // Filter options for this specific treatment category
   const filteredOptions = allOptions.filter(opt => opt.treatment_category === treatmentCategory);
   
   // PHASE 3: Sort to show TWC options first with badge
-  const categoryOptions = [...filteredOptions].sort((a, b) => {
-    const aIsTWC = (a as any).source === 'twc';
-    const bIsTWC = (b as any).source === 'twc';
-    if (aIsTWC && !bIsTWC) return -1;
-    if (!aIsTWC && bIsTWC) return 1;
-    return 0;
-  });
+  const categoryOptions = useMemo(() => {
+    return [...filteredOptions].sort((a, b) => {
+      const aIsTWC = (a as any).source === 'twc';
+      const bIsTWC = (b as any).source === 'twc';
+      if (aIsTWC && !bIsTWC) return -1;
+      if (!aIsTWC && bIsTWC) return 1;
+      return 0;
+    });
+  }, [filteredOptions]);
   
-  // Check if any TWC options exist
+  // Check if any TWC options exist in treatment_options
   const hasTWCOptions = categoryOptions.some(opt => (opt as any).source === 'twc');
   
-  console.log('🔍 Filtered categoryOptions:', {
+  // Check if TWC product has options that aren't synced yet
+  const hasPendingTWCOptions = twcQuestions.length > 0 && !hasTWCOptions;
+  
+  console.log('🎯 TemplateOptionsManager:', {
     treatmentCategory,
+    templateId,
+    linkedTWCProduct: linkedTWCProduct?.name,
+    twcQuestionsCount: twcQuestions.length,
     categoryOptionsCount: categoryOptions.length,
     hasTWCOptions,
-    categoryOptions: categoryOptions.map(o => ({ key: o.key, label: o.label, category: o.treatment_category, source: (o as any).source })),
+    hasPendingTWCOptions,
   });
+  
+  // Sync TWC options to treatment_options table
+  const syncTWCOptions = async () => {
+    if (!linkedTWCProduct || !templateId || twcQuestions.length === 0) return;
+    
+    setIsSyncing(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      
+      // Get account owner
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('parent_account_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      const accountId = profile?.parent_account_id || user.id;
+      
+      // Create treatment options for each TWC question
+      for (const question of twcQuestions) {
+        const optionKey = question.name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        
+        // Check if option already exists
+        const { data: existingOption } = await supabase
+          .from('treatment_options')
+          .select('id')
+          .eq('account_id', accountId)
+          .eq('treatment_category', treatmentCategory)
+          .eq('key', optionKey)
+          .single();
+        
+        let optionId = existingOption?.id;
+        
+        if (!existingOption) {
+          // Create the treatment option
+          const { data: newOption, error: optionError } = await supabase
+            .from('treatment_options')
+            .insert({
+              account_id: accountId,
+              treatment_category: treatmentCategory,
+              key: optionKey,
+              label: question.name,
+              input_type: 'select',
+              is_required: question.isRequired,
+              source: 'twc',
+              order_index: twcQuestions.indexOf(question),
+            })
+            .select('id')
+            .single();
+          
+          if (optionError) {
+            console.error('Error creating option:', optionError);
+            continue;
+          }
+          
+          optionId = newOption.id;
+          
+          // Create option values with required fields
+          const optionValues = question.options.map((opt, index) => ({
+            account_id: accountId,
+            option_id: optionId!,
+            code: opt.toLowerCase().replace(/[^a-z0-9]+/g, '_').substring(0, 50),
+            label: opt,
+            order_index: index,
+          }));
+          
+          if (optionValues.length > 0) {
+            await supabase.from('option_values').insert(optionValues);
+          }
+        }
+        
+        // Create template_option_settings linkage if it doesn't exist
+        if (optionId) {
+          const { data: existingSetting } = await supabase
+            .from('template_option_settings')
+            .select('id')
+            .eq('template_id', templateId)
+            .eq('treatment_option_id', optionId)
+            .single();
+          
+          if (!existingSetting) {
+            await supabase
+              .from('template_option_settings')
+              .insert({
+                template_id: templateId,
+                treatment_option_id: optionId,
+                is_enabled: true,
+              });
+          }
+        }
+      }
+      
+      toast({
+        title: 'Options Synced',
+        description: `${twcQuestions.length} TWC options imported successfully`,
+      });
+      
+      // Refetch options
+      refetch();
+    } catch (error: any) {
+      console.error('Error syncing TWC options:', error);
+      toast({
+        title: 'Sync Failed',
+        description: error.message || 'Failed to sync TWC options',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
   
   // Helper to check if option is enabled (default true if no setting exists)
   const isOptionEnabled = (optionId: string) => {
@@ -62,13 +189,9 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId }: Templa
     return setting ? setting.is_enabled : true; // Default to enabled
   };
   
-  // Check if we can show toggles (always show them, even for new templates)
-  const canShowToggles = true; // Always show toggles for option configuration
-  
   // Handler for toggling option
   const handleToggle = (optionId: string, currentEnabled: boolean) => {
     if (!templateId) {
-      // Show warning toast for unsaved templates
       console.warn('Template not saved yet - toggle will take effect after saving');
       return;
     }
@@ -119,7 +242,43 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId }: Templa
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        {categoryOptions.length === 0 ? (
+        {/* TWC Options Pending Sync Banner */}
+        {hasPendingTWCOptions && templateId && (
+          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <Package className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  {twcQuestions.length} TWC options ready to import
+                </p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  This template is linked to a TWC product with {twcQuestions.length} options. 
+                  Click sync to import them as selectable options.
+                </p>
+                <Button 
+                  size="sm" 
+                  className="mt-3"
+                  onClick={syncTWCOptions}
+                  disabled={isSyncing}
+                >
+                  {isSyncing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Sync TWC Options
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {categoryOptions.length === 0 && !hasPendingTWCOptions ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground mb-4">
               No options configured yet for this treatment type
@@ -132,7 +291,7 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId }: Templa
               Add Options in System Settings
             </Button>
           </div>
-        ) : (
+        ) : categoryOptions.length > 0 && (
           <>
             {hasTWCOptions && (
               <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
@@ -183,7 +342,6 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId }: Templa
                             id={`toggle-${option.id}`}
                             checked={enabled}
                             onCheckedChange={() => {
-                              console.log('Switch onCheckedChange called for option:', option.id, 'current:', enabled);
                               handleToggle(option.id, enabled);
                             }}
                             disabled={!templateId || toggleOption.isPending}

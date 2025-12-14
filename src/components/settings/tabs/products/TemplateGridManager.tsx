@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useVendors, useCreateVendor } from '@/hooks/useVendors';
 import { useIntegrations } from '@/hooks/useIntegrations';
 import { useEnhancedInventory } from '@/hooks/useEnhancedInventory';
+import { PriceGroupStatusDashboard } from './PriceGroupStatusDashboard';
 
 interface TemplateGridManagerProps {
   // No props needed - grids are now assigned directly to inventory items
@@ -354,8 +355,21 @@ export const TemplateGridManager = ({}: TemplateGridManagerProps) => {
     return PRODUCT_TYPES.find(pt => pt.value === type)?.label || type;
   };
 
+  // Handler for quick upload from dashboard
+  const handleQuickUpload = (priceGroup: string) => {
+    setPriceGroup(priceGroup);
+    setShowUploadForm(true);
+    setTimeout(() => uploadFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Price Group Status Dashboard */}
+      <PriceGroupStatusDashboard 
+        grids={grids} 
+        onUploadClick={handleQuickUpload}
+      />
+
       {/* Visual Explanation */}
       <Alert>
         <Info className="h-4 w-4" />
