@@ -443,10 +443,15 @@ export const DynamicCurtainOptions = ({
     ? headingOptions.filter(h => template.selected_heading_ids.includes(h.id))
     : headingOptions; // ✅ FIXED: Show all headings if template doesn't filter them
 
+  // ✅ FIX: Detect TWC templates to suppress confusing validation alerts
+  const isTWCTemplate = template?.metadata?.twc_product_id || 
+    template?.description?.includes('TWC Template') ||
+    template?.system_type?.toLowerCase?.()?.includes('twc');
+
   return (
     <div className="space-y-3 px-3">
-      {/* Validation Alert */}
-      {(validation.errors.length > 0 || validation.warnings.length > 0) && (
+      {/* Validation Alert - SUPPRESS for TWC templates as they have their own option structure */}
+      {!isTWCTemplate && (validation.errors.length > 0 || validation.warnings.length > 0) && (
         <ValidationAlert 
           errors={validation.errors}
           warnings={validation.warnings}
