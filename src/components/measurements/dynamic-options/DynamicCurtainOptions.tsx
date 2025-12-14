@@ -103,7 +103,7 @@ export const DynamicCurtainOptions = ({
   });
   
   // Get template option settings to filter hidden options
-  const { isOptionEnabled, hasSettings, isLoading: settingsLoading } = useEnabledTemplateOptions(template?.id);
+  const { isOptionEnabled, hasSettings, isLoading: settingsLoading, enabledOptionIds } = useEnabledTemplateOptions(template?.id);
   
   // CRITICAL: Force refetch inventory when component mounts to ensure fresh data
   useEffect(() => {
@@ -385,11 +385,12 @@ export const DynamicCurtainOptions = ({
     onChange(`treatment_option_${optionKey}`, valueId);
   };
 
-  // Validate treatment options
+  // Validate treatment options - only validate options that are enabled on template
   const validation = useMemo(() => {
-    if (treatmentOptionsLoading) return { isValid: true, errors: [], warnings: [] };
-    return validateTreatmentOptions(treatmentOptions, treatmentOptionSelections);
-  }, [treatmentOptions, treatmentOptionSelections, treatmentOptionsLoading]);
+    if (treatmentOptionsLoading || settingsLoading) return { isValid: true, errors: [], warnings: [] };
+    // ✅ FIX: Pass enabledOptionIds to validation so it only validates enabled options
+    return validateTreatmentOptions(treatmentOptions, treatmentOptionSelections, enabledOptionIds);
+  }, [treatmentOptions, treatmentOptionSelections, treatmentOptionsLoading, settingsLoading, enabledOptionIds]);
 
   if (headingsLoading || treatmentOptionsLoading) {
     return (
@@ -449,6 +450,7 @@ export const DynamicCurtainOptions = ({
         <ValidationAlert 
           errors={validation.errors}
           warnings={validation.warnings}
+          templateId={template?.id}
         />
       )}
 
