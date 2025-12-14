@@ -45,7 +45,7 @@ serve(async (req) => {
 
     const accountId = profile?.parent_account_id || user.id;
 
-    // 1. Get the product to find its treatment_category
+    // 1. Get the product to find its treatment_category from metadata or subcategory
     const { data: product, error: productError } = await supabase
       .from('enhanced_inventory_items')
       .select('id, name, metadata, category, subcategory')
@@ -60,6 +60,15 @@ serve(async (req) => {
 
     console.log(`Found product: ${product.name}`);
 
+    // Extract treatment_category from product metadata or subcategory
+    // This is the FIX: don't rely solely on linked templates
+    const productTreatmentCategory = 
+      product.metadata?.treatment_category || 
+      product.metadata?.twc_treatment_category ||
+      product.subcategory;
+
+    console.log(`Product treatment_category: ${productTreatmentCategory}`);
+
     // 2. Find the linked template
     const { data: linkedTemplates } = await supabase
       .from('curtain_templates')
@@ -69,8 +78,14 @@ serve(async (req) => {
     console.log(`Found ${linkedTemplates?.length || 0} linked templates`);
 
     // Collect all treatment_categories to clean up
+    // FIXED: Also include the product's treatment_category even if no templates linked
     const treatmentCategories = new Set<string>();
+    if (productTreatmentCategory) {
+      treatmentCategories.add(productTreatmentCategory);
+    }
     linkedTemplates?.forEach(t => t.treatment_category && treatmentCategories.add(t.treatment_category));
+
+    console.log(`Treatment categories to clean: ${Array.from(treatmentCategories).join(', ')}`);
 
     let deletedOptions = 0;
     let deletedOptionValues = 0;
@@ -99,53 +114,68 @@ serve(async (req) => {
       }
     }
 
-    // 4. Delete TWC-sourced treatment_options and their values for this account's categories
-    // Only delete options that are TWC-sourced and belong to this account
+    // 4. Delete TWC-sourced treatment_options and their values for this product's treatment categories
     for (const category of treatmentCategories) {
       // Find TWC options for this category
       const { data: twcOptions } = await supabase
         .from('treatment_options')
-        .select('id')
+        .select('id, key')
         .eq('account_id', accountId)
         .eq('treatment_category', category)
         .eq('source', 'twc');
+
+      console.log(`Found ${twcOptions?.length || 0} TWC options for category ${category}`);
 
       if (twcOptions && twcOptions.length > 0) {
         const optionIds = twcOptions.map(o => o.id);
 
         // Delete option_values first
-        const { data: deletedValues } = await supabase
+        const { data: deletedValues, error: valuesError } = await supabase
           .from('option_values')
           .delete()
           .in('option_id', optionIds)
           .select('id');
 
-        deletedOptionValues += deletedValues?.length || 0;
+        if (valuesError) {
+          console.error('Error deleting option_values:', valuesError);
+        } else {
+          deletedOptionValues += deletedValues?.length || 0;
+          console.log(`Deleted ${deletedValues?.length || 0} option_values`);
+        }
 
-        // Check if any other templates still use these options
+        // Delete template_option_settings for these options (from any template)
+        const { data: deletedSettings, error: settingsError } = await supabase
+          .from('template_option_settings')
+          .delete()
+          .in('treatment_option_id', optionIds)
+          .select('id');
+
+        if (settingsError) {
+          console.error('Error deleting template_option_settings:', settingsError);
+        } else {
+          deletedTemplateSettings += deletedSettings?.length || 0;
+          console.log(`Deleted ${deletedSettings?.length || 0} template_option_settings for TWC options`);
+        }
+
+        // Now delete the options themselves (no need to check remaining settings - we just deleted them)
         for (const optionId of optionIds) {
-          const { data: remainingSettings } = await supabase
-            .from('template_option_settings')
-            .select('id')
-            .eq('treatment_option_id', optionId);
+          const { error: optionDeleteError } = await supabase
+            .from('treatment_options')
+            .delete()
+            .eq('id', optionId);
 
-          // Only delete option if no templates reference it
-          if (!remainingSettings || remainingSettings.length === 0) {
-            const { error: optionDeleteError } = await supabase
-              .from('treatment_options')
-              .delete()
-              .eq('id', optionId);
-
-            if (!optionDeleteError) {
-              deletedOptions++;
-            }
+          if (!optionDeleteError) {
+            deletedOptions++;
+          } else {
+            console.error(`Error deleting option ${optionId}:`, optionDeleteError);
           }
         }
+        console.log(`Deleted ${deletedOptions} treatment_options for category ${category}`);
       }
     }
 
     // 5. Delete child materials (items with parent_product_id in metadata)
-    const { data: childMaterials } = await supabase
+    const { data: childMaterials, error: materialsError } = await supabase
       .from('enhanced_inventory_items')
       .delete()
       .eq('user_id', user.id)
@@ -153,8 +183,12 @@ serve(async (req) => {
       .filter('metadata->parent_product_id', 'eq', `"${productId}"`)
       .select('id');
 
-    deletedMaterials = childMaterials?.length || 0;
-    console.log(`Deleted ${deletedMaterials} child materials`);
+    if (materialsError) {
+      console.error('Error deleting child materials:', materialsError);
+    } else {
+      deletedMaterials = childMaterials?.length || 0;
+      console.log(`Deleted ${deletedMaterials} child materials`);
+    }
 
     // 6. Delete linked templates
     for (const template of linkedTemplates || []) {

@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Package, Loader2, RefreshCw, Trash2, ExternalLink } from "lucide-react";
-import { useTWCImportedProducts, useResyncTWCProducts, useDeleteTWCProduct } from "@/hooks/useTWCProducts";
+import { Package, Loader2, RefreshCw, Trash2, ExternalLink, AlertTriangle } from "lucide-react";
+import { useTWCImportedProducts, useResyncTWCProducts, useDeleteTWCProduct, useDeleteAllTWCData } from "@/hooks/useTWCProducts";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import {
@@ -21,8 +21,10 @@ export const TWCImportedProducts = () => {
   const { data: importedProducts, isLoading } = useTWCImportedProducts();
   const resyncMutation = useResyncTWCProducts();
   const deleteMutation = useDeleteTWCProduct();
+  const deleteAllMutation = useDeleteAllTWCData();
   const navigate = useNavigate();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
 
   if (isLoading) {
     return (
@@ -54,6 +56,15 @@ export const TWCImportedProducts = () => {
       deleteMutation.mutate(deleteTarget.id);
       setDeleteTarget(null);
     }
+  };
+
+  const handleDeleteAll = () => {
+    setShowDeleteAllConfirm(true);
+  };
+
+  const confirmDeleteAll = () => {
+    deleteAllMutation.mutate();
+    setShowDeleteAllConfirm(false);
   };
 
   const handleCreateTemplate = (product: any) => {
@@ -94,20 +105,36 @@ export const TWCImportedProducts = () => {
               <h3 className="font-semibold">TWC Products</h3>
               <Badge variant="secondary">{importedProducts.length}</Badge>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleResync}
-              disabled={resyncMutation.isPending}
-              className="gap-1.5"
-            >
-              {resyncMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              Re-sync Options
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleResync}
+                disabled={resyncMutation.isPending}
+                className="gap-1.5"
+              >
+                {resyncMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                Re-sync Options
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleDeleteAll}
+                disabled={deleteAllMutation.isPending}
+                className="gap-1.5"
+              >
+                {deleteAllMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                Delete All
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2 max-h-[250px] overflow-y-auto">
@@ -160,12 +187,13 @@ export const TWCImportedProducts = () => {
         </CardContent>
       </Card>
 
+      {/* Delete single product dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete TWC Product?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "{deleteTarget?.name}" from your inventory.
+              This will permanently delete "{deleteTarget?.name}" and all related templates, options, and materials.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -175,6 +203,38 @@ export const TWCImportedProducts = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete ALL TWC data dialog */}
+      <AlertDialog open={showDeleteAllConfirm} onOpenChange={setShowDeleteAllConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Delete ALL TWC Data?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>This will permanently delete ALL TWC data from your account:</p>
+              <ul className="list-disc list-inside text-sm space-y-1">
+                <li>All {importedProducts.length} TWC products</li>
+                <li>All related materials and fabrics</li>
+                <li>All TWC templates</li>
+                <li>All TWC options and values</li>
+                <li>All template option settings</li>
+              </ul>
+              <p className="font-medium text-destructive">This action cannot be undone.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteAll}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete All TWC Data
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

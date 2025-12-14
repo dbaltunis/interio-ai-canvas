@@ -282,3 +282,51 @@ export const useUpdateExistingTWCProducts = () => {
     },
   });
 };
+
+/**
+ * Phase 4: Delete ALL TWC data for the current account
+ * This is a comprehensive cleanup function that removes all orphaned data
+ */
+export const useDeleteAllTWCData = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.functions.invoke("twc-delete-all-data", {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Delete all failed");
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['twc-imported-products'] });
+      queryClient.invalidateQueries({ queryKey: ['enhanced-inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['curtain-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['treatment-options'] });
+      queryClient.invalidateQueries({ queryKey: ['template-option-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['option-values'] });
+      
+      const deleted = data.deleted;
+      const parts = ['All TWC data deleted:'];
+      if (deleted.products > 0) parts.push(`${deleted.products} products`);
+      if (deleted.materials > 0) parts.push(`${deleted.materials} materials`);
+      if (deleted.templates > 0) parts.push(`${deleted.templates} templates`);
+      if (deleted.options > 0) parts.push(`${deleted.options} options`);
+      if (deleted.option_values > 0) parts.push(`${deleted.option_values} values`);
+      if (deleted.template_settings > 0) parts.push(`${deleted.template_settings} settings`);
+      
+      toast.success('TWC Data Cleared', {
+        description: parts.join(', '),
+        duration: 6000
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete TWC data: ${error.message}`);
+    }
+  });
+};
