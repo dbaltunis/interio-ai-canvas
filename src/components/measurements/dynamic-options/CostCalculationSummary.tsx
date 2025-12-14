@@ -144,6 +144,9 @@ interface CostCalculationSummaryProps {
     horizontalPieces: number;
     orientation: 'horizontal' | 'vertical';
     usesLeftover?: boolean;
+    usesPricingGrid?: boolean; // ✅ For curtains using grid pricing
+    gridPrice?: number; // ✅ Grid price when applicable
+    gridName?: string; // ✅ Grid name for display
   };
   manufacturingDetails?: ManufacturingDetails;
   /** 
@@ -803,21 +806,26 @@ export const CostCalculationSummary = ({
                   {fabricDisplayData ? (
                     <>
                       <span className="text-xs text-muted-foreground truncate">
-                        {/* ✅ UNIT-AWARE DISPLAY: Convert meters to user's fabric unit */}
-                        {/* CRITICAL: Check usesLeftover FIRST for horizontal fabric */}
-                        {fabricDisplayData.usesLeftover && fabricDisplayData.orientation === 'horizontal'
-                          ? `${formatFabricLength(fabricDisplayData.linearMeters)} × 1 piece (using leftover) = ${formatFabricLength(fabricDisplayData.totalMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
-                          : fabricDisplayData.orientation === 'horizontal' && fabricDisplayData.horizontalPieces > 1
-                            ? `${formatFabricLength(fabricDisplayData.linearMeters)} × ${fabricDisplayData.horizontalPieces} pieces = ${formatFabricLength(fabricDisplayData.totalMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
-                            : `${formatFabricLength(fabricDisplayData.linearMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
+                        {/* ✅ FIX: Show grid pricing info when applicable */}
+                        {fabricDisplayData.usesPricingGrid && fabricDisplayData.gridName
+                          ? `Grid: ${fabricDisplayData.gridName}`
+                          : /* ✅ UNIT-AWARE DISPLAY: Convert meters to user's fabric unit */
+                            /* CRITICAL: Check usesLeftover FIRST for horizontal fabric */
+                            fabricDisplayData.usesLeftover && fabricDisplayData.orientation === 'horizontal'
+                              ? `${formatFabricLength(fabricDisplayData.linearMeters)} × 1 piece (using leftover) = ${formatFabricLength(fabricDisplayData.totalMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
+                              : fabricDisplayData.orientation === 'horizontal' && fabricDisplayData.horizontalPieces > 1
+                                ? `${formatFabricLength(fabricDisplayData.linearMeters)} × ${fabricDisplayData.horizontalPieces} pieces = ${formatFabricLength(fabricDisplayData.totalMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
+                                : `${formatFabricLength(fabricDisplayData.linearMeters)} × ${formatPricePerFabricUnit(fabricDisplayData.pricePerMeter)}`
                         }
                       </span>
                       <span className="text-xs text-muted-foreground/80 mt-0.5">
-                        {fabricDisplayData.orientation === 'horizontal'
-                          ? fabricDisplayData.usesLeftover 
-                            ? `✓ Using leftover fabric - charged for 1 piece only`
-                            : `⚡ Railroaded orientation: ${fabricDisplayData.horizontalPieces} piece(s) needed`
-                          : `📏 Standard vertical: ${fabricDisplayData.horizontalPieces} width(s)`
+                        {fabricDisplayData.usesPricingGrid
+                          ? `📊 Grid pricing applied (includes material & manufacturing)`
+                          : fabricDisplayData.orientation === 'horizontal'
+                            ? fabricDisplayData.usesLeftover 
+                              ? `✓ Using leftover fabric - charged for 1 piece only`
+                              : `⚡ Railroaded orientation: ${fabricDisplayData.horizontalPieces} piece(s) needed`
+                            : `📏 Standard vertical: ${fabricDisplayData.horizontalPieces} width(s)`
                         }
                       </span>
                     </>

@@ -399,6 +399,7 @@ export class CalculationEngine {
   /**
    * Calculate fabric cost - supports grid, per-meter, per-sqm, and fixed
    * CRITICAL: For linear types (curtains), width_cm should be EFFECTIVE width (with fullness)
+   * ✅ FIX: Apply pricing_grid_markup when using grid pricing
    */
   static calculateFabricCost(
     fabric: FabricContract, 
@@ -409,16 +410,21 @@ export class CalculationEngine {
     // PRIORITY 1: Grid pricing
     if (fabric.pricing_method === 'pricing_grid' && fabric.pricing_grid_data) {
       if (width_cm && drop_cm) {
+        const gridMarkup = (fabric as any).pricing_grid_markup || 0;
         console.log('📊 FABRIC GRID LOOKUP (CalculationEngine):', {
           widthCm: width_cm,
           dropCm: drop_cm,
           pricingMethod: fabric.pricing_method,
+          gridMarkup,
           gridName: (fabric as any).name || 'unknown'
         });
         const gridPrice = this.lookupGridPrice(fabric.pricing_grid_data, width_cm, drop_cm);
         if (gridPrice !== null && gridPrice > 0) {
-          console.log('✅ FABRIC GRID PRICE:', gridPrice);
-          return roundTo(gridPrice, 2);
+          // ✅ FIX: Apply markup percentage
+          const markupMultiplier = gridMarkup > 0 ? (1 + gridMarkup / 100) : 1;
+          const priceWithMarkup = gridPrice * markupMultiplier;
+          console.log('✅ FABRIC GRID PRICE:', { base: gridPrice, markup: gridMarkup, final: priceWithMarkup });
+          return roundTo(priceWithMarkup, 2);
         }
       }
     }
