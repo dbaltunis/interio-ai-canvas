@@ -69,12 +69,13 @@ export const resolveGridForProduct = async (
     });
 
     if (autoMatchResult.gridId) {
-      console.log('📊 Grid resolved via auto-match:', autoMatchResult.matchDetails);
+      console.log('📊 Grid resolved via auto-match:', autoMatchResult.matchDetails, 'markup:', autoMatchResult.markupPercentage);
       return {
         gridId: autoMatchResult.gridId,
         gridCode: autoMatchResult.gridCode,
         gridName: autoMatchResult.gridName,
         gridData: autoMatchResult.gridData,
+        markupPercentage: autoMatchResult.markupPercentage,  // ✅ FIX: Pass through markup from auto-match
         matchedRule: {
           id: 'auto-match',
           product_type: productType,
@@ -98,6 +99,7 @@ export const resolveGridForProduct = async (
           grid_code,
           name,
           grid_data,
+          markup_percentage,
           active
         )
       `)
@@ -148,6 +150,7 @@ export const resolveGridForProduct = async (
         gridCode: grid.grid_code,
         gridName: grid.name,
         gridData: grid.grid_data,
+        markupPercentage: grid.markup_percentage,  // ✅ FIX: Include markup from legacy grid
         matchedRule: {
           id: rule.id,
           product_type: rule.product_type,
