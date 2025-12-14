@@ -2604,6 +2604,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       || fabricCalculation?.pricePerMeter 
                       || 0;
                     
+                    // ✅ FIX: Check if curtain fabric uses pricing grid
+                    const curtainUsesPricingGrid = selectedFabricItem?.pricing_grid_data && 
+                      (selectedFabricItem?.pricing_method === 'pricing_grid' || selectedFabricItem?.resolved_grid_name);
+                    
                     // CRITICAL FIX: Check if using leftover fabric for horizontal seaming
                     const usesLeftover = measurements.uses_leftover_for_horizontal === true || 
                                         measurements.uses_leftover_for_horizontal === 'true';
@@ -2618,8 +2622,32 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     let totalMeters: number;
                     let fabricCost: number;
                     
-                    if (usingEngine && engineTotalMeters != null) {
-                      // ENGINE PATH: linear_meters is TOTAL
+                    // ✅ FIX: For curtains with pricing grid, use grid price (not per-meter calculation)
+                    if (curtainUsesPricingGrid && usingEngine) {
+                      // Grid pricing path - use engine's fabric_cost which includes grid lookup with markup
+                      totalMeters = engineTotalMeters!;
+                      perPieceMeters = isRailroaded && horizontalPiecesNeeded > 1 
+                        ? engineTotalMeters! / horizontalPiecesNeeded 
+                        : engineTotalMeters!;
+                      
+                      // Engine already calculated grid price with effective width
+                      fabricCost = engineResult?.fabric_cost ?? 0;
+                      
+                      // Apply leftover discount if applicable
+                      if (usesLeftover && horizontalPiecesNeeded > 1) {
+                        // For grid pricing, we don't have per-meter, so just show full grid price
+                        // Grid prices are typically for the complete treatment
+                        totalMeters = perPieceMeters;
+                      }
+                      
+                      console.log('📊 CURTAIN GRID PRICING PATH:', {
+                        gridName: selectedFabricItem?.resolved_grid_name,
+                        engineFabricCost: engineResult?.fabric_cost,
+                        gridMarkup: selectedFabricItem?.pricing_grid_markup,
+                        finalCost: fabricCost
+                      });
+                    } else if (usingEngine && engineTotalMeters != null) {
+                      // ENGINE PATH (per-meter): linear_meters is TOTAL
                       totalMeters = engineTotalMeters;
                       
                       if (isRailroaded && horizontalPiecesNeeded > 1) {
@@ -2888,7 +2916,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                           pricePerMeter: pricePerMeter,
                           horizontalPieces: piecesToDisplay,
                           orientation: isRailroaded ? 'horizontal' : 'vertical',
-                          usesLeftover
+                          usesLeftover,
+                          usesPricingGrid: curtainUsesPricingGrid,
+                          gridPrice: curtainUsesPricingGrid ? fabricCost : undefined,
+                          gridName: curtainUsesPricingGrid ? selectedFabricItem?.resolved_grid_name : undefined
                         }}
                         manufacturingDetails={manufacturingDetails}
                         engineResult={engineResult}

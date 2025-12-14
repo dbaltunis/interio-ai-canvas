@@ -347,30 +347,51 @@ export const AdaptiveFabricPricingDisplay = ({
       </div>
 
       {/* Grid Price - Simple Display */}
-      <div className="container-level-3 rounded-md p-3 space-y-2">
-        <div className="flex items-center justify-between">
-          <h4 className="font-semibold text-sm">Price</h4>
-          {gridDataToUse && <PricingGridPreview gridData={gridDataToUse} gridName={fabricToUse?.resolved_grid_name || fabricToUse?.name} gridCode={fabricToUse?.resolved_grid_code} />}
-        </div>
-        <div className="text-xs space-y-1 text-muted-foreground">
-            <div className="flex justify-between">
-              <span>{isCurtainType ? 'Effective Width × Drop:' : 'Dimensions:'}</span>
-              <span className="font-medium text-foreground">
-                {formatDimensionsFromCM(gridWidthCm, gridDropCm, units.length)}
-                {isCurtainType && effectiveGridWidthCm > 0 && (
-                  <span className="text-muted-foreground text-xs ml-1">(with fullness)</span>
-                )}
-              </span>
+      {(() => {
+        // ✅ FIX: Apply markup to grid price for display
+        const gridMarkup = fabricToUse?.pricing_grid_markup || 0;
+        const markupMultiplier = gridMarkup > 0 ? (1 + gridMarkup / 100) : 1;
+        const gridPriceWithMarkup = gridPrice * markupMultiplier;
+        
+        return (
+          <div className="container-level-3 rounded-md p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-sm">Price</h4>
+              {gridDataToUse && <PricingGridPreview gridData={gridDataToUse} gridName={fabricToUse?.resolved_grid_name || fabricToUse?.name} gridCode={fabricToUse?.resolved_grid_code} />}
             </div>
-          <div className="flex justify-between border-t border-border pt-2 mt-2">
-            <span className="font-medium">Grid Price:</span>
-            <span className="font-medium text-foreground text-lg">{formatPrice(gridPrice)}</span>
+            <div className="text-xs space-y-1 text-muted-foreground">
+              <div className="flex justify-between">
+                <span>{isCurtainType ? 'Effective Width × Drop:' : 'Dimensions:'}</span>
+                <span className="font-medium text-foreground">
+                  {formatDimensionsFromCM(gridWidthCm, gridDropCm, units.length)}
+                  {isCurtainType && effectiveGridWidthCm > 0 && (
+                    <span className="text-muted-foreground text-xs ml-1">(with fullness)</span>
+                  )}
+                </span>
+              </div>
+              {gridMarkup > 0 && (
+                <div className="flex justify-between">
+                  <span>Base Grid Price:</span>
+                  <span className="font-medium text-foreground">{formatPrice(gridPrice)}</span>
+                </div>
+              )}
+              {gridMarkup > 0 && (
+                <div className="flex justify-between">
+                  <span>Markup ({gridMarkup}%):</span>
+                  <span className="font-medium text-foreground">+{formatPrice(gridPriceWithMarkup - gridPrice)}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-border pt-2 mt-2">
+                <span className="font-medium">{gridMarkup > 0 ? 'Total Price:' : 'Grid Price:'}</span>
+                <span className="font-medium text-foreground text-lg">{formatPrice(gridPriceWithMarkup)}</span>
+              </div>
+              <p className="text-xs text-muted-foreground italic pt-1">
+                Pricing grid includes all material and manufacturing costs
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground italic pt-1">
-            Pricing grid includes all material and manufacturing costs
-          </p>
-        </div>
-      </div>
+        );
+      })()}
     </div>;
   const renderRollerBlindDisplay = () => {
     const sqm = calculateSquareMeters();
