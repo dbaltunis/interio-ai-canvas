@@ -19,6 +19,8 @@ import { QRCodeDisplay } from "./QRCodeDisplay";
 import { InventoryQuickView } from "./InventoryQuickView";
 import { ColorSlatPreview, getColorHex } from "./ColorSlatPreview";
 import { COLOR_PALETTE } from "@/constants/inventoryCategories";
+import { InventorySupplierFilter, matchesSupplierFilter } from "./InventorySupplierFilter";
+import { useVendors } from "@/hooks/useVendors";
 import {
   Dialog,
   DialogContent,
@@ -49,8 +51,9 @@ const MATERIAL_CATEGORIES = [
 
 const ITEMS_PER_PAGE = 24;
 
-export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection, selectedStorageLocation }: MaterialInventoryViewProps) => {
+export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: externalVendor, selectedCollection, selectedStorageLocation }: MaterialInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
+  const { data: vendors = [] } = useVendors();
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -58,6 +61,10 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
   const [quickViewItem, setQuickViewItem] = useState<any>(null);
   const [showQuickView, setShowQuickView] = useState(false);
   const [selectedPriceGroup, setSelectedPriceGroup] = useState<string>("all");
+  const [localSelectedVendor, setLocalSelectedVendor] = useState<string | undefined>(externalVendor);
+
+  // Use local vendor state, sync with external if provided
+  const selectedVendor = externalVendor ?? localSelectedVendor;
 
   const materialItems = inventory?.filter(item => 
     item.category === 'material' || item.category === 'blind_fabric'
@@ -87,7 +94,8 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
     const matchesCategory = activeCategory === "all" || 
       item.subcategory === activeCategory;
 
-    const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
+    // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
+    const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
     const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
     const matchesLocation = !selectedStorageLocation || item.location === selectedStorageLocation;
     
@@ -139,14 +147,20 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
 
   return (
     <div className="space-y-4">
-      {/* Header row with count, filter, and import */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      {/* Header row with count, supplier filter, price group filter, and import */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
           <span className="text-sm text-muted-foreground">
             {filteredItems.length} materials found
           </span>
+          <InventorySupplierFilter
+            value={selectedVendor}
+            onChange={setLocalSelectedVendor}
+            showCounts={true}
+            category="material"
+          />
           <Select value={selectedPriceGroup} onValueChange={setSelectedPriceGroup}>
-            <SelectTrigger className="w-auto h-8 text-xs gap-2 border-dashed">
+            <SelectTrigger className="w-auto h-9 text-sm gap-2 border-dashed">
               <Filter className="h-3 w-3" />
               <SelectValue placeholder="All Groups" />
             </SelectTrigger>
@@ -160,9 +174,17 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
               ))}
             </SelectContent>
           </Select>
-          {selectedPriceGroup !== "all" && (
-            <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={() => setSelectedPriceGroup("all")}>
-              Clear
+          {(selectedPriceGroup !== "all" || selectedVendor) && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 text-xs px-2" 
+              onClick={() => {
+                setSelectedPriceGroup("all");
+                setLocalSelectedVendor(undefined);
+              }}
+            >
+              Clear Filters
             </Button>
           )}
         </div>

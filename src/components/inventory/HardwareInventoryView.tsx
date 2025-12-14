@@ -26,6 +26,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { QRCodeDisplay } from "./QRCodeDisplay";
 import { InventoryQuickView } from "./InventoryQuickView";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { InventorySupplierFilter, matchesSupplierFilter } from "./InventorySupplierFilter";
+import { useVendors } from "@/hooks/useVendors";
 
 interface HardwareInventoryViewProps {
   searchQuery: string;
@@ -46,14 +48,19 @@ const HARDWARE_CATEGORIES = [
 
 const ITEMS_PER_PAGE = 24;
 
-export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection, selectedStorageLocation }: HardwareInventoryViewProps) => {
+export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: externalVendor, selectedCollection, selectedStorageLocation }: HardwareInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
+  const { data: vendors = [] } = useVendors();
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
   const [quickViewItem, setQuickViewItem] = useState<any>(null);
   const [showQuickView, setShowQuickView] = useState(false);
+  const [localSelectedVendor, setLocalSelectedVendor] = useState<string | undefined>(externalVendor);
+
+  // Use local vendor state, sync with external if provided
+  const selectedVendor = externalVendor ?? localSelectedVendor;
 
   const hardwareItems = inventory?.filter(item => 
     item.category === 'hardware'
@@ -76,7 +83,8 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
     const matchesCategory = activeCategory === "all" || 
       item.subcategory === activeCategory;
 
-    const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
+    // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
+    const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
     const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
     const matchesLocation = !selectedStorageLocation || item.location === selectedStorageLocation;
 
@@ -153,11 +161,19 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor, s
 
   return (
     <div className="space-y-6">
-      {/* Action Bar */}
+      {/* Action Bar with Supplier Filter */}
       <div className="flex justify-between items-center gap-4 flex-wrap">
-        <p className="text-sm text-muted-foreground">
-          {filteredItems.length} hardware item{filteredItems.length !== 1 ? 's' : ''} found
-        </p>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-muted-foreground">
+            {filteredItems.length} hardware item{filteredItems.length !== 1 ? 's' : ''} found
+          </p>
+          <InventorySupplierFilter
+            value={selectedVendor}
+            onChange={setLocalSelectedVendor}
+            showCounts={true}
+            category="hardware"
+          />
+        </div>
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline">
