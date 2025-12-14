@@ -376,6 +376,7 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
           <TemplateOptionsManager 
             treatmentCategory={formData.treatment_category} 
             templateId={template?.id}
+            linkedTWCProduct={linkedTWCProduct}
           />
         </TabsContent>
 
