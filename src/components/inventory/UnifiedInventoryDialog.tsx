@@ -26,6 +26,7 @@ import { ColorSelector } from "./ColorSelector";
 import { ColorSlatPreview, getColorHex } from "./ColorSlatPreview";
 import { COLOR_PALETTE } from "@/constants/inventoryCategories";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
+import { CompatibleTreatmentsSelector } from "./CompatibleTreatmentsSelector";
 
 const STORAGE_KEY = "inventory_draft_data";
 
@@ -117,6 +118,7 @@ export const UnifiedInventoryDialog = ({
     price_group: null as string | null,
     tags: [] as string[],
     specifications: {} as Record<string, any>,
+    compatible_treatments: [] as string[], // NEW: Which treatments this product works with
   });
   
   const [customColors, setCustomColors] = useState<Array<{ name: string; value: string; hex: string }>>([]);
@@ -265,6 +267,7 @@ export const UnifiedInventoryDialog = ({
         price_group: item.price_group || null,
         tags: item.tags || [],
         specifications: item.specifications || {},
+        compatible_treatments: item.compatible_treatments || [],
       });
       
       // Detect pricing method from item data
@@ -413,6 +416,8 @@ export const UnifiedInventoryDialog = ({
       pattern_repeat_horizontal: Number(formData.pattern_repeat_horizontal) || null,
       // Ensure tags array is included
       tags: Array.isArray(formData.tags) ? formData.tags : [],
+      // Include compatible treatments
+      compatible_treatments: Array.isArray(formData.compatible_treatments) ? formData.compatible_treatments : [],
     };
 
     console.log('🔍 Submitting inventory item:', JSON.stringify(itemData, null, 2));
@@ -535,8 +540,9 @@ export const UnifiedInventoryDialog = ({
 
           {formData.subcategory && (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-6">
+                <TabsTrigger value="basic">Basic</TabsTrigger>
+                <TabsTrigger value="treatments">Treatments</TabsTrigger>
                 <TabsTrigger value="pricing_method">Pricing</TabsTrigger>
                 <TabsTrigger value="product_details">Details</TabsTrigger>
                 <TabsTrigger value="inventory">Stock</TabsTrigger>
@@ -616,6 +622,16 @@ export const UnifiedInventoryDialog = ({
                     </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              {/* COMPATIBLE TREATMENTS TAB */}
+              <TabsContent value="treatments" className="space-y-4">
+                <CompatibleTreatmentsSelector
+                  selectedTreatments={formData.compatible_treatments}
+                  onChange={(treatments) => setFormData(prev => ({ ...prev, compatible_treatments: treatments }))}
+                  productType={formData.category === 'fabric' ? 'fabric' : formData.category === 'material' ? 'hard_material' : undefined}
+                  subcategory={formData.subcategory}
+                />
               </TabsContent>
 
               {/* PRICING METHOD TAB */}
