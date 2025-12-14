@@ -5,8 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign } from "lucide-react";
+import { DollarSign, TrendingUp } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useUserRole } from "@/hooks/useUserRole";
+import { calculateGrossMargin, getProfitStatus } from "@/utils/pricing/markupResolver";
 
 interface QuotationSummaryProps {
   subtotal: number;
@@ -16,6 +18,7 @@ interface QuotationSummaryProps {
   onTaxRateChange: (rate: number) => void;
   markupPercentage: number;
   treatmentTotal: number;
+  costTotal?: number; // Base cost before markup
   discountAmount?: number;
   discountType?: 'percentage' | 'fixed';
   discountValue?: number;
@@ -37,6 +40,7 @@ export const QuotationSummary = ({
   discountAmount = 0,
   discountType,
   discountValue,
+  costTotal,
   paymentAmount,
   paymentType,
   paymentStatus,
@@ -44,6 +48,8 @@ export const QuotationSummary = ({
   onEditPayment,
 }: QuotationSummaryProps) => {
   const { units } = useMeasurementUnits();
+  const { data: roleData } = useUserRole();
+  const canViewMarkup = roleData?.canViewMarkup || false;
   const currency = units.currency || 'USD';
 
   const formatCurrency = (amount: number) => {
@@ -55,6 +61,12 @@ export const QuotationSummary = ({
 
   const markupAmount = treatmentTotal * (markupPercentage / 100);
   const subtotalAfterDiscount = subtotal - discountAmount;
+  
+  // Calculate profit metrics for authorized users
+  const effectiveCost = costTotal || treatmentTotal;
+  const profit = subtotal - effectiveCost;
+  const gpPercent = calculateGrossMargin(effectiveCost, subtotal);
+  const profitStatus = getProfitStatus(gpPercent);
 
   return (
     <Card>
