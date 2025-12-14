@@ -43,15 +43,16 @@ export const SettingsView = () => {
   const locationState = location.state as LocationState | null;
 
   // Read initial tab from URL parameters or location state
-  const urlParams = new URLSearchParams(window.location.search);
-  const sectionParam = urlParams.get('section');
+  // Support both ?tab= and ?section= for backward compatibility
+  const urlParams = new URLSearchParams(location.search);
+  const tabParam = urlParams.get('tab') || urlParams.get('section');
   
   // Determine initial tab - location state takes precedence
   const getInitialTab = () => {
     if (locationState?.createTemplate || locationState?.activeTab === 'templates' || locationState?.editTemplateId) {
       return "window-coverings";
     }
-    return sectionParam || "personal";
+    return tabParam || "personal";
   };
   
   const [activeTab, setActiveTab] = useState(getInitialTab());
