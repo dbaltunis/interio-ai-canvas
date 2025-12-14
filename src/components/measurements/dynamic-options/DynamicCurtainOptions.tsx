@@ -355,19 +355,18 @@ export const DynamicCurtainOptions = ({
             return !opt.name.startsWith(`${option.label}:`);
           });
           
-          // Add the new option with its key for future identification
-          if (price > 0) {
-            const pricingMethod = selectedValue.extra_data?.pricing_method || 'per-meter';
-            const pricingGridData = selectedValue.extra_data?.pricing_grid_data;
-            
-            updatedOptions.push({ 
-              name: `${option.label}: ${selectedValue.label}`, 
-              price,
-              pricingMethod,
-              pricingGridData,
-              optionKey: optionKey // ✅ Store key for reliable filtering
-            } as any);
-          }
+          // ✅ FIX: Add ALL selected options regardless of price
+          // Even €0 options must be captured for quote display
+          const pricingMethod = selectedValue.extra_data?.pricing_method || 'per-meter';
+          const pricingGridData = selectedValue.extra_data?.pricing_grid_data;
+          
+          updatedOptions.push({ 
+            name: `${option.label}: ${selectedValue.label}`, 
+            price, // Will be 0 for included options - that's OK
+            pricingMethod,
+            pricingGridData,
+            optionKey: optionKey // Store key for reliable filtering
+          } as any);
           onSelectedOptionsChange(updatedOptions);
           console.log('🎨 Updated selectedOptions:', updatedOptions.map(o => o.name));
         }
