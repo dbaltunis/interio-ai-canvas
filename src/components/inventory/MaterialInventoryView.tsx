@@ -40,13 +40,17 @@ interface MaterialInventoryViewProps {
 const MATERIAL_CATEGORIES = [
   { key: "all", label: "All Materials" },
   { key: "roller_fabric", label: "Roller Blinds" },
-  { key: "venetian_slats", label: "Venetian Blinds" },
-  { key: "vertical_slats", label: "Vertical Blinds" },
-  { key: "vertical_fabric", label: "Vertical Fabrics" },
-  { key: "shutter_material", label: "Plantation Shutters" },
-  { key: "cellular", label: "Cellular/Honeycomb" },
-  { key: "panel_glide_fabric", label: "Panel Track/Glide" },
-  { key: "blind_material", label: "Other Materials" }
+  { key: "venetian_slats", label: "Venetian" },
+  { key: "vertical_slats", label: "Vertical" },
+  { key: "cellular", label: "Cellular" },
+  { key: "panel_glide_fabric", label: "Panel Glide" },
+  { key: "shutter_material", label: "Shutters" },
+];
+
+// Subcategories that are blind materials (manufactured products, not sewn)
+const BLIND_MATERIAL_SUBCATEGORIES = [
+  'roller_fabric', 'venetian_slats', 'vertical_slats', 'vertical_fabric',
+  'cellular', 'shutter_material', 'panel_glide_fabric', 'blind_material', 'blind_fabric'
 ];
 
 const ITEMS_PER_PAGE = 24;
@@ -66,9 +70,15 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
   // Use local vendor state, sync with external if provided
   const selectedVendor = externalVendor ?? localSelectedVendor;
 
-  const materialItems = inventory?.filter(item => 
-    item.category === 'material' || item.category === 'blind_fabric'
-  ) || [];
+  // CRITICAL FIX: Include ALL blind materials regardless of category field
+  // This catches TWC items that have category='fabric' but subcategory='roller_fabric'
+  const materialItems = inventory?.filter(item => {
+    // Include if category is material or blind_fabric
+    if (item.category === 'material' || item.category === 'blind_fabric') return true;
+    // Also include items from 'fabric' category that have blind material subcategories
+    if (BLIND_MATERIAL_SUBCATEGORIES.includes(item.subcategory || '')) return true;
+    return false;
+  }) || [];
 
   const priceGroups = [...new Set(materialItems.map(i => i.price_group).filter(Boolean))] as string[];
   priceGroups.sort((a, b) => {

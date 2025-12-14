@@ -134,10 +134,12 @@ const handler = async (req: Request): Promise<Response> => {
     };
 
     // Map category for inventory classification using VALID categories from INVENTORY_CATEGORY_GUIDE.md
+    // CRITICAL: Use 'material' category for ALL blind products (roller, venetian, vertical, etc.)
+    // Use 'fabric' ONLY for soft goods that are sewn (curtains, romans, linings)
     const mapCategory = (description: string | undefined | null): { category: string, subcategory: string } => {
       if (!description || typeof description !== 'string') {
         console.warn('Invalid description provided to mapCategory');
-        return { category: 'material', subcategory: 'blind_material' };
+        return { category: 'material', subcategory: 'roller_fabric' };
       }
       
       const lowerDesc = description.toLowerCase();
@@ -149,9 +151,9 @@ const handler = async (req: Request): Promise<Response> => {
         return { category: 'material', subcategory: 'venetian_slats' };
       }
       
-      // Roller = fabric with roller_fabric subcategory
+      // Roller = MATERIAL with roller_fabric subcategory (blind materials, not sewn)
       if (lowerDesc.includes('roller')) {
-        return { category: 'fabric', subcategory: 'roller_fabric' };
+        return { category: 'material', subcategory: 'roller_fabric' };
       }
       
       // Vertical = material with vertical_slats subcategory
@@ -159,19 +161,24 @@ const handler = async (req: Request): Promise<Response> => {
         return { category: 'material', subcategory: 'vertical_slats' };
       }
       
-      // Cellular/Honeycomb = fabric with cellular subcategory
+      // Cellular/Honeycomb = MATERIAL with cellular subcategory (manufactured)
       if (lowerDesc.includes('cellular') || lowerDesc.includes('honeycomb')) {
-        return { category: 'fabric', subcategory: 'cellular' };
+        return { category: 'material', subcategory: 'cellular' };
       }
       
-      // Roman = fabric with roman_fabric subcategory
-      if (lowerDesc.includes('roman')) {
-        return { category: 'fabric', subcategory: 'roman_fabric' };
+      // Panel Glide = MATERIAL with panel_glide_fabric subcategory
+      if (lowerDesc.includes('panel')) {
+        return { category: 'material', subcategory: 'panel_glide_fabric' };
       }
       
       // Shutters = material with shutter_material
       if (lowerDesc.includes('shutter')) {
         return { category: 'material', subcategory: 'shutter_material' };
+      }
+      
+      // Roman = FABRIC with roman_fabric (sewn products)
+      if (lowerDesc.includes('roman')) {
+        return { category: 'fabric', subcategory: 'roman_fabric' };
       }
       
       // Awning = fabric with awning_fabric
@@ -184,8 +191,8 @@ const handler = async (req: Request): Promise<Response> => {
         return { category: 'fabric', subcategory: 'curtain_fabric' };
       }
       
-      // Default: material with blind_material (safe for most blinds)
-      return { category: 'material', subcategory: 'blind_material' };
+      // Default: material with roller_fabric (most TWC products are blinds)
+      return { category: 'material', subcategory: 'roller_fabric' };
     };
 
     // PHASE 2: Improved mapping using PARENT product description for material subcategory
@@ -193,9 +200,9 @@ const handler = async (req: Request): Promise<Response> => {
       // Use parent product description (e.g., "Roller Blinds") for proper subcategory
       const parentDesc = (parentProductDescription || '').toLowerCase();
       
-      // Roller blind materials
+      // Roller blind materials - use MATERIAL category (manufactured, not sewn)
       if (parentDesc.includes('roller')) {
-        return { category: 'fabric', subcategory: 'roller_fabric' };
+        return { category: 'material', subcategory: 'roller_fabric' };
       }
       
       // Venetian blind materials
@@ -208,14 +215,14 @@ const handler = async (req: Request): Promise<Response> => {
         return { category: 'material', subcategory: 'vertical_slats' };
       }
       
-      // Cellular/Honeycomb materials
+      // Cellular/Honeycomb materials - use MATERIAL category (manufactured)
       if (parentDesc.includes('cellular') || parentDesc.includes('honeycomb')) {
-        return { category: 'fabric', subcategory: 'cellular' };
+        return { category: 'material', subcategory: 'cellular' };
       }
       
-      // Panel glide materials
+      // Panel glide materials - use MATERIAL category
       if (parentDesc.includes('panel')) {
-        return { category: 'fabric', subcategory: 'panel_glide_fabric' };
+        return { category: 'material', subcategory: 'panel_glide_fabric' };
       }
       
       // Shutter materials

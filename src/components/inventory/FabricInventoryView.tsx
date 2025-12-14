@@ -41,15 +41,21 @@ interface FabricInventoryViewProps {
   selectedCollection?: string;
   selectedStorageLocation?: string;
 }
-// Fabrics = soft goods for curtains/romans (sewn products)
-// Blind materials are in MaterialInventoryView (for manufactured products)
+// Fabrics = ONLY soft goods for curtains/romans (sewn products)
+// Blind materials (roller, venetian, etc.) are in MaterialInventoryView
 const FABRIC_CATEGORIES = [
   { key: "all", label: "All Fabrics" },
-  { key: "curtain_fabric", label: "Curtain & Roman Fabrics" },
-  { key: "awning_fabric", label: "Awning Fabrics" },
-  { key: "lining_fabric", label: "Lining Fabrics" },
-  { key: "upholstery_fabric", label: "Upholstery Fabrics" },
-  { key: "fabric", label: "Other Fabrics" }
+  { key: "curtain_fabric", label: "Curtain & Roman" },
+  { key: "lining_fabric", label: "Linings" },
+  { key: "sheer_fabric", label: "Sheers" },
+  { key: "awning_fabric", label: "Awnings" },
+  { key: "upholstery_fabric", label: "Upholstery" },
+];
+
+// Subcategories that belong in Materials view (NOT fabrics)
+const BLIND_MATERIAL_SUBCATEGORIES = [
+  'roller_fabric', 'venetian_slats', 'vertical_slats', 'vertical_fabric',
+  'cellular', 'shutter_material', 'panel_glide_fabric', 'blind_material', 'blind_fabric'
 ];
 
 const ITEMS_PER_PAGE = 24;
@@ -74,9 +80,15 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
   // Get leftover fabric totals for inventory badges
   const { data: leftovers = [] } = useInventoryLeftovers();
 
-  const fabricItems = inventory?.filter(item => 
-    item.category === 'fabric'
-  ) || [];
+  // CRITICAL FIX: Filter by subcategory to EXCLUDE blind materials
+  // Only show soft goods that are sewn (curtains, romans, linings, etc.)
+  const fabricItems = inventory?.filter(item => {
+    // Must be fabric category
+    if (item.category !== 'fabric') return false;
+    // EXCLUDE blind materials that should be in Materials view
+    if (BLIND_MATERIAL_SUBCATEGORIES.includes(item.subcategory || '')) return false;
+    return true;
+  }) || [];
 
   // Bulk selection
   const {

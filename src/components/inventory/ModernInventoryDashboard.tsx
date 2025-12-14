@@ -4,31 +4,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Filter, Grid, List, Package, Home, Minus, Palette, Wallpaper, Lock, QrCode, Upload, Wrench, CircleDot } from "lucide-react";
+import { Search, Plus, Grid, List, Package, Home, Minus, Palette, Wallpaper, Lock, QrCode, Wrench } from "lucide-react";
 import { QRCodeScanner } from "./QRCodeScanner";
 import { QRCodeQuickActions } from "./QRCodeQuickActions";
-import { EditInventoryDialog } from "./EditInventoryDialog";
 import { toast } from "sonner";
 import { BusinessInventoryOverview } from "./BusinessInventoryOverview";
 import { FabricInventoryView } from "./FabricInventoryView";
 import { HardwareInventoryView } from "./HardwareInventoryView";
 import { WallcoveringInventoryView } from "./WallcoveringInventoryView";
-import { HeadingInventoryView } from "./HeadingInventoryView";
-import { TrimmingsInventoryView } from "./TrimmingsInventoryView";
-import { RemnantsInventoryView } from "./RemnantsInventoryView";
-import { ServicesInventoryView } from "./ServicesInventoryView";
-import { AccessoriesInventoryView } from "./AccessoriesInventoryView";
-import { InventoryAnalytics } from "./InventoryAnalytics";
 import { AddInventoryDialog } from "./AddInventoryDialog";
-import { InventoryDemoData } from "./InventoryDemoData";
-import { ReorderNotificationSystem } from "./ReorderNotificationSystem";
 import { InventoryImportExport } from "./InventoryImportExport";
 import { VendorDashboard } from "../vendors/VendorDashboard";
-import { CategoryManagement } from "./CategoryManagement";
-
+import { ReorderNotificationSystem } from "./ReorderNotificationSystem";
+import { useVendors } from "@/hooks/useVendors";
 import { MaterialInventoryView } from "./MaterialInventoryView";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
-import { useVendors } from "@/hooks/useVendors";
 import { useHasPermission, useHasAnyPermission } from "@/hooks/usePermissions";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
@@ -243,15 +233,6 @@ export const ModernInventoryDashboard = () => {
             }
             onSuccess={refetch}
           />
-
-          <Button 
-            variant="outline"
-            size={isMobile ? "sm" : "default"}
-            onClick={() => setActiveTab("analytics")}
-          >
-            <Upload className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
-            {!isMobile && "Import"}
-          </Button>
         </div>
       </div>
 
@@ -271,28 +252,12 @@ export const ModernInventoryDashboard = () => {
                 Materials
               </TabsTrigger>
               <TabsTrigger value="hardware" className="flex items-center gap-2">
-                <Minus className="h-4 w-4" />
-                Hardware
-              </TabsTrigger>
-              <TabsTrigger value="accessories" className="flex items-center gap-2">
-                <CircleDot className="h-4 w-4" />
-                Accessories
-              </TabsTrigger>
-              <TabsTrigger value="services" className="flex items-center gap-2">
                 <Wrench className="h-4 w-4" />
-                Services
-              </TabsTrigger>
-              <TabsTrigger value="headings" className="flex items-center gap-2">
-                <Minus className="h-4 w-4" />
-                Headings
+                Hardware
               </TabsTrigger>
               <TabsTrigger value="wallcoverings" className="flex items-center gap-2">
                 <Wallpaper className="h-4 w-4" />
                 Wallcoverings
-              </TabsTrigger>
-              <TabsTrigger value="categories" className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Categories
               </TabsTrigger>
               <TabsTrigger value="vendors" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
@@ -301,7 +266,7 @@ export const ModernInventoryDashboard = () => {
               {!isMobile && (
                 <TabsTrigger value="analytics" className="flex items-center gap-2">
                   <Palette className="h-4 w-4" />
-                  Analytics
+                  Import/Export
                 </TabsTrigger>
               )}
             </TabsList>
@@ -464,26 +429,6 @@ export const ModernInventoryDashboard = () => {
           />
         </TabsContent>
 
-        <TabsContent value="accessories" className="space-y-6">
-          <AccessoriesInventoryView 
-            searchQuery={searchQuery} 
-            viewMode={viewMode}
-            selectedVendor={selectedVendor}
-            selectedCollection={selectedCollection}
-            selectedStorageLocation={selectedStorageLocation}
-          />
-        </TabsContent>
-
-        <TabsContent value="services" className="space-y-6">
-          <ServicesInventoryView 
-            searchQuery={searchQuery} 
-            viewMode={viewMode}
-            selectedVendor={selectedVendor}
-            selectedCollection={selectedCollection}
-            selectedStorageLocation={selectedStorageLocation}
-          />
-        </TabsContent>
-
         <TabsContent value="wallcoverings" className="space-y-6">
           <WallcoveringInventoryView 
             searchQuery={searchQuery} 
@@ -494,49 +439,12 @@ export const ModernInventoryDashboard = () => {
           />
         </TabsContent>
 
-        <TabsContent value="headings" className="space-y-6">
-          <HeadingInventoryView 
-            searchQuery={searchQuery}
-            viewMode={viewMode}
-            selectedVendor={selectedVendor}
-            selectedCollection={selectedCollection}
-            selectedStorageLocation={selectedStorageLocation}
-          />
-        </TabsContent>
-
-        <TabsContent value="trimmings" className="space-y-6">
-          <TrimmingsInventoryView searchQuery={searchQuery} viewMode={viewMode} />
-        </TabsContent>
-
-        <TabsContent value="remnants" className="space-y-6">
-          <RemnantsInventoryView searchQuery={searchQuery} viewMode={viewMode} />
-        </TabsContent>
-
-        <TabsContent value="categories" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Category Management</CardTitle>
-              <CardDescription>
-                Create and manage your inventory categories and subcategories. All inventory items will be organized using these categories.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CategoryManagement />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="vendors" className="space-y-6">
           <VendorDashboard />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
-          <InventoryAnalytics />
-          
-          {/* Import/Export Tools */}
-          <div data-import-export className="mt-6">
-            <InventoryImportExport />
-          </div>
+          <InventoryImportExport />
         </TabsContent>
       </Tabs>
       
