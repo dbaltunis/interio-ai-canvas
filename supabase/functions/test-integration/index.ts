@@ -199,13 +199,19 @@ async function testTWCConnection(integration: any) {
 
     console.log('Testing TWC connection:', api_url);
 
+    // Normalize base URL - remove trailing /twcpublic if present to avoid duplication
+    const baseUrl = api_url.replace(/\/twcpublic\/?$/i, '');
+    
     // Test TWC API by calling GetOrderOptions without itemNumber (gets all options)
-    const testUrl = `${api_url}/api/TwcPublic/GetOrderOptions?api_key=${api_key}`;
+    const testUrl = `${baseUrl}/twcpublic/api/GetOrderOptions?api_key=${api_key}`;
+    console.log('TWC test URL:', testUrl);
+    
     const response = await fetch(testUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
+      redirect: 'follow',
     });
 
     if (!response.ok) {

@@ -72,19 +72,25 @@ const handler = async (req: Request): Promise<Response> => {
       itemNumber = undefined;
     }
 
-    console.log('Fetching TWC order options:', { itemNumber });
+    console.log('Fetching TWC order options:', { itemNumber, api_url });
 
+    // Normalize base URL - remove trailing /twcpublic if present to avoid duplication
+    const baseUrl = api_url.replace(/\/twcpublic\/?$/i, '');
+    
     // Build URL with optional itemNumber filter
-    let twcUrl = `${api_url}/api/TwcPublic/GetOrderOptions?api_key=${api_key}`;
+    let twcUrl = `${baseUrl}/twcpublic/api/GetOrderOptions?api_key=${api_key}`;
     if (itemNumber) {
       twcUrl += `&itemNumber=${itemNumber}`;
     }
+
+    console.log('TWC API URL:', twcUrl);
 
     const response = await fetch(twcUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
+      redirect: 'follow',
     });
 
     if (!response.ok) {
