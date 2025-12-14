@@ -59,12 +59,14 @@ export const useFabricEnrichment = ({ fabricItem, formData }: FabricEnrichmentPa
             grid: gridResult.gridName,
             gridCode: gridResult.gridCode,
             priceGroup: fabricItem.price_group,
-            productCategory: fabricItem.product_category
+            productCategory: fabricItem.product_category,
+            markupPercentage: gridResult.markupPercentage  // ✅ FIX #2: Log markup
           });
 
           setEnrichedFabric({
             ...fabricItem,
             pricing_grid_data: gridResult.gridData,
+            pricing_grid_markup: gridResult.markupPercentage,  // ✅ FIX #2: Include grid markup
             resolved_grid_id: gridResult.gridId,
             resolved_grid_code: gridResult.gridCode,
             resolved_grid_name: gridResult.gridName

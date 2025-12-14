@@ -27,6 +27,7 @@ export interface AutoMatchResult {
   gridCode?: string;
   gridName?: string;
   gridData?: any;
+  markupPercentage?: number;  // ✅ FIX #2: Include markup from grid
   matchType: 'exact' | 'fallback' | 'flexible' | 'none';
   matchDetails?: string;
 }
@@ -61,7 +62,7 @@ export const autoMatchPricingGrid = async (
     if (supplierId) {
       const { data: exactMatch, error: exactError } = await supabase
         .from('pricing_grids')
-        .select('id, grid_code, name, grid_data')
+        .select('id, grid_code, name, grid_data, markup_percentage')  // ✅ FIX #2: Include markup_percentage
         .eq('user_id', userId)
         .eq('supplier_id', supplierId)
         .eq('product_type', productType)
@@ -75,13 +76,15 @@ export const autoMatchPricingGrid = async (
           supplier: supplierId,
           productType,
           priceGroup: normalizedPriceGroup,
-          grid: exactMatch.name
+          grid: exactMatch.name,
+          markup: exactMatch.markup_percentage  // ✅ FIX #2: Log markup
         });
         return {
           gridId: exactMatch.id,
           gridCode: exactMatch.grid_code,
           gridName: exactMatch.name,
           gridData: exactMatch.grid_data,
+          markupPercentage: exactMatch.markup_percentage,  // ✅ FIX #2: Include markup
           matchType: 'exact',
           matchDetails: `Matched by supplier + ${productType} + Group ${normalizedPriceGroup}`
         };
@@ -91,7 +94,7 @@ export const autoMatchPricingGrid = async (
     // Fallback: exact product_type + price_group (any supplier)
     const { data: fallbackMatch, error: fallbackError } = await supabase
       .from('pricing_grids')
-      .select('id, grid_code, name, grid_data')
+      .select('id, grid_code, name, grid_data, markup_percentage')  // ✅ FIX #2: Include markup_percentage
       .eq('user_id', userId)
       .eq('product_type', productType)
       .ilike('price_group', normalizedPriceGroup)
@@ -103,13 +106,15 @@ export const autoMatchPricingGrid = async (
       console.log('📊 Grid auto-match: FALLBACK match found', {
         productType,
         priceGroup: normalizedPriceGroup,
-        grid: fallbackMatch.name
+        grid: fallbackMatch.name,
+        markup: fallbackMatch.markup_percentage  // ✅ FIX #2: Log markup
       });
       return {
         gridId: fallbackMatch.id,
         gridCode: fallbackMatch.grid_code,
         gridName: fallbackMatch.name,
         gridData: fallbackMatch.grid_data,
+        markupPercentage: fallbackMatch.markup_percentage,  // ✅ FIX #2: Include markup
         matchType: 'fallback',
         matchDetails: `Matched by ${productType} + Group ${normalizedPriceGroup} (any supplier)`
       };
@@ -119,7 +124,7 @@ export const autoMatchPricingGrid = async (
     if (compatibleProductTypes.length > 1) {
       const { data: flexibleMatches, error: flexibleError } = await supabase
         .from('pricing_grids')
-        .select('id, grid_code, name, grid_data, product_type')
+        .select('id, grid_code, name, grid_data, product_type, markup_percentage')  // ✅ FIX #2: Include markup_percentage
         .eq('user_id', userId)
         .in('product_type', compatibleProductTypes)
         .ilike('price_group', normalizedPriceGroup)
@@ -132,13 +137,15 @@ export const autoMatchPricingGrid = async (
           requestedType: productType,
           matchedType: flexMatch.product_type,
           priceGroup: normalizedPriceGroup,
-          grid: flexMatch.name
+          grid: flexMatch.name,
+          markup: flexMatch.markup_percentage  // ✅ FIX #2: Log markup
         });
         return {
           gridId: flexMatch.id,
           gridCode: flexMatch.grid_code,
           gridName: flexMatch.name,
           gridData: flexMatch.grid_data,
+          markupPercentage: flexMatch.markup_percentage,  // ✅ FIX #2: Include markup
           matchType: 'flexible',
           matchDetails: `Matched by compatible type (${flexMatch.product_type}) + Group ${normalizedPriceGroup}`
         };

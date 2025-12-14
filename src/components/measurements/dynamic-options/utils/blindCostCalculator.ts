@@ -62,6 +62,7 @@ export const calculateBlindCosts = (
   // Get fabric price per sqm - FABRIC GRIDS ARE FOR FABRIC COST ONLY, NOT MANUFACTURING
   let fabricPricePerSqm = 0;
   let fabricCost = 0;
+  let gridMarkupPercentage = 0;  // ✅ FIX #2: Track grid markup for application
   
   // UNIVERSAL RULE FOR ALL SAAS CLIENTS: Fabric pricing grids = TOTAL PRODUCT PRICE
   // This applies to ALL blind types (Roller, Venetian, Vertical, Cellular, etc.) across ALL accounts
@@ -69,11 +70,19 @@ export const calculateBlindCosts = (
   const fabricHasPricingGrid = fabricItem?.pricing_grid_data && fabricItem?.resolved_grid_name;
   
   if (fabricHasPricingGrid) {
+    // ✅ FIX #2: Capture grid markup from enriched fabric
+    gridMarkupPercentage = fabricItem?.pricing_grid_markup || 0;
+    
     // UNIVERSAL: Fabric pricing grid = TOTAL PRODUCT PRICE (not just fabric cost)
     // Works for ALL blind types and ALL SaaS client accounts automatically
     const totalGridPrice = getPriceFromGrid(fabricItem.pricing_grid_data, widthCm, heightCm);
+    
+    // ✅ FIX #2: Apply grid markup percentage if set
+    const markupMultiplier = gridMarkupPercentage > 0 ? (1 + gridMarkupPercentage / 100) : 1;
+    const priceWithMarkup = totalGridPrice * markupMultiplier;
+    
     // For double configuration, multiply the grid price by 2 (two blinds)
-    fabricCost = totalGridPrice * blindMultiplier;
+    fabricCost = priceWithMarkup * blindMultiplier;
     fabricPricePerSqm = squareMeters > 0 ? fabricCost / squareMeters : 0;
     
     console.log('✅ UNIVERSAL FABRIC GRID (ALL CLIENTS, ALL BLIND TYPES):', {
@@ -81,7 +90,10 @@ export const calculateBlindCosts = (
       gridName: fabricItem.resolved_grid_name,
       gridCode: fabricItem.resolved_grid_code,
       dimensions: `${widthCm}cm × ${heightCm}cm`,
-      singleBlindGridPrice: totalGridPrice,
+      baseGridPrice: totalGridPrice,
+      gridMarkupPercentage,
+      markupMultiplier,
+      priceWithMarkup,
       blindMultiplier,
       totalFabricCost: fabricCost,
       note: 'Grid price = TOTAL product price (fabric + manufacturing) - applies to ALL SaaS clients'
