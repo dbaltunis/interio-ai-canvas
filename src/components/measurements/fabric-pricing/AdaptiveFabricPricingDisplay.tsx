@@ -214,35 +214,70 @@ export const AdaptiveFabricPricingDisplay = ({
   // CRITICAL: Calculate grid price if applicable
   // ✅ FIX: measurements are in USER'S DISPLAY UNIT (cm, inches, mm), NOT always MM
   // Must convert from user's unit to CM for grid lookup
+  // ✅ CURTAIN FIX: For curtains, apply fullness + hems + returns BEFORE grid lookup
   let gridPrice = 0;
   let gridWidthCm = 0;
   let gridDropCm = 0;
+  let effectiveGridWidthCm = 0; // For display - shows what was used for lookup
   if (usesPricingGrid && gridDataToUse && measurements.rail_width && measurements.drop) {
     // ✅ CRITICAL FIX: measurements are in user's display unit, convert TO cm
     const rawWidth = parseFloat(measurements.rail_width);
     const rawDrop = parseFloat(measurements.drop);
     // Convert from user's display unit (could be cm, inches, mm) to CM for grid lookup
-    gridWidthCm = convertLength(rawWidth, units.length, 'cm');
-    gridDropCm = convertLength(rawDrop, units.length, 'cm');
+    const rawWidthCm = convertLength(rawWidth, units.length, 'cm');
+    const rawDropCm = convertLength(rawDrop, units.length, 'cm');
+    
+    // ✅ CRITICAL: For CURTAINS/ROMAN, apply fullness + hems + returns BEFORE grid lookup
+    const isCurtainForGrid = treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds';
+    
+    if (isCurtainForGrid) {
+      // Get values from template (single source of truth) - values in CM
+      const fullness = displayFullness || 1;
+      const sideHemCm = (template?.side_hem || 0) * 2; // Both sides, already in CM
+      const returnLeftCm = template?.return_left || 0;
+      const returnRightCm = template?.return_right || 0;
+      const returnsCm = returnLeftCm + returnRightCm;
+      
+      // Formula: (width + hems + returns) × fullness
+      effectiveGridWidthCm = (rawWidthCm + sideHemCm + returnsCm) * fullness;
+      gridWidthCm = effectiveGridWidthCm;
+      gridDropCm = rawDropCm; // Drop stays as-is for grid lookup
+      
+      console.log('📊 CURTAIN GRID WIDTH CALCULATION:', {
+        rawWidthCm,
+        sideHemCm,
+        returnsCm,
+        fullness,
+        formula: `(${rawWidthCm.toFixed(1)} + ${sideHemCm} + ${returnsCm}) × ${fullness} = ${effectiveGridWidthCm.toFixed(1)}cm`,
+        effectiveGridWidthCm: effectiveGridWidthCm.toFixed(1),
+        gridDropCm: gridDropCm.toFixed(1)
+      });
+    } else {
+      // For blinds - use raw dimensions (correct for blinds)
+      gridWidthCm = rawWidthCm;
+      gridDropCm = rawDropCm;
+      effectiveGridWidthCm = rawWidthCm;
+    }
+    
     gridPrice = getPriceFromGrid(gridDataToUse, gridWidthCm, gridDropCm);
 
     // ✅ IMPROVED ERROR HANDLING: If grid returns 0, log helpful diagnostic
     if (gridPrice === 0) {
       console.error('⚠️ GRID PRICE IS ZERO - Check:', {
         gridData: gridDataToUse,
-        dimensions: `${gridWidthCm}cm × ${gridDropCm}cm`,
+        dimensions: `${gridWidthCm.toFixed(1)}cm × ${gridDropCm.toFixed(1)}cm`,
+        isCurtain: isCurtainForGrid,
         possibleReasons: ['1. Dimensions outside grid range', '2. Grid data format incorrect', '3. Fabric pricing grid not properly assigned']
       });
     }
     console.log('📊 GRID PRICE DEBUG:', {
       rawInput: { width: rawWidth, drop: rawDrop, userUnit: units.length },
-      convertedCm: { gridWidthCm, gridDropCm },
+      rawCm: { width: rawWidthCm.toFixed(1), drop: rawDropCm.toFixed(1) },
+      effectiveCm: { gridWidthCm: gridWidthCm.toFixed(1), gridDropCm: gridDropCm.toFixed(1) },
+      isCurtainType: isCurtainForGrid,
       hasGridData: !!gridDataToUse,
-      gridDataStructure: gridDataToUse ? Object.keys(gridDataToUse) : 'NO DATA',
       gridPrice,
-      fabricName: fabricToUse?.name || 'NO FABRIC',
-      fabricHasGridData: !!(fabricToUse?.pricing_grid_data || fabricToUse?.resolved_grid_data),
-      WARNING: gridPrice === 0 ? '⚠️ GRID RETURNING ZERO - Check: 1) Is fabric selected? 2) Does fabric have pricing grid assigned? 3) Are dimensions within grid range?' : '✅ Grid price calculated'
+      fabricName: fabricToUse?.name || 'NO FABRIC'
     });
   }
 
@@ -319,9 +354,12 @@ export const AdaptiveFabricPricingDisplay = ({
         </div>
         <div className="text-xs space-y-1 text-muted-foreground">
             <div className="flex justify-between">
-              <span>Dimensions:</span>
+              <span>{isCurtainType ? 'Effective Width × Drop:' : 'Dimensions:'}</span>
               <span className="font-medium text-foreground">
                 {formatDimensionsFromCM(gridWidthCm, gridDropCm, units.length)}
+                {isCurtainType && effectiveGridWidthCm > 0 && (
+                  <span className="text-muted-foreground text-xs ml-1">(with fullness)</span>
+                )}
               </span>
             </div>
           <div className="flex justify-between border-t border-border pt-2 mt-2">
