@@ -39,6 +39,8 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { InventoryCardSkeleton } from "@/components/inventory/InventoryCardSkeleton";
 import { useVendors } from "@/hooks/useVendors";
 import { matchesSupplierFilter } from "./InventorySupplierFilter";
+import { PriceGroupFilter } from "./PriceGroupFilter";
+import { QuickTypeFilter } from "./QuickTypeFilter";
 
 interface InventorySelectionPanelProps {
   treatmentType: string;
@@ -71,6 +73,8 @@ export const InventorySelectionPanel = ({
   const [selectedVendor, setSelectedVendor] = useState<string | undefined>();
   const [selectedCollection, setSelectedCollection] = useState<string | undefined>();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedPriceGroup, setSelectedPriceGroup] = useState<string | null>(null);
+  const [selectedQuickTypes, setSelectedQuickTypes] = useState<string[]>([]);
   const [manualEntry, setManualEntry] = useState({
     name: "",
     price: "",
@@ -110,6 +114,41 @@ export const InventorySelectionPanel = ({
     if (!fabricsData?.pages) return [];
     return fabricsData.pages.flatMap(page => page.items);
   }, [fabricsData]);
+
+  // Calculate price groups for filtering
+  const priceGroupStats = useMemo(() => {
+    const groups = new Map<string, number>();
+    treatmentFabrics.forEach(item => {
+      if (item.price_group) {
+        groups.set(item.price_group, (groups.get(item.price_group) || 0) + 1);
+      }
+    });
+    return Array.from(groups.entries())
+      .map(([group, count]) => ({ group, count }))
+      .sort((a, b) => a.group.localeCompare(b.group));
+  }, [treatmentFabrics]);
+
+  // Calculate available quick filter types
+  const availableQuickTypes = useMemo(() => {
+    const types = new Set<string>();
+    treatmentFabrics.forEach(item => {
+      if (item.tags) {
+        ['blockout', 'sheer', 'sunscreen', 'light_filtering', 'wide_width'].forEach(t => {
+          if (item.tags.includes(t)) types.add(t);
+        });
+      }
+    });
+    return Array.from(types);
+  }, [treatmentFabrics]);
+
+  // Handle quick type toggle
+  const handleQuickTypeToggle = (type: string) => {
+    setSelectedQuickTypes(prev => 
+      prev.includes(type) 
+        ? prev.filter(t => t !== type)
+        : [...prev, type]
+    );
+  };
 
   // Auto-scroll to selected item when category changes or selection changes
   useEffect(() => {
@@ -261,14 +300,19 @@ export const InventorySelectionPanel = ({
   // Filter inventory by treatment type and category
   const getInventoryByCategory = (category: string) => {
     // For fabric category, use server-side filtered treatmentFabrics
-    // Only apply client-side filters for vendor/collection/tags
+    // Apply client-side filters for vendor/collection/tags/price group/quick types
     if (category === "fabric") {
       const filtered = treatmentFabrics.filter(item => {
         // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
         const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
-        return matchesVendor && matchesCollection && matchesTags;
+        // NEW: Price group filter
+        const matchesPriceGroup = !selectedPriceGroup || item.price_group === selectedPriceGroup;
+        // NEW: Quick type filter (must match ALL selected types)
+        const matchesQuickTypes = selectedQuickTypes.length === 0 || 
+          (item.tags && selectedQuickTypes.every(t => item.tags.includes(t)));
+        return matchesVendor && matchesCollection && matchesTags && matchesPriceGroup && matchesQuickTypes;
       });
       // Sort results: items starting with search term first, then alphabetically
       const searchLower = searchTerm.toLowerCase();
@@ -669,6 +713,32 @@ export const InventorySelectionPanel = ({
           onCollectionChange={setSelectedCollection}
           onTagsChange={setSelectedTags}
         />
+      </div>
+      
+      {/* Price Group and Quick Type Filters - shown when there are price groups */}
+      {(priceGroupStats.length > 0 || availableQuickTypes.length > 0) && (
+        <div className="flex flex-col gap-2 py-2 px-1 border-b border-border/50 bg-muted/30 rounded-md">
+          {priceGroupStats.length > 0 && (
+            <PriceGroupFilter
+              priceGroups={priceGroupStats}
+              selectedGroup={selectedPriceGroup}
+              onGroupChange={setSelectedPriceGroup}
+            />
+          )}
+          {availableQuickTypes.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground shrink-0">Type:</span>
+              <QuickTypeFilter
+                selectedTypes={selectedQuickTypes}
+                onTypeToggle={handleQuickTypeToggle}
+                availableTypes={availableQuickTypes}
+              />
+            </div>
+          )}
+        </div>
+      )}
+      
+      <div className="flex gap-2 items-center">
         
         <Button 
           variant="outline" 
