@@ -17,6 +17,7 @@ export interface ValidationResult {
 /**
  * Validates that all required treatment options have been selected
  * CRITICAL: Only validates options that are BOTH required AND enabled on the template
+ * CRITICAL: Options with no values are SKIPPED (not blocking) - they become warnings only
  */
 export const validateTreatmentOptions = (
   treatmentOptions: TreatmentOption[],
@@ -33,8 +34,21 @@ export const validateTreatmentOptions = (
       ? enabledOptionIds.has(option.id)
       : true; // Fallback: if no enabledOptionIds provided, validate all visible required options
 
-    // Check required options - only if visible AND enabled on template
+    // Skip validation entirely for options without values - they can't be selected
+    const hasSelectableValues = option.option_values && option.option_values.length > 0;
+    
+    // Check required options - only if visible AND enabled on template AND has values
     if (option.required && option.visible && isEnabledOnTemplate) {
+      // ✅ FIX: If option has NO values, don't block - just warn (user can't select anything)
+      if (!hasSelectableValues) {
+        warnings.push({
+          field: option.key,
+          message: `${option.label} is required but has no options to select from`,
+          severity: 'warning'
+        });
+        return; // Skip the required check - can't validate what can't be selected
+      }
+      
       const selectedValue = selections[option.key];
       
       if (!selectedValue || selectedValue === '') {
@@ -48,15 +62,16 @@ export const validateTreatmentOptions = (
       }
     }
 
-    // Warn if option has no values to select from (only for enabled options)
-    if (option.visible && isEnabledOnTemplate && (!option.option_values || option.option_values.length === 0)) {
-      warnings.push({
-        field: option.key,
-        message: `${option.label} has no available options configured`,
-        severity: 'warning',
-        actionType: 'configure_template',
-        actionLabel: 'Add Options'
-      });
+    // Warn if option has no values to select from (only for enabled options) - informational only
+    if (option.visible && isEnabledOnTemplate && !hasSelectableValues) {
+      // Already handled above for required options, only add for non-required
+      if (!option.required) {
+        warnings.push({
+          field: option.key,
+          message: `${option.label} has no available options configured`,
+          severity: 'warning'
+        });
+      }
     }
   });
 

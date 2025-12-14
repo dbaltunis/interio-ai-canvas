@@ -106,12 +106,25 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Filtered to ${newProducts.length} new products (${products.length - newProducts.length} duplicates skipped)`);
 
     // Map TWC product description to treatment_category for templates
-    const mapTreatmentCategory = (description: string | undefined | null): string => {
+    // Returns 'hardware' for non-treatment items (tracks, brackets, motors, etc.)
+    const mapTreatmentCategory = (description: string | undefined | null): string | 'hardware' => {
       if (!description || typeof description !== 'string') {
         return 'roller_blinds'; // Safe default
       }
       
       const lowerDesc = description.toLowerCase();
+      
+      // ✅ HARDWARE DETECTION - These are NOT treatments, don't create templates
+      // Detect tracks, rods, brackets, motors, chains, accessories
+      if (lowerDesc.includes('track') && !lowerDesc.includes('panel track')) {
+        return 'hardware'; // Curtain tracks, blind tracks
+      }
+      if (lowerDesc.includes('bracket') || lowerDesc.includes('rod') || 
+          lowerDesc.includes('motor') || lowerDesc.includes('chain') ||
+          lowerDesc.includes('accessory') || lowerDesc.includes('accessories') ||
+          lowerDesc.includes('remote') || lowerDesc.includes('control')) {
+        return 'hardware';
+      }
       
       // Venetian detection - aluminium, wood, slats = venetian
       if (lowerDesc.includes('aluminium') || lowerDesc.includes('aluminum') || 
@@ -126,7 +139,7 @@ const handler = async (req: Request): Promise<Response> => {
       if (lowerDesc.includes('cellular') || lowerDesc.includes('honeycomb')) return 'cellular_blinds';
       if (lowerDesc.includes('roman')) return 'roman_blinds';
       if (lowerDesc.includes('shutter')) return 'shutters';
-      if (lowerDesc.includes('awning')) return 'awning'; // Fixed: was 'awnings'
+      if (lowerDesc.includes('awning')) return 'awning';
       if (lowerDesc.includes('panel')) return 'panel_glide';
       if (lowerDesc.includes('curtain')) return 'curtains';
       
@@ -136,6 +149,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Map category for inventory classification using VALID categories from INVENTORY_CATEGORY_GUIDE.md
     // CRITICAL: Use 'material' category for ALL blind products (roller, venetian, vertical, etc.)
     // Use 'fabric' ONLY for soft goods that are sewn (curtains, romans, linings)
+    // Use 'hardware' for tracks, brackets, motors, accessories
     const mapCategory = (description: string | undefined | null): { category: string, subcategory: string } => {
       if (!description || typeof description !== 'string') {
         console.warn('Invalid description provided to mapCategory');
@@ -143,6 +157,23 @@ const handler = async (req: Request): Promise<Response> => {
       }
       
       const lowerDesc = description.toLowerCase();
+      
+      // ✅ HARDWARE DETECTION - tracks, brackets, motors, accessories
+      if (lowerDesc.includes('track') && !lowerDesc.includes('panel track')) {
+        return { category: 'hardware', subcategory: 'track' };
+      }
+      if (lowerDesc.includes('bracket')) {
+        return { category: 'hardware', subcategory: 'bracket' };
+      }
+      if (lowerDesc.includes('motor') || lowerDesc.includes('remote') || lowerDesc.includes('control')) {
+        return { category: 'hardware', subcategory: 'motor' };
+      }
+      if (lowerDesc.includes('rod')) {
+        return { category: 'hardware', subcategory: 'rod' };
+      }
+      if (lowerDesc.includes('chain') || lowerDesc.includes('accessory') || lowerDesc.includes('accessories')) {
+        return { category: 'hardware', subcategory: 'accessory' };
+      }
       
       // Venetian/Aluminium/Wood = material with venetian_slats subcategory
       if (lowerDesc.includes('aluminium') || lowerDesc.includes('aluminum') || 
@@ -325,8 +356,17 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Successfully imported ${insertedItems?.length || 0} inventory items`);
 
     // Phase 2: Create templates for each imported product with inventory_item_id link
-    const templates = insertedItems?.map((item, index) => {
+    // ✅ FIX: Skip template creation for hardware items (tracks, brackets, motors, etc.)
+    const templates = (insertedItems?.map((item, index) => {
       const product = newProducts[index];
+      const treatmentCategory = mapTreatmentCategory(product.description);
+      
+      // ✅ SKIP hardware items - they go to inventory only, NO template
+      if (treatmentCategory === 'hardware') {
+        console.log(`⏭️ Skipping template creation for hardware item: ${item.name}`);
+        return null;
+      }
+      
       let productType = 'Unknown Product';
       
       if (product.productType) {
@@ -339,7 +379,7 @@ const handler = async (req: Request): Promise<Response> => {
       return {
         user_id: user.id,
         name: item.name,
-        treatment_category: mapTreatmentCategory(product.description),
+        treatment_category: treatmentCategory,
         pricing_type: 'pricing_grid', // Default to grid pricing
         pricing_grid_data: null, // User will configure this later
         system_type: productType,
@@ -357,7 +397,9 @@ const handler = async (req: Request): Promise<Response> => {
         fabric_width_type: 'standard',
         image_url: null,
       };
-    }) || [];
+    }) || []).filter(Boolean); // Filter out null (hardware items)
+    
+    console.log(`Creating ${templates.length} templates (skipped hardware items)`);
 
     const { data: insertedTemplates, error: templateError } = await supabaseClient
       .from('curtain_templates')
