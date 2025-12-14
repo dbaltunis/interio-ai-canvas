@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Upload, Trash2, Grid3x3, Building2, Tag, Layers, FolderOpen } from 'lucide-react';
+import { Plus, Upload, Trash2, Grid3x3, Building2, Tag, Layers, FolderOpen, Pencil, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,7 @@ import {
 const TREATMENT_OPTIONS = getTreatmentOptions();
 
 export const PricingGridManager = () => {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('single');
   const [newGridName, setNewGridName] = useState('');
   const [newGridCode, setNewGridCode] = useState('');
@@ -38,6 +39,10 @@ export const PricingGridManager = () => {
   const [newMarkupPercentage, setNewMarkupPercentage] = useState<string>('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // Inline edit state
+  const [editingGridId, setEditingGridId] = useState<string | null>(null);
+  const [editMarkupValue, setEditMarkupValue] = useState<string>('');
 
   // Get selected treatment config for display
   const selectedTreatmentConfig = useMemo(() => {
@@ -205,6 +210,40 @@ export const PricingGridManager = () => {
   const getProductTypeLabel = (value: string) => {
     const config = getUnifiedConfig(value);
     return config?.display_name || value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  // Mutation for updating markup
+  const updateMarkupMutation = useMutation({
+    mutationFn: async ({ gridId, markup }: { gridId: string; markup: number }) => {
+      const { error } = await supabase
+        .from('pricing_grids')
+        .update({ markup_percentage: markup })
+        .eq('id', gridId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Markup updated');
+      queryClient.invalidateQueries({ queryKey: ['pricing-grids'] });
+      setEditingGridId(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to update markup');
+    }
+  });
+
+  const handleStartEditMarkup = (gridId: string, currentMarkup: number) => {
+    setEditingGridId(gridId);
+    setEditMarkupValue(String(currentMarkup || 0));
+  };
+
+  const handleSaveMarkup = (gridId: string) => {
+    const markup = parseFloat(editMarkupValue) || 0;
+    updateMarkupMutation.mutate({ gridId, markup });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingGridId(null);
+    setEditMarkupValue('');
   };
 
   return (
@@ -476,9 +515,50 @@ export const PricingGridManager = () => {
                           {getProductTypeLabel(grid.product_type)}
                         </Badge>
                       )}
-                      {(grid as any).markup_percentage > 0 && (
-                        <Badge variant="default" className="text-xs bg-emerald-500">
-                          +{(grid as any).markup_percentage}% markup
+                      {/* Inline Markup Edit */}
+                      {editingGridId === grid.id ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            type="number"
+                            min="0"
+                            max="500"
+                            step="0.5"
+                            value={editMarkupValue}
+                            onChange={(e) => setEditMarkupValue(e.target.value)}
+                            className="w-20 h-7 text-xs"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveMarkup(grid.id);
+                              if (e.key === 'Escape') handleCancelEdit();
+                            }}
+                          />
+                          <span className="text-xs text-muted-foreground">%</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => handleSaveMarkup(grid.id)}
+                            disabled={updateMarkupMutation.isPending}
+                          >
+                            <Check className="h-3.5 w-3.5 text-emerald-500" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={handleCancelEdit}
+                          >
+                            <X className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Badge 
+                          variant={(grid as any).markup_percentage > 0 ? "default" : "outline"} 
+                          className={`text-xs cursor-pointer hover:opacity-80 ${(grid as any).markup_percentage > 0 ? 'bg-emerald-500' : ''}`}
+                          onClick={() => handleStartEditMarkup(grid.id, (grid as any).markup_percentage || 0)}
+                        >
+                          <Pencil className="h-3 w-3 mr-1" />
+                          {(grid as any).markup_percentage > 0 ? `+${(grid as any).markup_percentage}%` : 'Set markup'}
                         </Badge>
                       )}
                     </div>
