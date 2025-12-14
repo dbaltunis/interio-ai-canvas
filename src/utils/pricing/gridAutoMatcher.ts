@@ -13,6 +13,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { getProductTypesForTreatment } from "./treatmentGridMapping";
 
 export interface AutoMatchParams {
   supplierId?: string | null;    // From fabric's vendor_id
@@ -26,7 +27,7 @@ export interface AutoMatchResult {
   gridCode?: string;
   gridName?: string;
   gridData?: any;
-  matchType: 'exact' | 'fallback' | 'none';
+  matchType: 'exact' | 'fallback' | 'flexible' | 'none';
   matchDetails?: string;
 }
 
@@ -35,8 +36,9 @@ export interface AutoMatchResult {
  * 
  * Match priority:
  * 1. Exact match: supplier_id + product_type + price_group
- * 2. Fallback: product_type + price_group (any supplier)
- * 3. No match
+ * 2. Product type match: product_type + price_group (any supplier)
+ * 3. Flexible match: any compatible product_type + price_group
+ * 4. No match
  */
 export const autoMatchPricingGrid = async (
   params: AutoMatchParams
@@ -50,6 +52,9 @@ export const autoMatchPricingGrid = async (
   }
 
   const normalizedPriceGroup = priceGroup.toUpperCase().trim();
+  
+  // Get all compatible product types for this treatment category
+  const compatibleProductTypes = getProductTypesForTreatment(productType);
 
   try {
     // Try exact match first: supplier + product_type + price_group
@@ -83,7 +88,7 @@ export const autoMatchPricingGrid = async (
       }
     }
 
-    // Fallback: product_type + price_group (any supplier)
+    // Fallback: exact product_type + price_group (any supplier)
     const { data: fallbackMatch, error: fallbackError } = await supabase
       .from('pricing_grids')
       .select('id, grid_code, name, grid_data')
@@ -110,9 +115,40 @@ export const autoMatchPricingGrid = async (
       };
     }
 
+    // Flexible match: any compatible product_type + price_group
+    if (compatibleProductTypes.length > 1) {
+      const { data: flexibleMatches, error: flexibleError } = await supabase
+        .from('pricing_grids')
+        .select('id, grid_code, name, grid_data, product_type')
+        .eq('user_id', userId)
+        .in('product_type', compatibleProductTypes)
+        .ilike('price_group', normalizedPriceGroup)
+        .eq('active', true)
+        .limit(1);
+
+      if (!flexibleError && flexibleMatches && flexibleMatches.length > 0) {
+        const flexMatch = flexibleMatches[0];
+        console.log('📊 Grid auto-match: FLEXIBLE match found', {
+          requestedType: productType,
+          matchedType: flexMatch.product_type,
+          priceGroup: normalizedPriceGroup,
+          grid: flexMatch.name
+        });
+        return {
+          gridId: flexMatch.id,
+          gridCode: flexMatch.grid_code,
+          gridName: flexMatch.name,
+          gridData: flexMatch.grid_data,
+          matchType: 'flexible',
+          matchDetails: `Matched by compatible type (${flexMatch.product_type}) + Group ${normalizedPriceGroup}`
+        };
+      }
+    }
+
     console.log('📊 Grid auto-match: No match found', {
       supplierId,
       productType,
+      compatibleTypes: compatibleProductTypes,
       priceGroup: normalizedPriceGroup
     });
     return { gridId: null, matchType: 'none' };
