@@ -4,6 +4,8 @@ export interface ValidationError {
   field: string;
   message: string;
   severity: 'error' | 'warning';
+  actionType?: 'configure_template' | 'link_headings' | 'set_manufacturing';
+  actionLabel?: string;
 }
 
 export interface ValidationResult {
@@ -14,34 +16,46 @@ export interface ValidationResult {
 
 /**
  * Validates that all required treatment options have been selected
+ * CRITICAL: Only validates options that are BOTH required AND enabled on the template
  */
 export const validateTreatmentOptions = (
   treatmentOptions: TreatmentOption[],
-  selections: Record<string, string>
+  selections: Record<string, string>,
+  enabledOptionIds?: Set<string>
 ): ValidationResult => {
   const errors: ValidationError[] = [];
   const warnings: ValidationError[] = [];
 
   treatmentOptions.forEach(option => {
-    // Check required options
-    if (option.required && option.visible) {
+    // ✅ FIX: Only validate required options that are ALSO enabled on the template
+    // If enabledOptionIds is provided, check if this option is enabled
+    const isEnabledOnTemplate = enabledOptionIds 
+      ? enabledOptionIds.has(option.id)
+      : true; // Fallback: if no enabledOptionIds provided, validate all visible required options
+
+    // Check required options - only if visible AND enabled on template
+    if (option.required && option.visible && isEnabledOnTemplate) {
       const selectedValue = selections[option.key];
       
       if (!selectedValue || selectedValue === '') {
         errors.push({
           field: option.key,
           message: `${option.label} is required`,
-          severity: 'error'
+          severity: 'error',
+          actionType: 'configure_template',
+          actionLabel: 'Configure in Template'
         });
       }
     }
 
-    // Warn if option has no values to select from
-    if (option.visible && (!option.option_values || option.option_values.length === 0)) {
+    // Warn if option has no values to select from (only for enabled options)
+    if (option.visible && isEnabledOnTemplate && (!option.option_values || option.option_values.length === 0)) {
       warnings.push({
         field: option.key,
         message: `${option.label} has no available options configured`,
-        severity: 'warning'
+        severity: 'warning',
+        actionType: 'configure_template',
+        actionLabel: 'Add Options'
       });
     }
   });
