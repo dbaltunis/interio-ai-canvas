@@ -115,7 +115,7 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
               key: optionKey,
               label: question.name,
               input_type: 'select',
-              is_required: question.isRequired,
+              required: question.isRequired,
               source: 'twc',
               order_index: twcQuestions.indexOf(question),
             })
