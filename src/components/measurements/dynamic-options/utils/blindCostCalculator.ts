@@ -9,6 +9,7 @@ import { getBlindHemDefaults, calculateBlindSqm, logBlindCalculation } from '@/u
 
 interface OptionDetail {
   name: string;
+  value?: string; // Extracted value from "Key: Value" format for quote display
   cost: number;
   pricingMethod: string;
 }
@@ -243,9 +244,21 @@ export const calculateBlindCosts = (
         });
       }
       
-      // ✅ Store calculated cost for each option
+      // ✅ Store calculated cost for each option with extracted value for quote display
+      // UNIVERSAL: Extract value from "Key: Value" format (e.g., "Control Type: Centre tilt only")
+      const optionName = opt.name || 'Unknown Option';
+      let extractedName = optionName;
+      let extractedValue = '';
+      
+      if (optionName.includes(':')) {
+        const colonIndex = optionName.indexOf(':');
+        extractedName = optionName.substring(0, colonIndex).trim();
+        extractedValue = optionName.substring(colonIndex + 1).trim();
+      }
+      
       optionDetails.push({
-        name: opt.name || 'Unknown Option',
+        name: extractedName,
+        value: extractedValue || opt.optionKey || undefined,
         cost: calculatedCost,
         pricingMethod: usedMethod
       });
