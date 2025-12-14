@@ -141,32 +141,30 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor, s
     <div className="space-y-4">
       {/* Header row with count, filter, and import */}
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <span className="text-sm text-muted-foreground">
             {filteredItems.length} materials found
           </span>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={selectedPriceGroup} onValueChange={setSelectedPriceGroup}>
-              <SelectTrigger className="w-[160px] h-8 text-xs">
-                <SelectValue placeholder="All Groups" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Groups ({materialItems.length})</SelectItem>
-                <SelectItem value="none">No Price Group ({materialItems.filter(i => !i.price_group).length})</SelectItem>
-                {priceGroups.map(group => (
-                  <SelectItem key={group} value={group}>
-                    Group {group} ({materialItems.filter(i => i.price_group === group).length})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedPriceGroup !== "all" && (
-              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setSelectedPriceGroup("all")}>
-                Clear
-              </Button>
-            )}
-          </div>
+          <Select value={selectedPriceGroup} onValueChange={setSelectedPriceGroup}>
+            <SelectTrigger className="w-auto h-8 text-xs gap-2 border-dashed">
+              <Filter className="h-3 w-3" />
+              <SelectValue placeholder="All Groups" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Groups ({materialItems.length})</SelectItem>
+              <SelectItem value="none">No Price Group ({materialItems.filter(i => !i.price_group).length})</SelectItem>
+              {priceGroups.map(group => (
+                <SelectItem key={group} value={group}>
+                  Group {group} ({materialItems.filter(i => i.price_group === group).length})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedPriceGroup !== "all" && (
+            <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={() => setSelectedPriceGroup("all")}>
+              Clear
+            </Button>
+          )}
         </div>
         <Dialog>
           <DialogTrigger asChild>
