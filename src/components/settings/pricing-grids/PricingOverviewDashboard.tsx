@@ -37,6 +37,9 @@ import { useMarkupSettings } from '@/hooks/useMarkupSettings';
 import { toast } from 'sonner';
 import { getProductTypeDisplayName } from '@/utils/pricing/treatmentGridMapping';
 import { cn } from '@/lib/utils';
+import { InventoryMarkupCoverage } from './InventoryMarkupCoverage';
+import { TemplatesByPricingMethod } from './TemplatesByPricingMethod';
+import { MarkupCalculatorTool } from './MarkupCalculatorTool';
 
 interface GridData {
   id: string;
@@ -340,6 +343,15 @@ export const PricingOverviewDashboard = () => {
           </CollapsibleContent>
         </Card>
       </Collapsible>
+
+      {/* Inventory Markup Coverage */}
+      <InventoryMarkupCoverage />
+
+      {/* Templates by Pricing Method */}
+      <TemplatesByPricingMethod />
+
+      {/* What Will Apply Calculator */}
+      <MarkupCalculatorTool />
 
       {/* Bulk Actions Bar */}
       {selectedGrids.size > 0 && (
