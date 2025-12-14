@@ -1567,8 +1567,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               
               // Build option items with full name:value format for quote display
               const buildOptionBreakdownItems = () => {
-                // For blinds/shutters, use pre-calculated optionDetails
-                if ((displayCategory === 'blinds' || displayCategory === 'shutters') && liveBlindCalcResult?.optionDetails) {
+                // For blinds/shutters, use pre-calculated optionDetails first
+                if ((displayCategory === 'blinds' || displayCategory === 'shutters') && liveBlindCalcResult?.optionDetails && liveBlindCalcResult.optionDetails.length > 0) {
                   return liveBlindCalcResult.optionDetails.map((opt: any, idx: number) => ({
                     id: opt.name || `option-${idx}`,
                     name: opt.name || 'Option',
@@ -1580,7 +1580,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   }));
                 }
                 // For curtains/romans, use pre-calculated optionDetails
-                if (displayCategory === 'curtains' && liveCurtainCalcResult?.optionDetails) {
+                if (displayCategory === 'curtains' && liveCurtainCalcResult?.optionDetails && liveCurtainCalcResult.optionDetails.length > 0) {
                   return liveCurtainCalcResult.optionDetails.map((opt: any, idx: number) => ({
                     id: opt.name || `option-${idx}`,
                     name: opt.name || 'Option',
@@ -1591,8 +1591,14 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     image_url: opt.image_url || null
                   }));
                 }
+                
+                // ✅ CRITICAL FIX: Use selectedOptions OR measurements.selected_options (for blinds that store options there)
+                const optionsToUse = selectedOptions.length > 0 
+                  ? selectedOptions 
+                  : (Array.isArray(measurements.selected_options) ? measurements.selected_options : []);
+                
                 // Fallback: use selectedOptions with proper formatting
-                return selectedOptions.map((opt: any, idx: number) => {
+                return optionsToUse.map((opt: any, idx: number) => {
                   let optionTotalCost = opt.price || 0;
                   const isPerMeterOption = opt.pricingMethod === 'per-meter' || opt.pricingMethod === 'per-metre' || 
                                           opt.pricingMethod === 'per_meter' || opt.pricingMethod === 'per_metre' ||
