@@ -36,8 +36,8 @@ export const ColorSlatPreview = ({
     return baseWidth; // 127mm vanes
   };
 
-  const containerHeight = size === 'sm' ? 'h-16' : size === 'md' ? 'h-24' : 'h-32';
-  const containerWidth = size === 'sm' ? 'w-16' : size === 'md' ? 'w-full max-w-[200px]' : 'w-full max-w-[300px]';
+  const containerHeight = size === 'sm' ? 'h-10' : size === 'md' ? 'h-20' : 'h-28';
+  const containerWidth = size === 'sm' ? 'w-12' : size === 'md' ? 'w-full max-w-[180px]' : 'w-full max-w-[280px]';
 
   // Determine if material is wood-like for grain texture
   const isWoodLike = materialType === 'wood' || materialType === 'faux_wood';
