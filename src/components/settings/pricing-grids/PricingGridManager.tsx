@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Upload, Trash2, Grid3x3, Building2, Tag, Layers } from 'lucide-react';
+import { Plus, Upload, Trash2, Grid3x3, Building2, Tag, Layers, FolderOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -16,17 +16,36 @@ import { SampleDataHelper } from './SampleDataHelper';
 import { PricingGridExplainer } from './PricingGridExplainer';
 import { BulkGridUploader } from './BulkGridUploader';
 import { GridCoverageDashboard } from './GridCoverageDashboard';
+import { CategoryProductTypeGuide } from './CategoryProductTypeGuide';
 import { useVendors } from '@/hooks/useVendors';
 
-// Product types that use pricing grids (blinds & shutters)
+// Categories that organize product types
+const GRID_CATEGORIES = [
+  { value: 'material', label: 'Material (Hard Coverings)' },
+  { value: 'fabric', label: 'Fabric (Soft Furnishings)' },
+];
+
+// Product types organized by category
+const PRODUCT_TYPES_BY_CATEGORY: Record<string, Array<{ value: string; label: string; subcategory: string }>> = {
+  material: [
+    { value: 'roller_blinds', label: 'Roller Blinds', subcategory: 'roller_fabric' },
+    { value: 'venetian_blinds', label: 'Venetian Blinds', subcategory: 'venetian_slats' },
+    { value: 'cellular_blinds', label: 'Cellular/Honeycomb', subcategory: 'cellular' },
+    { value: 'vertical_blinds', label: 'Vertical Blinds', subcategory: 'vertical_fabric' },
+    { value: 'shutters', label: 'Shutters', subcategory: 'shutter_material' },
+    { value: 'panel_glide', label: 'Panel Glide', subcategory: 'panel_glide_fabric' },
+  ],
+  fabric: [
+    { value: 'curtains', label: 'Curtains', subcategory: 'curtain_fabric' },
+    { value: 'roman_blinds', label: 'Roman Blinds', subcategory: 'roman_fabric' },
+    { value: 'awnings', label: 'Awnings', subcategory: 'awning_fabric' },
+  ],
+};
+
+// All product types flattened for backward compatibility
 const GRID_PRODUCT_TYPES = [
-  { value: 'roller_blinds', label: 'Roller Blinds' },
-  { value: 'venetian_blinds', label: 'Venetian Blinds' },
-  { value: 'cellular_blinds', label: 'Cellular/Honeycomb' },
-  { value: 'vertical_blinds', label: 'Vertical Blinds' },
-  { value: 'shutters', label: 'Shutters' },
-  { value: 'awnings', label: 'Awnings' },
-  { value: 'panel_glide', label: 'Panel Glide' },
+  ...PRODUCT_TYPES_BY_CATEGORY.material,
+  ...PRODUCT_TYPES_BY_CATEGORY.fabric,
 ];
 
 export const PricingGridManager = () => {
@@ -35,15 +54,30 @@ export const PricingGridManager = () => {
   const [newGridCode, setNewGridCode] = useState('');
   const [newGridDescription, setNewGridDescription] = useState('');
   const [newSupplierId, setNewSupplierId] = useState<string>('');
+  const [newCategory, setNewCategory] = useState<string>('');
   const [newProductType, setNewProductType] = useState<string>('');
   const [newPriceGroup, setNewPriceGroup] = useState('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Filter product types based on selected category
+  const filteredProductTypes = useMemo(() => {
+    if (!newCategory) return GRID_PRODUCT_TYPES;
+    return PRODUCT_TYPES_BY_CATEGORY[newCategory] || [];
+  }, [newCategory]);
+
+  // Get the subcategory hint for selected product type
+  const selectedProductTypeInfo = useMemo(() => {
+    return GRID_PRODUCT_TYPES.find(pt => pt.value === newProductType);
+  }, [newProductType]);
+
   const { data: vendors = [] } = useVendors();
   
   // Handler for coverage dashboard clicks
   const handleCoverageUploadClick = (productType: string, priceGroup: string) => {
+    // Auto-set category based on product type
+    const isMaterial = PRODUCT_TYPES_BY_CATEGORY.material.some(p => p.value === productType);
+    setNewCategory(isMaterial ? 'material' : 'fabric');
     setNewProductType(productType);
     setNewPriceGroup(priceGroup);
     setActiveTab('single');
@@ -165,6 +199,7 @@ export const PricingGridManager = () => {
       setNewGridCode('');
       setNewGridDescription('');
       setNewSupplierId('');
+      setNewCategory('');
       setNewProductType('');
       setNewPriceGroup('');
       setCsvFile(null);
@@ -245,7 +280,17 @@ export const PricingGridManager = () => {
           <BulkGridUploader onComplete={refetch} />
         </TabsContent>
 
-        <TabsContent value="single" className="mt-4">
+        <TabsContent value="single" className="mt-4 space-y-4">
+      {/* Category Mapping Guide */}
+      <CategoryProductTypeGuide 
+        onSelectProductType={(pt) => {
+          setNewProductType(pt);
+          // Auto-set category based on product type
+          const isMaterial = PRODUCT_TYPES_BY_CATEGORY.material.some(p => p.value === pt);
+          setNewCategory(isMaterial ? 'material' : 'fabric');
+        }} 
+      />
+
       {/* Create New Grid */}
       <Card>
         <CardHeader>
@@ -254,50 +299,88 @@ export const PricingGridManager = () => {
             Create Pricing Grid
           </CardTitle>
           <CardDescription>
-            Upload a CSV with pricing data. Assign supplier, product type, and price group for auto-matching.
+            Upload a CSV with pricing data. Assign supplier, category, product type, and price group for auto-matching.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Supplier and Product Type - Required for matching */}
+          {/* Supplier */}
+          <div className="space-y-2">
+            <Label htmlFor="supplier">
+              <Building2 className="h-3.5 w-3.5 inline mr-1" />
+              Supplier *
+            </Label>
+            <Select value={newSupplierId} onValueChange={setNewSupplierId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select supplier" />
+              </SelectTrigger>
+              <SelectContent>
+                {vendors.map((vendor) => (
+                  <SelectItem key={vendor.id} value={vendor.id}>
+                    {vendor.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {vendors.length === 0 && (
+              <p className="text-xs text-amber-600">
+                No suppliers found. Add suppliers in Settings → Vendors first.
+              </p>
+            )}
+          </div>
+
+          {/* Category and Product Type - Side by side */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="supplier">
-                <Building2 className="h-3.5 w-3.5 inline mr-1" />
-                Supplier *
+              <Label htmlFor="category">
+                <FolderOpen className="h-3.5 w-3.5 inline mr-1" />
+                Category *
               </Label>
-              <Select value={newSupplierId} onValueChange={setNewSupplierId}>
+              <Select 
+                value={newCategory} 
+                onValueChange={(val) => {
+                  setNewCategory(val);
+                  setNewProductType(''); // Reset product type when category changes
+                }}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select supplier" />
+                  <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {vendors.map((vendor) => (
-                    <SelectItem key={vendor.id} value={vendor.id}>
-                      {vendor.name}
+                  {GRID_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {vendors.length === 0 && (
-                <p className="text-xs text-amber-600">
-                  No suppliers found. Add suppliers in Settings → Vendors first.
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground">
+                Match your inventory category
+              </p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="product-type">Product Type *</Label>
-              <Select value={newProductType} onValueChange={setNewProductType}>
+              <Select 
+                value={newProductType} 
+                onValueChange={setNewProductType}
+                disabled={!newCategory}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select product type" />
+                  <SelectValue placeholder={newCategory ? "Select product type" : "Select category first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {GRID_PRODUCT_TYPES.map((type) => (
+                  {filteredProductTypes.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {selectedProductTypeInfo && (
+                <p className="text-xs text-muted-foreground">
+                  Matches inventory subcategory: <code className="bg-muted px-1 rounded">{selectedProductTypeInfo.subcategory}</code>
+                </p>
+              )}
             </div>
           </div>
 
