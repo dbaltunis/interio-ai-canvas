@@ -456,6 +456,18 @@ export const DynamicCurtainOptions = ({
 
       {/* Heading Configuration State Detection and Validation */}
       {(() => {
+        // ✅ FIX: Suppress heading notices for TWC-imported templates
+        // TWC templates use their own heading options, not the standard heading workflow
+        const isTWCTemplate = template.metadata?.twc_product_id || 
+          template.description?.includes('TWC Template') ||
+          template.system_type?.toLowerCase().includes('twc');
+        
+        // Skip heading notices entirely for TWC templates
+        if (isTWCTemplate) {
+          console.log('🎯 Suppressing heading notice for TWC template:', template.name);
+          return null;
+        }
+        
         const hasTemplateHeadings = (template.selected_heading_ids || []).length > 0;
         const hasInventoryHeadings = headingOptions.length > 0;
         const hasAnyAvailableHeadings = availableHeadings.length > 0;
