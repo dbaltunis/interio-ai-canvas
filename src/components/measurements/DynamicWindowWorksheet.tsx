@@ -1592,41 +1592,49 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   ? 'Wallpaper' 
                   : 'Fabric';
               
-              // Build option items with full name:value format for quote display
+              // UNIVERSAL: Build option items with full name:value format for quote display
+              // Works for ALL treatment types: curtains, romans, blinds, shutters, wallpaper, hardware, services
               const buildOptionBreakdownItems = () => {
-                // For blinds/shutters, use pre-calculated optionDetails first
-                if ((displayCategory === 'blinds' || displayCategory === 'shutters') && liveBlindCalcResult?.optionDetails && liveBlindCalcResult.optionDetails.length > 0) {
-                  return liveBlindCalcResult.optionDetails.map((opt: any, idx: number) => ({
-                    id: opt.name || `option-${idx}`,
-                    name: opt.name || 'Option',
-                    description: opt.value || opt.label || '-',
-                    total_cost: opt.cost,
-                    category: 'option',
-                    pricing_method: opt.pricingMethod,
-                    image_url: opt.image_url || null
-                  }));
-                }
-                // For curtains/romans, use pre-calculated optionDetails
-                if (displayCategory === 'curtains' && liveCurtainCalcResult?.optionDetails && liveCurtainCalcResult.optionDetails.length > 0) {
-                  return liveCurtainCalcResult.optionDetails.map((opt: any, idx: number) => ({
-                    id: opt.name || `option-${idx}`,
-                    name: opt.name || 'Option',
-                    description: opt.value || opt.label || '-',
-                    total_cost: opt.cost,
-                    category: 'option',
-                    pricing_method: opt.pricingMethod,
-                    image_url: opt.image_url || null
-                  }));
+                // UNIVERSAL: Try live calculation results first (any treatment type)
+                const liveOptions = liveBlindCalcResult?.optionDetails || liveCurtainCalcResult?.optionDetails || [];
+                
+                if (liveOptions.length > 0) {
+                  return liveOptions.map((opt: any, idx: number) => {
+                    // UNIVERSAL: Format option name and extract description
+                    let optionName = opt.optionKey || opt.name || 'Option';
+                    let optionValue = opt.value || opt.label || '-';
+                    
+                    // Extract from "name: value" format if present
+                    if (optionName.includes(':')) {
+                      const colonIndex = optionName.indexOf(':');
+                      optionValue = optionName.substring(colonIndex + 1).trim() || optionValue;
+                      optionName = optionName.substring(0, colonIndex).trim();
+                    }
+                    
+                    // Format snake_case to Title Case
+                    optionName = optionName
+                      .replace(/_/g, ' ')
+                      .replace(/\b\w/g, (c: string) => c.toUpperCase());
+                    
+                    return {
+                      id: opt.name || `option-${idx}`,
+                      name: optionName,
+                      description: optionValue || '-',
+                      total_cost: opt.cost,
+                      category: 'option',
+                      pricing_method: opt.pricingMethod,
+                      image_url: opt.image_url || null
+                    };
+                  });
                 }
                 
-                // ✅ CRITICAL FIX: Use selectedOptions OR measurements.selected_options (for blinds that store options there)
+                // UNIVERSAL FALLBACK: Use selectedOptions array (works for ALL template types)
                 const optionsToUse = selectedOptions.length > 0 
                   ? selectedOptions 
                   : (Array.isArray(measurements.selected_options) ? measurements.selected_options : []);
                 
-                // Fallback: use selectedOptions with proper formatting
                 return optionsToUse.map((opt: any, idx: number) => {
-                  let optionTotalCost = opt.price || 0;
+                  let optionTotalCost = opt.price || opt.calculatedPrice || 0;
                   const isPerMeterOption = opt.pricingMethod === 'per-meter' || opt.pricingMethod === 'per-metre' || 
                                           opt.pricingMethod === 'per_meter' || opt.pricingMethod === 'per_metre' ||
                                           opt.name?.toLowerCase().includes('lining');
@@ -1635,9 +1643,16 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     optionTotalCost = opt.price * linearMeters;
                   }
                   
-                  // CRITICAL: Parse name to extract key and value
+                  // UNIVERSAL: Parse name to extract key and value
                   let optionName = opt.optionKey || opt.name || 'Option';
                   let optionValue = opt.label || opt.value || '-';
+                  
+                  // Extract from "name: value" format if present
+                  if (optionName.includes(':')) {
+                    const colonIndex = optionName.indexOf(':');
+                    optionValue = optionName.substring(colonIndex + 1).trim() || optionValue;
+                    optionName = optionName.substring(0, colonIndex).trim();
+                  }
                   
                   // Format snake_case to Title Case
                   optionName = optionName
@@ -1647,7 +1662,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   return {
                     id: `option-${idx}`,
                     name: optionName,
-                    description: optionValue,
+                    description: optionValue || '-',
                     total_cost: optionTotalCost,
                     category: 'option',
                     pricing_method: opt.pricingMethod,

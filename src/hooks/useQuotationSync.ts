@@ -262,14 +262,14 @@ export const useQuotationSync = ({
               let itemColor = item.color || null;
               let itemImageUrl = item.image_url || null;
               let formattedName = item.name || item.category || 'Item';
-              let formattedDescription = item.description || '-';
+              let formattedDescription = '-';
               
               if (item.category === 'fabric') {
                 itemColor = itemColor || materialDetails?.color || fabricDetails?.color || null;
                 itemImageUrl = itemImageUrl || materialImageUrl || null;
               }
               
-              // Format "option_key: value" to "Option Key: value"
+              // CRITICAL FIX: ALWAYS extract value from "option_key: value" format as description FIRST
               if (formattedName && formattedName.includes(':')) {
                 const colonIndex = formattedName.indexOf(':');
                 if (colonIndex > 0) {
@@ -278,8 +278,14 @@ export const useQuotationSync = ({
                   formattedName = key
                     .replace(/_/g, ' ')
                     .replace(/\b\w/g, (c: string) => c.toUpperCase());
-                  formattedDescription = value || formattedDescription;
+                  // ALWAYS set description from extracted value - never leave empty
+                  formattedDescription = value || '-';
                 }
+              }
+              
+              // Use explicit item.description as override ONLY if it has meaningful content
+              if (item.description && item.description !== '-' && item.description.trim().length > 0) {
+                formattedDescription = item.description;
               }
               
               return {
@@ -448,38 +454,38 @@ export const useQuotationSync = ({
           
           if (Array.isArray(selectedOptions) && selectedOptions.length > 0) {
               selectedOptions.forEach((opt: any, index: number) => {
-                // Extract option key and value from name
+                // UNIVERSAL: Extract option key and value - works for ALL treatment types
                 let optionName = '';
                 let optionValue = '';
                 
-                if (opt.name) {
-                  // Name format is usually "optionKey: value" or just a descriptive name
-                  const parts = opt.name.split(':');
-                  if (parts.length >= 2) {
-                    optionName = parts[0].trim();
-                    optionValue = parts.slice(1).join(':').trim();
-                  } else {
-                    // If no colon, use the whole name as the option name
-                    optionName = opt.name;
-                    optionValue = opt.label || '';
-                  }
-                }
-                
-                // Use optionKey if available for cleaner display
+                // Priority 1: Use optionKey if available (cleanest source)
                 if (opt.optionKey) {
-                  // Format optionKey to be more readable (e.g., "slat_width" -> "Slat Width")
                   optionName = opt.optionKey
-                    .split('_')
-                    .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(' ');
+                    .replace(/_/g, ' ')
+                    .replace(/\b\w/g, (c: string) => c.toUpperCase());
+                  // Get value from label or value field
+                  optionValue = opt.label || opt.value || '';
                 }
                 
-                // If still no value, try to extract from name or use description
-                if (!optionValue && opt.name) {
+                // Priority 2: Extract from "name: value" format
+                if (!optionName && opt.name) {
                   const colonIndex = opt.name.indexOf(':');
-                  if (colonIndex > -1) {
+                  if (colonIndex > 0) {
+                    optionName = opt.name.substring(0, colonIndex).trim()
+                      .replace(/_/g, ' ')
+                      .replace(/\b\w/g, (c: string) => c.toUpperCase());
                     optionValue = opt.name.substring(colonIndex + 1).trim();
+                  } else {
+                    optionName = opt.name
+                      .replace(/_/g, ' ')
+                      .replace(/\b\w/g, (c: string) => c.toUpperCase());
+                    optionValue = opt.label || opt.value || '';
                   }
+                }
+                
+                // Priority 3: Use explicit description if meaningful
+                if (opt.description && opt.description !== '-' && opt.description.trim().length > 0) {
+                  optionValue = opt.description;
                 }
                 
                 const quantity = opt.quantity || 1;
