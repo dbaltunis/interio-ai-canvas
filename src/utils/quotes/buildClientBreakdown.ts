@@ -215,9 +215,9 @@ export const buildClientBreakdown = (
     // Format option names for better display and enrich with color/image from source details
     const enrichedItems = raw.map((item: any) => {
       let formattedName = item.name || item.category || 'Item';
-      let formattedDescription = item.description;
+      let formattedDescription = '-';
       
-      // Format "option_key: value" to "Option Key: value"
+      // CRITICAL FIX: ALWAYS extract value from "option_key: value" format as description FIRST
       if (formattedName && formattedName.includes(':')) {
         const colonIndex = formattedName.indexOf(':');
         if (colonIndex > 0) {
@@ -226,8 +226,14 @@ export const buildClientBreakdown = (
           formattedName = key
             .replace(/_/g, ' ')
             .replace(/\b\w/g, (c: string) => c.toUpperCase());
-          formattedDescription = value || formattedDescription;
+          // ALWAYS set description from extracted value - never leave empty
+          formattedDescription = value || '-';
         }
+      }
+      
+      // Use explicit item.description as override ONLY if it has meaningful content
+      if (item.description && item.description !== '-' && item.description.trim().length > 0) {
+        formattedDescription = item.description;
       }
       
       // Enrich items with color/image from source details
@@ -447,10 +453,17 @@ export const buildClientBreakdown = (
     
     summary.selected_options.forEach((option: any, index: number) => {
       let formattedName = option.name || option.label || 'Option';
-      let formattedDescription = option.description;
+      let formattedDescription = '-';
       
-      // Format "option_key: value" to "Option Key: value"
-      if (formattedName && formattedName.includes(':')) {
+      // Priority 1: Extract from optionKey if available
+      if (option.optionKey) {
+        formattedName = option.optionKey
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, (c: string) => c.toUpperCase());
+        formattedDescription = option.label || option.value || '-';
+      }
+      // Priority 2: Extract from "option_key: value" format
+      else if (formattedName && formattedName.includes(':')) {
         const colonIndex = formattedName.indexOf(':');
         if (colonIndex > 0) {
           const key = formattedName.substring(0, colonIndex).trim();
@@ -458,8 +471,14 @@ export const buildClientBreakdown = (
           formattedName = key
             .replace(/_/g, ' ')
             .replace(/\b\w/g, (c: string) => c.toUpperCase());
-          formattedDescription = value || formattedDescription;
+          // ALWAYS set description from extracted value - never leave empty
+          formattedDescription = value || '-';
         }
+      }
+      
+      // Priority 3: Use explicit option.description as override if meaningful
+      if (option.description && option.description !== '-' && option.description.trim().length > 0) {
+        formattedDescription = option.description;
       }
       
       // CRITICAL: Use calculatedPrice (based on pricing method) if available, otherwise fall back to base price
@@ -470,7 +489,7 @@ export const buildClientBreakdown = (
       optionItems.push({
         id: option.id || `option-${index}`,
         name: formattedName,
-        description: formattedDescription && formattedDescription !== formattedName ? formattedDescription : undefined,
+        description: formattedDescription !== '-' ? formattedDescription : undefined,
         total_cost: price,
         unit_price: basePrice, // Show base rate for reference
         quantity: 1,
