@@ -30,6 +30,7 @@ import { InlineDiscountPanel } from "@/components/jobs/quotation/InlineDiscountP
 import { InlinePaymentConfig } from "@/components/jobs/quotation/InlinePaymentConfig";
 import { useQuoteDiscount } from "@/hooks/useQuoteDiscount";
 import { TWCSubmitDialog } from "@/components/integrations/TWCSubmitDialog";
+import { QuoteProfitSummary } from "@/components/pricing/QuoteProfitSummary";
 interface QuotationTabProps {
   projectId: string;
   quoteId?: string;
@@ -698,6 +699,14 @@ export const QuotationTab = ({
           } : undefined}
         />
       )}
+
+      {/* Profit Summary for Authorized Users */}
+      <QuoteProfitSummary 
+        costTotal={quotationData.costTotal || 0} 
+        sellingTotal={quotationData.sellingTotal || subtotal} 
+        variant="card"
+        showBreakdown={true}
+      />
 
       {/* Quotation Items Modal */}
       <QuotationItemsModal 

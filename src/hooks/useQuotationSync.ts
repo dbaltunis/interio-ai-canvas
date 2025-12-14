@@ -9,6 +9,7 @@ import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import { useMarkupSettings } from "@/hooks/useMarkupSettings";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveMarkup, applyMarkup, calculateGrossMargin } from "@/utils/pricing/markupResolver";
 
 interface QuotationSyncOptions {
   projectId: string;
@@ -91,6 +92,8 @@ export const useQuotationSync = ({
   // Build quotation items from current project data
   const buildQuotationItems = () => {
     const items: any[] = [];
+    let totalCostPrice = 0; // Track total cost for profit calculation
+    let totalSellingPrice = 0; // Track total selling for profit calculation
 
     // Get the most accurate cost data - prioritize window summaries over treatments
     const summariesTotal = projectSummaries?.projectTotal || 0;
@@ -213,13 +216,31 @@ export const useQuotationSync = ({
           };
           const itemCurrency = getMeasurementCurrency();
           
+          // MARKUP INTEGRATION: Calculate selling price from cost
+          const costPrice = summary.total_cost || 0;
+          const markupResult = resolveMarkup({
+            productMarkup: undefined, // Could add product-level markup from inventory
+            gridMarkup: summary.pricing_grid_markup || undefined,
+            category: treatmentCategory,
+            subcategory: summary.subcategory || undefined,
+            markupSettings: markupSettings || undefined
+          });
+          const sellingPrice = applyMarkup(costPrice, markupResult.percentage);
+          const grossMargin = calculateGrossMargin(costPrice, sellingPrice);
+          
           const parentItem = {
             id: window.window_id,
             name: productName,
             description,
             quantity: 1,
-            unit_price: summary.total_cost,
-            total: summary.total_cost,
+            // Store both cost and selling prices
+            cost_price: costPrice,
+            unit_price: sellingPrice, // Selling price (with markup)
+            total: sellingPrice,
+            cost_total: costPrice,
+            markup_percentage: markupResult.percentage,
+            markup_source: markupResult.sourceName,
+            gross_margin: grossMargin,
             breakdown,
             currency: summary.currency || itemCurrency,
             room_name: roomName,
@@ -536,8 +557,13 @@ export const useQuotationSync = ({
     }
 
     // Flatten room groups into a linear array for quotation
+    // Track cost vs selling totals for profit calculation
     Object.values(roomGroups).forEach((roomGroup: any) => {
       if (roomGroup.items.length > 0) {
+        roomGroup.items.forEach((item: any) => {
+          totalCostPrice += item.cost_price || item.cost_total || 0;
+          totalSellingPrice += item.unit_price || item.total || 0;
+        });
         // Add room items directly (room headers displayed in UI, not as items)
         items.push(...roomGroup.items);
       }
@@ -606,12 +632,22 @@ export const useQuotationSync = ({
       total = subtotal + taxAmount;
     }
 
+    // Calculate overall profit metrics
+    const overallGrossMargin = totalSellingPrice > 0 
+      ? calculateGrossMargin(totalCostPrice, totalSellingPrice) 
+      : 0;
+
     return {
       items,
       baseSubtotal,
       subtotal,
       taxAmount,
-      total
+      total,
+      // Profit tracking
+      costTotal: totalCostPrice,
+      sellingTotal: totalSellingPrice,
+      profitTotal: totalSellingPrice - totalCostPrice,
+      grossMarginPercent: overallGrossMargin
     };
   };
 
