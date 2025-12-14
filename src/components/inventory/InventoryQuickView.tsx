@@ -22,12 +22,7 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    // Close quick view first
-    onOpenChange(false);
-    // Wait for dialog close animation then open edit
-    setTimeout(() => {
-      setShowEditDialog(true);
-    }, 150);
+    setShowEditDialog(true);
   };
 
   const handleEditSuccess = () => {
@@ -77,16 +72,16 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
           <div className="space-y-6">
             {/* Large Image or Auto-generated Preview */}
             {item.image_url ? (
-              <div className="aspect-video rounded-lg overflow-hidden bg-muted">
+              <div className="h-48 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
                 <img 
                   src={item.image_url} 
                   alt={item.name}
                   crossOrigin="anonymous"
-                  className="w-full h-full object-contain"
+                  className="max-w-full max-h-full object-contain"
                 />
               </div>
             ) : item.category === 'material' && itemColors.length > 0 ? (
-              <div className="aspect-video rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+              <div className="p-6 rounded-lg bg-muted/30 border flex items-center justify-center">
                 <ColorSlatPreview 
                   hexColor={getColorHex(itemColors[0], [...COLOR_PALETTE], [])}
                   slatWidth={(item.specifications as Record<string, any>)?.slat_width}
