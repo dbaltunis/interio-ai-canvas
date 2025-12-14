@@ -141,25 +141,35 @@ export const InventoryImportExport = () => {
     let sampleRow: string[];
 
     if (templateType === 'basic') {
-      headers = ["Name", "Description", "Category", "SKU", "Quantity", "Unit Price", "Unit", "Reorder Point", "Supplier", "Location"];
-      sampleRow = ["Sample Item", "Description of the item", "fabric", "SKU-001", "10", "25.00", "meters", "5", "Supplier Name", "Warehouse A"];
-    } else {
+      // UPDATED: Basic template now includes Subcategory, Price Group, and Tags
       headers = [
-        "Name", "Description", "Category", "SKU", "Quantity", "Unit Price", 
+        "Name", "Description", "Category", "Subcategory", "SKU", "Quantity", 
+        "Unit Price", "Unit", "Reorder Point", "Supplier", "Location", 
+        "Price Group", "Tags"
+      ];
+      sampleRow = [
+        "Sample Fabric", "Beautiful curtain fabric", "fabric", "curtain_fabric", 
+        "SKU-001", "10", "25.00", "meters", "5", "Supplier Name", "Warehouse A",
+        "1", "day;wide_width;patterned"
+      ];
+    } else {
+      // Complete template with all fields
+      headers = [
+        "Name", "Description", "Category", "Subcategory", "SKU", "Quantity", "Unit Price", 
         "Unit", "Reorder Point", "Reorder Quantity", "Supplier", "Location",
-        "Fabric Width", "Pattern Repeat Vertical", "Pattern Repeat Horizontal", 
+        "Price Group", "Tags", "Fabric Width", "Pattern Repeat Vertical", "Pattern Repeat Horizontal", 
         "Fullness Ratio", "Roll Direction", "Collection Name", "Color Code",
         "Pattern Direction", "Transparency Level", "Fire Rating", "Composition",
         "Care Instructions", "Hardware Type", "Material Finish", "Installation Type",
         "Weight Capacity", "Max Length", "Pricing Method", "Specifications",
-        "Pricing Grid", "Images", "Compatibility Tags"
+        "Pricing Grid", "Images"
       ];
       sampleRow = [
-        "Sample Fabric", "Beautiful curtain fabric", "curtain_fabric", "SF-001", "50", "25.00", 
-        "meters", "10", "25", "Fabric Co", "Store A", "140", "32", "0", "2.5", 
-        "horizontal", "Collection A", "RED001", "straight", "semi_transparent", "B1", 
-        "100% Cotton", "Machine wash cold", "", "", "", "200", "300", "per_unit", 
-        "{}", "{}", "image1.jpg;image2.jpg", "curtains;blinds"
+        "Sample Fabric", "Beautiful curtain fabric", "fabric", "curtain_fabric", "SF-001", "50", "25.00", 
+        "meters", "10", "25", "Fabric Co", "Store A", "1", "day;wide_width;patterned",
+        "140", "32", "0", "2.5", "horizontal", "Collection A", "RED001", "straight", 
+        "semi_transparent", "B1", "100% Cotton", "Machine wash cold", "", "", "", 
+        "200", "300", "per_unit", "{}", "{}", "image1.jpg;image2.jpg"
       ];
     }
 
@@ -246,6 +256,10 @@ export const InventoryImportExport = () => {
             break;
           case 'category':
             item.category = value;
+            break;
+          case 'subcategory':
+            // CRITICAL: Subcategory field for proper product categorization
+            item.subcategory = value;
             break;
           case 'sku':
             item.sku = value;
@@ -341,15 +355,27 @@ export const InventoryImportExport = () => {
             }
             break;
           case 'images':
-            item.images = value ? value.split(';').filter(img => img.trim()) : [];
+            item.images = value ? value.split(';').filter((img: string) => img.trim()) : [];
+            break;
+          case 'tags':
+            // CRITICAL: Tags for granular filtering (semicolon-separated)
+            item.tags = value ? value.split(';').map((t: string) => t.trim().toLowerCase()).filter(Boolean) : [];
             break;
           case 'compatibility tags':
-            item.compatibility_tags = value ? value.split(';').filter(tag => tag.trim()) : [];
+            // Legacy support - merge into tags array
+            if (value) {
+              const legacyTags = value.split(';').filter((tag: string) => tag.trim());
+              item.tags = [...(item.tags || []), ...legacyTags];
+            }
+            break;
+          case 'price group':
+            // Price group for pricing grid linkage
+            item.price_group = value || null;
             break;
           case 'colors':
             // Split comma-separated colors and add to tags array for ColorSelector
             if (value) {
-              const colors = value.split(',').map(c => c.trim().toLowerCase()).filter(c => c);
+              const colors = value.split(',').map((c: string) => c.trim().toLowerCase()).filter((c: string) => c);
               item.tags = [...(item.tags || []), ...colors];
             }
             break;
