@@ -2631,6 +2631,11 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                         }] : [])
                       ];
                       
+                      // ✅ FIX: When editing, show saved costs instead of recalculating
+                      // This prevents €0.00 display while data loads
+                      const savedBreakdown = existingWindowSummary?.cost_breakdown as any[] | undefined;
+                      const savedTotal = existingWindowSummary?.total_cost;
+                      
                       return (
                         <CostCalculationSummary
                           template={selectedTemplate} 
@@ -2642,6 +2647,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                           fabricCalculation={fabricCalculation}
                           selectedOptions={basicOptions}
                           engineResult={engineResult}
+                          savedCostBreakdown={savedBreakdown}
+                          savedTotalCost={savedTotal}
                           onBlindCostsCalculated={(costs) => setLiveBlindCalcResult(costs)}
                           onCurtainCostsCalculated={(costs) => setLiveCurtainCalcResult(costs)}
                         />
@@ -2965,6 +2972,12 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       setCalculatedCosts(newCalculatedCosts);
                     }
 
+                    // ✅ FIX: When editing and engine/fabric not loaded yet, show saved costs
+                    // This prevents €0.00 display while data is still loading
+                    const savedBreakdown = existingWindowSummary?.cost_breakdown as any[] | undefined;
+                    const savedTotal = existingWindowSummary?.total_cost;
+                    const shouldUseSavedCosts = savedBreakdown && savedTotal && savedTotal > 0 && totalCost === 0;
+                    
                     return (
                       <CostCalculationSummary
                         template={selectedTemplate} 
@@ -2994,6 +3007,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                         }}
                         manufacturingDetails={manufacturingDetails}
                         engineResult={engineResult}
+                        savedCostBreakdown={shouldUseSavedCosts ? savedBreakdown : undefined}
+                        savedTotalCost={shouldUseSavedCosts ? savedTotal : undefined}
                         onBlindCostsCalculated={(costs) => setLiveBlindCalcResult(costs)}
                         onCurtainCostsCalculated={(costs) => setLiveCurtainCalcResult(costs)}
                       />
