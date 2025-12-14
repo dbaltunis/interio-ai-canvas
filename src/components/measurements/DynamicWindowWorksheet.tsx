@@ -1028,9 +1028,12 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               console.log('⚠️ [SAVE] No live blind result, falling back to recalculation');
               
               // BLIND/SHUTTER CALCULATIONS
-              // CRITICAL FIX: Convert MM to CM before passing to calculator
-              const width = (parseFloat(measurements.rail_width) || 0) / 10;
-              const height = (parseFloat(measurements.drop) || 0) / 10;
+              // ✅ CRITICAL FIX: measurements are in USER'S DISPLAY UNIT during live editing
+              // Convert from user's display unit to CM before passing to calculator
+              const rawWidth = parseFloat(measurements.rail_width) || 0;
+              const rawHeight = parseFloat(measurements.drop) || 0;
+              const width = convertLength(rawWidth, units.length, 'cm');
+              const height = convertLength(rawHeight, units.length, 'cm');
               
               // Import blind calculation utility - UNIFIED TO SINGLE CALCULATOR
               const { calculateBlindCosts, isBlindCategory } = await import('@/components/measurements/dynamic-options/utils/blindCostCalculator');

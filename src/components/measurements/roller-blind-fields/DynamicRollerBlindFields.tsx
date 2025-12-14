@@ -8,6 +8,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
 import { useConditionalOptions } from "@/hooks/useConditionalOptions";
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { convertLength } from "@/hooks/useBusinessSettings";
 import { Loader2, Info, Sparkles, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +35,9 @@ export const DynamicRollerBlindFields = ({
   selectedOptions = [],
   onSelectedOptionsChange
 }: DynamicRollerBlindFieldsProps) => {
+  // Get measurement units for proper conversion
+  const { units } = useMeasurementUnits();
+  
   // Track which sub-category is selected for cascading dropdowns
   const [subCategorySelections, setSubCategorySelections] = useState<Record<string, string>>({});
   // Track if sub-category selections have been restored from saved data
@@ -156,11 +161,15 @@ export const DynamicRollerBlindFields = ({
   // Helper to calculate price (handles pricing-grid method)
   const calculateOptionPrice = (basePrice: number, pricingMethod: string, pricingGridData: any): number => {
     if (pricingMethod === 'pricing-grid' && pricingGridData) {
+      // ✅ CRITICAL FIX: measurements are in USER'S DISPLAY UNIT, convert to CM for grid lookup
+      const rawWidth = parseFloat(measurements.rail_width) || 0;
+      const rawHeight = parseFloat(measurements.drop) || 0;
+      const widthCm = convertLength(rawWidth, units.length, 'cm');
+      const heightCm = convertLength(rawHeight, units.length, 'cm');
+      
       // Check if it's a simple width-only array format
       if (Array.isArray(pricingGridData) && pricingGridData.length > 0 && 'width' in pricingGridData[0]) {
         // Simple width-based pricing
-        // ✅ CRITICAL: measurements.rail_width is stored in MM, convert to CM for grid lookup
-        const widthCm = (parseFloat(measurements.rail_width) || 0) / 10;
         const widthValues = pricingGridData.map((entry: any) => parseInt(entry.width));
         const closestWidth = widthValues.reduce((prev: number, curr: number) => {
           return Math.abs(curr - widthCm) < Math.abs(prev - widthCm) ? curr : prev;
@@ -169,9 +178,6 @@ export const DynamicRollerBlindFields = ({
         return matchingEntry ? parseFloat(matchingEntry.price) : 0;
       } else {
         // Full 2D pricing grid with width and drop
-        // ✅ CRITICAL: measurements stored in MM, convert to CM for grid lookup
-        const widthCm = (parseFloat(measurements.rail_width) || 0) / 10;
-        const heightCm = (parseFloat(measurements.drop) || 0) / 10;
         return getPriceFromGrid(pricingGridData, widthCm, heightCm);
       }
     }
@@ -193,9 +199,11 @@ export const DynamicRollerBlindFields = ({
         const actualPrice = calculateOptionPrice(selectedOption.price, pricingMethod, pricingGridData);
         
         if (pricingMethod === 'pricing-grid' && pricingGridData) {
+          const rawWidth = parseFloat(measurements.rail_width) || 0;
+          const rawHeight = parseFloat(measurements.drop) || 0;
           console.log(`💰 Calculated pricing-grid price for "${key}":`, {
             method: Array.isArray(pricingGridData) && 'width' in pricingGridData[0] ? 'width-based' : '2D grid',
-            dimensions: `${(parseFloat(measurements.rail_width) || 0) / 10}cm × ${(parseFloat(measurements.drop) || 0) / 10}cm`,
+            dimensions: `${convertLength(rawWidth, units.length, 'cm')}cm × ${convertLength(rawHeight, units.length, 'cm')}cm`,
             calculatedPrice: actualPrice
           });
         }
