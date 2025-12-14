@@ -117,7 +117,12 @@ export class CalculationEngine {
       drops_per_width = linearResult.drops_per_width;
       formula_breakdown = linearResult.formula;
       
-      fabric_cost = this.calculateFabricCost(fabric, linear_meters, width_cm, drop_cm);
+      // CRITICAL: For curtains with pricing grid, use EFFECTIVE width (with fullness, hems, returns)
+      // NOT raw input width. Grid lookup uses the total fabric width that will be ordered.
+      const effectiveWidthForGrid = linearResult.total_width_cm;
+      const effectiveDropForGrid = drop_cm; // Drop is raw (hems are for fabric usage, not grid lookup)
+      
+      fabric_cost = this.calculateFabricCost(fabric, linear_meters, effectiveWidthForGrid, effectiveDropForGrid);
       
     } else if (isAreaType(category)) {
       const areaResult = this.calculateArea(measurements, template);
@@ -393,6 +398,7 @@ export class CalculationEngine {
   
   /**
    * Calculate fabric cost - supports grid, per-meter, per-sqm, and fixed
+   * CRITICAL: For linear types (curtains), width_cm should be EFFECTIVE width (with fullness)
    */
   static calculateFabricCost(
     fabric: FabricContract, 
@@ -403,8 +409,15 @@ export class CalculationEngine {
     // PRIORITY 1: Grid pricing
     if (fabric.pricing_method === 'pricing_grid' && fabric.pricing_grid_data) {
       if (width_cm && drop_cm) {
+        console.log('📊 FABRIC GRID LOOKUP (CalculationEngine):', {
+          widthCm: width_cm,
+          dropCm: drop_cm,
+          pricingMethod: fabric.pricing_method,
+          gridName: (fabric as any).name || 'unknown'
+        });
         const gridPrice = this.lookupGridPrice(fabric.pricing_grid_data, width_cm, drop_cm);
         if (gridPrice !== null && gridPrice > 0) {
+          console.log('✅ FABRIC GRID PRICE:', gridPrice);
           return roundTo(gridPrice, 2);
         }
       }

@@ -42,14 +42,39 @@ export const useFabricPricing = (params: FabricPricingParams): FabricPricingResu
     if (selectedFabricItem) {
       // PRIORITY 1: Check if fabric has pricing grid data already resolved
       // (Grid should be resolved and attached when fabric is selected)
-      // CRITICAL: measurements are in MM, getPriceFromGrid expects CM
+      // CRITICAL: For CURTAINS, grid lookup should use EFFECTIVE width (with fullness, hems, returns)
+      // NOT raw input width.
       if (selectedFabricItem.pricing_grid_data && formData.rail_width && formData.drop) {
-        const widthMm = parseFloat(formData.rail_width) || 0;
-        const dropMm = parseFloat(formData.drop) || 0;
+        // Get effective width from fabric calculation if available (for curtains)
+        // Otherwise use raw measurements (for blinds)
+        const isCurtainType = formData.treatment_type === 'curtains' || 
+                              formData.treatment_type === 'roman_blinds' ||
+                              formData.treatment_category === 'curtains' ||
+                              formData.treatment_category === 'roman_blinds';
         
-        // Convert MM to CM for grid lookup
-        const widthCm = widthMm / 10;
-        const dropCm = dropMm / 10;
+        let widthCm: number;
+        let dropCm: number;
+        
+        // Check for totalWidthWithAllowances in details
+        const effectiveWidthMm = fabricUsageResult?.details?.totalWidthWithAllowances;
+        
+        if (isCurtainType && effectiveWidthMm && effectiveWidthMm > 0) {
+          // Use effective width from fabric calculation (includes fullness, hems, returns)
+          widthCm = effectiveWidthMm / 10; // MM to CM
+          dropCm = (parseFloat(formData.drop) || 0) / 10;
+          console.log('📊 CURTAIN GRID LOOKUP using effective width:', {
+            rawWidthMm: formData.rail_width,
+            effectiveWidthCm: widthCm,
+            dropCm,
+            isCurtainType
+          });
+        } else {
+          // For blinds - use raw dimensions
+          const widthMm = parseFloat(formData.rail_width) || 0;
+          const dropMm = parseFloat(formData.drop) || 0;
+          widthCm = widthMm / 10;
+          dropCm = dropMm / 10;
+        }
         
         const gridPrice = getPriceFromGrid(selectedFabricItem.pricing_grid_data, widthCm, dropCm);
         
@@ -59,8 +84,9 @@ export const useFabricPricing = (params: FabricPricingParams): FabricPricingResu
           console.log('ℹ️ Fabric has pricing grid attached:', {
             grid: selectedFabricItem.resolved_grid_name,
             gridCode: selectedFabricItem.resolved_grid_code,
-            dimensions: `${widthMm}mm (${widthCm}cm) × ${dropMm}mm (${dropCm}cm)`,
-            gridPrice: `${gridPrice} (manufacturing cost)`
+            dimensions: `${widthCm}cm × ${dropCm}cm`,
+            gridPrice: `${gridPrice} (manufacturing cost)`,
+            isCurtainType
           });
           usePricingGrid = true;
         }
