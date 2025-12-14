@@ -7,12 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Upload, Trash2, Grid3x3, Building2, Tag } from 'lucide-react';
+import { Plus, Upload, Trash2, Grid3x3, Building2, Tag, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SampleDataHelper } from './SampleDataHelper';
 import { PricingGridExplainer } from './PricingGridExplainer';
+import { BulkGridUploader } from './BulkGridUploader';
+import { GridCoverageDashboard } from './GridCoverageDashboard';
 import { useVendors } from '@/hooks/useVendors';
 
 // Product types that use pricing grids (blinds & shutters)
@@ -27,6 +30,7 @@ const GRID_PRODUCT_TYPES = [
 ];
 
 export const PricingGridManager = () => {
+  const [activeTab, setActiveTab] = useState('single');
   const [newGridName, setNewGridName] = useState('');
   const [newGridCode, setNewGridCode] = useState('');
   const [newGridDescription, setNewGridDescription] = useState('');
@@ -37,6 +41,14 @@ export const PricingGridManager = () => {
   const [isUploading, setIsUploading] = useState(false);
 
   const { data: vendors = [] } = useVendors();
+  
+  // Handler for coverage dashboard clicks
+  const handleCoverageUploadClick = (productType: string, priceGroup: string) => {
+    setNewProductType(productType);
+    setNewPriceGroup(priceGroup);
+    setActiveTab('single');
+    toast.info(`Set up grid for ${productType.replace(/_/g, ' ')} - Group ${priceGroup}`);
+  };
 
   // Fetch pricing grids with supplier info
   const { data: grids, isLoading, refetch } = useQuery({
@@ -201,6 +213,9 @@ export const PricingGridManager = () => {
         <PricingGridExplainer />
       </div>
 
+      {/* Grid Coverage Dashboard */}
+      <GridCoverageDashboard onUploadClick={handleCoverageUploadClick} />
+
       {/* Auto-Match Explanation */}
       <Alert>
         <Tag className="h-4 w-4" />
@@ -213,6 +228,24 @@ export const PricingGridManager = () => {
       {/* Sample CSV Helper */}
       <SampleDataHelper />
 
+      {/* Upload Options - Tabs for Single vs Bulk */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="single" className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Single Grid
+          </TabsTrigger>
+          <TabsTrigger value="bulk" className="flex items-center gap-2">
+            <Layers className="h-4 w-4" />
+            Bulk Upload
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="bulk" className="mt-4">
+          <BulkGridUploader onComplete={refetch} />
+        </TabsContent>
+
+        <TabsContent value="single" className="mt-4">
       {/* Create New Grid */}
       <Card>
         <CardHeader>
@@ -352,6 +385,8 @@ export const PricingGridManager = () => {
           </Button>
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Existing Grids */}
       <Card>

@@ -41,6 +41,8 @@ import { useVendors } from "@/hooks/useVendors";
 import { matchesSupplierFilter } from "./InventorySupplierFilter";
 import { PriceGroupFilter } from "./PriceGroupFilter";
 import { QuickTypeFilter } from "./QuickTypeFilter";
+import { ColorSwatchSelector } from "./ColorSwatchSelector";
+import { MissingGridWarning } from "./MissingGridWarning";
 
 interface InventorySelectionPanelProps {
   treatmentType: string;
@@ -593,19 +595,19 @@ export const InventorySelectionPanel = ({
                 )}
               </div>
               
-              {/* Tags */}
+              {/* Color swatches instead of plain tags for colors */}
               {item.tags && item.tags.length > 0 && (
-                <div className="flex flex-wrap gap-0.5 pt-1">
-                  {item.tags.slice(0, 2).map((tag: string, idx: number) => (
-                    <Badge key={idx} variant="outline" className="text-[8px] px-1 py-0 h-3.5">
-                      {tag}
-                    </Badge>
-                  ))}
-                  {item.tags.length > 2 && (
-                    <Badge variant="secondary" className="text-[8px] px-1 py-0 h-3.5">
-                      +{item.tags.length - 2}
-                    </Badge>
-                  )}
+                <ColorSwatchSelector 
+                  colors={item.tags}
+                  size="sm"
+                  maxVisible={5}
+                />
+              )}
+
+              {/* Missing grid warning for items with price_group but no resolved grid */}
+              {item.price_group && !item.resolved_grid_id && !item.pricing_grid_id && !item.metadata?.pricing_grid_data && (
+                <div className="flex items-center gap-1 pt-1 text-[10px] text-amber-600">
+                  <span>⚠️ No pricing grid for Group {item.price_group}</span>
                 </div>
               )}
             </div>
