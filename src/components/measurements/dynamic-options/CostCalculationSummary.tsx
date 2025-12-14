@@ -894,13 +894,19 @@ export const CostCalculationSummary = ({
           </div>
         ) : (
           /* CRITICAL: Show warning ONLY for curtains/romans when manufacturing not configured */
+          /* ✅ FIX #4: Skip warning if using pricing grid (manufacturing included in grid price) */
           (() => {
             const treatmentCategory = template?.treatment_category?.toLowerCase() || '';
             const requiresManufacturing = ['curtains', 'curtain', 'romans', 'roman', 'roman_blinds', 'roman blind'].some(
               t => treatmentCategory.includes(t)
             );
             
-            if (!requiresManufacturing) return null;
+            // ✅ FIX #4: Don't show warning if using pricing grid (grid includes manufacturing)
+            const usingPricingGrid = fabricToUse?.pricing_grid_data || 
+                                      template?.pricing_type === 'pricing_grid' ||
+                                      template?.pricing_grid_data;
+            
+            if (!requiresManufacturing || usingPricingGrid) return null;
             
             return (
               <div className="flex justify-between py-1.5 border-b border-border/50 bg-amber-50 dark:bg-amber-950/30 -mx-4 px-4">

@@ -961,6 +961,11 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             ? 'wallpaper'
             : 'curtains';
           
+          // ✅ FIX #5: Check for existing window summary with non-zero cost
+          // This prevents saving zero costs over existing valid costs when editing
+          const existingSummaryData = latestSummaryRef.current || existingWindowSummary;
+          const existingTotalCost = existingSummaryData?.total_cost || 0;
+          
           // Calculate comprehensive costs including all components
           let fabricCost = 0;
           let totalCost = 0;
@@ -1339,6 +1344,25 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           } else {
             // Curtains - recalculate with all components including options (fallback)
             totalCost = fabricCost + liningCost + headingCost + manufacturingCost + curtainOptionsCost;
+          }
+
+          // ✅ FIX #5: Guard against saving zero costs over existing valid costs
+          // This prevents the "editing zeroing totals" bug
+          if (totalCost === 0 && existingTotalCost > 0 && !liveCurtainCalcResult && !liveBlindCalcResult) {
+            console.warn('⚠️ [SAVE] Refusing to save zero total cost over existing non-zero cost:', {
+              calculatedTotal: totalCost,
+              existingTotal: existingTotalCost,
+              hasLiveCurtainResult: !!liveCurtainCalcResult,
+              hasLiveBlindResult: !!liveBlindCalcResult
+            });
+            
+            // Use existing values instead of zeroing them out
+            totalCost = existingTotalCost;
+            fabricCost = existingSummaryData?.fabric_cost || fabricCost;
+            manufacturingCost = existingSummaryData?.manufacturing_cost || manufacturingCost;
+            blindOptionsCost = existingSummaryData?.options_cost || blindOptionsCost;
+            linearMeters = existingSummaryData?.linear_meters || linearMeters;
+            console.log('✅ [SAVE] Using existing costs as fallback:', { totalCost, fabricCost, manufacturingCost });
           }
 
           // ============================================================

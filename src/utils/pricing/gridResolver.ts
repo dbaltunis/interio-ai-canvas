@@ -28,6 +28,7 @@ export interface GridResolutionResult {
   gridCode?: string;
   gridName?: string;
   gridData?: any;
+  markupPercentage?: number;  // ✅ FIX #2: Include grid markup for proper pricing
   matchedRule?: {
     id: string;
     product_type: string;
