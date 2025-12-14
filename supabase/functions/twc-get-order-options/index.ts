@@ -74,11 +74,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Fetching TWC order options:', { itemNumber, api_url });
 
-    // Normalize base URL - remove trailing /twcpublic if present to avoid duplication
+    // Normalize base URL - remove trailing /twcpublic if present
     const baseUrl = api_url.replace(/\/twcpublic\/?$/i, '');
     
-    // Build URL with optional itemNumber filter
-    let twcUrl = `${baseUrl}/twcpublic/api/GetOrderOptions?api_key=${api_key}`;
+    // Build URL with correct path: /api/TwcPublic/GetOrderOptions (case-sensitive)
+    let twcUrl = `${baseUrl}/api/TwcPublic/GetOrderOptions?api_key=${api_key}`;
     if (itemNumber) {
       twcUrl += `&itemNumber=${itemNumber}`;
     }
