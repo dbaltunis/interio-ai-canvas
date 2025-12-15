@@ -918,7 +918,7 @@ export const UnifiedInventoryDialog = ({
                     </CardHeader>
                     <CardContent className="grid gap-4 md:grid-cols-2">
                       <div>
-                        <Label>Fabric Width (cm)</Label>
+                        <Label>Fabric Width ({lengthUnit === 'm' ? 'm' : lengthUnit === 'cm' ? 'cm' : lengthUnit === 'inches' ? 'in' : lengthUnit})</Label>
                         <Input
                           type="number"
                           step="0.1"
@@ -947,7 +947,7 @@ export const UnifiedInventoryDialog = ({
                       </div>
 
                       <div>
-                        <Label>Pattern Repeat - Vertical (cm)</Label>
+                        <Label>Pattern Repeat - Vertical ({lengthUnit === 'm' ? 'm' : lengthUnit === 'cm' ? 'cm' : lengthUnit === 'inches' ? 'in' : lengthUnit})</Label>
                         <Input
                           type="number"
                           step="0.1"
@@ -958,7 +958,7 @@ export const UnifiedInventoryDialog = ({
                       </div>
 
                       <div>
-                        <Label>Pattern Repeat - Horizontal (cm)</Label>
+                        <Label>Pattern Repeat - Horizontal ({lengthUnit === 'm' ? 'm' : lengthUnit === 'cm' ? 'cm' : lengthUnit === 'inches' ? 'in' : lengthUnit})</Label>
                         <Input
                           type="number"
                           step="0.1"

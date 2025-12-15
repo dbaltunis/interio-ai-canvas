@@ -14,6 +14,7 @@ import {
   FileText, DollarSign, Star, TrendingUp, Clock, Save, X, Briefcase,
   MessageSquare, Package, CheckCircle
 } from "lucide-react";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useClient, useUpdateClient } from "@/hooks/useClients";
 import { useClientJobs, useClientQuotes, calculateClientDealValue } from "@/hooks/useClientJobs";
 import { useConversionProbability } from "@/hooks/useConversionProbability";
@@ -47,6 +48,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const { toast } = useToast();
   const { probability: autoConversionProb, factors } = useConversionProbability(client);
   const { user } = useAuth();
+  const { formatCurrency } = useFormattedCurrency();
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedClient, setEditedClient] = useState<any>(null);
@@ -316,7 +318,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Deal Value</p>
-                <p className="text-2xl font-bold">${(currentClient.deal_value || 0).toLocaleString()}</p>
+                <p className="text-2xl font-bold">{formatCurrency(currentClient.deal_value || 0)}</p>
               </div>
               <DollarSign className="h-8 w-8 text-green-600" />
             </div>

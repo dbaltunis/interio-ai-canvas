@@ -6,9 +6,11 @@ import { Phone, Mail, Calendar, Flame } from "lucide-react";
 import { useHotLeads } from "@/hooks/useLeadIntelligence";
 import { LeadScoreCard } from "./LeadScoreCard";
 import { formatDistanceToNow } from "date-fns";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 
 export const HotLeadsList = () => {
   const { data: hotLeads, isLoading } = useHotLeads();
+  const { formatCurrency } = useFormattedCurrency();
 
   if (isLoading) {
     return (
@@ -99,7 +101,7 @@ export const HotLeadsList = () => {
               )}
               {lead.deal_value && parseFloat(lead.deal_value.toString()) > 0 && (
                 <div className="text-green-600 font-medium">
-                  Deal Value: ${parseFloat(lead.deal_value.toString()).toLocaleString()}
+                  Deal Value: {formatCurrency(parseFloat(lead.deal_value.toString()))}
                 </div>
               )}
               {lead.last_activity_date && (

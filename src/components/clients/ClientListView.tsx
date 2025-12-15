@@ -13,6 +13,7 @@ import { useIsTablet } from "@/hooks/use-tablet";
 import { ClientDetailDrawer } from "./ClientDetailDrawer";
 import { useDeleteClient } from "@/hooks/useClients";
 import { toast } from "sonner";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 
 interface Client {
   id: string;
@@ -55,6 +56,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const deleteClient = useDeleteClient();
+  const { formatCurrency } = useFormattedCurrency();
 
   const handleDeleteClick = (e: React.MouseEvent, client: Client) => {
     e.stopPropagation();
@@ -258,7 +260,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                       <TableCell>
                         {client.deal_value && client.deal_value > 0 ? (
                           <div className="font-bold text-foreground">
-                            ${client.deal_value.toLocaleString()}
+                            {formatCurrency(client.deal_value)}
                           </div>
                         ) : (
                           <div className="text-muted-foreground text-sm">—</div>
