@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface DashboardWidget {
   id: string;
@@ -115,7 +116,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Upcoming Events",
     description: "Calendar appointments and meetings",
     enabled: true,
-    order: 9,
+    order: 10,
     category: "communication",
     size: "small",
     requiredPermission: "view_calendar",
@@ -125,7 +126,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Recent Appointments",
     description: "Latest booked appointments",
     enabled: true,
-    order: 10,
+    order: 11,
     category: "communication",
     size: "small",
     requiredPermission: "view_calendar",
@@ -135,7 +136,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Recent Emails",
     description: "Email campaigns and metrics",
     enabled: true,
-    order: 11,
+    order: 12,
     category: "communication",
     size: "small",
     requiredPermission: "view_emails",
@@ -145,7 +146,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Project Status",
     description: "Overview of project statuses",
     enabled: true,
-    order: 12,
+    order: 13,
     category: "analytics",
     size: "small",
   },
@@ -154,7 +155,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Revenue Chart",
     description: "Revenue breakdown by project",
     enabled: true,
-    order: 13,
+    order: 14,
     category: "finance",
     size: "medium",
   },
@@ -163,7 +164,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Calendar Connection",
     description: "Google Calendar integration",
     enabled: true,
-    order: 14,
+    order: 15,
     category: "integrations",
     size: "small",
   },
@@ -172,7 +173,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
     name: "Recently Created Jobs",
     description: "Latest projects and jobs",
     enabled: true,
-    order: 15,
+    order: 16,
     category: "analytics",
     size: "medium",
   },
@@ -183,99 +184,117 @@ export const useDashboardWidgets = () => {
   const [widgets, setWidgets] = useState<DashboardWidget[]>(DEFAULT_WIDGETS);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Load preferences from database
   useEffect(() => {
+    const loadWidgets = async () => {
+      if (!user?.id) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('dashboard_preferences')
+          .select('widget_configs')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data?.widget_configs && Array.isArray(data.widget_configs) && data.widget_configs.length > 0) {
+          // Merge saved widgets with defaults (in case new widgets were added)
+          const savedWidgets = data.widget_configs as unknown as DashboardWidget[];
+          const mergedWidgets = DEFAULT_WIDGETS.map(defaultWidget => {
+            const savedWidget = savedWidgets.find(w => w.id === defaultWidget.id);
+            return savedWidget ? { ...defaultWidget, ...savedWidget } : defaultWidget;
+          });
+          setWidgets(mergedWidgets);
+        }
+      } catch (error) {
+        console.error('Error loading widget preferences:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     loadWidgets();
   }, [user?.id]);
 
-  const loadWidgets = async () => {
-    if (!user?.id) {
-      // Load from localStorage if no user
-      const saved = localStorage.getItem("dashboard_widgets");
-      if (saved) {
-        try {
-          setWidgets(JSON.parse(saved));
-        } catch (e) {
-          console.error("Error parsing saved widgets:", e);
-        }
-      }
-      setIsLoading(false);
-      return;
-    }
+  // Save preferences to database
+  const saveWidgets = useCallback(async (updatedWidgets: DashboardWidget[]) => {
+    if (!user?.id) return;
 
     try {
-      // Try to load from localStorage first
-      const saved = localStorage.getItem(`dashboard_widgets_${user.id}`);
-      if (saved) {
-        try {
-          const savedWidgets = JSON.parse(saved) as DashboardWidget[];
-          // Merge saved widgets with defaults, adding any new widgets that were added to defaults
-          const mergedWidgets = DEFAULT_WIDGETS.map(defaultWidget => {
-            const savedWidget = savedWidgets.find(w => w.id === defaultWidget.id);
-            return savedWidget || defaultWidget;
-          });
-          setWidgets(mergedWidgets);
-        } catch (e) {
-          console.error("Error parsing saved widgets:", e);
-          setWidgets(DEFAULT_WIDGETS);
-        }
+      // First check if record exists
+      const { data: existing } = await supabase
+        .from('dashboard_preferences')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existing) {
+        // Update existing record
+        await supabase
+          .from('dashboard_preferences')
+          .update({ widget_configs: updatedWidgets as unknown as any })
+          .eq('user_id', user.id);
       } else {
-        setWidgets(DEFAULT_WIDGETS);
+        // Insert new record
+        await supabase
+          .from('dashboard_preferences')
+          .insert({ user_id: user.id, widget_configs: updatedWidgets as unknown as any });
       }
     } catch (error) {
-      console.error("Error loading widgets:", error);
-      setWidgets(DEFAULT_WIDGETS);
-    } finally {
-      setIsLoading(false);
+      console.error('Error saving widget preferences:', error);
     }
-  };
+  }, [user?.id]);
 
-  const saveWidgets = async (updatedWidgets: DashboardWidget[]) => {
-    const storageKey = user?.id ? `dashboard_widgets_${user.id}` : "dashboard_widgets";
-    localStorage.setItem(storageKey, JSON.stringify(updatedWidgets));
-    setWidgets(updatedWidgets);
-  };
-
-  const updateWidgetSize = (widgetId: string, size: "small" | "medium" | "large") => {
-    const updatedWidgets = widgets.map(w =>
-      w.id === widgetId ? { ...w, size } : w
-    );
-    saveWidgets(updatedWidgets);
-  };
-
-  const toggleWidget = (widgetId: string) => {
-    const updatedWidgets = widgets.map(w =>
-      w.id === widgetId ? { ...w, enabled: !w.enabled } : w
-    );
-    saveWidgets(updatedWidgets);
-  };
-
-  const reorderWidgets = (widgetId: string, direction: "up" | "down") => {
-    const currentIndex = widgets.findIndex(w => w.id === widgetId);
-    if (currentIndex === -1) return;
-
-    const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
-    if (newIndex < 0 || newIndex >= widgets.length) return;
-
-    const updatedWidgets = [...widgets];
-    [updatedWidgets[currentIndex], updatedWidgets[newIndex]] = 
-      [updatedWidgets[newIndex], updatedWidgets[currentIndex]];
-
-    // Update order numbers
-    updatedWidgets.forEach((widget, index) => {
-      widget.order = index + 1;
+  const updateWidgetSize = useCallback((widgetId: string, size: "small" | "medium" | "large") => {
+    setWidgets(prev => {
+      const updated = prev.map(w => w.id === widgetId ? { ...w, size } : w);
+      saveWidgets(updated);
+      return updated;
     });
+  }, [saveWidgets]);
 
-    saveWidgets(updatedWidgets);
-  };
+  const toggleWidget = useCallback((widgetId: string) => {
+    setWidgets(prev => {
+      const updated = prev.map(w => w.id === widgetId ? { ...w, enabled: !w.enabled } : w);
+      saveWidgets(updated);
+      return updated;
+    });
+  }, [saveWidgets]);
 
-  const getEnabledWidgets = () => {
+  const reorderWidgets = useCallback((widgetId: string, direction: "up" | "down") => {
+    setWidgets(prev => {
+      const currentIndex = prev.findIndex(w => w.id === widgetId);
+      if (currentIndex === -1) return prev;
+
+      const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+      if (newIndex < 0 || newIndex >= prev.length) return prev;
+
+      const updatedWidgets = [...prev];
+      [updatedWidgets[currentIndex], updatedWidgets[newIndex]] = 
+        [updatedWidgets[newIndex], updatedWidgets[currentIndex]];
+
+      // Update order numbers
+      updatedWidgets.forEach((widget, index) => {
+        widget.order = index + 1;
+      });
+
+      saveWidgets(updatedWidgets);
+      return updatedWidgets;
+    });
+  }, [saveWidgets]);
+
+  const getEnabledWidgets = useCallback(() => {
     return widgets.filter(w => w.enabled).sort((a, b) => a.order - b.order);
-  };
+  }, [widgets]);
 
-  const getAvailableWidgets = () => {
+  const getAvailableWidgets = useCallback(() => {
     // Returns all widgets (for the customizer to filter by permissions)
     return widgets;
-  };
+  }, [widgets]);
 
   return {
     widgets,

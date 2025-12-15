@@ -2469,6 +2469,33 @@ export type Database = {
           },
         ]
       }
+      dashboard_preferences: {
+        Row: {
+          created_at: string | null
+          id: string
+          kpi_configs: Json | null
+          updated_at: string | null
+          user_id: string
+          widget_configs: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          kpi_configs?: Json | null
+          updated_at?: string | null
+          user_id: string
+          widget_configs?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          kpi_configs?: Json | null
+          updated_at?: string | null
+          user_id?: string
+          widget_configs?: Json | null
+        }
+        Relationships: []
+      }
       deals: {
         Row: {
           actual_close_date: string | null
