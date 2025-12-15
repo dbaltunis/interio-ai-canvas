@@ -3,11 +3,16 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RotateCcw, BarChart3, LayoutGrid } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RotateCcw, BarChart3, LayoutGrid, Target, ChevronDown, ChevronUp } from "lucide-react";
 import { useUserDashboardConfig } from "@/hooks/useUserDashboardConfig";
 import { useToast } from "@/hooks/use-toast";
 import { KPIConfig } from "@/hooks/useKPIConfig";
 import { DashboardWidget } from "@/hooks/useDashboardWidgets";
+import { TargetPeriod, getPeriodLabel } from "@/utils/kpiTargetProgress";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 interface DashboardConfigManagerProps {
   userId: string;
@@ -27,6 +32,14 @@ const WIDGET_CATEGORIES = {
   integrations: "Integrations",
 };
 
+const TARGET_PERIODS: { value: TargetPeriod; label: string }[] = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'quarterly', label: 'Quarterly' },
+  { value: 'yearly', label: 'Yearly' },
+];
+
 export const DashboardConfigManager = ({ userId, userName }: DashboardConfigManagerProps) => {
   const { toast } = useToast();
   const {
@@ -38,6 +51,20 @@ export const DashboardConfigManager = ({ userId, userName }: DashboardConfigMana
     resetToDefaults,
   } = useUserDashboardConfig(userId);
 
+  const [expandedKPIs, setExpandedKPIs] = React.useState<Set<string>>(new Set());
+
+  const toggleExpanded = (kpiId: string) => {
+    setExpandedKPIs(prev => {
+      const next = new Set(prev);
+      if (next.has(kpiId)) {
+        next.delete(kpiId);
+      } else {
+        next.add(kpiId);
+      }
+      return next;
+    });
+  };
+
   const handleKPIToggle = (kpiId: string, enabled: boolean) => {
     const updated = kpiConfigs.map((kpi) =>
       kpi.id === kpiId ? { ...kpi, enabled } : kpi
@@ -45,6 +72,22 @@ export const DashboardConfigManager = ({ userId, userName }: DashboardConfigMana
     updateKPIConfigs.mutate(updated, {
       onSuccess: () => {
         toast({ title: "KPI updated", description: `KPI ${enabled ? "enabled" : "disabled"} for ${userName}` });
+      },
+    });
+  };
+
+  const handleTargetChange = (kpiId: string, field: 'value' | 'period' | 'enabled' | 'unit', value: any) => {
+    const updated = kpiConfigs.map((kpi) => {
+      if (kpi.id !== kpiId) return kpi;
+      const currentTarget = kpi.target || { value: 0, period: 'monthly' as TargetPeriod, enabled: false };
+      return {
+        ...kpi,
+        target: { ...currentTarget, [field]: value }
+      };
+    });
+    updateKPIConfigs.mutate(updated, {
+      onSuccess: () => {
+        toast({ title: "Target updated", description: `KPI target updated for ${userName}` });
       },
     });
   };
@@ -110,23 +153,107 @@ export const DashboardConfigManager = ({ userId, userName }: DashboardConfigMana
               {KPI_CATEGORIES[category as keyof typeof KPI_CATEGORIES] || category}
             </p>
             <div className="grid gap-2">
-              {kpis.map((kpi) => (
-                <div
-                  key={kpi.id}
-                  className="flex items-center justify-between p-3 rounded-lg border bg-card"
-                >
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <p className="text-sm font-medium">{kpi.title}</p>
+              {kpis.map((kpi) => {
+                const isExpanded = expandedKPIs.has(kpi.id);
+                const hasTarget = kpi.target?.enabled && kpi.target?.value > 0;
+                
+                return (
+                  <Collapsible key={kpi.id} open={isExpanded} onOpenChange={() => toggleExpanded(kpi.id)}>
+                    <div className="rounded-lg border bg-card">
+                      <div className="flex items-center justify-between p-3">
+                        <div className="flex items-center gap-3">
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                              {isExpanded ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </CollapsibleTrigger>
+                          <div>
+                            <p className="text-sm font-medium">{kpi.title}</p>
+                            {hasTarget && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Target className="h-3 w-3" />
+                                Target: {kpi.target?.unit || ''}{kpi.target?.value?.toLocaleString()} {getPeriodLabel(kpi.target?.period || 'monthly')}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Switch
+                          checked={kpi.enabled}
+                          onCheckedChange={(checked) => handleKPIToggle(kpi.id, checked)}
+                          disabled={updateKPIConfigs.isPending}
+                        />
+                      </div>
+                      
+                      <CollapsibleContent>
+                        <div className="px-3 pb-3 pt-0 space-y-3 border-t">
+                          <div className="pt-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <label className="text-sm font-medium flex items-center gap-2">
+                                <Target className="h-4 w-4 text-primary" />
+                                Target Settings
+                              </label>
+                              <Switch
+                                checked={kpi.target?.enabled || false}
+                                onCheckedChange={(checked) => handleTargetChange(kpi.id, 'enabled', checked)}
+                                disabled={updateKPIConfigs.isPending}
+                              />
+                            </div>
+                            
+                            {kpi.target?.enabled && (
+                              <div className="grid gap-3 mt-3">
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="text-xs text-muted-foreground mb-1 block">Target Value</label>
+                                    <Input
+                                      type="number"
+                                      placeholder="e.g., 50000"
+                                      value={kpi.target?.value || ''}
+                                      onChange={(e) => handleTargetChange(kpi.id, 'value', parseFloat(e.target.value) || 0)}
+                                      className="h-8"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-xs text-muted-foreground mb-1 block">Unit/Prefix</label>
+                                    <Input
+                                      type="text"
+                                      placeholder="e.g., $, ₹, %"
+                                      value={kpi.target?.unit || ''}
+                                      onChange={(e) => handleTargetChange(kpi.id, 'unit', e.target.value)}
+                                      className="h-8"
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="text-xs text-muted-foreground mb-1 block">Period</label>
+                                  <Select
+                                    value={kpi.target?.period || 'monthly'}
+                                    onValueChange={(value) => handleTargetChange(kpi.id, 'period', value)}
+                                  >
+                                    <SelectTrigger className="h-8">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {TARGET_PERIODS.map((period) => (
+                                        <SelectItem key={period.value} value={period.value}>
+                                          {period.label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CollapsibleContent>
                     </div>
-                  </div>
-                  <Switch
-                    checked={kpi.enabled}
-                    onCheckedChange={(checked) => handleKPIToggle(kpi.id, checked)}
-                    disabled={updateKPIConfigs.isPending}
-                  />
-                </div>
-              ))}
+                  </Collapsible>
+                );
+              })}
             </div>
           </div>
         ))}
