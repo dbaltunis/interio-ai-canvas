@@ -1,5 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { LucideIcon } from 'lucide-react';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 export interface KPIConfig {
   id: string;
@@ -51,19 +54,90 @@ const defaultKPIConfigs: KPIConfig[] = [
 ];
 
 export const useKPIConfig = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [kpiConfigs, setKpiConfigs] = useState<KPIConfig[]>(defaultKPIConfigs);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load preferences from database
+  useEffect(() => {
+    const loadPreferences = async () => {
+      if (!user?.id) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('dashboard_preferences')
+          .select('kpi_configs')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data?.kpi_configs && Array.isArray(data.kpi_configs) && data.kpi_configs.length > 0) {
+          // Merge saved configs with defaults (in case new KPIs were added)
+          const savedConfigs = data.kpi_configs as unknown as KPIConfig[];
+          const mergedConfigs = defaultKPIConfigs.map(defaultConfig => {
+            const savedConfig = savedConfigs.find(c => c.id === defaultConfig.id);
+            return savedConfig || defaultConfig;
+          });
+          setKpiConfigs(mergedConfigs);
+        }
+      } catch (error) {
+        console.error('Error loading KPI preferences:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPreferences();
+  }, [user?.id]);
+
+  // Save preferences to database
+  const savePreferences = useCallback(async (configs: KPIConfig[]) => {
+    if (!user?.id) return;
+
+    try {
+      // First check if record exists
+      const { data: existing } = await supabase
+        .from('dashboard_preferences')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existing) {
+        // Update existing record
+        await supabase
+          .from('dashboard_preferences')
+          .update({ kpi_configs: configs as unknown as any })
+          .eq('user_id', user.id);
+      } else {
+        // Insert new record
+        await supabase
+          .from('dashboard_preferences')
+          .insert({ user_id: user.id, kpi_configs: configs as unknown as any });
+      }
+    } catch (error) {
+      console.error('Error saving KPI preferences:', error);
+    }
+  }, [user?.id]);
 
   const updateKPIConfig = useCallback((updatedConfigs: KPIConfig[]) => {
     setKpiConfigs(updatedConfigs);
-  }, []);
+    savePreferences(updatedConfigs);
+  }, [savePreferences]);
 
   const toggleKPI = useCallback((id: string) => {
-    setKpiConfigs(prev => 
-      prev.map(config => 
+    setKpiConfigs(prev => {
+      const updated = prev.map(config => 
         config.id === id ? { ...config, enabled: !config.enabled } : config
-      )
-    );
-  }, []);
+      );
+      savePreferences(updated);
+      return updated;
+    });
+  }, [savePreferences]);
 
   const reorderKPIs = useCallback((category: 'primary' | 'email' | 'business', activeId: string, overId: string) => {
     setKpiConfigs(prev => {
@@ -85,27 +159,33 @@ export const useKPIConfig = () => {
         order: index
       }));
       
-      return [...otherKPIs, ...updatedCategoryKPIs].sort((a, b) => {
+      const updated = [...otherKPIs, ...updatedCategoryKPIs].sort((a, b) => {
         if (a.category !== b.category) {
           const categoryOrder = { primary: 0, email: 1, business: 2 };
           return categoryOrder[a.category] - categoryOrder[b.category];
         }
         return a.order - b.order;
       });
+
+      savePreferences(updated);
+      return updated;
     });
-  }, []);
+  }, [savePreferences]);
 
   const updateKPIProperty = useCallback((id: string, property: keyof KPIConfig, value: any) => {
-    setKpiConfigs(prev => 
-      prev.map(config => 
+    setKpiConfigs(prev => {
+      const updated = prev.map(config => 
         config.id === id ? { ...config, [property]: value } : config
-      )
-    );
-  }, []);
+      );
+      savePreferences(updated);
+      return updated;
+    });
+  }, [savePreferences]);
 
   const resetToDefaults = useCallback(() => {
     setKpiConfigs(defaultKPIConfigs);
-  }, []);
+    savePreferences(defaultKPIConfigs);
+  }, [savePreferences]);
 
   const getEnabledKPIs = useCallback((category: 'primary' | 'email' | 'business') => {
     return kpiConfigs
@@ -119,6 +199,7 @@ export const useKPIConfig = () => {
 
   return {
     kpiConfigs,
+    isLoading,
     updateKPIConfig,
     toggleKPI,
     reorderKPIs,
