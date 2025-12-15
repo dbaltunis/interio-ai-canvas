@@ -56,11 +56,11 @@ export interface BusinessSettings {
 }
 
 export interface MeasurementUnits {
-  system: 'metric' | 'imperial';
+  system: 'metric' | 'imperial' | 'mixed';
   length: 'mm' | 'cm' | 'm' | 'inches' | 'feet';
   area: 'sq_mm' | 'sq_cm' | 'sq_m' | 'sq_inches' | 'sq_feet';
   fabric: 'cm' | 'm' | 'inches' | 'yards';
-  currency: 'NZD' | 'AUD' | 'USD' | 'GBP' | 'EUR' | 'ZAR';
+  currency: 'NZD' | 'AUD' | 'USD' | 'GBP' | 'EUR' | 'ZAR' | 'INR';
 }
 
 // Default to MM to match most users' settings and prevent flash during load
@@ -78,6 +78,15 @@ export const defaultImperialMeasurementUnits: MeasurementUnits = {
   area: 'sq_feet',
   fabric: 'yards',
   currency: 'USD'
+};
+
+// Mixed system: inches for dimensions, meters for fabric, sq_feet for area (Homekaara style)
+export const defaultMixedMeasurementUnits: MeasurementUnits = {
+  system: 'mixed',
+  length: 'inches',
+  area: 'sq_feet',
+  fabric: 'm',
+  currency: 'INR'
 };
 
 export const useBusinessSettings = () => {

@@ -37,5 +37,6 @@ export const currencyOptions = [
   { value: 'USD', label: 'US Dollar (USD)' },
   { value: 'GBP', label: 'British Pound (GBP)' },
   { value: 'EUR', label: 'Euro (EUR)' },
-  { value: 'ZAR', label: 'South African Rand (ZAR)' }
+  { value: 'ZAR', label: 'South African Rand (ZAR)' },
+  { value: 'INR', label: 'Indian Rupee (INR)' }
 ];
