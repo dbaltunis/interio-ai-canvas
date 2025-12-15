@@ -316,7 +316,8 @@ export function formatPrice(price: number, currency: string = 'USD'): string {
     'GBP': '£',
     'AUD': 'A$',
     'NZD': 'NZ$',
-    'ZAR': 'R'
+    'ZAR': 'R',
+    'INR': '₹'
   };
   
   const symbol = symbols[currency] || currency;

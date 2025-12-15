@@ -511,7 +511,8 @@ const LivePreviewBlock = ({
           'USD': '$',
           'ZAR': 'R',
           'CAD': 'C$',
-          'JPY': '¥'
+          'JPY': '¥',
+          'INR': '₹'
         };
         return symbols[curr] || '$';
       })(),

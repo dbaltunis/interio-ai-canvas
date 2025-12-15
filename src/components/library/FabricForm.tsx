@@ -245,7 +245,7 @@ export const FabricForm = ({ onClose }: FabricFormProps) => {
         </div>
 
         <div>
-          <Label htmlFor="width">Fabric Width (cm)</Label>
+          <Label htmlFor="width">Fabric Width ({getFabricUnitLabel()})</Label>
           <Input
             id="width"
             type="number"

@@ -18,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 
 const stageColors: Record<string, { bg: string, dot: string }> = {
   lead: { bg: "bg-blue-100", dot: "bg-blue-500" },
@@ -30,6 +31,7 @@ const stageColors: Record<string, { bg: string, dot: string }> = {
 
 export const MobileCRMView = () => {
   const { data: clients = [], isLoading } = useClients();
+  const { formatCurrency } = useFormattedCurrency();
 
   if (isLoading) {
     return (
@@ -107,7 +109,7 @@ export const MobileCRMView = () => {
                     {client.deal_value && (
                       <div className="flex items-center gap-1">
                         <DollarSign className="h-3 w-3" />
-                        <span>${client.deal_value.toLocaleString()}</span>
+                        <span>{formatCurrency(client.deal_value)}</span>
                       </div>
                     )}
                     {client.lead_score && (

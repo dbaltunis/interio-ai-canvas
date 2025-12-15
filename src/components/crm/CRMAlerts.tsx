@@ -7,9 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDistanceToNow, isPast, isWithinInterval, addDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 
 export const CRMAlerts = () => {
   const navigate = useNavigate();
+  const { formatCurrency } = useFormattedCurrency();
   
   const { data: alerts, isLoading } = useQuery({
     queryKey: ["crm-alerts"],
@@ -77,7 +79,7 @@ export const CRMAlerts = () => {
           id: c.id,
           type: "high_value_inactive",
           title: "High-Value Lead Inactive",
-          message: `${c.company_name || c.name} - $${(c.deal_value || 0).toLocaleString()} deal, inactive for ${c.last_activity_date ? formatDistanceToNow(new Date(c.last_activity_date)) : 'unknown time'}`,
+          message: `${c.company_name || c.name} - ${formatCurrency(c.deal_value || 0)} deal, inactive for ${c.last_activity_date ? formatDistanceToNow(new Date(c.last_activity_date)) : 'unknown time'}`,
           icon: DollarSign,
           color: "text-purple-600",
           client: c,
