@@ -8,6 +8,22 @@
  * - "Own" = can only access data they created
  */
 
+/**
+ * Permission Aliases for backward compatibility
+ * Maps old permission names to the new granular permission system
+ * This ensures existing code checking old names still works
+ */
+export const PERMISSION_ALIASES: Record<string, string[]> = {
+  // Old name -> New granular permissions that satisfy it
+  'view_jobs': ['view_all_jobs', 'view_assigned_jobs'],
+  'view_clients': ['view_all_clients', 'view_assigned_clients'],
+  'view_calendar': ['view_all_calendar', 'view_own_calendar'],
+  'view_analytics': ['view_team_performance', 'view_primary_kpis'],
+  'edit_own_jobs': ['edit_assigned_jobs'],
+  'edit_own_clients': ['edit_assigned_clients'],
+  'manage_settings': ['manage_business_settings', 'manage_integrations'],
+};
+
 // Permission Categories with display metadata
 export const PERMISSION_CATEGORIES = {
   jobs: { label: 'Jobs & Quotes', icon: '📋', color: 'bg-blue-500' },
@@ -239,6 +255,107 @@ export const PERMISSION_DETAILS: Record<string, {
     required: ['view_settings'], 
     warning: true 
   },
+  
+  // ===== ADDITIONAL PERMISSIONS (backward compatibility) =====
+  view_profile: { 
+    label: 'View Profile', 
+    description: 'Access own user profile', 
+    category: 'settings', 
+    required: [] 
+  },
+  view_shopify: { 
+    label: 'View Shopify', 
+    description: 'Access Shopify integration', 
+    category: 'settings', 
+    required: [] 
+  },
+  manage_shopify: { 
+    label: 'Manage Shopify', 
+    description: 'Configure Shopify settings', 
+    category: 'settings', 
+    required: ['view_shopify'] 
+  },
+  view_emails: { 
+    label: 'View Emails', 
+    description: 'Access email history and templates', 
+    category: 'team', 
+    required: [] 
+  },
+  send_emails: { 
+    label: 'Send Emails', 
+    description: 'Send emails to clients', 
+    category: 'team', 
+    required: ['view_emails'] 
+  },
+  view_workroom: { 
+    label: 'View Workroom', 
+    description: 'Access workroom and manufacturing details', 
+    category: 'jobs', 
+    required: [] 
+  },
+  view_primary_kpis: { 
+    label: 'View Primary KPIs', 
+    description: 'See main dashboard metrics', 
+    category: 'financial', 
+    required: [] 
+  },
+  view_email_kpis: { 
+    label: 'View Email KPIs', 
+    description: 'See email performance metrics', 
+    category: 'team', 
+    required: [] 
+  },
+  view_revenue_kpis: { 
+    label: 'View Revenue KPIs', 
+    description: 'See revenue and sales metrics', 
+    category: 'financial', 
+    required: [], 
+    warning: true 
+  },
+  view_purchasing: { 
+    label: 'View Purchasing', 
+    description: 'Access purchase orders', 
+    category: 'inventory', 
+    required: [] 
+  },
+  manage_purchasing: { 
+    label: 'Manage Purchasing', 
+    description: 'Create and manage purchase orders', 
+    category: 'inventory', 
+    required: ['view_purchasing'] 
+  },
+  manage_users: { 
+    label: 'Manage Users', 
+    description: 'Invite and manage team members', 
+    category: 'team', 
+    required: [], 
+    warning: true 
+  },
+  view_projects: { 
+    label: 'View Projects', 
+    description: 'Access project details', 
+    category: 'jobs', 
+    required: [] 
+  },
+  create_projects: { 
+    label: 'Create Projects', 
+    description: 'Create new projects', 
+    category: 'jobs', 
+    required: [] 
+  },
+  edit_projects: { 
+    label: 'Edit Projects', 
+    description: 'Modify project details', 
+    category: 'jobs', 
+    required: [] 
+  },
+  delete_projects: { 
+    label: 'Delete Projects', 
+    description: 'Remove projects (cannot be undone)', 
+    category: 'jobs', 
+    required: [], 
+    warning: true 
+  },
 };
 
 // Permission labels for quick lookup
@@ -246,7 +363,7 @@ export const PERMISSION_LABELS: Record<string, string> = Object.fromEntries(
   Object.entries(PERMISSION_DETAILS).map(([key, details]) => [key, details.label])
 );
 
-// Role-based default permissions
+// Role-based default permissions (includes all new permissions)
 export const ROLE_PERMISSIONS: Record<string, string[]> = {
   'System Owner': [
     // Full access to everything
@@ -256,7 +373,12 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_inventory', 'manage_inventory', 'view_templates', 'manage_templates',
     'view_selling_prices', 'view_cost_prices', 'view_profit_margins', 'manage_pricing',
     'view_team_members', 'view_team_performance', 'send_team_messages', 'manage_team',
-    'view_settings', 'manage_business_settings', 'manage_integrations'
+    'view_settings', 'manage_business_settings', 'manage_integrations',
+    // Additional permissions
+    'view_profile', 'view_shopify', 'manage_shopify', 'view_emails', 'send_emails',
+    'view_workroom', 'view_primary_kpis', 'view_email_kpis', 'view_revenue_kpis',
+    'view_purchasing', 'manage_purchasing', 'manage_users',
+    'view_projects', 'create_projects', 'edit_projects', 'delete_projects'
   ],
   Owner: [
     // Full access to everything
@@ -266,7 +388,12 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_inventory', 'manage_inventory', 'view_templates', 'manage_templates',
     'view_selling_prices', 'view_cost_prices', 'view_profit_margins', 'manage_pricing',
     'view_team_members', 'view_team_performance', 'send_team_messages', 'manage_team',
-    'view_settings', 'manage_business_settings', 'manage_integrations'
+    'view_settings', 'manage_business_settings', 'manage_integrations',
+    // Additional permissions
+    'view_profile', 'view_shopify', 'manage_shopify', 'view_emails', 'send_emails',
+    'view_workroom', 'view_primary_kpis', 'view_email_kpis', 'view_revenue_kpis',
+    'view_purchasing', 'manage_purchasing', 'manage_users',
+    'view_projects', 'create_projects', 'edit_projects', 'delete_projects'
   ],
   Admin: [
     // Full access except some sensitive settings
@@ -276,7 +403,12 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_inventory', 'manage_inventory', 'view_templates', 'manage_templates',
     'view_selling_prices', 'view_cost_prices', 'view_profit_margins', 'manage_pricing',
     'view_team_members', 'view_team_performance', 'send_team_messages', 'manage_team',
-    'view_settings', 'manage_business_settings'
+    'view_settings', 'manage_business_settings',
+    // Additional permissions
+    'view_profile', 'view_shopify', 'view_emails', 'send_emails',
+    'view_workroom', 'view_primary_kpis', 'view_email_kpis', 'view_revenue_kpis',
+    'view_purchasing', 'manage_purchasing', 'manage_users',
+    'view_projects', 'create_projects', 'edit_projects', 'delete_projects'
   ],
   Manager: [
     // Team oversight, can see costs but not manage all settings
@@ -286,7 +418,11 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_inventory', 'manage_inventory', 'view_templates',
     'view_selling_prices', 'view_cost_prices', 'view_profit_margins',
     'view_team_members', 'view_team_performance', 'send_team_messages',
-    'view_settings'
+    'view_settings',
+    // Additional permissions
+    'view_profile', 'view_emails', 'send_emails', 'view_workroom',
+    'view_primary_kpis', 'view_email_kpis', 'view_revenue_kpis',
+    'view_purchasing', 'view_projects', 'create_projects', 'edit_projects'
   ],
   Staff: [
     // Limited to assigned work only, no cost visibility
@@ -296,14 +432,19 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_inventory', 'view_templates',
     'view_selling_prices', // Can see what to quote customers
     'view_team_members', 'send_team_messages',
-    'view_settings'
+    'view_settings',
+    // Additional permissions
+    'view_profile', 'view_emails', 'send_emails', 'view_workroom',
+    'view_projects', 'create_projects', 'edit_projects'
   ],
   User: [
     // Minimal access
     'view_assigned_jobs',
     'view_assigned_clients',
     'view_own_calendar',
-    'view_settings'
+    'view_settings',
+    'view_profile',
+    'view_projects'
   ]
 };
 
