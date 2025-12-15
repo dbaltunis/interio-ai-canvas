@@ -1,48 +1,11 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUsers } from "@/hooks/useUsers";
 import { useCustomPermissions } from "@/hooks/useCustomPermissions";
 import { GitCompare, User } from "lucide-react";
-
-const ROLE_PERMISSIONS = {
-  Owner: [
-    'view_jobs', 'create_jobs', 'delete_jobs',
-    'view_clients', 'create_clients', 'delete_clients', 
-    'view_calendar', 'create_appointments', 'delete_appointments',
-    'view_inventory', 'manage_inventory',
-    'view_window_treatments', 'manage_window_treatments',
-    'view_analytics', 'view_settings', 'manage_settings', 'manage_users',
-    'view_profile'
-  ],
-  Admin: [
-    'view_jobs', 'create_jobs', 'delete_jobs',
-    'view_clients', 'create_clients', 'delete_clients',
-    'view_calendar', 'create_appointments', 'delete_appointments', 
-    'view_inventory', 'manage_inventory',
-    'view_window_treatments', 'manage_window_treatments',
-    'view_analytics', 'view_settings',
-    'view_profile'
-  ],
-  Manager: [
-    'view_jobs', 'create_jobs',
-    'view_clients', 'create_clients',
-    'view_calendar', 'create_appointments',
-    'view_inventory', 'manage_inventory',
-    'view_window_treatments', 'manage_window_treatments',
-    'view_analytics',
-    'view_profile'
-  ],
-  Staff: [
-    'view_jobs', 'create_jobs',
-    'view_clients', 'create_clients', 
-    'view_calendar',
-    'view_inventory',
-    'view_profile'
-  ]
-};
+import { ROLE_PERMISSIONS } from "@/constants/permissions";
 
 export const PermissionComparison = () => {
   const { data: users = [] } = useUsers();
