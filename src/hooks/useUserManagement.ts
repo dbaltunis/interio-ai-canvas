@@ -91,54 +91,5 @@ export const useUserManagement = () => {
   };
 };
 
-/**
- * Role-based permission definitions
- * Keep this in sync with the database function get_default_permissions_for_role
- */
-export const ROLE_PERMISSIONS = {
-  Owner: [
-    'view_jobs', 'create_jobs', 'delete_jobs', 'view_all_jobs', 'view_all_projects',
-    'view_clients', 'create_clients', 'delete_clients', 'view_all_clients',
-    'view_calendar', 'create_appointments', 'delete_appointments',
-    'view_inventory', 'manage_inventory',
-    'view_window_treatments', 'manage_window_treatments',
-    'view_analytics', 'view_settings', 'manage_settings', 'manage_users',
-    'view_emails', 'manage_emails',
-    'view_profile'
-  ],
-  Admin: [
-    'view_jobs', 'create_jobs', 'delete_jobs', 'view_all_jobs', 'view_all_projects',
-    'view_clients', 'create_clients', 'delete_clients', 'view_all_clients',
-    'view_calendar', 'create_appointments', 'delete_appointments',
-    'view_inventory', 'manage_inventory',
-    'view_window_treatments', 'manage_window_treatments',
-    'view_analytics', 'view_settings', 'manage_settings', 'manage_users',
-    'view_emails', 'manage_emails',
-    'view_profile'
-  ],
-  Manager: [
-    'view_jobs', 'create_jobs', 'delete_jobs', 'view_all_jobs', 'view_all_projects',
-    'view_clients', 'create_clients', 'delete_clients', 'view_all_clients',
-    'view_calendar', 'create_appointments', 'delete_appointments',
-    'view_inventory', 'manage_inventory',
-    'view_window_treatments', 'manage_window_treatments',
-    'view_analytics', 'view_settings',
-    'view_emails', 'manage_emails',
-    'view_profile'
-  ],
-  Staff: [
-    'view_jobs', 'create_jobs', 'view_all_jobs', 'view_all_clients', 'view_all_projects',
-    'view_clients', 'create_clients',
-    'view_calendar',
-    'view_inventory', 'manage_inventory',
-    'view_window_treatments',
-    'view_settings',
-    'view_emails',
-    'view_profile'
-  ],
-  User: [
-    'view_profile'
-  ]
-} as const;
-
-export type UserRole = keyof typeof ROLE_PERMISSIONS;
+// Re-export from centralized permissions for backward compatibility
+export { ROLE_PERMISSIONS, type UserRole } from "@/constants/permissions";

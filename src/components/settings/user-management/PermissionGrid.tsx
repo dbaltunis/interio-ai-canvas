@@ -3,39 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Search, AlertTriangle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Separator } from "@/components/ui/separator";
-
-const PERMISSION_CATEGORIES = {
-  jobs: { label: 'Jobs & Quotes', icon: '💼', color: 'bg-blue-500' },
-  clients: { label: 'Client Management', icon: '👥', color: 'bg-green-500' },
-  calendar: { label: 'Calendar & Appointments', icon: '📅', color: 'bg-primary' },
-  inventory: { label: 'Inventory', icon: '📦', color: 'bg-orange-500' },
-  treatments: { label: 'Window Treatments', icon: '🪟', color: 'bg-teal-500' },
-  analytics: { label: 'Analytics & Reports', icon: '📊', color: 'bg-indigo-500' },
-  settings: { label: 'Settings', icon: '⚙️', color: 'bg-gray-500' },
-  admin: { label: 'Administration', icon: '🔐', color: 'bg-red-500' },
-  profile: { label: 'Profile', icon: '👤', color: 'bg-cyan-500' }
-};
-
-const PERMISSION_DETAILS = {
-  view_jobs: { label: 'View Jobs', description: 'Can see all jobs and quotes', category: 'jobs', required: [] },
-  create_jobs: { label: 'Create Jobs', description: 'Can create new jobs and quotes', category: 'jobs', required: ['view_jobs'] },
-  delete_jobs: { label: 'Delete Jobs', description: 'Can permanently delete jobs', category: 'jobs', required: ['view_jobs'], warning: true },
-  view_clients: { label: 'View Clients', description: 'Can see client information', category: 'clients', required: [] },
-  create_clients: { label: 'Create Clients', description: 'Can add new clients', category: 'clients', required: ['view_clients'] },
-  delete_clients: { label: 'Delete Clients', description: 'Can permanently delete clients', category: 'clients', required: ['view_clients'], warning: true },
-  view_calendar: { label: 'View Calendar', description: 'Can see appointments and calendar', category: 'calendar', required: [] },
-  create_appointments: { label: 'Create Appointments', description: 'Can schedule new appointments', category: 'calendar', required: ['view_calendar'] },
-  delete_appointments: { label: 'Delete Appointments', description: 'Can cancel appointments', category: 'calendar', required: ['view_calendar'] },
-  view_inventory: { label: 'View Inventory', description: 'Can see inventory items', category: 'inventory', required: [] },
-  manage_inventory: { label: 'Manage Inventory', description: 'Can add, edit, and remove inventory', category: 'inventory', required: ['view_inventory'] },
-  view_window_treatments: { label: 'View Treatments', description: 'Can see treatment templates', category: 'treatments', required: [] },
-  manage_window_treatments: { label: 'Manage Treatments', description: 'Can create and edit treatment templates', category: 'treatments', required: ['view_window_treatments'] },
-  view_analytics: { label: 'View Analytics', description: 'Can see reports and analytics', category: 'analytics', required: [] },
-  view_settings: { label: 'View Settings', description: 'Can access settings pages', category: 'settings', required: [] },
-  manage_settings: { label: 'Manage Settings', description: 'Can modify business settings', category: 'settings', required: ['view_settings'] },
-  manage_users: { label: 'Manage Users', description: 'Can invite and manage team members', category: 'admin', required: [], warning: true },
-  view_profile: { label: 'View Profile', description: 'Can access own profile settings', category: 'profile', required: [] }
-};
+import { PERMISSION_CATEGORIES, PERMISSION_DETAILS } from "@/constants/permissions";
 
 interface PermissionGridProps {
   permissions: string[];

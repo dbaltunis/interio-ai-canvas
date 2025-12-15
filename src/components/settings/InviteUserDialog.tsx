@@ -7,79 +7,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCreateInvitation } from "@/hooks/useUserInvitations";
 import { Mail, User, Shield } from "lucide-react";
+import { ROLE_PERMISSIONS, PERMISSION_LABELS } from "@/constants/permissions";
 
 interface InviteUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const ROLE_PERMISSIONS = {
-  Owner: [
-    'view_jobs', 'create_jobs', 'delete_jobs',
-    'view_clients', 'create_clients', 'delete_clients', 
-    'view_calendar', 'create_appointments', 'delete_appointments',
-    'view_inventory', 'manage_inventory',
-    'view_window_treatments', 'manage_window_treatments',
-    'view_analytics', 'view_settings', 'manage_settings', 'manage_users',
-    'view_shopify', 'manage_shopify',
-    'view_emails',
-    'view_profile'
-  ],
-  Admin: [
-    'view_jobs', 'create_jobs', 'delete_jobs',
-    'view_clients', 'create_clients', 'delete_clients',
-    'view_calendar', 'create_appointments', 'delete_appointments', 
-    'view_inventory', 'manage_inventory',
-    'view_window_treatments', 'manage_window_treatments',
-    'view_analytics', 'view_settings',
-    'view_shopify', 'manage_shopify',
-    'view_emails',
-    'view_profile'
-  ],
-  Manager: [
-    'view_jobs', 'create_jobs',
-    'view_clients', 'create_clients',
-    'view_calendar', 'create_appointments',
-    'view_inventory', 'manage_inventory',
-    'view_window_treatments', 'manage_window_treatments',
-    'view_analytics',
-    'view_emails',
-    'view_profile'
-  ],
-  Staff: [
-    'view_jobs', 'create_jobs',
-    'view_clients', 'create_clients', 
-    'view_calendar',
-    'view_inventory', 'view_profile'
-  ]
-};
-
-const PERMISSION_LABELS = {
-  view_jobs: 'View Jobs',
-  create_jobs: 'Create Jobs',
-  delete_jobs: 'Delete Jobs',
-  view_clients: 'View Clients',
-  create_clients: 'Create Clients',
-  delete_clients: 'Delete Clients',
-  view_calendar: 'View Calendar',
-  create_appointments: 'Create Appointments',
-  delete_appointments: 'Delete Appointments',
-  view_inventory: 'View Inventory',
-  manage_inventory: 'Manage Inventory',
-  view_window_treatments: 'View Window Treatments',
-  manage_window_treatments: 'Manage Window Treatments',
-  view_analytics: 'View Analytics',
-  view_settings: 'View Settings',
-  manage_settings: 'Manage Settings',
-  manage_users: 'Manage Users',
-  view_shopify: 'View Online Store',
-  manage_shopify: 'Manage Online Store',
-  view_emails: 'View Emails',
-  view_profile: 'View Profile'
-};
-
 export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    invited_email: string;
+    invited_name: string;
+    role: string;
+    customPermissions: string[];
+  }>({
     invited_email: "",
     invited_name: "",
     role: "Staff",
