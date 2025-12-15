@@ -125,3 +125,6 @@ verify_jwt = true
 
 [functions.twc-delete-all-data]
 verify_jwt = true
+
+[functions.setup-homekaara-account]
+verify_jwt = false
