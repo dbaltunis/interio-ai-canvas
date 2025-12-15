@@ -3,18 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Users, UserPlus, Mail, Edit, TrendingUp, Clock } from "lucide-react";
+import { Users, UserPlus, Mail, Edit, Clock, Send, X } from "lucide-react";
 import { EditUserDialog } from "./EditUserDialog";
-import { UserSearchFilter } from "./UserSearchFilter";
-import { BulkUserActions } from "./BulkUserActions";
+import { Input } from "@/components/ui/input";
 import { useDeleteUser } from "@/hooks/useUpdateUser";
-import { useUserFilters } from "@/hooks/useUserFilters";
-import { useBulkUserSelection } from "@/hooks/useBulkUserSelection";
 import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserInvitations, useDeleteInvitation, useResendInvitation } from "@/hooks/useUserInvitations";
-import { X, Send } from "lucide-react";
 
 interface User {
   id: string;
@@ -34,6 +29,7 @@ interface UserListProps {
 export const UserList = ({ users, onInviteUser, isLoading = false }: UserListProps) => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const deleteUser = useDeleteUser();
   
   // Fetch pending invitations
@@ -51,133 +47,98 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
     };
     getCurrentUser();
   }, []);
-  
-  const {
-    filteredUsers,
-    activeFilters,
-    stats,
-    setSearchTerm,
-    setRoleFilter,
-    setStatusFilter,
-  } = useUserFilters(users);
 
-  const {
-    selectedUsers,
-    selectUser,
-    selectAll,
-    clearSelection,
-    toggleUser,
-    selectionStats,
-  } = useBulkUserSelection(filteredUsers);
-
-  const handleDeleteUser = useCallback(async (userId: string) => {
-    try {
-      if (confirm("Are you sure you want to remove this user? This action cannot be undone.")) {
-        await deleteUser.mutateAsync(userId);
-      }
-    } catch (error) {
-      console.error('Error deleting user:', error);
-    }
-  }, [deleteUser]);
+  // Simple search filter
+  const filteredUsers = users.filter(user => 
+    user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.role?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleEditUser = useCallback((user: User) => {
     setEditingUser(user);
   }, []);
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'Owner': return 'default';
+      case 'Admin': return 'default';
+      case 'Manager': return 'secondary';
+      default: return 'outline';
+    }
+  };
+
   return (
     <ErrorBoundary>
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Users className="h-5 w-5" />
+              <Users className="h-5 w-5 text-muted-foreground" />
               <div>
-                <CardTitle>Team Members</CardTitle>
+                <CardTitle className="text-lg">Team Members</CardTitle>
                 <CardDescription>
-                  Manage your team members and their access levels
+                  {users.length} member{users.length !== 1 ? 's' : ''} in your team
                 </CardDescription>
               </div>
             </div>
-            <Button onClick={onInviteUser} className="gap-2">
+            <Button onClick={onInviteUser} size="sm" className="gap-2">
               <UserPlus className="h-4 w-4" />
-              Invite User
+              Invite
             </Button>
           </div>
-          
-          {/* User Stats */}
-          <div className="flex gap-4 pt-4">
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="gap-1">
-                <TrendingUp className="h-3 w-3" />
-                Total: {stats.total}
-              </Badge>
-              <Badge variant="default">Active: {stats.active}</Badge>
-              <Badge variant="secondary">Inactive: {stats.inactive}</Badge>
-            </div>
-          </div>
         </CardHeader>
+        
         <CardContent className="space-y-4">
-          <UserSearchFilter
-            onSearchChange={setSearchTerm}
-            onRoleFilter={setRoleFilter}
-            onStatusFilter={setStatusFilter}
-            activeFilters={activeFilters}
+          {/* Simple Search */}
+          <Input
+            placeholder="Search by name, email, or role..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-sm"
           />
           
-          {/* Pending Invitations Section */}
+          {/* Pending Invitations */}
           {pendingInvitations.length > 0 && (
-            <div className="space-y-3 pb-4 border-b">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h4 className="font-medium text-amber-600 dark:text-amber-500">
-                    Pending Invitations ({pendingInvitations.length})
-                  </h4>
-                  <p className="text-sm text-muted-foreground">Users invited but not yet joined</p>
-                </div>
-              </div>
-              
+            <div className="space-y-2 pb-4 border-b">
+              <h4 className="text-sm font-medium text-amber-600 dark:text-amber-500">
+                Pending Invitations ({pendingInvitations.length})
+              </h4>
               <div className="space-y-2">
                 {pendingInvitations.map((invitation) => (
                   <div
                     key={invitation.id}
-                    className="flex items-start gap-3 p-3 border border-amber-200 dark:border-amber-900 rounded-lg bg-amber-50/50 dark:bg-amber-950/20"
+                    className="flex items-center justify-between p-3 border border-amber-200 dark:border-amber-900 rounded-lg bg-amber-50/50 dark:bg-amber-950/20"
                   >
-                    <Avatar className="h-10 w-10 shrink-0">
-                      <AvatarFallback className="text-sm font-medium bg-amber-100 dark:bg-amber-900">
-                        {invitation.invited_email?.[0]?.toUpperCase() || 'I'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="font-medium truncate">{invitation.invited_name || 'Pending User'}</div>
-                      <div className="text-sm text-muted-foreground flex items-center gap-1 min-w-0">
-                        <Mail className="h-3 w-3 shrink-0" />
-                        <span className="truncate" title={invitation.invited_email}>
-                          {invitation.invited_email}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className="border-amber-300 dark:border-amber-700">
-                          {invitation.role}
-                        </Badge>
-                        <Badge variant="secondary" className="text-xs">
-                          Expires: {new Date(invitation.expires_at).toLocaleDateString()}
-                        </Badge>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="text-xs bg-amber-100 dark:bg-amber-900">
+                          {invitation.invited_email?.[0]?.toUpperCase() || 'I'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="text-sm font-medium">{invitation.invited_name || invitation.invited_email}</div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs h-5">{invitation.role}</Badge>
+                          <span>Expires: {new Date(invitation.expires_at).toLocaleDateString()}</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex gap-1 shrink-0">
+                    <div className="flex gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950"
+                        className="h-7 w-7 p-0"
                         onClick={() => resendInvitation.mutate(invitation)}
                         disabled={resendInvitation.isPending}
                         title="Resend invitation"
                       >
-                        <Send className="h-4 w-4" />
+                        <Send className="h-3.5 w-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                        className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                         onClick={() => {
                           if (confirm('Cancel this invitation?')) {
                             deleteInvitation.mutate(invitation.id);
@@ -186,7 +147,7 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
                         disabled={deleteInvitation.isPending}
                         title="Cancel invitation"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
@@ -195,115 +156,73 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
             </div>
           )}
           
-          <BulkUserActions
-            users={filteredUsers}
-            selectedUsers={selectedUsers}
-            onSelectAll={selectAll}
-            onClearSelection={clearSelection}
-          />
-          <div className="flex justify-between items-center">
-            <div>
-              <h4 className="font-medium">
-                {stats.filtered !== stats.total 
-                  ? `Showing ${stats.filtered} of ${stats.total} members`
-                  : `Active Members (${stats.total})`
-                }
-              </h4>
-              <p className="text-sm text-muted-foreground">Users with access to your workspace</p>
-            </div>
-          </div>
-        
-        <div className="space-y-3">
-          {isLoading ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="animate-pulse">
+          {/* User List */}
+          <div className="space-y-2">
+            {isLoading ? (
+              <div className="flex items-center justify-center p-8">
                 <div className="text-sm text-muted-foreground">Loading users...</div>
               </div>
-            </div>
-          ) : filteredUsers.length === 0 && users.length > 0 ? (
-            <div className="flex items-center justify-center p-8 text-center">
-              <div>
-                <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">No users match your filters</p>
-                <p className="text-xs text-muted-foreground mt-1">Try adjusting your search or filters</p>
+            ) : filteredUsers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center p-8 text-center">
+                <Users className="h-8 w-8 mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  {searchTerm ? 'No users match your search' : 'No team members yet'}
+                </p>
               </div>
-            </div>
-          ) : users.length === 0 ? (
-            <div className="flex items-center justify-center p-8 text-center">
-              <div>
-                <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">No team members found</p>
-                <p className="text-xs text-muted-foreground mt-1">Team invitations currently disabled for stability</p>
-              </div>
-            </div>
-          ) : (
-            filteredUsers.map((user) => (
-            <div
-              key={user.id}
-              className={`flex items-start gap-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors ${
-                selectedUsers.includes(user.id) ? 'bg-muted/30 border-primary/50' : ''
-              }`}
-            >
-              <Checkbox
-                checked={selectedUsers.includes(user.id)}
-                onCheckedChange={(checked) => selectUser(user.id, !!checked)}
-                disabled={user.id === currentUserId}
-                className="mt-1"
-              />
-              <Avatar className="h-10 w-10 shrink-0">
-                <AvatarFallback className="text-sm font-medium">
-                  {user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0 space-y-2">
-                {/* User Info Section */}
-                <div className="space-y-1">
-                  <div className="font-medium truncate">{user.name || 'Unknown User'}</div>
-                  <div className="text-sm text-muted-foreground flex items-center gap-1 min-w-0">
-                    <Mail className="h-3 w-3 shrink-0" />
-                    <span className="truncate" title={user.email}>{user.email}</span>
+            ) : (
+              filteredUsers.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => handleEditUser(user)}
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-9 w-9">
+                      <AvatarFallback className="text-sm font-medium">
+                        {user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-medium text-sm">{user.name || 'Unknown User'}</div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Mail className="h-3 w-3" />
+                        <span>{user.email}</span>
+                      </div>
+                    </div>
                   </div>
-                  {user.phone && (
-                    <div className="text-xs text-muted-foreground truncate">{user.phone}</div>
-                  )}
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3 shrink-0" />
-                    <span>Last seen: Recently</span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={getRoleBadgeVariant(user.role)} className="text-xs">
+                      {user.role}
+                    </Badge>
+                    <Badge 
+                      variant={user.status === 'Active' ? 'default' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {user.status}
+                    </Badge>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditUser(user);
+                      }}
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </div>
-                
-                {/* Badges and Actions Section */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant={user.role === 'Admin' ? 'default' : user.role === 'Manager' ? 'secondary' : 'outline'}>
-                    {user.role}
-                  </Badge>
-                  <Badge variant={user.status === 'Active' ? 'default' : 'secondary'}>
-                    {user.status}
-                  </Badge>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="h-8 px-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditUser(user);
-                    }}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </div>
+        </CardContent>
         
         <EditUserDialog 
           user={editingUser}
           open={!!editingUser}
           onOpenChange={(open) => !open && setEditingUser(null)}
         />
-      </CardContent>
       </Card>
     </ErrorBoundary>
   );
