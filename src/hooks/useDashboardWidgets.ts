@@ -2,6 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 
+export interface WidgetConfig {
+  id: string;
+  title: string;
+  enabled: boolean;
+  category: string;
+  requiredPermission?: string;
+}
+
 export interface DashboardWidget {
   id: string;
   name: string;
@@ -10,11 +18,11 @@ export interface DashboardWidget {
   order: number;
   category: "analytics" | "communication" | "finance" | "integrations";
   size: "small" | "medium" | "large";
-  requiredPermission?: string; // Permission required to view this widget
-  integrationType?: "shopify" | "online_store" | null; // Widget belongs to specific integration
+  requiredPermission?: string;
+  integrationType?: "shopify" | "online_store" | null;
 }
 
-const DEFAULT_WIDGETS: DashboardWidget[] = [
+export const DEFAULT_WIDGETS: DashboardWidget[] = [
   // Shopify Widgets - Disabled by default, only enable when Shopify is connected
   {
     id: "shopify",

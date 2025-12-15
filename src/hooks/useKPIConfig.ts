@@ -37,7 +37,7 @@ export interface KPIData {
   category: 'primary' | 'email' | 'business';
 }
 
-const defaultKPIConfigs: KPIConfig[] = [
+export const DEFAULT_KPI_CONFIGS: KPIConfig[] = [
   { id: 'total-revenue', title: 'Total Revenue', enabled: true, order: 0, category: 'primary', displayFormat: 'card', size: 'medium', refreshInterval: 15, showTrend: true, dataPeriod: '30d' },
   { id: 'active-projects', title: 'Active Projects', enabled: true, order: 1, category: 'primary', displayFormat: 'card', size: 'medium', refreshInterval: 15, showTrend: true, dataPeriod: '30d' },
   { id: 'pending-quotes', title: 'Pending Quotes', enabled: true, order: 2, category: 'primary', displayFormat: 'card', size: 'medium', refreshInterval: 15, showTrend: true, dataPeriod: '30d' },
@@ -52,6 +52,8 @@ const defaultKPIConfigs: KPIConfig[] = [
   { id: 'completed-jobs', title: 'Completed Jobs', enabled: true, order: 2, category: 'business', displayFormat: 'card', size: 'medium', refreshInterval: 30, showTrend: true, dataPeriod: '30d' },
   { id: 'response-time', title: 'Response Time', enabled: true, order: 3, category: 'business', displayFormat: 'compact', size: 'small', refreshInterval: 10, showTrend: true, dataPeriod: '7d' },
 ];
+
+const defaultKPIConfigs = DEFAULT_KPI_CONFIGS;
 
 export const useKPIConfig = () => {
   const { user } = useAuth();
