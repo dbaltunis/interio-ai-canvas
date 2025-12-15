@@ -32,6 +32,7 @@ export const ActionButton = React.forwardRef<HTMLButtonElement, ActionButtonProp
           'focus:outline-none focus:ring-2 focus:ring-offset-2',
           'transition-all duration-200 hover-lift interactive-bounce',
           'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none',
+          'caret-transparent select-none',
           variantClasses[variant],
           sizeClasses[size],
           className
