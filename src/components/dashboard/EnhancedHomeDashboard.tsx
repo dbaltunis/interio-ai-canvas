@@ -28,6 +28,7 @@ const ShopifyOrdersWidget = lazy(() => import("./ShopifyOrdersWidget").then(m =>
 const ShopifyProductsSyncWidget = lazy(() => import("./ShopifyProductsSyncWidget").then(m => ({ default: m.ShopifyProductsSyncWidget })));
 const ShopifyProductCategoriesWidget = lazy(() => import("./ShopifyProductCategoriesWidget").then(m => ({ default: m.ShopifyProductCategoriesWidget })));
 const TeamMembersWidget = lazy(() => import("./TeamMembersWidget").then(m => ({ default: m.TeamMembersWidget })));
+const DealerPerformanceWidget = lazy(() => import("./DealerPerformanceWidget"));
 const RecentlyCreatedJobsWidget = lazy(() => import("./RecentlyCreatedJobsWidget").then(m => ({ default: m.RecentlyCreatedJobsWidget })));
 const RecentAppointmentsWidget = lazy(() => import("./RecentAppointmentsWidget").then(m => ({ default: m.RecentAppointmentsWidget })));
 
@@ -79,6 +80,7 @@ export const EnhancedHomeDashboard = () => {
   const canViewShopify = useHasPermission('view_shopify');
   const canViewEmails = useHasPermission('view_emails');
   const canViewInventory = useHasPermission('view_inventory');
+  const canViewTeamPerformance = useHasPermission('view_team_performance');
   const canViewPrimaryKPIs = useHasPermission('view_primary_kpis');
   const canViewEmailKPIs = useHasPermission('view_email_kpis');
   const canViewRevenueKPIs = useHasPermission('view_revenue_kpis');
@@ -113,6 +115,7 @@ export const EnhancedHomeDashboard = () => {
       if (widget.requiredPermission === 'view_shopify') return canViewShopify === true;
       if (widget.requiredPermission === 'view_emails') return canViewEmails === true;
       if (widget.requiredPermission === 'view_inventory') return canViewInventory === true;
+      if (widget.requiredPermission === 'view_team_performance') return canViewTeamPerformance === true;
 
       return false;
     });
@@ -265,6 +268,8 @@ export const EnhancedHomeDashboard = () => {
                 return isShopifyConnected ? <ShopifyAnalyticsCard /> : null;
               case "team":
                 return <TeamMembersWidget />;
+              case "dealer-performance":
+                return <DealerPerformanceWidget />;
               case "events":
                 return <UpcomingEventsWidget />;
               case "recent-appointments":
