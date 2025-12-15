@@ -1,10 +1,18 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { StatusIndicator } from "@/components/ui/status-indicator";
-import { ModernProgress } from "@/components/ui/modern-progress";
-import { LucideIcon, TrendingUp, TrendingDown } from "lucide-react";
+import { LucideIcon, TrendingUp, TrendingDown, Target } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
+import { 
+  KPITarget, 
+  calculateProgress, 
+  getProgressStatus, 
+  getProgressBgColor,
+  formatProgressDisplay,
+  getPeriodLabel,
+  parseNumericValue
+} from "@/utils/kpiTargetProgress";
+import { cn } from "@/lib/utils";
 
 interface KPICardProps {
   title: string;
@@ -16,9 +24,10 @@ interface KPICardProps {
     isPositive: boolean;
   };
   loading?: boolean;
+  target?: KPITarget;
 }
 
-export const KPICard = ({ title, value, subtitle, icon: Icon, trend, loading }: KPICardProps) => {
+export const KPICard = ({ title, value, subtitle, icon: Icon, trend, loading, target }: KPICardProps) => {
   if (loading) {
     return (
       <Card>
@@ -38,12 +47,24 @@ export const KPICard = ({ title, value, subtitle, icon: Icon, trend, loading }: 
     );
   }
 
+  // Calculate progress if target is set and enabled
+  const numericValue = parseNumericValue(value);
+  const hasTarget = target?.enabled && target?.value > 0;
+  const progress = hasTarget ? calculateProgress(numericValue, target.value) : 0;
+  const progressStatus = hasTarget ? getProgressStatus(progress) : null;
+
   return (
     <Card className="group">
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
           <Icon className="h-4 w-4 text-primary" />
           {title}
+          {hasTarget && (
+            <Badge variant="outline" className="ml-auto text-xs">
+              <Target className="h-3 w-3 mr-1" />
+              {getPeriodLabel(target.period)}
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -67,12 +88,40 @@ export const KPICard = ({ title, value, subtitle, icon: Icon, trend, loading }: 
           <p className="text-sm text-muted-foreground">{subtitle}</p>
         )}
         
-        {typeof value === 'number' && value <= 100 && (
-          <ModernProgress 
-            value={value} 
-            size="sm" 
-            variant={trend?.isPositive ? 'success' : 'default'}
-          />
+        {/* Target Progress Section */}
+        {hasTarget && (
+          <div className="space-y-2 pt-2 border-t border-border/50">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {formatProgressDisplay(numericValue, target.value, target.unit)}
+              </span>
+              <span className={cn(
+                "font-medium",
+                progressStatus === 'exceeded' && "text-green-600",
+                progressStatus === 'on-track' && "text-green-600",
+                progressStatus === 'warning' && "text-yellow-600",
+                progressStatus === 'critical' && "text-red-600"
+              )}>
+                {progress}%
+              </span>
+            </div>
+            <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
+              <div 
+                className={cn(
+                  "h-full transition-all duration-500 rounded-full",
+                  getProgressBgColor(progressStatus!)
+                )}
+                style={{ width: `${Math.min(progress, 100)}%` }}
+              />
+              {/* Target marker at 100% */}
+              <div className="absolute top-0 right-0 w-0.5 h-full bg-foreground/30" />
+            </div>
+            {progress >= 100 && (
+              <p className="text-xs text-green-600 font-medium">
+                🎉 Target achieved!
+              </p>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>

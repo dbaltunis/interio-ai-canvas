@@ -3,6 +3,10 @@ import { LucideIcon } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { KPITarget, TargetPeriod } from '@/utils/kpiTargetProgress';
+
+// Re-export for convenience
+export type { KPITarget, TargetPeriod } from '@/utils/kpiTargetProgress';
 
 export interface KPIConfig {
   id: string;
@@ -21,6 +25,7 @@ export interface KPIConfig {
     critical?: number;
   };
   dataPeriod: '7d' | '30d' | '90d' | 'all';
+  target?: KPITarget;
 }
 
 export interface KPIData {
