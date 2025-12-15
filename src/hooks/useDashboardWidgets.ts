@@ -92,11 +92,21 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
   },
   // General Widgets (no integration type)
   {
+    id: "dealer-performance",
+    name: "Team Performance",
+    description: "Leaderboard showing dealer/team member performance metrics",
+    enabled: true,
+    order: 8,
+    category: "analytics",
+    size: "small",
+    requiredPermission: "view_team_performance",
+  },
+  {
     id: "team",
     name: "Team Members",
     description: "View and message your team",
     enabled: true,
-    order: 8,
+    order: 9,
     category: "communication",
     size: "small",
   },

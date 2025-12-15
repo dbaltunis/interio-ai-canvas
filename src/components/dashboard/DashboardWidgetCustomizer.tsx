@@ -45,6 +45,7 @@ const getWidgetIcon = (widgetId: string) => {
   const icons: Record<string, any> = {
     shopify: ShoppingBag,
     team: Users,
+    "dealer-performance": BarChart3,
     events: Calendar,
     emails: Mail,
     status: BarChart3,
@@ -89,6 +90,7 @@ export const DashboardWidgetCustomizer = ({
   const canViewShopify = useHasPermission('view_shopify');
   const canViewEmails = useHasPermission('view_emails');
   const canViewInventory = useHasPermission('view_inventory');
+  const canViewTeamPerformance = useHasPermission('view_team_performance');
 
   // Check integration statuses
   const { integration: shopifyIntegration, isLoading: isLoadingShopify } = useShopifyIntegrationReal();
@@ -134,11 +136,12 @@ export const DashboardWidgetCustomizer = ({
       if (widget.requiredPermission === 'view_shopify') return canViewShopify === true;
       if (widget.requiredPermission === 'view_emails') return canViewEmails === true;
       if (widget.requiredPermission === 'view_inventory') return canViewInventory === true;
+      if (widget.requiredPermission === 'view_team_performance') return canViewTeamPerformance === true;
 
       // If permission check is undefined or false, don't show
       return false;
     });
-  }, [widgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, isShopifyConnected, hasOnlineStore, isLoading]);
+  }, [widgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, canViewTeamPerformance, isShopifyConnected, hasOnlineStore, isLoading]);
 
   const filteredWidgets = filter === "all" 
     ? permissionFilteredWidgets 
