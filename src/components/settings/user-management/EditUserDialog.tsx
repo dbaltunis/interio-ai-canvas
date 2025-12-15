@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { User as UserIcon, Shield } from "lucide-react";
+import { User as UserIcon, Shield, LayoutDashboard } from "lucide-react";
 import { useUpdateUser } from "@/hooks/useUpdateUser";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@/hooks/useUsers";
 import { CustomPermissionsManager } from "./CustomPermissionsManager";
+import { DashboardConfigManager } from "./DashboardConfigManager";
 
 interface EditUserDialogProps {
   user: User | null;
@@ -89,14 +90,18 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
         </DialogHeader>
         
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <UserIcon className="h-4 w-4" />
               Basic Info
             </TabsTrigger>
             <TabsTrigger value="permissions" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
-              Custom Permissions
+              Permissions
+            </TabsTrigger>
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard
             </TabsTrigger>
           </TabsList>
 
@@ -183,6 +188,15 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
               <CustomPermissionsManager 
                 userId={user.id}
                 userRole={role}
+                userName={displayName || user.name || "User"}
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="dashboard" className="mt-4">
+            {user && (
+              <DashboardConfigManager 
+                userId={user.id}
                 userName={displayName || user.name || "User"}
               />
             )}
