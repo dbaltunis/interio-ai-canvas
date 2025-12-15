@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { ROLE_PERMISSIONS } from "@/constants/permissions";
+import { ROLE_PERMISSIONS, PERMISSION_ALIASES } from "@/constants/permissions";
 
 export const useUserPermissions = () => {
   const { user, loading: authLoading } = useAuth();
@@ -71,7 +71,16 @@ export const useHasPermission = (permission: string) => {
   
   if (isLoading || permissions === undefined) return undefined;
   
-  return permissions?.some(p => p.permission_name === permission) || false;
+  // Check for permission aliases (backward compatibility)
+  // If checking for old name like 'view_jobs', also check for new names like 'view_all_jobs'
+  const aliasedPermissions = PERMISSION_ALIASES[permission];
+  const permissionsToCheck = aliasedPermissions 
+    ? [permission, ...aliasedPermissions] 
+    : [permission];
+  
+  return permissionsToCheck.some(p => 
+    permissions?.some(userPerm => userPerm.permission_name === p)
+  ) || false;
 };
 
 export const useHasAnyPermission = (permissionList: string[]) => {
