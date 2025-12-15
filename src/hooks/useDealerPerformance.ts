@@ -92,20 +92,33 @@ export const useDealerPerformance = () => {
 
       if (projectsError) throw projectsError;
 
+      // Status values that indicate a "won" quote (case-insensitive matching)
+      const wonStatuses = ['accepted', 'approved', 'won', 'order', 'in-progress', 'completed', 'invoiced', 'paid'];
+      
       // Calculate performance metrics for each team member
       const dealerData: DealerPerformanceData[] = teamMembers.map((member) => {
         const memberQuotes = quotes?.filter((q) => q.user_id === member.user_id) || [];
         const memberProjects = projects?.filter((p) => p.user_id === member.user_id) || [];
 
         const totalQuotes = memberQuotes.length;
-        const acceptedQuotes = memberQuotes.filter(
-          (q) => q.status === "accepted" || q.status === "approved"
-        ).length;
-        const totalValue = memberQuotes
-          .filter((q) => q.status === "accepted" || q.status === "approved")
-          .reduce((sum, q) => sum + (q.total_amount || 0), 0);
+        
+        // Check for won quotes (case-insensitive)
+        const wonQuotes = memberQuotes.filter((q) => 
+          wonStatuses.some(s => q.status?.toLowerCase() === s.toLowerCase())
+        );
+        const acceptedQuotes = wonQuotes.length;
+        
+        // Revenue from won quotes
+        const wonValue = wonQuotes.reduce((sum, q) => sum + (q.total_amount || 0), 0);
+        
+        // Total pipeline value (all quotes)
+        const pipelineValue = memberQuotes.reduce((sum, q) => sum + (q.total_amount || 0), 0);
+        
+        // Use pipeline value if no won quotes yet, for visibility
+        const totalValue = wonValue > 0 ? wonValue : pipelineValue;
+        
         const conversionRate = totalQuotes > 0 ? (acceptedQuotes / totalQuotes) * 100 : 0;
-        const avgDealSize = acceptedQuotes > 0 ? totalValue / acceptedQuotes : 0;
+        const avgDealSize = totalQuotes > 0 ? pipelineValue / totalQuotes : 0;
 
         // Calculate trend based on recent activity (simplified)
         const recentQuotes = memberQuotes.filter((q) => {
