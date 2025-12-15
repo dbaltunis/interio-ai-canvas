@@ -35,7 +35,7 @@ export const useMeasurementUnitsForm = () => {
     }
   }, [businessSettings]);
 
-  const handleSystemChange = (system: 'metric' | 'imperial') => {
+  const handleSystemChange = (system: 'metric' | 'imperial' | 'mixed') => {
     // Don't reset if already on this system (prevents accidental resets)
     if (system === units.system) return;
     
@@ -47,10 +47,15 @@ export const useMeasurementUnitsForm = () => {
       newUnits.length = 'mm';  // ✅ Database standard is MM
       newUnits.area = 'sq_m';  // ✅ sq_m is more practical than sq_cm
       newUnits.fabric = 'm';   // ✅ meters for fabric is industry standard
-    } else {
+    } else if (system === 'imperial') {
       newUnits.length = 'inches';
-      newUnits.area = 'sq_inches';
+      newUnits.area = 'sq_feet';
       newUnits.fabric = 'yards';
+    } else if (system === 'mixed') {
+      // Mixed system: inches for window dimensions, meters for fabric, sq_feet for blind pricing
+      newUnits.length = 'inches';
+      newUnits.area = 'sq_feet';
+      newUnits.fabric = 'm';
     }
     
     setUnits(newUnits);

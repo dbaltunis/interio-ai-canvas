@@ -42,9 +42,18 @@ export const MeasurementUnitsTab = () => {
     return <MeasurementUnitsLoadingSkeleton />;
   }
 
-  const lengthOptions = units.system === 'metric' ? metricLengthOptions : imperialLengthOptions;
-  const areaOptions = units.system === 'metric' ? metricAreaOptions : imperialAreaOptions;
-  const fabricOptions = units.system === 'metric' ? metricFabricOptions : imperialFabricOptions;
+  // For mixed system, combine all options so user can pick any combination
+  const lengthOptions = units.system === 'mixed' 
+    ? [...metricLengthOptions, ...imperialLengthOptions]
+    : units.system === 'metric' ? metricLengthOptions : imperialLengthOptions;
+  
+  const areaOptions = units.system === 'mixed'
+    ? [...metricAreaOptions, ...imperialAreaOptions]  
+    : units.system === 'metric' ? metricAreaOptions : imperialAreaOptions;
+  
+  const fabricOptions = units.system === 'mixed'
+    ? [...metricFabricOptions, ...imperialFabricOptions]
+    : units.system === 'metric' ? metricFabricOptions : imperialFabricOptions;
 
   return (
     <div className="space-y-6">
@@ -71,8 +80,8 @@ export const MeasurementUnitsTab = () => {
         <CardContent className="space-y-6">
           <RadioGroup 
             value={units.system} 
-            onValueChange={(value: 'metric' | 'imperial') => handleSystemChange(value)}
-            className="flex space-x-6"
+            onValueChange={(value: 'metric' | 'imperial' | 'mixed') => handleSystemChange(value)}
+            className="flex flex-wrap gap-4"
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="metric" id="metric" />
@@ -81,6 +90,13 @@ export const MeasurementUnitsTab = () => {
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="imperial" id="imperial" />
               <Label htmlFor="imperial">Imperial System</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="mixed" id="mixed" />
+              <Label htmlFor="mixed" className="flex flex-col">
+                <span>Mixed System</span>
+                <span className="text-xs text-muted-foreground font-normal">Inches + Meters + Sq Feet</span>
+              </Label>
             </div>
           </RadioGroup>
 

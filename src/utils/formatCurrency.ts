@@ -11,6 +11,7 @@ export const getCurrencySymbol = (currency: string): string => {
     'GBP': '£',
     'EUR': '€',
     'ZAR': 'R',
+    'INR': '₹',
   };
   return symbols[currency] || '$';
 };
