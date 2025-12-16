@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
+import { useHeadingInventory } from "@/hooks/useHeadingInventory";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 import type { EyeletRing } from "@/hooks/useEyeletRings";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
@@ -30,11 +30,11 @@ export const HeadingOptionsSection = ({
   readOnly = false
 }: HeadingOptionsSectionProps) => {
   const { units, getLengthUnitLabel } = useMeasurementUnits();
-  const { data: inventory = [], isLoading } = useEnhancedInventory();
+  const { data: headingInventory = [], isLoading } = useHeadingInventory();
   const [availableRings, setAvailableRings] = useState<EyeletRing[]>([]);
 
   // Filter heading options from inventory - ONLY show headings that are selected on the template
-  const inventoryHeadingOptions = inventory.filter(item => {
+  const inventoryHeadingOptions = headingInventory.filter(item => {
     // If template has selected_heading_ids, ONLY show those specific headings
     if (template.selected_heading_ids && template.selected_heading_ids.length > 0) {
       return template.selected_heading_ids.includes(item.id);
@@ -79,7 +79,7 @@ export const HeadingOptionsSection = ({
     }
     
     // Check inventory items first for multiple ratios
-    const selectedItem = inventory.find(item => item.id === selectedHeading);
+    const selectedItem = headingInventory.find(item => item.id === selectedHeading);
     if (selectedItem && selectedItem.metadata) {
       const metadata = selectedItem.metadata as any;
       if (metadata.use_multiple_ratios && metadata.multiple_fullness_ratios && metadata.multiple_fullness_ratios.length > 0) {
@@ -102,7 +102,7 @@ export const HeadingOptionsSection = ({
       return [];
     }
     
-    const selectedItem = inventory.find(item => item.id === selectedHeading);
+    const selectedItem = headingInventory.find(item => item.id === selectedHeading);
     if (selectedItem && selectedItem.metadata) {
       const metadata = selectedItem.metadata as any;
       if (metadata.use_multiple_ratios && metadata.multiple_fullness_ratios && metadata.multiple_fullness_ratios.length > 1) {
@@ -119,7 +119,7 @@ export const HeadingOptionsSection = ({
       return 0;
     }
     
-    const selectedItem = inventory.find(item => item.id === selectedHeading);
+    const selectedItem = headingInventory.find(item => item.id === selectedHeading);
     if (selectedItem && selectedItem.metadata) {
       const metadata = selectedItem.metadata as any;
       return metadata.extra_fabric || 0;
@@ -134,7 +134,7 @@ export const HeadingOptionsSection = ({
       return null;
     }
     
-    const selectedItem = inventory.find(item => item.id === selectedHeading);
+    const selectedItem = headingInventory.find(item => item.id === selectedHeading);
     if (selectedItem && selectedItem.metadata) {
       return selectedItem.metadata as any;
     }
@@ -145,7 +145,7 @@ export const HeadingOptionsSection = ({
   // Check if selected heading is eyelet type and load available rings
   useEffect(() => {
     if (selectedHeading && selectedHeading !== 'standard') {
-      const selectedItem = inventory.find(item => item.id === selectedHeading);
+      const selectedItem = headingInventory.find(item => item.id === selectedHeading);
       
       if (selectedItem && selectedItem.metadata) {
         const metadata = selectedItem.metadata as any;
@@ -164,7 +164,7 @@ export const HeadingOptionsSection = ({
     } else {
       setAvailableRings([]);
     }
-  }, [selectedHeading, inventory, selectedEyeletRing, onEyeletRingChange]);
+  }, [selectedHeading, headingInventory, selectedEyeletRing, onEyeletRingChange]);
 
   return (
     <div className="space-y-3">
