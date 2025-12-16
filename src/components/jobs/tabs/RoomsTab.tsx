@@ -10,6 +10,8 @@ import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { useWorkroomSync } from "@/hooks/useWorkroomSync";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { useMarkupSettings } from "@/hooks/useMarkupSettings";
+import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
 import { supabase } from "@/integrations/supabase/client";
 
 interface RoomsTabProps {
@@ -42,6 +44,7 @@ export const RoomsTab = ({
   const {
     data: businessSettings
   } = useBusinessSettings();
+  const { data: markupSettings } = useMarkupSettings();
   const createRoom = useCreateRoom();
   const project = projects?.find(p => p.id === projectId);
 
@@ -140,20 +143,29 @@ export const RoomsTab = ({
   const windowsWithPricing = projectSummaries?.windows?.filter(w => w.summary && w.summary.total_cost > 0) || [];
   const treatmentCount = windowsWithPricing.length;
 
-  // Project pricing calculation - show base cost without automatic markups
+  // Project pricing calculation - show RETAIL price with markup
   const summariesTotal = projectSummaries?.projectTotal || 0;
 
-  // Calculate room products total
+  // Calculate room products total (already at selling price)
   const roomProductsTotal = allRoomProducts.reduce((sum, p) => sum + (p.total_price || 0), 0);
 
-  // Use windows_summary data if available (more accurate as it includes fabric calculations)
-  // Fall back to treatments table data only if no window summaries exist
-  // CRITICAL: Always include room products in total
-  const baseSubtotal = (summariesTotal > 0 ? summariesTotal : treatmentTotal) + roomProductsTotal;
+  // Calculate SELLING total with markup applied
+  const sellingTotal = (projectSummaries?.windows || []).reduce((sum, w) => {
+    if (!w.summary) return sum;
+    const costPrice = Number(w.summary.total_cost || 0);
+    
+    // Apply markup to get selling price
+    const markupResult = resolveMarkup({
+      gridMarkup: w.summary.pricing_grid_markup || undefined,
+      category: w.summary.treatment_category || w.summary.treatment_type,
+      subcategory: w.summary.subcategory || undefined,
+      markupSettings: markupSettings || undefined
+    });
+    return sum + applyMarkup(costPrice, markupResult.percentage);
+  }, 0);
 
-  // TODO: Markup and tax should be configurable in settings, not hardcoded
-  // For now, show the base cost without automatic markup/tax to provide clarity
-  const displayTotal = baseSubtotal;
+  // Use selling total (with markup) + room products for display
+  const displayTotal = sellingTotal + roomProductsTotal;
   if (!project) {
     return <div className="flex items-center justify-center py-12">
         <div className="text-muted-foreground">Loading project...</div>
@@ -164,8 +176,8 @@ export const RoomsTab = ({
   console.log('RoomsTab: Treatments count:', treatmentCount);
   console.log('RoomsTab: Treatment total (from treatments table):', treatmentTotal);
   console.log('RoomsTab: Summaries total (from windows_summary table):', summariesTotal);
-  console.log('RoomsTab: Base subtotal used:', baseSubtotal);
-  console.log('RoomsTab: Display total (no markup/tax):', displayTotal);
+  console.log('RoomsTab: Selling total (with markup):', sellingTotal);
+  console.log('RoomsTab: Display total:', displayTotal);
   console.log('RoomsTab: Price source:', summariesTotal > 0 ? 'windows_summary table' : 'treatments table');
   return <div className="space-y-4">
       {/* Compact Header - Reduced spacing and size */}
@@ -181,8 +193,8 @@ export const RoomsTab = ({
             {formatCurrency(displayTotal)}
           </div>
           <p className="text-xs text-muted-foreground">
-            Base Project Cost
-            {businessSettings?.tax_type && businessSettings.tax_type !== 'none' ? (businessSettings.pricing_settings as any)?.tax_inclusive ? ` (incl. ${businessSettings.tax_type?.toUpperCase()})` : ` (excl. ${businessSettings.tax_type?.toUpperCase()})` : ' (no tax)'}
+            Project Total
+            {businessSettings?.tax_type && businessSettings.tax_type !== 'none' ? (businessSettings.pricing_settings as any)?.tax_inclusive ? ` (incl. ${businessSettings.tax_type?.toUpperCase()})` : ` (excl. ${businessSettings.tax_type?.toUpperCase()})` : ' (excl. tax)'}
             {quotationSync.isLoading && ' • Syncing...'}
           </p>
         </div>

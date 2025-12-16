@@ -4,12 +4,15 @@ import { useTreatments } from "@/hooks/useTreatments";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 import { useRoomProducts } from "@/hooks/useRoomProducts";
+import { useMarkupSettings } from "@/hooks/useMarkupSettings";
+import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
 
 export const useRoomCardLogic = (room: any, projectId: string, _clientId?: string, onCreateTreatment?: (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => void) => {
   const { data: allTreatments } = useTreatments(projectId);
   const { data: allSurfaces, isLoading: surfacesLoading } = useSurfaces(projectId);
   const { data: projectSummaries } = useProjectWindowSummaries(projectId);
   const { data: roomProducts = [] } = useRoomProducts(room.id);
+  const { data: markupSettings } = useMarkupSettings();
   
   const [pricingFormOpen, setPricingFormOpen] = useState(false);
   const [calculatorDialogOpen, setCalculatorDialogOpen] = useState(false);
@@ -31,47 +34,65 @@ export const useRoomCardLogic = (room: any, projectId: string, _clientId?: strin
     [allTreatments, room.id]
   );
   
-  // DISPLAY-ONLY ARCHITECTURE: Sum saved totals, no recalculations
+  // DISPLAY-ONLY ARCHITECTURE: Sum saved totals WITH MARKUP for retail display
   const roomTotal = useMemo(() => {
-    console.log(`📊 [DISPLAY-ONLY] Room total for ${room.name}`);
+    console.log(`📊 [RETAIL] Room total for ${room.name}`);
     
-    let total = 0;
+    let totalCost = 0;
+    let totalSelling = 0;
 
-    // Sum all window summaries for this room using saved values only
+    // Sum all window summaries for this room - apply markup for retail display
     const windowSummariesForRoom = (projectSummaries?.windows || [])
       .filter((w) => w.room_id === room.id);
     
-    const summaryRoomTotal = windowSummariesForRoom.reduce((sum, w) => {
-      if (!w.summary) return sum;
+    windowSummariesForRoom.forEach(w => {
+      if (!w.summary) return;
       
-      // Use saved total_cost directly - no breakdown recalculation
-      const windowTotal = Number(w.summary.total_cost || 0);
-      console.log(`  Window ${w.window_id}: ${windowTotal}`);
-      return sum + windowTotal;
-    }, 0);
+      const costPrice = Number(w.summary.total_cost || 0);
+      totalCost += costPrice;
+      
+      // Apply markup to get selling price
+      const markupResult = resolveMarkup({
+        gridMarkup: w.summary.pricing_grid_markup || undefined,
+        category: w.summary.treatment_category || w.summary.treatment_type,
+        subcategory: w.summary.subcategory || undefined,
+        markupSettings: markupSettings || undefined
+      });
+      const sellingPrice = applyMarkup(costPrice, markupResult.percentage);
+      totalSelling += sellingPrice;
+      
+      console.log(`  Window ${w.window_id}: Cost ${costPrice} → Sell ${sellingPrice} (${markupResult.percentage}% markup)`);
+    });
 
-    total = summaryRoomTotal;
-
-    // Add room products/services total (these are also saved values)
+    // Add room products/services (these already have markup applied at point of sale)
     const roomProductsTotal = roomProducts.reduce((sum, p) => sum + (p.total_price || 0), 0);
     if (roomProductsTotal > 0) {
       console.log(`  Products/services: ${roomProductsTotal}`);
-      total += roomProductsTotal;
+      totalSelling += roomProductsTotal;
     }
 
-    console.log(`📊 [DISPLAY-ONLY] Final room total: ${total}`);
-    return total;
-  }, [projectSummaries, room.id, room.name, roomProducts]);
+    console.log(`📊 [RETAIL] Final room total: Cost ${totalCost} → Sell ${totalSelling}`);
+    return totalSelling; // Return RETAIL price for display
+  }, [projectSummaries, room.id, room.name, roomProducts, markupSettings]);
 
-  // DISPLAY-ONLY: Sum saved total_cost values directly
+  // DISPLAY-ONLY: Sum selling prices WITH MARKUP for retail display
   const projectTotal = useMemo(() => {
     if (!projectSummaries?.windows) return 0;
     
     return projectSummaries.windows.reduce((sum, w) => {
       if (!w.summary) return sum;
-      return sum + Number(w.summary.total_cost || 0);
+      const costPrice = Number(w.summary.total_cost || 0);
+      
+      // Apply markup to get selling price
+      const markupResult = resolveMarkup({
+        gridMarkup: w.summary.pricing_grid_markup || undefined,
+        category: w.summary.treatment_category || w.summary.treatment_type,
+        subcategory: w.summary.subcategory || undefined,
+        markupSettings: markupSettings || undefined
+      });
+      return sum + applyMarkup(costPrice, markupResult.percentage);
     }, 0);
-  }, [projectSummaries]);
+  }, [projectSummaries, markupSettings]);
 
   // Remove surface creation logic from here - it will be handled by parent
 
