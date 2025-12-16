@@ -5,13 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Edit, Trash2, Upload, X, Settings } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Edit, Trash2, Upload, X, Settings, RefreshCw, ExternalLink } from "lucide-react";
 import { useEnhancedInventoryByCategory, useCreateEnhancedInventoryItem, useUpdateEnhancedInventoryItem, useDeleteEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import type { EnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { EyeletRingSelector, type EyeletRing } from "@/components/inventory/EyeletRingSelector";
 import { useEyeletRings } from "@/hooks/useEyeletRings";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Extended type to include image_url and advanced settings
 interface HeadingItem extends EnhancedInventoryItem {
@@ -33,6 +35,7 @@ export const HeadingInventoryManager = () => {
   const updateItem = useUpdateEnhancedInventoryItem();
   const deleteItem = useDeleteEnhancedInventoryItem();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Cast to our extended type
   const headings = headingsData as HeadingItem[];
@@ -42,6 +45,7 @@ export const HeadingInventoryManager = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [eyeletRings, setEyeletRings] = useState<EyeletRing[]>([]);
+  const [isImportingTwc, setIsImportingTwc] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     fullness_ratio: '' as number | string, // NO hardcoded default - user must enter
@@ -315,6 +319,135 @@ export const HeadingInventoryManager = () => {
     resetForm();
   };
 
+  // Import headings from TWC templates
+  const handleImportFromTwc = async () => {
+    setIsImportingTwc(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "You must be logged in to import headings.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Fetch TWC inventory items with heading questions in metadata
+      const { data: twcItems, error: itemsError } = await supabase
+        .from('enhanced_inventory_items')
+        .select('id, name, metadata')
+        .eq('user_id', user.id)
+        .eq('supplier', 'TWC')
+        .not('metadata', 'is', null);
+
+      if (itemsError) {
+        throw itemsError;
+      }
+
+      if (!twcItems || twcItems.length === 0) {
+        toast({
+          title: "No TWC products found",
+          description: "Import TWC products first to get heading options.",
+        });
+        return;
+      }
+
+      // Extract unique heading values from TWC questions
+      const headingValues = new Set<string>();
+      
+      for (const item of twcItems) {
+        const metadata = item.metadata as any;
+        const twcQuestions = metadata?.twc_questions || [];
+        
+        for (const question of twcQuestions) {
+          if (question.question?.toLowerCase().includes('heading') && question.answers) {
+            for (const answer of question.answers) {
+              if (answer && typeof answer === 'string') {
+                headingValues.add(answer);
+              }
+            }
+          }
+        }
+      }
+
+      if (headingValues.size === 0) {
+        toast({
+          title: "No heading options found",
+          description: "TWC templates don't contain heading questions.",
+        });
+        return;
+      }
+
+      // Get existing headings to avoid duplicates
+      const { data: existingHeadings } = await supabase
+        .from('enhanced_inventory_items')
+        .select('name')
+        .eq('user_id', user.id)
+        .eq('category', 'heading');
+
+      const existingNames = new Set(existingHeadings?.map(h => h.name.toLowerCase()) || []);
+
+      let created = 0;
+      let skipped = 0;
+
+      for (const headingValue of headingValues) {
+        if (existingNames.has(headingValue.toLowerCase())) {
+          skipped++;
+          continue;
+        }
+
+        // Determine fullness_ratio based on heading name
+        const lowerHeading = headingValue.toLowerCase();
+        let fullnessRatio = 2.0;
+        
+        if (lowerHeading.includes('s-fold') || lowerHeading.includes('sfold')) {
+          fullnessRatio = 2.2;
+        } else if (lowerHeading.includes('wave')) {
+          fullnessRatio = 2.5;
+        } else if (lowerHeading.includes('triple')) {
+          fullnessRatio = 2.5;
+        } else if (lowerHeading.includes('tab') || lowerHeading.includes('eyelet')) {
+          fullnessRatio = 1.5;
+        }
+
+        await createItem.mutateAsync({
+          user_id: user.id,
+          name: headingValue,
+          category: 'heading',
+          subcategory: 'curtain_heading',
+          fullness_ratio: fullnessRatio,
+          active: true,
+          show_in_quote: true,
+          description: 'Imported from TWC',
+          metadata: {
+            source: 'twc',
+            imported_at: new Date().toISOString(),
+          },
+        } as any);
+        
+        created++;
+      }
+
+      // Invalidate query to refresh list
+      queryClient.invalidateQueries({ queryKey: ['enhanced-inventory', 'heading'] });
+
+      toast({
+        title: "Import complete",
+        description: `Created ${created} new headings. ${skipped} already existed.`,
+      });
+    } catch (error) {
+      console.error('Error importing TWC headings:', error);
+      toast({
+        title: "Import failed",
+        description: "Failed to import headings from TWC.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsImportingTwc(false);
+    }
+  };
+
   if (isLoading) {
     return <div className="text-center py-8">Loading headings...</div>;
   }
@@ -333,12 +466,26 @@ export const HeadingInventoryManager = () => {
             <p className="text-sm text-muted-foreground">
               Add heading styles with fullness ratios and optional pricing
             </p>
-            <Button 
-              onClick={() => setIsCreating(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Heading Style
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={handleImportFromTwc}
+                disabled={isImportingTwc}
+              >
+                {isImportingTwc ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                )}
+                Import from TWC
+              </Button>
+              <Button 
+                onClick={() => setIsCreating(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Heading Style
+              </Button>
+            </div>
           </div>
 
           {/* Create/Edit Form */}
@@ -609,6 +756,11 @@ export const HeadingInventoryManager = () => {
                   // Ignore parse errors
                 }
 
+                // Check if heading is from TWC
+                const isTwcHeading = heading.metadata && 
+                  typeof heading.metadata === 'object' && 
+                  (heading.metadata as any).source === 'twc';
+
                 return (
                   <div key={heading.id} className="flex items-center gap-4 p-4 border rounded-lg">
                     {/* Image */}
@@ -626,12 +778,20 @@ export const HeadingInventoryManager = () => {
                     
                     {/* Content */}
                     <div className="flex-1">
-                      <h4 className="font-medium">{heading.name}</h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium">{heading.name}</h4>
+                        {isTwcHeading && (
+                          <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            TWC
+                          </Badge>
+                        )}
+                      </div>
                       <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
                         {advancedSettings.use_multiple_ratios ? (
                           <span>Ratios: {advancedSettings.multiple_fullness_ratios?.join(', ')}</span>
                         ) : (
-                          <span>Fullness: {heading.fullness_ratio || 1.0}</span>
+                          <span>Fullness: {heading.fullness_ratio || 1.0}x</span>
                         )}
                         {(heading.labor_hours || 0) > 0 && (
                           <span>Extra Fabric: {heading.labor_hours}m</span>

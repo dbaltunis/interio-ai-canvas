@@ -459,10 +459,101 @@ const handler = async (req: Request): Promise<Response> => {
               continue;
             }
             
-            // CRITICAL FIX: Skip heading_type questions - these duplicate system headings
-            // Users should recreate TWC headings in Settings → Headings instead
+            // AUTO-CREATE HEADING INVENTORY ITEMS from TWC heading questions
+            // This creates proper heading items with fullness_ratio for fabric calculations
             if (question.question.toLowerCase().includes('heading')) {
-              console.log(`Skipping heading question "${question.question}" - use Settings → Headings instead`);
+              console.log(`Processing heading question "${question.question}" - creating heading inventory items`);
+              
+              // Extract heading values and create inventory items
+              if (question.answers && Array.isArray(question.answers)) {
+                const createdHeadingIds: string[] = [];
+                
+                for (const headingValue of question.answers) {
+                  if (!headingValue || typeof headingValue !== 'string') continue;
+                  
+                  // Determine fullness_ratio based on heading name pattern
+                  const lowerHeading = headingValue.toLowerCase();
+                  let fullnessRatio = 2.0; // Default
+                  
+                  if (lowerHeading.includes('s-fold') || lowerHeading.includes('sfold') || lowerHeading.includes('s fold')) {
+                    fullnessRatio = 2.2;
+                  } else if (lowerHeading.includes('wave')) {
+                    fullnessRatio = 2.5;
+                  } else if (lowerHeading.includes('triple') || lowerHeading.includes('3 fold')) {
+                    fullnessRatio = 2.5;
+                  } else if (lowerHeading.includes('double') || lowerHeading.includes('pinch')) {
+                    fullnessRatio = 2.0;
+                  } else if (lowerHeading.includes('tab') || lowerHeading.includes('eyelet') || lowerHeading.includes('grommet')) {
+                    fullnessRatio = 1.5;
+                  } else if (lowerHeading.includes('gather') || lowerHeading.includes('pencil')) {
+                    fullnessRatio = 2.0;
+                  } else if (lowerHeading.includes('rod pocket')) {
+                    fullnessRatio = 2.0;
+                  }
+                  
+                  // Check if this heading already exists for this account
+                  const { data: existingHeading } = await supabaseClient
+                    .from('enhanced_inventory_items')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .eq('category', 'heading')
+                    .eq('name', headingValue)
+                    .maybeSingle();
+                  
+                  if (existingHeading) {
+                    console.log(`Heading "${headingValue}" already exists (${existingHeading.id})`);
+                    createdHeadingIds.push(existingHeading.id);
+                    continue;
+                  }
+                  
+                  // Create new heading inventory item
+                  const { data: newHeading, error: headingError } = await supabaseClient
+                    .from('enhanced_inventory_items')
+                    .insert({
+                      user_id: user.id,
+                      name: headingValue,
+                      category: 'heading',
+                      subcategory: 'curtain_heading',
+                      fullness_ratio: fullnessRatio,
+                      active: true,
+                      show_in_quote: true,
+                      description: `TWC Heading - ${product.description || 'Curtains'}`,
+                      metadata: {
+                        source: 'twc',
+                        twc_product_id: template.id,
+                        twc_product_name: product.description,
+                        imported_at: new Date().toISOString(),
+                      },
+                    })
+                    .select('id')
+                    .single();
+                  
+                  if (headingError) {
+                    console.error(`Error creating heading "${headingValue}":`, headingError);
+                  } else if (newHeading) {
+                    console.log(`✅ Created heading "${headingValue}" with fullness ${fullnessRatio}x (${newHeading.id})`);
+                    createdHeadingIds.push(newHeading.id);
+                  }
+                }
+                
+                // Update template with selected_heading_ids
+                if (createdHeadingIds.length > 0) {
+                  const { error: updateError } = await supabaseClient
+                    .from('curtain_templates')
+                    .update({ 
+                      selected_heading_ids: createdHeadingIds 
+                    })
+                    .eq('id', template.id);
+                  
+                  if (updateError) {
+                    console.error(`Error updating template headings:`, updateError);
+                  } else {
+                    console.log(`✅ Assigned ${createdHeadingIds.length} headings to template ${template.name}`);
+                  }
+                }
+              }
+              
+              // Don't create treatment_option for heading - it's handled via Heading tab
               continue;
             }
             
