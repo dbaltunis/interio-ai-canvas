@@ -128,3 +128,6 @@ verify_jwt = true
 
 [functions.setup-homekaara-account]
 verify_jwt = false
+
+[functions.import-homekaara-fabrics]
+verify_jwt = false
