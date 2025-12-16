@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { GripVertical, Edit, Trash2, Eye, EyeOff, ChevronDown, ChevronRight, Package } from "lucide-react";
+import { GripVertical, Edit, Trash2, Eye, EyeOff, ChevronDown, ChevronRight, Package, BadgeCheck } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { OptionValue, TreatmentOption } from "@/hooks/useTreatmentOptions";
 import { InventoryStockBadge } from "./InventoryStockBadge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getPricingMethodSuffix } from "@/utils/pricingMethodLabels";
+import { SupplierBadge } from "@/components/ui/SupplierBadge";
 
 interface SortableOptionItemProps {
   value: OptionValue;
@@ -127,6 +128,10 @@ export const SortableOptionItem = ({
                 <Package className="h-3 w-3" />
                 Linked
               </Badge>
+            )}
+            {/* Supplier Verification Badge */}
+            {value.extra_data?.source && (
+              <SupplierBadge supplier={value.extra_data.source} showIcon={true} />
             )}
           </div>
           <div className="text-sm text-muted-foreground mt-1">

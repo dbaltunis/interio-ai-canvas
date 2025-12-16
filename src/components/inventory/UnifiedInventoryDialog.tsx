@@ -395,7 +395,7 @@ export const UnifiedInventoryDialog = ({
       ...formData,
       name: formData.name.trim(),
       sku: generatedSku,
-      quantity: trackInventory ? formData.quantity : 0,
+      quantity: trackInventory ? formData.quantity : null,
       // Ensure empty strings become null for UUID fields
       pricing_grid_id: formData.pricing_grid_id || null,
       product_category: formData.product_category || null,
