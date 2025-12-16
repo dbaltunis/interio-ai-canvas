@@ -22,6 +22,8 @@ export const PERMISSION_ALIASES: Record<string, string[]> = {
   'edit_own_jobs': ['edit_assigned_jobs'],
   'edit_own_clients': ['edit_assigned_clients'],
   'manage_settings': ['manage_business_settings', 'manage_integrations'],
+  // Products/Window treatments - ensures Settings > Products tab is always visible
+  'view_window_treatments': ['view_templates', 'view_inventory'],
 };
 
 // Permission Categories with display metadata
@@ -176,6 +178,12 @@ export const PERMISSION_DETAILS: Record<string, {
     description: 'Create and modify treatment templates', 
     category: 'inventory', 
     required: ['view_templates'] 
+  },
+  view_window_treatments: { 
+    label: 'View Products & Templates', 
+    description: 'Access Settings > Products tab for templates and treatment configuration', 
+    category: 'inventory', 
+    required: [] 
   },
   
   // ===== FINANCIAL & PRICING =====
@@ -370,7 +378,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_all_jobs', 'view_assigned_jobs', 'create_jobs', 'edit_all_jobs', 'edit_assigned_jobs', 'delete_jobs',
     'view_all_clients', 'view_assigned_clients', 'create_clients', 'edit_all_clients', 'edit_assigned_clients', 'delete_clients',
     'view_all_calendar', 'view_own_calendar', 'create_appointments',
-    'view_inventory', 'manage_inventory', 'view_templates', 'manage_templates',
+    'view_inventory', 'manage_inventory', 'view_templates', 'manage_templates', 'view_window_treatments',
     'view_selling_prices', 'view_cost_prices', 'view_profit_margins', 'manage_pricing',
     'view_team_members', 'view_team_performance', 'send_team_messages', 'manage_team',
     'view_settings', 'manage_business_settings', 'manage_integrations',
@@ -385,7 +393,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_all_jobs', 'view_assigned_jobs', 'create_jobs', 'edit_all_jobs', 'edit_assigned_jobs', 'delete_jobs',
     'view_all_clients', 'view_assigned_clients', 'create_clients', 'edit_all_clients', 'edit_assigned_clients', 'delete_clients',
     'view_all_calendar', 'view_own_calendar', 'create_appointments',
-    'view_inventory', 'manage_inventory', 'view_templates', 'manage_templates',
+    'view_inventory', 'manage_inventory', 'view_templates', 'manage_templates', 'view_window_treatments',
     'view_selling_prices', 'view_cost_prices', 'view_profit_margins', 'manage_pricing',
     'view_team_members', 'view_team_performance', 'send_team_messages', 'manage_team',
     'view_settings', 'manage_business_settings', 'manage_integrations',
@@ -400,7 +408,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_all_jobs', 'view_assigned_jobs', 'create_jobs', 'edit_all_jobs', 'edit_assigned_jobs', 'delete_jobs',
     'view_all_clients', 'view_assigned_clients', 'create_clients', 'edit_all_clients', 'edit_assigned_clients', 'delete_clients',
     'view_all_calendar', 'view_own_calendar', 'create_appointments',
-    'view_inventory', 'manage_inventory', 'view_templates', 'manage_templates',
+    'view_inventory', 'manage_inventory', 'view_templates', 'manage_templates', 'view_window_treatments',
     'view_selling_prices', 'view_cost_prices', 'view_profit_margins', 'manage_pricing',
     'view_team_members', 'view_team_performance', 'send_team_messages', 'manage_team',
     'view_settings', 'manage_business_settings',
@@ -415,7 +423,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_all_jobs', 'view_assigned_jobs', 'create_jobs', 'edit_all_jobs', 'edit_assigned_jobs',
     'view_all_clients', 'view_assigned_clients', 'create_clients', 'edit_all_clients', 'edit_assigned_clients',
     'view_all_calendar', 'view_own_calendar', 'create_appointments',
-    'view_inventory', 'manage_inventory', 'view_templates',
+    'view_inventory', 'manage_inventory', 'view_templates', 'view_window_treatments',
     'view_selling_prices', 'view_cost_prices', 'view_profit_margins',
     'view_team_members', 'view_team_performance', 'send_team_messages',
     'view_settings',
@@ -429,7 +437,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_assigned_jobs', 'create_jobs', 'edit_assigned_jobs',
     'view_assigned_clients', 'create_clients', 'edit_assigned_clients',
     'view_own_calendar', 'create_appointments',
-    'view_inventory', 'view_templates',
+    'view_inventory', 'view_templates', 'view_window_treatments',
     'view_selling_prices', // Can see what to quote customers
     'view_team_members', 'send_team_messages',
     'view_settings',
