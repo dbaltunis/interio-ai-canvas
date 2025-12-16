@@ -162,6 +162,97 @@ Change to **Inches** and verify same locations show inches.
 
 ---
 
+## 9. TWC INTEGRATION (December 2025)
+
+### Test Steps
+1. Go to **Settings → Suppliers**
+2. Connect TWC supplier (if not connected)
+3. Run **Sync Products from TWC**
+4. Go to **Inventory → Headings**
+5. Click **Import from TWC**
+
+### Verification Points
+| Check | What to Verify | Pass/Fail |
+|-------|----------------|-----------|
+| Product Import | TWC products appear in inventory | ☐ |
+| Heading Import | Headings created with fullness ratios | ☐ |
+| TWC Badge | Imported items show TWC badge | ☐ |
+| Material Filtering | Only relevant materials show per template | ☐ |
+| Options Import | TWC options appear in Settings → Options | ☐ |
+
+---
+
+## 10. PER-TEMPLATE OPTIONS (December 2025)
+
+### Test Steps
+1. Go to **Settings → Templates**
+2. Select a template with options
+3. Open **Options** tab
+4. Drag to reorder options
+5. Click value badges to hide/show
+
+### Verification Points
+| Check | What to Verify | Pass/Fail |
+|-------|----------------|-----------|
+| Order Saved | Reorder persists after page refresh | ☐ |
+| Order in Quote | Quote shows options in configured order | ☐ |
+| Hidden Values | Hidden values don't appear in dropdown | ☐ |
+| Show All/Hide All | Bulk actions work correctly | ☐ |
+
+---
+
+## 11. MARKUP SYSTEM (December 2025)
+
+### Test Steps
+1. Go to **Settings → Pricing → Grids**
+2. Set markup % on a pricing grid
+3. Create quote using that grid
+4. Verify selling price includes markup
+
+### Verification Points
+| Check | What to Verify | Pass/Fail |
+|-------|----------------|-----------|
+| Grid Markup | Grid markup % applies to cost | ☐ |
+| Markup Hierarchy | Grid > Category > Global priority works | ☐ |
+| Discount on Retail | Discount applied to selling price | ☐ |
+| GP% Display | Gross profit % shows correctly | ☐ |
+
+---
+
+## 12. TARGET TRACKING (December 2025)
+
+### Test Steps
+1. Go to **Settings → Team → [User] → Dashboard**
+2. Enable target on a KPI (e.g., Total Quotes)
+3. Set target value (e.g., 10) and period (Weekly)
+4. Save and view user's dashboard
+
+### Verification Points
+| Check | What to Verify | Pass/Fail |
+|-------|----------------|-----------|
+| Progress Bar | Shows current/target ratio | ☐ |
+| Color Status | Red/Yellow/Green based on % | ☐ |
+| Period Reset | Resets at correct interval | ☐ |
+| Database Persist | Settings persist after logout | ☐ |
+
+---
+
+## 13. MULTI-ACCOUNT ISOLATION (December 2025)
+
+### Test Setup
+Create 2 test accounts with different data
+
+### Verification Points
+| Check | What to Verify | Pass/Fail |
+|-------|----------------|-----------|
+| Templates | Account A can't see Account B templates | ☐ |
+| Inventory | Account A can't see Account B inventory | ☐ |
+| Options | Account A can't see Account B custom options | ☐ |
+| Pricing Grids | Account A can't see Account B grids | ☐ |
+| System Defaults | Both accounts see system defaults | ☐ |
+
+---
+
 ## Critical Issues Log
 
 Record any issues found during testing:

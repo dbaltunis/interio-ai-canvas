@@ -4,6 +4,155 @@ All notable changes to InterioApp will be documented in this file.
 
 ---
 
+## Version 2.1.0 (December 2025)
+
+### 🎉 TWC Integration Features
+
+#### Supplier Product Import
+- **Auto-Import Products**: Import window treatments directly from TWC suppliers
+- **Heading Auto-Creation**: Headings automatically created with fullness_ratio from TWC questions
+- **"Import from TWC" Button**: One-click import in Heading Manager
+- **Parent Product Filtering**: Fabrics/materials filtered by parent product ID for accurate selection
+- **Hardware Detection**: Curtain tracks and hardware prevented from importing as treatment templates
+
+#### Per-Template Option Configuration
+- **Drag-and-Drop Ordering**: Reorder options per template with grip handles
+- **Value Visibility Filtering**: Show/hide specific option values per template
+- **Show All / Hide All**: Bulk actions for option value management
+- **Order Persistence**: Option order preserved in quotes and work orders
+- **TWC Badge**: Blue badges identify supplier-imported options
+
+#### Material Import
+- **Color Consolidation**: Color variants consolidated into single material with tags
+- **Price Group Assignment**: Bulk assign price groups to 600+ materials
+- **Supplier Verification Badge**: TWC-sourced items display verification badge
+
+---
+
+### 💰 Pricing System Enhancements
+
+#### Markup Hierarchy System
+```
+Grid Markup % (highest priority)
+    ↓ if not set
+Category/Subcategory Markup %
+    ↓ if not set
+Global Default Markup %
+    ↓ minimum
+Minimum Markup Floor
+```
+
+#### New Features
+- **Per-Grid Markup**: Set markup percentage on each pricing grid
+- **Inline Markup Panel**: Edit markups directly in grid manager
+- **Discount on Retail**: Discounts now applied to retail price (after markup)
+- **Real-time GP%**: Gross profit percentage updates in real-time
+- **Centralized Formulas**: All calculations in `calculationFormulas.ts`
+
+#### Three Fabric Pricing Methods
+1. **Per Running Meter/Yard**: Linear pricing for narrow-width fabrics
+2. **Per Square Meter/Foot**: Area-based pricing for wide-width fabrics
+3. **Fixed Price**: Flat rate pricing
+
+---
+
+### 🎯 Dashboard & Target Tracking
+
+#### KPI Targets
+- **Per-User Targets**: Set targets for individual team members
+- **Multiple Periods**: Daily, Weekly, Monthly, Quarterly, Yearly targets
+- **Progress Tracking**: Visual progress bars on KPI cards
+- **Color-Coded Status**:
+  - 🔴 Red: <50% of target
+  - 🟡 Yellow: 50-80% of target
+  - 🟢 Green: >80% of target
+
+#### Dashboard Customization
+- **Admin Configuration**: Assign KPIs/widgets per user in Settings → Team
+- **Database Persistence**: Dashboard preferences saved to database
+- **Drag-and-Drop Widgets**: Rearrange dashboard widgets
+- **Reset to Defaults**: One-click reset option
+
+#### Dealer Performance Widget
+- **Team Leaderboard**: View performance across team members
+- **Quote Count & Revenue**: Track individual dealer metrics
+- **Conversion Rates**: Compare conversion percentages
+- **Permission-Gated**: Requires `view_team_performance` permission
+
+---
+
+### 🔒 Security & Multi-Tenancy Fixes
+
+#### RLS Stacking Breach Fix
+- **Critical Fix**: Old broken policies with `OR is_admin()` explicitly dropped
+- **50+ Tables Fixed**: Cross-account leakage eliminated
+- **Pattern**: New policies use `auth.uid() = user_id OR is_same_account(user_id)`
+
+#### Account Isolation
+- **Verified Isolation**: Each account sees only their own data + system defaults
+- **Account-Scoped Constraints**: Unique constraints include account_id
+- **Defense-in-Depth**: Explicit user_id filtering + RLS policies
+
+#### New Permissions
+- `view_messages`: Team communication access
+- `view_markups`: See cost/profit/margins (sensitive)
+- `view_team_performance`: See other users' KPIs (sensitive)
+- **Permission Aliases**: Backward-compatible mapping for legacy permissions
+
+---
+
+### 📦 Inventory Improvements
+
+#### Color Management
+- **Color Tags**: Add multiple colors to materials/fabrics
+- **Tag Filtering**: Excludes metadata tags (wide_width, blockout, etc.)
+- **Color Selector**: Only actual colors display in worksheet selector
+
+#### Stock Tracking
+- **Out of Stock Badge**: Only shows when tracking enabled
+- **Tracking Toggle**: Enable/disable inventory tracking per item
+- **Low Stock Warnings**: Alerts for items below threshold
+
+#### Price Groups
+- **Bulk Assignment**: Select multiple items → Set Price Group action
+- **Filter by Group**: View items by price group
+- **"No Price Group"**: Filter to find unassigned items
+
+---
+
+### 🎨 UX Improvements
+
+#### Currency & Units
+- **Centralized Currency Symbols**: `getCurrencySymbol()` utility replaces 24+ hardcoded mappings
+- **Imperial/Metric Support**: Full fabric unit conversion (yards, feet, inches, cm, m)
+- **Unit Labels**: Dynamic unit labels based on user preferences
+
+#### Options Display
+- **Required Validation**: Only validates enabled template options
+- **Quick-Fix Buttons**: "Configure Template" button on validation errors
+- **Order Preserved**: Options display in same order as template configuration
+
+#### Document Numbering
+- **Number Reuse**: Previously assigned numbers reused when status changes back
+- **Stage-Based Storage**: draft_number, quote_number, order_number, invoice_number columns
+- **Single Display**: Simplified to single "Job Number" with status badge
+
+---
+
+### 🔧 Technical Improvements
+
+#### Calculation Architecture
+- **Centralized Formulas**: `src/utils/calculationFormulas.ts` as single source of truth
+- **Unit Suffixes**: All variables include unit (Cm, M, Percent) for clarity
+- **Formula Documentation**: JSDoc comments show exact calculation logic
+
+#### Display/Save Consistency
+- **Live Results Passed**: `onBlindCostsCalculated` callback ensures popup = saved price
+- **No Re-calculation**: Saved data displayed as-is, never recalculated on load
+- **Explicit Sources**: Every value traceable to single authoritative source
+
+---
+
 ## Version 2.0.1 (November 21, 2025)
 
 ### 🎉 New Features

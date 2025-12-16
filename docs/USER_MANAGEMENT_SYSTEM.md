@@ -4,6 +4,32 @@
 
 The user management system supports multi-tenant account structures with automatic permission inheritance, role-based access control, and seamless invitation workflows.
 
+---
+
+## Quick Setup for New Accounts
+
+### Automatic Initialization
+When a new account is created, the system automatically:
+- Creates user profile with default role (Owner for new accounts)
+- Seeds default permissions based on role
+- Initializes account settings:
+  - Measurement units: MM (millimeters)
+  - Currency: Based on locale
+  - Tax settings: Default rates
+- Creates number sequences (JOB, QUO, ORD, INV)
+- Links to parent account (if invited)
+
+### What New Users Get
+| Component | Default |
+|-----------|---------|
+| Measurement Unit | MM |
+| Currency | USD (or locale-based) |
+| Tax Rate | 0% |
+| Role | Owner (new) / Invited role |
+| Permissions | All for Owner / Role-based |
+
+---
+
 ## Key Features
 
 ### 1. Account Hierarchy
@@ -101,6 +127,89 @@ All data access respects both account boundaries and user permissions.
 3. **Account Isolation**: Users can only access their account's data
 4. **Audit Logging**: All permission changes are logged
 5. **Automatic Cleanup**: Permissions are kept in sync automatically
+
+---
+
+## New Permissions (December 2025)
+
+### Added Permissions
+| Permission | Description | Default Access |
+|------------|-------------|----------------|
+| `view_messages` | Team communication access | Manager+ |
+| `view_markups` | See cost/profit/margins (sensitive) | Manager+ |
+| `view_team_performance` | See other users' KPIs (sensitive) | Manager+ |
+
+### Permission Aliases
+For backward compatibility, old permission names map to new granular versions:
+
+| Old Permission | Maps To |
+|----------------|---------|
+| `view_jobs` | `view_all_jobs`, `view_assigned_jobs` |
+| `view_clients` | `view_all_clients`, `view_assigned_clients` |
+| `view_calendar` | `view_all_calendar`, `view_own_calendar` |
+| `view_analytics` | `view_team_performance` |
+
+### Checking Permissions
+```typescript
+// Old way (still works)
+const canViewJobs = useHasPermission('view_jobs');
+
+// New granular way
+const canViewAllJobs = useHasPermission('view_all_jobs');
+const canViewAssignedJobs = useHasPermission('view_assigned_jobs');
+```
+
+---
+
+## Team Member Invitation Flow
+
+### Step 1: Send Invitation
+1. Go to **Settings → Team**
+2. Click **+ Invite Member**
+3. Enter email and select role
+4. Click **Send Invitation**
+
+### Step 2: User Accepts
+1. User receives email with invitation link
+2. Clicks link to create account (or login)
+3. System automatically:
+   - Links user to parent account
+   - Assigns selected role
+   - Seeds role-based permissions
+   - Inherits account settings
+
+### Step 3: Verify Access
+1. New user logs in
+2. Sees shared account data (clients, projects)
+3. Has permissions based on assigned role
+
+---
+
+## Permission Quick Reference
+
+### By Role
+
+| Permission | Owner | Admin | Manager | Staff |
+|------------|-------|-------|---------|-------|
+| View all jobs | ✅ | ✅ | ✅ | ❌ |
+| View own jobs | ✅ | ✅ | ✅ | ✅ |
+| Create jobs | ✅ | ✅ | ✅ | ✅ |
+| Delete jobs | ✅ | ✅ | ❌ | ❌ |
+| View all clients | ✅ | ✅ | ✅ | ❌ |
+| View assigned clients | ✅ | ✅ | ✅ | ✅ |
+| View markups | ✅ | ✅ | ✅ | ❌ |
+| View team performance | ✅ | ✅ | ✅ | ❌ |
+| Manage team | ✅ | ✅ | ❌ | ❌ |
+| Manage settings | ✅ | ✅ | ❌ | ❌ |
+
+### Custom Permissions
+Override role defaults per user:
+1. Settings → Team → [User]
+2. Enable **Custom Permissions**
+3. Toggle individual permissions
+4. Changes apply immediately
+
+---
 
 ## Future Maintenance
 
