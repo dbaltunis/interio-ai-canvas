@@ -69,17 +69,23 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
   }
 
   // Calculate values before and after discount
+  // CRITICAL: sellingTotal IS the original (pre-discount) total
+  // We calculate discountedSellingTotal by subtracting the discount
   const hasDiscount = discount && discount.amount > 0;
-  const originalSellingTotal = hasDiscount ? sellingTotal + discount.amount : sellingTotal;
+  const originalSellingTotal = sellingTotal; // This is the PRE-discount total
+  const discountedSellingTotal = hasDiscount ? sellingTotal - discount.amount : sellingTotal;
   
-  const profit = sellingTotal - costTotal;
+  // Profit and margin are calculated on DISCOUNTED totals (what client actually pays)
+  const profit = discountedSellingTotal - costTotal;
   const originalProfit = originalSellingTotal - costTotal;
   const profitReduction = hasDiscount ? originalProfit - profit : 0;
   
-  const marginPercentage = calculateGrossMargin(costTotal, sellingTotal);
+  // GP% uses discounted selling total (actual revenue received)
+  const marginPercentage = calculateGrossMargin(costTotal, discountedSellingTotal);
   const originalMarginPercentage = hasDiscount ? calculateGrossMargin(costTotal, originalSellingTotal) : marginPercentage;
   
-  const markupPercentage = calculateMarkup(costTotal, sellingTotal);
+  // Markup% uses original selling total (pricing strategy)
+  const markupPercentage = calculateMarkup(costTotal, discountedSellingTotal);
   const originalMarkupPercentage = hasDiscount ? calculateMarkup(costTotal, originalSellingTotal) : markupPercentage;
   
   const profitStatus = getProfitStatus(marginPercentage);
@@ -269,11 +275,11 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
                         {formatCurrency(costTotal, currency)}
                       </td>
                       <td className="text-right py-2 font-mono">
-                        {formatCurrency(hasDiscount ? originalSellingTotal : sellingTotal, currency)}
+                        {formatCurrency(originalSellingTotal, currency)}
                       </td>
                       {hasDiscount && (
                         <td className="text-right py-2 font-mono text-amber-600 dark:text-amber-400">
-                          {formatCurrency(sellingTotal, currency)}
+                          {formatCurrency(discountedSellingTotal, currency)}
                         </td>
                       )}
                       <td className="text-right py-2 font-mono text-muted-foreground">
