@@ -114,43 +114,24 @@ export const useUpdateTemplateOptionOrder = () => {
     }) => {
       if (!user) throw new Error("User not authenticated");
 
-      // Update each option's order
-      for (const opt of orderedOptions) {
-        // Check if setting exists
-        const { data: existing } = await supabase
-          .from('template_option_settings')
-          .select('id')
-          .eq('template_id', templateId)
-          .eq('treatment_option_id', opt.treatmentOptionId)
-          .maybeSingle();
+      // Batch upsert all options at once
+      const upsertData = orderedOptions.map(opt => ({
+        template_id: templateId,
+        treatment_option_id: opt.treatmentOptionId,
+        is_enabled: true,
+        order_index: opt.orderIndex,
+      }));
 
-        if (existing) {
-          // Update existing setting with order
-          const { error } = await supabase
-            .from('template_option_settings')
-            .update({ order_index: opt.orderIndex })
-            .eq('id', existing.id);
+      const { error } = await supabase
+        .from('template_option_settings')
+        .upsert(upsertData, { 
+          onConflict: 'template_id,treatment_option_id',
+          ignoreDuplicates: false 
+        });
 
-          if (error) {
-            console.error('Error updating option order:', error);
-            throw error;
-          }
-        } else {
-          // Create new setting with order
-          const { error } = await supabase
-            .from('template_option_settings')
-            .insert({
-              template_id: templateId,
-              treatment_option_id: opt.treatmentOptionId,
-              is_enabled: true,
-              order_index: opt.orderIndex,
-            });
-
-          if (error) {
-            console.error('Error creating option order:', error);
-            throw error;
-          }
-        }
+      if (error) {
+        console.error('Error updating option order:', error);
+        throw error;
       }
     },
     onSuccess: (_, variables) => {
