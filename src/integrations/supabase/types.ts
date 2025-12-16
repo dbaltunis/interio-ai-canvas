@@ -8144,6 +8144,7 @@ export type Database = {
       template_option_settings: {
         Row: {
           created_at: string
+          hidden_value_ids: string[] | null
           id: string
           is_enabled: boolean
           order_index: number | null
@@ -8153,6 +8154,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          hidden_value_ids?: string[] | null
           id?: string
           is_enabled?: boolean
           order_index?: number | null
@@ -8162,6 +8164,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          hidden_value_ids?: string[] | null
           id?: string
           is_enabled?: boolean
           order_index?: number | null

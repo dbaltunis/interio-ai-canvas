@@ -4,10 +4,16 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { ExternalLink, Loader2, RefreshCw, Package, GripVertical } from "lucide-react";
+import { ExternalLink, Loader2, RefreshCw, Package, GripVertical, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAllTreatmentOptions } from "@/hooks/useTreatmentOptionsManagement";
-import { useTemplateOptionSettings, useToggleTemplateOption, useUpdateTemplateOptionOrder } from "@/hooks/useTemplateOptionSettings";
+import { 
+  useTemplateOptionSettings, 
+  useToggleTemplateOption, 
+  useUpdateTemplateOptionOrder,
+  useToggleValueVisibility,
+  useBulkToggleValueVisibility
+} from "@/hooks/useTemplateOptionSettings";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -46,7 +52,10 @@ interface SortableOptionItemProps {
   enabled: boolean;
   isTWCOption: boolean;
   templateId?: string;
+  hiddenValueIds: string[];
   onToggle: (optionId: string, currentEnabled: boolean) => void;
+  onToggleValue: (optionId: string, valueId: string, hide: boolean) => void;
+  onBulkToggle: (optionId: string, valueIds: string[], hide: boolean) => void;
   isToggling: boolean;
 }
 
@@ -55,7 +64,10 @@ const SortableOptionItem = ({
   enabled, 
   isTWCOption, 
   templateId, 
+  hiddenValueIds,
   onToggle,
+  onToggleValue,
+  onBulkToggle,
   isToggling 
 }: SortableOptionItemProps) => {
   const {
@@ -73,8 +85,27 @@ const SortableOptionItem = ({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const visibleValues = option.option_values?.filter((v: any) => !v.hidden_by_user) || [];
-  const hiddenValues = option.option_values?.filter((v: any) => v.hidden_by_user) || [];
+  const allValues = option.option_values?.filter((v: any) => !v.hidden_by_user) || [];
+  const visibleValues = allValues.filter((v: any) => !hiddenValueIds.includes(v.id));
+  const hiddenCount = hiddenValueIds.filter(id => allValues.some((v: any) => v.id === id)).length;
+
+  const handleValueClick = (valueId: string) => {
+    if (!templateId) return;
+    const isHidden = hiddenValueIds.includes(valueId);
+    onToggleValue(option.id, valueId, !isHidden);
+  };
+
+  const handleShowAll = () => {
+    if (!templateId) return;
+    const allValueIds = allValues.map((v: any) => v.id);
+    onBulkToggle(option.id, allValueIds, false);
+  };
+
+  const handleHideAll = () => {
+    if (!templateId) return;
+    const allValueIds = allValues.map((v: any) => v.id);
+    onBulkToggle(option.id, allValueIds, true);
+  };
 
   return (
     <div ref={setNodeRef} style={style}>
@@ -97,11 +128,11 @@ const SortableOptionItem = ({
                 </Badge>
               )}
               <Badge variant="secondary" className="text-xs">
-                {visibleValues.length} option{visibleValues.length !== 1 ? 's' : ''}
+                {visibleValues.length} visible
               </Badge>
-              {hiddenValues.length > 0 && (
-                <Badge variant="outline" className="text-xs">
-                  {hiddenValues.length} hidden
+              {hiddenCount > 0 && (
+                <Badge variant="outline" className="text-xs text-muted-foreground">
+                  {hiddenCount} hidden
                 </Badge>
               )}
               {!enabled && (
@@ -126,23 +157,63 @@ const SortableOptionItem = ({
           </div>
         </AccordionTrigger>
         <AccordionContent>
-          <div className="space-y-2 pl-10 pr-4 pb-2">
-            {visibleValues.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {visibleValues.map((value: any) => (
-                  <Badge key={value.id} variant="outline" className="text-xs">
-                    {value.label}
-                    {value.extra_data?.price > 0 && (
-                      <span className="ml-1 text-muted-foreground">
-                        ${value.extra_data.price.toFixed(2)}
-                      </span>
-                    )}
-                  </Badge>
-                ))}
-              </div>
+          <div className="space-y-3 pl-10 pr-4 pb-3">
+            {allValues.length > 0 ? (
+              <>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs text-muted-foreground">Click values to show/hide for this template:</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 text-xs px-2"
+                    onClick={handleShowAll}
+                    disabled={!templateId}
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    Show All
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 text-xs px-2"
+                    onClick={handleHideAll}
+                    disabled={!templateId}
+                  >
+                    <EyeOff className="h-3 w-3 mr-1" />
+                    Hide All
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {allValues.map((value: any) => {
+                    const isHidden = hiddenValueIds.includes(value.id);
+                    return (
+                      <Badge 
+                        key={value.id} 
+                        variant={isHidden ? "outline" : "secondary"}
+                        className={`text-xs cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 ${
+                          isHidden ? 'opacity-50 line-through' : ''
+                        } ${!templateId ? 'cursor-not-allowed' : ''}`}
+                        onClick={() => handleValueClick(value.id)}
+                      >
+                        {isHidden ? (
+                          <EyeOff className="h-3 w-3 mr-1" />
+                        ) : (
+                          <Eye className="h-3 w-3 mr-1" />
+                        )}
+                        {value.label}
+                        {value.extra_data?.price > 0 && (
+                          <span className="ml-1 text-muted-foreground">
+                            ${value.extra_data.price.toFixed(2)}
+                          </span>
+                        )}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </>
             ) : (
               <p className="text-sm text-muted-foreground">
-                No visible options configured
+                No options configured
               </p>
             )}
           </div>
@@ -162,6 +233,36 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
   const { data: templateSettings = [] } = useTemplateOptionSettings(templateId);
   const toggleOption = useToggleTemplateOption();
   const updateOrder = useUpdateTemplateOptionOrder();
+  const toggleValueVisibility = useToggleValueVisibility();
+  const bulkToggleVisibility = useBulkToggleValueVisibility();
+  
+  // Get hidden value IDs for a specific option
+  const getHiddenValueIds = (optionId: string): string[] => {
+    const setting = templateSettings.find(s => s.treatment_option_id === optionId);
+    return (setting?.hidden_value_ids as string[]) || [];
+  };
+  
+  // Handle single value visibility toggle
+  const handleToggleValue = (optionId: string, valueId: string, hide: boolean) => {
+    if (!templateId) return;
+    toggleValueVisibility.mutate({
+      templateId,
+      treatmentOptionId: optionId,
+      valueId,
+      hide,
+    });
+  };
+  
+  // Handle bulk value visibility toggle
+  const handleBulkToggle = (optionId: string, valueIds: string[], hide: boolean) => {
+    if (!templateId) return;
+    bulkToggleVisibility.mutate({
+      templateId,
+      treatmentOptionId: optionId,
+      valueIds,
+      hide,
+    });
+  };
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -464,9 +565,10 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
                 strategy={verticalListSortingStrategy}
               >
                 <Accordion type="multiple" className="w-full space-y-0">
-                  {localOrderedOptions.map((option) => {
+                {localOrderedOptions.map((option) => {
                     const enabled = isOptionEnabled(option.id);
                     const isTWCOption = (option as any).source === 'twc';
+                    const hiddenValueIds = getHiddenValueIds(option.id);
                     
                     return (
                       <SortableOptionItem
@@ -475,7 +577,10 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
                         enabled={enabled}
                         isTWCOption={isTWCOption}
                         templateId={templateId}
+                        hiddenValueIds={hiddenValueIds}
                         onToggle={handleToggle}
+                        onToggleValue={handleToggleValue}
+                        onBulkToggle={handleBulkToggle}
                         isToggling={toggleOption.isPending}
                       />
                     );
