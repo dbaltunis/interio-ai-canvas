@@ -18,10 +18,17 @@ export const useQuoteDiscount = (projectId?: string) => {
            (item.unit_price && item.quantity ? item.unit_price * item.quantity : 0) || 0;
   };
 
+  /**
+   * Calculate discount amount based on configuration
+   * @param items - Quote line items
+   * @param config - Discount configuration (type, value, scope)
+   * @param subtotal - RETAIL PRICE (with markup applied), NOT cost price.
+   *                   Discount is applied to the selling price, not the cost.
+   */
   const calculateDiscountAmount = (
     items: any[],
     config: DiscountConfig,
-    subtotal: number
+    subtotal: number // This is RETAIL/SELLING price after markup, not cost
   ): number => {
     let discountableAmount = 0;
 
