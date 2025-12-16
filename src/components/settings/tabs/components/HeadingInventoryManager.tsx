@@ -361,10 +361,15 @@ export const HeadingInventoryManager = () => {
         const twcQuestions = metadata?.twc_questions || [];
         
         for (const question of twcQuestions) {
-          if (question.question?.toLowerCase().includes('heading') && question.answers) {
-            for (const answer of question.answers) {
-              if (answer && typeof answer === 'string') {
-                headingValues.add(answer);
+          // TWC uses 'name' for question name and 'options' for answers
+          const questionName = question.name?.toLowerCase() || '';
+          const questionOptions = question.options || [];
+          
+          // Look for heading-related questions (Heading Type, Carrier Type for S-Fold/Wave)
+          if ((questionName.includes('heading') || questionName.includes('carrier')) && questionOptions.length > 0) {
+            for (const option of questionOptions) {
+              if (option && typeof option === 'string') {
+                headingValues.add(option);
               }
             }
           }
