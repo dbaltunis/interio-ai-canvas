@@ -115,33 +115,47 @@ const handler = async (req: Request): Promise<Response> => {
       const lowerDesc = description.toLowerCase();
       
       // ✅ HARDWARE DETECTION - These are NOT treatments, don't create templates
-      // Detect tracks, rods, brackets, motors, chains, accessories
-      if (lowerDesc.includes('track') && !lowerDesc.includes('panel track')) {
-        return 'hardware'; // Curtain tracks, blind tracks
+      // Pattern 1: "Tracks Only", "Track Only" - these are hardware components
+      if (lowerDesc.includes('tracks only') || lowerDesc.includes('track only')) {
+        return 'hardware';
       }
+      // Pattern 2: "Slats Only" - replacement slats without blind system
+      if (lowerDesc.includes('slats only') || lowerDesc.includes('slat only')) {
+        return 'hardware'; // Replacement parts, not full product
+      }
+      // Pattern 3: Curtain tracks (but not panel track systems)
+      if (lowerDesc.includes('curtain track') || 
+          (lowerDesc.includes('track') && lowerDesc.includes('residential')) ||
+          (lowerDesc.includes('track') && lowerDesc.includes('designer'))) {
+        return 'hardware';
+      }
+      // Pattern 4: Generic hardware items
       if (lowerDesc.includes('bracket') || lowerDesc.includes('rod') || 
           lowerDesc.includes('motor') || lowerDesc.includes('chain') ||
           lowerDesc.includes('accessory') || lowerDesc.includes('accessories') ||
-          lowerDesc.includes('remote') || lowerDesc.includes('control')) {
+          lowerDesc.includes('remote') || lowerDesc.includes('control') ||
+          lowerDesc.includes('component') || lowerDesc.includes('spare part')) {
         return 'hardware';
       }
       
-      // Venetian detection - aluminium, wood, slats = venetian
-      if (lowerDesc.includes('aluminium') || lowerDesc.includes('aluminum') || 
+      // Venetian detection - aluminium, wood, slats (but NOT "slats only")
+      if ((lowerDesc.includes('aluminium') || lowerDesc.includes('aluminum') || 
           lowerDesc.includes('wood') || lowerDesc.includes('venetian') ||
-          lowerDesc.includes('slat')) {
+          lowerDesc.includes('slat')) && !lowerDesc.includes('only')) {
         return 'venetian_blinds';
       }
       
       // Other types - order matters for specificity
       if (lowerDesc.includes('roller')) return 'roller_blinds';
-      if (lowerDesc.includes('vertical')) return 'vertical_blinds';
+      // Vertical blinds (but not "track only" which was caught above)
+      if (lowerDesc.includes('vertical') && !lowerDesc.includes('track only')) return 'vertical_blinds';
       if (lowerDesc.includes('cellular') || lowerDesc.includes('honeycomb')) return 'cellular_blinds';
       if (lowerDesc.includes('roman')) return 'roman_blinds';
       if (lowerDesc.includes('shutter')) return 'shutters';
       if (lowerDesc.includes('awning')) return 'awning';
-      if (lowerDesc.includes('panel')) return 'panel_glide';
-      if (lowerDesc.includes('curtain')) return 'curtains';
+      // Panel glide systems (but not "tracks only" which was caught above)
+      if (lowerDesc.includes('panel') && !lowerDesc.includes('tracks only')) return 'panel_glide';
+      if (lowerDesc.includes('curtain') && !lowerDesc.includes('track')) return 'curtains';
       
       return 'roller_blinds'; // Safe fallback
     };
@@ -159,7 +173,18 @@ const handler = async (req: Request): Promise<Response> => {
       const lowerDesc = description.toLowerCase();
       
       // ✅ HARDWARE DETECTION - tracks, brackets, motors, accessories
-      if (lowerDesc.includes('track') && !lowerDesc.includes('panel track')) {
+      // Pattern 1: "Tracks Only", "Track Only" - hardware components
+      if (lowerDesc.includes('tracks only') || lowerDesc.includes('track only')) {
+        return { category: 'hardware', subcategory: 'track' };
+      }
+      // Pattern 2: "Slats Only" - replacement parts
+      if (lowerDesc.includes('slats only') || lowerDesc.includes('slat only')) {
+        return { category: 'hardware', subcategory: 'slat' };
+      }
+      // Pattern 3: Curtain tracks
+      if (lowerDesc.includes('curtain track') || 
+          (lowerDesc.includes('track') && lowerDesc.includes('residential')) ||
+          (lowerDesc.includes('track') && lowerDesc.includes('designer'))) {
         return { category: 'hardware', subcategory: 'track' };
       }
       if (lowerDesc.includes('bracket')) {
@@ -512,6 +537,34 @@ const handler = async (req: Request): Promise<Response> => {
               optionId = newOption.id;
               totalOptionsCreated++;
               console.log(`Created new option ${optionKey} (${optionId}) for account ${accountId}`);
+              
+              // ✅ FIX: Also create option_type_categories entry so option appears in Settings → Products → Options
+              const { data: existingCategory } = await supabaseClient
+                .from('option_type_categories')
+                .select('id')
+                .eq('account_id', accountId)
+                .eq('type_key', optionKey)
+                .eq('treatment_category', template.treatment_category)
+                .maybeSingle();
+              
+              if (!existingCategory) {
+                const { error: categoryError } = await supabaseClient
+                  .from('option_type_categories')
+                  .insert({
+                    account_id: accountId,
+                    type_key: optionKey,
+                    type_label: question.question,
+                    treatment_category: template.treatment_category,
+                    sort_order: 0,
+                    active: true,
+                  });
+                
+                if (categoryError) {
+                  console.error(`Error creating option_type_categories for ${optionKey}:`, categoryError);
+                } else {
+                  console.log(`Created option_type_categories for TWC option ${optionKey}`);
+                }
+              }
             }
 
             // Check if template_option_settings already exists
