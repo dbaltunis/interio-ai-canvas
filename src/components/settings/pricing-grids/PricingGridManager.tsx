@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Upload, Trash2, Grid3x3, Building2, Layers, FolderOpen, Pencil, Check, X, HelpCircle } from 'lucide-react';
+import { Plus, Upload, Trash2, Grid3x3, Building2, Layers, FolderOpen, Pencil, Check, X, HelpCircle, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,6 +18,7 @@ import { CategoryProductTypeGuide } from './CategoryProductTypeGuide';
 import { PriceGroupAutocomplete } from './PriceGroupAutocomplete';
 import { MaterialMatchPreview } from './MaterialMatchPreview';
 import { HowPricingWorksGuide } from './HowPricingWorksGuide';
+import { PricingSystemGuide } from '@/components/guides/PricingSystemGuide';
 import { useVendors } from '@/hooks/useVendors';
 import { 
   getTreatmentOptions, 
@@ -49,6 +50,9 @@ export const PricingGridManager = () => {
   // Inline edit state
   const [editingGridId, setEditingGridId] = useState<string | null>(null);
   const [editMarkupValue, setEditMarkupValue] = useState<string>('');
+  
+  // Guide modal state
+  const [showGuide, setShowGuide] = useState(false);
 
   // Get selected treatment config for display
   const selectedTreatmentConfig = useMemo(() => {
@@ -254,6 +258,9 @@ export const PricingGridManager = () => {
 
   return (
     <div className="space-y-6">
+      {/* Interactive Guide Modal */}
+      <PricingSystemGuide isOpen={showGuide} onClose={() => setShowGuide(false)} />
+      
       {/* Help Section */}
       <div className="flex items-center justify-between">
         <div>
@@ -262,7 +269,18 @@ export const PricingGridManager = () => {
             Upload grids with supplier + product type + price group for automatic matching
           </p>
         </div>
-        <PricingGridExplainer />
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setShowGuide(true)}
+            className="flex items-center gap-2"
+          >
+            <BookOpen className="h-4 w-4" />
+            How It Works
+          </Button>
+          <PricingGridExplainer />
+        </div>
       </div>
 
       {/* Grid Coverage Dashboard */}
