@@ -4,13 +4,30 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { ExternalLink, Loader2, RefreshCw, Package } from "lucide-react";
+import { ExternalLink, Loader2, RefreshCw, Package, GripVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAllTreatmentOptions } from "@/hooks/useTreatmentOptionsManagement";
-import { useTemplateOptionSettings, useToggleTemplateOption } from "@/hooks/useTemplateOptionSettings";
+import { useTemplateOptionSettings, useToggleTemplateOption, useUpdateTemplateOptionOrder } from "@/hooks/useTemplateOptionSettings";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface TWCQuestion {
   name: string;
@@ -21,58 +38,203 @@ interface TWCQuestion {
 interface TemplateOptionsManagerProps {
   treatmentCategory: string;
   templateId?: string;
-  linkedTWCProduct?: any; // Pass linked TWC product for option sync
+  linkedTWCProduct?: any;
 }
+
+interface SortableOptionItemProps {
+  option: any;
+  enabled: boolean;
+  isTWCOption: boolean;
+  templateId?: string;
+  onToggle: (optionId: string, currentEnabled: boolean) => void;
+  isToggling: boolean;
+}
+
+const SortableOptionItem = ({ 
+  option, 
+  enabled, 
+  isTWCOption, 
+  templateId, 
+  onToggle,
+  isToggling 
+}: SortableOptionItemProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: option.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const visibleValues = option.option_values?.filter((v: any) => !v.hidden_by_user) || [];
+  const hiddenValues = option.option_values?.filter((v: any) => v.hidden_by_user) || [];
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <AccordionItem value={option.id} className="border rounded-lg mb-2 bg-background">
+        <AccordionTrigger className="hover:no-underline px-3">
+          <div className="flex items-center justify-between w-full pr-4">
+            <div className="flex items-center gap-2">
+              <div
+                {...attributes}
+                {...listeners}
+                className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <GripVertical className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <span className="font-medium">{option.label}</span>
+              {isTWCOption && (
+                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px]">
+                  TWC
+                </Badge>
+              )}
+              <Badge variant="secondary" className="text-xs">
+                {visibleValues.length} option{visibleValues.length !== 1 ? 's' : ''}
+              </Badge>
+              {hiddenValues.length > 0 && (
+                <Badge variant="outline" className="text-xs">
+                  {hiddenValues.length} hidden
+                </Badge>
+              )}
+              {!enabled && (
+                <Badge variant="destructive" className="text-xs">
+                  Disabled
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <Label htmlFor={`toggle-${option.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                {enabled ? 'Enabled' : 'Disabled'}
+              </Label>
+              <Switch
+                id={`toggle-${option.id}`}
+                checked={enabled}
+                onCheckedChange={() => {
+                  onToggle(option.id, enabled);
+                }}
+                disabled={!templateId || isToggling}
+              />
+            </div>
+          </div>
+        </AccordionTrigger>
+        <AccordionContent>
+          <div className="space-y-2 pl-10 pr-4 pb-2">
+            {visibleValues.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {visibleValues.map((value: any) => (
+                  <Badge key={value.id} variant="outline" className="text-xs">
+                    {value.label}
+                    {value.extra_data?.price > 0 && (
+                      <span className="ml-1 text-muted-foreground">
+                        ${value.extra_data.price.toFixed(2)}
+                      </span>
+                    )}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No visible options configured
+              </p>
+            )}
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </div>
+  );
+};
 
 export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTWCProduct }: TemplateOptionsManagerProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [localOrderedOptions, setLocalOrderedOptions] = useState<any[]>([]);
   
-  // Fetch all treatment options and filter by category
   const { data: allOptions = [], isLoading, error, refetch } = useAllTreatmentOptions();
-  
-  // Fetch template option settings
   const { data: templateSettings = [] } = useTemplateOptionSettings(templateId);
   const toggleOption = useToggleTemplateOption();
+  const updateOrder = useUpdateTemplateOptionOrder();
   
-  // Get TWC questions from linked product
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+  
   const twcQuestions: TWCQuestion[] = useMemo(() => {
     if (!linkedTWCProduct?.metadata?.twc_questions) return [];
     return linkedTWCProduct.metadata.twc_questions || [];
   }, [linkedTWCProduct]);
   
-  // Filter options for this specific treatment category
   const filteredOptions = allOptions.filter(opt => opt.treatment_category === treatmentCategory);
   
-  // PHASE 3: Sort to show TWC options first with badge
+  // Sort options by template-specific order_index, then by TWC status
   const categoryOptions = useMemo(() => {
-    return [...filteredOptions].sort((a, b) => {
+    const sorted = [...filteredOptions].sort((a, b) => {
+      // Get template-specific order
+      const aOrder = templateSettings.find(s => s.treatment_option_id === a.id)?.order_index;
+      const bOrder = templateSettings.find(s => s.treatment_option_id === b.id)?.order_index;
+      
+      // If both have order_index, sort by that
+      if (aOrder !== null && aOrder !== undefined && bOrder !== null && bOrder !== undefined) {
+        return aOrder - bOrder;
+      }
+      // If only one has order_index, that one comes first
+      if (aOrder !== null && aOrder !== undefined) return -1;
+      if (bOrder !== null && bOrder !== undefined) return 1;
+      
+      // Otherwise, sort TWC first
       const aIsTWC = (a as any).source === 'twc';
       const bIsTWC = (b as any).source === 'twc';
       if (aIsTWC && !bIsTWC) return -1;
       if (!aIsTWC && bIsTWC) return 1;
       return 0;
     });
-  }, [filteredOptions]);
+    return sorted;
+  }, [filteredOptions, templateSettings]);
   
-  // Check if any TWC options exist in treatment_options
+  // Keep local state in sync with computed order
+  useEffect(() => {
+    setLocalOrderedOptions(categoryOptions);
+  }, [categoryOptions]);
+  
   const hasTWCOptions = categoryOptions.some(opt => (opt as any).source === 'twc');
-  
-  // Check if TWC product has options that aren't synced yet
   const hasPendingTWCOptions = twcQuestions.length > 0 && !hasTWCOptions;
   
-  console.log('🎯 TemplateOptionsManager:', {
-    treatmentCategory,
-    templateId,
-    linkedTWCProduct: linkedTWCProduct?.name,
-    twcQuestionsCount: twcQuestions.length,
-    categoryOptionsCount: categoryOptions.length,
-    hasTWCOptions,
-    hasPendingTWCOptions,
-  });
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) return;
+    
+    const oldIndex = localOrderedOptions.findIndex(opt => opt.id === active.id);
+    const newIndex = localOrderedOptions.findIndex(opt => opt.id === over.id);
+    
+    const newOrder = arrayMove(localOrderedOptions, oldIndex, newIndex);
+    setLocalOrderedOptions(newOrder);
+    
+    // Save to database
+    if (templateId) {
+      const orderedOptions = newOrder.map((opt, index) => ({
+        treatmentOptionId: opt.id,
+        orderIndex: index,
+      }));
+      updateOrder.mutate({ templateId, orderedOptions });
+    }
+  };
   
-  // Sync TWC options to treatment_options table
   const syncTWCOptions = async () => {
     if (!linkedTWCProduct || !templateId || twcQuestions.length === 0) return;
     
@@ -81,7 +243,6 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       
-      // Get account owner
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('parent_account_id')
@@ -90,11 +251,9 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
       
       const accountId = profile?.parent_account_id || user.id;
       
-      // Create treatment options for each TWC question
       for (const question of twcQuestions) {
         const optionKey = question.name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
         
-        // Check if option already exists
         const { data: existingOption } = await supabase
           .from('treatment_options')
           .select('id')
@@ -106,7 +265,6 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
         let optionId = existingOption?.id;
         
         if (!existingOption) {
-          // Create the treatment option
           const { data: newOption, error: optionError } = await supabase
             .from('treatment_options')
             .insert({
@@ -129,7 +287,6 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
           
           optionId = newOption.id;
           
-          // Create option values with required fields
           const optionValues = question.options.map((opt, index) => ({
             account_id: accountId,
             option_id: optionId!,
@@ -143,7 +300,6 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
           }
         }
         
-        // Create template_option_settings linkage if it doesn't exist
         if (optionId) {
           const { data: existingSetting } = await supabase
             .from('template_option_settings')
@@ -159,6 +315,7 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
                 template_id: templateId,
                 treatment_option_id: optionId,
                 is_enabled: true,
+                order_index: twcQuestions.indexOf(question),
               });
           }
         }
@@ -169,7 +326,6 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
         description: `${twcQuestions.length} TWC options imported successfully`,
       });
       
-      // Refetch options
       refetch();
     } catch (error: any) {
       console.error('Error syncing TWC options:', error);
@@ -183,13 +339,11 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
     }
   };
   
-  // Helper to check if option is enabled (default true if no setting exists)
   const isOptionEnabled = (optionId: string) => {
     const setting = templateSettings.find(s => s.treatment_option_id === optionId);
-    return setting ? setting.is_enabled : true; // Default to enabled
+    return setting ? setting.is_enabled : true;
   };
   
-  // Handler for toggling option
   const handleToggle = (optionId: string, currentEnabled: boolean) => {
     if (!templateId) {
       console.warn('Template not saved yet - toggle will take effect after saving');
@@ -203,7 +357,6 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
     });
   };
   
-  // Map treatment categories to option management paths
   const getOptionsPath = () => {
     switch (treatmentCategory) {
       case 'roller_blinds':
@@ -237,12 +390,11 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
       <CardHeader>
         <CardTitle>Available Options</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Toggle options on/off to control which appear for this template in quotes
+          Drag to reorder • Toggle options on/off for this template
           {!templateId && " (save template to apply changes)"}
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* TWC Options Pending Sync Banner */}
         {hasPendingTWCOptions && templateId && (
           <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <div className="flex items-start gap-3">
@@ -278,7 +430,7 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
           </div>
         )}
 
-        {categoryOptions.length === 0 && !hasPendingTWCOptions ? (
+        {localOrderedOptions.length === 0 && !hasPendingTWCOptions ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground mb-4">
               No options configured yet for this treatment type
@@ -291,90 +443,46 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
               Add Options in System Settings
             </Button>
           </div>
-        ) : categoryOptions.length > 0 && (
+        ) : localOrderedOptions.length > 0 && (
           <>
             {hasTWCOptions && (
               <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  <strong>TWC Integration Active:</strong> This template uses imported TWC options (marked with blue badge). 
-                  TWC options are shown first and will appear in quotes for this product.
+                  <strong>TWC Integration Active:</strong> TWC options marked with blue badge. 
+                  Drag to reorder options for this specific template.
                 </p>
               </div>
             )}
 
-            <Accordion type="multiple" className="w-full">
-              {categoryOptions.map((option) => {
-                const visibleValues = option.option_values?.filter(v => !v.hidden_by_user) || [];
-                const hiddenValues = option.option_values?.filter(v => v.hidden_by_user) || [];
-                const enabled = isOptionEnabled(option.id);
-                const isTWCOption = (option as any).source === 'twc';
-                
-                return (
-                  <AccordionItem key={option.id} value={option.id}>
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center justify-between w-full pr-4">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{option.label}</span>
-                          {isTWCOption && (
-                            <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px]">
-                              TWC
-                            </Badge>
-                          )}
-                          <Badge variant="secondary" className="text-xs">
-                            {visibleValues.length} option{visibleValues.length !== 1 ? 's' : ''}
-                          </Badge>
-                          {hiddenValues.length > 0 && (
-                            <Badge variant="outline" className="text-xs">
-                              {hiddenValues.length} hidden
-                            </Badge>
-                          )}
-                          {!enabled && (
-                            <Badge variant="destructive" className="text-xs">
-                              Disabled
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Label htmlFor={`toggle-${option.id}`} className="text-xs text-muted-foreground cursor-pointer">
-                            {enabled ? 'Enabled' : 'Disabled'}
-                          </Label>
-                          <Switch
-                            id={`toggle-${option.id}`}
-                            checked={enabled}
-                            onCheckedChange={() => {
-                              handleToggle(option.id, enabled);
-                            }}
-                            disabled={!templateId || toggleOption.isPending}
-                          />
-                        </div>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-2 pl-4">
-                        {visibleValues.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {visibleValues.map((value) => (
-                              <Badge key={value.id} variant="outline" className="text-xs">
-                                {value.label}
-                                {value.extra_data?.price > 0 && (
-                                  <span className="ml-1 text-muted-foreground">
-                                    ${value.extra_data.price.toFixed(2)}
-                                  </span>
-                                )}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">
-                            No visible options configured
-                          </p>
-                        )}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                );
-              })}
-            </Accordion>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={localOrderedOptions.map(o => o.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <Accordion type="multiple" className="w-full space-y-0">
+                  {localOrderedOptions.map((option) => {
+                    const enabled = isOptionEnabled(option.id);
+                    const isTWCOption = (option as any).source === 'twc';
+                    
+                    return (
+                      <SortableOptionItem
+                        key={option.id}
+                        option={option}
+                        enabled={enabled}
+                        isTWCOption={isTWCOption}
+                        templateId={templateId}
+                        onToggle={handleToggle}
+                        isToggling={toggleOption.isPending}
+                      />
+                    );
+                  })}
+                </Accordion>
+              </SortableContext>
+            </DndContext>
 
             <div className="pt-4 border-t">
               <Button
@@ -386,8 +494,8 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
                 Manage Options in System Settings
               </Button>
               <p className="text-xs text-muted-foreground mt-2 text-center">
-                Use toggles above to enable/disable options for this template. Only enabled options will appear in quotes.
-                {!templateId && " Save the template to apply your toggle settings."}
+                Each template can have different option order and selection.
+                {!templateId && " Save the template to apply your settings."}
               </p>
             </div>
           </>
