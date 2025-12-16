@@ -1655,7 +1655,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     // UNIVERSAL: Format option name and extract description
                     // PRIORITY: Use pre-extracted value from blindCostCalculator if available
                     let optionName = opt.name || opt.optionKey || 'Option';
-                    let optionValue = opt.value || opt.label || '';
+                    // CRITICAL: Check multiple sources for the selected value
+                    let optionValue = opt.value || opt.label || opt.selectedValue || opt.selectedLabel || '';
                     
                     // Extract from "name: value" format if value not already extracted
                     if (!optionValue && optionName.includes(':')) {
@@ -1664,7 +1665,19 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       optionName = optionName.substring(0, colonIndex).trim();
                     }
                     
-                    // Final fallback if still no value
+                    // Also try "name - value" format (sub-options use hyphen)
+                    if (!optionValue && optionName.includes(' - ')) {
+                      const hyphenIndex = optionName.indexOf(' - ');
+                      optionValue = optionName.substring(hyphenIndex + 3).trim();
+                      optionName = optionName.substring(0, hyphenIndex).trim();
+                    }
+                    
+                    // Final fallback - use original full name as value if it has content
+                    if (!optionValue && opt.name && !opt.name.includes(':') && !opt.name.includes(' - ')) {
+                      optionValue = opt.name;
+                    }
+                    
+                    // Only use dash if truly nothing available
                     if (!optionValue) optionValue = '-';
                     
                     // Format snake_case to Title Case
@@ -1675,7 +1688,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     return {
                       id: opt.name || `option-${idx}`,
                       name: optionName,
-                      description: optionValue || '-',
+                      description: optionValue,
                       total_cost: opt.cost,
                       category: 'option',
                       pricing_method: opt.pricingMethod,
@@ -1701,14 +1714,31 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   
                   // UNIVERSAL: Parse name to extract key and value
                   let optionName = opt.optionKey || opt.name || 'Option';
-                  let optionValue = opt.label || opt.value || '-';
+                  // CRITICAL: Check multiple sources for the selected value
+                  let optionValue = opt.label || opt.value || opt.selectedValue || opt.selectedLabel || '';
                   
                   // Extract from "name: value" format if present
                   if (optionName.includes(':')) {
                     const colonIndex = optionName.indexOf(':');
-                    optionValue = optionName.substring(colonIndex + 1).trim() || optionValue;
+                    const extractedValue = optionName.substring(colonIndex + 1).trim();
+                    if (extractedValue) optionValue = extractedValue;
                     optionName = optionName.substring(0, colonIndex).trim();
                   }
+                  
+                  // Also try "name - value" format (sub-options use hyphen)
+                  if (!optionValue && optionName.includes(' - ')) {
+                    const hyphenIndex = optionName.indexOf(' - ');
+                    optionValue = optionName.substring(hyphenIndex + 3).trim();
+                    optionName = optionName.substring(0, hyphenIndex).trim();
+                  }
+                  
+                  // Final fallback - use original full name as value if it has content
+                  if (!optionValue && opt.name && !opt.name.includes(':') && !opt.name.includes(' - ')) {
+                    optionValue = opt.name;
+                  }
+                  
+                  // Only use dash if truly nothing available
+                  if (!optionValue) optionValue = '-';
                   
                   // Format snake_case to Title Case
                   optionName = optionName
@@ -1718,7 +1748,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   return {
                     id: `option-${idx}`,
                     name: optionName,
-                    description: optionValue || '-',
+                    description: optionValue,
                     total_cost: optionTotalCost,
                     category: 'option',
                     pricing_method: opt.pricingMethod,
