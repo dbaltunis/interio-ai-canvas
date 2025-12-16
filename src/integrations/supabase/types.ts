@@ -8146,6 +8146,7 @@ export type Database = {
           created_at: string
           id: string
           is_enabled: boolean
+          order_index: number | null
           template_id: string
           treatment_option_id: string
           updated_at: string
@@ -8154,6 +8155,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_enabled?: boolean
+          order_index?: number | null
           template_id: string
           treatment_option_id: string
           updated_at?: string
@@ -8162,6 +8164,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_enabled?: boolean
+          order_index?: number | null
           template_id?: string
           treatment_option_id?: string
           updated_at?: string
