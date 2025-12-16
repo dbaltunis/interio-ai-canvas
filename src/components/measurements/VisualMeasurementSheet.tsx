@@ -953,12 +953,30 @@ export const VisualMeasurementSheet = ({
               
               {/* Color Selection - for fabric or material with colors (from tags array, colors field, or TWC metadata) */}
               {(() => {
+                // Tags that are NOT colors - filter these out from color selector
+                const NON_COLOR_TAGS = [
+                  'wide_width', 'blockout', 'sunscreen', 'sheer', 'light_filtering', 
+                  'dimout', 'thermal', 'to confirm', 'discontinued', 'imported', 
+                  'twc', 'fabric', 'material', 'roller', 'venetian', 'vertical',
+                  'cellular', 'roman', 'curtain', 'awning', 'panel'
+                ];
+                
+                // Helper to filter out non-color tags
+                const filterColorTags = (tags: string[]): string[] => {
+                  return tags.filter(tag => 
+                    !NON_COLOR_TAGS.includes(tag.toLowerCase().trim())
+                  );
+                };
+                
                 // Helper to extract colors from an item - check tags array, colors array, colors string, or TWC metadata
                 const getColorsFromItem = (item: any): string[] => {
                   if (!item) return [];
                   
-                  // Check tags array first (primary storage)
-                  if (Array.isArray(item.tags) && item.tags.length > 0) return item.tags;
+                  // Check tags array first (primary storage) - filter out non-color tags
+                  if (Array.isArray(item.tags) && item.tags.length > 0) {
+                    const filteredColors = filterColorTags(item.tags);
+                    if (filteredColors.length > 0) return filteredColors;
+                  }
                   
                   // Check colors array
                   if (Array.isArray(item.colors) && item.colors.length > 0) return item.colors;
