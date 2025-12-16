@@ -4,7 +4,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
-import { useHeadingOptions } from "@/hooks/useHeadingOptions";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 import type { EyeletRing } from "@/hooks/useEyeletRings";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
@@ -32,16 +31,17 @@ export const HeadingOptionsSection = ({
 }: HeadingOptionsSectionProps) => {
   const { units, getLengthUnitLabel } = useMeasurementUnits();
   const { data: inventory = [], isLoading } = useEnhancedInventory();
-  const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
   const [availableRings, setAvailableRings] = useState<EyeletRing[]>([]);
 
-  // Filter heading options from inventory - looking for heading/hardware items
-  const inventoryHeadingOptions = inventory.filter(item => 
-    item.category?.toLowerCase().includes('heading') || 
-    item.category?.toLowerCase().includes('hardware') ||
-    item.category?.toLowerCase().includes('pleat') ||
-    (template.selected_heading_ids && template.selected_heading_ids.includes(item.id))
-  );
+  // Filter heading options from inventory - ONLY show headings that are selected on the template
+  const inventoryHeadingOptions = inventory.filter(item => {
+    // If template has selected_heading_ids, ONLY show those specific headings
+    if (template.selected_heading_ids && template.selected_heading_ids.length > 0) {
+      return template.selected_heading_ids.includes(item.id);
+    }
+    // If no heading IDs selected on template, don't show any inventory headings
+    return false;
+  });
 
   const formatPrice = (price: number) => {
     const symbol = getCurrencySymbol(units.currency);
@@ -91,10 +91,7 @@ export const HeadingOptionsSection = ({
       }
     }
     
-    const selectedHeadingOption = headingOptionsFromSettings.find(h => h.id === selectedHeading);
-    if (selectedHeadingOption) {
-      return selectedHeadingOption.fullness;
-    }
+    // Fallback to inventory lookup (all headings are now in inventory)
 
     return template.fullness_ratio;
   };
@@ -183,8 +180,6 @@ export const HeadingOptionsSection = ({
               {selectedHeading === 'standard' && `Standard ${template.heading_name}`}
               {selectedHeading && selectedHeading !== 'standard' && (
                 (() => {
-                  const fromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
-                  if (fromSettings) return fromSettings.name;
                   const fromInventory = inventoryHeadingOptions.find(h => h.id === selectedHeading);
                   if (fromInventory) return fromInventory.name;
                   return 'Selected Heading';
@@ -205,16 +200,6 @@ export const HeadingOptionsSection = ({
                     <span className="text-xs text-primary ml-2 font-semibold">No upcharge</span>
                   </div>
                 </SelectItem>
-                {headingOptionsFromSettings.map((option) => (
-                  <SelectItem key={option.id} value={option.id} className="text-card-foreground">
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-sm font-medium">{option.name}</span>
-                      <span className="text-xs text-primary ml-2 font-semibold">
-                        {formatPricePerFabricUnit(option.price)}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
                 {inventoryHeadingOptions.map((option) => (
                   <SelectItem key={option.id} value={option.id} className="text-card-foreground">
                     <div className="flex items-center justify-between w-full">
@@ -225,9 +210,9 @@ export const HeadingOptionsSection = ({
                     </div>
                   </SelectItem>
                 ))}
-                {headingOptionsFromSettings.length === 0 && inventoryHeadingOptions.length === 0 && (
+                {inventoryHeadingOptions.length === 0 && (
                   <SelectItem value="no-options" disabled className="text-card-foreground">
-                    No heading options in inventory - Add heading items in Settings
+                    No headings selected for this template - Configure in Settings
                   </SelectItem>
                 )}
               </>
