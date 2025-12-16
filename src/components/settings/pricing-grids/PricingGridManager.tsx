@@ -5,11 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Upload, Trash2, Grid3x3, Building2, Tag, Layers, FolderOpen, Pencil, Check, X } from 'lucide-react';
+import { Plus, Upload, Trash2, Grid3x3, Building2, Layers, FolderOpen, Pencil, Check, X, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SampleDataHelper } from './SampleDataHelper';
@@ -17,12 +15,20 @@ import { PricingGridExplainer } from './PricingGridExplainer';
 import { BulkGridUploader } from './BulkGridUploader';
 import { GridCoverageDashboard } from './GridCoverageDashboard';
 import { CategoryProductTypeGuide } from './CategoryProductTypeGuide';
+import { PriceGroupAutocomplete } from './PriceGroupAutocomplete';
+import { MaterialMatchPreview } from './MaterialMatchPreview';
+import { HowPricingWorksGuide } from './HowPricingWorksGuide';
 import { useVendors } from '@/hooks/useVendors';
 import { 
-  UNIFIED_CATEGORIES, 
   getTreatmentOptions, 
   getUnifiedConfig 
 } from '@/types/treatmentCategories';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // Get treatment options from unified categories (single source of truth)
 const TREATMENT_OPTIONS = getTreatmentOptions();
@@ -262,14 +268,8 @@ export const PricingGridManager = () => {
       {/* Grid Coverage Dashboard */}
       <GridCoverageDashboard onUploadClick={handleCoverageUploadClick} />
 
-      {/* Auto-Match Explanation */}
-      <Alert>
-        <Tag className="h-4 w-4" />
-        <AlertDescription>
-          <strong>Auto-matching:</strong> When you import fabrics/materials with a <code className="bg-muted px-1 rounded">price_group</code> column, 
-          the system automatically finds the matching grid based on Supplier + Product Type + Price Group. No manual assignment needed!
-        </AlertDescription>
-      </Alert>
+      {/* How Pricing Works Guide */}
+      <HowPricingWorksGuide />
 
       {/* Sample CSV Helper */}
       <SampleDataHelper />
@@ -367,26 +367,44 @@ export const PricingGridManager = () => {
             )}
           </div>
 
-          {/* Price Group and Grid Code */}
+          {/* Price Group (Key linking field) */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="price-group" className="flex items-center gap-1">
+                Price Group (Links to Materials) *
+              </Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>Materials with matching price_group will use this pricing grid. Select an existing group or create a new one.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <PriceGroupAutocomplete
+              value={newPriceGroup}
+              onChange={setNewPriceGroup}
+              placeholder="Select or type a price group..."
+            />
+          </div>
+
+          {/* Material Match Preview */}
+          <MaterialMatchPreview
+            supplierId={newSupplierId}
+            productType={newProductType}
+            priceGroup={newPriceGroup}
+          />
+
+          {/* Grid Code and Name */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="price-group">
-                <Tag className="h-3.5 w-3.5 inline mr-1" />
-                Price Group *
+              <Label htmlFor="grid-code">
+                Grid Code *
+                <span className="text-xs text-muted-foreground ml-2">(Internal reference)</span>
               </Label>
-              <Input
-                id="price-group"
-                placeholder="e.g., A, B, C, GROUP-1"
-                value={newPriceGroup}
-                onChange={(e) => setNewPriceGroup(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Must match the price_group in your fabric/material CSV import
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="grid-code">Grid Code *</Label>
               <Input
                 id="grid-code"
                 placeholder="e.g., RB-STD-2024"
@@ -394,11 +412,12 @@ export const PricingGridManager = () => {
                 onChange={(e) => setNewGridCode(e.target.value)}
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="grid-name">Grid Name *</Label>
+              <Label htmlFor="grid-name">
+                Grid Name *
+                <span className="text-xs text-muted-foreground ml-2">(Display name)</span>
+              </Label>
               <Input
                 id="grid-name"
                 placeholder="e.g., Roller Blind - Standard"
@@ -406,21 +425,34 @@ export const PricingGridManager = () => {
                 onChange={(e) => setNewGridName(e.target.value)}
               />
             </div>
+          </div>
 
+          {/* Description and Markup */}
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="grid-description">Description</Label>
               <Input
                 id="grid-description"
-                placeholder="Optional description"
+                placeholder="Optional notes about this grid"
                 value={newGridDescription}
                 onChange={(e) => setNewGridDescription(e.target.value)}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="markup-percentage">
-                Default Markup %
-              </Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="markup-percentage">Default Markup %</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>Set a markup percentage for this grid. Leave at 0 to use global markup settings.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <div className="relative">
                 <Input
                   id="markup-percentage"
@@ -437,9 +469,6 @@ export const PricingGridManager = () => {
                   %
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Markup for items using this grid (0 = use global)
-              </p>
             </div>
           </div>
 
