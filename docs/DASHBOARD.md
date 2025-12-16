@@ -344,11 +344,49 @@ Avg Deal = Total Revenue / Number of Approved Quotes
 
 ---
 
+## Target Tracking (December 2025)
+
+### Setting KPI Targets
+Admins can set performance targets for team members:
+
+1. Go to **Settings → Team → [User] → Dashboard**
+2. Enable target for specific KPIs
+3. Set target value and period
+
+### Target Periods
+- **Daily**: Resets every day
+- **Weekly**: Resets every Monday
+- **Monthly**: Resets first of month
+- **Quarterly**: Resets first of quarter
+- **Yearly**: Resets January 1st
+
+### Progress Visualization
+- Progress bar on each KPI card
+- Percentage to goal displayed
+- Color-coded status:
+  - 🔴 Red: <50% of target
+  - 🟡 Yellow: 50-80% of target
+  - 🟢 Green: >80% of target
+
+---
+
+## Dashboard Preferences (December 2025)
+
+Dashboard settings now save to database, persisting across devices.
+
+---
+
+## Dealer Performance Widget (December 2025)
+
+Shows team leaderboard with quote count, revenue, and conversion rates per dealer.
+Requires `view_team_performance` permission.
+
+---
+
 ## Future Enhancements
 
 ### Coming Soon
 - **Custom KPI Builder**: Create your own metrics
-- **Goal Tracking**: Set and monitor team goals
 - **Forecasting**: AI-powered projections
 - **Benchmarking**: Compare to industry averages
 - **Mobile Dashboard**: Access metrics on the go
