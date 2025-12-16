@@ -676,8 +676,8 @@ export const QuotationTab = ({
         </div>
       </Card>
 
-      {/* Inline Discount Panel */}
-      <InlineDiscountPanel isOpen={isDiscountDialogOpen} onClose={() => setIsDiscountDialogOpen(false)} quoteId={quoteId || quoteVersions?.[0]?.id || ''} projectId={projectId} items={quotationData.items || []} subtotal={subtotal} taxRate={taxRate * 100} currency={projectData.currency} currentDiscount={currentQuote?.discount_type ? {
+      {/* Inline Discount Panel - Pass sellingTotal (retail price with markup) for discount calculations */}
+      <InlineDiscountPanel isOpen={isDiscountDialogOpen} onClose={() => setIsDiscountDialogOpen(false)} quoteId={quoteId || quoteVersions?.[0]?.id || ''} projectId={projectId} items={quotationData.items || []} subtotal={quotationData.sellingTotal || subtotal} taxRate={taxRate * 100} currency={projectData.currency} currentDiscount={currentQuote?.discount_type ? {
       type: currentQuote.discount_type as 'percentage' | 'fixed',
       value: currentQuote.discount_value || 0,
       scope: currentQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items',

@@ -290,7 +290,7 @@ export const InlineDiscountPanel = ({
                 <h4 className="font-semibold text-sm mb-4 text-primary">Live Preview</h4>
                 <div className="space-y-3 text-sm bg-background rounded-lg p-4 border">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Base Subtotal:</span>
+                    <span className="text-muted-foreground">Retail Subtotal:</span>
                     <span className="font-medium">{formatCurrency(subtotal, currency)}</span>
                   </div>
                   <div className="flex justify-between text-destructive">
