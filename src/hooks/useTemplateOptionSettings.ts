@@ -9,6 +9,7 @@ interface TemplateOptionSetting {
   treatment_option_id: string;
   is_enabled: boolean;
   order_index: number | null;
+  hidden_value_ids: string[] | null;
 }
 
 export const useTemplateOptionSettings = (templateId?: string) => {
@@ -143,6 +144,135 @@ export const useUpdateTemplateOptionOrder = () => {
     onError: (error) => {
       console.error("Error updating option order:", error);
       toast.error("Failed to update option order");
+    },
+  });
+};
+
+export const useToggleValueVisibility = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({
+      templateId,
+      treatmentOptionId,
+      valueId,
+      hide,
+    }: {
+      templateId: string;
+      treatmentOptionId: string;
+      valueId: string;
+      hide: boolean;
+    }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      // Get current setting
+      const { data: existing } = await supabase
+        .from('template_option_settings')
+        .select('id, hidden_value_ids')
+        .eq('template_id', templateId)
+        .eq('treatment_option_id', treatmentOptionId)
+        .maybeSingle();
+
+      const currentHidden: string[] = (existing?.hidden_value_ids as string[]) || [];
+      let newHidden: string[];
+
+      if (hide) {
+        // Add to hidden list if not already there
+        newHidden = currentHidden.includes(valueId) ? currentHidden : [...currentHidden, valueId];
+      } else {
+        // Remove from hidden list
+        newHidden = currentHidden.filter(id => id !== valueId);
+      }
+
+      if (existing) {
+        const { error } = await supabase
+          .from('template_option_settings')
+          .update({ hidden_value_ids: newHidden })
+          .eq('id', existing.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('template_option_settings')
+          .insert({
+            template_id: templateId,
+            treatment_option_id: treatmentOptionId,
+            is_enabled: true,
+            hidden_value_ids: newHidden,
+          });
+
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ 
+        queryKey: ['template-option-settings', variables.templateId] 
+      });
+    },
+    onError: (error) => {
+      console.error("Error toggling value visibility:", error);
+      toast.error("Failed to update value visibility");
+    },
+  });
+};
+
+export const useBulkToggleValueVisibility = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({
+      templateId,
+      treatmentOptionId,
+      valueIds,
+      hide,
+    }: {
+      templateId: string;
+      treatmentOptionId: string;
+      valueIds: string[];
+      hide: boolean;
+    }) => {
+      if (!user) throw new Error("User not authenticated");
+
+      const { data: existing } = await supabase
+        .from('template_option_settings')
+        .select('id, hidden_value_ids')
+        .eq('template_id', templateId)
+        .eq('treatment_option_id', treatmentOptionId)
+        .maybeSingle();
+
+      const newHidden = hide ? valueIds : [];
+
+      if (existing) {
+        const { error } = await supabase
+          .from('template_option_settings')
+          .update({ hidden_value_ids: newHidden })
+          .eq('id', existing.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('template_option_settings')
+          .insert({
+            template_id: templateId,
+            treatment_option_id: treatmentOptionId,
+            is_enabled: true,
+            hidden_value_ids: newHidden,
+          });
+
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ 
+        queryKey: ['template-option-settings', variables.templateId] 
+      });
+      toast.success(variables.hide ? "All values hidden" : "All values shown");
+    },
+    onError: (error) => {
+      console.error("Error bulk toggling value visibility:", error);
+      toast.error("Failed to update value visibility");
     },
   });
 };
