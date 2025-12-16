@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -130,6 +130,7 @@ export const WindowTreatmentOptionsManager = () => {
   const [selectedInventoryCategoryId, setSelectedInventoryCategoryId] = useState<string | null>(null);
   const [showCreateInventoryForm, setShowCreateInventoryForm] = useState(false);
   const [expandedOptions, setExpandedOptions] = useState<Set<string>>(new Set());
+  const editFormRef = useRef<HTMLDivElement>(null);
   
   // Inventory sync states
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
@@ -430,6 +431,11 @@ export const WindowTreatmentOptionsManager = () => {
     });
     setEditingValue(value);
     setIsCreating(false);
+    
+    // Scroll to edit form after state update
+    setTimeout(() => {
+      editFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const handleDelete = async (value: OptionValue) => {
@@ -873,6 +879,51 @@ export const WindowTreatmentOptionsManager = () => {
         // Auto-fill price from inventory item (try selling_price first, then cost_price)
         const autoPrice = selectedItem.selling_price || selectedItem.cost_price || 0;
         
+        // Check if inventory item has color tags and auto-create color sub-options
+        const NON_COLOR_TAGS = ['wide_width', 'blockout', 'sheer', 'dimout', 'sunscreen', 'lining', 'fabric', 'material'];
+        const colorTags = (selectedItem.tags || []).filter(
+          (tag: string) => !NON_COLOR_TAGS.includes(tag.toLowerCase())
+        );
+        
+        // Build sub_options with colors if present
+        let newSubOptions = [...formData.sub_options];
+        if (colorTags.length > 0) {
+          // Check if a "Color" sub-option already exists
+          const existingColorSubOption = newSubOptions.find(
+            sub => sub.label.toLowerCase() === 'color' || sub.label.toLowerCase() === 'colour'
+          );
+          
+          if (existingColorSubOption) {
+            // Add colors to existing sub-option (avoid duplicates)
+            const existingLabels = new Set(existingColorSubOption.choices.map(c => c.label.toLowerCase()));
+            colorTags.forEach((color: string) => {
+              if (!existingLabels.has(color.toLowerCase())) {
+                existingColorSubOption.choices.push({
+                  id: crypto.randomUUID(),
+                  label: color,
+                  value: color.toLowerCase().replace(/\s+/g, '_'),
+                  price: 0,
+                  pricing_method: 'fixed'
+                });
+              }
+            });
+          } else {
+            // Create new Color sub-option
+            newSubOptions.push({
+              id: crypto.randomUUID(),
+              label: 'Color',
+              key: 'color',
+              choices: colorTags.map((color: string) => ({
+                id: crypto.randomUUID(),
+                label: color,
+                value: color.toLowerCase().replace(/\s+/g, '_'),
+                price: 0,
+                pricing_method: 'fixed'
+              }))
+            });
+          }
+        }
+        
         setFormData({
           ...formData,
           inventory_item_id: itemId,
@@ -883,17 +934,21 @@ export const WindowTreatmentOptionsManager = () => {
           price: autoPrice,
           // Preserve existing pricing_method if already set, otherwise default to 'fixed'
           pricing_method: formData.pricing_method || 'fixed',
+          // Include auto-generated sub_options with colors
+          sub_options: newSubOptions,
         });
+        
+        const colorMessage = colorTags.length > 0 ? ` ${colorTags.length} color(s) added as sub-options.` : '';
         
         if (autoPrice > 0) {
           toast({
             title: "Inventory item linked",
-            description: `Auto-filled with "${selectedItem.name}" - $${autoPrice.toFixed(2)}. You can adjust the price if needed.`,
+            description: `Auto-filled with "${selectedItem.name}" - $${autoPrice.toFixed(2)}.${colorMessage}`,
           });
         } else {
           toast({
             title: "Inventory item linked",
-            description: `"${selectedItem.name}" has no price in inventory. Please set the price below.`,
+            description: `"${selectedItem.name}" has no price in inventory. Please set the price below.${colorMessage}`,
             variant: "default",
           });
         }
@@ -1474,7 +1529,7 @@ export const WindowTreatmentOptionsManager = () => {
 
               {/* Create/Edit Form */}
               {(isCreating || editingValue) && (
-                <div className="p-4 border rounded-lg bg-muted/50">
+                <div ref={editFormRef} className="p-4 border rounded-lg bg-muted/50">
                   <h3 className="text-lg font-semibold mb-4">
                     {editingValue ? `Edit Option` : `Add New Option`}
                   </h3>
@@ -1497,6 +1552,7 @@ export const WindowTreatmentOptionsManager = () => {
                           setFormData({ ...formData, name, value });
                         }}
                         placeholder="e.g., 38mm Tube"
+                        className="bg-white dark:bg-background"
                       />
                     </div>
                     
@@ -1547,6 +1603,7 @@ export const WindowTreatmentOptionsManager = () => {
                           value={formData.price}
                           onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                           placeholder="0.00"
+                          className="bg-white dark:bg-background"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
                           {formData.pricing_method === 'per-meter' 
@@ -1671,6 +1728,7 @@ export const WindowTreatmentOptionsManager = () => {
                                         newSubOptions[subIdx].choices[choiceIdx].value = e.target.value.toLowerCase().replace(/\s+/g, '_');
                                         setFormData({ ...formData, sub_options: newSubOptions });
                                       }}
+                                      className="bg-white dark:bg-background"
                                     />
                                     <Select
                                       value={choice.pricing_method || 'fixed'}
@@ -1704,7 +1762,7 @@ export const WindowTreatmentOptionsManager = () => {
                                           }
                                         }}
                                         disabled={!!linkedInventoryItem}
-                                        className={linkedInventoryItem ? 'bg-muted cursor-not-allowed' : ''}
+                                        className={linkedInventoryItem ? 'bg-muted cursor-not-allowed' : 'bg-white dark:bg-background'}
                                       />
                                       {linkedInventoryItem && (
                                         <Badge variant="secondary" className="absolute -top-2 -right-2 text-xs">
