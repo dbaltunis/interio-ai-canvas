@@ -624,14 +624,18 @@ export const useQuotationSync = ({
     let total: number;
     let subtotal: number;
     
+    // CRITICAL FIX: Use SELLING price (with markup) for subtotal display, not cost
+    // totalSellingPrice already has markup applied from item calculations above
+    const sellingSubtotal = totalSellingPrice + roomProductsTotal;
+    
     if (taxInclusive) {
       // Prices already include tax, so extract tax from total
-      total = combinedSubtotal;
-      subtotal = combinedSubtotal / (1 + taxRate);
+      total = sellingSubtotal;
+      subtotal = sellingSubtotal / (1 + taxRate);
       taxAmount = total - subtotal;
     } else {
       // Prices exclude tax, so add tax on top
-      subtotal = combinedSubtotal;
+      subtotal = sellingSubtotal;
       taxAmount = subtotal * taxRate;
       total = subtotal + taxAmount;
     }
