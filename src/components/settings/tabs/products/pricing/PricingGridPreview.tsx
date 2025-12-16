@@ -83,7 +83,7 @@ export const PricingGridPreview = ({ gridData, gridName }: PricingGridPreviewPro
         <div className="space-y-4">
           <div className="text-sm text-muted-foreground">
             <p><strong>Dimensions:</strong> {drops.length} drop ranges × {widths.length} width ranges</p>
-            <p><strong>Unit:</strong> {getUnitLabel(gridData.unit || units.length)}</p>
+            <p><strong>Dimensions stored in:</strong> {getUnitLabel(gridData.unit || 'cm')}</p>
           </div>
           
           <div className="border rounded-lg overflow-auto">
@@ -91,7 +91,7 @@ export const PricingGridPreview = ({ gridData, gridName }: PricingGridPreviewPro
               <TableHeader>
                 <TableRow>
                   <TableHead className="sticky left-0 bg-background z-10 min-w-[100px]">
-                    Drop / Width ({getUnitLabel(gridData.unit || units.length)})
+                    Drop / Width ({getUnitLabel(gridData.unit || 'cm')})
                   </TableHead>
                   {widths.map((width: string | number, index: number) => (
                     <TableHead key={index} className="text-center min-w-[80px]">
