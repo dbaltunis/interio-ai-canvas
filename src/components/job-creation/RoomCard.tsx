@@ -32,6 +32,7 @@ interface RoomCardProps {
   onRenameRoom: (roomId: string, newName: string) => void;
   onChangeRoomType: (roomId: string, roomType: string) => void;
   isCopyingRoom?: boolean;
+  isReadOnly?: boolean;
 }
 
 export const RoomCard = ({ 
@@ -51,7 +52,8 @@ export const RoomCard = ({
   setEditingRoomName,
   onRenameRoom,
   onChangeRoomType,
-  isCopyingRoom = false
+  isCopyingRoom = false,
+  isReadOnly = false
 }: RoomCardProps) => {
   const {
     surfacesLoading,
@@ -165,6 +167,7 @@ export const RoomCard = ({
           isCopyingRoom={isCopyingRoom}
           isOpen={isOpen}
           onToggle={() => setIsOpen(!isOpen)}
+          isReadOnly={isReadOnly}
         />
 
         <CollapsibleContent className="animate-accordion-down data-[state=closed]:animate-accordion-up">
@@ -191,27 +194,29 @@ export const RoomCard = ({
           <RoomProductsList roomId={room.id} />
 
           {/* Add Buttons */}
-          <div className="flex gap-2 pt-3 pb-4 px-4 border-t border-border/50">
-            <Button
-              onClick={handleSurfaceCreation}
-              disabled={isCreatingSurface}
-              variant="outline"
-              size={compact ? "sm" : "sm"}
-              className="flex-1"
-            >
-              <RectangleHorizontal className="h-4 w-4 mr-2" />
-              Add Measurement Worksheet
-            </Button>
-            <Button
-              onClick={() => setShowProductDialog(true)}
-              variant="outline"
-              size={compact ? "sm" : "sm"}
-              className="flex-1"
-            >
-              <Package className="h-4 w-4 mr-2" />
-              Add Product/Service
-            </Button>
-          </div>
+          {!isReadOnly && (
+            <div className="flex gap-2 pt-3 pb-4 px-4 border-t border-border/50">
+              <Button
+                onClick={handleSurfaceCreation}
+                disabled={isCreatingSurface}
+                variant="outline"
+                size={compact ? "sm" : "sm"}
+                className="flex-1"
+              >
+                <RectangleHorizontal className="h-4 w-4 mr-2" />
+                Add Measurement Worksheet
+              </Button>
+              <Button
+                onClick={() => setShowProductDialog(true)}
+                variant="outline"
+                size={compact ? "sm" : "sm"}
+                className="flex-1"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Add Product/Service
+              </Button>
+            </div>
+          )}
         </CollapsibleContent>
 
         {/* Auto-open worksheet dialog for new surfaces */}

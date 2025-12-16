@@ -28,6 +28,8 @@ import { useTreatments } from "@/hooks/useTreatments";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
+import { useHasPermission } from "@/hooks/usePermissions";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface ProjectDetailsTabProps {
   project: any;
@@ -35,6 +37,11 @@ interface ProjectDetailsTabProps {
 }
 
 export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps) => {
+  const { user } = useAuth();
+  const canEditAllJobs = useHasPermission('edit_all_jobs');
+  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
+  const canEditJob = canEditAllJobs || (canEditAssignedJobs && project?.user_id === user?.id);
+  const isReadOnly = !canEditJob;
   const [isEditing, setIsEditing] = useState(false);
   const [showClientSearch, setShowClientSearch] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<any | null>(null);
@@ -81,6 +88,15 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   
   // Handle saving document number
   const handleSaveDocumentNumber = async () => {
+    if (isReadOnly) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       if (jobNumber !== project.job_number) {
         await updateProject.mutateAsync({
@@ -140,6 +156,15 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   const selectedClient = clients?.find(c => c.id === formData.client_id);
 
   const handleSave = async () => {
+    if (isReadOnly) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       console.log("Saving project details...", formData);
       
@@ -211,6 +236,15 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
   };
 
   const handleClientSelection = (clientId: string) => {
+    if (isReadOnly) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     console.log("Client selected from search:", clientId);
     updateFormData("client_id", clientId);
     setShowClientSearch(false);
@@ -419,6 +453,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                     "h-7 px-2 font-medium hover:bg-accent",
                     !project.start_date && "text-muted-foreground"
                   )}
+                  disabled={isReadOnly}
                 >
                   <CalendarIcon className="h-3 w-3 mr-1" />
                   {project.start_date ? format(new Date(project.start_date), "PPP") : 'Set start date'}
@@ -429,6 +464,14 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                   mode="single"
                   selected={project.start_date ? new Date(project.start_date) : undefined}
                   onSelect={async (date) => {
+                    if (isReadOnly) {
+                      toast({
+                        title: "Permission Denied",
+                        description: "You don't have permission to edit this job.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
                     if (date) {
                       const dateStr = format(date, "yyyy-MM-dd");
                       try {
@@ -470,6 +513,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                     "h-7 px-2 font-medium hover:bg-accent",
                     !project.due_date && "text-muted-foreground"
                   )}
+                  disabled={isReadOnly}
                 >
                   <CalendarIcon className="h-3 w-3 mr-1" />
                   {project.due_date ? format(new Date(project.due_date), "PPP") : 'Set due date'}
@@ -480,6 +524,14 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                   mode="single"
                   selected={project.due_date ? new Date(project.due_date) : undefined}
                   onSelect={async (date) => {
+                    if (isReadOnly) {
+                      toast({
+                        title: "Permission Denied",
+                        description: "You don't have permission to edit this job.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
                     if (date) {
                       const dateStr = format(date, "yyyy-MM-dd");
                       try {
@@ -533,9 +585,10 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                 onChange={(e) => setJobNumber(e.target.value)}
                 placeholder={`Enter ${documentLabel.toLowerCase()} number`}
                 className="text-lg font-mono"
+                disabled={isReadOnly}
               />
             </div>
-            {jobNumber !== project.job_number && (
+            {jobNumber !== project.job_number && !isReadOnly && (
               <Button 
                 onClick={handleSaveDocumentNumber}
                 size="sm"
@@ -564,6 +617,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
                 variant="outline" 
                 size="sm"
                 onClick={() => setShowClientSearch(true)}
+                disabled={isReadOnly}
               >
                 <Search className="h-3 w-3 mr-1" />
                 Change Client
@@ -602,7 +656,7 @@ export const ProjectDetailsTab = ({ project, onUpdate }: ProjectDetailsTabProps)
             <div className="text-center py-6">
               <User className="mx-auto h-12 w-12 text-muted-foreground/50 mb-3" />
               <p className="text-sm text-muted-foreground mb-4">No client assigned to this project</p>
-              <Button onClick={() => setShowClientSearch(true)}>
+              <Button onClick={() => setShowClientSearch(true)} disabled={isReadOnly}>
                 <Search className="h-4 w-4 mr-2" />
                 Assign Client
               </Button>

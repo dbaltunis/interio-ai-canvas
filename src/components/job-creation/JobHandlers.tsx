@@ -5,12 +5,18 @@ import { useTreatments, useCreateTreatment, useUpdateTreatment, useDeleteTreatme
 import { useClientMeasurements, useCreateClientMeasurement } from "@/hooks/useClientMeasurements";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useHasPermission } from "@/hooks/usePermissions";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export const useJobHandlers = (project: any) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const projectId = project?.project_id || project?.id;
   const clientId = project?.client_id;
+  const { user } = useAuth();
+  const canEditAllJobs = useHasPermission('edit_all_jobs');
+  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
+  const canEditJob = canEditAllJobs || (canEditAssignedJobs && project?.user_id === user?.id);
   
   const { data: rooms, isLoading: roomsLoading } = useRooms(projectId);
   const { data: allSurfaces } = useSurfaces(projectId);
@@ -29,6 +35,15 @@ export const useJobHandlers = (project: any) => {
   const createClientMeasurement = useCreateClientMeasurement();
 
   const handleCreateRoom = async () => {
+    if (!canEditJob) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (!projectId) return;
     
     try {
@@ -49,6 +64,15 @@ export const useJobHandlers = (project: any) => {
   };
 
   const handleRenameRoom = async (roomId: string, newName: string) => {
+    if (!canEditJob) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       await updateRoom.mutateAsync({ id: roomId, name: newName });
       toast({
@@ -66,6 +90,15 @@ export const useJobHandlers = (project: any) => {
   };
 
   const handleChangeRoomType = async (roomId: string, roomType: string) => {
+    if (!canEditJob) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       await updateRoom.mutateAsync({ id: roomId, room_type: roomType });
       toast({
@@ -83,6 +116,15 @@ export const useJobHandlers = (project: any) => {
   };
 
   const handleCreateSurface = async (roomId: string, surfaceType: string) => {
+    if (!canEditJob) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       const roomSurfaces = allSurfaces?.filter(s => s.room_id === roomId) || [];
       const windowNumber = roomSurfaces.filter(s => s.surface_type === 'window').length + 1;
@@ -138,6 +180,15 @@ export const useJobHandlers = (project: any) => {
   };
 
   const handleUpdateSurface = async (surfaceId: string, updates: any) => {
+    if (!canEditJob) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       await updateSurface.mutateAsync({ id: surfaceId, ...updates });
       toast({
@@ -155,6 +206,15 @@ export const useJobHandlers = (project: any) => {
   };
 
   const handleDeleteSurface = async (surfaceId: string) => {
+    if (!canEditJob) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       await deleteSurface.mutateAsync(surfaceId);
       toast({
@@ -172,6 +232,15 @@ export const useJobHandlers = (project: any) => {
   };
 
   const handleCopyRoom = async (room: any) => {
+    if (!canEditJob) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Prevent duplicate copies if already in progress
     if (createRoom.isPending) {
       console.log("Room copy already in progress, ignoring duplicate request");
@@ -323,6 +392,15 @@ export const useJobHandlers = (project: any) => {
   };
 
   const handleDeleteRoom = async (roomId: string) => {
+    if (!canEditJob) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       await deleteRoom.mutateAsync(roomId);
       toast({
@@ -340,6 +418,15 @@ export const useJobHandlers = (project: any) => {
   };
 
   const handleCreateTreatment = async (roomId: string, surfaceId: string, treatmentType: string, treatmentData?: any) => {
+    if (!canEditJob) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       const payload: any = {
         project_id: projectId,

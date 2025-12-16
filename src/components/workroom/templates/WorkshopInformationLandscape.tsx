@@ -12,9 +12,10 @@ interface WorkshopInformationLandscapeProps {
   data: WorkshopData;
   projectId?: string;
   isPrintMode?: boolean;
+  isReadOnly?: boolean;
 }
 
-export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscapeProps> = ({ data, projectId, isPrintMode = false }) => {
+export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscapeProps> = ({ data, projectId, isPrintMode = false, isReadOnly = false }) => {
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
   const { units } = useMeasurementUnits();
@@ -70,13 +71,14 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
             <span className="h-1.5 w-1.5 rounded-full bg-primary" title="Modified" />
           )}
         </div>
-        {editing ? (
+        {editing && !isReadOnly ? (
           multiline ? (
             <Textarea
               value={value}
               onChange={(e) => handleFieldChange(field, e.target.value)}
               className="mt-0.5 text-xs min-h-[50px]"
               placeholder={data.header[field] || "—"}
+              disabled={isReadOnly}
             />
           ) : (
             <Input
@@ -84,6 +86,7 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
               onChange={(e) => handleFieldChange(field, e.target.value)}
               className="mt-0.5 text-xs h-7"
               placeholder={data.header[field] || "—"}
+              disabled={isReadOnly}
             />
           )
         ) : (
@@ -110,6 +113,7 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                   size="sm"
                   onClick={handleReset}
                   className="h-7 text-xs"
+                  disabled={isReadOnly}
                 >
                   <RotateCcw className="h-3 w-3 mr-1" />
                   Reset
@@ -119,7 +123,7 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                 variant={editing ? "default" : "outline"}
                 size="sm"
                 onClick={editing ? handleSaveAndClose : () => setEditing(true)}
-                disabled={isSaving}
+                disabled={isSaving || isReadOnly}
                 className="h-7 text-xs"
               >
                 {editing ? (
@@ -425,7 +429,7 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                           {/* Notes - show for all treatments */}
                           <div className="text-[9px] mt-2 pt-2 border-t border-gray-200">
                             <div className="font-medium text-gray-700 mb-1">Notes:</div>
-                            {isPrintMode || !editing ? (
+                            {isPrintMode || !editing || isReadOnly ? (
                               <div className="text-gray-600 italic min-h-[20px]">
                                 {getItemNote(item.id, item.notes) || "No notes"}
                               </div>
@@ -435,6 +439,7 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
                                 onChange={(e) => setItemNote(item.id, e.target.value)}
                                 className="text-[9px] min-h-[40px] w-full"
                                 placeholder="Add manufacturing notes for this item..."
+                                disabled={isReadOnly}
                               />
                             )}
                           </div>
@@ -452,7 +457,7 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
       {/* Production Notes Section */}
       <div className="border-t pt-3 mt-4">
         <h3 className="text-xs font-bold uppercase tracking-wide mb-2">Production Notes</h3>
-        {isPrintMode || !editing ? (
+        {isPrintMode || !editing || isReadOnly ? (
           <div className="bg-gray-50 rounded p-3 min-h-[60px] text-xs text-gray-600">
             {productionNotes ? (
               <p className="whitespace-pre-wrap">{productionNotes}</p>
@@ -466,6 +471,7 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
             onChange={(e) => setProductionNotes(e.target.value)}
             className="text-xs min-h-[80px] w-full"
             placeholder="Add general manufacturing instructions, special handling notes, or additional details..."
+            disabled={isReadOnly}
           />
         )}
       </div>

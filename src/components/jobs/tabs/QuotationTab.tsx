@@ -31,6 +31,8 @@ import { InlinePaymentConfig } from "@/components/jobs/quotation/InlinePaymentCo
 import { useQuoteDiscount } from "@/hooks/useQuoteDiscount";
 import { TWCSubmitDialog } from "@/components/integrations/TWCSubmitDialog";
 import { QuoteProfitSummary } from "@/components/pricing/QuoteProfitSummary";
+import { useHasPermission } from "@/hooks/usePermissions";
+import { useAuth } from "@/components/auth/AuthProvider";
 interface QuotationTabProps {
   projectId: string;
   quoteId?: string;
@@ -92,6 +94,11 @@ export const QuotationTab = ({
   const currentQuote = quoteVersions?.find(q => q.id === quoteId);
   const currentVersion = currentQuote?.version || 1;
   const isEmptyVersion = (rooms?.length || 0) === 0 && quoteId;
+  const { user } = useAuth();
+  const canEditAllJobs = useHasPermission('edit_all_jobs');
+  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
+  const canEditJob = canEditAllJobs || (canEditAssignedJobs && project?.user_id === user?.id);
+  const isReadOnly = !canEditJob;
 
   // Fetch client data
   const {
@@ -230,7 +237,16 @@ export const QuotationTab = ({
 
   // Function to update template settings
   const handleUpdateTemplateSettings = async (key: string, value: any) => {
-    if (!selectedTemplate) return;
+    if (!selectedTemplate || isReadOnly) {
+      if (isReadOnly) {
+        toast({
+          title: "Permission Denied",
+          description: "You don't have permission to edit this job.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
     try {
       const blocks = Array.isArray(selectedTemplate.blocks) ? selectedTemplate.blocks : [];
       const updatedBlocks = blocks.map((block: any) => {
@@ -535,6 +551,14 @@ export const QuotationTab = ({
     }
   };
   const handleAddDiscount = async () => {
+    if (isReadOnly) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
     const effectiveQuoteId = await getOrCreateQuoteId();
     if (!effectiveQuoteId) return;
 
@@ -553,6 +577,14 @@ export const QuotationTab = ({
     });
   };
   const handlePayment = async () => {
+    if (isReadOnly) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
     const effectiveQuoteId = await getOrCreateQuoteId();
     if (!effectiveQuoteId) return;
 
@@ -610,25 +642,25 @@ export const QuotationTab = ({
           <div className="flex flex-wrap items-center gap-2">
 
             {/* Primary Action */}
-            <Button size="sm" variant="outline" onClick={handleDownloadPDF} disabled={isGeneratingPDF || !selectedTemplate} className="h-9 px-4">
+            <Button size="sm" variant="outline" onClick={handleDownloadPDF} disabled={isGeneratingPDF || !selectedTemplate || isReadOnly} className="h-9 px-4">
               <Download className="h-4 w-4 mr-2" />
               {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
             </Button>
 
             {/* Secondary Actions */}
-            <Button variant="outline" size="sm" onClick={() => setIsEmailModalOpen(true)} disabled={isGeneratingPDF || !selectedTemplate} className="h-9 px-4">
+            <Button variant="outline" size="sm" onClick={() => setIsEmailModalOpen(true)} disabled={isGeneratingPDF || !selectedTemplate || isReadOnly} className="h-9 px-4">
               <Mail className="h-4 w-4 mr-2" />
               Email
             </Button>
 
             {/* Discount Button */}
-            <Button variant="outline" size="sm" onClick={handleAddDiscount} disabled={createQuote.isPending} className="h-9 px-4">
+            <Button variant="outline" size="sm" onClick={handleAddDiscount} disabled={createQuote.isPending || isReadOnly} className="h-9 px-4">
               <Percent className="h-4 w-4 mr-2" />
               Discount
             </Button>
 
             {/* Payment Button */}
-            <Button variant="outline" size="sm" onClick={handlePayment} disabled={createQuote.isPending} className="h-9 px-4">
+            <Button variant="outline" size="sm" onClick={handlePayment} disabled={createQuote.isPending || isReadOnly} className="h-9 px-4">
               <CreditCard className="h-4 w-4 mr-2" />
               Payment
             </Button>
@@ -639,6 +671,7 @@ export const QuotationTab = ({
                 variant="outline" 
                 size="sm" 
                 onClick={() => setIsTWCSubmitDialogOpen(true)}
+                disabled={isReadOnly}
                 className="h-9 px-4 border-blue-500 text-blue-600 hover:bg-blue-50"
               >
                 <Package className="h-4 w-4 mr-2" />
@@ -656,20 +689,20 @@ export const QuotationTab = ({
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <Switch checked={templateSettings.groupByRoom} onCheckedChange={checked => {
             handleUpdateTemplateSettings('groupByRoom', checked);
-          }} />
+          }} disabled={isReadOnly} />
             <span className="text-sm">Group by room</span>
           </label>
           
           <Button variant="ghost" size="sm" onClick={() => {
           const newLayout = templateSettings.layout === 'detailed' ? 'simple' : 'detailed';
           handleUpdateTemplateSettings('layout', newLayout);
-        }} className="h-8">
+        }} className="h-8" disabled={isReadOnly}>
             {templateSettings.layout === 'detailed' ? 'Simple View' : 'Detailed View'}
           </Button>
           
           <Button variant="ghost" size="sm" onClick={() => {
           handleUpdateTemplateSettings('showImages', !templateSettings.showImages);
-        }} className="h-8">
+        }} className="h-8" disabled={isReadOnly}>
             <ImageIconLucide className="h-4 w-4 mr-2" />
             {templateSettings.showImages ? 'Hide Images' : 'Show Images'}
           </Button>

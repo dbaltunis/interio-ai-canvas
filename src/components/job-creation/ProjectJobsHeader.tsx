@@ -8,6 +8,8 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useTreatments } from "@/hooks/useTreatments";
 import { formatCurrency } from "@/utils/currency";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useHasPermission } from "@/hooks/usePermissions";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface ProjectJobsHeaderProps {
   project: any;
@@ -29,6 +31,10 @@ export const ProjectJobsHeader = ({
   const { units } = useMeasurementUnits();
   const { data: treatments = [] } = useTreatments(project?.id);
   const currency = useCurrency();
+  const { user } = useAuth();
+  const canEditAllJobs = useHasPermission('edit_all_jobs');
+  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
+  const canEditJob = canEditAllJobs || (canEditAssignedJobs && project?.user_id === user?.id);
 
   // Calculate total amount from treatments for this specific project
   const totalAmount = treatments
@@ -105,14 +111,16 @@ export const ProjectJobsHeader = ({
             ) : (
               <div className="flex items-center space-x-2">
                 <h1 className="text-2xl font-bold">{project?.name || "Untitled Project"}</h1>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleStartEdit}
-                  className="text-white/80 hover:text-white hover:bg-white/10"
-                >
-                  <Edit2 className="h-4 w-4" />
-                </Button>
+                {canEditJob && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleStartEdit}
+                    className="text-white/80 hover:text-white hover:bg-white/10"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             )}
           </div>
@@ -126,7 +134,7 @@ export const ProjectJobsHeader = ({
         
         <Button
           onClick={onCreateRoom}
-          disabled={isCreatingRoom}
+          disabled={isCreatingRoom || !canEditJob}
           className="bg-white/10 hover:bg-white/20 text-white border-white/20 shadow-lg"
           size="lg"
         >

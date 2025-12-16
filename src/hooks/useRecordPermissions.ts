@@ -12,7 +12,7 @@ export const useRecordPermissions = () => {
   // Edit permissions
   const canEditOwnClients = useHasPermission('edit_own_clients');
   const canEditAllClients = useHasPermission('edit_all_clients');
-  const canEditOwnJobs = useHasPermission('edit_own_jobs');
+  const canEditOwnJobs = useHasPermission('edit_assigned_jobs');
   const canEditAllJobs = useHasPermission('edit_all_jobs');
   const canEditOwnProjects = useHasPermission('edit_own_projects');
   const canEditAllProjects = useHasPermission('edit_all_projects');

@@ -24,6 +24,7 @@ interface RoomManagementTabsProps {
   isCopyingRoom?: boolean;
   onChangeRoomType: (roomId: string, roomType: string) => void;
   onCreateFromTemplate?: (template: any, customName?: string) => void;
+  isReadOnly?: boolean;
 }
 
 export const RoomManagementTabs = ({
@@ -48,7 +49,8 @@ export const RoomManagementTabs = ({
   isCreatingRoom,
   isCopyingRoom = false,
   onChangeRoomType,
-  onCreateFromTemplate
+  onCreateFromTemplate,
+  isReadOnly = false
 }: RoomManagementTabsProps) => {
   return (
     <div className="space-y-6">
@@ -73,6 +75,7 @@ export const RoomManagementTabs = ({
         isCopyingRoom={isCopyingRoom}
         onChangeRoomType={onChangeRoomType}
         onCreateFromTemplate={onCreateFromTemplate}
+        isReadOnly={isReadOnly}
       />
     </div>
   );

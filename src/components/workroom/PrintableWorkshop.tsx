@@ -9,10 +9,11 @@ interface PrintableWorkshopProps {
   projectId?: string;
   template: string;
   blocks?: any[];
+  isReadOnly?: boolean;
 }
 
 export const PrintableWorkshop = React.forwardRef<HTMLDivElement, PrintableWorkshopProps>(
-  ({ data, orientation, margins, projectId, template, blocks }, ref) => {
+  ({ data, orientation, margins, projectId, template, blocks, isReadOnly = false }, ref) => {
     const width = orientation === 'landscape' ? '297mm' : '210mm';
     const minHeight = orientation === 'landscape' ? '210mm' : '297mm';
     
@@ -42,6 +43,7 @@ export const PrintableWorkshop = React.forwardRef<HTMLDivElement, PrintableWorks
           projectId={projectId}
           orientation={orientation}
           isPrintMode={true}
+          isReadOnly={isReadOnly}
         />
       </div>
     );

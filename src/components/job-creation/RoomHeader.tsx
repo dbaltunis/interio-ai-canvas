@@ -24,6 +24,7 @@ interface RoomHeaderProps {
   isCopyingRoom?: boolean;
   isOpen?: boolean;
   onToggle?: () => void;
+  isReadOnly?: boolean;
 }
 
 export const RoomHeader = ({
@@ -41,7 +42,8 @@ export const RoomHeader = ({
   onChangeRoomType,
   isCopyingRoom = false,
   isOpen = true,
-  onToggle
+  onToggle,
+  isReadOnly = false
 }: RoomHeaderProps) => {
   const { compact } = useCompactMode();
   const { formatCurrency } = useFormattedCurrency();
@@ -79,17 +81,19 @@ export const RoomHeader = ({
             ) : (
               <div className="flex items-center gap-2">
                 <CardTitle className="text-lg font-semibold text-foreground">{room.name}</CardTitle>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onStartEditing();
-                  }}
-                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                >
-                  <Edit2 className="h-3 w-3" />
-                </Button>
+                {!isReadOnly && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onStartEditing();
+                    }}
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                  >
+                    <Edit2 className="h-3 w-3" />
+                  </Button>
+                )}
               </div>
             )}
             <p className="text-xl font-bold text-primary mt-1">{formatCurrency(roomTotal)}</p>

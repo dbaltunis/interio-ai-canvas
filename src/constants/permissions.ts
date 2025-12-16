@@ -65,7 +65,7 @@ export const PERMISSION_DETAILS: Record<string, {
     label: 'Create Jobs', 
     description: 'Create new jobs and quotes', 
     category: 'jobs', 
-    required: [] 
+    required: ['view_assigned_jobs'] 
   },
   edit_all_jobs: { 
     label: 'Edit Any Job', 
@@ -85,7 +85,7 @@ export const PERMISSION_DETAILS: Record<string, {
     label: 'Delete Jobs', 
     description: 'Permanently remove jobs (cannot be undone)', 
     category: 'jobs', 
-    required: [], 
+    required: ['view_assigned_jobs'], 
     warning: true 
   },
   
@@ -108,7 +108,7 @@ export const PERMISSION_DETAILS: Record<string, {
     label: 'Create Clients', 
     description: 'Add new clients to the system', 
     category: 'clients', 
-    required: [] 
+    required: ['view_assigned_clients'] 
   },
   edit_all_clients: { 
     label: 'Edit Any Client', 
@@ -128,7 +128,7 @@ export const PERMISSION_DETAILS: Record<string, {
     label: 'Delete Clients', 
     description: 'Permanently remove clients (cannot be undone)', 
     category: 'clients', 
-    required: [], 
+    required: ['view_assigned_clients'], 
     warning: true 
   },
   
@@ -151,7 +151,7 @@ export const PERMISSION_DETAILS: Record<string, {
     label: 'Create Appointments', 
     description: 'Schedule new appointments', 
     category: 'calendar', 
-    required: [] 
+    required: ['view_own_calendar'] 
   },
   
   // ===== INVENTORY & PRODUCTS =====

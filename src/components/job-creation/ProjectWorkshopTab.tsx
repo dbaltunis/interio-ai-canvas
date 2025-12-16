@@ -8,6 +8,8 @@ import { useRooms } from "@/hooks/useRooms";
 import { useSurfaces } from "@/hooks/useSurfaces";
 import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 import { formatCurrency } from "@/utils/currency";
+import { useHasPermission } from "@/hooks/usePermissions";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface ProjectWorkshopTabProps {
   project: any;
@@ -18,6 +20,11 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
   const { data: rooms = [], isLoading: roomsLoading } = useRooms(project?.id);
   const { data: surfaces = [], isLoading: surfacesLoading } = useSurfaces(project?.id);
   const { data: projectSummaries, isLoading: summariesLoading } = useProjectWindowSummaries(project?.id);
+  const { user } = useAuth();
+  const canEditAllJobs = useHasPermission('edit_all_jobs');
+  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
+  const canEditJob = canEditAllJobs || (canEditAssignedJobs && project?.user_id === user?.id);
+  const isReadOnly = !canEditJob;
   
   const isLoading = treatmentsLoading || roomsLoading || surfacesLoading || summariesLoading;
   
@@ -130,7 +137,7 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
         <div className="p-4 border-b">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">Work Orders</h3>
-            <Button size="sm" disabled={isLoading || workOrders.length === 0}>
+            <Button size="sm" disabled={isLoading || workOrders.length === 0 || isReadOnly}>
               <Wrench className="h-4 w-4 mr-2" />
               Generate Orders
             </Button>
@@ -233,19 +240,19 @@ export const ProjectWorkshopTab = ({ project }: ProjectWorkshopTabProps) => {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Button variant="outline" className="h-20 flex-col">
+        <Button variant="outline" className="h-20 flex-col" disabled={isReadOnly}>
           <Users className="h-6 w-6 mb-2" />
           <span className="text-sm">Assign Tasks</span>
         </Button>
-        <Button variant="outline" className="h-20 flex-col">
+        <Button variant="outline" className="h-20 flex-col" disabled={isReadOnly}>
           <Package className="h-6 w-6 mb-2" />
           <span className="text-sm">Order Materials</span>
         </Button>
-        <Button variant="outline" className="h-20 flex-col">
+        <Button variant="outline" className="h-20 flex-col" disabled={isReadOnly}>
           <CheckCircle className="h-6 w-6 mb-2" />
           <span className="text-sm">Update Status</span>
         </Button>
-        <Button variant="outline" className="h-20 flex-col">
+        <Button variant="outline" className="h-20 flex-col" disabled={isReadOnly}>
           <Clock className="h-6 w-6 mb-2" />
           <span className="text-sm">Track Progress</span>
         </Button>

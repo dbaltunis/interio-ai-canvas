@@ -11,6 +11,8 @@ import { useQuotationSync } from "@/hooks/useQuotationSync";
 import { useWorkroomSync } from "@/hooks/useWorkroomSync";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { supabase } from "@/integrations/supabase/client";
+import { useHasPermission } from "@/hooks/usePermissions";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface RoomsTabProps {
   projectId: string;
@@ -44,6 +46,11 @@ export const RoomsTab = ({
   } = useBusinessSettings();
   const createRoom = useCreateRoom();
   const project = projects?.find(p => p.id === projectId);
+  const { user } = useAuth();
+  const canEditAllJobs = useHasPermission('edit_all_jobs');
+  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
+  const canEditJob = canEditAllJobs || (canEditAssignedJobs && project?.user_id === user?.id);
+  const isReadOnly = !canEditJob;
 
   // Fetch all room products for this project
   const roomIds = rooms.map(r => r.id);
@@ -189,6 +196,6 @@ export const RoomsTab = ({
       </div>
 
       {/* Enhanced Room Management - This handles all room display and management */}
-      <EnhancedRoomView project={project} clientId={project.client_id} />
+      <EnhancedRoomView project={project} clientId={project.client_id} isReadOnly={isReadOnly} />
     </div>;
 };

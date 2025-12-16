@@ -13,9 +13,10 @@ interface ProjectClientTabProps {
   project: any;
   onClientSelect?: (clientId: string) => void;
   onClientRemove?: () => void;
+  isReadOnly?: boolean;
 }
 
-export const ProjectClientTab = ({ project, onClientSelect, onClientRemove }: ProjectClientTabProps) => {
+export const ProjectClientTab = ({ project, onClientSelect, onClientRemove, isReadOnly = false }: ProjectClientTabProps) => {
   const [showClientDialog, setShowClientDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -136,14 +137,14 @@ export const ProjectClientTab = ({ project, onClientSelect, onClientRemove }: Pr
               </div>
             </div>
             <div className="flex space-x-2">
-              <Button variant="outline" size="sm" onClick={openEditDialog}>
+              <Button variant="outline" size="sm" onClick={openEditDialog} disabled={isReadOnly}>
                 <Edit className="h-4 w-4 mr-1" />
                 Edit
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowClientDialog(true)}>
+              <Button variant="outline" size="sm" onClick={() => setShowClientDialog(true)} disabled={isReadOnly}>
                 Change Client
               </Button>
-              <Button variant="outline" size="sm" onClick={onClientRemove}>
+              <Button variant="outline" size="sm" onClick={onClientRemove} disabled={isReadOnly}>
                 Remove
               </Button>
             </div>
@@ -193,7 +194,7 @@ export const ProjectClientTab = ({ project, onClientSelect, onClientRemove }: Pr
         
         <Dialog open={showClientDialog} onOpenChange={setShowClientDialog}>
           <DialogTrigger asChild>
-            <Button>
+            <Button disabled={isReadOnly}>
               <Search className="h-4 w-4 mr-2" />
               Select Client
             </Button>

@@ -2,16 +2,24 @@ import { useState } from "react";
 import { useJobHandlers } from "../job-creation/JobHandlers";
 import { RoomManagementTabs } from "./RoomManagementTabs";
 import { useToast } from "@/hooks/use-toast";
+import { useHasPermission } from "@/hooks/usePermissions";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface EnhancedRoomViewProps {
   project: any;
   clientId?: string;
+  isReadOnly?: boolean;
 }
 
-export const EnhancedRoomView = ({ project, clientId }: EnhancedRoomViewProps) => {
+export const EnhancedRoomView = ({ project, clientId, isReadOnly: propIsReadOnly }: EnhancedRoomViewProps) => {
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [editingRoomName, setEditingRoomName] = useState("");
   const { toast } = useToast();
+  const { user } = useAuth();
+  const canEditAllJobs = useHasPermission('edit_all_jobs');
+  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
+  const canEditJob = canEditAllJobs || (canEditAssignedJobs && project?.user_id === user?.id);
+  const isReadOnly = propIsReadOnly !== undefined ? propIsReadOnly : !canEditJob;
 
   const {
     rooms,
@@ -86,6 +94,7 @@ export const EnhancedRoomView = ({ project, clientId }: EnhancedRoomViewProps) =
       isCopyingRoom={createRoom.isPending}
       onChangeRoomType={handleChangeRoomType}
       onCreateFromTemplate={handleCreateFromTemplate}
+      isReadOnly={isReadOnly}
     />
   );
 };

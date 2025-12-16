@@ -79,6 +79,13 @@ export const useCreateNumberSequence = () => {
       });
     },
     onError: (error: any) => {
+      // Don't show error toast for duplicate key constraint violations
+      // These are expected when sequences already exist (created by trigger or race conditions)
+      if (error?.code === '23505' || error?.message?.includes('duplicate key') || error?.message?.includes('unique constraint')) {
+        console.log('Number sequence already exists, skipping error toast');
+        return;
+      }
+      
       toast({
         title: "Failed to create number sequence",
         description: error.message,

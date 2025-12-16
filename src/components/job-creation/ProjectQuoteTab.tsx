@@ -19,6 +19,7 @@ import { DetailedQuotationTable } from "@/components/jobs/quotation/DetailedQuot
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { EnhancedVisualEditor } from "@/components/settings/templates/visual-editor/EnhancedVisualEditor";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useReactToPrint } from "react-to-print";
 import { PrintableQuote } from "@/components/jobs/quotation/PrintableQuote";
 import { EmailQuoteModal } from "@/components/jobs/quotation/EmailQuoteModal";
@@ -37,6 +38,11 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   const { data: businessSettings } = useBusinessSettings();
   const { data: templates } = useQuoteTemplates();
   const isAdmin = useHasPermission('manage_settings');
+  const { user } = useAuth();
+  const canEditAllJobs = useHasPermission('edit_all_jobs');
+  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
+  const canEditJob = canEditAllJobs || (canEditAssignedJobs && project?.user_id === user?.id);
+  const isReadOnly = !canEditJob;
   const { buildQuotationItems } = useQuotationSync({
     projectId: project?.id || "",
     clientId: project?.client_id || "",
@@ -160,6 +166,7 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
                 size="sm" 
                 variant="secondary"
                 onClick={() => setIsTemplateEditorOpen(true)}
+                disabled={isReadOnly}
               >
                 <Edit3 className="h-4 w-4 mr-2" />
                 Edit Template
@@ -169,7 +176,7 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
               size="sm" 
               variant="default"
               onClick={handlePrint}
-              disabled={!client}
+              disabled={!client || isReadOnly}
             >
               <Download className="h-4 w-4 mr-2" />
               PDF
@@ -178,29 +185,29 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
               size="sm" 
               variant="outline"
               onClick={() => setIsEmailModalOpen(true)}
-              disabled={!client}
+              disabled={!client || isReadOnly}
             >
               <Mail className="h-4 w-4 mr-2" />
               Email
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" disabled={isReadOnly}>
                   <MoreVertical className="h-4 w-4 mr-2" />
                   More
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>
+                <DropdownMenuItem disabled={isReadOnly}>
                   Add Terms & Conditions
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem disabled={isReadOnly}>
                   Add Discount
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem disabled={isReadOnly}>
                   Adjust Markup
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem disabled={isReadOnly}>
                   Export Settings
                 </DropdownMenuItem>
               </DropdownMenuContent>

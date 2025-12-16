@@ -100,14 +100,40 @@ export const useUserAccountInfo = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .select("*, parent_account:parent_account_id(user_id, display_name, role)")
-        .eq("user_id", user.id)
-        .single();
-
-      if (error) throw error;
+      // Retry logic for race conditions when user is just created
+      let data = null;
+      let error = null;
+      const maxRetries = 3;
+      
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const result = await supabase
+          .from("user_profiles")
+          .select("*, parent_account:parent_account_id(user_id, display_name, role)")
+          .eq("user_id", user.id)
+          .single();
+        
+        data = result.data;
+        error = result.error;
+        
+        // If profile found or error is not 406/not found, break
+        if (data || (error && error.code !== 'PGRST116' && error.code !== '406')) {
+          break;
+        }
+        
+        // If 406/not found and not last attempt, wait and retry
+        if (attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        }
+      }
+      
+      // Only throw error if it's not a "not found" error (406/PGRST116)
+      if (error && error.code !== 'PGRST116' && error.code !== '406') {
+        throw error;
+      }
+      
       return data;
     },
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
   });
 };

@@ -35,10 +35,10 @@ export const JobStatusDropdown = ({
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Permission checks - use create_jobs since edit permissions don't exist
-  const canCreateJobs = useHasPermission('create_jobs');
-  const canViewAllJobs = useHasPermission('view_all_jobs');
-  const canEditJobs = canCreateJobs || canViewAllJobs;
+  // Permission checks - properly check edit permissions
+  const canEditAllJobs = useHasPermission('edit_all_jobs');
+  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
+  const canEditJobs = canEditAllJobs || canEditAssignedJobs;
 
   // Filter statuses based on job type
   const availableStatuses = jobStatuses.filter(status => {
