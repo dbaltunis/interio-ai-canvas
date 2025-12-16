@@ -10,8 +10,10 @@ import { getBlindHemDefaults, calculateBlindSqm, logBlindCalculation } from '@/u
 interface OptionDetail {
   name: string;
   value?: string; // Extracted value from "Key: Value" format for quote display
+  label?: string; // CRITICAL: Explicit label for description extraction in quotes
   cost: number;
   pricingMethod: string;
+  orderIndex?: number; // CRITICAL: Per-template ordering from template_option_settings
 }
 
 interface BlindCalculationResult {
@@ -31,7 +33,7 @@ export const calculateBlindCosts = (
   heightCm: number,
   template: any,
   fabricItem: any,
-  selectedOptions: Array<{ name: string; price?: number; pricingMethod?: string; optionKey?: string; pricingGridData?: any }> = [],
+  selectedOptions: Array<{ name: string; price?: number; pricingMethod?: string; optionKey?: string; pricingGridData?: any; label?: string; orderIndex?: number }> = [],
   measurements?: Record<string, any>
 ): BlindCalculationResult => {
   
@@ -259,8 +261,10 @@ export const calculateBlindCosts = (
       optionDetails.push({
         name: extractedName,
         value: extractedValue || opt.optionKey || undefined,
+        label: opt.label || extractedValue || undefined, // CRITICAL: Pass through explicit label
         cost: calculatedCost,
-        pricingMethod: usedMethod
+        pricingMethod: usedMethod,
+        orderIndex: opt.orderIndex // CRITICAL: Pass through order_index for sorting
       });
       
       return sum + calculatedCost;

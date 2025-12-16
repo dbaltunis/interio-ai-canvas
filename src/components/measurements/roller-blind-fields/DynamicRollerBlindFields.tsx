@@ -20,7 +20,7 @@ interface DynamicRollerBlindFieldsProps {
   templateId?: string;
   treatmentCategory?: string;
   readOnly?: boolean;
-  onOptionPriceChange?: (optionKey: string, price: number, label: string, pricingMethod?: string, pricingGridData?: any) => void;
+  onOptionPriceChange?: (optionKey: string, price: number, label: string, pricingMethod?: string, pricingGridData?: any, orderIndex?: number) => void;
   selectedOptions?: Array<{ name: string; price: number; pricingMethod?: string }>;
   onSelectedOptionsChange?: (options: Array<{ name: string; price: number; pricingMethod?: string }>) => void;
 }
@@ -185,7 +185,7 @@ export const DynamicRollerBlindFields = ({
   };
 
   // Helper to handle option change and notify parent of price
-  const handleOptionChange = (key: string, value: string | boolean, optionValues: any[], selectedValue?: any) => {
+  const handleOptionChange = (key: string, value: string | boolean, optionValues: any[], selectedValue?: any, orderIndex?: number) => {
     onChange(key, String(value));
     
     if (onOptionPriceChange && typeof value === 'string') {
@@ -208,7 +208,7 @@ export const DynamicRollerBlindFields = ({
           });
         }
         
-        onOptionPriceChange(key, actualPrice, selectedOption.label, pricingMethod, pricingGridData);
+        onOptionPriceChange(key, actualPrice, selectedOption.label, pricingMethod, pricingGridData, orderIndex);
       }
     }
   };
@@ -251,7 +251,7 @@ export const DynamicRollerBlindFields = ({
           const pricingMethod = firstOptionValue?.extra_data?.pricing_method || 'fixed';
           const pricingGridData = firstOptionValue?.extra_data?.pricing_grid_data;
           const actualPrice = calculateOptionPrice(defaultValue.price, pricingMethod, pricingGridData);
-          onOptionPriceChange(option.key, actualPrice, defaultValue.label, pricingMethod, pricingGridData);
+          onOptionPriceChange(option.key, actualPrice, defaultValue.label, pricingMethod, pricingGridData, (option as any).template_order_index);
         }
       } else if (currentValue && onOptionPriceChange) {
         // If value exists, ensure it's in the cost summary
@@ -264,7 +264,7 @@ export const DynamicRollerBlindFields = ({
             const pricingGridData = selectedValue?.extra_data?.pricing_grid_data;
             const actualPrice = calculateOptionPrice(selectedOption.price, pricingMethod, pricingGridData);
             console.log(`  Re-adding existing ${option.key} = ${currentValue} to cost summary`);
-            onOptionPriceChange(option.key, actualPrice, selectedOption.label, pricingMethod, pricingGridData);
+            onOptionPriceChange(option.key, actualPrice, selectedOption.label, pricingMethod, pricingGridData, (option as any).template_order_index);
           }
         }
       }
@@ -468,7 +468,7 @@ export const DynamicRollerBlindFields = ({
                   value={currentValue || defaultValue}
                   onValueChange={(value) => {
                     const selectedValue = option.option_values?.find((v: any) => v.code === value || v.id === value);
-                    handleOptionChange(option.key, value, optionValues, selectedValue);
+                    handleOptionChange(option.key, value, optionValues, selectedValue, (option as any).template_order_index);
                   }}
                   disabled={readOnly}
                 >
@@ -578,7 +578,7 @@ export const DynamicRollerBlindFields = ({
                                 
                                 // Update option price
                                 if (onOptionPriceChange) {
-                                  onOptionPriceChange(`${option.key}_${selectedSubOption.key}`, price, displayLabel, 'fixed', undefined);
+                                  onOptionPriceChange(`${option.key}_${selectedSubOption.key}`, price, displayLabel, 'fixed', undefined, (option as any).template_order_index);
                                 }
                                 
                                 // CRITICAL: Also update selectedOptions for Cost Summary display
@@ -642,7 +642,7 @@ export const DynamicRollerBlindFields = ({
               </div>
               <RadioGroup
                 value={currentValue || defaultValue}
-                onValueChange={(value) => handleOptionChange(option.key, value, optionValues)}
+                onValueChange={(value) => handleOptionChange(option.key, value, optionValues, undefined, (option as any).template_order_index)}
                 disabled={readOnly}
               >
                 {optionValues.map(opt => (
@@ -683,7 +683,7 @@ export const DynamicRollerBlindFields = ({
                 id={option.key}
                 type={option.input_type}
                 value={currentValue || ''}
-                onChange={(e) => handleOptionChange(option.key, e.target.value, [])}
+                onChange={(e) => handleOptionChange(option.key, e.target.value, [], undefined, (option as any).template_order_index)}
                 disabled={readOnly}
                 placeholder={`Enter ${option.label.toLowerCase()}`}
                 className={isConditional ? "border-purple-200 focus:ring-purple-500" : ""}
@@ -710,7 +710,7 @@ export const DynamicRollerBlindFields = ({
               <Switch
                 id={option.key}
                 checked={currentValue === 'true' || currentValue === true}
-                onCheckedChange={(checked) => handleOptionChange(option.key, checked, [])}
+                onCheckedChange={(checked) => handleOptionChange(option.key, checked, [], undefined, (option as any).template_order_index)}
                 disabled={readOnly}
               />
             </div>
