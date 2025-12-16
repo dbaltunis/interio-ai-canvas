@@ -48,10 +48,12 @@ export const fetchTraditionalOptions = async (
       
       // CRITICAL FIX: Fetch options through template_option_settings to get ALL linked options
       // This includes TWC options that may have different account_ids
+      // Also fetch hidden_value_ids for per-template value filtering
       const { data: linkedOptions, error: linkedError } = await supabase
         .from('template_option_settings')
         .select(`
           is_enabled,
+          hidden_value_ids,
           treatment_options!inner (
             id,
             key,
@@ -95,10 +97,23 @@ export const fetchTraditionalOptions = async (
         return [];
       }
       
-      // Extract treatment_options from the joined result
+      // Extract treatment_options from the joined result and filter hidden values
       const options = linkedOptions
         .filter(lo => lo.treatment_options)
-        .map(lo => lo.treatment_options);
+        .map(lo => {
+          const option = lo.treatment_options as any;
+          const hiddenValueIds = (lo.hidden_value_ids as string[]) || [];
+          
+          // Filter out hidden values from option_values
+          if (option.option_values && hiddenValueIds.length > 0) {
+            option.option_values = option.option_values.filter(
+              (v: any) => !hiddenValueIds.includes(v.id)
+            );
+            console.log(`🔍 Filtered ${hiddenValueIds.length} hidden values from option ${option.label}`);
+          }
+          
+          return option;
+        });
       
       console.log(`✅ Found ${options.length} enabled options for template`);
       
