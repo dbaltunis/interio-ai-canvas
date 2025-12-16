@@ -56,11 +56,13 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
       
       // If querying by template ID, fetch options via template_option_settings
       // CRITICAL: Filter by user's account_id to prevent cross-account data leakage
+      // Also fetch hidden_value_ids for per-template value filtering
       if (templateIdOrCategory && queryType === 'template') {
         const { data: linkedOptions, error: linkedError } = await supabase
           .from('template_option_settings')
           .select(`
             is_enabled,
+            hidden_value_ids,
             treatment_options!inner (
               id,
               treatment_id,
@@ -91,9 +93,23 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
         }
         
         // CRITICAL FIX: Filter to only show options belonging to THIS user's account
+        // AND filter out hidden option values based on template_option_settings.hidden_value_ids
         const allLinkedOptions = (linkedOptions || [])
           .filter(lo => lo.treatment_options)
-          .map(lo => lo.treatment_options as TreatmentOption & { account_id?: string })
+          .map(lo => {
+            const opt = lo.treatment_options as TreatmentOption & { account_id?: string };
+            const hiddenValueIds = (lo.hidden_value_ids as string[]) || [];
+            
+            // Filter out hidden values from option_values
+            if (opt.option_values && hiddenValueIds.length > 0) {
+              opt.option_values = opt.option_values.filter(
+                (v: OptionValue) => !hiddenValueIds.includes(v.id)
+              );
+              console.log(`🔍 Filtered ${hiddenValueIds.length} hidden values from option ${opt.label}`);
+            }
+            
+            return opt;
+          })
           .filter(opt => opt.account_id === accountId); // Only show user's own options
         
         console.log('🔧 useTreatmentOptions (template query) loaded:', {
