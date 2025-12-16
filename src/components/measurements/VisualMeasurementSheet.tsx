@@ -162,7 +162,7 @@ export const VisualMeasurementSheet = ({
   };
 
   // Handle option price changes from dynamic fields
-  const handleOptionPriceChange = (optionKey: string, price: number, label: string, pricingMethod?: string, pricingGridData?: any) => {
+  const handleOptionPriceChange = (optionKey: string, price: number, label: string, pricingMethod?: string, pricingGridData?: any, orderIndex?: number) => {
     if (onSelectedOptionsChange) {
       // ⚠️ CRITICAL: Don't default to 'fixed' - require explicit pricing configuration
       if (!pricingMethod) {
@@ -174,10 +174,12 @@ export const VisualMeasurementSheet = ({
       const filteredOptions = currentOptions.filter(opt => !opt.name.startsWith(optionKey + ':'));
       const newOption = {
         name: `${optionKey}: ${label}`,
+        label: label, // CRITICAL: Store label separately for quote description extraction
         price,
         pricingMethod: pricingMethod, // Don't default to 'fixed'
         optionKey,
-        pricingGridData
+        pricingGridData,
+        orderIndex: orderIndex ?? 999 // CRITICAL: Store order_index for sorting in quotes
       };
       const updatedOptions = [...filteredOptions, newOption];
       console.log(`🎯 handleOptionPriceChange - ${optionKey}:`, {
@@ -185,6 +187,7 @@ export const VisualMeasurementSheet = ({
         newOption,
         pricingMethod: pricingMethod || '⚠️ NOT CONFIGURED',
         hasPricingGridData: !!pricingGridData,
+        orderIndex,
         updatedOptions
       });
 

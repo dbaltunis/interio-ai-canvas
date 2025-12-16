@@ -1650,78 +1650,17 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                 // UNIVERSAL: Try live calculation results first (any treatment type)
                 const liveOptions = liveBlindCalcResult?.optionDetails || liveCurtainCalcResult?.optionDetails || [];
                 
-                if (liveOptions.length > 0) {
-                  return liveOptions.map((opt: any, idx: number) => {
-                    // UNIVERSAL: Format option name and extract description
-                    // PRIORITY: Use pre-extracted value from blindCostCalculator if available
-                    let optionName = opt.name || opt.optionKey || 'Option';
-                    // CRITICAL: Check multiple sources for the selected value
-                    let optionValue = opt.value || opt.label || opt.selectedValue || opt.selectedLabel || '';
-                    
-                    // Extract from "name: value" format if value not already extracted
-                    if (!optionValue && optionName.includes(':')) {
-                      const colonIndex = optionName.indexOf(':');
-                      optionValue = optionName.substring(colonIndex + 1).trim();
-                      optionName = optionName.substring(0, colonIndex).trim();
-                    }
-                    
-                    // Also try "name - value" format (sub-options use hyphen)
-                    if (!optionValue && optionName.includes(' - ')) {
-                      const hyphenIndex = optionName.indexOf(' - ');
-                      optionValue = optionName.substring(hyphenIndex + 3).trim();
-                      optionName = optionName.substring(0, hyphenIndex).trim();
-                    }
-                    
-                    // Final fallback - use original full name as value if it has content
-                    if (!optionValue && opt.name && !opt.name.includes(':') && !opt.name.includes(' - ')) {
-                      optionValue = opt.name;
-                    }
-                    
-                    // Only use dash if truly nothing available
-                    if (!optionValue) optionValue = '-';
-                    
-                    // Format snake_case to Title Case
-                    optionName = optionName
-                      .replace(/_/g, ' ')
-                      .replace(/\b\w/g, (c: string) => c.toUpperCase());
-                    
-                    return {
-                      id: opt.name || `option-${idx}`,
-                      name: optionName,
-                      description: optionValue,
-                      total_cost: opt.cost,
-                      category: 'option',
-                      pricing_method: opt.pricingMethod,
-                      image_url: opt.image_url || null
-                    };
-                  });
-                }
-                
-                // UNIVERSAL FALLBACK: Use selectedOptions array (works for ALL template types)
-                const optionsToUse = selectedOptions.length > 0 
-                  ? selectedOptions 
-                  : (Array.isArray(measurements.selected_options) ? measurements.selected_options : []);
-                
-                return optionsToUse.map((opt: any, idx: number) => {
-                  let optionTotalCost = opt.price || opt.calculatedPrice || 0;
-                  const isPerMeterOption = opt.pricingMethod === 'per-meter' || opt.pricingMethod === 'per-metre' || 
-                                          opt.pricingMethod === 'per_meter' || opt.pricingMethod === 'per_metre' ||
-                                          opt.name?.toLowerCase().includes('lining');
-                  
-                  if (isPerMeterOption && linearMeters > 0 && opt.price > 0) {
-                    optionTotalCost = opt.price * linearMeters;
-                  }
-                  
-                  // UNIVERSAL: Parse name to extract key and value
-                  let optionName = opt.optionKey || opt.name || 'Option';
-                  // CRITICAL: Check multiple sources for the selected value
+                // Helper to extract and validate option value
+                const extractOptionValue = (opt: any): { name: string; value: string; isValid: boolean } => {
+                  // CRITICAL: Use opt.name first (contains "key: value" format for blinds)
+                  let optionName = opt.name || opt.optionKey || 'Option';
+                  // CRITICAL: Check label FIRST (explicitly stored), then other sources
                   let optionValue = opt.label || opt.value || opt.selectedValue || opt.selectedLabel || '';
                   
-                  // Extract from "name: value" format if present
-                  if (optionName.includes(':')) {
+                  // Extract from "name: value" format if value not already found
+                  if (!optionValue && optionName.includes(':')) {
                     const colonIndex = optionName.indexOf(':');
-                    const extractedValue = optionName.substring(colonIndex + 1).trim();
-                    if (extractedValue) optionValue = extractedValue;
+                    optionValue = optionName.substring(colonIndex + 1).trim();
                     optionName = optionName.substring(0, colonIndex).trim();
                   }
                   
@@ -1737,24 +1676,71 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     optionValue = opt.name;
                   }
                   
-                  // Only use dash if truly nothing available
-                  if (!optionValue) optionValue = '-';
-                  
-                  // Format snake_case to Title Case
+                  // Format snake_case to Title Case for display
                   optionName = optionName
                     .replace(/_/g, ' ')
                     .replace(/\b\w/g, (c: string) => c.toUpperCase());
                   
-                  return {
-                    id: `option-${idx}`,
-                    name: optionName,
-                    description: optionValue,
-                    total_cost: optionTotalCost,
-                    category: 'option',
-                    pricing_method: opt.pricingMethod,
-                    image_url: opt.image_url || null
-                  };
-                });
+                  // CRITICAL: Filter out N/A, empty, and invalid options
+                  const invalidValues = ['n/a', 'na', '-', '', 'none', 'select', 'select option', 'choose'];
+                  const isValid = optionValue && !invalidValues.includes(optionValue.toLowerCase().trim());
+                  
+                  return { name: optionName, value: optionValue || '-', isValid };
+                };
+                
+                if (liveOptions.length > 0) {
+                  return liveOptions
+                    .map((opt: any, idx: number) => {
+                      const extracted = extractOptionValue(opt);
+                      
+                      return {
+                        id: opt.name || `option-${idx}`,
+                        name: extracted.name,
+                        description: extracted.value,
+                        total_cost: opt.cost,
+                        category: 'option',
+                        pricing_method: opt.pricingMethod,
+                        image_url: opt.image_url || null,
+                        orderIndex: opt.orderIndex ?? idx,
+                        isValid: extracted.isValid
+                      };
+                    })
+                    .filter((opt: any) => opt.isValid) // CRITICAL: Filter out N/A options
+                    .sort((a: any, b: any) => (a.orderIndex ?? 999) - (b.orderIndex ?? 999)); // Sort by order_index
+                }
+                
+                // UNIVERSAL FALLBACK: Use selectedOptions array (works for ALL template types)
+                const optionsToUse = selectedOptions.length > 0 
+                  ? selectedOptions 
+                  : (Array.isArray(measurements.selected_options) ? measurements.selected_options : []);
+                
+                return optionsToUse
+                  .map((opt: any, idx: number) => {
+                    let optionTotalCost = opt.price || opt.calculatedPrice || 0;
+                    const isPerMeterOption = opt.pricingMethod === 'per-meter' || opt.pricingMethod === 'per-metre' || 
+                                            opt.pricingMethod === 'per_meter' || opt.pricingMethod === 'per_metre' ||
+                                            opt.name?.toLowerCase().includes('lining');
+                    
+                    if (isPerMeterOption && linearMeters > 0 && opt.price > 0) {
+                      optionTotalCost = opt.price * linearMeters;
+                    }
+                    
+                    const extracted = extractOptionValue(opt);
+                    
+                    return {
+                      id: `option-${idx}`,
+                      name: extracted.name,
+                      description: extracted.value,
+                      total_cost: optionTotalCost,
+                      category: 'option',
+                      pricing_method: opt.pricingMethod,
+                      image_url: opt.image_url || null,
+                      orderIndex: opt.orderIndex ?? idx,
+                      isValid: extracted.isValid
+                    };
+                  })
+                  .filter((opt: any) => opt.isValid) // CRITICAL: Filter out N/A options
+                  .sort((a: any, b: any) => (a.orderIndex ?? 999) - (b.orderIndex ?? 999)); // Sort by order_index
               };
               
               return [

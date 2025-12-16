@@ -63,6 +63,7 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
           .select(`
             is_enabled,
             hidden_value_ids,
+            order_index,
             treatment_options!inner (
               id,
               treatment_id,
@@ -94,11 +95,15 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
         
         // CRITICAL FIX: Filter to only show options belonging to THIS user's account
         // AND filter out hidden option values based on template_option_settings.hidden_value_ids
+        // AND include per-template order_index for sorting
         const allLinkedOptions = (linkedOptions || [])
           .filter(lo => lo.treatment_options)
           .map(lo => {
-            const opt = lo.treatment_options as TreatmentOption & { account_id?: string };
+            const opt = lo.treatment_options as TreatmentOption & { account_id?: string; template_order_index?: number };
             const hiddenValueIds = (lo.hidden_value_ids as string[]) || [];
+            
+            // CRITICAL: Use template_option_settings.order_index for per-template ordering
+            opt.template_order_index = lo.order_index ?? opt.order_index ?? 999;
             
             // Filter out hidden values from option_values
             if (opt.option_values && hiddenValueIds.length > 0) {
@@ -110,7 +115,8 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
             
             return opt;
           })
-          .filter(opt => opt.account_id === accountId); // Only show user's own options
+          .filter(opt => opt.account_id === accountId) // Only show user's own options
+          .sort((a, b) => (a.template_order_index ?? 999) - (b.template_order_index ?? 999)); // Sort by template order
         
         console.log('🔧 useTreatmentOptions (template query) loaded:', {
           templateId: templateIdOrCategory,
@@ -119,7 +125,8 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
           options: allLinkedOptions.map(o => ({
             key: o.key,
             label: o.label,
-            valuesCount: o.option_values?.length || 0
+            valuesCount: o.option_values?.length || 0,
+            templateOrderIndex: (o as any).template_order_index
           }))
         });
         
