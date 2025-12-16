@@ -202,7 +202,7 @@ export const QuoteDiscountDialog = ({
             <h4 className="font-semibold text-sm mb-3">Preview</h4>
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
-                <span>Base Subtotal:</span>
+                <span>Retail Subtotal:</span>
                 <span className="font-medium">{formatCurrency(subtotal, currency)}</span>
               </div>
               <div className="flex justify-between text-destructive">

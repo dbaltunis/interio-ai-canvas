@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calculator, Info, Settings, AlertCircle } from "lucide-react";
+import { Calculator, Info, Settings, AlertCircle, TrendingUp } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { convertLength } from "@/hooks/useBusinessSettings";
 import { useHeadingOptions } from "@/hooks/useHeadingOptions";
@@ -17,6 +17,8 @@ import { formatDimensionsFromCM, formatFromCM, getUnitLabel } from "@/utils/meas
 import { PricingGridPreview } from "@/components/settings/tabs/products/pricing/PricingGridPreview";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { SavedCostBreakdownDisplay } from "./SavedCostBreakdownDisplay";
+import { useMarkupSettings } from "@/hooks/useMarkupSettings";
+import { applyMarkup, resolveMarkup } from "@/utils/pricing/markupResolver";
 
 // Simple SVG icons
 const FabricSwatchIcon = ({ className }: { className?: string }) => (
@@ -197,6 +199,7 @@ export const CostCalculationSummary = ({
 }: CostCalculationSummaryProps) => {
   const { units } = useMeasurementUnits();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
+  const { data: markupSettings } = useMarkupSettings();
   
   // ✅ CRITICAL: Refs for deferred callback to prevent infinite render loop
   // The blind costs are stored here during render, then reported via useEffect AFTER render
@@ -568,12 +571,26 @@ export const CostCalculationSummary = ({
           )}
         </div>
 
-        {/* Total */}
+        {/* Cost Total */}
         <div className="border-t-2 border-primary/20 pt-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-card-foreground">Total</span>
+            <span className="text-lg font-bold text-card-foreground">Cost Total</span>
             <span className="text-xl font-bold text-primary">{formatPrice(blindCosts.totalCost)}</span>
           </div>
+          
+          {/* Quote Price - Shows retail price with markup for sales team */}
+          {markupSettings && markupSettings.default_markup_percentage > 0 && (
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+              <div className="flex items-center gap-1.5">
+                <TrendingUp className="h-4 w-4 text-emerald-600" />
+                <span className="font-semibold text-emerald-600">Quote Price</span>
+                <span className="text-xs text-muted-foreground">({markupSettings.default_markup_percentage}% markup)</span>
+              </div>
+              <span className="text-xl font-bold text-emerald-600">
+                {formatPrice(applyMarkup(blindCosts.totalCost, markupSettings.default_markup_percentage))}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Pricing Details */}
@@ -1057,11 +1074,26 @@ export const CostCalculationSummary = ({
         })}
       </div>
 
+      {/* Cost Total */}
       <div className="border-t-2 border-primary/20 pt-2.5">
         <div className="flex items-center justify-between">
-          <span className="text-lg font-bold text-card-foreground">Total</span>
+          <span className="text-lg font-bold text-card-foreground">Cost Total</span>
           <span className="text-xl font-bold text-primary">{formatPrice(totalCost)}</span>
         </div>
+        
+        {/* Quote Price - Shows retail price with markup for sales team */}
+        {markupSettings && markupSettings.default_markup_percentage > 0 && (
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+            <div className="flex items-center gap-1.5">
+              <TrendingUp className="h-4 w-4 text-emerald-600" />
+              <span className="font-semibold text-emerald-600">Quote Price</span>
+              <span className="text-xs text-muted-foreground">({markupSettings.default_markup_percentage}% markup)</span>
+            </div>
+            <span className="text-xl font-bold text-emerald-600">
+              {formatPrice(applyMarkup(totalCost, markupSettings.default_markup_percentage))}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
