@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Users, Shield, Loader2 } from "lucide-react";
+import { Users, Shield, Loader2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 interface TeamMember {
@@ -39,11 +39,21 @@ export const AdminAccessManager = () => {
     queryFn: async () => {
       if (!user) return [];
 
-      // Get team members
+      // First, get the current user's profile to check if they're an owner or team member
+      const { data: currentProfile } = await supabase
+        .from('user_profiles')
+        .select('parent_account_id')
+        .eq('user_id', user.id)
+        .single();
+
+      // Determine the account owner ID
+      const accountOwnerId = currentProfile?.parent_account_id || user.id;
+      
+      // Get all team members under this account (excluding the owner)
       const { data: profiles, error } = await supabase
         .from('user_profiles')
         .select('user_id, display_name, first_name, last_name, avatar_url')
-        .eq('parent_account_id', user.id);
+        .eq('parent_account_id', accountOwnerId);
 
       if (error) throw error;
 
@@ -51,6 +61,9 @@ export const AdminAccessManager = () => {
       const membersWithAccess: TeamMember[] = [];
 
       for (const profile of profiles || []) {
+        // Skip the owner (they always have access)
+        if (profile.user_id === accountOwnerId) continue;
+
         // Get role
         const { data: roleData } = await supabase
           .from('user_roles')
@@ -64,7 +77,7 @@ export const AdminAccessManager = () => {
           .select('permission_name')
           .eq('user_id', profile.user_id)
           .eq('permission_name', 'manage_inventory_admin')
-          .single();
+          .maybeSingle();
 
         membersWithAccess.push({
           ...profile,
@@ -112,15 +125,16 @@ export const AdminAccessManager = () => {
     if (member.first_name || member.last_name) {
       return `${member.first_name || ''} ${member.last_name || ''}`.trim();
     }
-    return 'Unknown User';
+    return 'Team Member';
   };
 
   const getInitials = (member: TeamMember) => {
     const name = getDisplayName(member);
-    return name.split(' ').map(n => n[0]).join('').toUpperCase() || '?';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
   };
 
   const membersWithAccess = teamMembers?.filter(m => m.hasAdminAccess) || [];
+  const totalMembers = teamMembers?.length || 0;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -129,7 +143,7 @@ export const AdminAccessManager = () => {
           <Users className="h-4 w-4" />
           <span className="hidden sm:inline">Share Access</span>
           {membersWithAccess.length > 0 && (
-            <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
               {membersWithAccess.length}
             </Badge>
           )}
@@ -151,46 +165,56 @@ export const AdminAccessManager = () => {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : teamMembers && teamMembers.length > 0 ? (
-          <ScrollArea className="max-h-[300px] pr-4">
-            <div className="space-y-3">
-              {teamMembers.map((member) => (
-                <div
-                  key={member.user_id}
-                  className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-                >
-                  <Checkbox
-                    id={`access-${member.user_id}`}
-                    checked={member.hasAdminAccess}
-                    onCheckedChange={(checked) => {
-                      toggleAccessMutation.mutate({
-                        userId: member.user_id,
-                        grant: !!checked
-                      });
-                    }}
-                    disabled={toggleAccessMutation.isPending}
-                  />
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={member.avatar_url || undefined} />
-                    <AvatarFallback className="text-xs">
-                      {getInitials(member)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{getDisplayName(member)}</p>
-                    <p className="text-xs text-muted-foreground">{member.role}</p>
-                  </div>
-                  <Badge variant="outline" className="text-xs shrink-0">
-                    {member.role}
-                  </Badge>
-                </div>
-              ))}
+          <>
+            <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+              <span>{membersWithAccess.length} of {totalMembers} team members have access</span>
             </div>
-          </ScrollArea>
+            <ScrollArea className="max-h-[300px] pr-4">
+              <div className="space-y-2">
+                {teamMembers.map((member) => (
+                  <label
+                    key={member.user_id}
+                    htmlFor={`access-${member.user_id}`}
+                    className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+                  >
+                    <Checkbox
+                      id={`access-${member.user_id}`}
+                      checked={member.hasAdminAccess}
+                      onCheckedChange={(checked) => {
+                        toggleAccessMutation.mutate({
+                          userId: member.user_id,
+                          grant: !!checked
+                        });
+                      }}
+                      disabled={toggleAccessMutation.isPending}
+                    />
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={member.avatar_url || undefined} />
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                        {getInitials(member)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{getDisplayName(member)}</p>
+                      <p className="text-xs text-muted-foreground">{member.role}</p>
+                    </div>
+                    {member.hasAdminAccess && (
+                      <Badge variant="secondary" className="text-xs shrink-0">
+                        Has Access
+                      </Badge>
+                    )}
+                  </label>
+                ))}
+              </div>
+            </ScrollArea>
+          </>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
-            <Users className="h-10 w-10 mx-auto mb-3 opacity-50" />
-            <p>No team members found</p>
-            <p className="text-sm">Invite team members to share access</p>
+            <UserPlus className="h-12 w-12 mx-auto mb-3 opacity-40" />
+            <p className="font-medium">No team members yet</p>
+            <p className="text-sm mt-1">
+              Invite team members from Settings to share access to this section.
+            </p>
           </div>
         )}
 
