@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type JobStatus = Tables<"job_statuses">;
@@ -8,16 +9,17 @@ type JobStatusInsert = TablesInsert<"job_statuses">;
 type JobStatusUpdate = TablesUpdate<"job_statuses">;
 
 export const useJobStatuses = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["job_statuses"],
+    queryKey: ["job_statuses", effectiveOwnerId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!effectiveOwnerId) return [];
 
       const { data, error } = await supabase
         .from("job_statuses")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveOwnerId)
         .eq("is_active", true)
         .order("slot_number", { ascending: true });
 
@@ -25,6 +27,7 @@ export const useJobStatuses = () => {
       
       return data || [];
     },
+    enabled: !!effectiveOwnerId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
