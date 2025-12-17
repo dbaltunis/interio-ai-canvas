@@ -40,11 +40,28 @@ export const ModernInventoryDashboard = () => {
   const [selectedStorageLocation, setSelectedStorageLocation] = useState<string | undefined>();
   const { data: allInventory, refetch } = useEnhancedInventory();
   const { data: vendors } = useVendors();
-  const { data: userRole } = useUserRole();
+  const { data: userRole, isLoading: userRoleLoading } = useUserRole();
   const isMobile = useIsMobile();
   
-  // Check if user is Owner/Admin for admin tab
-  const isOwnerOrAdmin = userRole?.role === 'Owner' || userRole?.role === 'Admin' || userRole?.role === 'System Owner' || userRole?.isAdmin || userRole?.isOwner;
+  // Check if user is Owner/Admin for admin tab - log for debugging
+  const isOwnerOrAdmin = !userRoleLoading && (
+    userRole?.role === 'Owner' || 
+    userRole?.role === 'Admin' || 
+    userRole?.role === 'System Owner' || 
+    userRole?.isAdmin === true || 
+    userRole?.isOwner === true ||
+    userRole?.isSystemOwner === true
+  );
+  
+  // Debug logging - remove after confirming it works
+  console.log('[Admin Tab Debug]', { 
+    role: userRole?.role, 
+    isOwner: userRole?.isOwner, 
+    isAdmin: userRole?.isAdmin, 
+    isSystemOwner: userRole?.isSystemOwner,
+    isOwnerOrAdmin,
+    userRoleLoading 
+  });
   
   // Permission checks - CRITICAL for data security
   const canViewInventory = useHasPermission('view_inventory');
