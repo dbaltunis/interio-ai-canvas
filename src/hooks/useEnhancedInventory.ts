@@ -1,9 +1,9 @@
 
-import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
+import { useEffectiveAccountOwner } from "./useEffectiveAccountOwner";
 
 export interface EnhancedInventoryItem {
   // Core fields (exact database column names)
@@ -96,27 +96,20 @@ export interface EnhancedInventoryItem {
 }
 
 export const useEnhancedInventory = (options?: { forceRefresh?: boolean }) => {
-  // Get user ID synchronously from auth state for cache key isolation
-  const [userId, setUserId] = useState<string | null>(null);
-  
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserId(data?.user?.id || null);
-    });
-  }, []);
+  // Use effective account owner for multi-tenant queries (team members see owner's inventory)
+  const { effectiveOwnerId, isLoading: ownerLoading } = useEffectiveAccountOwner();
 
   return useQuery({
-    // ✅ CRITICAL FIX v2.3.7: Include userId in cache key for multi-account isolation
-    queryKey: ["enhanced-inventory", userId],
-    enabled: !!userId, // Don't fetch until we have userId
+    // ✅ CRITICAL FIX v2.4.0: Use effectiveOwnerId for multi-tenant isolation
+    queryKey: ["enhanced-inventory", effectiveOwnerId],
+    enabled: !!effectiveOwnerId && !ownerLoading,
     staleTime: options?.forceRefresh ? 0 : 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnMount: options?.forceRefresh ? 'always' : true,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      if (!effectiveOwnerId) throw new Error('User not authenticated');
 
-      console.log('📦 [useEnhancedInventory] Fetching inventory for user:', user.id);
+      console.log('📦 [useEnhancedInventory] Fetching inventory for effective owner:', effectiveOwnerId);
 
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
@@ -125,7 +118,7 @@ export const useEnhancedInventory = (options?: { forceRefresh?: boolean }) => {
           vendor:vendors!enhanced_inventory_items_vendor_id_fkey(id, name),
           collection:collections!collection_id(id, name)
         `)
-        .eq("user_id", user.id) // CRITICAL: Filter by user_id to prevent data isolation breach
+        .eq("user_id", effectiveOwnerId) // ✅ FIX: Use effectiveOwnerId so team members see owner's inventory
         .eq("active", true)
         .order("created_at", { ascending: false });
 
@@ -135,10 +128,9 @@ export const useEnhancedInventory = (options?: { forceRefresh?: boolean }) => {
       }
       
       // Debug: Log inventory summary with heading items highlighted
-      // ✅ CRITICAL FIX: Use exact match for 'heading' category
       const headingItems = (data || []).filter(item => item.category === 'heading');
       
-      console.log('✅ [v2.3.5] useEnhancedInventory Fetched:', {
+      console.log('✅ [v2.4.0] useEnhancedInventory Fetched:', {
         totalItems: data?.length || 0,
         headingItemsCount: headingItems.length,
         headingItems: headingItems.map(h => ({ id: h.id, name: h.name, category: h.category, fullness: h.fullness_ratio })),
@@ -151,25 +143,18 @@ export const useEnhancedInventory = (options?: { forceRefresh?: boolean }) => {
 };
 
 export const useEnhancedInventoryByCategory = (category: string, options?: { forceRefresh?: boolean }) => {
-  // Get user ID synchronously from auth state for cache key isolation
-  const [userId, setUserId] = useState<string | null>(null);
-  
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserId(data?.user?.id || null);
-    });
-  }, []);
+  // Use effective account owner for multi-tenant queries
+  const { effectiveOwnerId, isLoading: ownerLoading } = useEffectiveAccountOwner();
 
   return useQuery({
-    // ✅ CRITICAL FIX v2.3.7: Include userId in cache key for multi-account isolation
-    queryKey: ["enhanced-inventory", category, userId],
-    enabled: !!userId, // Don't fetch until we have userId
+    // ✅ CRITICAL FIX v2.4.0: Use effectiveOwnerId for multi-account isolation
+    queryKey: ["enhanced-inventory", category, effectiveOwnerId],
+    enabled: !!effectiveOwnerId && !ownerLoading,
     staleTime: options?.forceRefresh ? 0 : 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnMount: options?.forceRefresh ? 'always' : true,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      if (!effectiveOwnerId) throw new Error('User not authenticated');
 
       const { data, error } = await supabase
         .from("enhanced_inventory_items")
@@ -178,7 +163,7 @@ export const useEnhancedInventoryByCategory = (category: string, options?: { for
           vendor:vendors!enhanced_inventory_items_vendor_id_fkey(id, name),
           collection:collections!collection_id(id, name)
         `)
-        .eq("user_id", user.id) // CRITICAL: Filter by user_id to prevent data isolation breach
+        .eq("user_id", effectiveOwnerId) // ✅ FIX: Use effectiveOwnerId so team members see owner's inventory
         .eq("category", category)
         .eq("active", true)
         .order("created_at", { ascending: false });
@@ -328,18 +313,22 @@ export const useDeleteEnhancedInventoryItem = () => {
   });
 };
 
-export const useInventoryStats = () => {
+export const useInventoryStats = (effectiveOwnerIdOverride?: string) => {
+  // Use effective account owner for multi-tenant queries
+  const { effectiveOwnerId: resolvedOwnerId, isLoading: ownerLoading } = useEffectiveAccountOwner();
+  const effectiveOwnerId = effectiveOwnerIdOverride || resolvedOwnerId;
+
   return useQuery({
-    queryKey: ["inventory-stats"],
+    queryKey: ["inventory-stats", effectiveOwnerId],
+    enabled: !!effectiveOwnerId && !ownerLoading,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!effectiveOwnerId) throw new Error("Not authenticated");
 
       // Get total inventory count by category
       const { data: items, error } = await supabase
         .from("enhanced_inventory_items")
         .select("category, vendor_id, collection_id")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveOwnerId) // ✅ FIX: Use effectiveOwnerId
         .eq("active", true);
 
       if (error) throw error;
