@@ -5,6 +5,16 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useTeamPresence } from './useTeamPresence';
 
+export interface MessageAttachment {
+  id: string;
+  message_id: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  file_url: string;
+  created_at: string;
+}
+
 export interface DirectMessage {
   id: string;
   sender_id: string;
@@ -16,6 +26,7 @@ export interface DirectMessage {
     display_name: string;
     avatar_url?: string;
   };
+  attachments?: MessageAttachment[];
 }
 
 export interface Conversation {
@@ -34,6 +45,7 @@ export const useDirectMessages = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Use cached team presence data instead of making separate RPC calls
   const { data: teamPresence = [] } = useTeamPresence();
@@ -102,7 +114,7 @@ export const useDirectMessages = () => {
     enabled: !!user && teamPresence.length > 0,
   });
 
-  // Fetch messages for active conversation
+  // Fetch messages for active conversation with attachments
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ['messages', activeConversation, user?.id],
     queryFn: async (): Promise<DirectMessage[]> => {
@@ -110,48 +122,147 @@ export const useDirectMessages = () => {
 
       console.log('Fetching messages for conversation:', activeConversation, 'user:', user.id);
       
-      const { data, error } = await supabase
+      // Fetch messages
+      const { data: messagesData, error: messagesError } = await supabase
         .from('direct_messages')
         .select('*')
         .or(`and(sender_id.eq.${user.id},recipient_id.eq.${activeConversation}),and(sender_id.eq.${activeConversation},recipient_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching messages:', error);
-        throw error;
+      if (messagesError) {
+        console.error('Error fetching messages:', messagesError);
+        throw messagesError;
+      }
+
+      // Fetch attachments for these messages
+      if (messagesData && messagesData.length > 0) {
+        const messageIds = messagesData.map(m => m.id);
+        const { data: attachmentsData } = await supabase
+          .from('message_attachments')
+          .select('*')
+          .in('message_id', messageIds);
+
+        // Group attachments by message_id
+        const attachmentsByMessage = (attachmentsData || []).reduce((acc, att) => {
+          if (!acc[att.message_id]) acc[att.message_id] = [];
+          acc[att.message_id].push(att as MessageAttachment);
+          return acc;
+        }, {} as Record<string, MessageAttachment[]>);
+
+        // Merge attachments into messages
+        const messagesWithAttachments = messagesData.map(msg => ({
+          ...msg,
+          attachments: attachmentsByMessage[msg.id] || []
+        }));
+
+        console.log('Fetched messages:', messagesWithAttachments.length, 'messages for conversation:', activeConversation);
+        return messagesWithAttachments as DirectMessage[];
       }
       
-      console.log('Fetched messages:', data?.length || 0, 'messages for conversation:', activeConversation);
-      return (data || []) as DirectMessage[];
+      console.log('Fetched messages:', messagesData?.length || 0, 'messages for conversation:', activeConversation);
+      return (messagesData || []) as DirectMessage[];
     },
     enabled: !!user && !!activeConversation,
   });
 
-  // Send message using DB table
-  const sendMessageMutation = useMutation({
-    mutationFn: async ({ recipientId, content }: { recipientId: string; content: string }) => {
-      if (!user) throw new Error('Not authenticated');
-      if (!content?.trim()) throw new Error('Message cannot be empty');
+  // Upload file to storage
+  const uploadFile = async (file: File, userId: string): Promise<{ url: string; path: string }> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+    const filePath = `${userId}/${fileName}`;
 
-      const { data, error } = await supabase
+    const { error: uploadError } = await supabase.storage
+      .from('message-attachments')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: urlData } = supabase.storage
+      .from('message-attachments')
+      .getPublicUrl(filePath);
+
+    return { url: urlData.publicUrl, path: filePath };
+  };
+
+  // Send message with optional attachments
+  const sendMessageMutation = useMutation({
+    mutationFn: async ({ 
+      recipientId, 
+      content, 
+      files 
+    }: { 
+      recipientId: string; 
+      content: string;
+      files?: File[];
+    }) => {
+      if (!user) throw new Error('Not authenticated');
+      if (!content?.trim() && (!files || files.length === 0)) {
+        throw new Error('Message cannot be empty');
+      }
+
+      // Insert message
+      const { data: messageData, error: messageError } = await supabase
         .from('direct_messages')
         .insert({
           sender_id: user.id,
           recipient_id: recipientId,
-          content: content.trim(),
+          content: content.trim() || '',
         })
         .select()
         .single();
 
-      if (error) throw error;
-      return data as DirectMessage;
+      if (messageError) throw messageError;
+
+      // Upload files and create attachment records
+      if (files && files.length > 0) {
+        setUploadProgress(0);
+        const totalFiles = files.length;
+        const attachments: {
+          message_id: string;
+          file_name: string;
+          file_type: string;
+          file_size: number;
+          file_url: string;
+        }[] = [];
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          try {
+            const { url } = await uploadFile(file, user.id);
+            attachments.push({
+              message_id: messageData.id,
+              file_name: file.name,
+              file_type: file.type || 'application/octet-stream',
+              file_size: file.size,
+              file_url: url,
+            });
+            setUploadProgress(((i + 1) / totalFiles) * 100);
+          } catch (err) {
+            console.error('Error uploading file:', file.name, err);
+          }
+        }
+
+        // Insert attachment records
+        if (attachments.length > 0) {
+          const { error: attachError } = await supabase
+            .from('message_attachments')
+            .insert(attachments);
+
+          if (attachError) {
+            console.error('Error saving attachments:', attachError);
+          }
+        }
+      }
+
+      setUploadProgress(0);
+      return { ...messageData, attachments: [] } as DirectMessage;
     },
     onSuccess: () => {
-      // Simple invalidation without complex optimistic updates
       queryClient.invalidateQueries({ queryKey: ['messages', activeConversation, user?.id] });
       queryClient.invalidateQueries({ queryKey: ['conversations', user?.id] });
     },
     onError: (error) => {
+      setUploadProgress(0);
       toast({
         title: "Failed to send message",
         description: error instanceof Error ? error.message : "Unknown error",
@@ -201,7 +312,7 @@ export const useDirectMessages = () => {
               if (oldMessages.some(msg => msg.id === newMessage.id)) {
                 return oldMessages;
               }
-              return [...oldMessages, newMessage];
+              return [...oldMessages, { ...newMessage, attachments: [] }];
             });
           }
           
@@ -242,8 +353,8 @@ export const useDirectMessages = () => {
     };
   }, [user, queryClient, activeConversation]);
 
-  const sendMessage = (recipientId: string, content: string) => {
-    sendMessageMutation.mutate({ recipientId, content });
+  const sendMessage = (recipientId: string, content: string, files?: File[]) => {
+    sendMessageMutation.mutate({ recipientId, content, files });
   };
 
   const openConversation = (userId: string) => {
@@ -272,6 +383,7 @@ export const useDirectMessages = () => {
     openConversation,
     closeConversation,
     sendingMessage: sendMessageMutation.isPending,
+    uploadProgress,
     totalUnreadCount
   };
 };
