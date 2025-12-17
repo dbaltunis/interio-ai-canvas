@@ -395,16 +395,22 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                 {/* Tabs for Team & Messages */}
                 <div className="flex-1 overflow-hidden">
                   <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'team' | 'messages')} className="h-full flex flex-col">
-                    <TabsList className="mx-4 mt-4 h-10 bg-muted/50 rounded-lg border p-1 grid grid-cols-2">
-                      <TabsTrigger value="team" className="h-8 rounded-md text-foreground data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
-                        <Users className="h-4 w-4 mr-2" />
-                        Team ({totalUsers})
+                    <TabsList className="mx-4 mt-4 bg-muted/50 rounded-lg p-1 grid grid-cols-2 gap-1 h-auto">
+                      <TabsTrigger 
+                        value="team" 
+                        className="flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground"
+                      >
+                        <Users className="h-4 w-4" />
+                        <span>Team ({totalUsers})</span>
                       </TabsTrigger>
-                      <TabsTrigger value="messages" className="h-8 rounded-md text-foreground data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
-                        <MessageCircle className="h-4 w-4 mr-2" />
-                        Messages
+                      <TabsTrigger 
+                        value="messages" 
+                        className="flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        <span>Messages</span>
                         {totalUnreadCount > 0 && (
-                          <Badge variant="destructive" className="ml-2 h-4 px-1.5 text-xs">
+                          <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px] font-bold">
                             {totalUnreadCount}
                           </Badge>
                         )}

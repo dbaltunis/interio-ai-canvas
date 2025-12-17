@@ -43,7 +43,7 @@ export const MessageAttachment = ({ attachment, isOwn = false }: MessageAttachme
   
   if (isImageType(attachment.file_type)) {
     return (
-      <div className="mt-2 rounded-lg overflow-hidden max-w-[280px]">
+      <div className="mt-1.5 rounded-lg overflow-hidden max-w-[220px]">
         <a 
           href={attachment.file_url} 
           target="_blank" 
@@ -57,13 +57,11 @@ export const MessageAttachment = ({ attachment, isOwn = false }: MessageAttachme
             loading="lazy"
           />
         </a>
-        <div className={`flex items-center gap-2 mt-1 text-[10px] ${
-          isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'
+        <p className={`text-[10px] mt-1 truncate ${
+          isOwn ? 'text-primary-foreground/60' : 'text-muted-foreground'
         }`}>
-          <span className="truncate max-w-[200px]">{attachment.file_name}</span>
-          <span>•</span>
-          <span>{formatFileSize(attachment.file_size)}</span>
-        </div>
+          {attachment.file_name}
+        </p>
       </div>
     );
   }
@@ -73,26 +71,26 @@ export const MessageAttachment = ({ attachment, isOwn = false }: MessageAttachme
       href={attachment.file_url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`flex items-center gap-3 mt-2 p-3 rounded-lg transition-colors ${
+      className={`flex items-center gap-2 mt-1.5 p-2 rounded-lg transition-colors ${
         isOwn 
           ? 'bg-primary-foreground/10 hover:bg-primary-foreground/20' 
-          : 'bg-muted/50 hover:bg-muted'
+          : 'bg-muted hover:bg-muted/80'
       }`}
     >
-      <div className={`p-2 rounded-lg ${isOwn ? 'bg-primary-foreground/20' : 'bg-background'}`}>
-        <FileIcon className={`h-5 w-5 ${isOwn ? 'text-primary-foreground' : 'text-primary'}`} />
+      <div className={`p-1.5 rounded ${isOwn ? 'bg-primary-foreground/20' : 'bg-background'}`}>
+        <FileIcon className={`h-4 w-4 ${isOwn ? 'text-primary-foreground' : 'text-primary'}`} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate ${
+        <p className={`text-xs font-medium truncate ${
           isOwn ? 'text-primary-foreground' : 'text-foreground'
         }`}>
           {attachment.file_name}
         </p>
-        <p className={`text-[10px] ${isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+        <p className={`text-[10px] ${isOwn ? 'text-primary-foreground/60' : 'text-muted-foreground'}`}>
           {formatFileSize(attachment.file_size)}
         </p>
       </div>
-      <Download className={`h-4 w-4 shrink-0 ${isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`} />
+      <Download className={`h-3.5 w-3.5 shrink-0 ${isOwn ? 'text-primary-foreground/60' : 'text-muted-foreground'}`} />
     </a>
   );
 };
@@ -104,7 +102,7 @@ export const AttachmentPreview = ({ file, url, onRemove }: AttachmentPreviewProp
   return (
     <div className="relative group">
       {isImage ? (
-        <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-border">
+        <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-border bg-muted">
           <img 
             src={url} 
             alt={file.name}
@@ -112,18 +110,18 @@ export const AttachmentPreview = ({ file, url, onRemove }: AttachmentPreviewProp
           />
         </div>
       ) : (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border border-border">
-          <FileIcon className="h-4 w-4 text-muted-foreground" />
-          <span className="text-xs truncate max-w-[100px]">{file.name}</span>
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted border border-border">
+          <FileIcon className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs truncate max-w-[80px]">{file.name}</span>
         </div>
       )}
       <Button
         variant="destructive"
         size="icon"
-        className="absolute -top-2 -right-2 h-5 w-5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full opacity-0 group-hover:opacity-100 transition-opacity p-0"
         onClick={onRemove}
       >
-        <X className="h-3 w-3" />
+        <X className="h-2.5 w-2.5" />
       </Button>
     </div>
   );
