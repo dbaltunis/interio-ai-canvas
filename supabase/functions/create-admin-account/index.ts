@@ -89,27 +89,55 @@ serve(async (req) => {
 
     console.log('User created:', newUser.user.id);
 
-    // Step 2: Update user profile (it may have been auto-created by trigger)
-    const { error: profileUpsertError } = await supabaseAdmin
+    // Step 2: Check if profile exists (may have been auto-created by trigger)
+    const { data: existingProfile } = await supabaseAdmin
       .from('user_profiles')
-      .upsert({
-        user_id: newUser.user.id,
-        display_name: displayName,
-        role: 'Owner', // New accounts are owners of their account
-        account_type: accountType,
-        parent_account_id: null, // This is a parent account
-      }, {
-        onConflict: 'user_id'
-      });
+      .select('user_id')
+      .eq('user_id', newUser.user.id)
+      .maybeSingle();
 
-    if (profileUpsertError) {
-      console.error('Error updating profile:', profileUpsertError);
-      // Rollback: delete auth user
-      await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
-      throw new Error(`Failed to update profile: ${profileUpsertError.message}`);
+    if (existingProfile) {
+      // Update existing profile
+      const { error: profileUpdateError } = await supabaseAdmin
+        .from('user_profiles')
+        .update({
+          display_name: displayName,
+          full_name: displayName,
+          email: email.toLowerCase().trim(),
+          role: 'Owner',
+          account_type: accountType,
+          parent_account_id: null,
+          is_active: true,
+        })
+        .eq('user_id', newUser.user.id);
+
+      if (profileUpdateError) {
+        console.error('Error updating profile:', profileUpdateError);
+      }
+    } else {
+      // Insert new profile
+      const { error: profileInsertError } = await supabaseAdmin
+        .from('user_profiles')
+        .insert({
+          user_id: newUser.user.id,
+          display_name: displayName,
+          full_name: displayName,
+          email: email.toLowerCase().trim(),
+          role: 'Owner',
+          account_type: accountType,
+          parent_account_id: null,
+          is_active: true,
+        });
+
+      if (profileInsertError) {
+        console.error('Error inserting profile:', profileInsertError);
+        // Rollback: delete auth user
+        await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+        throw new Error(`Failed to create profile: ${profileInsertError.message}`);
+      }
     }
 
-    console.log('Profile created for user:', newUser.user.id);
+    console.log('Profile created/updated for user:', newUser.user.id);
 
     // Step 3: Create user role
     const { error: roleInsertError } = await supabaseAdmin
@@ -119,48 +147,179 @@ serve(async (req) => {
         role: 'Owner',
       });
 
-    if (roleInsertError) {
+    if (roleInsertError && !roleInsertError.message?.includes('duplicate')) {
       console.error('Error creating role:', roleInsertError);
-      // Note: We continue even if role creation fails, as it might be auto-created by triggers
     }
 
-    // Step 4: Create trial subscription
-    let planId = subscriptionPlanId;
-    
-    // If no plan specified, get the default trial/free plan
-    if (!planId) {
-      const { data: defaultPlan } = await supabaseAdmin
-        .from('subscription_plans')
-        .select('id')
-        .eq('name', 'Free')
-        .single();
-      
-      planId = defaultPlan?.id;
+    // Step 4: Create business_settings with defaults
+    const { error: businessSettingsError } = await supabaseAdmin
+      .from('business_settings')
+      .insert({
+        user_id: newUser.user.id,
+        company_name: displayName,
+        measurement_units: 'mm',
+        tax_rate: 15,
+        tax_type: 'GST',
+      });
+
+    if (businessSettingsError && !businessSettingsError.message?.includes('duplicate')) {
+      console.error('Error creating business settings:', businessSettingsError);
+    } else {
+      console.log('Business settings created for user:', newUser.user.id);
     }
 
-    if (planId) {
-      const trialEndDate = new Date();
-      trialEndDate.setDate(trialEndDate.getDate() + 14); // 14 day trial
+    // Step 5: Create account_settings with default measurement units
+    const { error: accountSettingsError } = await supabaseAdmin
+      .from('account_settings')
+      .insert({
+        account_owner_id: newUser.user.id,
+        currency: 'NZD',
+        language: 'en',
+        measurement_units: {
+          distance: 'mm',
+          fabric: 'm',
+          display: 'metric',
+          currency: 'NZD'
+        },
+      });
 
-      const { error: subscriptionError } = await supabaseAdmin
-        .from('user_subscriptions')
+    if (accountSettingsError && !accountSettingsError.message?.includes('duplicate')) {
+      console.error('Error creating account settings:', accountSettingsError);
+    } else {
+      console.log('Account settings created for user:', newUser.user.id);
+    }
+
+    // Step 6: Create trial subscription
+    const trialEndDate = new Date();
+    trialEndDate.setDate(trialEndDate.getDate() + 14); // 14 day trial
+
+    const { error: subscriptionError } = await supabaseAdmin
+      .from('user_subscriptions')
+      .insert({
+        user_id: newUser.user.id,
+        status: accountType === 'test' ? 'active' : 'trial',
+        current_period_start: new Date().toISOString(),
+        current_period_end: trialEndDate.toISOString(),
+        trial_ends_at: accountType === 'test' ? null : trialEndDate.toISOString(),
+        trial_end_date: accountType === 'test' ? null : trialEndDate.toISOString(),
+        subscription_type: accountType === 'test' ? 'test' : 'trial',
+        account_type: accountType,
+        is_active: true,
+        admin_notes: adminNotes || null,
+      });
+
+    if (subscriptionError && !subscriptionError.message?.includes('duplicate')) {
+      console.error('Error creating subscription:', subscriptionError);
+    } else {
+      console.log('Subscription created for user:', newUser.user.id);
+    }
+
+    // Step 7: Create default number sequences
+    const sequences = [
+      { entity_type: 'job', prefix: 'JOB-', next_number: 1, padding: 4 },
+      { entity_type: 'draft', prefix: 'DRF-', next_number: 1, padding: 4 },
+      { entity_type: 'quote', prefix: 'QTE-', next_number: 1, padding: 4 },
+      { entity_type: 'order', prefix: 'ORD-', next_number: 1, padding: 4 },
+      { entity_type: 'invoice', prefix: 'INV-', next_number: 1, padding: 4 },
+    ];
+
+    for (const seq of sequences) {
+      const { error: seqError } = await supabaseAdmin
+        .from('number_sequences')
         .insert({
           user_id: newUser.user.id,
-          plan_id: planId,
-          status: accountType === 'test' ? 'active' : 'trial',
-          current_period_start: new Date().toISOString(),
-          current_period_end: trialEndDate.toISOString(),
-          trial_ends_at: accountType === 'test' ? null : trialEndDate.toISOString(),
-          subscription_type: accountType === 'test' ? 'test' : 'standard',
-          admin_notes: adminNotes || null,
+          ...seq,
+          active: true,
         });
 
-      if (subscriptionError) {
-        console.error('Error creating subscription:', subscriptionError);
-        // Don't rollback for subscription errors
-      } else {
-        console.log('Subscription created for user:', newUser.user.id);
+      if (seqError && !seqError.message?.includes('duplicate')) {
+        console.error(`Error creating sequence ${seq.entity_type}:`, seqError);
       }
+    }
+    console.log('Number sequences created for user:', newUser.user.id);
+
+    // Step 8: Create default job statuses
+    const defaultStatuses = [
+      { name: 'New Lead', color: '#10b981', sort_order: 1, is_default: true },
+      { name: 'Planning', color: '#6366f1', sort_order: 2 },
+      { name: 'Quoted', color: '#f59e0b', sort_order: 3 },
+      { name: 'Approved', color: '#22c55e', sort_order: 4 },
+      { name: 'In Production', color: '#8b5cf6', sort_order: 5 },
+      { name: 'Ready for Install', color: '#06b6d4', sort_order: 6 },
+      { name: 'Completed', color: '#6b7280', sort_order: 7 },
+    ];
+
+    for (const status of defaultStatuses) {
+      const { error: statusError } = await supabaseAdmin
+        .from('job_statuses')
+        .insert({
+          user_id: newUser.user.id,
+          ...status,
+          is_active: true,
+        });
+
+      if (statusError && !statusError.message?.includes('duplicate')) {
+        console.error(`Error creating status ${status.name}:`, statusError);
+      }
+    }
+    console.log('Job statuses created for user:', newUser.user.id);
+
+    // Step 9: Seed default treatment options
+    try {
+      const { error: seedError } = await supabaseAdmin.rpc('seed_account_options', {
+        target_account_id: newUser.user.id,
+      });
+      if (seedError) {
+        console.error('Error seeding account options:', seedError);
+      } else {
+        console.log('Account options seeded for user:', newUser.user.id);
+      }
+    } catch (seedErr) {
+      console.error('Error calling seed_account_options:', seedErr);
+    }
+
+    // Step 10: Seed default window types
+    try {
+      const { error: windowTypeError } = await supabaseAdmin.rpc('seed_default_window_types', {
+        account_owner_id: newUser.user.id,
+      });
+      if (windowTypeError) {
+        console.error('Error seeding window types:', windowTypeError);
+      } else {
+        console.log('Window types seeded for user:', newUser.user.id);
+      }
+    } catch (wtErr) {
+      console.error('Error calling seed_default_window_types:', wtErr);
+    }
+
+    // Step 11: Seed default email templates
+    try {
+      const { error: emailTemplateError } = await supabaseAdmin.rpc('seed_default_email_templates', {
+        target_user_id: newUser.user.id,
+      });
+      if (emailTemplateError) {
+        console.error('Error seeding email templates:', emailTemplateError);
+      } else {
+        console.log('Email templates seeded for user:', newUser.user.id);
+      }
+    } catch (etErr) {
+      console.error('Error calling seed_default_email_templates:', etErr);
+    }
+
+    // Step 12: Create notification settings
+    const { error: notifError } = await supabaseAdmin
+      .from('user_notification_settings')
+      .insert({
+        user_id: newUser.user.id,
+        email_notifications_enabled: true,
+        sms_notifications_enabled: false,
+        email_service_provider: 'resend',
+      });
+
+    if (notifError && !notifError.message?.includes('duplicate')) {
+      console.error('Error creating notification settings:', notifError);
+    } else {
+      console.log('Notification settings created for user:', newUser.user.id);
     }
 
     // Step 5: Log audit trail
@@ -331,19 +490,6 @@ serve(async (req) => {
       }
     } catch (emailError) {
       console.error('Error sending welcome email:', emailError);
-      // Log error email to database if we have user id
-      try {
-        await supabaseAdmin.from('emails').insert({
-          user_id: newUser.user.id,
-          recipient_email: email,
-          subject: emailSubject,
-          content: emailHtml,
-          status: 'failed',
-          bounce_reason: emailError instanceof Error ? emailError.message : 'Unknown error',
-        });
-      } catch (logErr) {
-        console.error('Failed to log email error:', logErr);
-      }
       console.warn('Account created but welcome email not sent for:', email);
     }
 
