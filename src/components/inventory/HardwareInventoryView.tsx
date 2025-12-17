@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Minus, Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { CategoryImportExport } from "./CategoryImportExport";
@@ -28,6 +29,8 @@ import { InventoryQuickView } from "./InventoryQuickView";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { InventorySupplierFilter, matchesSupplierFilter } from "./InventorySupplierFilter";
 import { useVendors } from "@/hooks/useVendors";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { InventoryMobileCard } from "./InventoryMobileCard";
 
 interface HardwareInventoryViewProps {
   searchQuery: string;
@@ -52,6 +55,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: e
   const { data: inventory, refetch } = useEnhancedInventory();
   const { data: vendors = [] } = useVendors();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
