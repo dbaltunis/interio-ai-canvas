@@ -44,7 +44,7 @@ export const ModernInventoryDashboard = () => {
   const isMobile = useIsMobile();
   
   // Check if user is Owner/Admin for admin tab
-  const isOwnerOrAdmin = userRole?.role === 'Owner' || userRole?.role === 'Admin' || userRole?.isAdmin;
+  const isOwnerOrAdmin = userRole?.role === 'Owner' || userRole?.role === 'Admin' || userRole?.role === 'System Owner' || userRole?.isAdmin || userRole?.isOwner;
   
   // Permission checks - CRITICAL for data security
   const canViewInventory = useHasPermission('view_inventory');
