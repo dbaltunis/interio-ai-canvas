@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 import { generateSequenceNumber, getEntityTypeFromStatus, shouldRegenerateNumber } from "./useNumberSequenceGeneration";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
@@ -10,22 +11,24 @@ type ProjectInsert = TablesInsert<"projects">;
 type ProjectUpdate = TablesUpdate<"projects">;
 
 export const useProjects = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["projects"],
+    queryKey: ["projects", effectiveOwnerId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!effectiveOwnerId) return [];
 
-      // Explicit user filtering for defense-in-depth (RLS is primary protection)
+      // Explicit effectiveOwnerId filtering for multi-tenant support
       const { data, error } = await supabase
         .from("projects")
         .select("*, clients(name), parent_job_id")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveOwnerId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!effectiveOwnerId,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useEffectiveAccountOwner } from '@/hooks/useEffectiveAccountOwner';
 
 export interface DocumentTemplate {
   id?: string;
@@ -17,16 +18,17 @@ export interface DocumentTemplate {
 }
 
 export const useDocumentTemplates = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ['document-templates'],
+    queryKey: ['document-templates', effectiveOwnerId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!effectiveOwnerId) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
         .from('quote_templates')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveOwnerId)
         .eq('active', true)
         .order('updated_at', { ascending: false });
       
@@ -47,6 +49,7 @@ export const useDocumentTemplates = () => {
         user_id: template.user_id,
       }));
     },
+    enabled: !!effectiveOwnerId,
   });
 };
 
