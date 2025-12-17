@@ -169,6 +169,12 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
     }
   };
 
+  // Get live status for a conversation user by looking up in activeUsers
+  const getConversationUserStatus = (userId: string): string => {
+    const activeUser = activeUsers.find(u => u.user_id === userId);
+    return activeUser?.status || 'offline';
+  };
+
   return createPortal(
     <>
       {/* Sliding Panel */}
@@ -410,20 +416,20 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                 <div className="flex-1 overflow-hidden flex flex-col">
                   <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'team' | 'messages')} className="h-full flex flex-col">
                     <div className="px-4 pt-4 shrink-0">
-                      <TabsList className="w-full bg-muted/50 rounded-xl p-1.5 grid grid-cols-2 gap-2 h-auto">
+                      <TabsList className="w-full bg-muted rounded-xl p-1 grid grid-cols-2 h-11">
                         <TabsTrigger 
                           value="team" 
-                          className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground data-[state=inactive]:hover:bg-background/50"
+                          className="flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-all h-full data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground"
                         >
                           <Users className="h-4 w-4 shrink-0" />
-                          <span className="truncate">Team ({totalUsers})</span>
+                          <span>Team ({totalUsers})</span>
                         </TabsTrigger>
                         <TabsTrigger 
                           value="messages" 
-                          className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground data-[state=inactive]:hover:bg-background/50"
+                          className="flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-all h-full data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground"
                         >
                           <MessageCircle className="h-4 w-4 shrink-0" />
-                          <span className="truncate">Messages</span>
+                          <span>Messages</span>
                           {totalUnreadCount > 0 && (
                             <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px] font-bold shrink-0">
                               {totalUnreadCount}
@@ -634,13 +640,13 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                           </AvatarFallback>
                                         </Avatar>
                                         
-                                        {/* Status indicator with animation */}
+                                        {/* Status indicator - use live status from activeUsers */}
                                         <motion.div
                                           className="absolute -bottom-1 -right-1"
                                           initial={{ scale: 0 }}
                                           animate={{ scale: 1 }}
                                         >
-                                          <Circle className={`h-4 w-4 fill-current ${getStatusColor(conversation.user_profile?.status || 'offline')} border-2 border-background rounded-full shadow-sm`} />
+                                          <div className={`h-4 w-4 rounded-full border-2 border-background shadow-sm ${getStatusDotColor(getConversationUserStatus(conversation.user_id))}`} />
                                         </motion.div>
                                         
                                         {/* Enhanced unread count badge */}
@@ -665,9 +671,14 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                           </p>
                                           <Badge 
                                             variant="secondary" 
-                                            className="text-xs bg-accent/40 text-foreground border border-border/50 px-2 py-1"
+                                            className={cn(
+                                              "text-xs px-2 py-0.5 capitalize",
+                                              getConversationUserStatus(conversation.user_id) === 'online' && "bg-green-500/20 text-green-700 dark:text-green-400",
+                                              getConversationUserStatus(conversation.user_id) === 'away' && "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400",
+                                              (getConversationUserStatus(conversation.user_id) === 'offline' || getConversationUserStatus(conversation.user_id) === 'never_logged_in') && "bg-red-500/20 text-red-700 dark:text-red-400"
+                                            )}
                                           >
-                                            {getStatusLabel(conversation.user_profile?.status || 'offline')}
+                                            {getStatusLabel(getConversationUserStatus(conversation.user_id))}
                                           </Badge>
                                         </div>
                                         
