@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useEffectiveAccountOwner } from '@/hooks/useEffectiveAccountOwner';
 
 export interface ShopifyOrder {
   id: string;
@@ -22,12 +23,12 @@ export interface ShopifyOrder {
 
 export const useShopifyOrders = () => {
   const { toast } = useToast();
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
 
   return useQuery({
-    queryKey: ['shopify-orders'],
+    queryKey: ['shopify-orders', effectiveOwnerId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!effectiveOwnerId) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
         .from('shopify_orders')
@@ -44,12 +45,13 @@ export const useShopifyOrders = () => {
             email
           )
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveOwnerId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data as ShopifyOrder[];
     },
+    enabled: !!effectiveOwnerId,
   });
 };
 
