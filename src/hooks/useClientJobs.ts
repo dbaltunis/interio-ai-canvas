@@ -1,13 +1,14 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
 export const useClientStats = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["client-stats"],
+    queryKey: ["client-stats", effectiveOwnerId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!effectiveOwnerId) return [];
 
       // Get all clients with their associated projects and quotes
       const { data: clients, error } = await supabase
@@ -28,7 +29,7 @@ export const useClientStats = () => {
             status
           )
         `)
-        .eq("user_id", user.id);
+        .eq("user_id", effectiveOwnerId);
 
       if (error) throw error;
 
@@ -61,72 +62,76 @@ export const useClientStats = () => {
 
       return clientStats;
     },
+    enabled: !!effectiveOwnerId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
 export const useClientJobs = (clientId: string) => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["client-jobs", clientId],
+    queryKey: ["client-jobs", effectiveOwnerId, clientId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!effectiveOwnerId) return [];
 
       const { data: projects, error } = await supabase
         .from("projects")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveOwnerId)
         .eq("client_id", clientId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return projects || [];
     },
-    enabled: !!clientId,
+    enabled: !!effectiveOwnerId && !!clientId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
 export const useClientEmails = (clientId: string) => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["client-emails", clientId],
+    queryKey: ["client-emails", effectiveOwnerId, clientId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!effectiveOwnerId) return [];
 
       const { data: emails, error } = await supabase
         .from("emails")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveOwnerId)
         .eq("client_id", clientId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return emails || [];
     },
-    enabled: !!clientId,
+    enabled: !!effectiveOwnerId && !!clientId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
 export const useClientQuotes = (clientId: string) => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["client-quotes", clientId],
+    queryKey: ["client-quotes", effectiveOwnerId, clientId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!effectiveOwnerId) return [];
 
       const { data: quotes, error } = await supabase
         .from("quotes")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveOwnerId)
         .eq("client_id", clientId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return quotes || [];
     },
-    enabled: !!clientId,
+    enabled: !!effectiveOwnerId && !!clientId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

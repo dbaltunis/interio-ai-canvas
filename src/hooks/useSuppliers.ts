@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
 export interface Supplier {
   id: string;
@@ -17,21 +18,23 @@ export interface Supplier {
 }
 
 export const useSuppliers = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["suppliers"],
+    queryKey: ["suppliers", effectiveOwnerId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.id) throw new Error("User not authenticated");
+      if (!effectiveOwnerId) return [];
 
       const { data, error } = await supabase
         .from("suppliers")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveOwnerId)
         .order("name");
 
       if (error) throw error;
       return data as Supplier[];
     },
+    enabled: !!effectiveOwnerId,
   });
 };
 

@@ -1,28 +1,36 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
 export const useAutomationWorkflows = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["automation-workflows"],
+    queryKey: ["automation-workflows", effectiveOwnerId],
     queryFn: async () => {
+      if (!effectiveOwnerId) return [];
+      
       const { data, error } = await supabase
         .from("automation_workflows")
         .select("*")
+        .eq("user_id", effectiveOwnerId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!effectiveOwnerId,
   });
 };
 
 export const useFollowUpReminders = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["follow-up-reminders"],
+    queryKey: ["follow-up-reminders", effectiveOwnerId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!effectiveOwnerId) return [];
 
       const { data, error } = await supabase
         .from("follow_up_reminders")
@@ -36,20 +44,25 @@ export const useFollowUpReminders = () => {
             email
           )
         `)
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveOwnerId)
         .eq("status", "pending")
         .order("scheduled_for", { ascending: true });
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!effectiveOwnerId,
   });
 };
 
 export const useScheduledTasks = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["scheduled-tasks"],
+    queryKey: ["scheduled-tasks", effectiveOwnerId],
     queryFn: async () => {
+      if (!effectiveOwnerId) return [];
+      
       const { data, error } = await supabase
         .from("scheduled_tasks")
         .select(`
@@ -61,19 +74,25 @@ export const useScheduledTasks = () => {
             client_type
           )
         `)
+        .eq("user_id", effectiveOwnerId)
         .eq("status", "pending")
         .order("scheduled_for", { ascending: true });
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!effectiveOwnerId,
   });
 };
 
 export const useEmailSequences = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["email-sequences"],
+    queryKey: ["email-sequences", effectiveOwnerId],
     queryFn: async () => {
+      if (!effectiveOwnerId) return [];
+      
       const { data, error } = await supabase
         .from("email_sequences")
         .select(`
@@ -88,11 +107,13 @@ export const useEmailSequences = () => {
             is_active
           )
         `)
+        .eq("user_id", effectiveOwnerId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!effectiveOwnerId,
   });
 };
 
@@ -368,11 +389,12 @@ export const useDeleteReminder = () => {
 };
 
 export const useCompletedReminders = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ['completed-reminders'],
+    queryKey: ['completed-reminders', effectiveOwnerId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!effectiveOwnerId) return [];
 
       const { data, error } = await supabase
         .from('follow_up_reminders')
@@ -386,7 +408,7 @@ export const useCompletedReminders = () => {
             email
           )
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveOwnerId)
         .eq('status', 'dismissed')
         .order('updated_at', { ascending: false })
         .limit(20);
@@ -394,6 +416,7 @@ export const useCompletedReminders = () => {
       if (error) throw error;
       return data || [];
     },
+    enabled: !!effectiveOwnerId,
   });
 };
 

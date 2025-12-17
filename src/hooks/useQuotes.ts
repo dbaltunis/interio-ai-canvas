@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 import { generateSequenceNumber, getEntityTypeFromStatus, shouldRegenerateNumber, syncSequenceCounter } from "./useNumberSequenceGeneration";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
@@ -10,11 +11,12 @@ type QuoteInsert = TablesInsert<"quotes">;
 type QuoteUpdate = TablesUpdate<"quotes">;
 
 export const useQuotes = (projectId?: string) => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["quotes", projectId],
+    queryKey: ["quotes", effectiveOwnerId, projectId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!effectiveOwnerId) return [];
 
       // Explicit user filtering for defense-in-depth (RLS is primary protection)
       let query = supabase
@@ -38,7 +40,7 @@ export const useQuotes = (projectId?: string) => {
             )
           )
         `)
-        .eq("user_id", user.id);
+        .eq("user_id", effectiveOwnerId);
       
       if (projectId) {
         query = query.eq("project_id", projectId);
@@ -49,6 +51,7 @@ export const useQuotes = (projectId?: string) => {
       if (error) throw error;
       return data || [];
     },
+    enabled: !!effectiveOwnerId,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

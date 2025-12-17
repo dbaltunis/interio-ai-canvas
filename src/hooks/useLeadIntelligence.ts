@@ -1,19 +1,26 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
 export const useLeadScoringRules = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["lead-scoring-rules"],
+    queryKey: ["lead-scoring-rules", effectiveOwnerId],
     queryFn: async () => {
+      if (!effectiveOwnerId) return [];
+      
       const { data, error } = await supabase
         .from("lead_scoring_rules")
         .select("*")
+        .eq("user_id", effectiveOwnerId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!effectiveOwnerId,
   });
 };
 
@@ -68,16 +75,17 @@ export const useCreateInteraction = () => {
 };
 
 export const useHotLeads = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["hot-leads"],
+    queryKey: ["hot-leads", effectiveOwnerId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!effectiveOwnerId) return [];
 
       const { data, error } = await supabase
         .from("clients")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveOwnerId)
         .gte("lead_score", 50)
         .order("lead_score", { ascending: false })
         .limit(10);
@@ -85,20 +93,22 @@ export const useHotLeads = () => {
       if (error) throw error;
       return data || [];
     },
+    enabled: !!effectiveOwnerId,
   });
 };
 
 export const useLeadSourceAnalytics = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["lead-source-analytics"],
+    queryKey: ["lead-source-analytics", effectiveOwnerId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!effectiveOwnerId) return [];
 
       const { data, error } = await supabase
         .from("clients")
         .select("lead_source, lead_score, deal_value, funnel_stage")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveOwnerId)
         .not("lead_source", "is", null);
 
       if (error) throw error;
@@ -139,5 +149,6 @@ export const useLeadSourceAnalytics = () => {
         ...metrics
       }));
     },
+    enabled: !!effectiveOwnerId,
   });
 };

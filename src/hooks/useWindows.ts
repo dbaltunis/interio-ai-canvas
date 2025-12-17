@@ -1,24 +1,25 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Surface = Tables<"surfaces">;
 type SurfaceInsert = TablesInsert<"surfaces">;
 
 export const useWindows = (projectId?: string) => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["surfaces", projectId],
+    queryKey: ["surfaces", effectiveOwnerId, projectId],
     queryFn: async () => {
       if (!projectId) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return [];
+        if (!effectiveOwnerId) return [];
 
         const { data, error } = await supabase
           .from("surfaces")
           .select("*")
-          .eq("user_id", user.id)
+          .eq("user_id", effectiveOwnerId)
           .order("created_at");
         
         if (error) throw error;
@@ -34,6 +35,7 @@ export const useWindows = (projectId?: string) => {
       if (error) throw error;
       return data;
     },
+    enabled: !!projectId || !!effectiveOwnerId,
   });
 };
 
