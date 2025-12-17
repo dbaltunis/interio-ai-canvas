@@ -1,19 +1,31 @@
+import { useState } from "react";
 import { useUserDisplay } from "@/hooks/useUserDisplay";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Settings2, Moon, Sun } from "lucide-react";
+import { Settings2, Moon, Sun, Users } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useUserPresence } from "@/hooks/useUserPresence";
+import { useDirectMessages } from "@/hooks/useDirectMessages";
+import { Badge } from "@/components/ui/badge";
+import { TeamCollaborationCenter } from "../collaboration/TeamCollaborationCenter";
 
 interface WelcomeHeaderProps {
   onCustomizeClick: () => void;
 }
 
 export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
+  const [teamHubOpen, setTeamHubOpen] = useState(false);
   const { displayName, initials, avatarUrl, isLoading: userLoading } = useUserDisplay();
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { theme, setTheme } = useTheme();
+  const { activeUsers, currentUser } = useUserPresence();
+  const { conversations } = useDirectMessages();
+
+  const otherActiveUsers = activeUsers.filter(u => u.user_id !== currentUser?.user_id && u.status === 'online');
+  const unreadCount = conversations.reduce((total, conv) => total + conv.unread_count, 0);
+  const hasActivity = otherActiveUsers.length > 0 || unreadCount > 0;
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -64,6 +76,26 @@ export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
         <Button
           variant="ghost"
           size="sm"
+          onClick={() => setTeamHubOpen(true)}
+          className="h-8 w-8 p-0 hover:bg-primary/10 relative"
+          title="Team Hub"
+        >
+          <Users className="h-4 w-4" />
+          {hasActivity && (
+            <span className="absolute -top-0.5 -right-0.5">
+              {unreadCount > 0 ? (
+                <Badge variant="destructive" className="h-3.5 min-w-3.5 p-0 text-[9px] flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Badge>
+              ) : (
+                <span className="h-2 w-2 bg-green-500 rounded-full animate-pulse block" />
+              )}
+            </span>
+          )}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className="h-8 w-8 p-0 hover:bg-primary/10"
           title="Toggle theme"
@@ -84,6 +116,11 @@ export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
           <Settings2 className="h-4 w-4" />
         </Button>
       </div>
+
+      <TeamCollaborationCenter 
+        isOpen={teamHubOpen}
+        onToggle={() => setTeamHubOpen(!teamHubOpen)}
+      />
     </div>
   );
 };
