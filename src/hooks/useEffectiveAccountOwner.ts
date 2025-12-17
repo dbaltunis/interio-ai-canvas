@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -9,54 +9,44 @@ import { supabase } from "@/integrations/supabase/client";
  * This ensures team members see the same data as their account owner.
  */
 export const useEffectiveAccountOwner = () => {
-  const [effectiveOwnerId, setEffectiveOwnerId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchEffectiveOwner = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          setEffectiveOwnerId(null);
-          setCurrentUserId(null);
-          setIsLoading(false);
-          return;
-        }
-
-        setCurrentUserId(user.id);
-
-        // Get user profile to check for parent_account_id
-        const { data: profile, error } = await supabase
-          .from("user_profiles")
-          .select("parent_account_id")
-          .eq("user_id", user.id)
-          .single();
-
-        if (error) {
-          console.warn('[useEffectiveAccountOwner] Error fetching profile, using user.id as fallback:', error);
-          setEffectiveOwnerId(user.id);
-        } else {
-          // Use parent_account_id if exists (team member), otherwise use own ID (account owner)
-          const ownerId = profile?.parent_account_id || user.id;
-          console.log('[useEffectiveAccountOwner] Resolved:', {
-            currentUserId: user.id,
-            parentAccountId: profile?.parent_account_id,
-            effectiveOwnerId: ownerId,
-            isTeamMember: !!profile?.parent_account_id
-          });
-          setEffectiveOwnerId(ownerId);
-        }
-      } catch (err) {
-        console.error('[useEffectiveAccountOwner] Unexpected error:', err);
-        setEffectiveOwnerId(null);
-      } finally {
-        setIsLoading(false);
+  const { data, isLoading } = useQuery({
+    queryKey: ['effective-account-owner'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return { effectiveOwnerId: null, currentUserId: null };
       }
-    };
 
-    fetchEffectiveOwner();
-  }, []);
+      // Get user profile to check for parent_account_id
+      const { data: profile, error } = await supabase
+        .from("user_profiles")
+        .select("parent_account_id")
+        .eq("user_id", user.id)
+        .single();
 
-  return { effectiveOwnerId, currentUserId, isLoading };
+      if (error) {
+        console.warn('[useEffectiveAccountOwner] Error fetching profile, using user.id as fallback:', error);
+        return { effectiveOwnerId: user.id, currentUserId: user.id };
+      }
+
+      // Use parent_account_id if exists (team member), otherwise use own ID (account owner)
+      const ownerId = profile?.parent_account_id || user.id;
+      console.log('[useEffectiveAccountOwner] Resolved:', {
+        currentUserId: user.id,
+        parentAccountId: profile?.parent_account_id,
+        effectiveOwnerId: ownerId,
+        isTeamMember: !!profile?.parent_account_id
+      });
+
+      return { effectiveOwnerId: ownerId, currentUserId: user.id };
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    gcTime: 10 * 60 * 1000,
+  });
+
+  return {
+    effectiveOwnerId: data?.effectiveOwnerId ?? null,
+    currentUserId: data?.currentUserId ?? null,
+    isLoading
+  };
 };
