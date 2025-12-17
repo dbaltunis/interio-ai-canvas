@@ -5,6 +5,7 @@ import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { useJobStatuses, useCreateJobStatus } from "@/hooks/useJobStatuses";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
 const DEFAULT_STATUSES = [
   { name: "Lead", color: "gray", category: "Project", action: "editable", description: "Initial contact", sort_order: 1, slot_number: 1 },
@@ -23,6 +24,7 @@ export const SeedJobStatuses = () => {
   const { data: existingStatuses = [], isLoading } = useJobStatuses();
   const createStatus = useCreateJobStatus();
   const { toast } = useToast();
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
   const [isSeeding, setIsSeeding] = useState(false);
   const [seeded, setSeeded] = useState(false);
 
@@ -35,20 +37,20 @@ export const SeedJobStatuses = () => {
     totalStatuses: existingStatuses.length,
     activeStatuses: activeStatuses.length,
     shouldShowSeed,
-    seeded
+    seeded,
+    effectiveOwnerId
   });
 
   const handleSeed = async () => {
     setIsSeeding(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      if (!effectiveOwnerId) throw new Error("No account found");
 
       // First, HARD DELETE any existing statuses with slot_numbers 1-10 to free up the slots
       const { error: deleteError } = await supabase
         .from("job_statuses")
         .delete()
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveOwnerId)
         .gte("slot_number", 1)
         .lte("slot_number", 10);
       

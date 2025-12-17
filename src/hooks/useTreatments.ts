@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 type Treatment = Tables<"treatments">;
@@ -34,7 +35,7 @@ const safeParseJSON = (jsonString: string | null | undefined, fallback: any = nu
     return parsed;
   } catch (error) {
     console.error(`JSON Parse Error for ${fieldName}:`, {
-      error: error.message,
+      error: (error as Error).message,
       jsonString: jsonString?.substring(0, 100) + (jsonString?.length > 100 ? '...' : ''),
       fallback
     });
@@ -87,26 +88,27 @@ const processTreatmentData = (treatment: any): Treatment => {
 };
 
 export const useTreatments = (projectId?: string, quoteId?: string) => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["treatments", projectId, quoteId],
+    queryKey: ["treatments", effectiveOwnerId, projectId, quoteId],
     queryFn: async () => {
       console.log("=== FETCHING TREATMENTS ===");
-      console.log("Project ID:", projectId, "Quote ID:", quoteId);
+      console.log("Project ID:", projectId, "Quote ID:", quoteId, "effectiveOwnerId:", effectiveOwnerId);
       
       try {
         if (!projectId) {
           console.log("No project ID, fetching all user treatments");
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) {
-            console.log("No authenticated user found");
+          if (!effectiveOwnerId) {
+            console.log("No effectiveOwnerId found");
             return [];
           }
 
-          console.log("Fetching treatments for user:", user.id);
+          console.log("Fetching treatments for account:", effectiveOwnerId);
           const { data, error } = await supabase
             .from("treatments")
             .select("*")
-            .eq("user_id", user.id)
+            .eq("user_id", effectiveOwnerId)
             .order("created_at", { ascending: false });
           
           if (error) {
@@ -204,6 +206,7 @@ export const useTreatments = (projectId?: string, quoteId?: string) => {
         return [];
       }
     },
+    enabled: !!projectId || !!effectiveOwnerId,
     retry: 1,
     staleTime: 30 * 1000,
     refetchOnWindowFocus: true,

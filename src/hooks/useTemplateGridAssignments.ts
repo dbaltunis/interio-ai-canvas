@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
 export interface TemplateGridAssignment {
   id: string;
@@ -21,6 +22,7 @@ export interface PricingGridBasic {
 export const useTemplateGridAssignments = (templateId: string | undefined) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
 
   // Fetch assigned grids for this template
   const { data: assignments = [], isLoading: isLoadingAssignments } = useQuery({
@@ -60,23 +62,23 @@ export const useTemplateGridAssignments = (templateId: string | undefined) => {
     .map((a: any) => a.pricing_grids?.price_group)
     .filter(Boolean) as string[];
 
-  // Fetch available grids for the current user
+  // Fetch available grids for the current user (using effectiveOwnerId)
   const { data: availableGrids = [], isLoading: isLoadingGrids } = useQuery({
-    queryKey: ["available-pricing-grids"],
+    queryKey: ["available-pricing-grids", effectiveOwnerId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!effectiveOwnerId) return [];
 
       const { data, error } = await supabase
         .from("pricing_grids")
         .select("id, name, grid_code, product_type, price_group, supplier_id")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveOwnerId)
         .eq("active", true)
         .order("name");
 
       if (error) throw error;
       return data as PricingGridBasic[];
     },
+    enabled: !!effectiveOwnerId,
   });
 
   // Assign a grid to the template

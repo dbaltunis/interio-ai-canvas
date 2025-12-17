@@ -1,14 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 import { startOfMonth, startOfQuarter, endOfMonth, endOfQuarter } from "date-fns";
 
 export const useCRMStats = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["crm-stats"],
+    queryKey: ["crm-stats", effectiveOwnerId],
     queryFn: async () => {
       // DEFENSE-IN-DEPTH: Explicit user filtering even with RLS
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return {
+      if (!effectiveOwnerId) return {
         totalLeads: 0, activeLeads: 0, convertedLeads: 0, lostDeals: 0,
         totalRevenueThisMonth: 0, totalRevenueThisQuarter: 0, avgDealSize: 0,
         conversionRate: 0, bySource: {}, byStage: {}
@@ -24,7 +26,7 @@ export const useCRMStats = () => {
       const { data: allClients, error: clientsError } = await supabase
         .from("clients")
         .select("*, deals(deal_value, stage)")
-        .eq("user_id", user.id);
+        .eq("user_id", effectiveOwnerId);
 
       if (clientsError) throw clientsError;
 
@@ -38,7 +40,7 @@ export const useCRMStats = () => {
       const { data: deals } = await supabase
         .from("deals")
         .select("*")
-        .eq("user_id", user.id);
+        .eq("user_id", effectiveOwnerId);
 
       const lostDeals = deals?.filter(d => d.stage === 'closed_lost').length || 0;
       
@@ -104,5 +106,6 @@ export const useCRMStats = () => {
         byStage: byStage || {},
       };
     },
+    enabled: !!effectiveOwnerId,
   });
 };
