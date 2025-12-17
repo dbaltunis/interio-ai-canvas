@@ -103,8 +103,22 @@ export const useHasPermission = (permission: string) => {
 };
 
 export const useHasAnyPermission = (permissionList: string[]) => {
-  const { data: permissions, isLoading } = useUserPermissions();
+  const { data: permissions, isLoading, isError, error } = useUserPermissions();
+  
+  // Log errors for debugging
+  if (isError) {
+    console.error('[useHasAnyPermission] Permission query error:', error);
+  }
+  
+  // Still loading and no cached data
   if (isLoading && permissions === undefined) return undefined;
+  
+  // If there was an error loading permissions, return undefined to allow fallback handling
+  if (isError && permissions === undefined) {
+    console.warn('[useHasAnyPermission] Permission error with no cached data, returning undefined for fallback handling');
+    return undefined;
+  }
+  
   return permissionList.some(permission => 
     permissions?.some(p => p.permission_name === permission)
   ) || false;

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
 export interface InventoryTransaction {
   id: string;
@@ -17,16 +18,17 @@ export interface InventoryTransaction {
 }
 
 export const useInventoryTransactions = (inventoryItemId?: string) => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["inventory-transactions", inventoryItemId],
+    queryKey: ["inventory-transactions", effectiveOwnerId, inventoryItemId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.id) throw new Error("User not authenticated");
+      if (!effectiveOwnerId) return [];
 
       let query = supabase
         .from("inventory_transactions")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveOwnerId)
         .order("created_at", { ascending: false });
 
       if (inventoryItemId) {
@@ -38,6 +40,7 @@ export const useInventoryTransactions = (inventoryItemId?: string) => {
 
       return data as InventoryTransaction[];
     },
+    enabled: !!effectiveOwnerId,
   });
 };
 

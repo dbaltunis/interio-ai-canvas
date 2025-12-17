@@ -1213,7 +1213,7 @@ const LivePreviewBlock = ({
                   <div className="flex justify-end py-1" style={{ backgroundColor: '#ffffff !important' }}>
                     <div className="text-right" style={{ minWidth: '200px', backgroundColor: '#ffffff !important' }}>
                       <span style={{ fontSize: '14px', color: '#111827 !important' }}>
-                        Base Subtotal: {renderTokenValue('basetotal')}
+                        Subtotal (before discount): {renderTokenValue('basetotal')}
                       </span>
                     </div>
                   </div>

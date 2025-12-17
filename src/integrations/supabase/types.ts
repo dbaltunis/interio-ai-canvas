@@ -9836,6 +9836,7 @@ export type Database = {
       get_invitation_by_token: {
         Args: { invitation_token_param: string }
         Returns: {
+          company_name: string
           expires_at: string
           invited_by_email: string
           invited_by_name: string
@@ -9843,6 +9844,7 @@ export type Database = {
           invited_name: string
           role: string
           status: string
+          user_id: string
         }[]
       }
       get_next_sequence_number: {

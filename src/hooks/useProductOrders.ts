@@ -1,7 +1,7 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type ProductOrder = Tables<"product_orders">;
@@ -9,11 +9,12 @@ type ProductOrderInsert = TablesInsert<"product_orders">;
 type ProductOrderUpdate = TablesUpdate<"product_orders">;
 
 export const useProductOrders = (projectId?: string) => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["product-orders", projectId],
+    queryKey: ["product-orders", effectiveOwnerId, projectId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !projectId) return [];
+      if (!effectiveOwnerId || !projectId) return [];
 
       const { data, error } = await supabase
         .from("product_orders")
@@ -26,14 +27,14 @@ export const useProductOrders = (projectId?: string) => {
             lead_time_days
           )
         `)
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveOwnerId)
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
-    enabled: !!projectId,
+    enabled: !!effectiveOwnerId && !!projectId,
   });
 };
 

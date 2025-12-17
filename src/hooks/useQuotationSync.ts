@@ -574,7 +574,8 @@ export const useQuotationSync = ({
     });
 
     // Add room products/services to quote items
-    let roomProductsTotal = 0;
+    let roomProductsCostTotal = 0;
+    let roomProductsSellingTotal = 0;
     allRoomProducts.forEach((product: any) => {
       const room = rooms.find(r => r.id === product.room_id);
       const roomName = room?.name || 'Unknown Room';
@@ -588,13 +589,20 @@ export const useQuotationSync = ({
         : (inventoryItem?.subcategory?.replace(/_/g, ' ') || inventoryItem?.category || '');
       const displayImage = isCustom ? product.image_url : inventoryItem?.image_url;
       
+      // Track cost and selling totals for room products
+      // Room products: total_price is user-entered selling price, cost_price is cost (if tracked)
+      const productCost = product.cost_price || product.total_price || 0; // Fall back to total if no cost tracked
+      const productSelling = product.total_price || 0;
+      
       items.push({
         id: `product-${product.id}`,
         name: displayName,
         description: displayDescription,
         quantity: product.quantity,
+        cost_price: productCost,
         unit_price: product.unit_price,
-        total: product.total_price,
+        total: productSelling,
+        cost_total: productCost,
         currency: (() => {
           if (!businessSettings?.measurement_units) return 'USD';
           const units = typeof businessSettings.measurement_units === 'string' 
@@ -610,11 +618,14 @@ export const useQuotationSync = ({
         inventory_item_id: isCustom ? null : product.inventory_item_id,
       });
       
-      roomProductsTotal += product.total_price;
+      roomProductsCostTotal += productCost;
+      roomProductsSellingTotal += productSelling;
     });
 
-    // Include room products in total
-    const combinedSubtotal = baseSubtotal + roomProductsTotal;
+    // Include room products in totals - CRITICAL for consistency
+    const combinedCostTotal = totalCostPrice + roomProductsCostTotal;
+    const combinedSellingTotal = totalSellingPrice + roomProductsSellingTotal;
+    const combinedSubtotal = baseSubtotal + roomProductsSellingTotal;
 
     // Calculate tax based on tax_inclusive setting
     const pricingSettings = businessSettings?.pricing_settings as any;
@@ -624,21 +635,25 @@ export const useQuotationSync = ({
     let total: number;
     let subtotal: number;
     
+    // CRITICAL FIX: Use SELLING price (with markup) for subtotal display, not cost
+    // combinedSellingTotal includes both window treatments AND room products
+    const sellingSubtotal = combinedSellingTotal;
+    
     if (taxInclusive) {
       // Prices already include tax, so extract tax from total
-      total = combinedSubtotal;
-      subtotal = combinedSubtotal / (1 + taxRate);
+      total = sellingSubtotal;
+      subtotal = sellingSubtotal / (1 + taxRate);
       taxAmount = total - subtotal;
     } else {
       // Prices exclude tax, so add tax on top
-      subtotal = combinedSubtotal;
+      subtotal = sellingSubtotal;
       taxAmount = subtotal * taxRate;
       total = subtotal + taxAmount;
     }
 
-    // Calculate overall profit metrics
-    const overallGrossMargin = totalSellingPrice > 0 
-      ? calculateGrossMargin(totalCostPrice, totalSellingPrice) 
+    // Calculate overall profit metrics using COMBINED totals (includes room products)
+    const overallGrossMargin = combinedSellingTotal > 0 
+      ? calculateGrossMargin(combinedCostTotal, combinedSellingTotal) 
       : 0;
 
     return {
@@ -647,10 +662,10 @@ export const useQuotationSync = ({
       subtotal,
       taxAmount,
       total,
-      // Profit tracking
-      costTotal: totalCostPrice,
-      sellingTotal: totalSellingPrice,
-      profitTotal: totalSellingPrice - totalCostPrice,
+      // Profit tracking - use COMBINED totals for consistency
+      costTotal: combinedCostTotal,
+      sellingTotal: combinedSellingTotal,
+      profitTotal: combinedSellingTotal - combinedCostTotal,
       grossMarginPercent: overallGrossMargin
     };
   };

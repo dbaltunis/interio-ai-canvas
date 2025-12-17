@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { TrendingUp, TrendingDown, Eye, ChevronDown, ChevronUp, AlertTriangle, Percent } from 'lucide-react';
+import { TrendingUp, TrendingDown, Eye, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { useMeasurementUnits } from '@/hooks/useMeasurementUnits';
@@ -69,17 +69,23 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
   }
 
   // Calculate values before and after discount
+  // CRITICAL: sellingTotal IS the original (pre-discount) total
+  // We calculate discountedSellingTotal by subtracting the discount
   const hasDiscount = discount && discount.amount > 0;
-  const originalSellingTotal = hasDiscount ? sellingTotal + discount.amount : sellingTotal;
+  const originalSellingTotal = sellingTotal; // This is the PRE-discount total
+  const discountedSellingTotal = hasDiscount ? sellingTotal - discount.amount : sellingTotal;
   
-  const profit = sellingTotal - costTotal;
+  // Profit and margin are calculated on DISCOUNTED totals (what client actually pays)
+  const profit = discountedSellingTotal - costTotal;
   const originalProfit = originalSellingTotal - costTotal;
   const profitReduction = hasDiscount ? originalProfit - profit : 0;
   
-  const marginPercentage = calculateGrossMargin(costTotal, sellingTotal);
+  // GP% uses discounted selling total (actual revenue received)
+  const marginPercentage = calculateGrossMargin(costTotal, discountedSellingTotal);
   const originalMarginPercentage = hasDiscount ? calculateGrossMargin(costTotal, originalSellingTotal) : marginPercentage;
   
-  const markupPercentage = calculateMarkup(costTotal, sellingTotal);
+  // Markup% uses original selling total (pricing strategy)
+  const markupPercentage = calculateMarkup(costTotal, discountedSellingTotal);
   const originalMarkupPercentage = hasDiscount ? calculateMarkup(costTotal, originalSellingTotal) : markupPercentage;
   
   const profitStatus = getProfitStatus(marginPercentage);
@@ -199,36 +205,7 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
           <div className="px-3 pb-3 space-y-3">
             <Separator />
             
-            {/* Discount Impact Warning */}
-            {hasDiscount && (
-              <div className="bg-amber-500/10 border border-amber-500/20 rounded-md p-2.5">
-                <div className="flex items-start gap-2">
-                  <Percent className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5" />
-                  <div className="flex-1 text-xs">
-                    <p className="font-medium text-amber-700 dark:text-amber-400">
-                      Discount Impact ({discount.type === 'percentage' ? `${discount.value}%` : formatCurrency(discount.value, currency)})
-                    </p>
-                    <div className="mt-1 grid grid-cols-2 gap-2 text-muted-foreground">
-                      <div>
-                        <span className="line-through">{originalMarginPercentage.toFixed(1)}% GP</span>
-                        <span className="mx-1">→</span>
-                        <span className={profitStatus.color}>{marginPercentage.toFixed(1)}% GP</span>
-                      </div>
-                      <div>
-                        <span className="line-through">{formatCurrency(originalProfit, currency)}</span>
-                        <span className="mx-1">→</span>
-                        <span className={profitStatus.color}>{formatCurrency(profit, currency)}</span>
-                      </div>
-                    </div>
-                    <p className="mt-1 text-amber-700 dark:text-amber-400">
-                      Profit reduced by {formatCurrency(profitReduction, currency)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Per-Treatment Breakdown Table */}
+            {/* Per-Treatment Breakdown Table with Discounted Sell column */}
             {items.length > 0 && (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -237,6 +214,9 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
                       <th className="text-left py-1.5 font-medium">Treatment</th>
                       <th className="text-right py-1.5 font-medium">Cost</th>
                       <th className="text-right py-1.5 font-medium">Sell</th>
+                      {hasDiscount && (
+                        <th className="text-right py-1.5 font-medium">Disc. Sell</th>
+                      )}
                       <th className="text-right py-1.5 font-medium">Markup%</th>
                       <th className="text-right py-1.5 font-medium">GP%</th>
                     </tr>
@@ -245,8 +225,21 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
                     {items.map((item) => {
                       const itemCost = item.cost_price || item.cost_total || 0;
                       const itemSell = item.unit_price || item.total || 0;
-                      const itemMargin = item.gross_margin ?? calculateGrossMargin(itemCost, itemSell);
+                      
+                      // Calculate proportional discount for this item
+                      // Discount is applied to RETAIL PRICE (Sell), not Cost
+                      const itemDiscountRatio = originalSellingTotal > 0 ? itemSell / originalSellingTotal : 0;
+                      const itemDiscountAmount = hasDiscount ? discount.amount * itemDiscountRatio : 0;
+                      const itemDiscountedSell = itemSell - itemDiscountAmount;
+                      
+                      // Markup % is based on original sell price (before discount)
                       const itemMarkup = calculateMarkup(itemCost, itemSell);
+                      
+                      // GP% is calculated from Discounted Sell (after discount applied to retail)
+                      // GP% = (Discounted Sell - Cost) / Discounted Sell × 100
+                      const itemMargin = hasDiscount 
+                        ? calculateGrossMargin(itemCost, itemDiscountedSell)
+                        : (item.gross_margin ?? calculateGrossMargin(itemCost, itemSell));
                       const itemStatus = getProfitStatus(itemMargin);
                       
                       return (
@@ -260,6 +253,11 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
                           <td className="text-right py-1.5 font-mono">
                             {formatCurrency(itemSell, currency)}
                           </td>
+                          {hasDiscount && (
+                            <td className="text-right py-1.5 font-mono text-amber-600 dark:text-amber-400">
+                              {formatCurrency(itemDiscountedSell, currency)}
+                            </td>
+                          )}
                           <td className="text-right py-1.5 font-mono text-muted-foreground">
                             {itemMarkup.toFixed(0)}%
                           </td>
@@ -277,10 +275,15 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
                         {formatCurrency(costTotal, currency)}
                       </td>
                       <td className="text-right py-2 font-mono">
-                        {formatCurrency(sellingTotal, currency)}
+                        {formatCurrency(originalSellingTotal, currency)}
                       </td>
+                      {hasDiscount && (
+                        <td className="text-right py-2 font-mono text-amber-600 dark:text-amber-400">
+                          {formatCurrency(discountedSellingTotal, currency)}
+                        </td>
+                      )}
                       <td className="text-right py-2 font-mono text-muted-foreground">
-                        {markupPercentage.toFixed(0)}%
+                        {(hasDiscount ? originalMarkupPercentage : markupPercentage).toFixed(0)}%
                       </td>
                       <td className={cn("text-right py-2 font-mono", profitStatus.color)}>
                         {marginPercentage.toFixed(1)}%

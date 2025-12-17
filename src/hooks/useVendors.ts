@@ -1,7 +1,7 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type Vendor = Tables<"vendors">;
@@ -9,22 +9,24 @@ type VendorInsert = TablesInsert<"vendors">;
 type VendorUpdate = TablesUpdate<"vendors">;
 
 export const useVendors = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["vendors"],
+    queryKey: ["vendors", effectiveOwnerId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!effectiveOwnerId) return [];
 
       const { data, error } = await supabase
         .from("vendors")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveOwnerId)
         .eq("active", true)
         .order("name");
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!effectiveOwnerId,
   });
 };
 

@@ -17,6 +17,16 @@ const generateSlug = (name: string): string => {
     .substring(0, 50);
 };
 
+// Helper to get effective account owner ID
+const getEffectiveOwnerId = async (userId: string): Promise<string> => {
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("parent_account_id")
+    .eq("user_id", userId)
+    .single();
+  return profile?.parent_account_id || userId;
+};
+
 export const useCreateStore = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -26,11 +36,13 @@ export const useCreateStore = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Get business settings for auto-population
+      const effectiveOwnerId = await getEffectiveOwnerId(user.id);
+
+      // Get business settings for auto-population (account-scoped)
       const { data: businessSettings } = await supabase
         .from('business_settings')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveOwnerId)
         .single();
 
       const slug = generateSlug(storeName);
@@ -73,11 +85,11 @@ export const useCreateStore = () => {
 
       if (pagesError) throw pagesError;
 
-      // Get user's inventory items and auto-add visible products
+      // Get account's inventory items and auto-add visible products
       const { data: inventoryItems } = await supabase
         .from('enhanced_inventory_items')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('user_id', effectiveOwnerId)
         .eq('active', true)
         .limit(20);
 

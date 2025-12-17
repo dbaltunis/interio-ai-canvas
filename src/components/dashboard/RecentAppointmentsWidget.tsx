@@ -8,10 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
 export const RecentAppointmentsWidget = () => {
   const navigate = useNavigate();
   const canViewCalendar = useHasPermission('view_calendar');
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
   
   // Don't show widget at all if no calendar permission
   if (canViewCalendar === false) {
@@ -19,16 +21,15 @@ export const RecentAppointmentsWidget = () => {
   }
   
   const { data: bookings, isLoading } = useQuery({
-    queryKey: ["recent-appointment-bookings"],
+    queryKey: ["recent-appointment-bookings", effectiveOwnerId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!effectiveOwnerId) return [];
 
       // First get user's schedulers
       const { data: schedulers } = await supabase
         .from("appointment_schedulers")
         .select("id")
-        .eq("user_id", user.id);
+        .eq("user_id", effectiveOwnerId);
 
       if (!schedulers || schedulers.length === 0) return [];
 
@@ -54,7 +55,7 @@ export const RecentAppointmentsWidget = () => {
       return data || [];
     },
     staleTime: 30 * 1000, // 30 seconds
-    enabled: canViewCalendar === true, // Only fetch if user has calendar permission
+    enabled: canViewCalendar === true && !!effectiveOwnerId, // Only fetch if user has calendar permission
   });
 
   if (isLoading || canViewCalendar === undefined) {

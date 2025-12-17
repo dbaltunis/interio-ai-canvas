@@ -16,6 +16,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useMarkupSettings } from "@/hooks/useMarkupSettings";
+import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
 
 // Lazy load heavy components - use direct import for now to avoid build issues
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
@@ -74,6 +76,7 @@ export function WindowSummaryCard({
   const userCurrency = useUserCurrency();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: markupSettings } = useMarkupSettings();
 
   // Detect treatment type from multiple sources - prioritize fabric category detection
   const detectTreatmentTypeFromFabric = () => {
@@ -353,23 +356,30 @@ export function WindowSummaryCard({
     return items;
   }, [summary]);
 
-  // DISPLAY-ONLY: Use saved total_cost directly - no recalculation
+  // DISPLAY-ONLY: Calculate RETAIL price (cost + markup) for display
   const displayTotal = useMemo(() => {
     if (!summary) return 0;
     
-    // If we have structured breakdown, sum it for consistency
-    if (enrichedBreakdown.length > 0 && enrichedBreakdown[0]?.total_cost !== undefined) {
-      const breakdownTotal = enrichedBreakdown.reduce((sum, item) => {
-        return sum + (Number(item.total_cost) || 0);
-      }, 0);
-      console.log('💰 [DISPLAY-ONLY] Using breakdown total:', breakdownTotal);
-      return breakdownTotal;
-    }
+    // Get cost total from breakdown or saved total
+    const costTotal = enrichedBreakdown.length > 0 && enrichedBreakdown[0]?.total_cost !== undefined
+      ? enrichedBreakdown.reduce((sum, item) => sum + (Number(item.total_cost) || 0), 0)
+      : Number(summary.total_cost) || 0;
     
-    // Fallback to saved total_cost
-    console.log('💰 [DISPLAY-ONLY] Using saved total_cost:', summary.total_cost);
-    return Number(summary.total_cost) || 0;
-  }, [summary, enrichedBreakdown]);
+    // Access extended properties safely
+    const summaryAny = summary as any;
+    
+    // Apply markup to get retail/selling price
+    const markupResult = resolveMarkup({
+      gridMarkup: summaryAny.pricing_grid_markup || undefined,
+      category: summary.treatment_category || summary.treatment_type,
+      subcategory: summaryAny.subcategory || undefined,
+      markupSettings: markupSettings || undefined
+    });
+    
+    const retailPrice = applyMarkup(costTotal, markupResult.percentage);
+    console.log('💰 [DISPLAY] Window card retail price:', { costTotal, markup: markupResult.percentage, retailPrice });
+    return retailPrice;
+  }, [summary, enrichedBreakdown, markupSettings]);
 
   const displayName = treatmentLabel || surface.name;
 
@@ -729,7 +739,7 @@ export function WindowSummaryCard({
                     {/* Total - Use displayTotal to match the sum of breakdown items */}
                     <div className="border-t-2 border-primary/20 pt-3 mt-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-base font-bold text-foreground">Total Cost</span>
+                        <span className="text-base font-bold text-foreground">Total</span>
                         <span className="text-xl font-bold text-primary">
                           {formatCurrency(displayTotal, userCurrency)}
                         </span>

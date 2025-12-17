@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
 export interface SMSContact {
   id: string;
@@ -17,17 +18,23 @@ export interface SMSContact {
 }
 
 export const useSMSContacts = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
   return useQuery({
-    queryKey: ["sms-contacts"],
+    queryKey: ["sms-contacts", effectiveOwnerId],
     queryFn: async () => {
+      if (!effectiveOwnerId) return [];
+      
       const { data, error } = await supabase
         .from("sms_contacts")
         .select("*")
+        .eq("user_id", effectiveOwnerId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data as SMSContact[];
     },
+    enabled: !!effectiveOwnerId,
   });
 };
 
@@ -86,17 +93,19 @@ export const useUpdateSMSContact = () => {
 // Hook to sync clients to SMS contacts
 export const useSyncClientsToSMSContacts = () => {
   const queryClient = useQueryClient();
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
 
   return useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
+      if (!effectiveOwnerId) throw new Error("No account found");
 
       // Get all clients with phone numbers
       const { data: clients, error: clientsError } = await supabase
         .from("clients")
         .select("id, name, phone")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveOwnerId)
         .not("phone", "is", null);
 
       if (clientsError) throw clientsError;
@@ -105,7 +114,7 @@ export const useSyncClientsToSMSContacts = () => {
       const { data: existingContacts, error: contactsError } = await supabase
         .from("sms_contacts")
         .select("phone_number, client_id")
-        .eq("user_id", user.id);
+        .eq("user_id", effectiveOwnerId);
 
       if (contactsError) throw contactsError;
 
