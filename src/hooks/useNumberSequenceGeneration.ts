@@ -121,13 +121,33 @@ export const shouldRegenerateNumber = (
  * Sync the sequence counter if a higher number is manually entered.
  * Extracts the numeric part from the document number and updates the sequence.
  */
+/**
+ * Get the effective account owner ID for multi-tenant queries
+ */
+const getEffectiveOwnerId = async (): Promise<string | null> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("parent_account_id")
+    .eq("user_id", user.id)
+    .single();
+
+  return profile?.parent_account_id || user.id;
+};
+
+/**
+ * Sync the sequence counter if a higher number is manually entered.
+ * Extracts the numeric part from the document number and updates the sequence.
+ */
 export const syncSequenceCounter = async (
   entityType: EntityType,
   documentNumber: string
 ): Promise<void> => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const effectiveOwnerId = await getEffectiveOwnerId();
+    if (!effectiveOwnerId) return;
 
     // Extract numeric part from the document number
     const numericMatch = documentNumber.match(/(\d+)$/);
@@ -136,11 +156,11 @@ export const syncSequenceCounter = async (
     const enteredNumber = parseInt(numericMatch[1], 10);
     if (isNaN(enteredNumber)) return;
 
-    // Get current sequence
+    // Get current sequence using effective owner ID
     const { data: sequence, error: fetchError } = await supabase
       .from("number_sequences")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", effectiveOwnerId)
       .eq("entity_type", entityType)
       .eq("active", true)
       .maybeSingle();
