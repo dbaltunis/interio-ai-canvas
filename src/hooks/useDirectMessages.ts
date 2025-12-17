@@ -48,6 +48,8 @@ export const useDirectMessages = () => {
       const results: Conversation[] = [];
 
       for (const row of teamPresence) {
+        // Skip current user - don't show self in conversations list
+        if (row.user_id === user.id) continue;
         // Count unread
         const { count, error: countError } = await supabase
           .from('direct_messages')
