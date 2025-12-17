@@ -102,6 +102,29 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
 
   return (
     <>
+      {/* Floating Message Notification Badge - Mobile Only */}
+      {(unreadCount > 0 || otherActiveUsers.length > 0) && (
+        <button
+          onClick={() => setPresencePanelOpen(true)}
+          className="fixed bottom-20 right-4 lg:hidden z-50 flex items-center gap-2 px-3 py-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 animate-in slide-in-from-right-5"
+        >
+          <div className="relative">
+            <Users className="h-4 w-4" />
+            {otherActiveUsers.length > 0 && (
+              <span className="absolute -top-1 -right-1 h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+            )}
+          </div>
+          {unreadCount > 0 && (
+            <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-xs font-bold">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </Badge>
+          )}
+          {unreadCount === 0 && otherActiveUsers.length > 0 && (
+            <span className="text-xs font-medium">{otherActiveUsers.length} online</span>
+          )}
+        </button>
+      )}
+
       <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-background/95 backdrop-blur-md border-t border-border shadow-lg pb-safe">
         {permissionsLoading ? (
           // Show skeleton while permissions are loading
