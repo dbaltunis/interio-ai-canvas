@@ -127,7 +127,8 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
       case 'online': return 'bg-green-500';
       case 'away': return 'bg-yellow-500';
       case 'busy': return 'bg-red-500';
-      default: return 'bg-muted-foreground/50';
+      case 'offline': return 'bg-red-500';
+      default: return 'bg-red-500';
     }
   };
 
@@ -136,6 +137,8 @@ export const DirectMessageDialog = ({ open, onOpenChange, selectedUserId: propSe
       case 'online': return 'Online';
       case 'away': return 'Away';
       case 'busy': return 'Busy';
+      case 'offline': return 'Offline';
+      case 'never_logged_in': return 'Never logged in';
       default: return 'Offline';
     }
   };
