@@ -97,13 +97,13 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existingProfile) {
-      // Update existing profile
+      // Update existing profile (user_profiles doesn't have email/full_name columns)
       const { error: profileUpdateError } = await supabaseAdmin
         .from('user_profiles')
         .update({
           display_name: displayName,
-          full_name: displayName,
-          email: email.toLowerCase().trim(),
+          first_name: displayName.split(' ')[0] || displayName,
+          last_name: displayName.split(' ').slice(1).join(' ') || null,
           role: 'Owner',
           account_type: accountType,
           parent_account_id: null,
@@ -115,14 +115,14 @@ serve(async (req) => {
         console.error('Error updating profile:', profileUpdateError);
       }
     } else {
-      // Insert new profile
+      // Insert new profile (user_profiles doesn't have email/full_name columns)
       const { error: profileInsertError } = await supabaseAdmin
         .from('user_profiles')
         .insert({
           user_id: newUser.user.id,
           display_name: displayName,
-          full_name: displayName,
-          email: email.toLowerCase().trim(),
+          first_name: displayName.split(' ')[0] || displayName,
+          last_name: displayName.split(' ').slice(1).join(' ') || null,
           role: 'Owner',
           account_type: accountType,
           parent_account_id: null,
