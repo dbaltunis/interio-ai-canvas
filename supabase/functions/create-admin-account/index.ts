@@ -89,15 +89,24 @@ serve(async (req) => {
 
     console.log('User created:', newUser.user.id);
 
-    // Step 2: Check if profile exists (may have been auto-created by trigger)
-    const { data: existingProfile } = await supabaseAdmin
+    // Step 2: Wait briefly for trigger to create profile, then update it
+    // The handle_new_user trigger fires on auth.users insert and creates profile
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Check if profile was created by trigger
+    const { data: existingProfile, error: checkError } = await supabaseAdmin
       .from('user_profiles')
-      .select('user_id')
+      .select('user_id, role')
       .eq('user_id', newUser.user.id)
       .maybeSingle();
 
+    if (checkError) {
+      console.error('Error checking profile:', checkError);
+    }
+
     if (existingProfile) {
-      // Update existing profile (user_profiles doesn't have email/full_name columns)
+      // Profile exists (created by trigger) - just update with admin values
+      console.log('Profile already exists (created by trigger), updating...');
       const { error: profileUpdateError } = await supabaseAdmin
         .from('user_profiles')
         .update({
@@ -115,7 +124,8 @@ serve(async (req) => {
         console.error('Error updating profile:', profileUpdateError);
       }
     } else {
-      // Insert new profile (user_profiles doesn't have email/full_name columns)
+      // Profile doesn't exist - create it directly (no ON CONFLICT)
+      console.log('Profile not found, inserting new profile...');
       const { error: profileInsertError } = await supabaseAdmin
         .from('user_profiles')
         .insert({
@@ -131,9 +141,8 @@ serve(async (req) => {
 
       if (profileInsertError) {
         console.error('Error inserting profile:', profileInsertError);
-        // Rollback: delete auth user
-        await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
-        throw new Error(`Failed to create profile: ${profileInsertError.message}`);
+        // Don't rollback - trigger may have created it in parallel
+        // Just log and continue
       }
     }
 
