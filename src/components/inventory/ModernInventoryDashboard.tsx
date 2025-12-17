@@ -1,35 +1,33 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Grid, List, Package, Home, Minus, Palette, Wallpaper, Lock, QrCode, Wrench } from "lucide-react";
+import { Search, Plus, Grid, List, Package, Home, Minus, Wallpaper, Lock, QrCode, Wrench, Shield } from "lucide-react";
 import { QRCodeScanner } from "./QRCodeScanner";
 import { QRCodeQuickActions } from "./QRCodeQuickActions";
 import { toast } from "sonner";
-import { BusinessInventoryOverview } from "./BusinessInventoryOverview";
 import { FabricInventoryView } from "./FabricInventoryView";
 import { HardwareInventoryView } from "./HardwareInventoryView";
 import { WallcoveringInventoryView } from "./WallcoveringInventoryView";
 import { AddInventoryDialog } from "./AddInventoryDialog";
-import { InventoryImportExport } from "./InventoryImportExport";
 import { VendorDashboard } from "../vendors/VendorDashboard";
-import { ReorderNotificationSystem } from "./ReorderNotificationSystem";
 import { useVendors } from "@/hooks/useVendors";
 import { MaterialInventoryView } from "./MaterialInventoryView";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useHasPermission, useHasAnyPermission } from "@/hooks/usePermissions";
+import { useUserRole } from "@/hooks/useUserRole";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { FilterButton } from "../library/FilterButton";
+import { InventoryAdminPanel } from "./InventoryAdminPanel";
 
 export const ModernInventoryDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("fabrics");
   const [showSearch, setShowSearch] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
@@ -42,7 +40,11 @@ export const ModernInventoryDashboard = () => {
   const [selectedStorageLocation, setSelectedStorageLocation] = useState<string | undefined>();
   const { data: allInventory, refetch } = useEnhancedInventory();
   const { data: vendors } = useVendors();
+  const { data: userRole } = useUserRole();
   const isMobile = useIsMobile();
+  
+  // Check if user is Owner/Admin for admin tab
+  const isOwnerOrAdmin = userRole?.role === 'Owner' || userRole?.role === 'Admin' || userRole?.isAdmin;
   
   // Permission checks - CRITICAL for data security
   const canViewInventory = useHasPermission('view_inventory');
@@ -50,41 +52,38 @@ export const ModernInventoryDashboard = () => {
   const hasAnyInventoryAccess = useHasAnyPermission(['view_inventory', 'manage_inventory']);
   
   // Filter out treatment options - only show physical inventory
-  // NOTE: Filters only apply on sub-tabs (Fabrics, Hardware, etc), NOT on overview
   const allPhysicalInventory = allInventory?.filter(item => item.category !== 'treatment_option') || [];
   
-  // For overview tab, show all inventory without filters
-  const inventory = activeTab === 'overview' 
-    ? allPhysicalInventory
-    : allPhysicalInventory.filter(item => {
-        // Apply vendor filter
-        if (selectedVendor && item.vendor_id !== selectedVendor) return false;
-        
-        // Apply collection filter
-        if (selectedCollection && item.collection_id !== selectedCollection) return false;
-        
-        // Apply storage location filter
-        if (selectedStorageLocation && item.location !== selectedStorageLocation) return false;
-        
-        // Apply tags filter
-        if (selectedTags.length > 0) {
-          const itemTags = item.tags || [];
-          const hasMatchingTag = selectedTags.some(tag => itemTags.includes(tag));
-          if (!hasMatchingTag) return false;
-        }
-        
-        // Apply search query
-        if (searchQuery) {
-          const query = searchQuery.toLowerCase();
-          return (
-            item.name?.toLowerCase().includes(query) ||
-            item.sku?.toLowerCase().includes(query) ||
-            item.description?.toLowerCase().includes(query)
-          );
-        }
-        
-        return true;
-      });
+  // Apply filters to inventory
+  const inventory = allPhysicalInventory.filter(item => {
+    // Apply vendor filter
+    if (selectedVendor && item.vendor_id !== selectedVendor) return false;
+    
+    // Apply collection filter
+    if (selectedCollection && item.collection_id !== selectedCollection) return false;
+    
+    // Apply storage location filter
+    if (selectedStorageLocation && item.location !== selectedStorageLocation) return false;
+    
+    // Apply tags filter
+    if (selectedTags.length > 0) {
+      const itemTags = item.tags || [];
+      const hasMatchingTag = selectedTags.some(tag => itemTags.includes(tag));
+      if (!hasMatchingTag) return false;
+    }
+    
+    // Apply search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return (
+        item.name?.toLowerCase().includes(query) ||
+        item.sku?.toLowerCase().includes(query) ||
+        item.description?.toLowerCase().includes(query)
+      );
+    }
+    
+    return true;
+  });
 
   const handleScan = (itemId: string) => {
     const item = inventory.find((i) => i.id === itemId);
@@ -239,10 +238,6 @@ export const ModernInventoryDashboard = () => {
       {/* Main Content */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="w-full justify-start overflow-x-auto flex-nowrap">
-              <TabsTrigger value="overview" className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Overview
-              </TabsTrigger>
               <TabsTrigger value="fabrics" className="flex items-center gap-2">
                 <Home className="h-4 w-4" />
                 Fabrics
@@ -263,141 +258,13 @@ export const ModernInventoryDashboard = () => {
                 <Package className="h-4 w-4" />
                 Vendors
               </TabsTrigger>
-              {!isMobile && (
-                <TabsTrigger value="analytics" className="flex items-center gap-2">
-                  <Palette className="h-4 w-4" />
-                  Import/Export
+              {isOwnerOrAdmin && (
+                <TabsTrigger value="admin" className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Admin
                 </TabsTrigger>
               )}
             </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          <BusinessInventoryOverview />
-          
-          {/* Quick Access */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">Quick Access</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20" onClick={() => setActiveTab("fabrics")}>
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-blue-500/10">
-                        <Home className="h-5 w-5 text-blue-500" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">Fabric Library</CardTitle>
-                        <CardDescription className="text-xs">
-                          Fabrics & materials
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="secondary" className="text-xs">
-                      {inventory.filter(i => i.category === 'fabric').length || 0} Items
-                    </Badge>
-                    <Button variant="ghost" size="sm" className="text-xs group-hover:text-primary">
-                      View →
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20" onClick={() => setActiveTab("hardware")}>
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-green-500/10">
-                        <Minus className="h-5 w-5 text-green-500" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">Hardware</CardTitle>
-                        <CardDescription className="text-xs">
-                          Tracks & accessories
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="secondary" className="text-xs">
-                      {inventory.filter(i => i.category === 'hardware').length || 0} Items
-                    </Badge>
-                    <Button variant="ghost" size="sm" className="text-xs group-hover:text-primary">
-                      View →
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20" onClick={() => setActiveTab("wallcoverings")}>
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-purple-500/10">
-                        <Wallpaper className="h-5 w-5 text-purple-500" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">Wallcoverings</CardTitle>
-                        <CardDescription className="text-xs">
-                          Wallpaper & coverings
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="secondary" className="text-xs">
-                      {inventory.filter(i => i.category === 'wallcovering').length || 0} Items
-                    </Badge>
-                    <Button variant="ghost" size="sm" className="text-xs group-hover:text-primary">
-                      View →
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20" onClick={() => setActiveTab("vendors")}>
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-orange-500/10">
-                        <Package className="h-5 w-5 text-orange-500" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">Vendors</CardTitle>
-                        <CardDescription className="text-xs">
-                          Supplier management
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="secondary" className="text-xs">
-                      {vendors?.length || 0} Vendors
-                    </Badge>
-                    <Button variant="ghost" size="sm" className="text-xs group-hover:text-primary">
-                      Manage →
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Alerts */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">Alerts</h2>
-            <ReorderNotificationSystem />
-          </div>
-        </TabsContent>
 
         <TabsContent value="fabrics" className="space-y-6">
           <FabricInventoryView 
@@ -443,9 +310,11 @@ export const ModernInventoryDashboard = () => {
           <VendorDashboard />
         </TabsContent>
 
-        <TabsContent value="analytics" className="space-y-6">
-          <InventoryImportExport />
-        </TabsContent>
+        {isOwnerOrAdmin && (
+          <TabsContent value="admin" className="space-y-6">
+            <InventoryAdminPanel />
+          </TabsContent>
+        )}
       </Tabs>
       
       <HelpDrawer
