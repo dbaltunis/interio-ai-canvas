@@ -50,6 +50,22 @@ export const useDirectMessages = () => {
   // Use cached team presence data instead of making separate RPC calls
   const { data: teamPresence = [] } = useTeamPresence();
 
+  // Calculate status based on last_seen timestamp
+  const calculateStatus = (lastSeen: string | null, userId: string): string => {
+    // Current user is always online
+    if (userId === user?.id) return 'online';
+    
+    if (!lastSeen) return 'never_logged_in';
+    
+    const lastSeenDate = new Date(lastSeen);
+    const now = new Date();
+    const diffMinutes = (now.getTime() - lastSeenDate.getTime()) / (1000 * 60);
+    
+    if (diffMinutes <= 5) return 'online';      // Active within 5 minutes = green
+    if (diffMinutes <= 30) return 'away';       // Active within 30 minutes = yellow
+    return 'offline';                            // More than 30 minutes = red/offline
+  };
+
   // Conversations: use presence view for consistent status
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
     queryKey: ['conversations', user?.id, teamPresence.length],
@@ -91,7 +107,7 @@ export const useDirectMessages = () => {
           user_profile: {
             display_name: row.display_name || 'Unknown User',
             avatar_url: undefined,
-            status: (row.status as string) || 'offline',
+            status: calculateStatus(row.last_seen, row.user_id),
           },
           last_message: lastMsgs?.[0] as DirectMessage | undefined,
           unread_count: count || 0,

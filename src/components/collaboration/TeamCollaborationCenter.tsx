@@ -131,8 +131,9 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
       case 'online': return 'text-green-500 dark:text-green-400';
       case 'away': return 'text-yellow-500 dark:text-yellow-400';
       case 'busy': return 'text-red-500 dark:text-red-400';
+      case 'offline': return 'text-red-500 dark:text-red-400';
       case 'never_logged_in': return 'text-muted-foreground';
-      default: return 'text-muted-foreground';
+      default: return 'text-red-500 dark:text-red-400';
     }
   };
 
@@ -141,8 +142,9 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
       case 'online': return 'from-green-500 to-emerald-500 dark:from-green-400 dark:to-emerald-400';
       case 'away': return 'from-yellow-500 to-orange-500 dark:from-yellow-400 dark:to-orange-400';
       case 'busy': return 'from-red-500 to-red-600 dark:from-red-400 dark:to-red-500';
+      case 'offline': return 'from-red-500 to-red-600 dark:from-red-400 dark:to-red-500';
       case 'never_logged_in': return 'from-muted to-muted-foreground/50';
-      default: return 'from-muted to-muted-foreground/50';
+      default: return 'from-red-500 to-red-600 dark:from-red-400 dark:to-red-500';
     }
   };
   
@@ -151,7 +153,19 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
       case 'online': return 'bg-green-500';
       case 'away': return 'bg-yellow-500';
       case 'busy': return 'bg-red-500';
-      default: return 'bg-muted-foreground';
+      case 'offline': return 'bg-red-500';
+      default: return 'bg-red-500';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'online': return 'online';
+      case 'away': return 'away';
+      case 'busy': return 'busy';
+      case 'offline': return 'offline';
+      case 'never_logged_in': return 'never logged in';
+      default: return 'offline';
     }
   };
 
@@ -393,29 +407,31 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                 </div>
 
                 {/* Tabs for Team & Messages */}
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden flex flex-col">
                   <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'team' | 'messages')} className="h-full flex flex-col">
-                    <TabsList className="mx-4 mt-4 bg-muted/50 rounded-lg p-1 grid grid-cols-2 gap-1 h-auto">
-                      <TabsTrigger 
-                        value="team" 
-                        className="flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground"
-                      >
-                        <Users className="h-4 w-4" />
-                        <span>Team ({totalUsers})</span>
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="messages" 
-                        className="flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground"
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                        <span>Messages</span>
-                        {totalUnreadCount > 0 && (
-                          <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px] font-bold">
-                            {totalUnreadCount}
-                          </Badge>
-                        )}
-                      </TabsTrigger>
-                    </TabsList>
+                    <div className="px-4 pt-4 shrink-0">
+                      <TabsList className="w-full bg-muted/50 rounded-xl p-1.5 grid grid-cols-2 gap-2 h-auto">
+                        <TabsTrigger 
+                          value="team" 
+                          className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground data-[state=inactive]:hover:bg-background/50"
+                        >
+                          <Users className="h-4 w-4 shrink-0" />
+                          <span className="truncate">Team ({totalUsers})</span>
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="messages" 
+                          className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground data-[state=inactive]:hover:bg-background/50"
+                        >
+                          <MessageCircle className="h-4 w-4 shrink-0" />
+                          <span className="truncate">Messages</span>
+                          {totalUnreadCount > 0 && (
+                            <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px] font-bold shrink-0">
+                              {totalUnreadCount}
+                            </Badge>
+                          )}
+                        </TabsTrigger>
+                      </TabsList>
+                    </div>
 
                     {/* Team Tab Content */}
                     <TabsContent value="team" className="flex-1 mt-0 overflow-hidden">
@@ -497,7 +513,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                          
                                          <p className="text-xs text-muted-foreground capitalize flex items-center gap-1">
                                            <Circle className={`h-2 w-2 fill-current ${getStatusColor(user.status)} shrink-0`} />
-                                           {user.status}
+                                           {getStatusLabel(user.status)}
                                          </p>
                                        </div>
                                       
@@ -565,8 +581,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
 
                                           <p className="text-xs text-muted-foreground capitalize flex items-center gap-1">
                                             <Circle className={`h-2 w-2 fill-current ${getStatusColor(user.status)} shrink-0`} />
-                                            {user.status === 'never_logged_in' ? 'Never signed up' : 
-                                             user.status === 'away' ? 'Away' : 'Offline'}
+                                            {getStatusLabel(user.status)}
                                             {user.last_seen && user.status !== 'never_logged_in' && (
                                               <span className="ml-1">
                                                 • {formatLastSeen(user.last_seen)}
@@ -652,7 +667,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                             variant="secondary" 
                                             className="text-xs bg-accent/40 text-foreground border border-border/50 px-2 py-1"
                                           >
-                                            {conversation.user_profile?.status || 'offline'}
+                                            {getStatusLabel(conversation.user_profile?.status || 'offline')}
                                           </Badge>
                                         </div>
                                         
