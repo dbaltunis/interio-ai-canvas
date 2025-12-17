@@ -51,8 +51,14 @@ export const InventoryAdminPanel = () => {
 
   const currencySymbol = getCurrencySymbol(units.currency);
 
-  // Permission check - Owner/Admin only
-  const isOwnerOrAdmin = userRole?.role === 'Owner' || userRole?.role === 'Admin' || userRole?.isAdmin;
+  // Permission check - Owner/Admin only (including System Owner)
+  const isOwnerOrAdmin = 
+    userRole?.role === 'Owner' || 
+    userRole?.role === 'Admin' || 
+    userRole?.role === 'System Owner' ||
+    userRole?.isAdmin === true || 
+    userRole?.isOwner === true ||
+    userRole?.isSystemOwner === true;
 
   // Calculate financial summaries
   const financialSummary = useMemo(() => {
