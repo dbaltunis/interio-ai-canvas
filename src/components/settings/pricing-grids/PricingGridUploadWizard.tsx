@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { 
   Building2, 
   Package, 
@@ -15,8 +16,10 @@ import {
   ChevronRight,
   FileSpreadsheet,
   Sparkles,
-  Info
+  Info,
+  Ruler
 } from 'lucide-react';
+import { looksLikeMillimeters, type GridUnit } from '@/utils/gridUnitUtils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useVendors } from '@/hooks/useVendors';
@@ -55,6 +58,8 @@ export const PricingGridUploadWizard = ({
   const [gridCode, setGridCode] = useState('');
   const [markupPercentage, setMarkupPercentage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [gridUnit, setGridUnit] = useState<GridUnit>('cm');
+  const [detectedUnit, setDetectedUnit] = useState<GridUnit | null>(null);
 
   // Get material count for selected price group
   const { data: materialMatch } = useMaterialMatchCount(supplierId, productType, priceGroup);
@@ -112,6 +117,14 @@ export const PricingGridUploadWizard = ({
     const preview = lines.map(line => line.split(',').map(cell => cell.trim()));
     setCsvPreview(preview);
     
+    // Auto-detect unit from width values in header row
+    if (preview.length > 0 && preview[0].length > 1) {
+      const widthValues = preview[0].slice(1); // Skip first column (drop label)
+      const inferredUnit: GridUnit = looksLikeMillimeters(widthValues) ? 'mm' : 'cm';
+      setDetectedUnit(inferredUnit);
+      setGridUnit(inferredUnit);
+    }
+    
     // Auto-generate grid name and code
     const supplierName = selectedVendor?.name || 'Unknown';
     const productLabel = selectedConfig?.display_name || productType.replace(/_/g, ' ');
@@ -119,7 +132,7 @@ export const PricingGridUploadWizard = ({
     setGridCode(`${supplierName.substring(0, 3).toUpperCase()}-${productType.substring(0, 3).toUpperCase()}-${priceGroup}`);
   };
 
-  const parseCsvToGridData = (csvText: string) => {
+  const parseCsvToGridData = (csvText: string, unit: GridUnit) => {
     const lines = csvText.trim().split('\n');
     if (lines.length < 2) throw new Error('CSV must have header and data rows');
 
@@ -134,7 +147,8 @@ export const PricingGridUploadWizard = ({
       };
     });
 
-    return { widthColumns, dropRows };
+    // Include the unit in the grid data
+    return { widthColumns, dropRows, unit };
   };
 
   const handleSubmit = async () => {
@@ -150,7 +164,7 @@ export const PricingGridUploadWizard = ({
       if (!user) throw new Error('Not authenticated');
 
       const csvText = await csvFile.text();
-      const gridData = parseCsvToGridData(csvText);
+      const gridData = parseCsvToGridData(csvText, gridUnit);
 
       const { error } = await supabase
         .from('pricing_grids')
@@ -393,25 +407,63 @@ export const PricingGridUploadWizard = ({
             </div>
 
             {csvPreview.length > 0 && (
-              <div className="mt-4">
-                <Label className="text-sm">Preview (first 5 rows)</Label>
-                <div className="mt-2 overflow-x-auto">
-                  <table className="w-full text-xs border rounded">
-                    <tbody>
-                      {csvPreview.map((row, i) => (
-                        <tr key={i} className={i === 0 ? "bg-muted font-medium" : ""}>
-                          {row.slice(0, 6).map((cell, j) => (
-                            <td key={j} className="border px-2 py-1 truncate max-w-20">
-                              {cell}
-                            </td>
-                          ))}
-                          {row.length > 6 && (
-                            <td className="border px-2 py-1 text-muted-foreground">...</td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              <div className="mt-4 space-y-4">
+                <div>
+                  <Label className="text-sm">Preview (first 5 rows)</Label>
+                  <div className="mt-2 overflow-x-auto">
+                    <table className="w-full text-xs border rounded">
+                      <tbody>
+                        {csvPreview.map((row, i) => (
+                          <tr key={i} className={i === 0 ? "bg-muted font-medium" : ""}>
+                            {row.slice(0, 6).map((cell, j) => (
+                              <td key={j} className="border px-2 py-1 truncate max-w-20">
+                                {cell}{i === 0 && j > 0 ? gridUnit : ''}
+                              </td>
+                            ))}
+                            {row.length > 6 && (
+                              <td className="border px-2 py-1 text-muted-foreground">...</td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Unit Selector */}
+                <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Ruler className="h-4 w-4 text-primary" />
+                    <Label className="text-sm font-semibold">Grid Dimensions Unit</Label>
+                    {detectedUnit && (
+                      <Badge variant="outline" className="text-xs">
+                        Auto-detected: {detectedUnit}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    What unit are the width/drop values in your CSV?
+                  </p>
+                  <RadioGroup
+                    value={gridUnit}
+                    onValueChange={(v) => setGridUnit(v as GridUnit)}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="cm" id="unit-cm" />
+                      <Label htmlFor="unit-cm" className="cursor-pointer">
+                        Centimeters (cm)
+                        <span className="block text-xs text-muted-foreground">e.g., 30, 60, 120, 240</span>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="mm" id="unit-mm" />
+                      <Label htmlFor="unit-mm" className="cursor-pointer">
+                        Millimeters (mm)
+                        <span className="block text-xs text-muted-foreground">e.g., 600, 900, 1200, 2400</span>
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
               </div>
             )}
