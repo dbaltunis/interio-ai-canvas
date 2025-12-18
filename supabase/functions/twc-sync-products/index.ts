@@ -78,6 +78,40 @@ const handler = async (req: Request): Promise<Response> => {
     const accountId = userProfile?.parent_account_id || user.id;
     console.log('Using account_id:', accountId);
 
+    // ✅ FIX: Look up or create TWC vendor for proper grid matching
+    let twcVendorId: string | null = null;
+    const { data: existingTwcVendor } = await supabaseClient
+      .from('vendors')
+      .select('id')
+      .eq('user_id', user.id)
+      .ilike('name', '%TWC%')
+      .limit(1)
+      .single();
+
+    if (existingTwcVendor) {
+      twcVendorId = existingTwcVendor.id;
+      console.log('Found existing TWC vendor:', twcVendorId);
+    } else {
+      // Create TWC vendor if it doesn't exist
+      const { data: newVendor, error: vendorError } = await supabaseClient
+        .from('vendors')
+        .insert({
+          user_id: user.id,
+          name: 'TWC (The Wholesale Company)',
+          is_supplier: true,
+          active: true
+        })
+        .select('id')
+        .single();
+
+      if (!vendorError && newVendor) {
+        twcVendorId = newVendor.id;
+        console.log('Created new TWC vendor:', twcVendorId);
+      } else {
+        console.warn('Could not create TWC vendor:', vendorError);
+      }
+    }
+
     const { products } = await req.json() as SyncRequest;
 
     if (!products || products.length === 0) {
@@ -342,6 +376,7 @@ const handler = async (req: Request): Promise<Response> => {
         category: categoryMapping.category,
         subcategory: categoryMapping.subcategory,
         supplier: 'TWC',
+        vendor_id: twcVendorId, // ✅ FIX: Set vendor_id for proper grid matching
         active: true,
         show_in_quote: true,
         description: `${productType} - Imported from TWC`,

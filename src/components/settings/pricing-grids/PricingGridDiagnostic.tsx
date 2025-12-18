@@ -8,10 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Search, CheckCircle2, XCircle, AlertTriangle, Grid3x3 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search, CheckCircle2, XCircle, AlertTriangle, Grid3x3, Package, ArrowRight } from 'lucide-react';
 import { useVendors } from '@/hooks/useVendors';
 import { getTreatmentOptions } from '@/types/treatmentCategories';
 import { resolveGridForProduct } from '@/utils/pricing/gridResolver';
+import { useEnhancedInventory } from '@/hooks/useEnhancedInventory';
 
 const TREATMENT_OPTIONS = getTreatmentOptions();
 
@@ -37,16 +39,26 @@ interface DiagnosticResult {
     price_group: string;
   }>;
   possibleIssues: string[];
+  fixSteps: string[];
 }
 
 export const PricingGridDiagnostic = () => {
+  const [activeTab, setActiveTab] = useState<string>('manual');
   const [supplierId, setSupplierId] = useState<string>('');
   const [productType, setProductType] = useState<string>('');
   const [priceGroup, setPriceGroup] = useState<string>('');
+  const [selectedMaterialId, setSelectedMaterialId] = useState<string>('');
   const [result, setResult] = useState<DiagnosticResult | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
   const { data: vendors = [] } = useVendors();
+  const { data: inventory = [] } = useEnhancedInventory();
+
+  // Filter to materials only
+  const materials = inventory.filter(item => 
+    item.category === 'material' || 
+    ['roller_fabric', 'venetian_slats', 'vertical_slats', 'cellular', 'panel_glide_fabric', 'shutter_material'].includes(item.subcategory || '')
+  );
 
   // Fetch all grids for comparison
   const { data: allGrids = [] } = useQuery({
@@ -81,63 +93,71 @@ export const PricingGridDiagnostic = () => {
     }
   });
 
-  const runDiagnostic = async () => {
-    if (!productType || !priceGroup) {
+  const runDiagnostic = async (params: { supplierId?: string; productType: string; priceGroup: string }) => {
+    if (!params.productType || !params.priceGroup) {
       return;
     }
 
     setIsSearching(true);
     const possibleIssues: string[] = [];
+    const fixSteps: string[] = [];
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
       // Get supplier name for display
-      const supplierName = vendors.find(v => v.id === supplierId)?.name;
+      const supplierName = vendors.find(v => v.id === params.supplierId)?.name;
 
       // Try to resolve grid
       const resolution = await resolveGridForProduct({
-        productType,
-        fabricPriceGroup: priceGroup,
-        fabricSupplierId: supplierId || undefined,
+        productType: params.productType,
+        fabricPriceGroup: params.priceGroup,
+        fabricSupplierId: params.supplierId || undefined,
         userId: user.id
       });
 
       // Analyze why it might not match
       if (!resolution.gridId) {
         // Check for partial matches
-        const matchingProductType = allGrids.filter(g => g.product_type === productType);
+        const matchingProductType = allGrids.filter(g => g.product_type === params.productType);
         const matchingPriceGroup = allGrids.filter(g => 
-          g.price_group?.toLowerCase() === priceGroup.toLowerCase()
+          g.price_group?.toLowerCase() === params.priceGroup.toLowerCase()
         );
-        const matchingSupplier = supplierId 
-          ? allGrids.filter(g => g.supplier_id === supplierId)
+        const matchingSupplier = params.supplierId 
+          ? allGrids.filter(g => g.supplier_id === params.supplierId)
           : allGrids;
 
-        if (matchingProductType.length === 0) {
-          possibleIssues.push(`No grids exist for product type "${productType}"`);
+        if (allGrids.length === 0) {
+          possibleIssues.push('No pricing grids exist yet');
+          fixSteps.push('Go to Settings → Pricing → Grids tab and upload a pricing grid CSV');
+        } else if (matchingProductType.length === 0) {
+          possibleIssues.push(`No grids exist for product type "${params.productType.replace(/_/g, ' ')}"`);
+          fixSteps.push(`Upload a grid with Product Type = "${params.productType}"`);
         } else if (matchingPriceGroup.length === 0) {
-          possibleIssues.push(`No grids exist with price group "${priceGroup}"`);
-        } else if (supplierId && matchingSupplier.length === 0) {
+          possibleIssues.push(`No grids exist with price group "${params.priceGroup}"`);
+          fixSteps.push(`Upload a grid with Price Group = "${params.priceGroup}" OR update the material's price group`);
+        } else if (params.supplierId && matchingSupplier.length === 0) {
           possibleIssues.push(`No grids exist for supplier "${supplierName}"`);
+          fixSteps.push(`Upload a grid with Supplier = "${supplierName}" OR remove supplier filter`);
         } else {
           // Check if the combination doesn't exist
           const exactMatch = allGrids.find(g => 
-            g.product_type === productType &&
-            g.price_group?.toLowerCase() === priceGroup.toLowerCase() &&
-            (!supplierId || g.supplier_id === supplierId)
+            g.product_type === params.productType &&
+            g.price_group?.toLowerCase() === params.priceGroup.toLowerCase() &&
+            (!params.supplierId || g.supplier_id === params.supplierId)
           );
           if (!exactMatch) {
             possibleIssues.push('No grid matches the exact combination of supplier + product type + price group');
             
             // Show what's close
             const closeMatches = allGrids.filter(g => 
-              (g.product_type === productType || g.price_group?.toLowerCase() === priceGroup.toLowerCase())
+              (g.product_type === params.productType || g.price_group?.toLowerCase() === params.priceGroup.toLowerCase())
             );
             if (closeMatches.length > 0) {
-              possibleIssues.push(`Found ${closeMatches.length} grids with partial matches`);
+              possibleIssues.push(`Found ${closeMatches.length} grids with partial matches - check the table below`);
             }
+            fixSteps.push('Create a grid with the correct combination OR update the material\'s price group to match an existing grid');
           }
         }
       }
@@ -151,13 +171,14 @@ export const PricingGridDiagnostic = () => {
           ? `Matched via ${resolution.matchedRule.id === 'auto-match' ? 'Auto-Match' : 'Legacy Rule'}`
           : undefined,
         searchParams: {
-          supplierId: supplierId || undefined,
+          supplierId: params.supplierId || undefined,
           supplierName: supplierName,
-          productType,
-          priceGroup
+          productType: params.productType,
+          priceGroup: params.priceGroup
         },
         availableGrids: allGrids,
-        possibleIssues
+        possibleIssues,
+        fixSteps
       });
 
     } catch (error) {
@@ -167,18 +188,50 @@ export const PricingGridDiagnostic = () => {
         success: false,
         gridId: null,
         searchParams: {
-          supplierId: supplierId || undefined,
-          supplierName: vendors.find(v => v.id === supplierId)?.name,
-          productType,
-          priceGroup
+          supplierId: params.supplierId || undefined,
+          supplierName: vendors.find(v => v.id === params.supplierId)?.name,
+          productType: params.productType,
+          priceGroup: params.priceGroup
         },
         availableGrids: allGrids,
-        possibleIssues
+        possibleIssues,
+        fixSteps
       });
     } finally {
       setIsSearching(false);
     }
   };
+
+  const handleManualSearch = () => {
+    runDiagnostic({ supplierId, productType, priceGroup });
+  };
+
+  const handleMaterialLookup = () => {
+    const material = materials.find(m => m.id === selectedMaterialId);
+    if (!material) return;
+
+    // Map subcategory to product type
+    const subcategoryToProductType: Record<string, string> = {
+      'roller_fabric': 'roller_blinds',
+      'venetian_slats': 'venetian_blinds',
+      'vertical_slats': 'vertical_blinds',
+      'cellular': 'cellular_blinds',
+      'panel_glide_fabric': 'panel_glide',
+      'shutter_material': 'shutters'
+    };
+
+    const mappedProductType = subcategoryToProductType[material.subcategory || ''] || 'roller_blinds';
+    const materialPriceGroup = material.price_group || '';
+    const materialVendorId = material.vendor_id || '';
+
+    runDiagnostic({
+      supplierId: materialVendorId,
+      productType: mappedProductType,
+      priceGroup: materialPriceGroup
+    });
+  };
+
+  const selectedMaterial = materials.find(m => m.id === selectedMaterialId);
 
   return (
     <Card>
@@ -192,58 +245,158 @@ export const PricingGridDiagnostic = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Search Parameters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label>Supplier (Optional)</Label>
-          <Select value={supplierId || "_any"} onValueChange={(val) => setSupplierId(val === "_any" ? "" : val)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Any supplier" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_any">Any supplier</SelectItem>
-                {vendors.map((vendor) => (
-                  <SelectItem key={vendor.id} value={vendor.id}>
-                    {vendor.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="manual">Manual Search</TabsTrigger>
+            <TabsTrigger value="material">Material Lookup</TabsTrigger>
+          </TabsList>
 
-          <div className="space-y-2">
-            <Label>Product Type *</Label>
-            <Select value={productType} onValueChange={setProductType}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select product type" />
-              </SelectTrigger>
-              <SelectContent>
-                {TREATMENT_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <TabsContent value="manual" className="space-y-4 pt-4">
+            {/* Manual Search Parameters */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Supplier (Optional)</Label>
+                <Select value={supplierId || "_any"} onValueChange={(val) => setSupplierId(val === "_any" ? "" : val)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Any supplier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_any">Any supplier</SelectItem>
+                    {vendors.map((vendor) => (
+                      <SelectItem key={vendor.id} value={vendor.id}>
+                        {vendor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="space-y-2">
-            <Label>Price Group *</Label>
-            <Input
-              placeholder="e.g., A, B, Group 1"
-              value={priceGroup}
-              onChange={(e) => setPriceGroup(e.target.value)}
-            />
-          </div>
-        </div>
+              <div className="space-y-2">
+                <Label>Product Type *</Label>
+                <Select value={productType} onValueChange={setProductType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select product type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TREATMENT_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <Button 
-          onClick={runDiagnostic} 
-          disabled={!productType || !priceGroup || isSearching}
-          className="w-full"
-        >
-          {isSearching ? 'Searching...' : 'Test Grid Resolution'}
-        </Button>
+              <div className="space-y-2">
+                <Label>Price Group *</Label>
+                <Input
+                  placeholder="e.g., A, B, Group 1"
+                  value={priceGroup}
+                  onChange={(e) => setPriceGroup(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <Button 
+              onClick={handleManualSearch} 
+              disabled={!productType || !priceGroup || isSearching}
+              className="w-full"
+            >
+              {isSearching ? 'Searching...' : 'Test Grid Resolution'}
+            </Button>
+          </TabsContent>
+
+          <TabsContent value="material" className="space-y-4 pt-4">
+            {/* Material Lookup Mode */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Select a Material</Label>
+                <Select value={selectedMaterialId || "_none"} onValueChange={(val) => setSelectedMaterialId(val === "_none" ? "" : val)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose material to diagnose" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Select a material...</SelectItem>
+                    {materials.map((material) => (
+                      <SelectItem key={material.id} value={material.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{material.name}</span>
+                          {material.price_group && (
+                            <Badge variant="outline" className="text-xs">
+                              Group {material.price_group}
+                            </Badge>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedMaterial && (
+                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Material Details
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Name:</span>
+                      <span className="ml-2 font-medium">{selectedMaterial.name}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Supplier:</span>
+                      <span className="ml-2 font-medium">{selectedMaterial.supplier || 'Not set'}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Price Group:</span>
+                      <span className={`ml-2 font-medium ${!selectedMaterial.price_group ? 'text-amber-600' : ''}`}>
+                        {selectedMaterial.price_group || '⚠️ Not set'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Vendor ID:</span>
+                      <span className={`ml-2 font-medium ${!selectedMaterial.vendor_id ? 'text-amber-600' : ''}`}>
+                        {selectedMaterial.vendor_id ? '✓ Linked' : '⚠️ Not linked'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Subcategory:</span>
+                      <span className="ml-2 font-medium">{selectedMaterial.subcategory?.replace(/_/g, ' ') || 'Unknown'}</span>
+                    </div>
+                  </div>
+
+                  {/* Linkage status warnings */}
+                  {(!selectedMaterial.vendor_id || !selectedMaterial.price_group) && (
+                    <Alert variant="destructive" className="mt-3">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Missing Linkage Data</AlertTitle>
+                      <AlertDescription className="text-sm">
+                        {!selectedMaterial.vendor_id && !selectedMaterial.price_group && (
+                          <span>This material has no vendor_id or price_group set. Grids cannot match.</span>
+                        )}
+                        {!selectedMaterial.vendor_id && selectedMaterial.price_group && (
+                          <span>This material has no vendor_id. Supplier-specific grids won't match.</span>
+                        )}
+                        {selectedMaterial.vendor_id && !selectedMaterial.price_group && (
+                          <span>This material has no price_group. Grids require price_group to match.</span>
+                        )}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              )}
+
+              <Button 
+                onClick={handleMaterialLookup} 
+                disabled={!selectedMaterialId || isSearching}
+                className="w-full"
+              >
+                {isSearching ? 'Diagnosing...' : 'Diagnose Material Grid Resolution'}
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Results */}
         {result && (
@@ -278,7 +431,7 @@ export const PricingGridDiagnostic = () => {
                   <Badge variant="outline">Supplier: {result.searchParams.supplierName}</Badge>
                 )}
                 <Badge variant="outline">Type: {result.searchParams.productType.replace(/_/g, ' ')}</Badge>
-                <Badge variant="outline">Group: {result.searchParams.priceGroup}</Badge>
+                <Badge variant="outline">Group: {result.searchParams.priceGroup || '(none)'}</Badge>
               </div>
             </div>
 
@@ -287,13 +440,28 @@ export const PricingGridDiagnostic = () => {
               <div className="space-y-2">
                 <h4 className="text-sm font-medium flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  Possible Issues:
+                  Issues Found:
                 </h4>
                 <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
                   {result.possibleIssues.map((issue, idx) => (
                     <li key={idx}>{issue}</li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {/* Fix Steps */}
+            {result.fixSteps.length > 0 && (
+              <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-3 space-y-2">
+                <h4 className="text-sm font-medium text-green-700 dark:text-green-400 flex items-center gap-2">
+                  <ArrowRight className="h-4 w-4" />
+                  How to Fix:
+                </h4>
+                <ol className="list-decimal list-inside text-sm text-green-600 dark:text-green-400 space-y-1">
+                  {result.fixSteps.map((step, idx) => (
+                    <li key={idx}>{step}</li>
+                  ))}
+                </ol>
               </div>
             )}
 
@@ -319,7 +487,7 @@ export const PricingGridDiagnostic = () => {
                         key={grid.id} 
                         className={`border-t hover:bg-muted/50 ${
                           grid.product_type === result.searchParams.productType &&
-                          grid.price_group?.toLowerCase() === result.searchParams.priceGroup.toLowerCase()
+                          grid.price_group?.toLowerCase() === result.searchParams.priceGroup?.toLowerCase()
                             ? 'bg-green-50 dark:bg-green-950'
                             : ''
                         }`}
