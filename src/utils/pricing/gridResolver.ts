@@ -28,7 +28,8 @@ export interface GridResolutionResult {
   gridCode?: string;
   gridName?: string;
   gridData?: any;
-  markupPercentage?: number;  // ✅ FIX #2: Include grid markup for proper pricing
+  markupPercentage?: number;
+  includesFabricPrice?: boolean;  // When TRUE, grid includes fabric cost; when FALSE, add fabric separately
   matchedRule?: {
     id: string;
     product_type: string;
@@ -69,13 +70,14 @@ export const resolveGridForProduct = async (
     });
 
     if (autoMatchResult.gridId) {
-      console.log('📊 Grid resolved via auto-match:', autoMatchResult.matchDetails, 'markup:', autoMatchResult.markupPercentage);
+      console.log('📊 Grid resolved via auto-match:', autoMatchResult.matchDetails, 'markup:', autoMatchResult.markupPercentage, 'includesFabric:', autoMatchResult.includesFabricPrice);
       return {
         gridId: autoMatchResult.gridId,
         gridCode: autoMatchResult.gridCode,
         gridName: autoMatchResult.gridName,
         gridData: autoMatchResult.gridData,
-        markupPercentage: autoMatchResult.markupPercentage,  // ✅ FIX: Pass through markup from auto-match
+        markupPercentage: autoMatchResult.markupPercentage,
+        includesFabricPrice: autoMatchResult.includesFabricPrice ?? true,
         matchedRule: {
           id: 'auto-match',
           product_type: productType,
@@ -100,6 +102,7 @@ export const resolveGridForProduct = async (
           name,
           grid_data,
           markup_percentage,
+          includes_fabric_price,
           active
         )
       `)
@@ -150,7 +153,8 @@ export const resolveGridForProduct = async (
         gridCode: grid.grid_code,
         gridName: grid.name,
         gridData: grid.grid_data,
-        markupPercentage: grid.markup_percentage,  // ✅ FIX: Include markup from legacy grid
+        markupPercentage: grid.markup_percentage,
+        includesFabricPrice: grid.includes_fabric_price ?? true,
         matchedRule: {
           id: rule.id,
           product_type: rule.product_type,

@@ -11,6 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useVendors } from '@/hooks/useVendors';
 
 const GRID_PRODUCT_TYPES = [
+  { value: 'curtains', label: 'Curtains' },
+  { value: 'roman_blinds', label: 'Roman Blinds' },
   { value: 'roller_blinds', label: 'Roller Blinds' },
   { value: 'venetian_blinds', label: 'Venetian Blinds' },
   { value: 'cellular_blinds', label: 'Cellular/Honeycomb' },

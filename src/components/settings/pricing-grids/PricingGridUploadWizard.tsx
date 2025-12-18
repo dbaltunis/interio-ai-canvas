@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Building2, 
   Package, 
@@ -13,13 +14,15 @@ import {
   ChevronLeft, 
   ChevronRight,
   FileSpreadsheet,
-  Sparkles
+  Sparkles,
+  Info
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useVendors } from '@/hooks/useVendors';
 import { getTreatmentOptions, getUnifiedConfig } from '@/types/treatmentCategories';
 import { PriceGroupAutocomplete } from './PriceGroupAutocomplete';
+import { useMaterialMatchCount } from '@/hooks/useInventoryPriceGroups';
 import { cn } from '@/lib/utils';
 
 const TREATMENT_OPTIONS = getTreatmentOptions();
@@ -45,12 +48,16 @@ export const PricingGridUploadWizard = ({
   const [supplierId, setSupplierId] = useState('');
   const [productType, setProductType] = useState(initialProductType || '');
   const [priceGroup, setPriceGroup] = useState(initialPriceGroup || '');
+  const [includesFabricPrice, setIncludesFabricPrice] = useState(true);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvPreview, setCsvPreview] = useState<string[][]>([]);
   const [gridName, setGridName] = useState('');
   const [gridCode, setGridCode] = useState('');
   const [markupPercentage, setMarkupPercentage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+
+  // Get material count for selected price group
+  const { data: materialMatch } = useMaterialMatchCount(supplierId, productType, priceGroup);
 
   const selectedVendor = vendors.find(v => v.id === supplierId);
   const selectedConfig = productType ? getUnifiedConfig(productType) : null;
@@ -156,6 +163,7 @@ export const PricingGridUploadWizard = ({
           product_type: productType,
           price_group: priceGroup.toUpperCase().trim(),
           markup_percentage: parseFloat(markupPercentage) || 0,
+          includes_fabric_price: includesFabricPrice,
           active: true
         });
 
@@ -294,16 +302,51 @@ export const PricingGridUploadWizard = ({
             </div>
 
             {productType && (
-              <div className="mt-6 space-y-3">
-                <Label>Price Group</Label>
-                <PriceGroupAutocomplete
-                  value={priceGroup}
-                  onChange={setPriceGroup}
-                  placeholder="e.g., 1, 2, 3 or A, B, C"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Materials with this price group will use this grid
-                </p>
+              <div className="mt-6 space-y-4">
+                <div className="space-y-3">
+                  <Label>Price Group</Label>
+                  <PriceGroupAutocomplete
+                    value={priceGroup}
+                    onChange={setPriceGroup}
+                    placeholder="e.g., 1, 2, 3 or A, B, C"
+                  />
+                  {priceGroup && materialMatch && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <Info className="h-3 w-3 text-muted-foreground" />
+                      {materialMatch.count > 0 ? (
+                        <span className="text-primary font-medium">
+                          {materialMatch.count} materials will use this grid
+                        </span>
+                      ) : (
+                        <span className="text-amber-600">
+                          No materials with this price group yet - assign after upload
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Materials with matching price_group in inventory will auto-use this grid
+                  </p>
+                </div>
+
+                {/* Includes Fabric Price Toggle */}
+                <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/50 border">
+                  <Checkbox
+                    id="includes-fabric"
+                    checked={includesFabricPrice}
+                    onCheckedChange={(checked) => setIncludesFabricPrice(!!checked)}
+                  />
+                  <div className="space-y-1">
+                    <Label htmlFor="includes-fabric" className="text-sm font-medium cursor-pointer">
+                      Grid price includes fabric cost
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {includesFabricPrice 
+                        ? "TWC mode: Grid price is all-inclusive (fabric + fabrication)"
+                        : "Separate mode: Grid is fabrication only - fabric cost will be added"}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -399,6 +442,18 @@ export const PricingGridUploadWizard = ({
                 <span className="text-sm text-muted-foreground">Price Group</span>
                 <Badge>{priceGroup}</Badge>
               </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Pricing Mode</span>
+                <Badge variant={includesFabricPrice ? "default" : "secondary"}>
+                  {includesFabricPrice ? "All-inclusive (fabric + fabrication)" : "Fabrication only"}
+                </Badge>
+              </div>
+              {materialMatch && materialMatch.count > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Materials to link</span>
+                  <span className="text-sm font-medium text-primary">{materialMatch.count} items</span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">File</span>
                 <span className="text-sm">{csvFile?.name}</span>
