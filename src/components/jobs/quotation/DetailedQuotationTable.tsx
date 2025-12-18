@@ -7,8 +7,6 @@ import { ChevronDown, ChevronRight, Eye, EyeOff, List, ListX } from "lucide-reac
 import { formatCurrency } from "@/utils/currency";
 import QuoteItemBreakdown from "@/components/quotes/QuoteItemBreakdown";
 import { QuoteItemImage } from "@/components/quotes/QuoteItemImage";
-import { useMarkupSettings } from "@/hooks/useMarkupSettings";
-import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
 
 interface DetailedQuotationTableProps {
   quotationData: any;
@@ -35,7 +33,6 @@ export const DetailedQuotationTable: React.FC<DetailedQuotationTableProps> = ({
 }) => {
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const { data: markupSettings } = useMarkupSettings();
 
   const toggleRoom = (roomId: string) => {
     const newExpanded = new Set(expandedRooms);
@@ -131,7 +128,6 @@ export const DetailedQuotationTable: React.FC<DetailedQuotationTableProps> = ({
                       expandedItems={expandedItems}
                       onToggleItem={toggleItem}
                       currency={currency}
-                      markupSettings={markupSettings}
                     />
                   ))}
                 </CollapsibleContent>
@@ -150,7 +146,6 @@ export const DetailedQuotationTable: React.FC<DetailedQuotationTableProps> = ({
                   expandedItems={expandedItems}
                   onToggleItem={toggleItem}
                   currency={currency}
-                  markupSettings={markupSettings}
                 />
               ))}
             </div>
@@ -173,22 +168,10 @@ const QuotationItemRow: React.FC<{
   expandedItems: Set<string>;
   onToggleItem: (id: string) => void;
   currency: string;
-  markupSettings?: any;
-}> = ({ item, showDetailedView, showAllOptions, expandedItems, onToggleItem, currency, markupSettings }) => {
+}> = ({ item, showDetailedView, showAllOptions, expandedItems, onToggleItem, currency }) => {
   const isExpanded = expandedItems.has(item.id);
   const hasBreakdown = item.breakdown && Array.isArray(item.breakdown) && item.breakdown.length > 0;
   const hasChildren = item.children && Array.isArray(item.children) && item.children.length > 0;
-
-  // Helper to get selling price with markup
-  const getSellingPrice = (costPrice: number, category?: string) => {
-    if (!markupSettings || costPrice <= 0) return costPrice;
-    const markupResult = resolveMarkup({
-      category: item.treatment_category || category,
-      subcategory: category,
-      markupSettings
-    });
-    return applyMarkup(costPrice, markupResult.percentage);
-  };
 
   if (item.isHeader) {
     return null;
@@ -268,11 +251,11 @@ const QuotationItemRow: React.FC<{
                     <div className="text-right text-sm whitespace-nowrap">
                       {child.unit_price > 0 && child.quantity > 0 && (
                         <div className="text-muted-foreground text-xs">
-                          {formatCurrency(getSellingPrice(child.unit_price, child.category), currency)}/{child.unit || 'unit'} × {Number(child.quantity).toFixed(2)}
+                          {formatCurrency(child.unit_price, currency)}/{child.unit || 'unit'} × {Number(child.quantity).toFixed(2)}
                         </div>
                       )}
                       <div className="font-medium text-foreground">
-                        {formatCurrency(getSellingPrice(child.total || 0, child.category), currency)}
+                        {formatCurrency(child.total || 0, currency)}
                       </div>
                     </div>
                   </div>
@@ -303,7 +286,7 @@ const QuotationItemRow: React.FC<{
                           <span className="text-muted-foreground">{opt.description || opt.value || '-'}</span>
                         </span>
                         <span className="font-medium text-foreground whitespace-nowrap">
-                          {opt.total > 0 ? formatCurrency(getSellingPrice(opt.total, 'option'), currency) : 'Included'}
+                          {opt.total > 0 ? formatCurrency(opt.total, currency) : 'Included'}
                         </span>
                       </div>
                     </li>
@@ -313,9 +296,9 @@ const QuotationItemRow: React.FC<{
             )}
           </div>
           
-          {/* Total Price */}
+          {/* Total Price - already includes markup from source */}
           <div className="text-right flex-shrink-0">
-            <div className="text-lg font-semibold text-foreground">{formatCurrency(getSellingPrice(item.total || 0), currency)}</div>
+            <div className="text-lg font-semibold text-foreground">{formatCurrency(item.total || 0, currency)}</div>
           </div>
         </div>
       </div>
@@ -356,16 +339,16 @@ const QuotationItemRow: React.FC<{
             <div className="text-xs text-muted-foreground">{item.description}</div>
             {item.quantity && item.unit_price && (
               <div className="text-xs text-muted-foreground">
-                Qty: {item.quantity} × {formatCurrency(getSellingPrice(item.unit_price), currency)} each
+                Qty: {item.quantity} × {formatCurrency(item.unit_price, currency)} each
               </div>
             )}
           </div>
         </div>
         <div className="text-right">
-          <div className="font-medium text-foreground">{formatCurrency(getSellingPrice(item.total || 0), currency)}</div>
+          <div className="font-medium text-foreground">{formatCurrency(item.total || 0, currency)}</div>
           {item.quantity && item.unit_price && (
             <div className="text-xs text-muted-foreground">
-              {formatCurrency(getSellingPrice(item.unit_price), currency)} per unit
+              {formatCurrency(item.unit_price, currency)} per unit
             </div>
           )}
         </div>
