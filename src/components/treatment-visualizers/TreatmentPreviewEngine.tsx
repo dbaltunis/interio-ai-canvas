@@ -266,18 +266,6 @@ export const TreatmentPreviewEngine = ({
   return (
     <div className="relative">
       {renderTreatmentVisualizer()}
-      
-      {/* Treatment type indicator */}
-      <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm rounded p-2 text-xs">
-        <div className="font-medium">
-          {treatmentType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-        </div>
-        {template?.name && (
-          <div className="text-muted-foreground">
-            {template.name}
-          </div>
-        )}
-      </div>
     </div>
   );
 };
