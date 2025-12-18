@@ -312,7 +312,27 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
     return linkedTWCProduct.metadata.twc_questions || [];
   }, [linkedTWCProduct]);
   
-  const filteredOptions = allOptions.filter(opt => opt.treatment_category === treatmentCategory);
+  // Filter options: for TWC options, only show if linked to THIS template via template_option_settings
+  // For system options, show all that match the treatment_category
+  const filteredOptions = useMemo(() => {
+    const linkedOptionIds = new Set(templateSettings.map(s => s.treatment_option_id));
+    const templateIdPrefix = templateId?.substring(0, 8) || '';
+    
+    return allOptions.filter(opt => {
+      // Must match treatment category
+      if (opt.treatment_category !== treatmentCategory) return false;
+      
+      // For TWC options: only show if explicitly linked OR key matches this template's ID
+      if ((opt as any).source === 'twc') {
+        const isLinked = linkedOptionIds.has(opt.id);
+        const keyMatchesTemplate = templateIdPrefix && opt.key?.endsWith(`_${templateIdPrefix}`);
+        return isLinked || keyMatchesTemplate;
+      }
+      
+      // System/custom options: show all matching category
+      return true;
+    });
+  }, [allOptions, treatmentCategory, templateSettings, templateId]);
   
   // Sort options by template-specific order_index, then by TWC status
   const categoryOptions = useMemo(() => {
