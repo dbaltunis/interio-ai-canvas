@@ -353,7 +353,10 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
       const accountId = profile?.parent_account_id || user.id;
       
       for (const question of twcQuestions) {
-        const optionKey = question.name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        // Create product-specific key using template ID suffix to isolate options per product
+        const baseKey = question.name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        const templateShortId = templateId.substring(0, 8);
+        const optionKey = `${baseKey}_${templateShortId}`;
         
         const { data: existingOption } = await supabase
           .from('treatment_options')
