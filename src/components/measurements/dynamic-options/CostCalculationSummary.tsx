@@ -663,12 +663,43 @@ export const CostCalculationSummary = ({
   // When engineResult is provided, use it exclusively - no fallbacks
   const useEngine = engineResult != null;
   
-  // Fabric cost: prop > engine > 0
-  // CRITICAL: calculatedFabricCost includes leftover adjustment from DynamicWindowWorksheet
-  // engineResult.fabric_cost is always full cost (engine doesn't know about leftover logic)
-  const fabricCost = (calculatedFabricCost != null && calculatedFabricCost > 0)
-    ? calculatedFabricCost
-    : (useEngine ? engineResult.fabric_cost : 0);
+  // ✅ CRITICAL FIX: Calculate grid price for curtains when fabric has pricing_grid_data
+  // This was missing - causing NZ$0.00 Cost Total despite grid price showing in display
+  let gridPriceForCurtain = 0;
+  const hasCurtainPricingGrid = fabricToUse?.pricing_grid_data && 
+    (fabricToUse.pricing_method === 'pricing_grid' || template?.pricing_type === 'pricing_grid');
+  
+  if (hasCurtainPricingGrid) {
+    // For curtains, we need effective width (with fullness) and drop
+    const fullnessRatio = fabricCalculation?.fullnessRatio || measurements?.fullness_ratio || 2;
+    const effectiveWidthCm = width * fullnessRatio; // Apply fullness to width
+    const effectiveDropCm = height;
+    
+    gridPriceForCurtain = getPriceFromGrid(fabricToUse.pricing_grid_data, effectiveWidthCm, effectiveDropCm);
+    
+    // Apply markup if set
+    const gridMarkup = fabricToUse.pricing_grid_markup || 0;
+    if (gridMarkup > 0) {
+      gridPriceForCurtain = gridPriceForCurtain * (1 + gridMarkup / 100);
+    }
+    
+    console.log('📊 Curtain Grid Price Calculated:', {
+      effectiveWidthCm,
+      effectiveDropCm,
+      fullnessRatio,
+      gridPrice: gridPriceForCurtain,
+      markup: gridMarkup,
+      fabricName: fabricToUse.name
+    });
+  }
+  
+  // Fabric cost: GRID PRICE > prop > engine > 0
+  // CRITICAL: For pricing_grid, use the calculated grid price
+  const fabricCost = hasCurtainPricingGrid && gridPriceForCurtain > 0
+    ? gridPriceForCurtain
+    : (calculatedFabricCost != null && calculatedFabricCost > 0)
+      ? calculatedFabricCost
+      : (useEngine ? engineResult.fabric_cost : 0);
   
   // Linear meters: fabricDisplayData.totalMeters > engine > fabricCalculation > 0
   // ✅ CRITICAL: Use totalMeters from fabricDisplayData (parent passes the correct source)
@@ -688,6 +719,8 @@ export const CostCalculationSummary = ({
   if (import.meta.env.DEV) {
     console.log('💰 CostSummary - Source:', {
       usingEngine: useEngine,
+      hasCurtainPricingGrid,
+      gridPriceForCurtain,
       engineLinearMeters: engineResult?.linear_meters,
       fabricCalcLinearMeters: fabricCalculation?.linearMeters,
       finalLinearMeters: linearMeters,
@@ -699,7 +732,8 @@ export const CostCalculationSummary = ({
   }
   
   const liningCost = safeParseFloat(calculatedLiningCost, 0);
-  const manufacturingCost = safeParseFloat(calculatedManufacturingCost, 0);
+  // ✅ FIX: Skip manufacturing cost if using pricing_grid (grid includes manufacturing)
+  const manufacturingCost = hasCurtainPricingGrid ? 0 : safeParseFloat(calculatedManufacturingCost, 0);
   const headingCost = safeParseFloat(calculatedHeadingCost, 0);
   const optionsCost = safeParseFloat(calculatedOptionsCost, 0);
   const totalCost = calculatedTotalCost 
