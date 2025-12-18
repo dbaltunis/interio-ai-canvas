@@ -329,20 +329,8 @@ export const DynamicTreatmentVisualizer = ({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Treatment Preview - {getTreatmentDisplayName(treatmentType)}</span>
-          <div className="flex gap-2">
-            <Badge variant="outline">{template.name}</Badge>
-            {selectedFabric && <Badge variant="secondary">Fabric Selected</Badge>}
-            {selectedLining && selectedLining !== 'none' && <Badge variant="secondary">With Lining</Badge>}
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {renderVisualization()}
-      </CardContent>
-    </Card>
+    <div className="w-full">
+      {renderVisualization()}
+    </div>
   );
 };
