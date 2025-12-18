@@ -206,8 +206,9 @@ export const EnhancedMeasurementWorksheet = forwardRef<
   const [isSaving, setIsSaving] = useState(false);
   
   // Dynamic options state - isolated per window
+  // FIX: Use empty string instead of "standard" - "standard" doesn't match any UUID in inventory
   const [selectedHeading, setSelectedHeading] = useState(() => 
-    safeExistingTreatments?.[0]?.selected_heading || "standard"
+    safeExistingTreatments?.[0]?.selected_heading || ""
   );
   const [selectedLining, setSelectedLining] = useState(() => 
     safeExistingTreatments?.[0]?.selected_lining || "none"
@@ -300,10 +301,11 @@ export const EnhancedMeasurementWorksheet = forwardRef<
                    treatmentMeasurements.selected_fabric || "";
         
         // Priority order for heading: treatment_details > fabric_details > measurements
+        // FIX: Use empty string instead of "standard" - "standard" doesn't match any UUID in inventory
         headingValue = treatmentDetails.selected_heading || 
                        fabricDetails.selected_heading || 
                        treatmentMeasurements.selected_heading || 
-                       treatmentMeasurements.heading_type || "standard";
+                       treatmentMeasurements.heading_type || "";
         
         // Priority order for lining: treatment_details > fabric_details > measurements  
         liningValue = treatmentDetails.selected_lining || 
@@ -338,7 +340,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
     if (!savedTreatment && safeExistingMeasurement) {
       const measurementData = safeExistingMeasurement.measurements || {};
       fabricId = measurementData.selected_fabric || "";
-      headingValue = measurementData.selected_heading || "standard";
+      // FIX: Use empty string instead of "standard"
+      headingValue = measurementData.selected_heading || "";
       liningValue = measurementData.selected_lining || "none";
       windowCoveringId = measurementData.window_covering_id || "no_covering";
       
@@ -367,7 +370,8 @@ export const EnhancedMeasurementWorksheet = forwardRef<
       windowCoveringId = savedSummary.template_id || "no_covering";
       // Only use saved summary fabric/lining if no treatment data exists
       if (!fabricId) fabricId = savedSummary.fabric_details?.fabric_id || "";
-      if (headingValue === "standard") headingValue = savedSummary.heading_details?.heading_name || savedSummary.heading_details?.id || "standard";
+      // FIX: Use heading_details.id (UUID) instead of heading_name; empty string fallback
+      if (!headingValue) headingValue = savedSummary.heading_details?.id || "";
       if (liningValue === "none") liningValue = savedSummary.lining_type || "none";
       treatmentTypeValue = savedSummary.template_details?.curtain_type || "";
       
@@ -1405,9 +1409,38 @@ export const EnhancedMeasurementWorksheet = forwardRef<
               handleMeasurementChange('selected_lining', liningType);
             }}
             selectedHeading={selectedHeading}
-            onHeadingChange={(headingId) => {
+            onHeadingChange={async (headingId) => {
               setSelectedHeading(headingId);
               handleMeasurementChange('selected_heading', headingId);
+              
+              // ✅ IMMEDIATE SAVE: Save heading selection to windows_summary for persistence
+              if (surfaceId) {
+                try {
+                  const headingItem = inventoryItems.find(item => item.id === headingId);
+                  const { error } = await supabase
+                    .from('windows_summary')
+                    .upsert({
+                      window_id: surfaceId,
+                      heading_details: headingItem ? {
+                        id: headingItem.id,
+                        heading_name: headingItem.name,
+                        fullness_ratio: (headingItem as any).metadata?.fullness_ratio || (headingItem as any).fullness_ratio || 1,
+                        price_per_meter: (headingItem as any).price_per_meter || headingItem.selling_price || 0,
+                      } : null
+                    } as any, { onConflict: 'window_id' });
+                    
+                  if (!error) {
+                    console.log('✅ Heading saved to windows_summary:', headingItem?.name || 'No heading');
+                    // Invalidate queries to update
+                    queryClient.invalidateQueries({ queryKey: ['window-summary-treatment', surfaceId] });
+                    queryClient.invalidateQueries({ queryKey: ['window-summary', surfaceId] });
+                  } else {
+                    console.error('❌ Failed to save heading:', error);
+                  }
+                } catch (error) {
+                  console.error('❌ Error saving heading:', error);
+                }
+              }
             }}
             selectedEyeletRing={selectedEyeletRing}
             onEyeletRingChange={(ringId) => {

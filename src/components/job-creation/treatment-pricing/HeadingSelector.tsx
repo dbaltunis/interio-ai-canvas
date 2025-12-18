@@ -38,8 +38,9 @@ export const HeadingSelector = ({ selectedHeading, onHeadingChange }: HeadingSel
             ) : (selectedHeading === "no-heading" || selectedHeading === "standard") ? "Standard / No heading" : null}
           </SelectValue>
         </SelectTrigger>
-        <SelectContent className="max-h-[300px]">
-          <SelectItem value="standard" className="hover:bg-accent/50 transition-colors">Standard / No heading</SelectItem>
+        <SelectContent className="max-h-[300px] bg-popover border-border shadow-lg z-[9999]">
+          {/* FIX: Single clear option for no heading */}
+          <SelectItem value="no-heading" className="hover:bg-accent/50 transition-colors">Standard / No heading</SelectItem>
           {headingOptions.map((heading) => (
             <SelectItem key={heading.id} value={heading.id} className="hover:bg-accent/50 transition-colors">
               <div className="flex items-center gap-3 w-full py-1">
