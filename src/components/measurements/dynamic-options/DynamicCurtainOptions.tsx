@@ -852,6 +852,13 @@ export const DynamicCurtainOptions = ({
           return null;
         }
         
+        // ✅ CRITICAL: Skip heading_type options from TWC - these are already handled by the inventory-based heading selector above
+        // This prevents duplicate "Heading Type" dropdowns from appearing
+        if (option.key.toLowerCase().includes('heading_type') || option.key.toLowerCase().includes('heading-type')) {
+          console.log(`⏭️ Skipping option ${option.key}: heading_type handled by inventory-based selector`);
+          return null;
+        }
+        
         // Check if option is enabled in template settings
         if (!isOptionEnabled(option.id)) {
           console.log(`⏭️ Skipping option ${option.key}: NOT enabled in template settings`);
