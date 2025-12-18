@@ -320,6 +320,16 @@ const handler = async (req: Request): Promise<Response> => {
         return { category: 'material', subcategory: 'shutter_material' };
       }
       
+      // ✅ CRITICAL: Curtain fabrics = FABRIC category (sewn products, NOT materials)
+      if (parentDesc.includes('curtain')) {
+        return { category: 'fabric', subcategory: 'curtain_fabric' };
+      }
+      
+      // ✅ CRITICAL: Roman fabrics = FABRIC category (sewn products, NOT materials)
+      if (parentDesc.includes('roman')) {
+        return { category: 'fabric', subcategory: 'roman_fabric' };
+      }
+      
       // Fall back to original logic using material name
       return mapCategory(materialName);
     };
