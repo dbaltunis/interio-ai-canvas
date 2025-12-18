@@ -37,8 +37,24 @@ export const useRecordPermissions = () => {
   };
 
   const canEditJob = (jobUserId?: string, currentUserId?: string) => {
-    if (canEditAllJobs) return true;
-    if (canEditOwnJobs && jobUserId === currentUserId) return true;
+    // If both permissions are disabled, no job should be editable
+    if (!canEditAllJobs && !canEditOwnJobs) return false;
+    
+    // If both permissions are enabled, all jobs are editable
+    if (canEditAllJobs && canEditOwnJobs) return true;
+    
+    // If "Edit Any Job" is enabled but "Edit Assigned Jobs" is disabled,
+    // only jobs created by the user should be editable
+    if (canEditAllJobs && !canEditOwnJobs) {
+      return jobUserId === currentUserId;
+    }
+    
+    // If "Edit Assigned Jobs" is enabled but "Edit Any Job" is disabled,
+    // only assigned jobs (jobs where user_id matches current user) should be editable
+    if (canEditOwnJobs && !canEditAllJobs) {
+      return jobUserId === currentUserId;
+    }
+    
     return false;
   };
 

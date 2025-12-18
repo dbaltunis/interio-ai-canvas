@@ -41,7 +41,19 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   const { user } = useAuth();
   const canEditAllJobs = useHasPermission('edit_all_jobs');
   const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
-  const canEditJob = canEditAllJobs || (canEditAssignedJobs && project?.user_id === user?.id);
+  // If both permissions are disabled, no job should be editable
+  // If both are enabled, all jobs are editable
+  // If only "Edit Any Job" is enabled, only jobs created by the user should be editable
+  // If only "Edit Assigned Jobs" is enabled, only assigned jobs should be editable
+  const canEditJob = (!canEditAllJobs && !canEditAssignedJobs) 
+    ? false 
+    : (canEditAllJobs && canEditAssignedJobs) 
+      ? true 
+      : (canEditAllJobs && !canEditAssignedJobs) 
+        ? project?.user_id === user?.id 
+        : (canEditAssignedJobs && !canEditAllJobs) 
+          ? project?.user_id === user?.id 
+          : false;
   const isReadOnly = !canEditJob;
   const { buildQuotationItems } = useQuotationSync({
     projectId: project?.id || "",

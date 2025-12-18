@@ -36,9 +36,10 @@ export const JobStatusDropdown = ({
   const [isOpen, setIsOpen] = useState(false);
 
   // Permission checks - properly check edit permissions
+  // If both permissions are disabled, no job should be editable
   const canEditAllJobs = useHasPermission('edit_all_jobs');
   const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
-  const canEditJobs = canEditAllJobs || canEditAssignedJobs;
+  const canEditJobs = canEditAllJobs || canEditAssignedJobs; // At least one must be enabled
 
   // Filter statuses based on job type
   const availableStatuses = jobStatuses.filter(status => {

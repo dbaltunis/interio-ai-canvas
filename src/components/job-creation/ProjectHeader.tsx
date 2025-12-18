@@ -59,7 +59,19 @@ export const ProjectHeader = ({
   // Extract project object and user_id if projectId is an object
   const projectObj = typeof projectId === 'object' && projectId ? projectId : null;
   const projectUserId = projectObj?.user_id || null;
-  const canEditJob = canEditAllJobs || (canEditAssignedJobs && projectUserId === user?.id);
+  // If both permissions are disabled, no job should be editable
+  // If both are enabled, all jobs are editable
+  // If only "Edit Any Job" is enabled, only jobs created by the user should be editable
+  // If only "Edit Assigned Jobs" is enabled, only assigned jobs should be editable
+  const canEditJob = (!canEditAllJobs && !canEditAssignedJobs) 
+    ? false 
+    : (canEditAllJobs && canEditAssignedJobs) 
+      ? true 
+      : (canEditAllJobs && !canEditAssignedJobs) 
+        ? projectUserId === user?.id 
+        : (canEditAssignedJobs && !canEditAllJobs) 
+          ? projectUserId === user?.id 
+          : false;
   
   const [showEventDialog, setShowEventDialog] = useState(false);
   const [showTeamDialog, setShowTeamDialog] = useState(false);
