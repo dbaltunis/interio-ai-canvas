@@ -350,63 +350,31 @@ const handler = async (req: Request): Promise<Response> => {
       return [...new Set(colors)].slice(0, 30);
     };
 
-    // ✅ NEW: Determine price_group based on product name for automatic grid matching
-    const determinePriceGroup = (productName: string | undefined | null, subcategory: string): string | null => {
-      if (!productName || typeof productName !== 'string') return 'GROUP_1';
+    // ✅ FIX: Determine price_group using SIMPLE NUMERIC VALUES that match existing grids
+    // Grids use: 1, 2, 3, 4, 5, 6, A, BUDGET, MIDRANGE, PREMIUM
+    // DO NOT use prefixed names like ALUMINIUM_25MM, BLOCKOUT - they won't match!
+    const determinePriceGroup = (productName: string | undefined | null, subcategory: string): string => {
+      if (!productName || typeof productName !== 'string') return '1';
       
       const lowerName = productName.toLowerCase();
       
-      // Venetian blinds
-      if (subcategory === 'venetian_slats') {
-        if (lowerName.includes('25mm') && (lowerName.includes('aluminium') || lowerName.includes('aluminum'))) {
-          return 'ALUMINIUM_25MM';
-        }
-        if (lowerName.includes('50mm') && (lowerName.includes('aluminium') || lowerName.includes('aluminum'))) {
-          return 'ALUMINIUM_50MM';
-        }
-        if (lowerName.includes('wood') || lowerName.includes('timber')) {
-          return 'WOOD_50MM';
-        }
-        if (lowerName.includes('faux') || lowerName.includes('vision') || lowerName.includes('pvc')) {
-          return 'FAUXWOOD_50MM';
-        }
-        return 'GROUP_1';
+      // Premium/Expensive products → Group 3
+      if (lowerName.includes('premium') || lowerName.includes('designer') || 
+          lowerName.includes('luxury') || lowerName.includes('motorised') || 
+          lowerName.includes('motorized') || lowerName.includes('smart')) {
+        return '3';
       }
       
-      // Roller fabrics
-      if (subcategory === 'roller_fabric') {
-        if (lowerName.includes('blockout') || lowerName.includes('blackout')) {
-          return 'BLOCKOUT';
-        }
-        if (lowerName.includes('sunscreen') || lowerName.includes('screen') || lowerName.includes('mesh')) {
-          return 'SUNSCREEN';
-        }
-        if (lowerName.includes('light filter') || lowerName.includes('translucent')) {
-          return 'LIGHT_FILTER';
-        }
-        return 'GROUP_1';
+      // Mid-range/Blockout products → Group 2
+      if (lowerName.includes('blockout') || lowerName.includes('blackout') ||
+          lowerName.includes('thermal') || lowerName.includes('double cell') ||
+          lowerName.includes('wood') || lowerName.includes('timber')) {
+        return '2';
       }
       
-      // Vertical slats
-      if (subcategory === 'vertical_slats') {
-        if (lowerName.includes('fabric') || lowerName.includes('cloth')) {
-          return 'VERTICAL_FABRIC';
-        }
-        if (lowerName.includes('pvc') || lowerName.includes('vinyl')) {
-          return 'VERTICAL_PVC';
-        }
-        return 'GROUP_1';
-      }
-      
-      // Cellular
-      if (subcategory === 'cellular') {
-        if (lowerName.includes('single')) return 'CELLULAR_SINGLE';
-        if (lowerName.includes('double')) return 'CELLULAR_DOUBLE';
-        return 'GROUP_1';
-      }
-      
-      // Default
-      return 'GROUP_1';
+      // Standard/Budget products → Group 1
+      // This includes: sunscreen, light filter, standard, aluminium, etc.
+      return '1';
     };
 
     // Prepare inventory items for batch insert (only new products)
