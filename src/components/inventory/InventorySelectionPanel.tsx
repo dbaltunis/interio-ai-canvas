@@ -173,6 +173,30 @@ export const InventorySelectionPanel = ({
     }
   }, [activeCategory, selectedItems, treatmentFabrics, inventory]);
 
+  // AUTO-SELECT: When only 1 material exists and nothing is selected, auto-select it
+  // This streamlines the workflow for single-material templates (e.g., TWC products)
+  useEffect(() => {
+    // Only auto-select when data is loaded and not fetching
+    if (isFabricsLoading || isFabricsFetching) return;
+    
+    // Check if we have exactly 1 item and nothing is currently selected
+    const currentCategory = activeCategory === 'both' ? 'fabric' : activeCategory;
+    const currentSelection = selectedItems[currentCategory as keyof typeof selectedItems];
+    
+    // Get filtered items for current category
+    const filteredItems = activeCategory === 'fabric' || activeCategory === 'both' 
+      ? treatmentFabrics 
+      : [];
+    
+    // Auto-select if: exactly 1 item AND no current selection AND parentProductId is set (template-linked)
+    if (filteredItems.length === 1 && !currentSelection && parentProductId) {
+      const singleItem = filteredItems[0];
+      console.log('🎯 Auto-selecting single material:', singleItem.name);
+      onItemSelect(currentCategory, singleItem);
+      toast.success(`Auto-selected: ${singleItem.name}`);
+    }
+  }, [treatmentFabrics, activeCategory, selectedItems, isFabricsLoading, isFabricsFetching, parentProductId, onItemSelect]);
+
   // Handle manual entry submission
   const handleManualEntrySubmit = async () => {
     if (!manualEntry.name || !manualEntry.price) {
