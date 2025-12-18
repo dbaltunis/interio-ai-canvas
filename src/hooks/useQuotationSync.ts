@@ -162,7 +162,7 @@ export const useQuotationSync = ({
             };
           }
 
-          const breakdown = buildClientBreakdown(window.summary);
+          const breakdown = buildClientBreakdown(window.summary, undefined, markupSettings);
           const summary = window.summary;
           
           // CRITICAL: Check if cost_breakdown is structured (already has children items)
@@ -307,14 +307,24 @@ export const useQuotationSync = ({
                 formattedDescription = item.description;
               }
               
+              // MARKUP FIX: Apply markup to child item prices
+              const childCostUnitPrice = item.unit_price || 0;
+              const childCostTotal = item.total_cost || 0;
+              const childSellingUnitPrice = applyMarkup(childCostUnitPrice, markupResult.percentage);
+              const childSellingTotal = applyMarkup(childCostTotal, markupResult.percentage);
+              
               return {
                 id: `${window.window_id}-${item.id || item.category}-${idx}`,
                 name: formattedName,
                 description: formattedDescription,
                 quantity: item.quantity || 1,
                 unit: item.unit || '',
-                unit_price: item.unit_price || 0,
-                total: item.total_cost || 0,
+                // Selling prices (with markup) - what clients see
+                unit_price: childSellingUnitPrice,
+                total: childSellingTotal,
+                // Cost prices (original) - for internal profit calculations
+                cost_unit_price: childCostUnitPrice,
+                cost_total: childCostTotal,
                 image_url: itemImageUrl,
                 color: itemColor,
                 category: item.category,
@@ -350,17 +360,25 @@ export const useQuotationSync = ({
             };
             const itemCurrency = getMeasurementCurrency();
             
+            // MARKUP FIX: Apply markup to material/fabric prices
+            const materialCostUnitPrice = pricePerMetre;
+            const materialCostTotal = summary.fabric_cost;
+            const materialSellingUnitPrice = applyMarkup(materialCostUnitPrice, markupResult.percentage);
+            const materialSellingTotal = applyMarkup(materialCostTotal, markupResult.percentage);
+            
             parentItem.children.push({
             id: `${window.window_id}-material`,
             name: materialLabel,
             description: productName,
             quantity: summary.linear_meters || 0,
             unit: 'm',
-            unit_price: pricePerMetre,
-            total: summary.fabric_cost,
-            image_url: materialImageUrl, // Child shows actual fabric/material from inventory
-            color: materialDetails.color || fabricDetails.color || null, // CRITICAL: Pass color for fallback
-            inventory_item_id: materialDetails.inventory_item_id || fabricDetails.inventory_item_id || null, // NEW: Store for tracking
+            unit_price: materialSellingUnitPrice,
+            total: materialSellingTotal,
+            cost_unit_price: materialCostUnitPrice,
+            cost_total: materialCostTotal,
+            image_url: materialImageUrl,
+            color: materialDetails.color || fabricDetails.color || null,
+            inventory_item_id: materialDetails.inventory_item_id || fabricDetails.inventory_item_id || null,
             isChild: true
           });
           }
@@ -368,14 +386,20 @@ export const useQuotationSync = ({
           // DETAILED BREAKDOWN - Manufacturing (skip for wallpaper)
           if (summary.manufacturing_cost && summary.manufacturing_cost > 0 && treatmentCategory !== 'wallpaper') {
             console.log('[QUOTE ITEM] Adding manufacturing (NOT wallpaper)');
+            // MARKUP FIX: Apply markup to manufacturing prices
+            const mfgCostPrice = summary.manufacturing_cost;
+            const mfgSellingPrice = applyMarkup(mfgCostPrice, markupResult.percentage);
+            
             parentItem.children.push({
               id: `${window.window_id}-manufacturing`,
               name: 'Manufacturing price',
               description: '-',
               quantity: 1,
               unit: '',
-              unit_price: summary.manufacturing_cost,
-              total: summary.manufacturing_cost,
+              unit_price: mfgSellingPrice,
+              total: mfgSellingPrice,
+              cost_unit_price: mfgCostPrice,
+              cost_total: mfgCostPrice,
               isChild: true
             });
           } else if (treatmentCategory === 'wallpaper') {
@@ -387,16 +411,24 @@ export const useQuotationSync = ({
             const liningType = liningDetails.type || 'Interlining';
             const liningPricePerMetre = liningDetails.price_per_metre || (summary.lining_cost / (summary.linear_meters || 1));
             
+            // MARKUP FIX: Apply markup to lining prices
+            const liningCostUnitPrice = liningPricePerMetre;
+            const liningCostTotal = summary.lining_cost;
+            const liningSellingUnitPrice = applyMarkup(liningCostUnitPrice, markupResult.percentage);
+            const liningSellingTotal = applyMarkup(liningCostTotal, markupResult.percentage);
+            
             parentItem.children.push({
               id: `${window.window_id}-lining`,
               name: 'Lining',
               description: liningType,
               quantity: summary.linear_meters || 0,
               unit: 'm',
-              unit_price: liningPricePerMetre,
-              total: summary.lining_cost,
+              unit_price: liningSellingUnitPrice,
+              total: liningSellingTotal,
+              cost_unit_price: liningCostUnitPrice,
+              cost_total: liningCostTotal,
               image_url: liningDetails.image_url || null,
-              color: liningDetails.color || null, // CRITICAL: Pass color for fallback
+              color: liningDetails.color || null,
               isChild: true
             });
           }
@@ -406,14 +438,22 @@ export const useQuotationSync = ({
             const headingName = headingDetails.heading_name || 'Pencil Pleat';
             const headingCost = headingDetails.cost || summary.heading_cost;
             
+            // MARKUP FIX: Apply markup to heading prices
+            const headingCostUnitPrice = headingCost / ((summary.finished_width_cm || 100) / 100);
+            const headingCostTotal = headingCost;
+            const headingSellingUnitPrice = applyMarkup(headingCostUnitPrice, markupResult.percentage);
+            const headingSellingTotal = applyMarkup(headingCostTotal, markupResult.percentage);
+            
             parentItem.children.push({
               id: `${window.window_id}-heading`,
               name: 'Heading',
               description: headingName,
               quantity: summary.finished_width_cm || 0,
               unit: 'cm',
-              unit_price: headingCost / ((summary.finished_width_cm || 100) / 100),
-              total: headingCost,
+              unit_price: headingSellingUnitPrice,
+              total: headingSellingTotal,
+              cost_unit_price: headingCostUnitPrice,
+              cost_total: headingCostTotal,
               isChild: true
             });
           }
@@ -456,14 +496,22 @@ export const useQuotationSync = ({
               }
             }
             
+            // MARKUP FIX: Apply markup to hardware prices
+            const hwCostUnitPrice = calculatedPrice / orderedLength;
+            const hwCostTotal = calculatedPrice;
+            const hwSellingUnitPrice = applyMarkup(hwCostUnitPrice, markupResult.percentage);
+            const hwSellingTotal = applyMarkup(hwCostTotal, markupResult.percentage);
+            
             parentItem.children.push({
               id: `${window.window_id}-hardware`,
               name: 'Track/Rod',
               description: priceDescription,
               quantity: orderedLength,
               unit: 'cm',
-              unit_price: calculatedPrice / orderedLength,
-              total: calculatedPrice,
+              unit_price: hwSellingUnitPrice,
+              total: hwSellingTotal,
+              cost_unit_price: hwCostUnitPrice,
+              cost_total: hwCostTotal,
               isChild: true
             });
           }
@@ -513,14 +561,22 @@ export const useQuotationSync = ({
                 const unitPrice = Number(opt.basePrice) || Number(opt.price) || effectivePrice;
                 const total = effectivePrice;
                 
+                // MARKUP FIX: Apply markup to option prices
+                const optCostUnitPrice = unitPrice;
+                const optCostTotal = total;
+                const optSellingUnitPrice = applyMarkup(optCostUnitPrice, markupResult.percentage);
+                const optSellingTotal = applyMarkup(optCostTotal, markupResult.percentage);
+                
                 parentItem.children.push({
                   id: `${window.window_id}-option-${index}`,
                   name: optionName || 'Option',
                   description: optionValue || '-',
                   quantity: quantity,
                   unit: opt.unit || '',
-                  unit_price: unitPrice,
-                  total: total,
+                  unit_price: optSellingUnitPrice,
+                  total: optSellingTotal,
+                  cost_unit_price: optCostUnitPrice,
+                  cost_total: optCostTotal,
                   image_url: opt.image_url || null,
                   pricingDetails: opt.pricingDetails || '',
                   category: 'option',
