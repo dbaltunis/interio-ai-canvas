@@ -120,38 +120,42 @@ export const InventoryQuickView = ({ item, open, onOpenChange, onSuccess }: Inve
               </div>
             </div>
 
-            {/* Pricing Info */}
-            <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-md bg-background">
-                  <DollarSign className="h-4 w-4 text-primary" />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Cost Price</p>
-                  <p className="font-bold text-lg">{formatCurrency(item.cost_price || 0)}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-md bg-background">
-                  <DollarSign className="h-4 w-4 text-green-600" />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Selling Price</p>
-                  <p className="font-bold text-lg text-green-600">{formatCurrency(item.selling_price || 0)}</p>
+            {/* Pricing Info - Show grid pricing message if price_group is set */}
+            {priceGroup ? (
+              <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-md bg-primary/10">
+                    <Grid3X3 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Pricing Method</p>
+                    <p className="font-bold text-lg text-primary">Grid Pricing - Group {priceGroup}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Price determined by dimensions at quote time using pricing grid
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* Price Group for Grid Pricing */}
-            {priceGroup && (
-              <div className="flex items-start gap-3 p-4 bg-primary/5 rounded-lg border border-primary/10">
-                <div className="p-2 rounded-md bg-primary/10">
-                  <Grid3X3 className="h-4 w-4 text-primary" />
+            ) : (
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-md bg-background">
+                    <DollarSign className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Cost Price</p>
+                    <p className="font-bold text-lg">{formatCurrency(item.cost_price || 0)}</p>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Price Group (Grid Pricing)</p>
-                  <p className="font-bold text-lg text-primary">Group {priceGroup}</p>
+                
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-md bg-background">
+                    <DollarSign className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Selling Price</p>
+                    <p className="font-bold text-lg text-green-600">{formatCurrency(item.selling_price || 0)}</p>
+                  </div>
                 </div>
               </div>
             )}
