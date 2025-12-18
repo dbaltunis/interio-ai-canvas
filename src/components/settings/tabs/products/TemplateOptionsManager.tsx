@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { ExternalLink, Loader2, RefreshCw, Package, GripVertical, Eye, EyeOff } from "lucide-react";
+import { ExternalLink, Loader2, RefreshCw, Package, GripVertical, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAllTreatmentOptions } from "@/hooks/useTreatmentOptionsManagement";
 import { 
@@ -227,6 +227,7 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isEnablingAll, setIsEnablingAll] = useState(false);
   const [localOrderedOptions, setLocalOrderedOptions] = useState<any[]>([]);
   
   const { data: allOptions = [], isLoading, error, refetch } = useAllTreatmentOptions();
@@ -262,6 +263,37 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
       valueIds,
       hide,
     });
+  };
+  
+  // Enable all available options for this template
+  const handleEnableAllOptions = async () => {
+    if (!templateId) return;
+    
+    setIsEnablingAll(true);
+    try {
+      // Call the database function to bulk-enable options
+      const { data, error } = await supabase.rpc('bulk_enable_template_options', {
+        p_template_id: templateId
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Options Enabled',
+        description: `${data || 'All'} options enabled for this template`,
+      });
+      
+      refetch();
+    } catch (error: any) {
+      console.error('Error enabling all options:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to enable options',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsEnablingAll(false);
+    }
   };
   
   const sensors = useSensors(
@@ -492,7 +524,29 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Available Options</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Available Options</CardTitle>
+          {templateId && localOrderedOptions.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleEnableAllOptions}
+              disabled={isEnablingAll}
+            >
+              {isEnablingAll ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Enabling...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Enable All Options
+                </>
+              )}
+            </Button>
+          )}
+        </div>
         <p className="text-sm text-muted-foreground">
           Drag to reorder • Toggle options on/off for this template
           {!templateId && " (save template to apply changes)"}
