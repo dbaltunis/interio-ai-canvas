@@ -358,21 +358,40 @@ export const InventorySelectionPanel = ({
     // For "both" category (vertical blinds with fabric AND material vanes)
     if (category === "both") {
       const searchLower = searchTerm.toLowerCase();
-      // Get both fabric items from treatment-specific fabrics
+      
+      // CRITICAL FIX: When parentProductId is set (TWC-linked), ALL items come from treatmentFabrics
+      // treatmentFabrics is already filtered by parent_product_id via useTreatmentSpecificFabrics
+      if (parentProductId) {
+        const filtered = treatmentFabrics.filter(item => {
+          const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
+                               item.description?.toLowerCase().includes(searchLower) ||
+                               item.sku?.toLowerCase().includes(searchLower) ||
+                               item.supplier?.toLowerCase().includes(searchLower) ||
+                               item.vendor?.name?.toLowerCase().includes(searchLower);
+          const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
+          const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
+          const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
+          return matchesSearch && matchesVendor && matchesCollection && matchesTags;
+        });
+        
+        console.log('📦 Both tab (TWC-linked): Using ONLY treatmentFabrics:', filtered.length, 'items');
+        return filtered;
+      }
+      
+      // Non-TWC templates: combine fabric from treatmentFabrics + materials from inventory
       const fabricItems = treatmentFabrics.filter(item => {
         const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
                              item.description?.toLowerCase().includes(searchLower) ||
                              item.sku?.toLowerCase().includes(searchLower) ||
                              item.supplier?.toLowerCase().includes(searchLower) ||
                              item.vendor?.name?.toLowerCase().includes(searchLower);
-        // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
         const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
         return matchesSearch && matchesVendor && matchesCollection && matchesTags;
       });
 
-      // Get material items from inventory
+      // Get material items from inventory (only for non-TWC templates)
       const requiredSubcategories = getTreatmentMaterialSubcategories();
       const materialItems = inventory.filter(item => {
         const matchesCategory = item.category?.toLowerCase() === 'material' || 
@@ -386,7 +405,6 @@ export const InventorySelectionPanel = ({
                              item.sku?.toLowerCase().includes(searchLower) ||
                              item.supplier?.toLowerCase().includes(searchLower) ||
                              item.vendor?.name?.toLowerCase().includes(searchLower);
-        // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
         const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
@@ -394,7 +412,7 @@ export const InventorySelectionPanel = ({
         return matchesCategory && matchesSubcategory && matchesSearch && matchesVendor && matchesCollection && matchesTags;
       });
 
-      console.log('📦 Both tab filtered:', fabricItems.length, 'fabric items +', materialItems.length, 'material items');
+      console.log('📦 Both tab (non-TWC):', fabricItems.length, 'fabric items +', materialItems.length, 'material items');
       return [...fabricItems, ...materialItems];
     }
 
@@ -405,9 +423,30 @@ export const InventorySelectionPanel = ({
       
       console.log('🔍 Filtering materials - Required subcategories:', requiredSubcategories);
       console.log('📊 treatmentFabrics count:', treatmentFabrics.length, '| Raw inventory count:', inventory.length);
+      console.log('🔗 parentProductId:', parentProductId || 'none (non-TWC)');
       
-      // CRITICAL: Use treatmentFabrics if available (already enriched with pricing grids)
-      // treatmentFabrics now includes materials for material-based treatments
+      // CRITICAL FIX: When parentProductId is set (TWC-linked), ALL items come from treatmentFabrics ONLY
+      // treatmentFabrics is already filtered by parent_product_id via useTreatmentSpecificFabrics
+      if (parentProductId) {
+        const searchLower = searchTerm.toLowerCase();
+        const filtered = treatmentFabrics.filter(item => {
+          const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
+                               item.description?.toLowerCase().includes(searchLower) ||
+                               item.sku?.toLowerCase().includes(searchLower) ||
+                               item.supplier?.toLowerCase().includes(searchLower) ||
+                               item.vendor?.name?.toLowerCase().includes(searchLower);
+          const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
+          const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
+          const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
+          return matchesSearch && matchesVendor && matchesCollection && matchesTags;
+        });
+        
+        const enrichedCount = filtered.filter(i => i.pricing_grid_data || i.resolved_grid_id).length;
+        console.log(`📦 Material tab (TWC-linked): Using ONLY treatmentFabrics: ${filtered.length} items (${enrichedCount} with pricing grids)`);
+        return filtered;
+      }
+      
+      // Non-TWC templates: Use treatmentFabrics if available, else fall back to inventory
       const sourceData = treatmentFabrics.length > 0 ? treatmentFabrics : inventory;
       const dataSource = treatmentFabrics.length > 0 ? 'treatmentFabrics (enriched)' : 'raw inventory';
       
@@ -430,7 +469,6 @@ export const InventorySelectionPanel = ({
                              item.sku?.toLowerCase().includes(searchLower) ||
                              item.supplier?.toLowerCase().includes(searchLower) ||
                              item.vendor?.name?.toLowerCase().includes(searchLower);
-        // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
         const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
