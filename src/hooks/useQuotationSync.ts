@@ -307,24 +307,17 @@ export const useQuotationSync = ({
                 formattedDescription = item.description;
               }
               
-              // MARKUP FIX: Apply markup to child item prices
-              const childCostUnitPrice = item.unit_price || 0;
-              const childCostTotal = item.total_cost || 0;
-              const childSellingUnitPrice = applyMarkup(childCostUnitPrice, markupResult.percentage);
-              const childSellingTotal = applyMarkup(childCostTotal, markupResult.percentage);
-              
+              // CRITICAL: buildClientBreakdown already applied markup, so use prices directly
+              // DO NOT apply markup again - that causes double-markup
               return {
                 id: `${window.window_id}-${item.id || item.category}-${idx}`,
                 name: formattedName,
                 description: formattedDescription,
                 quantity: item.quantity || 1,
                 unit: item.unit || '',
-                // Selling prices (with markup) - what clients see
-                unit_price: childSellingUnitPrice,
-                total: childSellingTotal,
-                // Cost prices (original) - for internal profit calculations
-                cost_unit_price: childCostUnitPrice,
-                cost_total: childCostTotal,
+                // Prices already include markup from buildClientBreakdown
+                unit_price: item.unit_price || 0,
+                total: item.total_cost || 0,
                 image_url: itemImageUrl,
                 color: itemColor,
                 category: item.category,
