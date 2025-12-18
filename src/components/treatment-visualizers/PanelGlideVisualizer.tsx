@@ -141,33 +141,6 @@ export const PanelGlideVisualizer = ({
             </g>
           );
         })}
-        
-        {/* Material info badge */}
-        {material?.name && (
-          <g>
-            <rect
-              x={frameThickness + 10}
-              y={height - frameThickness - 60}
-              width={150}
-              height={30}
-              fill="hsl(var(--background))"
-              fillOpacity={0.9}
-              stroke="hsl(var(--border))"
-              strokeWidth={1}
-              rx={4}
-            />
-            <text
-              x={frameThickness + 85}
-              y={height - frameThickness - 40}
-              textAnchor="middle"
-              fill="hsl(var(--foreground))"
-              fontSize={12}
-              fontWeight="500"
-            >
-              {material.name}
-            </text>
-          </g>
-        )}
       </svg>
     </div>
   );
