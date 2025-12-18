@@ -553,42 +553,49 @@ const handler = async (req: Request): Promise<Response> => {
                 }
               }
               
-              // Don't create treatment_option for heading - it's handled via Heading tab
-              continue;
+            // Don't create treatment_option for heading - it's handled via Heading tab
+            continue;
+          }
+          
+          // CRITICAL FIX: Map TWC question to PRODUCT-SPECIFIC option key
+          // This prevents options from different products merging when they share treatment_category
+          // e.g., "chain_control_roller123" instead of just "chain_control"
+          const baseKey = question.question.toLowerCase()
+            .replace(/\s+/g, '_')
+            .replace(/[^a-z0-9_]/g, '');
+          
+          // Include a shortened template identifier to make options product-specific
+          // Use first 8 chars of template ID to keep keys manageable
+          const templateShortId = template.id.substring(0, 8);
+          const optionKey = `${baseKey}_${templateShortId}`;
+
+          // Map TWC question type to valid input_type enum
+          const mapInputType = (twcType: string | undefined): string => {
+            switch (twcType?.toLowerCase()) {
+              case 'dropdown':
+              case 'select':
+                return 'select';
+              case 'checkbox':
+                return 'checkbox';
+              case 'radio':
+                return 'radio';
+              case 'text':
+                return 'text';
+              case 'number':
+                return 'number';
+              default:
+                return 'select';
             }
-            
-            // Map TWC question to treatment option key
-            const optionKey = question.question.toLowerCase()
-              .replace(/\s+/g, '_')
-              .replace(/[^a-z0-9_]/g, '');
+          };
 
-            // Map TWC question type to valid input_type enum
-            const mapInputType = (twcType: string | undefined): string => {
-              switch (twcType?.toLowerCase()) {
-                case 'dropdown':
-                case 'select':
-                  return 'select';
-                case 'checkbox':
-                  return 'checkbox';
-                case 'radio':
-                  return 'radio';
-                case 'text':
-                  return 'text';
-                case 'number':
-                  return 'number';
-                default:
-                  return 'select';
-              }
-            };
-
-            // PHASE 1 FIX: Check if option already exists for THIS account
-            const { data: existingOption, error: checkError } = await supabaseClient
-              .from('treatment_options')
-              .select('id')
-              .eq('account_id', accountId)
-              .eq('treatment_category', template.treatment_category)
-              .eq('key', optionKey)
-              .maybeSingle();
+          // Check if option already exists for THIS account AND this specific template
+          const { data: existingOption, error: checkError } = await supabaseClient
+            .from('treatment_options')
+            .select('id')
+            .eq('account_id', accountId)
+            .eq('treatment_category', template.treatment_category)
+            .eq('key', optionKey)
+            .maybeSingle();
 
             if (checkError) {
               console.error(`Error checking existing option ${optionKey}:`, checkError);

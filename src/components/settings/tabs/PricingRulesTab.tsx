@@ -7,10 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calculator, Percent, Shield, Receipt, Grid3X3, BarChart3 } from "lucide-react";
+import { Calculator, Percent, Shield, Receipt, Grid3X3, BarChart3, Search } from "lucide-react";
 import { PricingRulesSection } from "../pricing/PricingRulesSection";
 import { PricingGridManager } from "../pricing-grids/PricingGridManager";
 import { PricingOverviewDashboard } from "../pricing-grids/PricingOverviewDashboard";
+import { PricingGridDiagnostic } from "../pricing-grids/PricingGridDiagnostic";
 import { useMarkupSettings, useUpdateMarkupSettings, MarkupSettings } from "@/hooks/useMarkupSettings";
 import { useBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -128,9 +129,9 @@ export const PricingRulesTab = () => {
         isInheriting={isInheritingSettings}
       />
       
-      {/* Tabs for Pricing Overview, Grids, and Markup/Tax */}
+      {/* Tabs for Pricing Overview, Grids, Diagnostic, and Markup/Tax */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Overview
@@ -138,6 +139,10 @@ export const PricingRulesTab = () => {
           <TabsTrigger value="grids" className="flex items-center gap-2">
             <Grid3X3 className="h-4 w-4" />
             Upload Grids
+          </TabsTrigger>
+          <TabsTrigger value="diagnostic" className="flex items-center gap-2">
+            <Search className="h-4 w-4" />
+            Diagnostic
           </TabsTrigger>
           <TabsTrigger value="markup" className="flex items-center gap-2">
             <Calculator className="h-4 w-4" />
@@ -151,6 +156,10 @@ export const PricingRulesTab = () => {
 
         <TabsContent value="grids">
           <PricingGridManager />
+        </TabsContent>
+
+        <TabsContent value="diagnostic">
+          <PricingGridDiagnostic />
         </TabsContent>
 
         <TabsContent value="markup" className="space-y-6">
