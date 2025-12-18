@@ -546,7 +546,7 @@ export const DynamicCurtainOptions = ({
             <span className="text-sm text-muted-foreground">Select Type</span>
             <div className="w-64">
               <Select
-                value={selectedHeading ?? measurements.selected_heading ?? ''}
+                value={selectedHeading || measurements.selected_heading || 'none'}
                 onValueChange={handleHeadingChange}
                 disabled={readOnly}
               >
@@ -560,7 +560,7 @@ export const DynamicCurtainOptions = ({
                   align="end"
                 >
                   {/* FIX: Add explicit "No Heading" option so users can select it */}
-                  <SelectItem key="no-heading" value="">
+                  <SelectItem key="no-heading" value="none">
                     <div className="flex items-center justify-between w-full gap-4">
                       <span className="text-muted-foreground">Standard / No Heading</span>
                       <Badge variant="outline" className="text-xs">
