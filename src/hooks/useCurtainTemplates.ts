@@ -231,30 +231,19 @@ export const useCreateCurtainTemplate = () => {
       return data;
     },
     onSuccess: async (newTemplate: any) => {
-      // AUTO-SYNC: Create template_option_settings for ALL options of this category
+      // AUTO-SYNC: Use database function to bulk-enable all options for this template
       if (newTemplate?.id && newTemplate?.treatment_category && newTemplate?.user_id) {
         try {
-          // Find all treatment options for this category and account
-          const { data: options } = await supabase
-            .from('treatment_options')
-            .select('id')
-            .eq('account_id', newTemplate.user_id)
-            .eq('treatment_category', newTemplate.treatment_category)
-            .is('template_id', null); // Only category-based options
+          // Use the robust database function for bulk-enabling options
+          const { data: enabledCount, error: enableError } = await supabase.rpc(
+            'bulk_enable_template_options',
+            { p_template_id: newTemplate.id }
+          );
           
-          if (options?.length) {
-            // Create template_option_settings for each option
-            const settingsToInsert = options.map(opt => ({
-              template_id: newTemplate.id,
-              treatment_option_id: opt.id,
-              is_enabled: true
-            }));
-            
-            await supabase
-              .from('template_option_settings')
-              .upsert(settingsToInsert, { onConflict: 'template_id,treatment_option_id' });
-            
-            console.log(`✅ Auto-created template_option_settings for ${options.length} options`);
+          if (enableError) {
+            console.error('Failed to auto-enable options:', enableError);
+          } else {
+            console.log(`✅ Auto-enabled ${enabledCount} options for new template: ${newTemplate.name}`);
           }
           
           // AUTO-SYNC HEADINGS: Link all heading inventory items to new template
