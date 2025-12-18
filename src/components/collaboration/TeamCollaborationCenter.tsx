@@ -131,8 +131,9 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
       case 'online': return 'text-green-500 dark:text-green-400';
       case 'away': return 'text-yellow-500 dark:text-yellow-400';
       case 'busy': return 'text-red-500 dark:text-red-400';
+      case 'offline': return 'text-red-500 dark:text-red-400';
       case 'never_logged_in': return 'text-muted-foreground';
-      default: return 'text-muted-foreground';
+      default: return 'text-red-500 dark:text-red-400';
     }
   };
 
@@ -141,8 +142,9 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
       case 'online': return 'from-green-500 to-emerald-500 dark:from-green-400 dark:to-emerald-400';
       case 'away': return 'from-yellow-500 to-orange-500 dark:from-yellow-400 dark:to-orange-400';
       case 'busy': return 'from-red-500 to-red-600 dark:from-red-400 dark:to-red-500';
+      case 'offline': return 'from-red-500 to-red-600 dark:from-red-400 dark:to-red-500';
       case 'never_logged_in': return 'from-muted to-muted-foreground/50';
-      default: return 'from-muted to-muted-foreground/50';
+      default: return 'from-red-500 to-red-600 dark:from-red-400 dark:to-red-500';
     }
   };
   
@@ -151,8 +153,26 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
       case 'online': return 'bg-green-500';
       case 'away': return 'bg-yellow-500';
       case 'busy': return 'bg-red-500';
-      default: return 'bg-muted-foreground';
+      case 'offline': return 'bg-red-500';
+      default: return 'bg-red-500';
     }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'online': return 'online';
+      case 'away': return 'away';
+      case 'busy': return 'busy';
+      case 'offline': return 'offline';
+      case 'never_logged_in': return 'never logged in';
+      default: return 'offline';
+    }
+  };
+
+  // Get live status for a conversation user by looking up in activeUsers
+  const getConversationUserStatus = (userId: string): string => {
+    const activeUser = activeUsers.find(u => u.user_id === userId);
+    return activeUser?.status || 'offline';
   };
 
   return createPortal(
@@ -393,23 +413,31 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                 </div>
 
                 {/* Tabs for Team & Messages */}
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden flex flex-col">
                   <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'team' | 'messages')} className="h-full flex flex-col">
-                    <TabsList className="mx-4 mt-4 h-10 bg-muted/50 rounded-lg border p-1 grid grid-cols-2">
-                      <TabsTrigger value="team" className="h-8 rounded-md text-foreground data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
-                        <Users className="h-4 w-4 mr-2" />
-                        Team ({totalUsers})
-                      </TabsTrigger>
-                      <TabsTrigger value="messages" className="h-8 rounded-md text-foreground data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
-                        <MessageCircle className="h-4 w-4 mr-2" />
-                        Messages
-                        {totalUnreadCount > 0 && (
-                          <Badge variant="destructive" className="ml-2 h-4 px-1.5 text-xs">
-                            {totalUnreadCount}
-                          </Badge>
-                        )}
-                      </TabsTrigger>
-                    </TabsList>
+                    <div className="px-4 pt-4 shrink-0">
+                      <TabsList className="w-full bg-muted rounded-xl p-1 grid grid-cols-2 h-11">
+                        <TabsTrigger 
+                          value="team" 
+                          className="flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-all h-full data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground"
+                        >
+                          <Users className="h-4 w-4 shrink-0" />
+                          <span>Team ({totalUsers})</span>
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="messages" 
+                          className="flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-all h-full data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground"
+                        >
+                          <MessageCircle className="h-4 w-4 shrink-0" />
+                          <span>Messages</span>
+                          {totalUnreadCount > 0 && (
+                            <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px] font-bold shrink-0">
+                              {totalUnreadCount}
+                            </Badge>
+                          )}
+                        </TabsTrigger>
+                      </TabsList>
+                    </div>
 
                     {/* Team Tab Content */}
                     <TabsContent value="team" className="flex-1 mt-0 overflow-hidden">
@@ -491,7 +519,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                          
                                          <p className="text-xs text-muted-foreground capitalize flex items-center gap-1">
                                            <Circle className={`h-2 w-2 fill-current ${getStatusColor(user.status)} shrink-0`} />
-                                           {user.status}
+                                           {getStatusLabel(user.status)}
                                          </p>
                                        </div>
                                       
@@ -559,8 +587,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
 
                                           <p className="text-xs text-muted-foreground capitalize flex items-center gap-1">
                                             <Circle className={`h-2 w-2 fill-current ${getStatusColor(user.status)} shrink-0`} />
-                                            {user.status === 'never_logged_in' ? 'Never signed up' : 
-                                             user.status === 'away' ? 'Away' : 'Offline'}
+                                            {getStatusLabel(user.status)}
                                             {user.last_seen && user.status !== 'never_logged_in' && (
                                               <span className="ml-1">
                                                 • {formatLastSeen(user.last_seen)}
@@ -613,13 +640,13 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                           </AvatarFallback>
                                         </Avatar>
                                         
-                                        {/* Status indicator with animation */}
+                                        {/* Status indicator - use live status from activeUsers */}
                                         <motion.div
                                           className="absolute -bottom-1 -right-1"
                                           initial={{ scale: 0 }}
                                           animate={{ scale: 1 }}
                                         >
-                                          <Circle className={`h-4 w-4 fill-current ${getStatusColor(conversation.user_profile?.status || 'offline')} border-2 border-background rounded-full shadow-sm`} />
+                                          <div className={`h-4 w-4 rounded-full border-2 border-background shadow-sm ${getStatusDotColor(getConversationUserStatus(conversation.user_id))}`} />
                                         </motion.div>
                                         
                                         {/* Enhanced unread count badge */}
@@ -644,9 +671,14 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                                           </p>
                                           <Badge 
                                             variant="secondary" 
-                                            className="text-xs bg-accent/40 text-foreground border border-border/50 px-2 py-1"
+                                            className={cn(
+                                              "text-xs px-2 py-0.5 capitalize",
+                                              getConversationUserStatus(conversation.user_id) === 'online' && "bg-green-500/20 text-green-700 dark:text-green-400",
+                                              getConversationUserStatus(conversation.user_id) === 'away' && "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400",
+                                              (getConversationUserStatus(conversation.user_id) === 'offline' || getConversationUserStatus(conversation.user_id) === 'never_logged_in') && "bg-red-500/20 text-red-700 dark:text-red-400"
+                                            )}
                                           >
-                                            {conversation.user_profile?.status || 'offline'}
+                                            {getStatusLabel(getConversationUserStatus(conversation.user_id))}
                                           </Badge>
                                         </div>
                                         

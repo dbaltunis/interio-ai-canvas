@@ -26,9 +26,12 @@ export const useFabricEnrichment = ({ fabricItem, formData }: FabricEnrichmentPa
         return;
       }
 
-      // If fabric already has grid data, use it as-is
+      // If fabric already has grid data, use it as-is but ensure pricing_method is set
       if (fabricItem.pricing_grid_data) {
-        setEnrichedFabric(fabricItem);
+        setEnrichedFabric({
+          ...fabricItem,
+          pricing_method: fabricItem.pricing_method || 'pricing_grid' // ✅ Ensure method is set
+        });
         return;
       }
 
@@ -65,8 +68,9 @@ export const useFabricEnrichment = ({ fabricItem, formData }: FabricEnrichmentPa
 
           setEnrichedFabric({
             ...fabricItem,
+            pricing_method: 'pricing_grid', // ✅ CRITICAL: Set pricing method for engine
             pricing_grid_data: gridResult.gridData,
-            pricing_grid_markup: gridResult.markupPercentage,  // ✅ FIX #2: Include grid markup
+            pricing_grid_markup: gridResult.markupPercentage,
             resolved_grid_id: gridResult.gridId,
             resolved_grid_code: gridResult.gridCode,
             resolved_grid_name: gridResult.gridName

@@ -41,10 +41,10 @@ export const useTeamPresence = (search?: string) => {
         return []; // Graceful degradation
       }
     },
-    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+    staleTime: 30 * 1000, // Cache for 30 seconds for faster presence updates
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
-    refetchOnWindowFocus: false, // Don't refetch on focus
-    refetchInterval: 2 * 60 * 1000, // Refetch every 2 minutes as backup
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchInterval: 60 * 1000, // Refetch every 1 minute for quicker updates
     retry: 1, // Only retry once on failure
     retryDelay: 1000, // Wait 1 second before retry
   });

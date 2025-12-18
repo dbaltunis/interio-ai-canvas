@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Package, Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet, Home } from "lucide-react";
 import { TagFilterChips } from "./TagFilterChips";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
@@ -34,6 +35,8 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { InventorySupplierFilter, matchesSupplierFilter } from "./InventorySupplierFilter";
 import { useVendors } from "@/hooks/useVendors";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { InventoryMobileCard } from "./InventoryMobileCard";
 
 interface FabricInventoryViewProps {
   searchQuery: string;
@@ -67,6 +70,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
   const { toast } = useToast();
   const { formatCurrency: formatPrice } = useFormattedCurrency();
   const { units } = useMeasurementUnits();
+  const isMobile = useIsMobile();
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pricingGrids, setPricingGrids] = useState<Array<{ id: string; grid_code: string | null; name: string }>>([]);
@@ -442,166 +446,195 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
                   />
                 )}
               </>
+            ) : isMobile ? (
+              // Mobile card layout
+              <>
+                <div className="space-y-2">
+                  {paginatedItems.map((item) => (
+                    <InventoryMobileCard
+                      key={item.id}
+                      item={item}
+                      isSelected={selectedItems.includes(item.id)}
+                      onSelect={(checked) => selectItem(item.id, checked)}
+                      onClick={() => {
+                        setQuickViewItem(item);
+                        setShowQuickView(true);
+                      }}
+                      formatPrice={formatPrice}
+                      stockUnit="m"
+                    />
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <JobsPagination
+                    currentPage={currentPage}
+                    totalItems={filteredItems.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
+              </>
             ) : (
+              // Desktop table layout
               <>
                 <div className="rounded-md border bg-card">
-                <table className="w-full">
-                  <thead className="bg-muted/20 border-b">
-                    <tr>
-                      <th className="px-2 py-1 w-8">
-                        <Checkbox
-                          checked={selectionStats.allSelected}
-                          onCheckedChange={(checked) => selectAll(!!checked)}
-                          aria-label="Select all"
-                        />
-                      </th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Image</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Name</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">SKU</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Supplier</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Width</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Price</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Stock</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Tags</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">QR</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedItems.map((item) => {
-                      const isSelected = selectedItems.includes(item.id);
-                      return (
-                        <tr key={item.id} className="border-t hover:bg-accent/50 transition-colors">
-                          <td className="px-2 py-1">
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={(checked) => selectItem(item.id, !!checked)}
-                              aria-label={`Select ${item.name}`}
-                            />
-                          </td>
-                          <td className="px-2 py-1">
-                            {item.image_url ? (
-                              <img 
-                                src={item.image_url} 
-                                alt={item.name} 
-                                crossOrigin="anonymous" 
-                                className="h-8 w-8 rounded object-cover cursor-pointer hover:opacity-80 transition-opacity" 
-                                onClick={() => setPreviewImage({ url: item.image_url!, title: item.name })}
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/20">
+                        <TableHead className="w-10 max-w-10">
+                          <Checkbox
+                            checked={selectionStats.allSelected}
+                            onCheckedChange={(checked) => selectAll(!!checked)}
+                            aria-label="Select all"
+                          />
+                        </TableHead>
+                        <TableHead className="w-14">Image</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead className="hidden lg:table-cell">SKU</TableHead>
+                        <TableHead className="hidden md:table-cell">Supplier</TableHead>
+                        <TableHead className="hidden xl:table-cell">Width</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Stock</TableHead>
+                        <TableHead className="hidden xl:table-cell">Tags</TableHead>
+                        <TableHead className="hidden lg:table-cell w-10">QR</TableHead>
+                        <TableHead className="w-20">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedItems.map((item) => {
+                        const isSelected = selectedItems.includes(item.id);
+                        return (
+                          <TableRow key={item.id} className="hover:bg-accent/50">
+                            <TableCell className="w-10 max-w-10">
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={(checked) => selectItem(item.id, !!checked)}
+                                aria-label={`Select ${item.name}`}
                               />
-                            ) : (
-                              <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
-                                <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-2 py-1 text-xs font-medium">{item.name}</td>
-                          <td className="px-2 py-1 text-xs text-muted-foreground">{item.sku || '-'}</td>
-                          <td className="px-2 py-1 text-xs">{item.supplier || '-'}</td>
-                          <td className="px-2 py-1 text-xs">{item.fabric_width ? formatFromCM(item.fabric_width, units.length) : '-'}</td>
-                          <td className="px-2 py-1 text-xs font-medium">
-                            {item.pricing_grid_id ? (
-                              <span className="text-primary">Grid</span>
-                            ) : (
-                              <>{formatPrice(item.price_per_meter || item.selling_price || 0)}/m</>
-                            )}
-                          </td>
-                          <td className="px-2 py-1">
-                            <div className="flex flex-col gap-0.5">
-                              <Badge variant={item.quantity && item.quantity > 0 ? "default" : "secondary"} className="text-xs py-0 h-5">
-                                {item.quantity || 0}m
-                              </Badge>
-                              {(() => {
-                                const leftover = leftovers.find(l => l.fabric_id === item.id);
-                                if (leftover && leftover.total_leftover_sqm > 0) {
-                                  return (
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Badge variant="outline" className="w-fit text-xs py-0 h-5 bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-100 cursor-help">
-                                            +{leftover.total_leftover_sqm.toFixed(1)}
-                                          </Badge>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <p>{leftover.piece_count} leftover piece(s)</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  );
-                                }
-                                return null;
-                              })()}
-                            </div>
-                          </td>
-                          <td className="px-2 py-1">
-                            {item.tags && item.tags.length > 0 ? (
-                              <div className="flex flex-wrap gap-0.5">
-                                {item.tags.slice(0, 2).map((tag) => (
-                                  <Badge key={tag} variant="outline" className="text-[10px] px-1 py-0 h-4">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                                {item.tags.length > 2 && (
-                                  <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
-                                    +{item.tags.length - 2}
-                                  </Badge>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground text-xs">-</span>
-                            )}
-                          </td>
-                          <td className="px-2 py-1">
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                  <QrCode className="h-3 w-3" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto">
-                                <QRCodeDisplay
-                                  itemId={item.id}
-                                  itemName={item.name}
-                                  size={180}
-                                  showActions={false}
+                            </TableCell>
+                            <TableCell>
+                              {item.image_url ? (
+                                <img 
+                                  src={item.image_url} 
+                                  alt={item.name} 
+                                  crossOrigin="anonymous" 
+                                  className="h-8 w-8 rounded object-cover cursor-pointer hover:opacity-80 transition-opacity" 
+                                  onClick={() => setPreviewImage({ url: item.image_url!, title: item.name })}
                                 />
-                              </PopoverContent>
-                            </Popover>
-                          </td>
-                          <td className="px-2 py-1">
-                            <div className="flex items-center gap-1">
-                              <EditInventoryDialog 
-                                item={item}
-                                trigger={
+                              ) : (
+                                <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
+                                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-xs font-medium">{item.name}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground hidden lg:table-cell">{item.sku || '-'}</TableCell>
+                            <TableCell className="text-xs hidden md:table-cell">{item.supplier || '-'}</TableCell>
+                            <TableCell className="text-xs hidden xl:table-cell">{item.fabric_width ? formatFromCM(item.fabric_width, units.length) : '-'}</TableCell>
+                            <TableCell className="text-xs font-medium">
+                              {item.pricing_grid_id ? (
+                                <span className="text-primary">Grid</span>
+                              ) : (
+                                <>{formatPrice(item.price_per_meter || item.selling_price || 0)}/m</>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col gap-0.5">
+                                <Badge variant={item.quantity && item.quantity > 0 ? "default" : "secondary"} className="text-xs py-0 h-5">
+                                  {item.quantity || 0}m
+                                </Badge>
+                                {(() => {
+                                  const leftover = leftovers.find(l => l.fabric_id === item.id);
+                                  if (leftover && leftover.total_leftover_sqm > 0) {
+                                    return (
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Badge variant="outline" className="w-fit text-xs py-0 h-5 bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-100 cursor-help">
+                                              +{leftover.total_leftover_sqm.toFixed(1)}
+                                            </Badge>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p>{leftover.piece_count} leftover piece(s)</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                              </div>
+                            </TableCell>
+                            <TableCell className="hidden xl:table-cell">
+                              {item.tags && item.tags.length > 0 ? (
+                                <div className="flex flex-wrap gap-0.5">
+                                  {item.tags.slice(0, 2).map((tag) => (
+                                    <Badge key={tag} variant="outline" className="text-[10px] px-1 py-0 h-4">
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                  {item.tags.length > 2 && (
+                                    <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
+                                      +{item.tags.length - 2}
+                                    </Badge>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="hidden lg:table-cell">
+                              <Popover>
+                                <PopoverTrigger asChild>
                                   <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                    <Edit className="h-3 w-3" />
+                                    <QrCode className="h-3 w-3" />
                                   </Button>
-                                }
-                              />
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                onClick={() => handleDelete(item.id)}
-                              >
-                                <Trash2 className="h-3 w-3 text-destructive" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              {totalPages > 1 && (
-                <JobsPagination
-                  currentPage={currentPage}
-                  totalItems={filteredItems.length}
-                  itemsPerPage={ITEMS_PER_PAGE}
-                  onPageChange={setCurrentPage}
-                />
-              )}
-            </>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto">
+                                  <QRCodeDisplay
+                                    itemId={item.id}
+                                    itemName={item.name}
+                                    size={180}
+                                    showActions={false}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <EditInventoryDialog 
+                                  item={item}
+                                  trigger={
+                                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                      <Edit className="h-3 w-3" />
+                                    </Button>
+                                  }
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => handleDelete(item.id)}
+                                >
+                                  <Trash2 className="h-3 w-3 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+                {totalPages > 1 && (
+                  <JobsPagination
+                    currentPage={currentPage}
+                    totalItems={filteredItems.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
+              </>
             )}
 
             {filteredItems.length === 0 && (

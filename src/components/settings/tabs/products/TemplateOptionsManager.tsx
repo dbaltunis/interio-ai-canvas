@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { ExternalLink, Loader2, RefreshCw, Package, GripVertical, Eye, EyeOff } from "lucide-react";
+import { ExternalLink, Loader2, RefreshCw, Package, GripVertical, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAllTreatmentOptions } from "@/hooks/useTreatmentOptionsManagement";
 import { 
@@ -227,6 +227,7 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isEnablingAll, setIsEnablingAll] = useState(false);
   const [localOrderedOptions, setLocalOrderedOptions] = useState<any[]>([]);
   
   const { data: allOptions = [], isLoading, error, refetch } = useAllTreatmentOptions();
@@ -264,6 +265,37 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
     });
   };
   
+  // Enable all available options for this template
+  const handleEnableAllOptions = async () => {
+    if (!templateId) return;
+    
+    setIsEnablingAll(true);
+    try {
+      // Call the database function to bulk-enable options
+      const { data, error } = await supabase.rpc('bulk_enable_template_options', {
+        p_template_id: templateId
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Options Enabled',
+        description: `${data || 'All'} options enabled for this template`,
+      });
+      
+      refetch();
+    } catch (error: any) {
+      console.error('Error enabling all options:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to enable options',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsEnablingAll(false);
+    }
+  };
+  
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -280,7 +312,27 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
     return linkedTWCProduct.metadata.twc_questions || [];
   }, [linkedTWCProduct]);
   
-  const filteredOptions = allOptions.filter(opt => opt.treatment_category === treatmentCategory);
+  // Filter options: for TWC options, only show if linked to THIS template via template_option_settings
+  // For system options, show all that match the treatment_category
+  const filteredOptions = useMemo(() => {
+    const linkedOptionIds = new Set(templateSettings.map(s => s.treatment_option_id));
+    const templateIdPrefix = templateId?.substring(0, 8) || '';
+    
+    return allOptions.filter(opt => {
+      // Must match treatment category
+      if (opt.treatment_category !== treatmentCategory) return false;
+      
+      // For TWC options: only show if explicitly linked OR key matches this template's ID
+      if ((opt as any).source === 'twc') {
+        const isLinked = linkedOptionIds.has(opt.id);
+        const keyMatchesTemplate = templateIdPrefix && opt.key?.endsWith(`_${templateIdPrefix}`);
+        return isLinked || keyMatchesTemplate;
+      }
+      
+      // System/custom options: show all matching category
+      return true;
+    });
+  }, [allOptions, treatmentCategory, templateSettings, templateId]);
   
   // Sort options by template-specific order_index, then by TWC status
   const categoryOptions = useMemo(() => {
@@ -353,7 +405,10 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
       const accountId = profile?.parent_account_id || user.id;
       
       for (const question of twcQuestions) {
-        const optionKey = question.name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        // Create product-specific key using template ID suffix to isolate options per product
+        const baseKey = question.name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        const templateShortId = templateId.substring(0, 8);
+        const optionKey = `${baseKey}_${templateShortId}`;
         
         const { data: existingOption } = await supabase
           .from('treatment_options')
@@ -489,7 +544,29 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Available Options</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Available Options</CardTitle>
+          {templateId && localOrderedOptions.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleEnableAllOptions}
+              disabled={isEnablingAll}
+            >
+              {isEnablingAll ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Enabling...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Enable All Options
+                </>
+              )}
+            </Button>
+          )}
+        </div>
         <p className="text-sm text-muted-foreground">
           Drag to reorder • Toggle options on/off for this template
           {!templateId && " (save template to apply changes)"}

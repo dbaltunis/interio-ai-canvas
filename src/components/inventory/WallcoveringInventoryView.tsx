@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Wallpaper, Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { CategoryImportExport } from "./CategoryImportExport";
@@ -25,6 +26,8 @@ import { InventoryBulkActionsBar } from "./InventoryBulkActionsBar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QRCodeDisplay } from "./QRCodeDisplay";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { InventoryMobileCard } from "./InventoryMobileCard";
 
 interface WallcoveringInventoryViewProps {
   searchQuery: string;
@@ -46,6 +49,7 @@ const ITEMS_PER_PAGE = 24;
 export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection, selectedStorageLocation }: WallcoveringInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
@@ -321,158 +325,190 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
                   />
                 )}
               </>
-            ) : (
+            ) : isMobile ? (
+              // Mobile: Show cards for list view too
               <>
-                <div className="rounded-md border bg-card">
-                <table className="w-full">
-                  <thead className="bg-muted/20 border-b">
-                    <tr>
-                      <th className="px-2 py-1 w-8">
-                        <Checkbox
-                          checked={selectionStats.allSelected}
-                          onCheckedChange={(checked) => selectAll(!!checked)}
-                          aria-label="Select all"
-                        />
-                      </th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Image</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Name</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">SKU</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Supplier</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Sold By</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Roll Size</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Pattern Repeat</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Price</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Stock</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">QR</th>
-                      <th className="px-2 py-1 text-left text-xs font-medium">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedItems.map((item) => {
-                      const isSelected = selectedItems.includes(item.id);
-                      return (
-                        <tr key={item.id} className="border-t hover:bg-accent/50 transition-colors">
-                          <td className="px-2 py-1">
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={(checked) => selectItem(item.id, !!checked)}
-                              aria-label={`Select ${item.name}`}
-                            />
-                          </td>
-                          <td className="px-2 py-1">
-                            {item.image_url ? (
-                              <img 
-                                src={item.image_url} 
-                                alt={item.name} 
-                                crossOrigin="anonymous" 
-                                className="h-8 w-8 rounded object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                                onClick={() => setPreviewImage({ url: item.image_url!, title: item.name })}
+                <div className="space-y-3">
+                  {paginatedItems.map((item) => {
+                    const soldBy = (item as any).wallpaper_sold_by;
+                    const stockUnit = soldBy === 'per_roll' ? 'rolls' : soldBy === 'per_sqm' ? 'm²' : 'units';
+                    return (
+                      <InventoryMobileCard
+                        key={item.id}
+                        item={item}
+                        isSelected={selectedItems.includes(item.id)}
+                        onSelect={(checked) => selectItem(item.id, checked)}
+                        onClick={() => {}}
+                        onEdit={() => {}}
+                        onDelete={() => handleDelete(item.id)}
+                        formatPrice={formatPrice}
+                        stockUnit={stockUnit}
+                      />
+                    );
+                  })}
+                </div>
+                {totalPages > 1 && (
+                  <JobsPagination
+                    currentPage={currentPage}
+                    totalItems={filteredItems.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
+              </>
+            ) : (
+              // Desktop: Show table
+              <>
+                <div className="rounded-md border bg-card overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/20">
+                        <TableHead className="w-8">
+                          <Checkbox
+                            checked={selectionStats.allSelected}
+                            onCheckedChange={(checked) => selectAll(!!checked)}
+                            aria-label="Select all"
+                          />
+                        </TableHead>
+                        <TableHead className="text-xs">Image</TableHead>
+                        <TableHead className="text-xs">Name</TableHead>
+                        <TableHead className="text-xs hidden lg:table-cell">SKU</TableHead>
+                        <TableHead className="text-xs hidden md:table-cell">Supplier</TableHead>
+                        <TableHead className="text-xs hidden md:table-cell">Sold By</TableHead>
+                        <TableHead className="text-xs hidden lg:table-cell">Roll Size</TableHead>
+                        <TableHead className="text-xs hidden xl:table-cell">Pattern Repeat</TableHead>
+                        <TableHead className="text-xs">Price</TableHead>
+                        <TableHead className="text-xs">Stock</TableHead>
+                        <TableHead className="text-xs hidden lg:table-cell">QR</TableHead>
+                        <TableHead className="text-xs">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedItems.map((item) => {
+                        const isSelected = selectedItems.includes(item.id);
+                        return (
+                          <TableRow key={item.id} className="hover:bg-accent/50 transition-colors">
+                            <TableCell className="px-2 py-1">
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={(checked) => selectItem(item.id, !!checked)}
+                                aria-label={`Select ${item.name}`}
                               />
-                            ) : (
-                              <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
-                                <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-2 py-1 text-xs font-medium">{item.name}</td>
-                          <td className="px-2 py-1 text-xs text-muted-foreground">{item.sku || '-'}</td>
-                          <td className="px-2 py-1 text-xs">{item.supplier || '-'}</td>
-                          <td className="px-2 py-1">
-                            {(item as any).wallpaper_sold_by ? (
-                              <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-xs py-0 h-5">
-                                {(item as any).wallpaper_sold_by === 'per_roll' ? 'Per Roll' : 
-                                 (item as any).wallpaper_sold_by === 'per_unit' ? 'Per Meter' : 
-                                 (item as any).wallpaper_sold_by === 'per_sqm' ? 'Per m²' : 'Per Unit'}
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground text-xs">-</span>
-                            )}
-                          </td>
-                          <td className="px-2 py-1 text-xs">
-                            {(item as any).wallpaper_roll_width && (item as any).wallpaper_roll_length ? (
-                              <span>{(item as any).wallpaper_roll_width}cm × {(item as any).wallpaper_roll_length}m</span>
-                            ) : (
-                              <Badge variant="secondary" className="text-xs py-0 h-5">Not specified</Badge>
-                            )}
-                          </td>
-                          <td className="px-2 py-1 text-xs">
-                            {item.pattern_repeat_vertical ? `${item.pattern_repeat_vertical}cm` : '-'}
-                          </td>
-                          <td className="px-2 py-1 text-xs font-medium">
-                            <div className="flex flex-col">
-                              <span>{formatPrice(item.price_per_meter || item.selling_price || 0)}</span>
-                              {(item as any).wallpaper_sold_by && (
-                                <span className="text-[10px] text-muted-foreground">
-                                  per {(item as any).wallpaper_sold_by === 'per_roll' ? 'roll' : 
-                                       (item as any).wallpaper_sold_by === 'per_unit' ? 'meter' : 
-                                       (item as any).wallpaper_sold_by === 'per_sqm' ? 'm²' : 'unit'}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-2 py-1">
-                            {item.quantity > 0 || (item as any).stock_quantity > 0 ? (
-                              <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20 text-xs py-0 h-5">
-                                {(item as any).stock_quantity || item.quantity || 0} {(item as any).wallpaper_sold_by === 'per_roll' ? 'rolls' : 'units'}
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary" className="bg-orange-500/10 text-orange-600 border-orange-500/20 text-xs py-0 h-5">
-                                Not tracked
-                              </Badge>
-                            )}
-                          </td>
-                          <td className="px-2 py-1">
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                  <QrCode className="h-3 w-3" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto">
-                                <QRCodeDisplay
-                                  itemId={item.id}
-                                  itemName={item.name}
-                                  size={180}
-                                  showActions={false}
+                            </TableCell>
+                            <TableCell className="px-2 py-1">
+                              {item.image_url ? (
+                                <img 
+                                  src={item.image_url} 
+                                  alt={item.name} 
+                                  crossOrigin="anonymous" 
+                                  className="h-8 w-8 rounded object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                                  onClick={() => setPreviewImage({ url: item.image_url!, title: item.name })}
                                 />
-                              </PopoverContent>
-                            </Popover>
-                          </td>
-                          <td className="px-2 py-1">
-                            <div className="flex items-center gap-1">
-                              <EditInventoryDialog 
-                                item={item}
-                                trigger={
+                              ) : (
+                                <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
+                                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell className="px-2 py-1 text-xs font-medium">{item.name}</TableCell>
+                            <TableCell className="px-2 py-1 text-xs text-muted-foreground hidden lg:table-cell">{item.sku || '-'}</TableCell>
+                            <TableCell className="px-2 py-1 text-xs hidden md:table-cell">{item.supplier || '-'}</TableCell>
+                            <TableCell className="px-2 py-1 hidden md:table-cell">
+                              {(item as any).wallpaper_sold_by ? (
+                                <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-xs py-0 h-5">
+                                  {(item as any).wallpaper_sold_by === 'per_roll' ? 'Per Roll' : 
+                                   (item as any).wallpaper_sold_by === 'per_unit' ? 'Per Meter' : 
+                                   (item as any).wallpaper_sold_by === 'per_sqm' ? 'Per m²' : 'Per Unit'}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="px-2 py-1 text-xs hidden lg:table-cell">
+                              {(item as any).wallpaper_roll_width && (item as any).wallpaper_roll_length ? (
+                                <span>{(item as any).wallpaper_roll_width}cm × {(item as any).wallpaper_roll_length}m</span>
+                              ) : (
+                                <Badge variant="secondary" className="text-xs py-0 h-5">Not specified</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="px-2 py-1 text-xs hidden xl:table-cell">
+                              {item.pattern_repeat_vertical ? `${item.pattern_repeat_vertical}cm` : '-'}
+                            </TableCell>
+                            <TableCell className="px-2 py-1 text-xs font-medium">
+                              <div className="flex flex-col">
+                                <span>{formatPrice(item.price_per_meter || item.selling_price || 0)}</span>
+                                {(item as any).wallpaper_sold_by && (
+                                  <span className="text-[10px] text-muted-foreground">
+                                    per {(item as any).wallpaper_sold_by === 'per_roll' ? 'roll' : 
+                                         (item as any).wallpaper_sold_by === 'per_unit' ? 'meter' : 
+                                         (item as any).wallpaper_sold_by === 'per_sqm' ? 'm²' : 'unit'}
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="px-2 py-1">
+                              {item.quantity > 0 || (item as any).stock_quantity > 0 ? (
+                                <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20 text-xs py-0 h-5">
+                                  {(item as any).stock_quantity || item.quantity || 0} {(item as any).wallpaper_sold_by === 'per_roll' ? 'rolls' : 'units'}
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="bg-orange-500/10 text-orange-600 border-orange-500/20 text-xs py-0 h-5">
+                                  Not tracked
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="px-2 py-1 hidden lg:table-cell">
+                              <Popover>
+                                <PopoverTrigger asChild>
                                   <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                    <Edit className="h-3 w-3" />
+                                    <QrCode className="h-3 w-3" />
                                   </Button>
-                                }
-                              />
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                onClick={() => handleDelete(item.id)}
-                              >
-                                <Trash2 className="h-3 w-3 text-destructive" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              {totalPages > 1 && (
-                <JobsPagination
-                  currentPage={currentPage}
-                  totalItems={filteredItems.length}
-                  itemsPerPage={ITEMS_PER_PAGE}
-                  onPageChange={setCurrentPage}
-                />
-              )}
-            </>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto">
+                                  <QRCodeDisplay
+                                    itemId={item.id}
+                                    itemName={item.name}
+                                    size={180}
+                                    showActions={false}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            </TableCell>
+                            <TableCell className="px-2 py-1">
+                              <div className="flex items-center gap-1">
+                                <EditInventoryDialog 
+                                  item={item}
+                                  trigger={
+                                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                      <Edit className="h-3 w-3" />
+                                    </Button>
+                                  }
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => handleDelete(item.id)}
+                                >
+                                  <Trash2 className="h-3 w-3 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+                {totalPages > 1 && (
+                  <JobsPagination
+                    currentPage={currentPage}
+                    totalItems={filteredItems.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
+              </>
             )}
 
             {filteredItems.length === 0 && (

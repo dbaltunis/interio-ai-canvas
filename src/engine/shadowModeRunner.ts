@@ -275,7 +275,9 @@ export function buildFabric(fabric: any): FabricContract | null {
       return null;
     }
     
-    if (!fabric.pricing_method) {
+    // ✅ FIX: If fabric has pricing_grid_data, default pricing_method to 'pricing_grid'
+    const pricingMethod = fabric.pricing_method || (fabric.pricing_grid_data ? 'pricing_grid' : null);
+    if (!pricingMethod) {
       console.warn('[ENGINE_SHADOW_FABRIC_MISSING_PRICING_METHOD]', { 
         fabricId: fabric.id,
         fabricName: fabric.name 
@@ -287,7 +289,7 @@ export function buildFabric(fabric: any): FabricContract | null {
       id: fabric.id || fabric.fabric_id || 'unknown',
       name: fabric.name || 'Unknown Fabric',
       width_cm,
-      pricing_method: fabric.pricing_method, // NO default
+      pricing_method: pricingMethod, // ✅ Use resolved pricing method
     };
     
     if (fabric.price_per_meter != null || fabric.selling_price != null || fabric.unit_price != null) {

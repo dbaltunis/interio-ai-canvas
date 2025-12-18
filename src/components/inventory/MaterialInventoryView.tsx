@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Image as ImageIcon, Trash2, Edit, QrCode, FileSpreadsheet, Filter, Package } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
@@ -22,6 +23,8 @@ import { COLOR_PALETTE } from "@/constants/inventoryCategories";
 import { InventorySupplierFilter, matchesSupplierFilter } from "./InventorySupplierFilter";
 import { useVendors } from "@/hooks/useVendors";
 import { TagFilterChips } from "./TagFilterChips";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { InventoryMobileCard } from "./InventoryMobileCard";
 import {
   Dialog,
   DialogContent,
@@ -60,6 +63,7 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
   const { data: inventory, refetch } = useEnhancedInventory();
   const { data: vendors = [] } = useVendors();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [activeCategory, setActiveCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
@@ -284,52 +288,78 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
 
         {MATERIAL_CATEGORIES.map(cat => (
           <TabsContent key={cat.key} value={cat.key} className="mt-4">
+            {isMobile ? (
+              // Mobile card layout
+              <>
+                <div className="space-y-2">
+                  {paginatedItems.map(item => (
+                    <InventoryMobileCard
+                      key={item.id}
+                      item={item}
+                      isSelected={selectedItems.includes(item.id)}
+                      onSelect={(checked) => selectItem(item.id, checked)}
+                      onClick={() => handleCardClick(item)}
+                      stockUnit="units"
+                      showPriceGroup={true}
+                    />
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <JobsPagination
+                    currentPage={currentPage}
+                    totalItems={filteredItems.length}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
+              </>
+            ) : (
+              // Desktop table layout
             <div className="rounded-md border bg-card">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-muted/20 border-b">
-                    <tr>
-                      <th className="px-2 py-2 text-left w-10">
-                        <Checkbox 
-                          checked={paginatedItems.length > 0 && paginatedItems.every(item => selectedItems.includes(item.id))}
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </th>
-                      <th className="px-2 py-2 text-left w-16">
-                        <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                      </th>
-                      <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground">Name</th>
-                      <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground">SKU</th>
-                      <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground">Supplier</th>
-                      <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground">Price Group</th>
-                      <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground">Stock</th>
-                      <th className="px-2 py-2 text-left text-xs font-medium text-muted-foreground">Tags</th>
-                      <th className="px-2 py-2 text-center text-xs font-medium text-muted-foreground w-10">QR</th>
-                      <th className="px-2 py-2 text-right text-xs font-medium text-muted-foreground w-20">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/20">
+                    <TableHead className="w-10 max-w-10">
+                      <Checkbox 
+                        checked={paginatedItems.length > 0 && paginatedItems.every(item => selectedItems.includes(item.id))}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                    <TableHead className="w-14">
+                      <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                    </TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="hidden lg:table-cell">SKU</TableHead>
+                    <TableHead className="hidden md:table-cell">Supplier</TableHead>
+                    <TableHead>Price Group</TableHead>
+                    <TableHead>Stock</TableHead>
+                    <TableHead className="hidden xl:table-cell">Tags</TableHead>
+                    <TableHead className="hidden lg:table-cell w-10">QR</TableHead>
+                    <TableHead className="w-20">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                     {paginatedItems.length === 0 ? (
-                      <tr>
-                        <td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">
+                      <TableRow>
+                        <TableCell colSpan={10} className="px-4 py-8 text-center text-muted-foreground">
                           No materials found
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ) : (
                       paginatedItems.map(item => (
-                        <tr 
+                        <TableRow 
                           key={item.id} 
-                          className="border-b hover:bg-accent/50 transition-colors cursor-pointer"
+                          className="hover:bg-accent/50 cursor-pointer"
                           onClick={() => handleCardClick(item)}
                         >
-                          <td className="px-2 py-1">
+                          <TableCell className="w-10 max-w-10">
                             <Checkbox
                               checked={selectedItems.includes(item.id)}
                               onCheckedChange={(checked) => selectItem(item.id, checked === true)}
                               onClick={(e) => e.stopPropagation()}
                             />
-                          </td>
-                          <td className="px-2 py-1">
+                          </TableCell>
+                          <TableCell>
                             {item.image_url ? (
                               <img 
                                 src={item.image_url} 
@@ -360,9 +390,26 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                                 <ImageIcon className="h-4 w-4 text-muted-foreground" />
                               </div>
                             )}
-                          </td>
-                          <td className="px-2 py-1">
+                          </TableCell>
+                          <TableCell>
                             <div className="flex items-center gap-2">
+                              {/* Linkage status indicator */}
+                              <span 
+                                className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                  item.vendor_id && item.price_group 
+                                    ? 'bg-green-500' 
+                                    : item.price_group 
+                                      ? 'bg-amber-500' 
+                                      : 'bg-red-500'
+                                }`}
+                                title={
+                                  item.vendor_id && item.price_group 
+                                    ? 'Fully linked - grids will match' 
+                                    : item.price_group 
+                                      ? 'Has price group but no vendor link' 
+                                      : 'Missing price group - grids won\'t match'
+                                }
+                              />
                               <span className="text-sm font-medium">{item.name}</span>
                               {item.supplier?.toUpperCase() === 'TWC' && (
                                 <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px] px-1 py-0">
@@ -370,10 +417,10 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                                 </Badge>
                               )}
                             </div>
-                          </td>
-                          <td className="px-2 py-1 text-xs text-muted-foreground">{item.sku || '-'}</td>
-                          <td className="px-2 py-1 text-xs text-muted-foreground">{item.supplier || '-'}</td>
-                          <td className="px-2 py-1">
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">{item.sku || '-'}</TableCell>
+                          <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{item.supplier || '-'}</TableCell>
+                          <TableCell>
                             {item.price_group ? (
                               <Badge variant="outline" className="text-[10px]">
                                 Group {item.price_group}
@@ -381,16 +428,16 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                             ) : (
                               <span className="text-xs text-muted-foreground">-</span>
                             )}
-                          </td>
-                          <td className="px-2 py-1">
+                          </TableCell>
+                          <TableCell>
                             <Badge 
                               variant={item.quantity === 0 ? "destructive" : "secondary"} 
                               className="text-[10px]"
                             >
                               {item.quantity ?? 0}
                             </Badge>
-                          </td>
-                          <td className="px-2 py-1">
+                          </TableCell>
+                          <TableCell className="hidden xl:table-cell">
                             <div className="flex flex-wrap gap-1 max-w-[150px]">
                               {item.tags?.slice(0, 2).map((tag: string, idx: number) => (
                                 <Badge key={idx} variant="outline" className="text-[10px] px-1 py-0">
@@ -403,8 +450,8 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                                 </Badge>
                               )}
                             </div>
-                          </td>
-                          <td className="px-2 py-1 text-center">
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
                             <Popover>
                               <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
                                 <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
@@ -415,9 +462,9 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                                 <QRCodeDisplay itemId={item.id} itemName={item.name} />
                               </PopoverContent>
                             </Popover>
-                          </td>
-                          <td className="px-2 py-1 text-right">
-                            <div className="flex items-center justify-end gap-1">
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
                               <EditInventoryDialog
                                 item={item}
                                 trigger={
@@ -439,14 +486,14 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                                 <Trash2 className="h-3 w-3 text-destructive" />
                               </Button>
                             </div>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))
                     )}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
-            </div>
+            )}
 
             {totalPages > 1 && (
               <div className="flex justify-center mt-4">

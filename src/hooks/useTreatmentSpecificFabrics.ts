@@ -56,7 +56,7 @@ export const useTreatmentSpecificFabrics = (
   treatmentCategory: TreatmentCategory,
   searchTerm?: string,
   templateId?: string,
-  parentProductId?: string // NEW: Filter to ONLY TWC-linked materials
+  parentProductId?: string // Filter to ONLY TWC-linked materials OR template's linked inventory item
 ) => {
   const { data: assignedPriceGroups = [] } = useTemplateAssignedPriceGroups(templateId);
   const treatmentConfig = getTreatmentConfig(treatmentCategory);
@@ -106,22 +106,24 @@ export const useTreatmentSpecificFabrics = (
       };
 
       // =====================================================
-      // NEW: TWC PARENT PRODUCT FILTER - Shows ONLY linked materials
+      // PARENT PRODUCT / TEMPLATE ITEM FILTER - Shows ONLY linked materials
       // =====================================================
-      // If parentProductId is provided, filter to ONLY materials that 
-      // have this parent_product_id in their metadata. This is how TWC
-      // links specific materials (e.g., 32) to a specific product (e.g., Romans)
+      // Priority 1: If parentProductId is provided, filter to materials that:
+      //   a) Have this parent_product_id in their metadata (TWC pattern), OR
+      //   b) ARE the parent product itself (for single-material templates)
+      // This enables both TWC multi-material products AND single-item templates
       
       let items: any[] = [];
       let hasMore = false;
       
       if (parentProductId) {
-        console.log('🔗 TWC Filter: Showing only materials linked to parent_product_id:', parentProductId);
+        console.log('🔗 Template Filter: Showing materials linked to inventory_item_id:', parentProductId);
         
+        // First try: get exact inventory item match (the template IS this product)
         let query = supabase
           .from("enhanced_inventory_items")
           .select("*")
-          .eq("metadata->>parent_product_id", parentProductId)
+          .or(`id.eq.${parentProductId},metadata->>parent_product_id.eq.${parentProductId}`)
           .eq("active", true);
 
         // Apply filters BEFORE pagination
@@ -133,14 +135,19 @@ export const useTreatmentSpecificFabrics = (
         
         const { data, error } = await query;
         if (error) {
-          console.error('Error fetching TWC-linked materials:', error);
+          console.error('Error fetching template-linked materials:', error);
           throw error;
         }
         
-        console.log(`✅ TWC Filter: Found ${data?.length || 0} materials linked to parent product`);
+        console.log(`✅ Template Filter: Found ${data?.length || 0} materials for template`);
         items = data || [];
         hasMore = items.length === PAGE_SIZE + 1;
         if (hasMore) items.pop();
+        
+        // If we found the exact item, return it immediately (auto-select scenario)
+        if (items.length === 1 && items[0].id === parentProductId) {
+          console.log('🎯 Single material match - ready for auto-select');
+        }
       }
       // CRITICAL FIX: Handle material-based treatments that have inventoryCategory === 'none'
       else if (treatmentConfig.inventoryCategory === 'none' && primaryCategory === 'material') {

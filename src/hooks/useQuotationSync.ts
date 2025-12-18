@@ -130,6 +130,25 @@ export const useQuotationSync = ({
             return;
           }
           
+          // GHOST FIX: Skip windows with incomplete or missing data
+          const hasMaterialOrFabric = window.summary.fabric_details?.name || 
+                                       window.summary.material_details?.name || 
+                                       window.summary.template_name;
+          const hasValidCostBreakdown = Array.isArray(window.summary.cost_breakdown) && 
+                                         window.summary.cost_breakdown.length > 0;
+          
+          // Skip if neither material/fabric name nor valid cost breakdown exists
+          if (!hasMaterialOrFabric && !hasValidCostBreakdown) {
+            console.warn('[QUOTE] Skipping ghost window with no material/fabric data:', {
+              windowId: window.window_id,
+              hasMaterialOrFabric,
+              hasValidCostBreakdown,
+              fabricDetails: window.summary.fabric_details,
+              materialDetails: window.summary.material_details
+            });
+            return;
+          }
+          
           const roomId = window.room_id || 'no-room';
           
           // Find the actual room data

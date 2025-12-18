@@ -41,10 +41,26 @@ export const PresenceProvider = ({ children }: { children: ReactNode }) => {
     console.warn('Presence system unavailable:', error);
   }
   
+  // Calculate status based on last_seen timestamp
+  const calculateStatus = (lastSeen: string | null, userId: string): 'online' | 'away' | 'busy' | 'offline' | 'never_logged_in' => {
+    // Current user is always online
+    if (userId === user?.id) return 'online';
+    
+    if (!lastSeen) return 'never_logged_in';
+    
+    const lastSeenDate = new Date(lastSeen);
+    const now = new Date();
+    const diffMinutes = (now.getTime() - lastSeenDate.getTime()) / (1000 * 60);
+    
+    if (diffMinutes <= 5) return 'online';      // Active within 5 minutes = green
+    if (diffMinutes <= 30) return 'away';       // Active within 30 minutes = yellow
+    return 'offline';                            // More than 30 minutes = red/offline
+  };
+
   // Transform team presence data to UserPresence format
   const activeUsers: UserPresence[] = teamPresence.map(profile => ({
     user_id: profile.user_id,
-    status: profile.user_id === user?.id ? 'online' : profile.status as 'online' | 'away' | 'busy' | 'offline' | 'never_logged_in',
+    status: calculateStatus(profile.last_seen, profile.user_id),
     last_seen: profile.last_seen || new Date().toISOString(),
     user_profile: {
       display_name: profile.display_name || 'Unknown User',
