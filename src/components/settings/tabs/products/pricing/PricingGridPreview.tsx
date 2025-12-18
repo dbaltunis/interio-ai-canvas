@@ -1,9 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Eye } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { getUnitLabel } from "@/utils/measurementFormatters";
+import { inferGridUnit, type GridUnit } from "@/utils/gridUnitUtils";
 
 interface PricingGridData {
   // Format B
@@ -13,7 +14,7 @@ interface PricingGridData {
   // Format A & C
   widthColumns?: number[];
   dropRows?: number[] | Array<{ drop: number; prices: number[] }>;
-  unit?: 'cm' | 'mm';
+  unit?: GridUnit;
 }
 
 interface PricingGridPreviewProps {
@@ -24,6 +25,8 @@ interface PricingGridPreviewProps {
 export const PricingGridPreview = ({ gridData, gridName }: PricingGridPreviewProps) => {
   const { units } = useMeasurementUnits();
   
+  // Infer the grid unit from data if not explicitly set
+  const gridUnit = inferGridUnit(gridData);
   // Detect grid format
   const isFormatB = gridData?.widthRanges && gridData?.dropRanges && Array.isArray(gridData?.prices);
   const isFormatC = gridData?.widthColumns && gridData?.dropRows && typeof gridData?.prices === 'object' && !Array.isArray(gridData?.prices);
@@ -81,9 +84,16 @@ export const PricingGridPreview = ({ gridData, gridName }: PricingGridPreviewPro
         </DialogHeader>
         
         <div className="space-y-4">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-muted-foreground flex items-center gap-4 flex-wrap">
             <p><strong>Dimensions:</strong> {drops.length} drop ranges × {widths.length} width ranges</p>
-            <p><strong>Dimensions stored in:</strong> {getUnitLabel(gridData.unit || 'cm')}</p>
+            <Badge variant="outline" className="text-xs">
+              Stored in: {gridUnit.toUpperCase()}
+            </Badge>
+            {!gridData.unit && (
+              <Badge variant="secondary" className="text-xs">
+                Unit auto-detected
+              </Badge>
+            )}
           </div>
           
           <div className="border rounded-lg overflow-auto">
@@ -91,7 +101,7 @@ export const PricingGridPreview = ({ gridData, gridName }: PricingGridPreviewPro
               <TableHeader>
                 <TableRow>
                   <TableHead className="sticky left-0 bg-background z-10 min-w-[100px]">
-                    Drop / Width ({getUnitLabel(gridData.unit || 'cm')})
+                    Drop / Width ({gridUnit})
                   </TableHead>
                   {widths.map((width: string | number, index: number) => (
                     <TableHead key={index} className="text-center min-w-[80px]">

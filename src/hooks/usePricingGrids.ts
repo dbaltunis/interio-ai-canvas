@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { PricingGrid } from "@/types/database";
+import { inferGridUnit, convertToGridUnit, type GridUnit } from "@/utils/gridUnitUtils";
 
 interface GridData {
   rows?: Array<{
@@ -18,6 +19,7 @@ interface GridData {
     prices: number[];
   }>;
   widthColumns?: string[];
+  unit?: GridUnit;
 }
 
 export const usePricingGrids = () => {
@@ -92,15 +94,26 @@ export const useDeletePricingGrid = () => {
 };
 
 // Helper function to parse CSV data and find price based on width and drop
-export const getPriceFromGrid = (gridData: any, width: number, drop: number): number => {
+// IMPORTANT: Input width and drop should be in CM (the app's standard)
+// The function will convert to match the grid's stored unit
+export const getPriceFromGrid = (gridData: any, widthCm: number, dropCm: number): number => {
   if (!gridData) {
     console.log("❌ getPriceFromGrid: No grid data provided");
     return 0;
   }
   
   try {
+    // Infer the grid's unit from values if not explicitly set
+    const gridUnit = inferGridUnit(gridData);
+    
+    // Convert input CM values to match the grid's unit
+    const width = convertToGridUnit(widthCm, gridUnit);
+    const drop = convertToGridUnit(dropCm, gridUnit);
+    
     console.log("🔍 === PRICING GRID LOOKUP ===");
-    console.log("📊 Looking for:", { width: width + "cm", drop: drop + "cm" });
+    console.log("📊 Input (CM):", { widthCm, dropCm });
+    console.log("📊 Grid unit:", gridUnit);
+    console.log("📊 Converted for lookup:", { width: width + gridUnit, drop: drop + gridUnit });
     console.log("📁 Grid data structure:", gridData);
     
     // Handle the data structure with dropRanges and widthRanges (from pricing grid)
@@ -109,33 +122,33 @@ export const getPriceFromGrid = (gridData: any, width: number, drop: number): nu
       const widthRanges = gridData.widthRanges;
       const prices = gridData.prices;
       
-      console.log("📋 Available drops:", dropRanges.map((d: string) => d + "cm"));
-      console.log("📋 Available widths:", widthRanges.map((w: string) => w + "cm"));
+      console.log("📋 Available drops:", dropRanges.map((d: string) => d + gridUnit));
+      console.log("📋 Available widths:", widthRanges.map((w: string) => w + gridUnit));
       
       // Find the closest drop index
       const dropValues = dropRanges.map((d: string) => parseInt(d));
-      const closestDrop = dropValues.reduce((prev, curr) => {
+      const closestDrop = dropValues.reduce((prev: number, curr: number) => {
         return Math.abs(curr - drop) < Math.abs(prev - drop) ? curr : prev;
       });
       const dropIndex = dropValues.indexOf(closestDrop);
       
-      console.log("✅ Found closest drop:", closestDrop + "cm at index", dropIndex, "(looking for " + drop + "cm)");
+      console.log("✅ Found closest drop:", closestDrop + gridUnit, "at index", dropIndex, "(looking for " + drop + gridUnit + ")");
       
       // Find the closest width index
       const widthValues = widthRanges.map((w: string) => parseInt(w));
-      const closestWidth = widthValues.reduce((prev, curr) => {
+      const closestWidth = widthValues.reduce((prev: number, curr: number) => {
         return Math.abs(curr - width) < Math.abs(prev - width) ? curr : prev;
       });
       const widthIndex = widthValues.indexOf(closestWidth);
       
-      console.log("✅ Found closest width:", closestWidth + "cm at index", widthIndex, "(looking for " + width + "cm)");
+      console.log("✅ Found closest width:", closestWidth + gridUnit, "at index", widthIndex, "(looking for " + width + gridUnit + ")");
       
       // Get the price from the 2D array
       const price = parseFloat(prices[dropIndex]?.[widthIndex]?.toString() || "0");
       
       console.log("✅ GRID MATCH FOUND:");
-      console.log("  📏 Requested Width:", width + "cm", "→ Using:", closestWidth + "cm");
-      console.log("  📏 Requested Drop:", drop + "cm", "→ Using:", closestDrop + "cm");
+      console.log("  📏 Requested Width:", widthCm + "cm →", width + gridUnit, "→ Using:", closestWidth + gridUnit);
+      console.log("  📏 Requested Drop:", dropCm + "cm →", drop + gridUnit, "→ Using:", closestDrop + gridUnit);
       console.log("  💰 Manufacturing Price:", price);
       console.log("🔍 === END PRICING GRID LOOKUP ===");
       
@@ -147,12 +160,12 @@ export const getPriceFromGrid = (gridData: any, width: number, drop: number): nu
       const dropRows = gridData.dropRows;
       const widthColumns = gridData.widthColumns;
       
-      console.log("📋 Available drops:", dropRows.map((r: any) => r.drop + "cm"));
-      console.log("📋 Available widths:", widthColumns.map((w: string) => w + "cm"));
+      console.log("📋 Available drops:", dropRows.map((r: any) => r.drop + gridUnit));
+      console.log("📋 Available widths:", widthColumns.map((w: string) => w + gridUnit));
       
       // Find the closest drop row (rounds to nearest grid value)
       const dropValues = dropRows.map((r: any) => parseInt(r.drop));
-      const closestDrop = dropValues.reduce((prev, curr) => {
+      const closestDrop = dropValues.reduce((prev: number, curr: number) => {
         return Math.abs(curr - drop) < Math.abs(prev - drop) ? curr : prev;
       });
       
@@ -166,11 +179,11 @@ export const getPriceFromGrid = (gridData: any, width: number, drop: number): nu
         return 0;
       }
       
-      console.log("✅ Found closest drop row:", matchingDropRow.drop + "cm", "(looking for " + drop + "cm)");
+      console.log("✅ Found closest drop row:", matchingDropRow.drop + gridUnit, "(looking for " + drop + gridUnit + ")");
       
       // Find the closest width column (rounds to nearest grid value)
       const widthValues = widthColumns.map((w: string) => parseInt(w.toString()));
-      const closestWidth = widthValues.reduce((prev, curr) => {
+      const closestWidth = widthValues.reduce((prev: number, curr: number) => {
         return Math.abs(curr - width) < Math.abs(prev - width) ? curr : prev;
       });
       
@@ -184,14 +197,14 @@ export const getPriceFromGrid = (gridData: any, width: number, drop: number): nu
         return 0;
       }
       
-      console.log("✅ Found closest width at index:", widthIndex, "=", closestWidth + "cm", "(looking for " + width + "cm)");
+      console.log("✅ Found closest width at index:", widthIndex, "=", closestWidth + gridUnit, "(looking for " + width + gridUnit + ")");
       
       // Get the price from the matching row and column
       const price = parseFloat(matchingDropRow.prices[widthIndex]?.toString() || "0");
       
       console.log("✅ GRID MATCH FOUND:");
-      console.log("  📏 Requested Width:", width + "cm", "→ Using:", closestWidth + "cm");
-      console.log("  📏 Requested Drop:", drop + "cm", "→ Using:", closestDrop + "cm");
+      console.log("  📏 Requested Width:", widthCm + "cm →", width + gridUnit, "→ Using:", closestWidth + gridUnit);
+      console.log("  📏 Requested Drop:", dropCm + "cm →", drop + gridUnit, "→ Using:", closestDrop + gridUnit);
       console.log("  💰 Manufacturing Price:", price);
       console.log("🔍 === END PRICING GRID LOOKUP ===");
       
