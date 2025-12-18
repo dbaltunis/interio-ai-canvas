@@ -30,6 +30,7 @@ import { ColorSelector } from "./ColorSelector";
 import { calculateOptionPrices, getOptionEffectivePrice } from "@/utils/calculateOptionPrices";
 import { runShadowComparison } from "@/engine/shadowModeRunner";
 import { useCurtainEngine } from "@/engine/useCurtainEngine";
+import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
 
 /**
  * CRITICAL MEASUREMENT UNIT STANDARD
@@ -217,6 +218,17 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
   } = useHeadingOptions();
   const queryClient = useQueryClient();
 
+  // ✅ CRITICAL: Enrich fabric with pricing grid data BEFORE engine calculation
+  // This ensures the engine has access to grid prices for curtains/romans
+  const { enrichedFabric } = useFabricEnrichment({
+    fabricItem: selectedItems.fabric || selectedItems.material,
+    formData: { 
+      ...measurements, 
+      system_type: selectedTemplate?.system_type,
+      treatment_category: treatmentCategory 
+    }
+  });
+
   // ✅ NEW ENGINE: Single source of truth for curtain/roman calculations
   // This replaces multiple scattered calculation paths with one authoritative engine
   const engineResult = useCurtainEngine({
@@ -225,7 +237,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     projectId,
     measurements,
     selectedTemplate,
-    selectedFabric: selectedItems.fabric || selectedItems.material,
+    selectedFabric: enrichedFabric, // ✅ Use enriched fabric with pricing grid data
     selectedOptions,
     units,
   });
