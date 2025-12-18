@@ -665,11 +665,12 @@ export const UnifiedInventoryDialog = ({
 
                     {/* Context-aware pricing method buttons */}
                     {(() => {
-                      const isFabricSubcategory = ['curtain_fabric', 'lining_fabric', 'roman_fabric', 'upholstery_fabric', 'sheer_fabric'].includes(formData.subcategory);
+                      const isFabricCategory = formData.category === 'fabric';
                       const isMaterialCategory = formData.category === 'material';
-                      // Show grid option for materials OR if price_group already exists
-                      const showGridOption = !isFabricSubcategory || isMaterialCategory || formData.price_group;
-                      const showSqmOption = isFabricSubcategory || formData.category === 'fabric';
+                      // Show grid option for ALL categories (TWC uses grids for curtains, romans, blinds - everything)
+                      const showGridOption = true;
+                      // Show sqm option only for fabrics
+                      const showSqmOption = isFabricCategory;
                       
                       const columnCount = (showGridOption ? 1 : 0) + 1 + (showSqmOption ? 1 : 0) + 1;
                       
@@ -684,7 +685,7 @@ export const UnifiedInventoryDialog = ({
                               }`}
                             >
                               <div className="font-medium mb-1">Pricing Grid</div>
-                              <div className="text-xs text-muted-foreground">For blinds/shutters</div>
+                              <div className="text-xs text-muted-foreground">TWC & manufacturers</div>
                             </button>
                           )}
                           
@@ -696,7 +697,7 @@ export const UnifiedInventoryDialog = ({
                             }`}
                           >
                             <div className="font-medium mb-1">Per {pricingUnitLabel}</div>
-                            <div className="text-xs text-muted-foreground">Narrow-width fabrics</div>
+                            <div className="text-xs text-muted-foreground">Linear pricing</div>
                           </button>
                           
                           {showSqmOption && (
