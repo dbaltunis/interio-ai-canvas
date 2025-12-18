@@ -393,6 +393,23 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
+                              {/* Linkage status indicator */}
+                              <span 
+                                className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                  item.vendor_id && item.price_group 
+                                    ? 'bg-green-500' 
+                                    : item.price_group 
+                                      ? 'bg-amber-500' 
+                                      : 'bg-red-500'
+                                }`}
+                                title={
+                                  item.vendor_id && item.price_group 
+                                    ? 'Fully linked - grids will match' 
+                                    : item.price_group 
+                                      ? 'Has price group but no vendor link' 
+                                      : 'Missing price group - grids won\'t match'
+                                }
+                              />
                               <span className="text-sm font-medium">{item.name}</span>
                               {item.supplier?.toUpperCase() === 'TWC' && (
                                 <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px] px-1 py-0">
