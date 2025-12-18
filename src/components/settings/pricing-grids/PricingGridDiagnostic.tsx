@@ -196,12 +196,12 @@ export const PricingGridDiagnostic = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label>Supplier (Optional)</Label>
-            <Select value={supplierId} onValueChange={setSupplierId}>
+          <Select value={supplierId || "_any"} onValueChange={(val) => setSupplierId(val === "_any" ? "" : val)}>
               <SelectTrigger>
                 <SelectValue placeholder="Any supplier" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Any supplier</SelectItem>
+                <SelectItem value="_any">Any supplier</SelectItem>
                 {vendors.map((vendor) => (
                   <SelectItem key={vendor.id} value={vendor.id}>
                     {vendor.name}
