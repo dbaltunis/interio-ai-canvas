@@ -5565,6 +5565,7 @@ export type Database = {
           grid_code: string
           grid_data: Json
           id: string
+          includes_fabric_price: boolean
           markup_percentage: number | null
           name: string
           price_group: string | null
@@ -5582,6 +5583,7 @@ export type Database = {
           grid_code: string
           grid_data?: Json
           id?: string
+          includes_fabric_price?: boolean
           markup_percentage?: number | null
           name: string
           price_group?: string | null
@@ -5599,6 +5601,7 @@ export type Database = {
           grid_code?: string
           grid_data?: Json
           id?: string
+          includes_fabric_price?: boolean
           markup_percentage?: number | null
           name?: string
           price_group?: string | null
