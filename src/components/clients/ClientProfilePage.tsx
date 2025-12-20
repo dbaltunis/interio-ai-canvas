@@ -16,17 +16,15 @@ import {
 } from "lucide-react";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useClient, useUpdateClient } from "@/hooks/useClients";
-import { useClientJobs, useClientQuotes, calculateClientDealValue } from "@/hooks/useClientJobs";
+import { useClientJobs, useClientQuotes } from "@/hooks/useClientJobs";
 import { useConversionProbability } from "@/hooks/useConversionProbability";
 import { ClientEmailHistory } from "./ClientEmailHistory";
 import { EnhancedClientEmailHistory } from "./EnhancedClientEmailHistory";
 import { LeadSourceSelect } from "@/components/crm/LeadSourceSelect";
 import { ClientProjectsList } from "./ClientProjectsList";
 import { MeasurementsList } from "../measurements/MeasurementsList";
-import { TasksList } from "../tasks/TasksList";
-import { TasksListEnhanced } from "../tasks/TasksListEnhanced";
-import { QuickAddTask } from "../tasks/QuickAddTask";
 import { ClientActivityLog } from "./ClientActivityLog";
+import { ClientAllNotesSection } from "./ClientAllNotesSection";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { ClientFilesManager } from "./ClientFilesManager";
@@ -52,7 +50,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedClient, setEditedClient] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("activity");
   
   // Calculate portfolio value from closed/completed projects only
   // Use project.quote data since quotes may not have client_id set directly
@@ -393,108 +391,65 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </Card>
       )}
 
-      {/* Engagement Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-accent" />
-              Engagement Insights
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">
-              Track how likely this lead is to convert
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Conversion Likelihood</span>
-                <Badge 
-                  variant="outline" 
-                  className={`${
-                    autoConversionProb >= 70 
-                      ? 'bg-green-50 text-green-700 border-green-300' 
-                      : autoConversionProb >= 40 
-                      ? 'bg-yellow-50 text-yellow-700 border-yellow-300' 
-                      : 'bg-red-50 text-red-700 border-red-300'
-                  }`}
-                >
-                  {autoConversionProb}%
-                </Badge>
-              </div>
-              <Progress value={autoConversionProb} className="h-2.5" />
-              <div className="grid grid-cols-2 gap-1.5 text-xs bg-muted/30 p-2.5 rounded-md">
-                <div className="flex items-center gap-1.5">
-                  <Star className="h-3 w-3 text-muted-foreground" />
-                  <span>Score: {factors.leadScore}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Briefcase className="h-3 w-3 text-muted-foreground" />
-                  <span>Stage: {factors.stage}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Mail className="h-3 w-3 text-muted-foreground" />
-                  <span>Emails: {factors.emailEngagement}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="h-3 w-3 text-muted-foreground" />
-                  <span>Activity: {factors.activityLevel}</span>
-                </div>
-              </div>
-            </div>
+      {/* All Project Notes Section */}
+      <ClientAllNotesSection clientId={clientId} />
 
-            <div className="h-px bg-border" />
-            
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-semibold flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4" />
-                  Quick Tasks
-                </h4>
-                <QuickAddTask clientId={clientId} />
-              </div>
-              
-              <TasksList clientId={clientId} compact={true} />
-              
-              <Button 
+      {/* Engagement Overview - simplified to single card */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-accent" />
+            Engagement Insights
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Track how likely this lead is to convert
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Conversion Likelihood</span>
+              <Badge 
                 variant="outline" 
-                size="sm" 
-                className="w-full mt-2"
-                onClick={() => setActiveTab("activity")}
+                className={`${
+                  autoConversionProb >= 70 
+                    ? 'bg-green-50 text-green-700 border-green-300' 
+                    : autoConversionProb >= 40 
+                    ? 'bg-yellow-50 text-yellow-700 border-yellow-300' 
+                    : 'bg-red-50 text-red-700 border-red-300'
+                }`}
               >
-                <Clock className="h-4 w-4 mr-2" />
-                View Full Timeline
-              </Button>
+                {autoConversionProb}%
+              </Badge>
             </div>
-          </CardContent>
-        </Card>
+            <Progress value={autoConversionProb} className="h-2.5" />
+            <div className="grid grid-cols-2 gap-1.5 text-xs bg-muted/30 p-2.5 rounded-md">
+              <div className="flex items-center gap-1.5">
+                <Star className="h-3 w-3 text-muted-foreground" />
+                <span>Score: {factors.leadScore}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Briefcase className="h-3 w-3 text-muted-foreground" />
+                <span>Stage: {factors.stage}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Mail className="h-3 w-3 text-muted-foreground" />
+                <span>Emails: {factors.emailEngagement}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-3 w-3 text-muted-foreground" />
+                <span>Activity: {factors.activityLevel}</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Quick Tasks */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-primary" />
-              Quick Tasks
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <QuickAddTask clientId={clientId} />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Redesigned Tabs Section */}
+      {/* Redesigned Tabs Section - 3 tabs: Activity, Emails, Measurements */}
       <div className="mt-8">
         <h3 className="text-lg font-semibold mb-4">More Details</h3>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/30">
-            <TabsTrigger 
-              value="tasks" 
-              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-            >
-              <CheckCircle className="h-5 w-5" />
-              <span className="font-medium">Tasks</span>
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/30">
             <TabsTrigger 
               value="activity" 
               className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
@@ -517,10 +472,6 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
               <span className="font-medium">Measurements</span>
             </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="tasks" className="mt-6">
-            <TasksListEnhanced clientId={clientId} />
-          </TabsContent>
 
           <TabsContent value="activity" className="mt-6">
             <ClientActivityLog clientId={clientId} />
