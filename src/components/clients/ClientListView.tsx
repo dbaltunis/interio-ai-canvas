@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
+
 import { Mail, Phone, User, Building2, MoreHorizontal, Star, TrendingUp, Clock, AlertCircle, Target, Calendar, MessageSquare, Briefcase, Package, Trash2, FileText } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -200,11 +200,10 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                   <TableHead className="text-muted-foreground font-medium w-16">#</TableHead>
                   <TableHead className="text-muted-foreground font-medium">Client</TableHead>
                   <TableHead className="text-muted-foreground font-medium">Stage</TableHead>
-                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Deal Value</TableHead>}
+                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Total Value</TableHead>}
                   {!isTablet && <TableHead className="text-muted-foreground font-medium">Source</TableHead>}
                   {!isTablet && <TableHead className="text-muted-foreground font-medium">Last Activity</TableHead>}
                   {!isTablet && <TableHead className="text-muted-foreground font-medium">Next Follow-up</TableHead>}
-                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Probability</TableHead>}
                   {!isTablet && <TableHead className="text-muted-foreground font-medium">Activity</TableHead>}
                   <TableHead className="text-muted-foreground font-medium text-right">Actions</TableHead>
                 </TableRow>
@@ -263,9 +262,9 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                     
                     {!isTablet && (
                       <TableCell>
-                        {client.deal_value && client.deal_value > 0 ? (
+                        {client.totalValue && client.totalValue > 0 ? (
                           <div className="font-bold text-foreground">
-                            {formatCurrency(client.deal_value)}
+                            {formatCurrency(client.totalValue)}
                           </div>
                         ) : (
                           <div className="text-muted-foreground text-sm">—</div>
@@ -308,23 +307,6 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                             <Calendar className="h-3 w-3" />
                             {formatDistanceToNow(new Date(client.follow_up_date), { addSuffix: true })}
                           </Badge>
-                        ) : (
-                          <div className="text-muted-foreground text-sm">—</div>
-                        )}
-                      </TableCell>
-                    )}
-                    
-                    {!isTablet && (
-                      <TableCell>
-                        {client.conversion_probability ? (
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">
-                                {client.conversion_probability}%
-                              </span>
-                            </div>
-                            <Progress value={client.conversion_probability} className="h-1.5" />
-                          </div>
                         ) : (
                           <div className="text-muted-foreground text-sm">—</div>
                         )}
