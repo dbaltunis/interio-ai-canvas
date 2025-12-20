@@ -12,7 +12,7 @@ import {
   useEnsureDefaultSequences,
   EntityType 
 } from "@/hooks/useNumberSequences";
-import { Plus, Save, Trash2, Hash } from "lucide-react";
+import { Plus, Save, Hash } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/select";
 
 const ENTITY_TYPES: { value: EntityType; label: string; description: string }[] = [
-  { value: 'job', label: 'Jobs', description: 'Main job/project numbers' },
   { value: 'draft', label: 'Drafts', description: 'Draft document numbers' },
   { value: 'quote', label: 'Quotes', description: 'Quote numbers' },
   { value: 'order', label: 'Orders', description: 'Order numbers' },
@@ -305,18 +304,9 @@ export const NumberSequenceSettings = () => {
                         </Button>
                       </div>
                     ) : (
-                      <div className="flex justify-end gap-2">
-                        <Button onClick={() => handleEdit(sequence)} size="sm" variant="outline">
-                          Edit
-                        </Button>
-                        <Button 
-                          onClick={() => handleDelete(sequence.id)} 
-                          size="sm" 
-                          variant="destructive"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
+                      <Button onClick={() => handleEdit(sequence)} size="sm" variant="outline">
+                        Edit
+                      </Button>
                     )}
                   </TableCell>
                 </TableRow>
