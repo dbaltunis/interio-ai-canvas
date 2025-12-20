@@ -281,14 +281,17 @@ export const NumberSequenceSettings = () => {
                     </span>
                   </TableCell>
                   <TableCell>
-                    {isEditing ? (
-                      <Switch
-                        checked={values.active}
-                        onCheckedChange={(checked) => setEditValues({ ...values, active: checked })}
-                      />
-                    ) : (
-                      <Switch checked={sequence.active} disabled />
-                    )}
+                    <Switch 
+                      checked={isEditing ? values.active : sequence.active} 
+                      onCheckedChange={(checked) => {
+                        if (isEditing) {
+                          setEditValues({ ...values, active: checked });
+                        } else {
+                          // Inline toggle without edit mode
+                          updateSequence.mutate({ id: sequence.id, updates: { active: checked } });
+                        }
+                      }}
+                    />
                   </TableCell>
                   <TableCell className="text-right">
                     {isEditing ? (
