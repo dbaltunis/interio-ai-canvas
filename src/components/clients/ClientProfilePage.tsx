@@ -54,8 +54,15 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const [editedClient, setEditedClient] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("overview");
   
-  // Calculate total value from quotes
-  const calculatedDealValue = calculateClientDealValue(quotes || []);
+  // Calculate portfolio value from closed/completed projects only
+  const closedProjectIds = new Set(
+    (projects || [])
+      .filter(p => ['closed', 'completed'].includes(p.status?.toLowerCase() || ''))
+      .map(p => p.id)
+  );
+  const portfolioValue = (quotes || [])
+    .filter(q => q.project_id && closedProjectIds.has(q.project_id))
+    .reduce((sum, q) => sum + parseFloat(q.total_amount?.toString() || '0'), 0);
 
   if (clientLoading) {
     return (
@@ -317,8 +324,8 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Deal Value</p>
-                <p className="text-2xl font-bold">{formatCurrency(currentClient.deal_value || 0)}</p>
+                <p className="text-sm text-muted-foreground">Portfolio Value</p>
+                <p className="text-2xl font-bold">{formatCurrency(portfolioValue)}</p>
               </div>
               <DollarSign className="h-8 w-8 text-green-600" />
             </div>
