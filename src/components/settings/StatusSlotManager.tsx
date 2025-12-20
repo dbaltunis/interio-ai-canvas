@@ -15,17 +15,17 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Star, EyeOff, Edit2, Save, X, FileText } from "lucide-react";
 import { useJobStatuses, useCreateJobStatus, useUpdateJobStatus } from "@/hooks/useJobStatuses";
+import { useNumberSequences } from "@/hooks/useNumberSequences";
 import { useToast } from "@/hooks/use-toast";
 
 const SLOT_COUNT = 10;
 
-// Document types that map to number sequences
+// Document types that map to number sequences (Draft → Quote → Order → Invoice)
 const DOCUMENT_TYPES = [
   { value: 'draft', label: 'Draft' },
   { value: 'quote', label: 'Quote' },
   { value: 'order', label: 'Order' },
   { value: 'invoice', label: 'Invoice' },
-  { value: 'job', label: 'Job' },
 ] as const;
 
 type DocumentType = typeof DOCUMENT_TYPES[number]['value'];
@@ -45,9 +45,19 @@ const DEFAULT_STATUS_TEMPLATES = [
 
 export const StatusSlotManager = () => {
   const { data: jobStatuses = [], isLoading } = useJobStatuses();
+  const { data: numberSequences = [] } = useNumberSequences();
   const createStatus = useCreateJobStatus();
   const updateStatus = useUpdateJobStatus();
   const { toast } = useToast();
+
+  // Get prefix example for a document type
+  const getPrefixExample = (docType: string): string => {
+    const sequence = numberSequences.find(s => s.entity_type === docType);
+    if (sequence) {
+      return `${sequence.prefix}${String(sequence.next_number).padStart(sequence.padding, '0')}`;
+    }
+    return '';
+  };
   const [editingSlot, setEditingSlot] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<any>({});
 
@@ -217,17 +227,6 @@ export const StatusSlotManager = () => {
                       </Select>
                     </div>
                     <div>
-                      <Label>Category</Label>
-                      <Select value={editForm.category} onValueChange={(v) => setEditForm({ ...editForm, category: v })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Project">Project</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
                       <Label>Action Behavior</Label>
                       <Select value={editForm.action} onValueChange={(v) => setEditForm({ ...editForm, action: v })}>
                         <SelectTrigger>
@@ -243,8 +242,6 @@ export const StatusSlotManager = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 mt-4">
                     <div>
                       <Label className="flex items-center gap-2">
                         <FileText className="h-4 w-4" />
@@ -258,15 +255,18 @@ export const StatusSlotManager = () => {
                           <SelectValue placeholder="Select document type" />
                         </SelectTrigger>
                         <SelectContent>
-                          {DOCUMENT_TYPES.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
-                          ))}
+                          {DOCUMENT_TYPES.map((type) => {
+                            const prefix = getPrefixExample(type.value);
+                            return (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label} {prefix && <span className="text-muted-foreground font-mono">({prefix})</span>}
+                              </SelectItem>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Determines which number sequence is used for documents at this stage
+                        Determines which number sequence is used at this stage
                       </p>
                     </div>
                   </div>
