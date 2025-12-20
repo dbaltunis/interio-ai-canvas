@@ -6,8 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageSquare, Plus, Calendar, Briefcase, X, Send } from "lucide-react";
-import { useProjectNotes } from "@/hooks/useProjectNotes";
-import { useClientJobs } from "@/hooks/useClientJobs";
+import { useClientProjectNotes } from "@/hooks/useClientProjectNotes";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
@@ -15,38 +14,12 @@ interface ClientAllNotesSectionProps {
   clientId: string;
 }
 
-interface ProjectWithNotes {
-  projectId: string;
-  projectName: string;
-  notes: Array<{
-    id: string;
-    content: string;
-    created_at: string;
-    note_type?: string;
-  }>;
-}
-
 export const ClientAllNotesSection = ({ clientId }: ClientAllNotesSectionProps) => {
-  const { data: projects, isLoading: projectsLoading } = useClientJobs(clientId);
+  const { notes, projects, isLoading, addNote } = useClientProjectNotes(clientId);
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [noteContent, setNoteContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Collect notes from all projects
-  const projectNotesHooks = (projects || []).map(project => {
-    const { notes, addNote } = useProjectNotes({ projectId: project.id });
-    return { projectId: project.id, projectName: project.name, notes, addNote };
-  });
-
-  // Flatten and sort all notes by date
-  const allNotes = projectNotesHooks.flatMap(({ projectId, projectName, notes }) => 
-    (notes || []).map(note => ({
-      ...note,
-      projectId,
-      projectName
-    }))
-  ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const handleAddNote = async () => {
     if (!selectedProjectId || !noteContent.trim()) {
@@ -56,14 +29,11 @@ export const ClientAllNotesSection = ({ clientId }: ClientAllNotesSectionProps) 
 
     setIsSubmitting(true);
     try {
-      const projectHook = projectNotesHooks.find(p => p.projectId === selectedProjectId);
-      if (projectHook) {
-        await projectHook.addNote(noteContent.trim(), 'general');
-        toast.success("Note added successfully");
-        setNoteContent("");
-        setSelectedProjectId("");
-        setIsAddingNote(false);
-      }
+      await addNote(selectedProjectId, noteContent.trim());
+      toast.success("Note added successfully");
+      setNoteContent("");
+      setSelectedProjectId("");
+      setIsAddingNote(false);
     } catch (error) {
       toast.error("Failed to add note");
     } finally {
@@ -83,7 +53,7 @@ export const ClientAllNotesSection = ({ clientId }: ClientAllNotesSectionProps) 
     }
   };
 
-  if (projectsLoading) {
+  if (isLoading) {
     return (
       <Card>
         <CardContent className="py-8">
@@ -134,7 +104,7 @@ export const ClientAllNotesSection = ({ clientId }: ClientAllNotesSectionProps) 
                   <SelectValue placeholder="Choose a project..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {(projects || []).map(project => (
+                  {projects.map(project => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.name}
                     </SelectItem>
@@ -166,7 +136,7 @@ export const ClientAllNotesSection = ({ clientId }: ClientAllNotesSectionProps) 
         )}
 
         {/* Notes List */}
-        {allNotes.length === 0 ? (
+        {notes.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30" />
             <p className="text-sm">No notes yet</p>
@@ -175,7 +145,7 @@ export const ClientAllNotesSection = ({ clientId }: ClientAllNotesSectionProps) 
         ) : (
           <ScrollArea className="max-h-[400px]">
             <div className="space-y-3 pr-4">
-              {allNotes.map((note) => (
+              {notes.map((note) => (
                 <div 
                   key={note.id} 
                   className="p-3 border rounded-lg bg-background hover:bg-muted/20 transition-colors"
