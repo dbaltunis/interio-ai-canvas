@@ -55,14 +55,23 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const [activeTab, setActiveTab] = useState("overview");
   
   // Calculate portfolio value from closed/completed projects only
-  const closedProjectIds = new Set(
-    (projects || [])
-      .filter(p => ['closed', 'completed'].includes(p.status?.toLowerCase() || ''))
-      .map(p => p.id)
+  // Use project.quote data since quotes may not have client_id set directly
+  const closedProjects = (projects || []).filter(p => 
+    ['closed', 'completed'].includes(p.status?.toLowerCase() || '')
   );
-  const portfolioValue = (quotes || [])
-    .filter(q => q.project_id && closedProjectIds.has(q.project_id))
-    .reduce((sum, q) => sum + parseFloat(q.total_amount?.toString() || '0'), 0);
+  
+  // Sum total_amount from quotes linked to closed projects
+  // Note: quotes may have client_id NULL but are linked via project_id
+  const portfolioValue = closedProjects.reduce((sum, project) => {
+    // Find quotes for this project
+    const projectQuotes = (quotes || []).filter(q => q.project_id === project.id);
+    if (projectQuotes.length > 0) {
+      // Use the latest quote's total_amount
+      const latestQuote = projectQuotes[0]; // Already sorted by created_at desc
+      return sum + parseFloat(latestQuote.total_amount?.toString() || '0');
+    }
+    return sum;
+  }, 0);
 
   if (clientLoading) {
     return (

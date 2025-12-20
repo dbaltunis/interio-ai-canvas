@@ -119,13 +119,26 @@ export const useClientQuotes = (clientId: string) => {
   return useQuery({
     queryKey: ["client-quotes", effectiveOwnerId, clientId],
     queryFn: async () => {
-      if (!effectiveOwnerId) return [];
+      if (!effectiveOwnerId || !clientId) return [];
 
+      // First, get all projects for this client
+      const { data: projects, error: projectsError } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("user_id", effectiveOwnerId)
+        .eq("client_id", clientId);
+
+      if (projectsError) throw projectsError;
+      if (!projects || projects.length === 0) return [];
+
+      const projectIds = projects.map(p => p.id);
+
+      // Then get quotes for those projects (quotes may have NULL client_id)
       const { data: quotes, error } = await supabase
         .from("quotes")
         .select("*")
         .eq("user_id", effectiveOwnerId)
-        .eq("client_id", clientId)
+        .in("project_id", projectIds)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
