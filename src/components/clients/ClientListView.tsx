@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-import { Mail, Phone, User, Building2, MoreHorizontal, Star, TrendingUp, Clock, AlertCircle, Target, Calendar, MessageSquare, Briefcase, Package, Trash2, FileText } from "lucide-react";
+import { Mail, Phone, User, Building2, MoreHorizontal, Star, Clock, FileText, Trash2, Calendar } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow, isPast } from "date-fns";
@@ -143,33 +143,6 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    const colors = {
-      'low': 'bg-gray-100 text-gray-600',
-      'medium': 'bg-blue-100 text-blue-600',
-      'high': 'bg-orange-100 text-orange-600',
-      'urgent': 'bg-red-100 text-red-600'
-    };
-    return colors[priority as keyof typeof colors] || colors.medium;
-  };
-
-  const getPriorityIcon = (priority: string) => {
-    const icons = {
-      'low': <TrendingUp className="h-3 w-3" />,
-      'medium': <Target className="h-3 w-3" />,
-      'high': <AlertCircle className="h-3 w-3" />,
-      'urgent': <AlertCircle className="h-3 w-3" />
-    };
-    return icons[priority as keyof typeof icons] || icons.medium;
-  };
-
-  const getLeadScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    if (score >= 40) return 'text-orange-600';
-    return 'text-gray-600';
-  };
-
   const isHotLead = (score: number) => score >= 70;
 
   if (isLoading) {
@@ -201,10 +174,8 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                   <TableHead className="text-muted-foreground font-medium">Client</TableHead>
                   <TableHead className="text-muted-foreground font-medium">Stage</TableHead>
                   {!isTablet && <TableHead className="text-muted-foreground font-medium">Total Value</TableHead>}
-                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Source</TableHead>}
                   {!isTablet && <TableHead className="text-muted-foreground font-medium">Last Activity</TableHead>}
-                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Next Follow-up</TableHead>}
-                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Activity</TableHead>}
+                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Documents</TableHead>}
                   <TableHead className="text-muted-foreground font-medium text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -274,18 +245,6 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                     
                     {!isTablet && (
                       <TableCell>
-                        {client.lead_source ? (
-                          <Badge variant="secondary" className="text-xs">
-                            {client.lead_source.replace('_', ' ')}
-                          </Badge>
-                        ) : (
-                          <div className="text-muted-foreground text-sm">—</div>
-                        )}
-                      </TableCell>
-                    )}
-                    
-                    {!isTablet && (
-                      <TableCell>
                         {client.last_contact_date ? (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Clock className="h-3.5 w-3.5" />
@@ -299,35 +258,11 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                     
                     {!isTablet && (
                       <TableCell>
-                        {client.follow_up_date ? (
-                          <Badge 
-                            variant={isPast(new Date(client.follow_up_date)) ? "destructive" : "secondary"}
-                            className="text-xs flex items-center gap-1 w-fit"
-                          >
-                            <Calendar className="h-3 w-3" />
-                            {formatDistanceToNow(new Date(client.follow_up_date), { addSuffix: true })}
-                          </Badge>
-                        ) : (
-                          <div className="text-muted-foreground text-sm">—</div>
-                        )}
-                      </TableCell>
-                    )}
-                    
-                    {!isTablet && (
-                      <TableCell>
                         <div className="flex items-center gap-2">
-                          {filesCount && filesCount[client.id] > 0 && (
-                            <Badge variant="outline" className="text-xs flex items-center gap-1">
-                              <FileText className="h-3 w-3" />
-                              {filesCount[client.id]}
-                            </Badge>
-                          )}
-                          {client.projectCount && client.projectCount > 0 && (
-                            <Badge variant="outline" className="text-xs flex items-center gap-1">
-                              <Briefcase className="h-3 w-3" />
-                              {client.projectCount}
-                            </Badge>
-                          )}
+                          <Badge variant="outline" className="text-xs flex items-center gap-1">
+                            <FileText className="h-3 w-3" />
+                            {filesCount?.[client.id] || 0}
+                          </Badge>
                         </div>
                       </TableCell>
                     )}
