@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { Mail, Phone, User, Building2, MoreHorizontal, Star, TrendingUp, Clock, AlertCircle, Target, Calendar, MessageSquare, Briefcase, Package, Trash2 } from "lucide-react";
+import { Mail, Phone, User, Building2, MoreHorizontal, Star, TrendingUp, Clock, AlertCircle, Target, Calendar, MessageSquare, Briefcase, Package, Trash2, FileText } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow, isPast } from "date-fns";
@@ -14,6 +14,7 @@ import { ClientDetailDrawer } from "./ClientDetailDrawer";
 import { useDeleteClient } from "@/hooks/useClients";
 import { toast } from "sonner";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
+import { useClientFilesCount } from "@/hooks/useClientFilesCount";
 
 interface Client {
   id: string;
@@ -57,6 +58,10 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const deleteClient = useDeleteClient();
   const { formatCurrency } = useFormattedCurrency();
+  
+  // Get client IDs for files count query
+  const clientIds = useMemo(() => clients?.map(c => c.id) || [], [clients]);
+  const { data: filesCount } = useClientFilesCount(clientIds);
 
   const handleDeleteClick = (e: React.MouseEvent, client: Client) => {
     e.stopPropagation();
@@ -329,6 +334,12 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                     {!isTablet && (
                       <TableCell>
                         <div className="flex items-center gap-2">
+                          {filesCount && filesCount[client.id] > 0 && (
+                            <Badge variant="outline" className="text-xs flex items-center gap-1">
+                              <FileText className="h-3 w-3" />
+                              {filesCount[client.id]}
+                            </Badge>
+                          )}
                           {client.projectCount && client.projectCount > 0 && (
                             <Badge variant="outline" className="text-xs flex items-center gap-1">
                               <Briefcase className="h-3 w-3" />
