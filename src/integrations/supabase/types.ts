@@ -4001,6 +4001,7 @@ export type Database = {
           color: string
           created_at: string
           description: string | null
+          document_type: string | null
           id: string
           is_active: boolean
           is_default: boolean | null
@@ -4016,6 +4017,7 @@ export type Database = {
           color?: string
           created_at?: string
           description?: string | null
+          document_type?: string | null
           id?: string
           is_active?: boolean
           is_default?: boolean | null
@@ -4031,6 +4033,7 @@ export type Database = {
           color?: string
           created_at?: string
           description?: string | null
+          document_type?: string | null
           id?: string
           is_active?: boolean
           is_default?: boolean | null
