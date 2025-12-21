@@ -8,6 +8,7 @@ import { Search, Package, Palette, Wrench, Check, X, Plus, Edit3, ScanLine, Load
 import { FilterButton } from "@/components/library/FilterButton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -38,7 +39,7 @@ import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithC
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { InventoryCardSkeleton } from "@/components/inventory/InventoryCardSkeleton";
 import { useVendors } from "@/hooks/useVendors";
-import { matchesSupplierFilter } from "./InventorySupplierFilter";
+import { matchesUnifiedSupplier } from "@/hooks/useUnifiedSuppliers";
 import { PriceGroupFilter } from "./PriceGroupFilter";
 import { QuickTypeFilter } from "./QuickTypeFilter";
 import { ColorSwatchSelector } from "./ColorSwatchSelector";
@@ -331,8 +332,8 @@ export const InventorySelectionPanel = ({
     // Apply client-side filters for vendor/collection/tags/price group/quick types
     if (category === "fabric") {
       const filtered = treatmentFabrics.filter(item => {
-        // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
-        const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
+        // CRITICAL FIX: Use unified vendor/supplier matching
+        const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
         // NEW: Price group filter
@@ -368,7 +369,7 @@ export const InventorySelectionPanel = ({
                                item.sku?.toLowerCase().includes(searchLower) ||
                                item.supplier?.toLowerCase().includes(searchLower) ||
                                item.vendor?.name?.toLowerCase().includes(searchLower);
-          const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
+          const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
           const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
           const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
           return matchesSearch && matchesVendor && matchesCollection && matchesTags;
@@ -385,7 +386,7 @@ export const InventorySelectionPanel = ({
                              item.sku?.toLowerCase().includes(searchLower) ||
                              item.supplier?.toLowerCase().includes(searchLower) ||
                              item.vendor?.name?.toLowerCase().includes(searchLower);
-        const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
+        const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
         return matchesSearch && matchesVendor && matchesCollection && matchesTags;
@@ -405,7 +406,7 @@ export const InventorySelectionPanel = ({
                              item.sku?.toLowerCase().includes(searchLower) ||
                              item.supplier?.toLowerCase().includes(searchLower) ||
                              item.vendor?.name?.toLowerCase().includes(searchLower);
-        const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
+        const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
         
@@ -435,7 +436,7 @@ export const InventorySelectionPanel = ({
                                item.sku?.toLowerCase().includes(searchLower) ||
                                item.supplier?.toLowerCase().includes(searchLower) ||
                                item.vendor?.name?.toLowerCase().includes(searchLower);
-          const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
+          const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
           const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
           const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
           return matchesSearch && matchesVendor && matchesCollection && matchesTags;
@@ -469,7 +470,7 @@ export const InventorySelectionPanel = ({
                              item.sku?.toLowerCase().includes(searchLower) ||
                              item.supplier?.toLowerCase().includes(searchLower) ||
                              item.vendor?.name?.toLowerCase().includes(searchLower);
-        const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
+        const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
         
@@ -494,8 +495,8 @@ export const InventorySelectionPanel = ({
                              item.sku?.toLowerCase().includes(searchLower) ||
                              item.supplier?.toLowerCase().includes(searchLower) ||
                              item.vendor?.name?.toLowerCase().includes(searchLower);
-        // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
-        const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
+        // Use unified vendor/supplier matching
+        const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
         
@@ -652,9 +653,18 @@ export const InventorySelectionPanel = ({
                       : (item.pricing_method ? item.pricing_method.replace(/_/g, ' ') : 'Per metre')}
                   </span>
                 </div>
-                {item.quantity !== undefined && item.quantity > 0 && (
-                  <Badge variant="secondary" className="text-[9px] px-1 py-0 h-3.5">
-                    {item.quantity} {units.fabric || 'm'}
+                {/* Stock indicator with color coding */}
+                {item.quantity !== undefined && (
+                  <Badge 
+                    variant={item.quantity <= 0 ? "destructive" : item.quantity < 10 ? "outline" : "secondary"}
+                    className={cn(
+                      "text-[9px] px-1.5 py-0 h-4 shrink-0",
+                      item.quantity <= 0 && "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+                      item.quantity > 0 && item.quantity < 10 && "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 border-amber-300",
+                      item.quantity >= 10 && "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                    )}
+                  >
+                    {item.quantity <= 0 ? 'Out' : `${item.quantity} ${units.fabric || 'm'}`}
                   </Badge>
                 )}
               </div>

@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Filter, X, ChevronDown, ChevronUp, DollarSign, Palette } from "lucide-react";
-import { useVendors } from "@/hooks/useVendors";
+import { Filter, X, ChevronDown, ChevronUp, DollarSign, Palette, Building2 } from "lucide-react";
 import { useCollections, useCollectionsByVendor } from "@/hooks/useCollections";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,6 +9,7 @@ import { useInventoryTags, useInventoryLocations, useInventoryColors } from "@/h
 import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 import { colorNameToHex } from "@/utils/colorNameToHex";
+import { useUnifiedSuppliers } from "@/hooks/useUnifiedSuppliers";
 
 interface FilterButtonProps {
   selectedVendor?: string;
@@ -46,7 +46,8 @@ export const FilterButton = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   
-  const { data: vendors } = useVendors();
+  // Use unified suppliers hook (combines vendor_id and supplier text fields)
+  const { suppliers: unifiedSuppliers, isLoading: suppliersLoading } = useUnifiedSuppliers();
   const { data: allCollections } = useCollections();
   const { data: vendorCollections } = useCollectionsByVendor(selectedVendor);
   
@@ -171,21 +172,33 @@ export const FilterButton = ({
           </div>
 
           <div className="space-y-4">
-            {/* Vendor Filter */}
+            {/* Supplier/Vendor Filter (Unified) */}
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Vendor</label>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                <Building2 className="h-3 w-3" />
+                Supplier
+              </label>
               <Select
                 value={selectedVendor || "all"}
                 onValueChange={(val) => onVendorChange(val === "all" ? undefined : val)}
+                disabled={suppliersLoading}
               >
                 <SelectTrigger className="w-full h-9">
-                  <SelectValue placeholder="All Vendors" />
+                  <SelectValue placeholder="All Suppliers" />
                 </SelectTrigger>
                 <SelectContent className="z-[10002]">
-                  <SelectItem value="all">All Vendors</SelectItem>
-                  {vendors?.map((vendor) => (
-                    <SelectItem key={vendor.id} value={vendor.id}>
-                      {vendor.name}
+                  <SelectItem value="all">All Suppliers</SelectItem>
+                  {unifiedSuppliers.filter(s => s.itemCount > 0).map((supplier) => (
+                    <SelectItem key={supplier.id} value={supplier.id}>
+                      <div className="flex items-center gap-2 w-full">
+                        <span className="flex-1">{supplier.name}</span>
+                        {supplier.type === 'supplier_text' && (
+                          <span className="text-amber-500 text-[10px]" title="Not linked to vendor">⚠</span>
+                        )}
+                        <Badge variant="secondary" className="text-[10px] ml-1 shrink-0">
+                          {supplier.itemCount}
+                        </Badge>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>

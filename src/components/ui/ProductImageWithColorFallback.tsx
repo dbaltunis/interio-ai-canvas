@@ -44,20 +44,50 @@ const generateProductGradient = (name: string): { background: string; textColor:
 
 /**
  * Get initials from product name (1-2 characters)
+ * Handles numeric SKU-style names like "1020-24" properly
  */
 const getProductInitials = (name: string): string => {
   if (!name) return '?';
   
-  // Split by common delimiters
-  const words = name.split(/[\s\-_\/]+/).filter(w => w.length > 0);
+  const trimmed = name.trim();
+  
+  // For SKU-style names like "1020-24", "ABC-123", show the last segment
+  if (/^[\w\d]+[-\/][\w\d]+$/.test(trimmed)) {
+    const parts = trimmed.split(/[-\/]/);
+    const lastPart = parts[parts.length - 1];
+    // If last part is very long, take first 2 chars of it
+    return lastPart.length > 2 ? lastPart.substring(0, 2).toUpperCase() : lastPart.toUpperCase();
+  }
+  
+  // For names that are mostly numeric (e.g., "12345"), show last 2 chars
+  if (/^\d+$/.test(trimmed)) {
+    return trimmed.slice(-2);
+  }
+  
+  // For mixed alphanumeric starting with number (e.g., "1020Blue"), extract letters
+  if (/^\d+[A-Za-z]/.test(trimmed)) {
+    const letters = trimmed.replace(/[^A-Za-z]/g, '');
+    if (letters.length >= 2) {
+      return letters.substring(0, 2).toUpperCase();
+    }
+    // Fallback to last 2 chars
+    return trimmed.slice(-2).toUpperCase();
+  }
+  
+  // Split by common delimiters for regular names
+  const words = trimmed.split(/[\s\-_\/]+/).filter(w => w.length > 0 && /[A-Za-z]/.test(w));
   
   if (words.length >= 2) {
-    // Take first letter of first two significant words
+    // Take first letter of first two significant words (that have letters)
     return (words[0][0] + words[1][0]).toUpperCase();
   }
   
-  // Single word: take first 2 characters
-  return name.substring(0, 2).toUpperCase();
+  if (words.length === 1 && words[0].length >= 2) {
+    return words[0].substring(0, 2).toUpperCase();
+  }
+  
+  // Last resort: first 2 characters of original
+  return trimmed.substring(0, 2).toUpperCase();
 };
 
 /**
