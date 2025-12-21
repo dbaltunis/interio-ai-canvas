@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-import { Mail, Phone, User, Building2, MoreHorizontal, Star, Clock, FileText, Trash2, Calendar } from "lucide-react";
+import { Mail, Phone, User, Building2, MoreHorizontal, Star, Clock, FileText, Trash2, Calendar, FolderKanban } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow, isPast } from "date-fns";
@@ -167,12 +167,13 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <Table>
+             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-border/50">
                   <TableHead className="text-muted-foreground font-medium w-16">#</TableHead>
                   <TableHead className="text-muted-foreground font-medium">Client</TableHead>
                   <TableHead className="text-muted-foreground font-medium">Stage</TableHead>
+                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Projects</TableHead>}
                   {!isTablet && <TableHead className="text-muted-foreground font-medium">Total Value</TableHead>}
                   {!isTablet && <TableHead className="text-muted-foreground font-medium">Last Activity</TableHead>}
                   {!isTablet && <TableHead className="text-muted-foreground font-medium">Documents</TableHead>}
@@ -230,6 +231,15 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                         {(client.funnel_stage || 'lead').replace('_', ' ').toUpperCase()}
                       </Badge>
                     </TableCell>
+                    
+                    {!isTablet && (
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs flex items-center gap-1 w-fit">
+                          <FolderKanban className="h-3 w-3" />
+                          {client.projectCount || 0}
+                        </Badge>
+                      </TableCell>
+                    )}
                     
                     {!isTablet && (
                       <TableCell>

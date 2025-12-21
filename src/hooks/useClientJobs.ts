@@ -10,7 +10,7 @@ export const useClientStats = () => {
     queryFn: async () => {
       if (!effectiveOwnerId) return [];
 
-      // Get all clients with their associated projects and quotes
+      // Get all clients with their associated projects
       const { data: clients, error } = await supabase
         .from("clients")
         .select(`
@@ -21,12 +21,12 @@ export const useClientStats = () => {
           projects (
             id,
             name,
-            status
-          ),
-          quotes (
-            id,
-            total_amount,
-            status
+            status,
+            quotes (
+              id,
+              total_amount,
+              status
+            )
           )
         `)
         .eq("user_id", effectiveOwnerId);
@@ -36,18 +36,23 @@ export const useClientStats = () => {
       // Calculate stats for each client
       const clientStats = clients?.map(client => {
         const projectCount = client.projects?.length || 0;
-        const quotes = client.quotes || [];
+        
+        // Get all quotes from all projects for this client
+        const allQuotes = client.projects?.flatMap(project => project.quotes || []) || [];
         
         const quotesData = {
-          draft: quotes.filter(q => q.status === 'draft').length,
-          sent: quotes.filter(q => q.status === 'sent').length,
-          accepted: quotes.filter(q => q.status === 'accepted').length,
-          total: quotes.length
+          draft: allQuotes.filter(q => q.status === 'draft').length,
+          sent: allQuotes.filter(q => q.status === 'sent').length,
+          accepted: allQuotes.filter(q => q.status === 'accepted').length,
+          total: allQuotes.length
         };
         
-        const totalValue = quotes.reduce((sum, quote) => {
-          return sum + (parseFloat(quote.total_amount?.toString() || '0'));
-        }, 0) || 0;
+        // Calculate total value from accepted quotes only (portfolio value)
+        const totalValue = allQuotes
+          .filter(q => q.status === 'accepted')
+          .reduce((sum, quote) => {
+            return sum + (parseFloat(quote.total_amount?.toString() || '0'));
+          }, 0) || 0;
 
         return {
           clientId: client.id,
