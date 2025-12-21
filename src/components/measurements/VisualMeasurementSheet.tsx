@@ -1325,9 +1325,15 @@ export const VisualMeasurementSheet = ({
                     selectedEyeletRing={measurements.selected_eyelet_ring} 
                     onEyeletRingChange={ringId => onMeasurementChange('selected_eyelet_ring', ringId)} 
                     selectedHeading={selectedHeading}
-                    onHeadingChange={headingId => onMeasurementChange('selected_heading', headingId)}
+                    onHeadingChange={headingId => {
+                      onMeasurementChange('selected_heading', headingId);
+                      if (onHeadingChange) onHeadingChange(headingId);
+                    }}
                     selectedLining={selectedLining}
-                    onLiningChange={liningType => onMeasurementChange('selected_lining', liningType)}
+                    onLiningChange={liningType => {
+                      onMeasurementChange('selected_lining', liningType);
+                      if (onLiningChange) onLiningChange(liningType);
+                    }}
                     onOptionPriceChange={(optionType, price, name) => {
                       console.log(`Option ${optionType} changed: ${name} - ${price}`);
                     }}
