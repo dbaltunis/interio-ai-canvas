@@ -33,7 +33,8 @@ import { InventoryQuickView } from "./InventoryQuickView";
 import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
-import { InventorySupplierFilter, matchesSupplierFilter } from "./InventorySupplierFilter";
+import { InventorySupplierFilter } from "./InventorySupplierFilter";
+import { matchesUnifiedSupplier } from "@/hooks/useUnifiedSuppliers";
 import { useVendors } from "@/hooks/useVendors";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { InventoryMobileCard } from "./InventoryMobileCard";
@@ -130,7 +131,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
       item.subcategory === activeCategory;
 
     // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
-    const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
+    const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
     const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
     const matchesLocation = !selectedStorageLocation || item.location === selectedStorageLocation;
     
