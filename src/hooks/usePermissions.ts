@@ -68,7 +68,16 @@ export const useUserPermissions = () => {
 export const useHasPermission = (permission: string) => {
   const { data: permissions, isLoading } = useUserPermissions();
   
-  if (isLoading || permissions === undefined) return undefined;
+  // CRITICAL: Return undefined during loading to prevent UI from hiding
+  // Components should show content when permission is undefined (loading)
+  if (isLoading) {
+    return undefined;
+  }
+  
+  // No data yet - still loading
+  if (permissions === undefined) {
+    return undefined;
+  }
   
   // Check for permission aliases (backward compatibility)
   // If checking for old name like 'view_jobs', also check for new names like 'view_all_jobs'
@@ -77,9 +86,12 @@ export const useHasPermission = (permission: string) => {
     ? [permission, ...aliasedPermissions] 
     : [permission];
   
-  return permissionsToCheck.some(p => 
-    permissions?.some(userPerm => userPerm.permission_name === p)
-  ) || false;
+  // Now we have actual permissions data - return true/false
+  const hasPermission = permissionsToCheck.some(p => 
+    permissions.some(userPerm => userPerm.permission_name === p)
+  );
+  
+  return hasPermission;
 };
 
 export const useHasAnyPermission = (permissionList: string[]) => {

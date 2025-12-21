@@ -45,13 +45,15 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   const { data: queueCount } = useMaterialQueueCount();
   
   // Permission checks - these return undefined while loading
-  const canViewDashboard = useHasPermission('view_dashboard');
   const canViewJobs = useHasPermission('view_jobs');
   const canViewClients = useHasPermission('view_clients');
   const canViewCalendar = useHasPermission('view_calendar');
   
-  // Check if permissions are still loading
-  const permissionsLoading = canViewJobs === undefined;
+  // Check if ANY permission is still loading (undefined)
+  // Only show skeleton when truly loading, not when permissions are determined
+  const permissionsLoading = canViewJobs === undefined || 
+                             canViewClients === undefined || 
+                             canViewCalendar === undefined;
   
   // Check if user actually has an online store (not just permission)
   const { data: hasOnlineStore } = useQuery({
