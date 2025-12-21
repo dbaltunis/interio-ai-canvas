@@ -74,3 +74,40 @@ export const useInventoryLocations = () => {
     placeholderData: (previousData) => previousData ?? [],
   });
 };
+
+/**
+ * Lightweight hook to fetch unique colors from inventory
+ */
+export const useInventoryColors = () => {
+  return useQuery({
+    queryKey: ["inventory-colors"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      // Only fetch color column for performance
+      const { data, error } = await supabase
+        .from("enhanced_inventory_items")
+        .select("color")
+        .eq("active", true)
+        .not("color", "is", null);
+
+      if (error) throw error;
+
+      // Extract unique colors
+      const colorsSet = new Set<string>();
+      (data || []).forEach(item => {
+        if (item.color && item.color.trim()) {
+          colorsSet.add(item.color.trim());
+        }
+      });
+
+      return Array.from(colorsSet).sort();
+    },
+    staleTime: 300000,
+    gcTime: 600000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    placeholderData: (previousData) => previousData ?? [],
+  });
+};
