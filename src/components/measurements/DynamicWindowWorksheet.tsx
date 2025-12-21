@@ -119,7 +119,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
   }>({});
   const [activeTab, setActiveTab] = useState("window-type");
   const [fabricCalculation, setFabricCalculation] = useState<any>(null);
-  const [selectedHeading, setSelectedHeading] = useState("standard");
+  const [selectedHeading, setSelectedHeading] = useState("none");
   const [selectedLining, setSelectedLining] = useState("none");
   const [selectedOptions, setSelectedOptions] = useState<Array<{ name: string; price: number; pricingMethod?: string; pricingGridData?: any; optionKey?: string }>>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -527,9 +527,12 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           setSelectedItems(restoredItems);
         }
         
-        // Restore heading and lining
+        // Restore heading and lining - normalize 'standard' to 'none' for dropdown compatibility
         if (existingWindowSummary.selected_heading_id) {
-          setSelectedHeading(existingWindowSummary.selected_heading_id);
+          const normalizedHeading = existingWindowSummary.selected_heading_id === 'standard' 
+            ? 'none' 
+            : existingWindowSummary.selected_heading_id;
+          setSelectedHeading(normalizedHeading);
         }
         if (existingWindowSummary.selected_lining_type) {
           setSelectedLining(existingWindowSummary.selected_lining_type);
