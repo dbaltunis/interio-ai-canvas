@@ -37,10 +37,10 @@ export const ProjectTabContent = ({
   const { user } = useAuth();
   const client = clients?.find(c => c.id === project.client_id);
   
-  // Permission checks
+  // Permission checks - use correct permission names
   const canEditAllJobs = useHasPermission('edit_all_jobs');
-  const canEditOwnJobs = useHasPermission('edit_own_jobs');
-  const canEditJob = canEditAllJobs || (canEditOwnJobs && project?.user_id === user?.id);
+  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
+  const canEditJob = canEditAllJobs || (canEditAssignedJobs && project?.user_id === user?.id);
   const isReadOnly = !canEditJob;
 
   const handleClientSelect = async (clientId: string) => {

@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMarkupSettings } from "@/hooks/useMarkupSettings";
 import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 // Lazy load heavy components - use direct import for now to avoid build issues
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
@@ -52,9 +53,16 @@ export function WindowSummaryCard({
   treatmentLabel,
   treatmentType: propTreatmentType
 }: WindowSummaryCardProps) {
-  // TEMPORARY: Always allow editing to bypass permissions issue
-  const canEditJobs = true; // useHasPermission('edit_all_jobs') || useHasPermission('edit_own_jobs');
-  const canDeleteJobs = true; // useHasPermission('delete_jobs');
+  // Permission checks - use correct permission names
+  const editAllJobs = useHasPermission('edit_all_jobs');
+  const editAssignedJobs = useHasPermission('edit_assigned_jobs');
+  const deleteJobsPerm = useHasPermission('delete_jobs');
+  
+  // Default to true during loading for better UX (RLS will enforce permissions anyway)
+  const canEditJobs = editAllJobs === undefined && editAssignedJobs === undefined 
+    ? true 
+    : (editAllJobs || editAssignedJobs);
+  const canDeleteJobs = deleteJobsPerm === undefined ? true : deleteJobsPerm;
   
   // Add defensive check for surface data
   if (!surface || !surface.id) {
