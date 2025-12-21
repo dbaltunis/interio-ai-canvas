@@ -4,20 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Settings, Mail, Key, Bell, Shield, Check, X, AlertTriangle, Loader2 } from "lucide-react";
+import { Mail, Check, Loader2 } from "lucide-react";
 import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettings";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { useState, useEffect } from "react";
-import { EmailSetupStatusCard } from "@/components/email-setup/EmailSetupStatusCard";
 import { TestEmailButton } from "@/components/email-setup/TestEmailButton";
-import { EmailSetupWizard } from "@/components/email-setup/EmailSetupWizard";
 import { useToast } from "@/hooks/use-toast";
 
 export const EmailSettings = () => {
-  const [wizardOpen, setWizardOpen] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const { data: emailSettings } = useEmailSettings();
   const { hasSendGridIntegration, integrationData } = useIntegrationStatus();
@@ -123,84 +118,8 @@ export const EmailSettings = () => {
 
   return (
     <div className="space-y-6">
-      {/* Setup Progress Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Email Settings Card */}
-        <Card className={emailSettings ? "border-green-200 bg-green-50/50" : "border-blue-200 bg-blue-50/50"}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {emailSettings ? (
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <Check className="h-5 w-5 text-green-600" />
-                  </div>
-                ) : (
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <AlertTriangle className="h-5 w-5 text-blue-600" />
-                  </div>
-                )}
-                <div>
-                  <h3 className="font-semibold text-sm">Email Settings</h3>
-                  <p className="text-xs text-muted-foreground">Configure sender name, email, and signature</p>
-                </div>
-              </div>
-              <Badge variant={emailSettings ? "default" : "secondary"} className={emailSettings ? "bg-green-100 text-green-800 border-green-200" : ""}>
-                {emailSettings ? "Complete" : "Pending"}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* SendGrid Premium Card */}
-        <Card className="border-border bg-background">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
-                <Mail className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-sm">Custom Domain (Optional Premium)</h3>
-                <p className="text-xs text-muted-foreground">Use your own SendGrid for custom branding and unlimited sending. Configure in Settings → Integrations.</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Start Setup Wizard / Manual Setup Toggle */}
-      {!emailSettings && (
-        <div className="flex gap-3">
-          <Button 
-            className="flex-1 bg-primary text-white hover:bg-primary/90"
-            size="lg"
-            onClick={() => setWizardOpen(true)}
-          >
-            <Mail className="h-4 w-4 mr-2" />
-            Start Setup Wizard
-          </Button>
-          <Button 
-            variant="outline"
-            size="lg"
-            onClick={() => {
-              // Scroll to sender form
-              document.getElementById('sender-form')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            Manual Setup
-          </Button>
-        </div>
-      )}
-
-      {/* Email Setup Wizard Dialog */}
-      <EmailSetupWizard 
-        open={wizardOpen} 
-        onOpenChange={setWizardOpen}
-        onComplete={() => setWizardOpen(false)}
-      />
-
-      {/* Sender Information - Primary Focus */}
-      <Card id="sender-form">
+      {/* Sender Information - Clean, focused form */}
+      <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
@@ -337,89 +256,11 @@ export const EmailSettings = () => {
         </CardContent>
       </Card>
 
-      {/* Optional: Advanced Settings - Collapsed by default */}
-      {emailSettings && (
-        <details className="group">
-          <summary className="cursor-pointer list-none">
-            <Card className="transition-colors hover:border-primary/50">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Settings className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <h3 className="font-semibold text-sm">Advanced Settings</h3>
-                      <p className="text-xs text-muted-foreground">Notification preferences, security, and compliance options</p>
-                    </div>
-                  </div>
-                  <Badge variant="secondary" className="text-xs">
-                    Optional
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </summary>
-          
-          <div className="mt-4 space-y-4">
-            {/* Notification Preferences */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Bell className="h-4 w-4" />
-                  Notification Preferences
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm">Email delivery notifications</p>
-                    <p className="text-xs text-muted-foreground">Get notified when emails are delivered</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm">Email open notifications</p>
-                    <p className="text-xs text-muted-foreground">Get notified when emails are opened</p>
-                  </div>
-                  <Switch />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm">Bounce notifications</p>
-                    <p className="text-xs text-muted-foreground">Get notified when emails bounce</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Security Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Shield className="h-4 w-4" />
-                  Security & Compliance
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm">Track email opens</p>
-                    <p className="text-xs text-muted-foreground">Add tracking pixels to emails</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm">Track link clicks</p>
-                    <p className="text-xs text-muted-foreground">Track when links in emails are clicked</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </details>
+      {/* Info about custom domain */}
+      {!hasSendGridIntegration && (
+        <p className="text-sm text-muted-foreground">
+          Want to send from your own domain? Configure SendGrid in Settings → Integrations.
+        </p>
       )}
     </div>
   );
