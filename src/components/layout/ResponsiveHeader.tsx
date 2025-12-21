@@ -59,8 +59,12 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   const canViewCalendar = useHasPermission('view_calendar');
   const canViewInventory = useHasPermission('view_inventory');
   
-  // Check if permissions are still loading
-  const permissionsLoading = canViewJobs === undefined;
+  // Check if ANY permission is still loading (undefined)
+  // Only show skeleton when truly loading, not when permissions are determined
+  const permissionsLoading = canViewJobs === undefined || 
+                             canViewClients === undefined || 
+                             canViewCalendar === undefined || 
+                             canViewInventory === undefined;
   
   // Check if user has InteriorApp store AND NOT using Shopify
   const { data: hasOnlineStore } = useQuery({
