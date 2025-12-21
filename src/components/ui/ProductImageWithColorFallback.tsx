@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { colorNameToHex, getContrastingTextColor, generateColorGradient } from '@/utils/colorNameToHex';
 import { cn } from '@/lib/utils';
+import { Scissors, Package, Settings, Wrench } from 'lucide-react';
 
 interface ProductImageWithColorFallbackProps {
   imageUrl?: string | null;
   color?: string | null;
   productName?: string;
+  supplierName?: string;
   size?: number;
   className?: string;
   showColorName?: boolean;
@@ -15,91 +17,78 @@ interface ProductImageWithColorFallbackProps {
 }
 
 /**
- * Generate a consistent gradient based on product name
- * Each product gets a unique but consistent color scheme
+ * Generate a consistent, muted color based on supplier name
+ * Each supplier gets a unique but consistent subtle color
  */
-const generateProductGradient = (name: string): { background: string; textColor: string } => {
-  // Generate a hash from the name for consistent colors
+const generateSupplierColor = (supplierName: string): { background: string; textColor: string } => {
+  if (!supplierName) {
+    return {
+      background: 'hsl(var(--muted))',
+      textColor: 'hsl(var(--muted-foreground))'
+    };
+  }
+
+  // Generate a hash from the supplier name
   let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    const char = name.charCodeAt(i);
+  for (let i = 0; i < supplierName.length; i++) {
+    const char = supplierName.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
+    hash = hash & hash;
   }
   
-  // Use hash to generate hue (0-360)
+  // Use hash to generate a muted, professional hue
   const hue = Math.abs(hash) % 360;
-  // Use secondary hash for saturation variation
-  const saturation = 45 + (Math.abs(hash >> 8) % 25); // 45-70%
-  const lightness = 75 + (Math.abs(hash >> 16) % 15); // 75-90%
-  
-  const baseColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-  const darkerColor = `hsl(${hue}, ${saturation + 10}%, ${lightness - 15}%)`;
+  // Keep saturation low for professional look
+  const saturation = 20 + (Math.abs(hash >> 8) % 15); // 20-35%
+  const lightness = 88 + (Math.abs(hash >> 16) % 8); // 88-96% (very light)
   
   return {
-    background: `linear-gradient(135deg, ${baseColor} 0%, ${darkerColor} 100%)`,
-    textColor: lightness > 70 ? 'hsl(var(--foreground))' : 'hsl(var(--background))'
+    background: `hsl(${hue}, ${saturation}%, ${lightness}%)`,
+    textColor: `hsl(${hue}, ${saturation + 20}%, 35%)`
   };
 };
 
 /**
- * Get initials from product name (1-2 characters)
- * Handles numeric SKU-style names like "1020-24" properly
+ * Get the appropriate icon component based on category
  */
-const getProductInitials = (name: string): string => {
-  if (!name) return '?';
+const getCategoryIcon = (category: string, size: number) => {
+  const iconSize = size >= 64 ? 24 : size >= 40 ? 18 : 14;
+  const iconProps = { size: iconSize, strokeWidth: 1.5 };
   
-  const trimmed = name.trim();
-  
-  // For SKU-style names like "1020-24", "ABC-123", show the last segment
-  if (/^[\w\d]+[-\/][\w\d]+$/.test(trimmed)) {
-    const parts = trimmed.split(/[-\/]/);
-    const lastPart = parts[parts.length - 1];
-    // If last part is very long, take first 2 chars of it
-    return lastPart.length > 2 ? lastPart.substring(0, 2).toUpperCase() : lastPart.toUpperCase();
+  switch (category) {
+    case 'fabric':
+      return <Scissors {...iconProps} />;
+    case 'material':
+      return <Package {...iconProps} />;
+    case 'hardware':
+      return <Settings {...iconProps} />;
+    case 'service':
+      return <Wrench {...iconProps} />;
+    default:
+      return <Scissors {...iconProps} />;
   }
-  
-  // For names that are mostly numeric (e.g., "12345"), show last 2 chars
-  if (/^\d+$/.test(trimmed)) {
-    return trimmed.slice(-2);
-  }
-  
-  // For mixed alphanumeric starting with number (e.g., "1020Blue"), extract letters
-  if (/^\d+[A-Za-z]/.test(trimmed)) {
-    const letters = trimmed.replace(/[^A-Za-z]/g, '');
-    if (letters.length >= 2) {
-      return letters.substring(0, 2).toUpperCase();
-    }
-    // Fallback to last 2 chars
-    return trimmed.slice(-2).toUpperCase();
-  }
-  
-  // Split by common delimiters for regular names
-  const words = trimmed.split(/[\s\-_\/]+/).filter(w => w.length > 0 && /[A-Za-z]/.test(w));
-  
-  if (words.length >= 2) {
-    // Take first letter of first two significant words (that have letters)
-    return (words[0][0] + words[1][0]).toUpperCase();
-  }
-  
-  if (words.length === 1 && words[0].length >= 2) {
-    return words[0].substring(0, 2).toUpperCase();
-  }
-  
-  // Last resort: first 2 characters of original
-  return trimmed.substring(0, 2).toUpperCase();
+};
+
+/**
+ * Get abbreviated supplier name for display
+ */
+const getSupplierAbbreviation = (supplierName: string, maxLength: number = 8): string => {
+  if (!supplierName) return '';
+  const name = supplierName.trim().toUpperCase();
+  return name.length > maxLength ? name.substring(0, maxLength) : name;
 };
 
 /**
  * Universal product image component with intelligent fallback:
  * 1. Try to load image from imageUrl
  * 2. If no image or load fails → display color swatch from color field
- * 3. If no color → show product initials on gradient background
+ * 3. If no color → show category icon with supplier name on muted background
  */
 export const ProductImageWithColorFallback: React.FC<ProductImageWithColorFallbackProps> = ({
   imageUrl,
   color,
   productName = 'Product',
+  supplierName = '',
   size = 48,
   className = '',
   showColorName = false,
@@ -115,9 +104,9 @@ export const ProductImageWithColorFallback: React.FC<ProductImageWithColorFallba
   const hasValidImage = !!imageUrl && !imageError;
   const textColor = getContrastingTextColor(hexColor);
 
-  // Generate consistent gradient for this product
-  const productGradient = useMemo(() => generateProductGradient(productName), [productName]);
-  const initials = useMemo(() => getProductInitials(productName), [productName]);
+  // Generate consistent color based on supplier name
+  const supplierColor = useMemo(() => generateSupplierColor(supplierName), [supplierName]);
+  const supplierAbbrev = useMemo(() => getSupplierAbbreviation(supplierName, size >= 64 ? 10 : 6), [supplierName, size]);
 
   const roundedClasses = {
     none: 'rounded-none',
@@ -131,9 +120,6 @@ export const ProductImageWithColorFallback: React.FC<ProductImageWithColorFallba
   const containerStyle: React.CSSProperties = fillContainer
     ? { width: '100%', height: '100%' }
     : { width: size, height: size, minWidth: size, minHeight: size };
-
-  // Calculate font size based on container size
-  const fontSize = fillContainer ? 'text-lg' : size >= 64 ? 'text-base' : size >= 40 ? 'text-sm' : 'text-xs';
 
   // Render image if available and not errored
   if (hasValidImage) {
@@ -210,26 +196,34 @@ export const ProductImageWithColorFallback: React.FC<ProductImageWithColorFallba
     );
   }
 
-  // Fallback: Product initials on gradient background
+  // Fallback: Category icon with supplier name on supplier-colored background
   return (
     <div
       className={cn(
-        'flex items-center justify-center border border-border/50 select-none',
+        'flex flex-col items-center justify-center border border-border/50 select-none gap-0.5 p-1',
         roundedClasses[rounded],
         className
       )}
       style={{
         ...containerStyle,
-        background: productGradient.background,
+        background: supplierColor.background,
       }}
-      title={productName}
+      title={supplierName ? `${productName} - ${supplierName}` : productName}
     >
-      <span 
-        className={cn('font-semibold tracking-tight', fontSize)}
-        style={{ color: productGradient.textColor }}
-      >
-        {initials}
-      </span>
+      {/* Category icon */}
+      <div style={{ color: supplierColor.textColor }} className="opacity-70">
+        {getCategoryIcon(category, size)}
+      </div>
+      
+      {/* Supplier name abbreviation */}
+      {supplierAbbrev && size >= 40 && (
+        <span 
+          className="text-[9px] font-medium tracking-tight leading-none truncate max-w-full px-0.5"
+          style={{ color: supplierColor.textColor }}
+        >
+          {supplierAbbrev}
+        </span>
+      )}
     </div>
   );
 };
