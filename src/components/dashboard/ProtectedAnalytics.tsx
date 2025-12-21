@@ -9,12 +9,9 @@ interface ProtectedAnalyticsProps {
 export const ProtectedAnalytics = ({ children, fallback }: ProtectedAnalyticsProps) => {
   const canViewAnalytics = useHasPermission('view_analytics');
 
-  // Show nothing while loading permissions
-  if (canViewAnalytics === undefined) {
-    return null;
-  }
-
-  if (!canViewAnalytics) {
+  // Show content during loading (undefined) to prevent UI flicker
+  // Only hide if explicitly denied (false)
+  if (canViewAnalytics === false) {
     return fallback || (
       <div className="bg-muted/50 rounded-lg p-6 text-center">
         <h3 className="text-lg font-semibold mb-2">Analytics Access Required</h3>

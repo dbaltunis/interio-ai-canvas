@@ -78,17 +78,19 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   });
   
   // Filter nav items based on permissions
+  // During loading (undefined), show items to prevent disappearing UI
   const visibleNavItems = navItems.filter(item => {
     if (!item.permission) return true;
     
     // Dashboard/Home should always be visible for authenticated users
     if (item.permission === 'view_dashboard') return true;
-    if (item.permission === 'view_jobs') return canViewJobs === true;
-    if (item.permission === 'view_clients') return canViewClients === true;
-    if (item.permission === 'view_calendar') return canViewCalendar === true;
+    // Only hide if explicitly false, not undefined (loading)
+    if (item.permission === 'view_jobs') return canViewJobs !== false;
+    if (item.permission === 'view_clients') return canViewClients !== false;
+    if (item.permission === 'view_calendar') return canViewCalendar !== false;
     if (item.permission === 'has_online_store') return hasOnlineStore === true;
     
-    return false;
+    return true; // Default to showing during loading
   });
   
   const otherActiveUsers = activeUsers.filter(user => user.user_id !== currentUser?.user_id && user.status === 'online');

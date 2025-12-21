@@ -30,7 +30,17 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
   const { units } = useMeasurementUnits();
   const currency = units.currency || 'USD';
 
-  if (!canViewProjects) {
+  // Handle permission loading state
+  if (canViewProjects === undefined) {
+    return (
+      <div className="animate-fade-in flex items-center justify-center p-8">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <span className="ml-2 text-muted-foreground">Loading projects...</span>
+      </div>
+    );
+  }
+
+  if (canViewProjects === false) {
     return (
       <div className="bg-muted/50 rounded-lg p-6 text-center">
         <h3 className="text-lg font-semibold mb-2">Projects Access Required</h3>
