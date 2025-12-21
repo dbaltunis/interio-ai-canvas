@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { Package, Palette, Layers } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
 import { colorNameToHex, getContrastingTextColor, generateColorGradient } from '@/utils/colorNameToHex';
 import { cn } from '@/lib/utils';
 
@@ -12,14 +11,60 @@ interface ProductImageWithColorFallbackProps {
   showColorName?: boolean;
   category?: 'fabric' | 'material' | 'hardware' | 'service' | string;
   rounded?: 'none' | 'sm' | 'md' | 'lg' | 'full';
-  fillContainer?: boolean; // When true, fills parent container instead of using fixed size
+  fillContainer?: boolean;
 }
+
+/**
+ * Generate a consistent gradient based on product name
+ * Each product gets a unique but consistent color scheme
+ */
+const generateProductGradient = (name: string): { background: string; textColor: string } => {
+  // Generate a hash from the name for consistent colors
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    const char = name.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  
+  // Use hash to generate hue (0-360)
+  const hue = Math.abs(hash) % 360;
+  // Use secondary hash for saturation variation
+  const saturation = 45 + (Math.abs(hash >> 8) % 25); // 45-70%
+  const lightness = 75 + (Math.abs(hash >> 16) % 15); // 75-90%
+  
+  const baseColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  const darkerColor = `hsl(${hue}, ${saturation + 10}%, ${lightness - 15}%)`;
+  
+  return {
+    background: `linear-gradient(135deg, ${baseColor} 0%, ${darkerColor} 100%)`,
+    textColor: lightness > 70 ? 'hsl(var(--foreground))' : 'hsl(var(--background))'
+  };
+};
+
+/**
+ * Get initials from product name (1-2 characters)
+ */
+const getProductInitials = (name: string): string => {
+  if (!name) return '?';
+  
+  // Split by common delimiters
+  const words = name.split(/[\s\-_\/]+/).filter(w => w.length > 0);
+  
+  if (words.length >= 2) {
+    // Take first letter of first two significant words
+    return (words[0][0] + words[1][0]).toUpperCase();
+  }
+  
+  // Single word: take first 2 characters
+  return name.substring(0, 2).toUpperCase();
+};
 
 /**
  * Universal product image component with intelligent fallback:
  * 1. Try to load image from imageUrl
  * 2. If no image or load fails → display color swatch from color field
- * 3. If no color → show category-appropriate icon with styled background
+ * 3. If no color → show product initials on gradient background
  */
 export const ProductImageWithColorFallback: React.FC<ProductImageWithColorFallbackProps> = ({
   imageUrl,
@@ -40,25 +85,9 @@ export const ProductImageWithColorFallback: React.FC<ProductImageWithColorFallba
   const hasValidImage = !!imageUrl && !imageError;
   const textColor = getContrastingTextColor(hexColor);
 
-  const getCategoryIcon = () => {
-    const iconSize = fillContainer ? 24 : Math.max(16, size * 0.4);
-    const iconProps = { size: iconSize, className: 'text-muted-foreground' };
-    
-    switch (category?.toLowerCase()) {
-      case 'fabric':
-      case 'fabrics':
-        return <Layers {...iconProps} />;
-      case 'material':
-      case 'materials':
-      case 'slat':
-      case 'slats':
-      case 'vane':
-      case 'vanes':
-        return <Palette {...iconProps} />;
-      default:
-        return <Package {...iconProps} />;
-    }
-  };
+  // Generate consistent gradient for this product
+  const productGradient = useMemo(() => generateProductGradient(productName), [productName]);
+  const initials = useMemo(() => getProductInitials(productName), [productName]);
 
   const roundedClasses = {
     none: 'rounded-none',
@@ -72,6 +101,9 @@ export const ProductImageWithColorFallback: React.FC<ProductImageWithColorFallba
   const containerStyle: React.CSSProperties = fillContainer
     ? { width: '100%', height: '100%' }
     : { width: size, height: size, minWidth: size, minHeight: size };
+
+  // Calculate font size based on container size
+  const fontSize = fillContainer ? 'text-lg' : size >= 64 ? 'text-base' : size >= 40 ? 'text-sm' : 'text-xs';
 
   // Render image if available and not errored
   if (hasValidImage) {
@@ -148,17 +180,26 @@ export const ProductImageWithColorFallback: React.FC<ProductImageWithColorFallba
     );
   }
 
-  // Fallback: category icon with styled background
+  // Fallback: Product initials on gradient background
   return (
     <div
       className={cn(
-        'flex items-center justify-center border border-border bg-muted',
+        'flex items-center justify-center border border-border/50 select-none',
         roundedClasses[rounded],
         className
       )}
-      style={containerStyle}
+      style={{
+        ...containerStyle,
+        background: productGradient.background,
+      }}
+      title={productName}
     >
-      {getCategoryIcon()}
+      <span 
+        className={cn('font-semibold tracking-tight', fontSize)}
+        style={{ color: productGradient.textColor }}
+      >
+        {initials}
+      </span>
     </div>
   );
 };
