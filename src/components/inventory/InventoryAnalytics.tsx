@@ -40,20 +40,26 @@ export const InventoryAnalytics = () => {
   }, {} as Record<string, { total: number; value: number; lowStock: number; outOfStock: number }>);
 
   // Prepare chart data from real inventory
-  const stockLevelData = categoryStats ? Object.entries(categoryStats).map(([category, stats]) => ({
-    category,
-    inStock: stats.total - stats.lowStock - stats.outOfStock,
-    lowStock: stats.lowStock - stats.outOfStock,
-    outOfStock: stats.outOfStock
-  })) : [];
+  const stockLevelData = categoryStats ? Object.entries(categoryStats).map(([category, statsValue]) => {
+    const stats = statsValue as { total: number; value: number; lowStock: number; outOfStock: number };
+    return {
+      category,
+      inStock: stats.total - stats.lowStock - stats.outOfStock,
+      lowStock: stats.lowStock - stats.outOfStock,
+      outOfStock: stats.outOfStock
+    };
+  }) : [];
 
   const categoryValueData = categoryStats ? Object.entries(categoryStats)
-    .filter(([_, stats]) => stats.value > 0)
-    .map(([category, stats], index) => ({
-      name: category,
-      value: Math.round(stats.value),
-      color: `hsl(${(index * 60) % 360}, 70%, 50%)`
-    })) : [];
+    .filter(([_, statsValue]) => (statsValue as { value: number }).value > 0)
+    .map(([category, statsValue], index) => {
+      const stats = statsValue as { value: number };
+      return {
+        name: category,
+        value: Math.round(stats.value),
+        color: `hsl(${(index * 60) % 360}, 70%, 50%)`
+      };
+    }) : [];
 
   if (isLoading) {
     return (
