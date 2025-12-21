@@ -31,7 +31,7 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { supabase } from "@/integrations/supabase/client";
 import { TreatmentCategory, getTreatmentConfig } from "@/utils/treatmentTypeDetection";
-import { useTreatmentSpecificFabrics } from "@/hooks/useTreatmentSpecificFabrics";
+import { useTreatmentSpecificFabrics, parseUnifiedSupplierId } from "@/hooks/useTreatmentSpecificFabrics";
 import { getAcceptedSubcategories, getTreatmentPrimaryCategory } from "@/constants/inventorySubcategories";
 import { toast } from "sonner";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
@@ -104,7 +104,13 @@ export const InventorySelectionPanel = ({
   // Debounce search for server-side filtering (300ms delay)
   const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
 
-  // Use treatment-specific fabrics with server-side search, pagination, price group filtering, and TWC parent product filtering
+  // Parse vendor selection into server-side filter
+  const supplierFilter = useMemo(() => {
+    return parseUnifiedSupplierId(selectedVendor);
+  }, [selectedVendor]);
+
+  // Use treatment-specific fabrics with server-side search, pagination, price group filtering, 
+  // TWC parent product filtering, AND server-side vendor/supplier filtering
   const {
     data: fabricsData,
     isLoading: isFabricsLoading,
@@ -112,7 +118,7 @@ export const InventorySelectionPanel = ({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage
-  } = useTreatmentSpecificFabrics(treatmentCategory, debouncedSearchTerm, templateId, parentProductId);
+  } = useTreatmentSpecificFabrics(treatmentCategory, debouncedSearchTerm, templateId, parentProductId, supplierFilter);
 
   // Flatten paginated data into single array
   const treatmentFabrics = useMemo(() => {
@@ -329,19 +335,19 @@ export const InventorySelectionPanel = ({
   // Filter inventory by treatment type and category
   const getInventoryByCategory = (category: string) => {
     // For fabric category, use server-side filtered treatmentFabrics
-    // Apply client-side filters for vendor/collection/tags/price group/quick types
+    // Apply client-side filters ONLY for collection/tags/price group/quick types
+    // (vendor/supplier is now server-side)
     if (category === "fabric") {
       const filtered = treatmentFabrics.filter(item => {
-        // CRITICAL FIX: Use unified vendor/supplier matching
-        const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
+        // Vendor/supplier is now filtered server-side, no need to check here
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
-        // NEW: Price group filter
+        // Price group filter
         const matchesPriceGroup = !selectedPriceGroup || item.price_group === selectedPriceGroup;
-        // NEW: Quick type filter (must match ALL selected types)
+        // Quick type filter (must match ALL selected types)
         const matchesQuickTypes = selectedQuickTypes.length === 0 || 
           (item.tags && selectedQuickTypes.every(t => item.tags.includes(t)));
-        return matchesVendor && matchesCollection && matchesTags && matchesPriceGroup && matchesQuickTypes;
+        return matchesCollection && matchesTags && matchesPriceGroup && matchesQuickTypes;
       });
       // Sort results: items starting with search term first, then alphabetically
       const searchLower = searchTerm.toLowerCase();
@@ -361,7 +367,7 @@ export const InventorySelectionPanel = ({
       const searchLower = searchTerm.toLowerCase();
       
       // CRITICAL FIX: When parentProductId is set (TWC-linked), ALL items come from treatmentFabrics
-      // treatmentFabrics is already filtered by parent_product_id via useTreatmentSpecificFabrics
+      // treatmentFabrics is already filtered by parent_product_id AND vendor via useTreatmentSpecificFabrics
       if (parentProductId) {
         const filtered = treatmentFabrics.filter(item => {
           const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
@@ -369,10 +375,10 @@ export const InventorySelectionPanel = ({
                                item.sku?.toLowerCase().includes(searchLower) ||
                                item.supplier?.toLowerCase().includes(searchLower) ||
                                item.vendor?.name?.toLowerCase().includes(searchLower);
-          const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
+          // Vendor/supplier is already server-side filtered for treatmentFabrics
           const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
           const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
-          return matchesSearch && matchesVendor && matchesCollection && matchesTags;
+          return matchesSearch && matchesCollection && matchesTags;
         });
         
         console.log('📦 Both tab (TWC-linked): Using ONLY treatmentFabrics:', filtered.length, 'items');
@@ -380,19 +386,21 @@ export const InventorySelectionPanel = ({
       }
       
       // Non-TWC templates: combine fabric from treatmentFabrics + materials from inventory
+      // treatmentFabrics already has server-side vendor filter applied
       const fabricItems = treatmentFabrics.filter(item => {
         const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
                              item.description?.toLowerCase().includes(searchLower) ||
                              item.sku?.toLowerCase().includes(searchLower) ||
                              item.supplier?.toLowerCase().includes(searchLower) ||
                              item.vendor?.name?.toLowerCase().includes(searchLower);
-        const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
+        // Vendor/supplier is already server-side filtered for treatmentFabrics
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
-        return matchesSearch && matchesVendor && matchesCollection && matchesTags;
+        return matchesSearch && matchesCollection && matchesTags;
       });
 
       // Get material items from inventory (only for non-TWC templates)
+      // These still need client-side vendor filtering
       const requiredSubcategories = getTreatmentMaterialSubcategories();
       const materialItems = inventory.filter(item => {
         const matchesCategory = item.category?.toLowerCase() === 'material' || 
@@ -406,6 +414,7 @@ export const InventorySelectionPanel = ({
                              item.sku?.toLowerCase().includes(searchLower) ||
                              item.supplier?.toLowerCase().includes(searchLower) ||
                              item.vendor?.name?.toLowerCase().includes(searchLower);
+        // Client-side vendor filter for inventory items
         const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
@@ -427,7 +436,7 @@ export const InventorySelectionPanel = ({
       console.log('🔗 parentProductId:', parentProductId || 'none (non-TWC)');
       
       // CRITICAL FIX: When parentProductId is set (TWC-linked), ALL items come from treatmentFabrics ONLY
-      // treatmentFabrics is already filtered by parent_product_id via useTreatmentSpecificFabrics
+      // treatmentFabrics is already filtered by parent_product_id AND vendor via useTreatmentSpecificFabrics
       if (parentProductId) {
         const searchLower = searchTerm.toLowerCase();
         const filtered = treatmentFabrics.filter(item => {
@@ -436,10 +445,10 @@ export const InventorySelectionPanel = ({
                                item.sku?.toLowerCase().includes(searchLower) ||
                                item.supplier?.toLowerCase().includes(searchLower) ||
                                item.vendor?.name?.toLowerCase().includes(searchLower);
-          const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
+          // Vendor/supplier is already server-side filtered for treatmentFabrics
           const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
           const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
-          return matchesSearch && matchesVendor && matchesCollection && matchesTags;
+          return matchesSearch && matchesCollection && matchesTags;
         });
         
         const enrichedCount = filtered.filter(i => i.pricing_grid_data || i.resolved_grid_id).length;
@@ -448,8 +457,10 @@ export const InventorySelectionPanel = ({
       }
       
       // Non-TWC templates: Use treatmentFabrics if available, else fall back to inventory
+      // treatmentFabrics already has server-side vendor filter applied
       const sourceData = treatmentFabrics.length > 0 ? treatmentFabrics : inventory;
       const dataSource = treatmentFabrics.length > 0 ? 'treatmentFabrics (enriched)' : 'raw inventory';
+      const useServerSideVendorFilter = treatmentFabrics.length > 0;
       
       console.log('📦 Using data source:', dataSource);
       
@@ -470,7 +481,8 @@ export const InventorySelectionPanel = ({
                              item.sku?.toLowerCase().includes(searchLower) ||
                              item.supplier?.toLowerCase().includes(searchLower) ||
                              item.vendor?.name?.toLowerCase().includes(searchLower);
-        const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
+        // Only apply client-side vendor filter if NOT using treatmentFabrics (which is already server-side filtered)
+        const matchesVendor = useServerSideVendorFilter ? true : matchesUnifiedSupplier(item, selectedVendor, vendors);
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
         
