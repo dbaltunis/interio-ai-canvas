@@ -112,6 +112,7 @@ interface CurtainCostsCallback {
   liningCost: number;
   manufacturingCost: number;
   headingCost: number;
+  headingName?: string; // ✅ ADD: Heading name for correct display/save
   optionsCost: number;
   optionDetails: Array<{ name: string; cost: number; pricingMethod: string }>;
   totalCost: number;
@@ -776,6 +777,23 @@ export const CostCalculationSummary = ({
     const measurementKey = `${measurements?.rail_width || 0}-${measurements?.drop || 0}`;
     const headingKey = selectedHeading || 'none';
     
+    // ✅ Resolve heading name from settings
+    const resolvedHeadingName = (() => {
+      if (!selectedHeading || selectedHeading === 'none' || selectedHeading === 'standard') {
+        return 'Standard';
+      }
+      const headingFromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
+      if (headingFromSettings) {
+        return headingFromSettings.name;
+      }
+      // Check inventory as fallback
+      const headingFromInventory = inventory?.find(item => item.id === selectedHeading && item.category === 'heading');
+      if (headingFromInventory) {
+        return headingFromInventory.name;
+      }
+      return selectedHeading; // Use ID as fallback
+    })();
+    
     const curtainCostsKey = `${fabricCost}-${liningCost}-${manufacturingCost}-${headingCost}-${optionsCost}-${totalCost}-${linearMeters}-${optionSelectionKey}-${measurementKey}-${headingKey}`;
     
     curtainCostsRef.current = {
@@ -784,6 +802,7 @@ export const CostCalculationSummary = ({
         liningCost,
         manufacturingCost,
         headingCost,
+        headingName: resolvedHeadingName, // ✅ FIXED: Use resolved heading name
         optionsCost,
         optionDetails,
         totalCost,

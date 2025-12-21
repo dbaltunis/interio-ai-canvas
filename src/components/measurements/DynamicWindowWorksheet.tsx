@@ -162,6 +162,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     liningCost: number;
     manufacturingCost: number;
     headingCost: number;
+    headingName?: string; // ✅ ADD: Heading name for correct save
     optionsCost: number;
     optionDetails: Array<{ name: string; cost: number; pricingMethod: string }>;
     totalCost: number;
@@ -1234,7 +1235,28 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
 
           // Calculate heading cost (for curtains only) - ONLY if not using liveCurtainCalcResult
           // Note: headingCost already declared at line 920, and set from liveCurtainCalcResult if available
-          let headingName = 'Standard';
+          
+          // ✅ CRITICAL FIX: ALWAYS resolve heading name, regardless of liveCurtainCalcResult
+          // Previously this was inside the if(!liveCurtainCalcResult) block, causing "Standard" to always show
+          let headingName = liveCurtainCalcResult?.headingName || 'Standard';
+          if (!headingName || headingName === 'Standard') {
+            // Resolve from settings/inventory if not provided by liveCurtainCalcResult
+            if (selectedHeading && selectedHeading !== 'standard' && selectedHeading !== 'none') {
+              const headingOptionFromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
+              if (headingOptionFromSettings) {
+                headingName = headingOptionFromSettings.name;
+              } else {
+                const headingItem = headingInventory?.find(item => item.id === selectedHeading);
+                if (headingItem) {
+                  headingName = headingItem.name;
+                } else {
+                  headingName = getHeadingName(selectedHeading);
+                }
+              }
+            }
+          }
+          console.log("🎯 Resolved heading name:", headingName, "for ID:", selectedHeading, "from liveCurtainCalcResult:", !!liveCurtainCalcResult?.headingName);
+          
           if (!liveCurtainCalcResult && treatmentCategory !== 'wallpaper') {
             console.log("🎯 AutoSave heading calculation:", {
               selectedHeading,
