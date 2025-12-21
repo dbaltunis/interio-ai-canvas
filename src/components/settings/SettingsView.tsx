@@ -70,12 +70,18 @@ export const SettingsView = () => {
     }
   }, []);
 
-  // Permission checks
-  const canViewSettings = useHasPermission('view_settings');
-  const canManageSettings = useHasPermission('manage_settings');
-  const canManageUsers = useHasPermission('manage_users');
-  const canViewWindowTreatments = useHasPermission('view_window_treatments');
-  const canManageMarkup = useHasPermission('manage_settings'); // Only owners/admins can manage pricing
+  // Permission checks - treat undefined (loading) as true to prevent UI flicker
+  const canViewSettingsRaw = useHasPermission('view_settings');
+  const canManageSettingsRaw = useHasPermission('manage_settings');
+  const canManageUsersRaw = useHasPermission('manage_users');
+  const canViewWindowTreatmentsRaw = useHasPermission('view_window_treatments');
+  
+  // During loading (undefined), show tabs to prevent disappearing UI
+  const canViewSettings = canViewSettingsRaw !== false;
+  const canManageSettings = canManageSettingsRaw !== false;
+  const canManageUsers = canManageUsersRaw !== false;
+  const canViewWindowTreatments = canViewWindowTreatmentsRaw !== false;
+  const canManageMarkup = canManageSettingsRaw !== false; // Only owners/admins can manage pricing
 
   return <div className="space-y-8 animate-fade-in">
       {/* Enhanced Header */}

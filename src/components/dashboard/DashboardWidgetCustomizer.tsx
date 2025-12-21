@@ -131,15 +131,15 @@ export const DashboardWidgetCustomizer = ({
       // Then check permissions
       if (!widget.requiredPermission) return true;
 
-      // Check specific permissions - only show if explicitly true
-      if (widget.requiredPermission === 'view_calendar') return canViewCalendar === true;
-      if (widget.requiredPermission === 'view_shopify') return canViewShopify === true;
-      if (widget.requiredPermission === 'view_emails') return canViewEmails === true;
-      if (widget.requiredPermission === 'view_inventory') return canViewInventory === true;
-      if (widget.requiredPermission === 'view_team_performance') return canViewTeamPerformance === true;
+      // Check specific permissions - show during loading (undefined), hide only if explicitly false
+      if (widget.requiredPermission === 'view_calendar') return canViewCalendar !== false;
+      if (widget.requiredPermission === 'view_shopify') return canViewShopify !== false;
+      if (widget.requiredPermission === 'view_emails') return canViewEmails !== false;
+      if (widget.requiredPermission === 'view_inventory') return canViewInventory !== false;
+      if (widget.requiredPermission === 'view_team_performance') return canViewTeamPerformance !== false;
 
-      // If permission check is undefined or false, don't show
-      return false;
+      // Default to showing during loading
+      return true;
     });
   }, [widgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, canViewTeamPerformance, isShopifyConnected, hasOnlineStore, isLoading]);
 
