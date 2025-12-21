@@ -553,7 +553,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           
           // CRITICAL: Explicitly restore heading and lining selections into measurements object
           // Priority: measurements_details > summary columns
-          restoredMeasurements.selected_heading = measurementsDetails.selected_heading || existingWindowSummary.selected_heading_id || '';
+          // Normalize 'standard' to 'none' for dropdown compatibility
+          const rawHeading = measurementsDetails.selected_heading || existingWindowSummary.selected_heading_id || '';
+          restoredMeasurements.selected_heading = rawHeading === 'standard' ? 'none' : rawHeading;
           restoredMeasurements.selected_lining = measurementsDetails.selected_lining || existingWindowSummary.selected_lining_type || 'none';
           
           // CRITICAL: Also update parent state immediately for dropdowns
