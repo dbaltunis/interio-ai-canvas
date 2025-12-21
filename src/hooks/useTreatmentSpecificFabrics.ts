@@ -7,6 +7,28 @@ import { getAcceptedSubcategories, getTreatmentPrimaryCategory, TREATMENT_SUBCAT
 const PAGE_SIZE = 100; // Increased for large TWC inventories
 
 /**
+ * Supplier filter for server-side filtering
+ */
+export interface SupplierFilter {
+  vendorId?: string;
+  supplierName?: string;
+}
+
+/**
+ * Parse a unified supplier ID into a SupplierFilter
+ */
+export const parseUnifiedSupplierId = (unifiedId: string | undefined): SupplierFilter | undefined => {
+  if (!unifiedId) return undefined;
+  
+  if (unifiedId.startsWith('supplier_text:')) {
+    return { supplierName: unifiedId.replace('supplier_text:', '') };
+  }
+  
+  // It's a real vendor UUID
+  return { vendorId: unifiedId };
+};
+
+/**
  * Hook to fetch assigned price groups for a template
  */
 const useTemplateAssignedPriceGroups = (templateId: string | undefined) => {
@@ -45,24 +67,26 @@ const useTemplateAssignedPriceGroups = (templateId: string | undefined) => {
  * Enterprise-grade hook for fetching treatment-specific fabrics/materials
  * Features:
  * - Server-side search (filters at database level)
+ * - Server-side vendor/supplier filtering
  * - Pagination with "Load More" (100 items per page)
  * - Batch grid queries (eliminates N+1 problem)
  * - Multi-tenant account isolation
  * - Optimized for large inventories (1000+ items)
  * - Filters by template's assigned pricing grids
- * - NEW: Filters by parent_product_id for TWC products (exact 32 materials)
+ * - Filters by parent_product_id for TWC products
  */
 export const useTreatmentSpecificFabrics = (
   treatmentCategory: TreatmentCategory,
   searchTerm?: string,
   templateId?: string,
-  parentProductId?: string // Filter to ONLY TWC-linked materials OR template's linked inventory item
+  parentProductId?: string, // Filter to ONLY TWC-linked materials OR template's linked inventory item
+  supplierFilter?: SupplierFilter // NEW: Server-side vendor/supplier filtering
 ) => {
   const { data: assignedPriceGroups = [] } = useTemplateAssignedPriceGroups(templateId);
   const treatmentConfig = getTreatmentConfig(treatmentCategory);
   
   return useInfiniteQuery({
-    queryKey: ["treatment-specific-fabrics", treatmentCategory, searchTerm || "", templateId || "", assignedPriceGroups.join(","), parentProductId || ""],
+    queryKey: ["treatment-specific-fabrics", treatmentCategory, searchTerm || "", templateId || "", assignedPriceGroups.join(","), parentProductId || "", JSON.stringify(supplierFilter || {})],
     queryFn: async ({ pageParam = 0 }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -105,6 +129,19 @@ export const useTreatmentSpecificFabrics = (
         return query;
       };
 
+      // NEW: Helper to add supplier/vendor filter (SERVER-SIDE)
+      const addSupplierFilter = (query: any) => {
+        if (supplierFilter?.vendorId) {
+          console.log('🏭 Server-side vendor filter:', supplierFilter.vendorId);
+          return query.eq("vendor_id", supplierFilter.vendorId);
+        }
+        if (supplierFilter?.supplierName) {
+          console.log('🏭 Server-side supplier text filter:', supplierFilter.supplierName);
+          return query.ilike("supplier", supplierFilter.supplierName);
+        }
+        return query;
+      };
+
       // =====================================================
       // PARENT PRODUCT / TEMPLATE ITEM FILTER - Shows ONLY linked materials
       // =====================================================
@@ -128,6 +165,7 @@ export const useTreatmentSpecificFabrics = (
 
         // Apply filters BEFORE pagination
         query = addAccountFilter(query);
+        query = addSupplierFilter(query);
         query = buildSearchQuery(query);
         
         // Apply ordering and pagination LAST
@@ -164,6 +202,7 @@ export const useTreatmentSpecificFabrics = (
         // Apply filters BEFORE range
         query = addAccountFilter(query);
         query = addPriceGroupFilter(query);
+        query = addSupplierFilter(query);
         query = buildSearchQuery(query);
         
         // Apply ordering and pagination LAST
@@ -189,6 +228,7 @@ export const useTreatmentSpecificFabrics = (
 
         // Apply filters BEFORE pagination
         query = addAccountFilter(query);
+        query = addSupplierFilter(query);
         query = buildSearchQuery(query);
         
         // Apply ordering and pagination LAST
@@ -216,6 +256,7 @@ export const useTreatmentSpecificFabrics = (
           // Apply filters BEFORE pagination
           fabricQuery = addAccountFilter(fabricQuery);
           fabricQuery = addPriceGroupFilter(fabricQuery);
+          fabricQuery = addSupplierFilter(fabricQuery);
           fabricQuery = buildSearchQuery(fabricQuery);
           
           // Apply ordering and pagination LAST
@@ -234,6 +275,7 @@ export const useTreatmentSpecificFabrics = (
           // Apply filters BEFORE pagination
           materialQuery = addAccountFilter(materialQuery);
           materialQuery = addPriceGroupFilter(materialQuery);
+          materialQuery = addSupplierFilter(materialQuery);
           materialQuery = buildSearchQuery(materialQuery);
           
           // Apply ordering and pagination LAST
@@ -269,6 +311,7 @@ export const useTreatmentSpecificFabrics = (
         // Apply filters BEFORE pagination
         query = addAccountFilter(query);
         query = addPriceGroupFilter(query);
+        query = addSupplierFilter(query);
         query = buildSearchQuery(query);
         
         // Apply ordering and pagination LAST
