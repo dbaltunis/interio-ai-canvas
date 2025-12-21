@@ -39,7 +39,7 @@ export const ModernInventoryDashboard = () => {
   const [selectedCollection, setSelectedCollection] = useState<string | undefined>();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedStorageLocation, setSelectedStorageLocation] = useState<string | undefined>();
-  const { data: allInventory, refetch } = useEnhancedInventory();
+  const { data: allInventory, refetch, isLoading: inventoryLoading, isFetching: inventoryFetching } = useEnhancedInventory();
   const { data: vendors } = useVendors();
   const { data: userRole, isLoading: userRoleLoading } = useUserRole();
   const isMobile = useIsMobile();
@@ -221,12 +221,21 @@ export const ModernInventoryDashboard = () => {
             </h1>
             {!isMobile && <HelpIcon onClick={() => setShowHelp(true)} />}
           </div>
-          <Badge className={cn(
-            "bg-accent/10 text-accent border-accent/20",
-            isMobile && "text-xs"
-          )}>
-            {inventory?.length || 0}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className={cn(
+              "bg-accent/10 text-accent border-accent/20",
+              isMobile && "text-xs"
+            )}>
+              {inventoryLoading ? (
+                <span className="animate-pulse">Loading...</span>
+              ) : (
+                `${inventory?.length || 0} items`
+              )}
+            </Badge>
+            {inventoryFetching && !inventoryLoading && (
+              <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+            )}
+          </div>
         </div>
         <div className={cn(
           "flex items-center gap-2",

@@ -109,35 +109,56 @@ export const useEnhancedInventory = (options?: { forceRefresh?: boolean }) => {
     queryFn: async () => {
       if (!effectiveOwnerId) throw new Error('User not authenticated');
 
-      console.log('📦 [useEnhancedInventory] Fetching inventory for effective owner:', effectiveOwnerId);
+      console.log('📦 [useEnhancedInventory] Fetching ALL inventory for effective owner:', effectiveOwnerId);
 
-      const { data, error } = await supabase
-        .from("enhanced_inventory_items")
-        .select(`
-          *,
-          vendor:vendors!enhanced_inventory_items_vendor_id_fkey(id, name),
-          collection:collections!collection_id(id, name)
-        `)
-        .eq("user_id", effectiveOwnerId) // ✅ FIX: Use effectiveOwnerId so team members see owner's inventory
-        .eq("active", true)
-        .order("created_at", { ascending: false });
+      // CRITICAL FIX: Supabase has a default 1000 row limit
+      // We must fetch items in batches to get ALL inventory
+      const BATCH_SIZE = 1000;
+      let allItems: any[] = [];
+      let start = 0;
+      let hasMore = true;
+      let batchCount = 0;
 
-      if (error) {
-        console.error('❌ [useEnhancedInventory] Error fetching inventory:', error);
-        throw error;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("enhanced_inventory_items")
+          .select(`
+            *,
+            vendor:vendors!enhanced_inventory_items_vendor_id_fkey(id, name),
+            collection:collections!collection_id(id, name)
+          `)
+          .eq("user_id", effectiveOwnerId)
+          .eq("active", true)
+          .order("created_at", { ascending: false })
+          .range(start, start + BATCH_SIZE - 1);
+
+        if (error) {
+          console.error('❌ [useEnhancedInventory] Error fetching inventory batch:', error);
+          throw error;
+        }
+
+        if (data && data.length > 0) {
+          allItems = [...allItems, ...data];
+          start += BATCH_SIZE;
+          batchCount++;
+          hasMore = data.length === BATCH_SIZE; // If we got a full batch, there might be more
+          console.log(`📦 [useEnhancedInventory] Batch ${batchCount}: fetched ${data.length} items (total: ${allItems.length})`);
+        } else {
+          hasMore = false;
+        }
       }
       
       // Debug: Log inventory summary with heading items highlighted
-      const headingItems = (data || []).filter(item => item.category === 'heading');
+      const headingItems = allItems.filter(item => item.category === 'heading');
       
-      console.log('✅ [v2.4.0] useEnhancedInventory Fetched:', {
-        totalItems: data?.length || 0,
+      console.log('✅ [v2.5.0] useEnhancedInventory Fetched ALL items:', {
+        totalItems: allItems.length,
+        batchesFetched: batchCount,
         headingItemsCount: headingItems.length,
-        headingItems: headingItems.map(h => ({ id: h.id, name: h.name, category: h.category, fullness: h.fullness_ratio })),
-        allCategories: [...new Set((data || []).map(i => i.category))]
+        allCategories: [...new Set(allItems.map(i => i.category))]
       });
       
-      return data || [];
+      return allItems;
     },
   });
 };
@@ -156,20 +177,38 @@ export const useEnhancedInventoryByCategory = (category: string, options?: { for
     queryFn: async () => {
       if (!effectiveOwnerId) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
-        .from("enhanced_inventory_items")
-        .select(`
-          *,
-          vendor:vendors!enhanced_inventory_items_vendor_id_fkey(id, name),
-          collection:collections!collection_id(id, name)
-        `)
-        .eq("user_id", effectiveOwnerId) // ✅ FIX: Use effectiveOwnerId so team members see owner's inventory
-        .eq("category", category)
-        .eq("active", true)
-        .order("created_at", { ascending: false });
+      // CRITICAL FIX: Batch fetch to handle >1000 items per category
+      const BATCH_SIZE = 1000;
+      let allItems: any[] = [];
+      let start = 0;
+      let hasMore = true;
 
-      if (error) throw error;
-      return data || [];
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from("enhanced_inventory_items")
+          .select(`
+            *,
+            vendor:vendors!enhanced_inventory_items_vendor_id_fkey(id, name),
+            collection:collections!collection_id(id, name)
+          `)
+          .eq("user_id", effectiveOwnerId)
+          .eq("category", category)
+          .eq("active", true)
+          .order("created_at", { ascending: false })
+          .range(start, start + BATCH_SIZE - 1);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          allItems = [...allItems, ...data];
+          start += BATCH_SIZE;
+          hasMore = data.length === BATCH_SIZE;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      return allItems;
     },
   });
 };

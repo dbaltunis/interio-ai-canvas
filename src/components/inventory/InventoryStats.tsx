@@ -38,7 +38,7 @@ export const InventoryStats = ({ hasStockTracking = true }: InventoryStatsProps)
     return acc;
   }, {} as Record<string, number>) || {};
 
-  const topCategory = Object.entries(categories).sort(([,a], [,b]) => b - a)[0];
+  const topCategory = Object.entries(categories).sort(([,a], [,b]) => (b as number) - (a as number))[0];
 
   return (
     <div className="space-y-6">
@@ -103,7 +103,8 @@ export const InventoryStats = ({ hasStockTracking = true }: InventoryStatsProps)
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Object.entries(categories).map(([category, count]) => {
+              {Object.entries(categories).map(([category, countValue]) => {
+                const count = countValue as number;
                 const percentage = (count / totalItems) * 100;
                 return (
                   <div key={category} className="space-y-2">

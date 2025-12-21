@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { EnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,7 +17,8 @@ import { Store, Package, Mail, Calendar, Plus, Send } from "lucide-react";
 
 export const VendorOrdering = () => {
   const { data: vendors = [] } = useVendors();
-  const { data: inventory = [] } = useEnhancedInventory();
+  const { data: inventoryData } = useEnhancedInventory();
+  const inventory = inventoryData || [];
   const [orderItems, setOrderItems] = useState<Record<string, number>>({});
   const [orderFrequency, setOrderFrequency] = useState("weekly");
 
@@ -26,7 +28,7 @@ export const VendorOrdering = () => {
     if (!acc[vendorId]) acc[vendorId] = [];
     acc[vendorId].push(item);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, typeof inventory>);
 
   const generateOrderEmail = (vendorKey: string) => {
     const vendor = vendors.find(v => v.id === vendorKey) || 
@@ -114,7 +116,8 @@ Best regards,
 
         <TabsContent value="by-vendor" className="space-y-4">
           <div className="grid gap-4">
-            {Object.entries(inventoryByVendor).map(([vendorKey, vendorItems]) => {
+            {Object.entries(inventoryByVendor).map(([vendorKey, vendorItemsUntyped]) => {
+              const vendorItems = vendorItemsUntyped as EnhancedInventoryItem[];
               const vendor = vendors.find(v => v.id === vendorKey) || 
                            vendors.find(v => v.name === vendorKey);
               const vendorName = vendor?.name || vendorKey === 'no-vendor' ? 'No Vendor' : vendorKey;
