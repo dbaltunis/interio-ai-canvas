@@ -546,7 +546,12 @@ export const DynamicCurtainOptions = ({
             <span className="text-sm text-muted-foreground">Select Type</span>
             <div className="w-64">
               <Select
-                value={selectedHeading || measurements.selected_heading || 'none'}
+                value={(() => {
+                  // Normalize heading value - treat 'standard', 'no-heading', empty as 'none'
+                  const val = selectedHeading || measurements.selected_heading;
+                  if (!val || val === 'standard' || val === 'no-heading') return 'none';
+                  return val;
+                })()}
                 onValueChange={handleHeadingChange}
                 disabled={readOnly}
               >

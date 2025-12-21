@@ -27,15 +27,22 @@ export const HeadingSelector = ({ selectedHeading, onHeadingChange }: HeadingSel
   return (
     <div className="space-y-2 animate-fade-in">
       <Label htmlFor="heading">Heading Type</Label>
-      <Select value={selectedHeading} onValueChange={onHeadingChange}>
+      <Select 
+        value={(() => {
+          // Normalize heading value - treat 'standard', empty as 'no-heading' for display
+          if (!selectedHeading || selectedHeading === 'standard' || selectedHeading === 'none') return 'no-heading';
+          return selectedHeading;
+        })()}
+        onValueChange={onHeadingChange}
+      >
         <SelectTrigger className="transition-all duration-200 hover:border-primary/50">
           <SelectValue placeholder="Select heading type">
-            {selectedHeading && selectedHeading !== "no-heading" && selectedHeading !== "standard" ? (
+            {selectedHeading && selectedHeading !== "no-heading" && selectedHeading !== "standard" && selectedHeading !== "none" ? (
               (() => {
                 const selectedOption = headingOptions.find(h => h.id === selectedHeading);
                 return selectedOption ? selectedOption.name : selectedHeading;
               })()
-            ) : (selectedHeading === "no-heading" || selectedHeading === "standard") ? "Standard / No heading" : null}
+            ) : "Standard / No heading"}
           </SelectValue>
         </SelectTrigger>
         <SelectContent className="max-h-[300px] bg-popover border-border shadow-lg z-[9999]">
