@@ -1271,25 +1271,27 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               headingCost = headingUpchargePerCurtain + headingUpchargePerMetre * linearMeters;
 
               // Add additional heading costs from settings/inventory
+              // ✅ CRITICAL FIX: Use linearMeters (fullness-adjusted width) NOT raw rail_width
+              // Heading tape is applied to the finished curtain width which includes fullness
               const headingOptionFromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
-              console.log("🎯 Found heading in settings:", headingOptionFromSettings);
+              console.log("🎯 Found heading in settings:", headingOptionFromSettings, "linearMeters:", linearMeters);
               if (headingOptionFromSettings) {
-                // ✅ CRITICAL: measurements.rail_width is in MM, convert to meters
-                const widthMM = parseFloat(measurements.rail_width) || 0;
-                const additionalCost = headingOptionFromSettings.price * widthMM / 1000; // MM to meters
+                // ✅ FIX: Use linearMeters (already in meters, includes fullness)
+                const headingPricePerMeter = headingOptionFromSettings.price || 0;
+                const additionalCost = headingPricePerMeter * linearMeters;
                 headingCost += additionalCost;
                 headingName = headingOptionFromSettings.name;
-                console.log("🎯 Settings heading cost:", additionalCost, "name:", headingName);
+                console.log("🎯 Settings heading cost:", additionalCost, "= price:", headingPricePerMeter, "× linearMeters:", linearMeters);
               } else {
                 const headingItem = headingInventory?.find(item => item.id === selectedHeading);
-                console.log("🎯 Found heading in inventory:", headingItem);
+                console.log("🎯 Found heading in inventory:", headingItem, "linearMeters:", linearMeters);
                 if (headingItem) {
-                  // ✅ CRITICAL: measurements.rail_width is in MM, convert to meters
-                  const widthMM = parseFloat(measurements.rail_width) || 0;
-                  const additionalCost = (headingItem.price_per_meter || headingItem.selling_price || 0) * widthMM / 1000;
+                  // ✅ FIX: Use linearMeters (already in meters, includes fullness)
+                  const headingPricePerMeter = headingItem.price_per_meter || headingItem.selling_price || 0;
+                  const additionalCost = headingPricePerMeter * linearMeters;
                   headingCost += additionalCost;
                   headingName = headingItem.name;
-                  console.log("🎯 Inventory heading cost:", additionalCost, "name:", headingName);
+                  console.log("🎯 Inventory heading cost:", additionalCost, "= price:", headingPricePerMeter, "× linearMeters:", linearMeters);
                 } else {
                   // Use getHeadingName helper as fallback
                   headingName = getHeadingName(selectedHeading);
@@ -2936,11 +2938,14 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       headingCost = headingUpchargePerCurtain + headingUpchargePerMetre * totalMeters;
                       
                       // Add heading inventory/settings price - match save calculation exactly
+                      // ✅ CRITICAL FIX: Use totalMeters (fullness-adjusted width) NOT raw rail_width
+                      // Heading tape is applied to the finished curtain width which includes fullness
                       const heading = headingOptionsFromSettings.find(h => h.id === selectedHeading || h.name === selectedHeading);
                       if (heading) {
-                        const railWidth = parseFloat(measurements.rail_width || '0');
-                        const additionalCost = (heading as any).price * (railWidth / 100);
+                        const headingPricePerMeter = (heading as any).price || 0;
+                        const additionalCost = headingPricePerMeter * totalMeters;
                         headingCost += additionalCost;
+                        console.log("🎯 Display heading cost:", additionalCost, "= price:", headingPricePerMeter, "× totalMeters:", totalMeters);
                       }
                     }
 
