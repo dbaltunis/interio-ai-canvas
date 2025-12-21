@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { useVendors } from '@/hooks/useVendors';
-import { useEnhancedInventory } from '@/hooks/useEnhancedInventory';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useEffectiveAccountOwner } from './useEffectiveAccountOwner';
 
 interface UnifiedSupplier {
   id: string;
@@ -11,23 +13,44 @@ interface UnifiedSupplier {
 
 /**
  * Hook that unifies vendor_id and supplier fields into a single list
- * This fixes the issue where some items have vendor_id and others have supplier text
+ * Uses a lightweight query to count items per supplier without loading full inventory
  */
 export const useUnifiedSuppliers = (category?: string) => {
   const { data: vendors = [], isLoading: vendorsLoading } = useVendors();
-  const { data: inventory = [], isLoading: inventoryLoading } = useEnhancedInventory();
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+
+  // Lightweight query to get just supplier/vendor_id data for counting
+  const { data: supplierData = [], isLoading: supplierDataLoading } = useQuery({
+    queryKey: ['unified-suppliers-data', effectiveOwnerId, category],
+    queryFn: async () => {
+      if (!effectiveOwnerId) return [];
+      
+      let query = supabase
+        .from('enhanced_inventory_items')
+        .select('vendor_id, supplier')
+        .eq('user_id', effectiveOwnerId)
+        .eq('active', true);
+      
+      if (category) {
+        query = query.eq('category', category);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!effectiveOwnerId,
+    staleTime: 30000, // Cache for 30 seconds
+  });
 
   const unifiedSuppliers = useMemo(() => {
-    const supplierMap = new Map<string, UnifiedSupplier>();
+    if (vendorsLoading || supplierDataLoading) return [];
     
-    // Filter by category if provided
-    const items = category 
-      ? inventory.filter(i => i.category === category)
-      : inventory;
+    const supplierMap = new Map<string, UnifiedSupplier>();
 
     // First, add all vendors with their counts
     vendors.forEach(vendor => {
-      const count = items.filter(item => 
+      const count = supplierData.filter(item => 
         item.vendor_id === vendor.id || 
         item.supplier?.toLowerCase().trim() === vendor.name?.toLowerCase().trim()
       ).length;
@@ -42,7 +65,7 @@ export const useUnifiedSuppliers = (category?: string) => {
 
     // Then find orphan supplier text values (not matching any vendor)
     const orphanSuppliers = new Map<string, number>();
-    items.forEach(item => {
+    supplierData.forEach(item => {
       if (item.supplier && !item.vendor_id) {
         const supplierName = item.supplier.trim();
         const normalizedName = supplierName.toLowerCase();
@@ -53,7 +76,6 @@ export const useUnifiedSuppliers = (category?: string) => {
         );
         
         if (!matchingVendor) {
-          // This is an orphan supplier
           orphanSuppliers.set(supplierName, (orphanSuppliers.get(supplierName) || 0) + 1);
         }
       }
@@ -84,7 +106,7 @@ export const useUnifiedSuppliers = (category?: string) => {
       // Then alphabetically
       return a.name.localeCompare(b.name);
     });
-  }, [vendors, inventory, category]);
+  }, [vendors, supplierData, vendorsLoading, supplierDataLoading]);
 
   // Total items with any supplier
   const totalItems = useMemo(() => {
@@ -94,7 +116,7 @@ export const useUnifiedSuppliers = (category?: string) => {
   return {
     suppliers: unifiedSuppliers,
     totalItems,
-    isLoading: vendorsLoading || inventoryLoading
+    isLoading: vendorsLoading || supplierDataLoading
   };
 };
 
