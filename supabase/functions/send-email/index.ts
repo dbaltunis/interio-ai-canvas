@@ -380,7 +380,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (user_id) {
       const { data: settings } = await supabase
         .from("email_settings")
-        .select("from_email, from_name, signature, active")
+        .select("from_email, from_name, reply_to_email, signature, active")
         .eq("user_id", user_id)
         .eq("active", true)
         .single();
@@ -532,7 +532,7 @@ const handler = async (req: Request): Promise<Response> => {
           name: fromName,
         },
         reply_to: {
-          email: fromEmail,
+          email: emailSettings?.reply_to_email || fromEmail,
           name: fromName
         },
         content: [
@@ -596,14 +596,15 @@ const handler = async (req: Request): Promise<Response> => {
         content: att.content // Resend accepts base64 directly
       }));
 
-      // For Resend, always use verified domain but set reply-to to user's email
+      // For Resend, always use verified domain but set reply-to to user's configured reply_to_email or from_email
       const verifiedFromEmail = 'noreply@interioapp.com';
+      const replyToEmail = emailSettings?.reply_to_email || (fromEmail !== verifiedFromEmail ? fromEmail : undefined);
       const { error: resendError } = await resend.emails.send({
         from: `${fromName} <${verifiedFromEmail}>`,
         to: [to],
         subject: subject,
         html: contentWithSignature,
-        reply_to: fromEmail !== verifiedFromEmail ? fromEmail : undefined,
+        reply_to: replyToEmail,
         attachments: resendAttachments.length > 0 ? resendAttachments : undefined
       });
 
