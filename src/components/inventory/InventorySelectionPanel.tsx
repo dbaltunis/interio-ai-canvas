@@ -593,6 +593,7 @@ export const InventorySelectionPanel = ({
                 imageUrl={imageUrl}
                 color={item.color}
                 productName={item.name}
+                supplierName={item.supplier || item.vendor?.name}
                 category={category}
                 className="w-full h-full object-cover"
                 fillContainer={true}
