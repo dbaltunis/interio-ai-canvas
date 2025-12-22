@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Plus, Home } from "lucide-react";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface WindowSelectionDialogProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export const WindowSelectionDialog = ({
     height: 48,
     surface_type: 'window'
   });
+  const { getLengthUnitLabel } = useMeasurementUnits();
 
   const handleConfirm = () => {
     if (selectedOption === 'existing' && selectedWindowId) {
@@ -136,7 +138,7 @@ export const WindowSelectionDialog = ({
                   
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label htmlFor="width">Width (inches)</Label>
+                      <Label htmlFor="width">Width ({getLengthUnitLabel('short')})</Label>
                       <Input
                         id="width"
                         type="number"
@@ -145,7 +147,7 @@ export const WindowSelectionDialog = ({
                       />
                     </div>
                     <div>
-                      <Label htmlFor="height">Height (inches)</Label>
+                      <Label htmlFor="height">Height ({getLengthUnitLabel('short')})</Label>
                       <Input
                         id="height"
                         type="number"

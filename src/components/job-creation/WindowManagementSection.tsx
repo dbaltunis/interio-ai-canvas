@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 interface WindowManagementSectionProps {
   projectId: string;
@@ -18,6 +19,7 @@ export const WindowManagementSection = ({ projectId, rooms }: WindowManagementSe
   const createSurface = useCreateSurface();
   const updateSurface = useUpdateSurface();
   const deleteSurface = useDeleteSurface();
+  const { getLengthUnitLabel } = useMeasurementUnits();
   
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingSurface, setEditingSurface] = useState<any>(null);
@@ -152,7 +154,7 @@ export const WindowManagementSection = ({ projectId, rooms }: WindowManagementSe
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="width">Width (inches)</Label>
+                    <Label htmlFor="width">Width ({getLengthUnitLabel('short')})</Label>
                     <Input
                       id="width"
                       type="number"
@@ -161,7 +163,7 @@ export const WindowManagementSection = ({ projectId, rooms }: WindowManagementSe
                     />
                   </div>
                   <div>
-                    <Label htmlFor="height">Height (inches)</Label>
+                    <Label htmlFor="height">Height ({getLengthUnitLabel('short')})</Label>
                     <Input
                       id="height"
                       type="number"
@@ -252,7 +254,7 @@ export const WindowManagementSection = ({ projectId, rooms }: WindowManagementSe
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit-width">Width (inches)</Label>
+                  <Label htmlFor="edit-width">Width ({getLengthUnitLabel('short')})</Label>
                   <Input
                     id="edit-width"
                     type="number"
@@ -261,7 +263,7 @@ export const WindowManagementSection = ({ projectId, rooms }: WindowManagementSe
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit-height">Height (inches)</Label>
+                  <Label htmlFor="edit-height">Height ({getLengthUnitLabel('short')})</Label>
                   <Input
                     id="edit-height"
                     type="number"

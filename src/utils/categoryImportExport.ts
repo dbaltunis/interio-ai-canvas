@@ -157,27 +157,39 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
     const compatibleTreatments = parseCommaSeparated(compatibleTreatmentsRaw);
     
     // ✅ CRITICAL FIX: Parse fabric_width with unit detection
-    // Detect inches (54'' or 54" or explicit unit column) and convert to CM (internal standard)
+    // Detect inches (54'' or 54" or explicit unit column or common inch widths) and convert to CM (internal standard)
     const fabricWidthRaw = getValue(values, lookup, 'fabric_width', 'width', 'roll_width', 'material_width');
     const fabricWidthUnit = getValue(values, lookup, 'fabric_width_unit', 'width_unit', 'unit_width');
     let fabricWidthCm: number | null = null;
+    
+    // Common fabric widths in inches (will be auto-detected and converted)
+    const COMMON_INCH_WIDTHS = [36, 44, 45, 48, 54, 60, 108, 118, 120];
     
     if (fabricWidthRaw) {
       // Check for inch indicators: '' or " suffix, or unit column says inches/in
       const hasInchSymbol = fabricWidthRaw.includes("''") || fabricWidthRaw.includes('"') || fabricWidthRaw.toLowerCase().includes('inch');
       const unitIsInches = fabricWidthUnit?.toLowerCase().includes('inch') || fabricWidthUnit?.toLowerCase() === 'in';
+      const hasCmIndicator = fabricWidthRaw.toLowerCase().includes('cm') || fabricWidthUnit?.toLowerCase() === 'cm';
       
       // Parse the numeric value (strip any non-numeric chars except decimal)
       const numericValue = parseFloat(fabricWidthRaw.replace(/[^\d.]/g, ''));
       
       if (!isNaN(numericValue) && numericValue > 0) {
-        if (hasInchSymbol || unitIsInches) {
+        // Determine if this is likely inches:
+        // 1. Has explicit inch symbol ('', ", inch)
+        // 2. Unit column says inches
+        // 3. Value matches common inch widths AND no cm indicator
+        const isCommonInchWidth = COMMON_INCH_WIDTHS.includes(Math.round(numericValue));
+        const isLikelyInches = hasInchSymbol || unitIsInches || (isCommonInchWidth && !hasCmIndicator);
+        
+        if (isLikelyInches) {
           // Convert inches to CM (internal standard): 1 inch = 2.54 cm
           fabricWidthCm = numericValue * 2.54;
-          console.log(`📏 CSV Import: Converted fabric width from ${numericValue} inches to ${fabricWidthCm} cm`);
+          console.log(`📏 CSV Import: Converted fabric width from ${numericValue} inches to ${fabricWidthCm.toFixed(2)} cm`);
         } else {
           // Assume CM if no inch indicator
           fabricWidthCm = numericValue;
+          console.log(`📏 CSV Import: Fabric width ${numericValue} assumed to be CM`);
         }
       }
     }
