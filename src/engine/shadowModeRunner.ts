@@ -242,6 +242,17 @@ export function buildTemplate(
       result.pricing_grid_data = template.pricing_grid_data;
     }
     
+    // Making/Stitching charge fields (curtains only)
+    if (template.making_charge_per_meter != null) {
+      result.making_charge_per_meter = parseFloat(template.making_charge_per_meter);
+    }
+    if (template.making_charge_method) {
+      result.making_charge_method = template.making_charge_method;
+    }
+    if (template.heading_making_charges && typeof template.heading_making_charges === 'object') {
+      result.heading_making_charges = template.heading_making_charges;
+    }
+    
     return result;
   } catch (error) {
     console.warn('[ENGINE_SHADOW] Failed to build template:', error);

@@ -32,6 +32,7 @@ export interface CurtainEngineResult extends CalculationResultContract {
   fullness?: number;
   totalWidthCm?: number;
   totalDropCm?: number;
+  // making_cost is already included from CalculationResultContract
 }
 
 export function useCurtainEngine({

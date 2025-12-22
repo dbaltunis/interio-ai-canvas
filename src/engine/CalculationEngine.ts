@@ -155,7 +155,16 @@ export class CalculationEngine {
     );
     
     const base_cost = template.base_price || 0;
-    const subtotal = fabric_cost + material_cost + options_cost + base_cost;
+    
+    // Calculate making/stitching charge (curtains only)
+    const making_cost = this.calculateMakingCost(
+      template,
+      category,
+      linear_meters,
+      widths_required
+    );
+    
+    const subtotal = fabric_cost + material_cost + options_cost + base_cost + making_cost;
     
     const waste_percentage = template.waste_percentage;
     const waste_amount = roundTo(subtotal * (waste_percentage / 100), 2);
@@ -172,6 +181,7 @@ export class CalculationEngine {
       material_cost: roundTo(material_cost, 2),
       options_cost: roundTo(options_cost, 2),
       base_cost: roundTo(base_cost, 2),
+      making_cost: roundTo(making_cost, 2),
       subtotal: roundTo(subtotal, 2),
       waste_amount,
       total,
@@ -390,6 +400,52 @@ export class CalculationEngine {
         formula_string: `(${effective_width_cm}cm × ${effective_height_cm}cm) / 10000 = ${sqm}m²`,
       },
     };
+  }
+  
+  // ============================================================
+  // Making/Stitching Charge Calculation
+  // ============================================================
+  
+  /**
+   * Calculate making/stitching charge from template configuration
+   * Supports per_meter, per_panel, and per_unit pricing methods
+   */
+  static calculateMakingCost(
+    template: TemplateContract,
+    category: TreatmentCategoryDbValue,
+    linear_meters?: number,
+    widths_required?: number
+  ): number {
+    // Only apply to curtains (not blinds)
+    if (!isLinearType(category)) {
+      return 0;
+    }
+    
+    const baseCharge = template.making_charge_per_meter;
+    if (!baseCharge || baseCharge <= 0) {
+      return 0;
+    }
+    
+    const method = template.making_charge_method || 'per_meter';
+    
+    switch (method) {
+      case 'per_meter':
+        // Charge per linear meter of fabric
+        if (!linear_meters) return 0;
+        return roundTo(baseCharge * linear_meters, 2);
+        
+      case 'per_panel':
+        // Charge per panel/width (for machine-made curtains)
+        if (!widths_required) return 0;
+        return roundTo(baseCharge * widths_required, 2);
+        
+      case 'per_unit':
+        // Flat charge per curtain unit
+        return roundTo(baseCharge, 2);
+        
+      default:
+        return 0;
+    }
   }
   
   // ============================================================
