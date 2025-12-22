@@ -68,7 +68,6 @@ interface EngineResult {
   material_cost: number;
   options_cost: number;
   base_cost: number;
-  making_cost?: number; // Making/stitching charge from template
   subtotal: number;
   waste_amount: number;
   total: number;
@@ -114,8 +113,7 @@ interface CurtainCostsCallback {
   liningCost: number;
   manufacturingCost: number;
   headingCost: number;
-  headingName?: string; // ✅ ADD: Heading name for correct display/save
-  makingCost: number; // Making/stitching charge from template
+  headingName?: string;
   optionsCost: number;
   optionDetails: Array<{ name: string; cost: number; pricingMethod: string }>;
   totalCost: number;
@@ -740,18 +738,15 @@ export const CostCalculationSummary = ({
   const manufacturingCost = hasCurtainPricingGrid ? 0 : safeParseFloat(calculatedManufacturingCost, 0);
   const headingCost = safeParseFloat(calculatedHeadingCost, 0);
   const optionsCost = safeParseFloat(calculatedOptionsCost, 0);
-  // ✅ NEW: Making/stitching cost from engine (template-based)
-  const makingCost = useEngine ? (engineResult.making_cost ?? 0) : 0;
   const totalCost = calculatedTotalCost 
     ? safeParseFloat(calculatedTotalCost, 0)
-    : (fabricCost + liningCost + manufacturingCost + headingCost + optionsCost + makingCost);
+    : (fabricCost + liningCost + manufacturingCost + headingCost + optionsCost);
 
   console.log('📊 Curtain costs:', {
     fabricCost,
     liningCost,
     manufacturingCost,
     headingCost,
-    makingCost,
     optionsCost,
     selectedOptionsCount: selectedOptions?.length,
     selectedOptionsDetails: selectedOptions?.map(opt => ({ name: opt.name, price: opt.price })),
@@ -800,7 +795,7 @@ export const CostCalculationSummary = ({
       return selectedHeading; // Use ID as fallback
     })();
     
-    const curtainCostsKey = `${fabricCost}-${liningCost}-${manufacturingCost}-${headingCost}-${makingCost}-${optionsCost}-${totalCost}-${linearMeters}-${optionSelectionKey}-${measurementKey}-${headingKey}`;
+    const curtainCostsKey = `${fabricCost}-${liningCost}-${manufacturingCost}-${headingCost}-${optionsCost}-${totalCost}-${linearMeters}-${optionSelectionKey}-${measurementKey}-${headingKey}`;
     
     curtainCostsRef.current = {
       costs: {
@@ -808,8 +803,7 @@ export const CostCalculationSummary = ({
         liningCost,
         manufacturingCost,
         headingCost,
-        headingName: resolvedHeadingName, // ✅ FIXED: Use resolved heading name
-        makingCost, // ✅ NEW: Making/stitching charge from template
+        headingName: resolvedHeadingName,
         optionsCost,
         optionDetails,
         totalCost,
@@ -1031,33 +1025,6 @@ export const CostCalculationSummary = ({
           <div className="flex justify-between py-1.5 border-b border-border/50">
             <span className="text-card-foreground font-medium">Heading</span>
             <span className="font-semibold text-card-foreground">{formatPrice(headingCost)}</span>
-          </div>
-        )}
-
-        {/* Making/Stitching Charge (from template configuration) */}
-        {makingCost > 0 && (
-          <div className="flex justify-between py-1.5 border-b border-border/50">
-            <div className="flex flex-col">
-              <span className="text-card-foreground font-medium flex items-center gap-2">
-                <SewingMachineIcon className="h-3.5 w-3.5 text-primary" />
-                Making/Stitching
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {(() => {
-                  const method = (template as any)?.making_charge_method || 'per_meter';
-                  const charge = (template as any)?.making_charge_per_meter || 0;
-                  if (method === 'per_meter' && linearMeters > 0) {
-                    return `${formatPrice(charge)}/m × ${linearMeters.toFixed(2)}m`;
-                  } else if (method === 'per_panel' && widthsRequired > 0) {
-                    return `${formatPrice(charge)}/panel × ${widthsRequired} panel(s)`;
-                  } else if (method === 'per_unit') {
-                    return 'Flat rate per unit';
-                  }
-                  return '';
-                })()}
-              </span>
-            </div>
-            <span className="font-semibold text-card-foreground">{formatPrice(makingCost)}</span>
           </div>
         )}
 
