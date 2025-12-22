@@ -80,6 +80,12 @@ export interface TemplateContract {
   // Pricing grid if applicable
   pricing_grid_data?: PricingGridContract;
   pricing_grid_id?: string;
+  
+  // Making/Stitching charge configuration (curtains only)
+  making_charge_per_meter?: number;
+  making_charge_method?: 'per_meter' | 'per_panel' | 'per_unit';
+  /** Heading-specific making charges: { heading_id: price } */
+  heading_making_charges?: Record<string, number>;
 }
 
 /**
@@ -189,6 +195,8 @@ export interface CalculationResultContract {
   material_cost: number;
   options_cost: number;
   base_cost: number;
+  /** Making/stitching charge (curtains only) */
+  making_cost: number;
   
   // Totals
   subtotal: number;
