@@ -13,6 +13,7 @@ import { CategoryDrillDown } from "./admin/CategoryDrillDown";
 import { CFOValuationTable, ValuationItem } from "./admin/CFOValuationTable";
 import { AdminAccessManager } from "./admin/AdminAccessManager";
 import { CompactImportExport } from "./admin/CompactImportExport";
+import { BulkInventoryImport } from "@/components/settings/tabs/inventory/BulkInventoryImport";
 
 export const InventoryAdminPanel = () => {
   const { data: inventory, isLoading } = useEnhancedInventory();
@@ -263,6 +264,9 @@ export const InventoryAdminPanel = () => {
           expectedProfit={financialSummary.expectedProfit}
         />
       </div>
+
+      {/* Bulk Import */}
+      <BulkInventoryImport />
     </div>
   );
 };
