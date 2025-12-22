@@ -242,6 +242,11 @@ export function buildTemplate(
       result.pricing_grid_data = template.pricing_grid_data;
     }
     
+    // Heading-specific price overrides (for per-metre pricing)
+    if (template.heading_prices && typeof template.heading_prices === 'object') {
+      result.heading_prices = template.heading_prices;
+    }
+    
     return result;
   } catch (error) {
     console.warn('[ENGINE_SHADOW] Failed to build template:', error);

@@ -155,6 +155,7 @@ export class CalculationEngine {
     );
     
     const base_cost = template.base_price || 0;
+    
     const subtotal = fabric_cost + material_cost + options_cost + base_cost;
     
     const waste_percentage = template.waste_percentage;
@@ -391,7 +392,6 @@ export class CalculationEngine {
       },
     };
   }
-  
   // ============================================================
   // Pricing Calculations with Grid Support
   // ============================================================

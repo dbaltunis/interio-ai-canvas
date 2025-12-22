@@ -77,6 +77,7 @@ export const VirtualizedInventoryGrid = ({
               imageUrl={item.image_url}
               color={item.colors?.[0] || item.color}
               productName={item.name}
+              supplierName={item.supplier || item.vendor?.name}
               className="w-full h-full object-cover"
             />
             {isSelected && (

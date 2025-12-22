@@ -39,31 +39,31 @@ const Sidebar = () => {
       path: "/jobs",
       label: "Jobs",
       icon: Briefcase,
-      show: canViewJobs
+      show: canViewJobs !== false // Show during loading (undefined)
     },
     {
       path: "/crm",
       label: "CRM",
       icon: Users,
-      show: canViewClients
+      show: canViewClients !== false
     },
     {
       path: "/calendar",
       label: "Calendar",
       icon: Calendar,
-      show: canViewCalendar
+      show: canViewCalendar !== false
     },
     {
       path: "/inventory",
       label: "Inventory",
       icon: Package,
-      show: canViewInventory
+      show: canViewInventory !== false
     },
     {
       path: "/analytics",
       label: "Analytics",
       icon: BarChart3,
-      show: canViewAnalytics
+      show: canViewAnalytics !== false
     },
     {
       path: "/documentation",
@@ -75,7 +75,7 @@ const Sidebar = () => {
       path: "/settings",
       label: "Settings",
       icon: Settings,
-      show: canViewSettings
+      show: canViewSettings !== false
     }
   ].filter(item => item.show);
 

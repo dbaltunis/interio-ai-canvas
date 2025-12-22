@@ -119,7 +119,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
   }>({});
   const [activeTab, setActiveTab] = useState("window-type");
   const [fabricCalculation, setFabricCalculation] = useState<any>(null);
-  const [selectedHeading, setSelectedHeading] = useState("standard");
+  const [selectedHeading, setSelectedHeading] = useState("none");
   const [selectedLining, setSelectedLining] = useState("none");
   const [selectedOptions, setSelectedOptions] = useState<Array<{ name: string; price: number; pricingMethod?: string; pricingGridData?: any; optionKey?: string }>>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -162,6 +162,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     liningCost: number;
     manufacturingCost: number;
     headingCost: number;
+    headingName?: string; // ✅ ADD: Heading name for correct save
     optionsCost: number;
     optionDetails: Array<{ name: string; cost: number; pricingMethod: string }>;
     totalCost: number;
@@ -527,9 +528,12 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           setSelectedItems(restoredItems);
         }
         
-        // Restore heading and lining
+        // Restore heading and lining - normalize 'standard' to 'none' for dropdown compatibility
         if (existingWindowSummary.selected_heading_id) {
-          setSelectedHeading(existingWindowSummary.selected_heading_id);
+          const normalizedHeading = existingWindowSummary.selected_heading_id === 'standard' 
+            ? 'none' 
+            : existingWindowSummary.selected_heading_id;
+          setSelectedHeading(normalizedHeading);
         }
         if (existingWindowSummary.selected_lining_type) {
           setSelectedLining(existingWindowSummary.selected_lining_type);
@@ -550,7 +554,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           
           // CRITICAL: Explicitly restore heading and lining selections into measurements object
           // Priority: measurements_details > summary columns
-          restoredMeasurements.selected_heading = measurementsDetails.selected_heading || existingWindowSummary.selected_heading_id || '';
+          // Normalize 'standard' to 'none' for dropdown compatibility
+          const rawHeading = measurementsDetails.selected_heading || existingWindowSummary.selected_heading_id || '';
+          restoredMeasurements.selected_heading = rawHeading === 'standard' ? 'none' : rawHeading;
           restoredMeasurements.selected_lining = measurementsDetails.selected_lining || existingWindowSummary.selected_lining_type || 'none';
           
           // CRITICAL: Also update parent state immediately for dropdowns
@@ -707,7 +713,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           // CRITICAL FIX: Calculate totalWidthWithAllowances from restored values
           // rail_width is stored in MM in database, convert to CM for fabric calculation
           const railWidthCm = (md.rail_width || 0) / 10;
-          const fullness = md.heading_fullness || md.fullness_ratio || 2;
+          const fullness = md.heading_fullness || md.fullness_ratio || 1; // ✅ FIX: Use 1 (no multiplication) if no fullness found
           const requiredWidth = railWidthCm * fullness;
           const returns = (md.return_left || 0) + (md.return_right || 0);
           const curtainMultiplier = (md.curtain_type === 'pair' || md.curtain_type === 'double') ? 2 : 1;
@@ -1229,7 +1235,28 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
 
           // Calculate heading cost (for curtains only) - ONLY if not using liveCurtainCalcResult
           // Note: headingCost already declared at line 920, and set from liveCurtainCalcResult if available
-          let headingName = 'Standard';
+          
+          // ✅ CRITICAL FIX: ALWAYS resolve heading name, regardless of liveCurtainCalcResult
+          // Previously this was inside the if(!liveCurtainCalcResult) block, causing "Standard" to always show
+          let headingName = liveCurtainCalcResult?.headingName || 'Standard';
+          if (!headingName || headingName === 'Standard') {
+            // Resolve from settings/inventory if not provided by liveCurtainCalcResult
+            if (selectedHeading && selectedHeading !== 'standard' && selectedHeading !== 'none') {
+              const headingOptionFromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
+              if (headingOptionFromSettings) {
+                headingName = headingOptionFromSettings.name;
+              } else {
+                const headingItem = headingInventory?.find(item => item.id === selectedHeading);
+                if (headingItem) {
+                  headingName = headingItem.name;
+                } else {
+                  headingName = getHeadingName(selectedHeading);
+                }
+              }
+            }
+          }
+          console.log("🎯 Resolved heading name:", headingName, "for ID:", selectedHeading, "from liveCurtainCalcResult:", !!liveCurtainCalcResult?.headingName);
+          
           if (!liveCurtainCalcResult && treatmentCategory !== 'wallpaper') {
             console.log("🎯 AutoSave heading calculation:", {
               selectedHeading,
@@ -1244,25 +1271,27 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               headingCost = headingUpchargePerCurtain + headingUpchargePerMetre * linearMeters;
 
               // Add additional heading costs from settings/inventory
+              // ✅ CRITICAL FIX: Use linearMeters (fullness-adjusted width) NOT raw rail_width
+              // Heading tape is applied to the finished curtain width which includes fullness
               const headingOptionFromSettings = headingOptionsFromSettings.find(h => h.id === selectedHeading);
-              console.log("🎯 Found heading in settings:", headingOptionFromSettings);
+              console.log("🎯 Found heading in settings:", headingOptionFromSettings, "linearMeters:", linearMeters);
               if (headingOptionFromSettings) {
-                // ✅ CRITICAL: measurements.rail_width is in MM, convert to meters
-                const widthMM = parseFloat(measurements.rail_width) || 0;
-                const additionalCost = headingOptionFromSettings.price * widthMM / 1000; // MM to meters
+                // ✅ FIX: Use linearMeters (already in meters, includes fullness)
+                const headingPricePerMeter = headingOptionFromSettings.price || 0;
+                const additionalCost = headingPricePerMeter * linearMeters;
                 headingCost += additionalCost;
                 headingName = headingOptionFromSettings.name;
-                console.log("🎯 Settings heading cost:", additionalCost, "name:", headingName);
+                console.log("🎯 Settings heading cost:", additionalCost, "= price:", headingPricePerMeter, "× linearMeters:", linearMeters);
               } else {
                 const headingItem = headingInventory?.find(item => item.id === selectedHeading);
-                console.log("🎯 Found heading in inventory:", headingItem);
+                console.log("🎯 Found heading in inventory:", headingItem, "linearMeters:", linearMeters);
                 if (headingItem) {
-                  // ✅ CRITICAL: measurements.rail_width is in MM, convert to meters
-                  const widthMM = parseFloat(measurements.rail_width) || 0;
-                  const additionalCost = (headingItem.price_per_meter || headingItem.selling_price || 0) * widthMM / 1000;
+                  // ✅ FIX: Use linearMeters (already in meters, includes fullness)
+                  const headingPricePerMeter = headingItem.price_per_meter || headingItem.selling_price || 0;
+                  const additionalCost = headingPricePerMeter * linearMeters;
                   headingCost += additionalCost;
                   headingName = headingItem.name;
-                  console.log("🎯 Inventory heading cost:", additionalCost, "name:", headingName);
+                  console.log("🎯 Inventory heading cost:", additionalCost, "= price:", headingPricePerMeter, "× linearMeters:", linearMeters);
                 } else {
                   // Use getHeadingName helper as fallback
                   headingName = getHeadingName(selectedHeading);
@@ -1317,7 +1346,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               // ✅ FIX: Calculate totalWidthWithAllowances directly from raw measurements
               // Never rely on potentially-stale fabricCalculation state
               const railWidthCm = (parseFloat(measurements.rail_width || '0')) / 10; // MM to CM
-              const fullness = fabricCalculation?.fullnessRatio || parseFloat(measurements.heading_fullness || '0') || selectedTemplate?.fullness_ratio || 2;
+              const fullness = fabricCalculation?.fullnessRatio || parseFloat(measurements.heading_fullness || '0') || selectedTemplate?.fullness_ratio || 1; // ✅ FIX: Use 1 if no fullness
               const sideHemCm = fabricCalculation?.sideHems || parseFloat(String(measurements.side_hem || selectedTemplate?.side_hem || 4));
               const returnLeftCm = parseFloat(measurements.return_left || '0');
               const returnRightCm = parseFloat(measurements.return_right || '0');
@@ -1959,8 +1988,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               pooling_option: measurements.pooling_option || 'above_floor',
               pooling_amount: measurements.pooling_amount || '',
               // CRITICAL FIX: Use user's heading_fullness selection, NOT template default
-              fullness_ratio: measurements.heading_fullness || measurements.fullness_ratio || selectedTemplate?.fullness_ratio || (treatmentCategory === 'wallpaper' ? 1 : 2),
-              heading_fullness: measurements.heading_fullness || selectedTemplate?.fullness_ratio || 2,
+              // ✅ FIX: No hardcoded fallback - use 1 (no multiplication) if not set
+              fullness_ratio: measurements.heading_fullness || measurements.fullness_ratio || selectedTemplate?.fullness_ratio || 1,
+              heading_fullness: measurements.heading_fullness || measurements.fullness_ratio || selectedTemplate?.fullness_ratio || 1,
               fabric_width_cm: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140,
               window_type: selectedWindowType?.name || 'Room Wall',
               selected_heading: selectedHeading,
@@ -2909,11 +2939,14 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       headingCost = headingUpchargePerCurtain + headingUpchargePerMetre * totalMeters;
                       
                       // Add heading inventory/settings price - match save calculation exactly
+                      // ✅ CRITICAL FIX: Use totalMeters (fullness-adjusted width) NOT raw rail_width
+                      // Heading tape is applied to the finished curtain width which includes fullness
                       const heading = headingOptionsFromSettings.find(h => h.id === selectedHeading || h.name === selectedHeading);
                       if (heading) {
-                        const railWidth = parseFloat(measurements.rail_width || '0');
-                        const additionalCost = (heading as any).price * (railWidth / 100);
+                        const headingPricePerMeter = (heading as any).price || 0;
+                        const additionalCost = headingPricePerMeter * totalMeters;
                         headingCost += additionalCost;
+                        console.log("🎯 Display heading cost:", additionalCost, "= price:", headingPricePerMeter, "× totalMeters:", totalMeters);
                       }
                     }
 

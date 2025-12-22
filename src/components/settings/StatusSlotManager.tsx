@@ -13,30 +13,51 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Star, EyeOff, Edit2, Save, X } from "lucide-react";
+import { Star, EyeOff, Edit2, Save, X, FileText } from "lucide-react";
 import { useJobStatuses, useCreateJobStatus, useUpdateJobStatus } from "@/hooks/useJobStatuses";
+import { useNumberSequences } from "@/hooks/useNumberSequences";
 import { useToast } from "@/hooks/use-toast";
 
 const SLOT_COUNT = 10;
 
+// Document types that map to number sequences (Draft → Quote → Order → Invoice)
+const DOCUMENT_TYPES = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'quote', label: 'Quote' },
+  { value: 'order', label: 'Order' },
+  { value: 'invoice', label: 'Invoice' },
+] as const;
+
+type DocumentType = typeof DOCUMENT_TYPES[number]['value'];
+
 const DEFAULT_STATUS_TEMPLATES = [
-  { slot: 1, name: "Quote Draft", color: "gray", category: "Quote", action: "editable", description: "Initial quote preparation" },
-  { slot: 2, name: "Quote Sent", color: "blue", category: "Quote", action: "view_only", description: "Quote sent to client" },
-  { slot: 3, name: "Quote Approved", color: "green", category: "Quote", action: "locked", description: "Quote approved by client" },
-  { slot: 4, name: "Planning", color: "gray", category: "Project", action: "editable", description: "Project planning phase" },
-  { slot: 5, name: "In Progress", color: "blue", category: "Project", action: "progress_only", description: "Active project work" },
-  { slot: 6, name: "Materials Ordered", color: "orange", category: "Project", action: "progress_only", description: "Materials have been ordered" },
-  { slot: 7, name: "Manufacturing", color: "yellow", category: "Project", action: "progress_only", description: "Manufacturing in progress" },
-  { slot: 8, name: "Quality Check", color: "primary", category: "Project", action: "view_only", description: "Quality inspection" },
-  { slot: 9, name: "Ready for Delivery", color: "green", category: "Project", action: "view_only", description: "Ready to deliver" },
-  { slot: 10, name: "Completed", color: "green", category: "Project", action: "completed", description: "Project completed" },
+  { slot: 1, name: "Quote Draft", color: "gray", category: "Quote", action: "editable", description: "Initial quote preparation", document_type: "draft" as DocumentType },
+  { slot: 2, name: "Quote Sent", color: "blue", category: "Quote", action: "view_only", description: "Quote sent to client", document_type: "quote" as DocumentType },
+  { slot: 3, name: "Quote Approved", color: "green", category: "Quote", action: "locked", description: "Quote approved by client", document_type: "quote" as DocumentType },
+  { slot: 4, name: "Planning", color: "gray", category: "Project", action: "editable", description: "Project planning phase", document_type: "order" as DocumentType },
+  { slot: 5, name: "In Progress", color: "blue", category: "Project", action: "progress_only", description: "Active project work", document_type: "order" as DocumentType },
+  { slot: 6, name: "Materials Ordered", color: "orange", category: "Project", action: "progress_only", description: "Materials have been ordered", document_type: "order" as DocumentType },
+  { slot: 7, name: "Manufacturing", color: "yellow", category: "Project", action: "progress_only", description: "Manufacturing in progress", document_type: "order" as DocumentType },
+  { slot: 8, name: "Quality Check", color: "primary", category: "Project", action: "view_only", description: "Quality inspection", document_type: "order" as DocumentType },
+  { slot: 9, name: "Ready for Delivery", color: "green", category: "Project", action: "view_only", description: "Ready to deliver", document_type: "order" as DocumentType },
+  { slot: 10, name: "Completed", color: "green", category: "Project", action: "completed", description: "Project completed", document_type: "invoice" as DocumentType },
 ];
 
 export const StatusSlotManager = () => {
   const { data: jobStatuses = [], isLoading } = useJobStatuses();
+  const { data: numberSequences = [] } = useNumberSequences();
   const createStatus = useCreateJobStatus();
   const updateStatus = useUpdateJobStatus();
   const { toast } = useToast();
+
+  // Get prefix example for a document type
+  const getPrefixExample = (docType: string): string => {
+    const sequence = numberSequences.find(s => s.entity_type === docType);
+    if (sequence) {
+      return `${sequence.prefix}${String(sequence.next_number).padStart(sequence.padding, '0')}`;
+    }
+    return '';
+  };
   const [editingSlot, setEditingSlot] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<any>({});
 
@@ -54,6 +75,8 @@ export const StatusSlotManager = () => {
 
   const handleEdit = (slotNumber: number, status: any) => {
     setEditingSlot(slotNumber);
+    // Determine default document_type based on slot number
+    const defaultDocType = slotNumber <= 1 ? 'draft' : slotNumber <= 3 ? 'quote' : slotNumber === 10 ? 'invoice' : 'order';
     setEditForm({
       name: status?.name || "",
       color: status?.color || "gray",
@@ -61,6 +84,7 @@ export const StatusSlotManager = () => {
       action: status?.action || "editable",
       description: status?.description || "",
       is_active: status?.is_active ?? true,
+      document_type: status?.document_type || defaultDocType,
     });
   };
 
@@ -120,6 +144,7 @@ export const StatusSlotManager = () => {
             category: template.category,
             action: template.action,
             description: template.description,
+            document_type: template.document_type,
             slot_number: template.slot,
             sort_order: template.slot,
             is_active: true,
@@ -202,17 +227,6 @@ export const StatusSlotManager = () => {
                       </Select>
                     </div>
                     <div>
-                      <Label>Category</Label>
-                      <Select value={editForm.category} onValueChange={(v) => setEditForm({ ...editForm, category: v })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Project">Project</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
                       <Label>Action Behavior</Label>
                       <Select value={editForm.action} onValueChange={(v) => setEditForm({ ...editForm, action: v })}>
                         <SelectTrigger>
@@ -227,6 +241,33 @@ export const StatusSlotManager = () => {
                           <SelectItem value="requires_reason">Requires Reason</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Number Sequence Type
+                      </Label>
+                      <Select 
+                        value={editForm.document_type || 'order'} 
+                        onValueChange={(v) => setEditForm({ ...editForm, document_type: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select document type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DOCUMENT_TYPES.map((type) => {
+                            const prefix = getPrefixExample(type.value);
+                            return (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label} {prefix && <span className="text-muted-foreground font-mono">({prefix})</span>}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Determines which number sequence is used at this stage
+                      </p>
                     </div>
                   </div>
                   <div>
@@ -287,8 +328,18 @@ export const StatusSlotManager = () => {
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {status.category} • {status.action.replace(/_/g, " ")}
-                            {status.description && ` • ${status.description}`}
+                            {(status as any).document_type && (
+                              <span className="ml-2">
+                                <Badge variant="outline" className="text-xs">
+                                  <FileText className="h-3 w-3 mr-1" />
+                                  {(status as any).document_type}
+                                </Badge>
+                              </span>
+                            )}
                           </p>
+                          {status.description && (
+                            <p className="text-xs text-muted-foreground mt-1">{status.description}</p>
+                          )}
                         </>
                       ) : (
                         <p className="text-sm text-muted-foreground italic">

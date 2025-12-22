@@ -18,6 +18,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useMarkupSettings } from "@/hooks/useMarkupSettings";
 import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
+import { useHasPermission } from "@/hooks/usePermissions";
 
 // Lazy load heavy components - use direct import for now to avoid build issues
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
@@ -132,6 +133,7 @@ export function WindowSummaryCard({
   }
 
   // DISPLAY-ONLY ARCHITECTURE: Trust saved cost_breakdown completely, no recalculations
+  // CRITICAL: Apply markup to ALL items to show SELLING prices (not cost prices)
   const enrichedBreakdown = useMemo(() => {
     if (!summary) return [] as any[];
 
@@ -142,13 +144,35 @@ export function WindowSummaryCard({
       userCurrency
     });
 
+    // Helper to apply markup to a single item
+    const applyMarkupToItem = (item: any) => {
+      if (!markupSettings) return item;
+      
+      const markupResult = resolveMarkup({
+        category: summary.treatment_category || summary.treatment_type,
+        subcategory: item.category,
+        markupSettings: markupSettings
+      });
+      
+      const costPrice = Number(item.total_cost) || 0;
+      const unitCost = Number(item.unit_price) || 0;
+      
+      return {
+        ...item,
+        total_cost: applyMarkup(costPrice, markupResult.percentage),
+        unit_price: unitCost > 0 ? applyMarkup(unitCost, markupResult.percentage) : undefined
+      };
+    };
+
     const raw = Array.isArray(summary.cost_breakdown) ? summary.cost_breakdown : [];
     
     // If we have structured cost_breakdown, use it directly - NO recalculations
     const hasStructured = raw.some((it: any) => it && 'category' in it && 'total_cost' in it);
     if (hasStructured) {
-      console.log('✅ [DISPLAY-ONLY] Using saved cost_breakdown as-is:', raw.map((i: any) => ({ name: i.name, total: i.total_cost })));
-      return raw as any[];
+      // CRITICAL: Apply markup to ALL items to show SELLING prices
+      const itemsWithMarkup = raw.map(applyMarkupToItem);
+      console.log('✅ [DISPLAY-ONLY] Using saved cost_breakdown with markup applied:', itemsWithMarkup.map((i: any) => ({ name: i.name, sellingPrice: i.total_cost })));
+      return itemsWithMarkup as any[];
     }
 
     // Fallback: Build display breakdown from summary fields (still no recalculation)
@@ -353,22 +377,26 @@ export function WindowSummaryCard({
       });
     }
 
-    return items;
-  }, [summary]);
+    // CRITICAL: Apply markup to ALL fallback items to show SELLING prices
+    const itemsWithMarkup = items.map(applyMarkupToItem);
+    return itemsWithMarkup;
+  }, [summary, markupSettings, userCurrency, treatmentType]);
 
-  // DISPLAY-ONLY: Calculate RETAIL price (cost + markup) for display
+  // DISPLAY-ONLY: Calculate TOTAL from already-marked-up breakdown items
   const displayTotal = useMemo(() => {
     if (!summary) return 0;
     
-    // Get cost total from breakdown or saved total
-    const costTotal = enrichedBreakdown.length > 0 && enrichedBreakdown[0]?.total_cost !== undefined
-      ? enrichedBreakdown.reduce((sum, item) => sum + (Number(item.total_cost) || 0), 0)
-      : Number(summary.total_cost) || 0;
+    // Since enrichedBreakdown items already have markup applied, just sum them
+    if (enrichedBreakdown.length > 0 && enrichedBreakdown[0]?.total_cost !== undefined) {
+      const total = enrichedBreakdown.reduce((sum, item) => sum + (Number(item.total_cost) || 0), 0);
+      console.log('💰 [DISPLAY] Window card total (from marked-up items):', total);
+      return total;
+    }
     
-    // Access extended properties safely
+    // Fallback: Apply markup to saved total_cost
+    const costTotal = Number(summary.total_cost) || 0;
     const summaryAny = summary as any;
     
-    // Apply markup to get retail/selling price
     const markupResult = resolveMarkup({
       gridMarkup: summaryAny.pricing_grid_markup || undefined,
       category: summary.treatment_category || summary.treatment_type,
@@ -377,7 +405,7 @@ export function WindowSummaryCard({
     });
     
     const retailPrice = applyMarkup(costTotal, markupResult.percentage);
-    console.log('💰 [DISPLAY] Window card retail price:', { costTotal, markup: markupResult.percentage, retailPrice });
+    console.log('💰 [DISPLAY] Window card retail price (fallback):', { costTotal, markup: markupResult.percentage, retailPrice });
     return retailPrice;
   }, [summary, enrichedBreakdown, markupSettings]);
 

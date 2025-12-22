@@ -142,12 +142,12 @@ export const PricingRulesTab = () => {
         isInheriting={isInheritingSettings}
       />
       
-      {/* Simplified 2-Tab Structure */}
+      {/* 2-Tab Structure: Grids, Settings */}
       <Tabs defaultValue="grids" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="grids" className="flex items-center gap-2">
             <Grid3X3 className="h-4 w-4" />
-            My Grids
+            Pricing Grids
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings2 className="h-4 w-4" />

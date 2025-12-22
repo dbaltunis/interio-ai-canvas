@@ -6,9 +6,17 @@ import type { ClientBreakdownItem } from "@/utils/quotes/buildClientBreakdown";
 interface QuoteItemBreakdownProps {
   breakdown: ClientBreakdownItem[];
   showImages?: boolean;
+  treatmentCategory?: string;
 }
 
-const QuoteItemBreakdown: React.FC<QuoteItemBreakdownProps> = ({ breakdown, showImages = false }) => {
+/**
+ * Displays breakdown items with selling prices (markup already applied at source)
+ */
+const QuoteItemBreakdown: React.FC<QuoteItemBreakdownProps> = ({ 
+  breakdown, 
+  showImages = false,
+  treatmentCategory 
+}) => {
   const { formatCurrency } = useFormattedCurrency();
 
   if (!Array.isArray(breakdown) || breakdown.length === 0) return null;
@@ -16,7 +24,9 @@ const QuoteItemBreakdown: React.FC<QuoteItemBreakdownProps> = ({ breakdown, show
   return (
     <div className="mt-2 space-y-1">
       {breakdown.map((item, idx) => {
-        const itemCost = Number(item.total_cost) || 0;
+        // Prices already include markup from buildClientBreakdown/useQuotationSync
+        const totalPrice = Number(item.total_cost) || 0;
+        const unitPrice = Number(item.unit_price) || 0;
         
         return (
           <div key={item.id || `${item.category || 'row'}-${idx}`} className="flex items-start justify-between text-sm gap-2">
@@ -36,16 +46,16 @@ const QuoteItemBreakdown: React.FC<QuoteItemBreakdownProps> = ({ breakdown, show
               {item.description && (
                 <div className="text-xs text-muted-foreground">{item.description}</div>
               )}
-              {(item.quantity || item.unit_price) && (
+              {(item.quantity || unitPrice > 0) && (
                 <div className="text-xs text-muted-foreground">
                   {item.quantity ? `${Number(item.quantity).toFixed(2)}${item.unit ? ` ${item.unit}` : ''}` : ''}
-                  {item.quantity && item.unit_price ? ' × ' : ''}
-                  {item.unit_price ? formatCurrency(Number(item.unit_price)) : ''}
+                  {item.quantity && unitPrice > 0 ? ' × ' : ''}
+                  {unitPrice > 0 ? formatCurrency(unitPrice) : ''}
                 </div>
               )}
             </div>
             <div className="text-right font-medium">
-              {itemCost > 0 ? formatCurrency(itemCost) : <span className="text-muted-foreground text-sm">Included</span>}
+              {totalPrice > 0 ? formatCurrency(totalPrice) : <span className="text-muted-foreground text-sm">Included</span>}
             </div>
           </div>
         );

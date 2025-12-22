@@ -8,25 +8,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
 import { 
   ArrowLeft, Mail, Phone, MapPin, Building2, User, Edit, Calendar, 
-  FileText, DollarSign, Star, TrendingUp, Clock, Save, X, Briefcase,
-  MessageSquare, Package, CheckCircle
+  FileText, DollarSign, Clock, Save, X, Briefcase, Package
 } from "lucide-react";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useClient, useUpdateClient } from "@/hooks/useClients";
-import { useClientJobs, useClientQuotes, calculateClientDealValue } from "@/hooks/useClientJobs";
-import { useConversionProbability } from "@/hooks/useConversionProbability";
-import { ClientEmailHistory } from "./ClientEmailHistory";
+import { useClientJobs, useClientQuotes } from "@/hooks/useClientJobs";
+import { useClientFiles } from "@/hooks/useClientFiles";
 import { EnhancedClientEmailHistory } from "./EnhancedClientEmailHistory";
 import { LeadSourceSelect } from "@/components/crm/LeadSourceSelect";
 import { ClientProjectsList } from "./ClientProjectsList";
 import { MeasurementsList } from "../measurements/MeasurementsList";
-import { TasksList } from "../tasks/TasksList";
-import { TasksListEnhanced } from "../tasks/TasksListEnhanced";
-import { QuickAddTask } from "../tasks/QuickAddTask";
 import { ClientActivityLog } from "./ClientActivityLog";
+import { ClientAllNotesSection } from "./ClientAllNotesSection";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { ClientFilesManager } from "./ClientFilesManager";
@@ -46,16 +41,32 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const { data: quotes } = useClientQuotes(clientId);
   const updateClient = useUpdateClient();
   const { toast } = useToast();
-  const { probability: autoConversionProb, factors } = useConversionProbability(client);
   const { user } = useAuth();
+  const { data: clientFiles } = useClientFiles(clientId, user?.id || '');
   const { formatCurrency } = useFormattedCurrency();
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedClient, setEditedClient] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("activity");
   
-  // Calculate total value from quotes
-  const calculatedDealValue = calculateClientDealValue(quotes || []);
+  // Calculate portfolio value from closed/completed projects only
+  // Use project.quote data since quotes may not have client_id set directly
+  const closedProjects = (projects || []).filter(p => 
+    ['closed', 'completed'].includes(p.status?.toLowerCase() || '')
+  );
+  
+  // Sum total_amount from quotes linked to closed projects
+  // Note: quotes may have client_id NULL but are linked via project_id
+  const portfolioValue = closedProjects.reduce((sum, project) => {
+    // Find quotes for this project
+    const projectQuotes = (quotes || []).filter(q => q.project_id === project.id);
+    if (projectQuotes.length > 0) {
+      // Use the latest quote's total_amount
+      const latestQuote = projectQuotes[0]; // Already sorted by created_at desc
+      return sum + parseFloat(latestQuote.total_amount?.toString() || '0');
+    }
+    return sum;
+  }, 0);
 
   if (clientLoading) {
     return (
@@ -132,12 +143,6 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
               {currentClient.client_type === 'B2B' ? <Building2 className="h-3 w-3" /> : <User className="h-3 w-3" />}
               {currentClient.client_type || 'B2C'}
             </Badge>
-            {currentClient.lead_score && currentClient.lead_score >= 70 && (
-              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300 text-xs">
-                <Star className="h-3 w-3 mr-1 fill-yellow-500" />
-                <span className="hidden sm:inline">Hot Lead</span>
-              </Badge>
-            )}
           </div>
         </div>
       </div>
@@ -270,19 +275,68 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Stage</p>
-                <Badge className={getStageColor(currentClient.funnel_stage || 'lead')}>
-                  {getStageByValue(currentClient.funnel_stage || 'lead')?.label || 'Lead'}
-                </Badge>
+                <Select 
+                  value={currentClient.funnel_stage || 'lead'}
+                  onValueChange={async (value) => {
+                    try {
+                      await updateClient.mutateAsync({
+                        id: client.id,
+                        funnel_stage: value,
+                      });
+                      toast({ title: "Stage updated" });
+                    } catch (error) {
+                      toast({ title: "Failed to update stage", variant: "destructive" });
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-fit h-auto py-1 px-2 border-0 bg-transparent hover:bg-muted/50">
+                    <Badge className={getStageColor(currentClient.funnel_stage || 'lead')}>
+                      {getStageByValue(currentClient.funnel_stage || 'lead')?.label || 'Lead'}
+                    </Badge>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FUNNEL_STAGES.map((stage) => (
+                      <SelectItem key={stage.value} value={stage.value}>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${stage.color.split(' ')[0]}`} />
+                          {stage.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Priority</p>
-                <Badge variant="secondary" className={
-                  currentClient.priority === 'high' ? 'bg-red-100 text-red-700' :
-                  currentClient.priority === 'low' ? 'bg-gray-100 text-gray-700' :
-                  'bg-yellow-100 text-yellow-700'
-                }>
-                  {(currentClient.priority || 'medium').toUpperCase()}
-                </Badge>
+                <Select 
+                  value={currentClient.priority_level || 'medium'}
+                  onValueChange={async (value) => {
+                    try {
+                      await updateClient.mutateAsync({
+                        id: client.id,
+                        priority_level: value,
+                      });
+                      toast({ title: "Priority updated" });
+                    } catch (error) {
+                      toast({ title: "Failed to update priority", variant: "destructive" });
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-fit h-auto py-1 px-2 border-0 bg-transparent hover:bg-muted/50">
+                    <Badge variant="secondary" className={
+                      currentClient.priority_level === 'high' ? 'bg-red-100 text-red-700' :
+                      currentClient.priority_level === 'low' ? 'bg-gray-100 text-gray-700' :
+                      'bg-yellow-100 text-yellow-700'
+                    }>
+                      {(currentClient.priority_level || 'medium').toUpperCase()}
+                    </Badge>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Lead Source</p>
@@ -317,8 +371,8 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Deal Value</p>
-                <p className="text-2xl font-bold">{formatCurrency(currentClient.deal_value || 0)}</p>
+                <p className="text-sm text-muted-foreground">Portfolio Value</p>
+                <p className="text-2xl font-bold">{formatCurrency(portfolioValue)}</p>
               </div>
               <DollarSign className="h-8 w-8 text-green-600" />
             </div>
@@ -341,10 +395,10 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Lead Score</p>
-                <p className="text-2xl font-bold">{currentClient.lead_score || 0}</p>
+                <p className="text-sm text-muted-foreground">Files</p>
+                <p className="text-2xl font-bold">{clientFiles?.length || 0}</p>
               </div>
-              <TrendingUp className="h-8 w-8 text-orange-600" />
+              <FileText className="h-8 w-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
@@ -353,10 +407,14 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Conversion</p>
-                <p className="text-2xl font-bold">{currentClient.conversion_probability || 0}%</p>
+                <p className="text-sm text-muted-foreground">Last Contact</p>
+                <p className="text-lg font-bold">
+                  {currentClient.last_contact_date 
+                    ? formatDistanceToNow(new Date(currentClient.last_contact_date), { addSuffix: true })
+                    : 'Never'}
+                </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-purple-600" />
+              <Calendar className="h-8 w-8 text-purple-600" />
             </div>
           </CardContent>
         </Card>
@@ -377,108 +435,14 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </Card>
       )}
 
-      {/* Engagement Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-accent" />
-              Engagement Insights
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">
-              Track how likely this lead is to convert
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Conversion Likelihood</span>
-                <Badge 
-                  variant="outline" 
-                  className={`${
-                    autoConversionProb >= 70 
-                      ? 'bg-green-50 text-green-700 border-green-300' 
-                      : autoConversionProb >= 40 
-                      ? 'bg-yellow-50 text-yellow-700 border-yellow-300' 
-                      : 'bg-red-50 text-red-700 border-red-300'
-                  }`}
-                >
-                  {autoConversionProb}%
-                </Badge>
-              </div>
-              <Progress value={autoConversionProb} className="h-2.5" />
-              <div className="grid grid-cols-2 gap-1.5 text-xs bg-muted/30 p-2.5 rounded-md">
-                <div className="flex items-center gap-1.5">
-                  <Star className="h-3 w-3 text-muted-foreground" />
-                  <span>Score: {factors.leadScore}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Briefcase className="h-3 w-3 text-muted-foreground" />
-                  <span>Stage: {factors.stage}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Mail className="h-3 w-3 text-muted-foreground" />
-                  <span>Emails: {factors.emailEngagement}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="h-3 w-3 text-muted-foreground" />
-                  <span>Activity: {factors.activityLevel}</span>
-                </div>
-              </div>
-            </div>
+      {/* All Project Notes Section */}
+      <ClientAllNotesSection clientId={clientId} />
 
-            <div className="h-px bg-border" />
-            
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-semibold flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4" />
-                  Quick Tasks
-                </h4>
-                <QuickAddTask clientId={clientId} />
-              </div>
-              
-              <TasksList clientId={clientId} compact={true} />
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full mt-2"
-                onClick={() => setActiveTab("activity")}
-              >
-                <Clock className="h-4 w-4 mr-2" />
-                View Full Timeline
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Quick Tasks */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-primary" />
-              Quick Tasks
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <QuickAddTask clientId={clientId} />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Redesigned Tabs Section */}
+      {/* Redesigned Tabs Section - 3 tabs: Activity, Emails, Measurements */}
       <div className="mt-8">
         <h3 className="text-lg font-semibold mb-4">More Details</h3>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/30">
-            <TabsTrigger 
-              value="tasks" 
-              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-            >
-              <CheckCircle className="h-5 w-5" />
-              <span className="font-medium">Tasks</span>
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/30">
             <TabsTrigger 
               value="activity" 
               className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
@@ -501,10 +465,6 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
               <span className="font-medium">Measurements</span>
             </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="tasks" className="mt-6">
-            <TasksListEnhanced clientId={clientId} />
-          </TabsContent>
 
           <TabsContent value="activity" className="mt-6">
             <ClientActivityLog clientId={clientId} />

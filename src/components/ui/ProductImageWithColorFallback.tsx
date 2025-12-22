@@ -1,30 +1,94 @@
-import React, { useState } from 'react';
-import { Package, Palette, Layers } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
 import { colorNameToHex, getContrastingTextColor, generateColorGradient } from '@/utils/colorNameToHex';
 import { cn } from '@/lib/utils';
+import { Scissors, Package, Settings, Wrench } from 'lucide-react';
 
 interface ProductImageWithColorFallbackProps {
   imageUrl?: string | null;
   color?: string | null;
   productName?: string;
+  supplierName?: string;
   size?: number;
   className?: string;
   showColorName?: boolean;
   category?: 'fabric' | 'material' | 'hardware' | 'service' | string;
   rounded?: 'none' | 'sm' | 'md' | 'lg' | 'full';
-  fillContainer?: boolean; // When true, fills parent container instead of using fixed size
+  fillContainer?: boolean;
 }
+
+/**
+ * Generate a consistent, muted color based on supplier name
+ * Each supplier gets a unique but consistent subtle color
+ */
+const generateSupplierColor = (supplierName: string): { background: string; textColor: string } => {
+  if (!supplierName) {
+    return {
+      background: 'hsl(var(--muted))',
+      textColor: 'hsl(var(--muted-foreground))'
+    };
+  }
+
+  // Generate a hash from the supplier name
+  let hash = 0;
+  for (let i = 0; i < supplierName.length; i++) {
+    const char = supplierName.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  
+  // Use hash to generate a muted, professional hue
+  const hue = Math.abs(hash) % 360;
+  // Keep saturation low for professional look
+  const saturation = 20 + (Math.abs(hash >> 8) % 15); // 20-35%
+  const lightness = 88 + (Math.abs(hash >> 16) % 8); // 88-96% (very light)
+  
+  return {
+    background: `hsl(${hue}, ${saturation}%, ${lightness}%)`,
+    textColor: `hsl(${hue}, ${saturation + 20}%, 35%)`
+  };
+};
+
+/**
+ * Get the appropriate icon component based on category
+ */
+const getCategoryIcon = (category: string, size: number) => {
+  const iconSize = size >= 64 ? 24 : size >= 40 ? 18 : 14;
+  const iconProps = { size: iconSize, strokeWidth: 1.5 };
+  
+  switch (category) {
+    case 'fabric':
+      return <Scissors {...iconProps} />;
+    case 'material':
+      return <Package {...iconProps} />;
+    case 'hardware':
+      return <Settings {...iconProps} />;
+    case 'service':
+      return <Wrench {...iconProps} />;
+    default:
+      return <Scissors {...iconProps} />;
+  }
+};
+
+/**
+ * Get abbreviated supplier name for display
+ */
+const getSupplierAbbreviation = (supplierName: string, maxLength: number = 8): string => {
+  if (!supplierName) return '';
+  const name = supplierName.trim().toUpperCase();
+  return name.length > maxLength ? name.substring(0, maxLength) : name;
+};
 
 /**
  * Universal product image component with intelligent fallback:
  * 1. Try to load image from imageUrl
  * 2. If no image or load fails → display color swatch from color field
- * 3. If no color → show category-appropriate icon with styled background
+ * 3. If no color → show category icon with supplier name on muted background
  */
 export const ProductImageWithColorFallback: React.FC<ProductImageWithColorFallbackProps> = ({
   imageUrl,
   color,
   productName = 'Product',
+  supplierName = '',
   size = 48,
   className = '',
   showColorName = false,
@@ -40,25 +104,9 @@ export const ProductImageWithColorFallback: React.FC<ProductImageWithColorFallba
   const hasValidImage = !!imageUrl && !imageError;
   const textColor = getContrastingTextColor(hexColor);
 
-  const getCategoryIcon = () => {
-    const iconSize = fillContainer ? 24 : Math.max(16, size * 0.4);
-    const iconProps = { size: iconSize, className: 'text-muted-foreground' };
-    
-    switch (category?.toLowerCase()) {
-      case 'fabric':
-      case 'fabrics':
-        return <Layers {...iconProps} />;
-      case 'material':
-      case 'materials':
-      case 'slat':
-      case 'slats':
-      case 'vane':
-      case 'vanes':
-        return <Palette {...iconProps} />;
-      default:
-        return <Package {...iconProps} />;
-    }
-  };
+  // Generate consistent color based on supplier name
+  const supplierColor = useMemo(() => generateSupplierColor(supplierName), [supplierName]);
+  const supplierAbbrev = useMemo(() => getSupplierAbbreviation(supplierName, size >= 64 ? 10 : 6), [supplierName, size]);
 
   const roundedClasses = {
     none: 'rounded-none',
@@ -148,17 +196,34 @@ export const ProductImageWithColorFallback: React.FC<ProductImageWithColorFallba
     );
   }
 
-  // Fallback: category icon with styled background
+  // Fallback: Category icon with supplier name on supplier-colored background
   return (
     <div
       className={cn(
-        'flex items-center justify-center border border-border bg-muted',
+        'flex flex-col items-center justify-center border border-border/50 select-none gap-0.5 p-1',
         roundedClasses[rounded],
         className
       )}
-      style={containerStyle}
+      style={{
+        ...containerStyle,
+        background: supplierColor.background,
+      }}
+      title={supplierName ? `${productName} - ${supplierName}` : productName}
     >
-      {getCategoryIcon()}
+      {/* Category icon */}
+      <div style={{ color: supplierColor.textColor }} className="opacity-70">
+        {getCategoryIcon(category, size)}
+      </div>
+      
+      {/* Supplier name abbreviation */}
+      {supplierAbbrev && size >= 40 && (
+        <span 
+          className="text-[9px] font-medium tracking-tight leading-none truncate max-w-full px-0.5"
+          style={{ color: supplierColor.textColor }}
+        >
+          {supplierAbbrev}
+        </span>
+      )}
     </div>
   );
 };

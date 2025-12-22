@@ -19,8 +19,16 @@ export const PERMISSION_ALIASES: Record<string, string[]> = {
   'view_clients': ['view_all_clients', 'view_assigned_clients'],
   'view_calendar': ['view_all_calendar', 'view_own_calendar'],
   'view_analytics': ['view_team_performance', 'view_primary_kpis'],
+  'view_inventory': ['view_inventory', 'manage_inventory'], // Added alias for inventory
+  // Edit permissions - map "own" to "assigned"
   'edit_own_jobs': ['edit_assigned_jobs'],
   'edit_own_clients': ['edit_assigned_clients'],
+  'edit_own_projects': ['edit_projects'],
+  // View permissions - map "own" to "assigned"
+  'view_own_jobs': ['view_assigned_jobs'],
+  'view_own_clients': ['view_assigned_clients'],
+  'view_own_projects': ['view_projects'],
+  // Settings
   'manage_settings': ['manage_business_settings', 'manage_integrations'],
   // Products/Window treatments - ensures Settings > Products tab is always visible
   'view_window_treatments': ['view_templates', 'view_inventory'],

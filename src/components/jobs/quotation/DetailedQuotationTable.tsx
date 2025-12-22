@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -296,7 +296,7 @@ const QuotationItemRow: React.FC<{
             )}
           </div>
           
-          {/* Total Price */}
+          {/* Total Price - already includes markup from source */}
           <div className="text-right flex-shrink-0">
             <div className="text-lg font-semibold text-foreground">{formatCurrency(item.total || 0, currency)}</div>
           </div>

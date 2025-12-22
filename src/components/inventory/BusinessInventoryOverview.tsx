@@ -90,8 +90,8 @@ export const BusinessInventoryOverview = () => {
   }, {} as Record<string, { count: number; value: number; profit: number }>);
 
   const topCategories = Object.entries(categoryStats)
-    .sort((a, b) => b[1].value - a[1].value)
-    .slice(0, 5);
+    .sort((a, b) => (b[1] as { value: number }).value - (a[1] as { value: number }).value)
+    .slice(0, 5) as [string, { count: number; value: number; profit: number }][];
 
 
   if (isLoading || roleLoading) {

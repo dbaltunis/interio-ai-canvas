@@ -59,21 +59,20 @@ export const useUserPermissions = () => {
         console.error('[useUserPermissions] Error fetching custom permissions:', customError);
       }
 
-      // If no custom permissions configured, use role-based permissions
-      if (!customPermissions || customPermissions.length === 0) {
-        console.log(`[useUserPermissions] Using role-based permissions for ${userRole}`);
-        return roleBasedPermissions.map(p => ({ permission_name: p }));
+      // ALWAYS start with role-based permissions as baseline
+      // Custom permissions are ADDITIONS, never replacements
+      const finalPermissions = new Set(roleBasedPermissions);
+      
+      // Add any custom permissions on top of role-based permissions
+      if (customPermissions && customPermissions.length > 0) {
+        for (const cp of customPermissions) {
+          finalPermissions.add(cp.permission_name);
+        }
+        console.log(`[useUserPermissions] Role: ${userRole}, merged ${customPermissions.length} custom permissions with ${roleBasedPermissions.length} role permissions = ${finalPermissions.size} total`);
+      } else {
+        console.log(`[useUserPermissions] Role: ${userRole}, using ${roleBasedPermissions.length} role-based permissions`);
       }
-
-      // Custom permissions exist - these are ADDITIONS to role-based permissions
-      // or a complete override depending on use case
-      // For now: use custom permissions but ensure minimum baseline
-      const customPermissionNames = customPermissions.map(p => p.permission_name);
       
-      // Always include view_profile as minimum
-      const finalPermissions = new Set([...customPermissionNames, 'view_profile']);
-      
-      console.log(`[useUserPermissions] Using custom permissions for ${userRole}:`, Array.from(finalPermissions));
       return Array.from(finalPermissions).map(p => ({ permission_name: p }));
     },
     enabled: !!user && !authLoading,
@@ -88,7 +87,16 @@ export const useUserPermissions = () => {
 export const useHasPermission = (permission: string) => {
   const { data: permissions, isLoading } = useUserPermissions();
   
-  if (isLoading || permissions === undefined) return undefined;
+  // CRITICAL: Return undefined during loading to prevent UI from hiding
+  // Components should show content when permission is undefined (loading)
+  if (isLoading) {
+    return undefined;
+  }
+  
+  // No data yet - still loading
+  if (permissions === undefined) {
+    return undefined;
+  }
   
   // Check for permission aliases (backward compatibility)
   // If checking for old name like 'view_jobs', also check for new names like 'view_all_jobs'
@@ -97,9 +105,12 @@ export const useHasPermission = (permission: string) => {
     ? [permission, ...aliasedPermissions] 
     : [permission];
   
-  return permissionsToCheck.some(p => 
-    permissions?.some(userPerm => userPerm.permission_name === p)
-  ) || false;
+  // Now we have actual permissions data - return true/false
+  const hasPermission = permissionsToCheck.some(p => 
+    permissions.some(userPerm => userPerm.permission_name === p)
+  );
+  
+  return hasPermission;
 };
 
 export const useHasAnyPermission = (permissionList: string[]) => {

@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
-import { Mail, Phone, User, Building2, MoreHorizontal, Star, TrendingUp, Clock, AlertCircle, Target, Calendar, MessageSquare, Briefcase, Package, Trash2 } from "lucide-react";
+
+import { Mail, Phone, User, Building2, MoreHorizontal, Star, Clock, FileText, Trash2, Calendar, FolderKanban } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow, isPast } from "date-fns";
@@ -14,6 +14,7 @@ import { ClientDetailDrawer } from "./ClientDetailDrawer";
 import { useDeleteClient } from "@/hooks/useClients";
 import { toast } from "sonner";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
+import { useClientFilesCount } from "@/hooks/useClientFilesCount";
 
 interface Client {
   id: string;
@@ -57,6 +58,10 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const deleteClient = useDeleteClient();
   const { formatCurrency } = useFormattedCurrency();
+  
+  // Get client IDs for files count query
+  const clientIds = useMemo(() => clients?.map(c => c.id) || [], [clients]);
+  const { data: filesCount } = useClientFilesCount(clientIds);
 
   const handleDeleteClick = (e: React.MouseEvent, client: Client) => {
     e.stopPropagation();
@@ -138,33 +143,6 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    const colors = {
-      'low': 'bg-gray-100 text-gray-600',
-      'medium': 'bg-blue-100 text-blue-600',
-      'high': 'bg-orange-100 text-orange-600',
-      'urgent': 'bg-red-100 text-red-600'
-    };
-    return colors[priority as keyof typeof colors] || colors.medium;
-  };
-
-  const getPriorityIcon = (priority: string) => {
-    const icons = {
-      'low': <TrendingUp className="h-3 w-3" />,
-      'medium': <Target className="h-3 w-3" />,
-      'high': <AlertCircle className="h-3 w-3" />,
-      'urgent': <AlertCircle className="h-3 w-3" />
-    };
-    return icons[priority as keyof typeof icons] || icons.medium;
-  };
-
-  const getLeadScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    if (score >= 40) return 'text-orange-600';
-    return 'text-gray-600';
-  };
-
   const isHotLead = (score: number) => score >= 70;
 
   if (isLoading) {
@@ -189,18 +167,16 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <Table>
+             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-border/50">
                   <TableHead className="text-muted-foreground font-medium w-16">#</TableHead>
                   <TableHead className="text-muted-foreground font-medium">Client</TableHead>
                   <TableHead className="text-muted-foreground font-medium">Stage</TableHead>
-                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Deal Value</TableHead>}
-                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Source</TableHead>}
+                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Projects</TableHead>}
+                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Total Value</TableHead>}
                   {!isTablet && <TableHead className="text-muted-foreground font-medium">Last Activity</TableHead>}
-                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Next Follow-up</TableHead>}
-                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Probability</TableHead>}
-                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Activity</TableHead>}
+                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Documents</TableHead>}
                   <TableHead className="text-muted-foreground font-medium text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -258,22 +234,19 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                     
                     {!isTablet && (
                       <TableCell>
-                        {client.deal_value && client.deal_value > 0 ? (
-                          <div className="font-bold text-foreground">
-                            {formatCurrency(client.deal_value)}
-                          </div>
-                        ) : (
-                          <div className="text-muted-foreground text-sm">—</div>
-                        )}
+                        <Badge variant="outline" className="text-xs flex items-center gap-1 w-fit">
+                          <FolderKanban className="h-3 w-3" />
+                          {client.projectCount || 0}
+                        </Badge>
                       </TableCell>
                     )}
                     
                     {!isTablet && (
                       <TableCell>
-                        {client.lead_source ? (
-                          <Badge variant="secondary" className="text-xs">
-                            {client.lead_source.replace('_', ' ')}
-                          </Badge>
+                        {client.totalValue && client.totalValue > 0 ? (
+                          <div className="font-bold text-foreground">
+                            {formatCurrency(client.totalValue)}
+                          </div>
                         ) : (
                           <div className="text-muted-foreground text-sm">—</div>
                         )}
@@ -295,46 +268,11 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                     
                     {!isTablet && (
                       <TableCell>
-                        {client.follow_up_date ? (
-                          <Badge 
-                            variant={isPast(new Date(client.follow_up_date)) ? "destructive" : "secondary"}
-                            className="text-xs flex items-center gap-1 w-fit"
-                          >
-                            <Calendar className="h-3 w-3" />
-                            {formatDistanceToNow(new Date(client.follow_up_date), { addSuffix: true })}
-                          </Badge>
-                        ) : (
-                          <div className="text-muted-foreground text-sm">—</div>
-                        )}
-                      </TableCell>
-                    )}
-                    
-                    {!isTablet && (
-                      <TableCell>
-                        {client.conversion_probability ? (
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">
-                                {client.conversion_probability}%
-                              </span>
-                            </div>
-                            <Progress value={client.conversion_probability} className="h-1.5" />
-                          </div>
-                        ) : (
-                          <div className="text-muted-foreground text-sm">—</div>
-                        )}
-                      </TableCell>
-                    )}
-                    
-                    {!isTablet && (
-                      <TableCell>
                         <div className="flex items-center gap-2">
-                          {client.projectCount && client.projectCount > 0 && (
-                            <Badge variant="outline" className="text-xs flex items-center gap-1">
-                              <Briefcase className="h-3 w-3" />
-                              {client.projectCount}
-                            </Badge>
-                          )}
+                          <Badge variant="outline" className="text-xs flex items-center gap-1">
+                            <FileText className="h-3 w-3" />
+                            {filesCount?.[client.id] || 0}
+                          </Badge>
                         </div>
                       </TableCell>
                     )}

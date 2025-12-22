@@ -10,7 +10,7 @@ export const useClientStats = () => {
     queryFn: async () => {
       if (!effectiveOwnerId) return [];
 
-      // Get all clients with their associated projects and quotes
+      // Get all clients with their associated projects
       const { data: clients, error } = await supabase
         .from("clients")
         .select(`
@@ -21,12 +21,12 @@ export const useClientStats = () => {
           projects (
             id,
             name,
-            status
-          ),
-          quotes (
-            id,
-            total_amount,
-            status
+            status,
+            quotes (
+              id,
+              total_amount,
+              status
+            )
           )
         `)
         .eq("user_id", effectiveOwnerId);
@@ -36,18 +36,32 @@ export const useClientStats = () => {
       // Calculate stats for each client
       const clientStats = clients?.map(client => {
         const projectCount = client.projects?.length || 0;
-        const quotes = client.quotes || [];
+        
+        // Filter closed/completed projects (matching ClientProfilePage logic)
+        const closedProjects = (client.projects || []).filter(p => 
+          ['closed', 'completed'].includes(p.status?.toLowerCase() || '')
+        );
+        
+        // Get all quotes from all projects for this client
+        const allQuotes = client.projects?.flatMap(project => project.quotes || []) || [];
         
         const quotesData = {
-          draft: quotes.filter(q => q.status === 'draft').length,
-          sent: quotes.filter(q => q.status === 'sent').length,
-          accepted: quotes.filter(q => q.status === 'accepted').length,
-          total: quotes.length
+          draft: allQuotes.filter(q => q.status === 'draft').length,
+          sent: allQuotes.filter(q => q.status === 'sent').length,
+          accepted: allQuotes.filter(q => q.status === 'accepted').length,
+          total: allQuotes.length
         };
         
-        const totalValue = quotes.reduce((sum, quote) => {
-          return sum + (parseFloat(quote.total_amount?.toString() || '0'));
-        }, 0) || 0;
+        // Calculate portfolio value from closed/completed projects only (matching ClientProfilePage)
+        const totalValue = closedProjects.reduce((sum, project) => {
+          const projectQuotes = project.quotes || [];
+          if (projectQuotes.length > 0) {
+            // Use the first quote's total_amount (quotes are not sorted here, so take first)
+            const latestQuote = projectQuotes[0];
+            return sum + parseFloat(latestQuote.total_amount?.toString() || '0');
+          }
+          return sum;
+        }, 0);
 
         return {
           clientId: client.id,
@@ -119,13 +133,26 @@ export const useClientQuotes = (clientId: string) => {
   return useQuery({
     queryKey: ["client-quotes", effectiveOwnerId, clientId],
     queryFn: async () => {
-      if (!effectiveOwnerId) return [];
+      if (!effectiveOwnerId || !clientId) return [];
 
+      // First, get all projects for this client
+      const { data: projects, error: projectsError } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("user_id", effectiveOwnerId)
+        .eq("client_id", clientId);
+
+      if (projectsError) throw projectsError;
+      if (!projects || projects.length === 0) return [];
+
+      const projectIds = projects.map(p => p.id);
+
+      // Then get quotes for those projects (quotes may have NULL client_id)
       const { data: quotes, error } = await supabase
         .from("quotes")
         .select("*")
         .eq("user_id", effectiveOwnerId)
-        .eq("client_id", clientId)
+        .in("project_id", projectIds)
         .order("created_at", { ascending: false });
 
       if (error) throw error;

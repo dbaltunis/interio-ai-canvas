@@ -75,11 +75,29 @@ export const calculateOptionCost = (option: any, formData: any, currencySymbol: 
 
   const isBlind = isBlindType(formData);
   
+  // Check if this option should only apply to specific headings
+  const appliesToHeadings = option.applies_to_headings || option.extra_data?.applies_to_headings;
+  if (appliesToHeadings && Array.isArray(appliesToHeadings) && appliesToHeadings.length > 0) {
+    const selectedHeading = formData.heading_type || formData.heading_style || formData.heading;
+    if (selectedHeading && !appliesToHeadings.includes(selectedHeading.toLowerCase())) {
+      // Option doesn't apply to selected heading - return zero cost
+      return {
+        cost: 0,
+        calculation: `Not applicable for ${selectedHeading} heading`,
+        breakdown: { units: 0, unitCost: 0, multiplier: 0 }
+      };
+    }
+  }
+  
+  // For per-panel pricing, use widths_required from fabric calculation if available
+  // This gives us the pre-calculated panel count from the fabric calculator
+  const panelCount = formData.widths_required || formData.panel_count;
+  
   const context: PricingContext = {
     baseCost,
     railWidth: parseFloat(formData.rail_width) || 0,
     drop: parseFloat(formData.drop) || 0,
-    quantity: formData.quantity || 1,
+    quantity: panelCount || formData.quantity || 1, // Use panel count for per-panel pricing
     fullness: getFullness(formData, isBlind),
     fabricWidth: getFabricWidth(formData, isBlind),
     fabricCost: parseFloat(formData.fabric_cost_per_yard || "0") || 0,
@@ -89,7 +107,63 @@ export const calculateOptionCost = (option: any, formData: any, currencySymbol: 
     currencySymbol
   };
 
-  return calculatePrice(method, context);
+  // Apply pricing rules (height multipliers, minimums, etc.)
+  let result = calculatePrice(method, context);
+  result = applyPricingRules(result, option, formData);
+  
+  return result;
+};
+
+/**
+ * Apply additional pricing rules like height multipliers and minimums
+ */
+const applyPricingRules = (result: any, option: any, formData: any): any => {
+  const pricingRules = option.pricing_rules || option.extra_data?.pricing_rules;
+  if (!pricingRules) return result;
+  
+  let finalCost = result.cost;
+  let calculation = result.calculation;
+  
+  // Height multiplier rule (e.g., double price above 10ft)
+  if (pricingRules.height_multiplier) {
+    const dropFt = (parseFloat(formData.drop) || 0) / 304.8; // mm to ft
+    const threshold = pricingRules.height_multiplier.threshold_ft || 10;
+    const multiplier = pricingRules.height_multiplier.multiplier || 2;
+    
+    if (dropFt > threshold) {
+      finalCost *= multiplier;
+      calculation += ` × ${multiplier} (height > ${threshold}ft)`;
+    }
+  }
+  
+  // Minimum order value
+  if (pricingRules.minimum) {
+    const minValue = pricingRules.minimum.value || 0;
+    if (finalCost < minValue && finalCost > 0) {
+      calculation = `Minimum: ${result.calculation} → ${minValue}`;
+      finalCost = minValue;
+    }
+  }
+  
+  // Minimum sqft rule (e.g., 16 sqft minimum for Roman making)
+  if (pricingRules.minimum_sqft) {
+    const railWidthFt = (parseFloat(formData.rail_width) || 0) / 304.8;
+    const dropFt = (parseFloat(formData.drop) || 0) / 304.8;
+    const actualSqft = railWidthFt * dropFt;
+    const minSqft = pricingRules.minimum_sqft.value || 16;
+    
+    if (actualSqft < minSqft) {
+      const minCost = result.breakdown?.unitCost ? result.breakdown.unitCost * minSqft : finalCost;
+      calculation = `Min ${minSqft}sqft: ${result.calculation}`;
+      finalCost = Math.max(finalCost, minCost);
+    }
+  }
+  
+  return {
+    ...result,
+    cost: finalCost,
+    calculation
+  };
 };
 
 export const calculateHierarchicalOptionCost = (option: any, formData: any, currencySymbol: string = '$') => {
@@ -104,12 +178,28 @@ export const calculateHierarchicalOptionCost = (option: any, formData: any, curr
   }
 
   const isBlind = isBlindType(formData);
+  
+  // Check if this option should only apply to specific headings
+  const appliesToHeadings = option.applies_to_headings || option.extra_data?.applies_to_headings;
+  if (appliesToHeadings && Array.isArray(appliesToHeadings) && appliesToHeadings.length > 0) {
+    const selectedHeading = formData.heading_type || formData.heading_style || formData.heading;
+    if (selectedHeading && !appliesToHeadings.includes(selectedHeading.toLowerCase())) {
+      return {
+        cost: 0,
+        calculation: `Not applicable for ${selectedHeading} heading`,
+        breakdown: { units: 0, unitCost: 0, multiplier: 0 }
+      };
+    }
+  }
+
+  // For per-panel pricing, use widths_required from fabric calculation
+  const panelCount = formData.widths_required || formData.panel_count;
 
   const context: PricingContext = {
     baseCost,
     railWidth: parseFloat(formData.rail_width) || 0,
     drop: parseFloat(formData.drop) || 0,
-    quantity: formData.quantity || 1,
+    quantity: panelCount || formData.quantity || 1,
     fullness: getFullness(formData, isBlind),
     fabricWidth: getFabricWidth(formData, isBlind),
     fabricCost: parseFloat(formData.fabric_cost_per_yard || "0") || 0,
@@ -119,5 +209,8 @@ export const calculateHierarchicalOptionCost = (option: any, formData: any, curr
     currencySymbol
   };
 
-  return calculatePrice(method, context);
+  let result = calculatePrice(method, context);
+  result = applyPricingRules(result, option, formData);
+  
+  return result;
 };

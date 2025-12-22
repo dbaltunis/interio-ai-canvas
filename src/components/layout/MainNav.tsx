@@ -51,17 +51,19 @@ export const MainNav = ({ activeTab, onTabChange }: MainNavProps) => {
   const canViewSettings = useHasPermission('view_settings');
   
   // Filter nav items based on permissions
+  // During loading (undefined), show items to prevent disappearing UI
   const visibleNavItems = navItems.filter(item => {
     if (!item.permission) return true; // No permission required
     
-    if (item.permission === 'view_jobs') return canViewJobs === true;
-    if (item.permission === 'create_jobs') return canCreateJobs === true;
-    if (item.permission === 'view_inventory') return canViewInventory === true;
-    if (item.permission === 'view_calendar') return canViewCalendar === true;
-    if (item.permission === 'view_clients') return canViewClients === true;
-    if (item.permission === 'view_settings') return canViewSettings === true;
+    // Only hide if explicitly false, not undefined (loading)
+    if (item.permission === 'view_jobs') return canViewJobs !== false;
+    if (item.permission === 'create_jobs') return canCreateJobs !== false;
+    if (item.permission === 'view_inventory') return canViewInventory !== false;
+    if (item.permission === 'view_calendar') return canViewCalendar !== false;
+    if (item.permission === 'view_clients') return canViewClients !== false;
+    if (item.permission === 'view_settings') return canViewSettings !== false;
     
-    return false;
+    return true; // Default to showing during loading
   });
   
   return (

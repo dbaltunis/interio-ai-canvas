@@ -4,9 +4,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useHeadingInventory } from "@/hooks/useHeadingInventory";
+import { useStitchingPricesForHeading } from "@/hooks/useStitchingPrices";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 import type { EyeletRing } from "@/hooks/useEyeletRings";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
+import { Scissors } from "lucide-react";
 
 interface HeadingOptionsSectionProps {
   template: CurtainTemplate;
@@ -16,6 +18,8 @@ interface HeadingOptionsSectionProps {
   onEyeletRingChange?: (ringId: string) => void;
   headingFullness?: number;
   onHeadingFullnessChange?: (fullness: number) => void;
+  selectedStitchingId?: string;
+  onStitchingChange?: (stitchingId: string) => void;
   readOnly?: boolean;
 }
 
@@ -27,11 +31,18 @@ export const HeadingOptionsSection = ({
   onEyeletRingChange,
   headingFullness,
   onHeadingFullnessChange,
+  selectedStitchingId,
+  onStitchingChange,
   readOnly = false
 }: HeadingOptionsSectionProps) => {
   const { units, getLengthUnitLabel } = useMeasurementUnits();
   const { data: headingInventory = [], isLoading } = useHeadingInventory();
   const [availableRings, setAvailableRings] = useState<EyeletRing[]>([]);
+  
+  // Get stitching prices linked to the selected heading
+  const { stitchingPrices, isLoading: stitchingLoading } = useStitchingPricesForHeading(
+    selectedHeading !== 'standard' ? selectedHeading : undefined
+  );
 
   // Filter heading options from inventory - ONLY show headings that are selected on the template
   const inventoryHeadingOptions = headingInventory.filter(item => {
@@ -267,6 +278,29 @@ export const HeadingOptionsSection = ({
                   <div className="flex items-center justify-between w-full">
                     <span className="text-sm font-medium">{ratio}x Fullness</span>
                   </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Stitching Price Selector - Shows when heading has linked stitching prices */}
+      {stitchingPrices.length > 0 && onStitchingChange && (
+        <div>
+          <Label className="text-sm font-medium mb-2 block text-card-foreground flex items-center gap-1.5">
+            <Scissors className="h-3.5 w-3.5" />
+            Stitching / Making Charge
+          </Label>
+          <Select value={selectedStitchingId || 'none'} onValueChange={onStitchingChange} disabled={readOnly}>
+            <SelectTrigger className="h-10 text-sm container-level-2 border-border">
+              <SelectValue placeholder="Select stitching option" />
+            </SelectTrigger>
+            <SelectContent className="container-level-1 border-2 border-border z-50">
+              <SelectItem value="none" className="text-card-foreground">No stitching charge</SelectItem>
+              {stitchingPrices.map((price) => (
+                <SelectItem key={price.id} value={price.id} className="text-card-foreground">
+                  {price.name} - {formatPrice(price.price_per_meter || price.price_per_unit || 0)}/{price.pricing_method.replace('per_', '')}
                 </SelectItem>
               ))}
             </SelectContent>

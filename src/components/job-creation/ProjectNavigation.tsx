@@ -34,11 +34,12 @@ export const ProjectNavigation = ({
   ];
 
   // Filter nav items based on permissions
+  // Show tabs during loading (undefined), hide only if explicitly false
   const navItems = allNavItems.filter(item => {
     // Always show tabs without permission requirements
     if (item.permission === undefined) return true;
-    // Show tabs where permission check is true (hide if false or undefined/loading)
-    return item.permission === true;
+    // Show tabs during loading (undefined) and when true, hide only if explicitly false
+    return item.permission !== false;
   });
 
   // Handle automatic redirect to quote tab when status changes to "Quote"

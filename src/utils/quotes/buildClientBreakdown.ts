@@ -1,4 +1,6 @@
 import { MeasurementUnits, defaultMeasurementUnits, convertLength } from '@/hooks/useBusinessSettings';
+import { MarkupSettings, defaultMarkupSettings } from '@/hooks/useMarkupSettings';
+import { resolveMarkup, applyMarkup } from '@/utils/pricing/markupResolver';
 
 export interface ClientBreakdownItem {
   id?: string;
@@ -14,6 +16,38 @@ export interface ClientBreakdownItem {
   pricingDetails?: string; // Pricing breakdown info (e.g., "18.00/m × 5.30m")
   details?: Record<string, any>;
 }
+
+/**
+ * CRITICAL: Apply markup to a breakdown item's prices
+ * This ensures ALL client-facing prices include the selling markup
+ */
+const applyMarkupToItem = (
+  item: ClientBreakdownItem,
+  markupSettings?: MarkupSettings,
+  treatmentCategory?: string
+): ClientBreakdownItem => {
+  if (!markupSettings) return item;
+  
+  // Resolve markup based on item category and treatment category
+  const markupResult = resolveMarkup({
+    category: treatmentCategory || item.category,
+    subcategory: item.category,
+    markupSettings
+  });
+  
+  const markupPercentage = markupResult.percentage;
+  if (markupPercentage <= 0) return item;
+  
+  // Apply markup to prices
+  const costPrice = Number(item.total_cost) || 0;
+  const unitCost = Number(item.unit_price) || 0;
+  
+  return {
+    ...item,
+    total_cost: applyMarkup(costPrice, markupPercentage),
+    unit_price: unitCost > 0 ? applyMarkup(unitCost, markupPercentage) : undefined
+  };
+};
 
 /**
  * Group related options together (e.g., "Headrail Selection" + "Headrail Selection Colour")
@@ -184,18 +218,23 @@ const groupRelatedOptions = (items: ClientBreakdownItem[]): ClientBreakdownItem[
 };
 
 /**
- * Build a client-facing cost breakdown from a saved window summary.
+ * Build a client-facing SELLING PRICE breakdown from a saved window summary.
  * - Uses structured summary.cost_breakdown if already shaped
  * - Otherwise, derives Fabric, Lining, and Manufacturing lines from summary fields
+ * - CRITICAL: When markupSettings provided, ALL prices are converted to SELLING prices (cost + markup)
  * 
  * @param summary - Window summary data
  * @param units - Optional measurement units for display (defaults to metric)
+ * @param markupSettings - Optional markup settings to convert costs to selling prices
  */
 export const buildClientBreakdown = (
   summary: any,
-  units: MeasurementUnits = defaultMeasurementUnits
+  units: MeasurementUnits = defaultMeasurementUnits,
+  markupSettings?: MarkupSettings
 ): ClientBreakdownItem[] => {
   if (!summary) return [];
+  
+  const treatmentCategory = summary.treatment_category || summary.treatment_type;
 
   console.log('🔍 buildClientBreakdown called with summary:', {
     hasCostBreakdown: !!summary.cost_breakdown,
@@ -280,12 +319,18 @@ export const buildClientBreakdown = (
     // Apply smart grouping to merge related options (e.g., "Headrail Selection" + "Headrail Selection Colour")
     const groupedItems = groupRelatedOptions(enrichedItems);
     
-    console.log('✅ Returning %d items after grouping (original: %d)', groupedItems.length, enrichedItems.length);
-    groupedItems.forEach((item: any) => {
-      console.log('  Item:', item.name, '| Desc:', item.description, '| Cost:', item.total_cost, '| Color:', item.color);
+    // CRITICAL: Apply markup to ALL items to convert cost prices to SELLING prices
+    const itemsWithMarkup = markupSettings 
+      ? groupedItems.map((item: any) => applyMarkupToItem(item as ClientBreakdownItem, markupSettings, treatmentCategory))
+      : groupedItems;
+    
+    console.log('✅ Returning %d items after grouping (original: %d), markup applied: %s', 
+      itemsWithMarkup.length, enrichedItems.length, !!markupSettings);
+    itemsWithMarkup.forEach((item: any) => {
+      console.log('  Item:', item.name, '| Desc:', item.description, '| Selling Price:', item.total_cost, '| Color:', item.color);
     });
     
-    return groupedItems as ClientBreakdownItem[];
+    return itemsWithMarkup as ClientBreakdownItem[];
   }
 
   console.log('⚠️ No structured breakdown - building from scratch (THIS SHOULD BE RARE)');
@@ -525,5 +570,10 @@ export const buildClientBreakdown = (
     });
   }
 
-  return items;
+  // CRITICAL: Apply markup to ALL items to convert cost prices to SELLING prices
+  const itemsWithMarkup = markupSettings 
+    ? items.map(item => applyMarkupToItem(item, markupSettings, treatmentCategory))
+    : items;
+
+  return itemsWithMarkup;
 };

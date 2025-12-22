@@ -80,6 +80,10 @@ export interface TemplateContract {
   // Pricing grid if applicable
   pricing_grid_data?: PricingGridContract;
   pricing_grid_id?: string;
+  
+  // Heading-specific price overrides (per-metre pricing)
+  /** Heading-specific prices: { heading_id: { machine_price?: number, hand_price?: number } } */
+  heading_prices?: Record<string, { machine_price?: number; hand_price?: number }>;
 }
 
 /**

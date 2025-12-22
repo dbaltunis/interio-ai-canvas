@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -47,7 +48,14 @@ interface JobDetailPageProps {
 }
 
 export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
-  const [activeTab, setActiveTab] = useState("details");
+  const [searchParams] = useSearchParams();
+  const initialSection = searchParams.get('section');
+  const [activeTab, setActiveTab] = useState(() => {
+    if (initialSection === 'quotation') return 'quotation';
+    if (initialSection === 'rooms') return 'rooms';
+    if (initialSection === 'workroom') return 'workroom';
+    return 'details';
+  });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);

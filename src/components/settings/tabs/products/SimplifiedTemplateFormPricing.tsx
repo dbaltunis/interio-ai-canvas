@@ -13,6 +13,7 @@ import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { getUnitLabel } from "@/utils/measurementFormatters";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useHeadingInventory } from "@/hooks/useHeadingInventory";
 
 interface SimplifiedTemplateFormPricingProps {
   formData: any;
@@ -28,6 +29,7 @@ export const SimplifiedTemplateFormPricing = ({
   handleInputChange 
 }: SimplifiedTemplateFormPricingProps) => {
   const { units } = useMeasurementUnits();
+  const { data: headings = [] } = useHeadingInventory();
   
   // Check BOTH treatment_category (plural) and curtain_type (singular) for compatibility
   const isCurtainOrRoman = 
@@ -35,6 +37,8 @@ export const SimplifiedTemplateFormPricing = ({
     formData.treatment_category === 'roman_blinds' ||
     formData.curtain_type === 'curtain' || 
     formData.curtain_type === 'roman_blind';
+  
+  const isCurtainOnly = formData.treatment_category === 'curtains' || formData.curtain_type === 'curtain';
   
   const isWallpaper = 
     formData.treatment_category === 'wallpaper' ||
@@ -119,6 +123,9 @@ export const SimplifiedTemplateFormPricing = ({
               handPricePerMetre={formData.hand_price_per_metre}
               offersHandFinished={formData.offers_hand_finished}
               heightPriceRanges={formData.height_price_ranges}
+              headingPrices={formData.heading_prices}
+              selectedHeadingIds={formData.selected_heading_ids || []}
+              headings={headings.map(h => ({ id: h.id, name: h.name }))}
               onInputChange={handleInputChange}
             />
           )}

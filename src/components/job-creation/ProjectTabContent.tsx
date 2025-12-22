@@ -37,7 +37,7 @@ export const ProjectTabContent = ({
   const { user } = useAuth();
   const client = clients?.find(c => c.id === project.client_id);
   
-  // Permission checks
+  // Permission checks - use correct permission names
   const canEditAllJobs = useHasPermission('edit_all_jobs');
   const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
   // If both permissions are disabled, no job should be editable

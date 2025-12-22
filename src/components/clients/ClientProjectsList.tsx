@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Calendar, DollarSign, AlertCircle, CheckCircle, Clock, ExternalLink } from "lucide-react";
 import { useClientJobs } from "@/hooks/useClientJobs";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useCreateQuote } from "@/hooks/useQuotes";
@@ -19,7 +19,6 @@ interface ClientProjectsListProps {
 
 export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsListProps) => {
   const { data: projects, isLoading } = useClientJobs(clientId);
-  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const createProject = useCreateProject();
   const createQuote = useCreateQuote();
@@ -68,16 +67,8 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
   };
 
   const handleViewProject = (projectId: string) => {
-    // Set URL params to navigate to projects tab with the specific job
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set('tab', 'projects');
-    newParams.set('jobId', projectId);
-    setSearchParams(newParams);
-    
-    // If onTabChange is provided, use it to navigate
-    if (onTabChange) {
-      onTabChange('projects');
-    }
+    // Navigate directly with all params including section for quotation tab
+    navigate(`/?tab=projects&jobId=${projectId}&section=quotation`);
   };
 
   const handleCreateProject = async () => {

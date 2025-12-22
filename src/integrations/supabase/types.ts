@@ -1487,6 +1487,69 @@ export type Database = {
         }
         Relationships: []
       }
+      bundle_rules: {
+        Row: {
+          active: boolean | null
+          child_item_id: string | null
+          child_item_key: string
+          child_unit_price: number | null
+          condition: Json | null
+          created_at: string | null
+          id: string
+          order_index: number | null
+          parent_item_id: string | null
+          parent_item_key: string | null
+          qty_formula: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          child_item_id?: string | null
+          child_item_key: string
+          child_unit_price?: number | null
+          condition?: Json | null
+          created_at?: string | null
+          id?: string
+          order_index?: number | null
+          parent_item_id?: string | null
+          parent_item_key?: string | null
+          qty_formula: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          child_item_id?: string | null
+          child_item_key?: string
+          child_unit_price?: number | null
+          condition?: Json | null
+          created_at?: string | null
+          id?: string
+          order_index?: number | null
+          parent_item_id?: string | null
+          parent_item_key?: string | null
+          qty_formula?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_rules_child_item_id_fkey"
+            columns: ["child_item_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_rules_parent_item_id_fkey"
+            columns: ["parent_item_id"]
+            isOneToOne: false
+            referencedRelation: "enhanced_inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_settings: {
         Row: {
           abn: string | null
@@ -2215,6 +2278,7 @@ export type Database = {
           hand_price_per_metre: number | null
           hand_price_per_panel: number | null
           header_allowance: number | null
+          heading_making_charges: Json | null
           heading_name: string | null
           heading_upcharge_per_curtain: number | null
           heading_upcharge_per_metre: number | null
@@ -2232,6 +2296,8 @@ export type Database = {
           machine_price_per_metre: number | null
           machine_price_per_panel: number | null
           machine_price_per_sqm: number | null
+          making_charge_method: string | null
+          making_charge_per_meter: number | null
           manufacturing_type: string
           maximum_height: number | null
           maximum_width: number | null
@@ -2290,6 +2356,7 @@ export type Database = {
           hand_price_per_metre?: number | null
           hand_price_per_panel?: number | null
           header_allowance?: number | null
+          heading_making_charges?: Json | null
           heading_name?: string | null
           heading_upcharge_per_curtain?: number | null
           heading_upcharge_per_metre?: number | null
@@ -2307,6 +2374,8 @@ export type Database = {
           machine_price_per_metre?: number | null
           machine_price_per_panel?: number | null
           machine_price_per_sqm?: number | null
+          making_charge_method?: string | null
+          making_charge_per_meter?: number | null
           manufacturing_type?: string
           maximum_height?: number | null
           maximum_width?: number | null
@@ -2365,6 +2434,7 @@ export type Database = {
           hand_price_per_metre?: number | null
           hand_price_per_panel?: number | null
           header_allowance?: number | null
+          heading_making_charges?: Json | null
           heading_name?: string | null
           heading_upcharge_per_curtain?: number | null
           heading_upcharge_per_metre?: number | null
@@ -2382,6 +2452,8 @@ export type Database = {
           machine_price_per_metre?: number | null
           machine_price_per_panel?: number | null
           machine_price_per_sqm?: number | null
+          making_charge_method?: string | null
+          making_charge_per_meter?: number | null
           manufacturing_type?: string
           maximum_height?: number | null
           maximum_width?: number | null
@@ -4001,6 +4073,7 @@ export type Database = {
           color: string
           created_at: string
           description: string | null
+          document_type: string | null
           id: string
           is_active: boolean
           is_default: boolean | null
@@ -4016,6 +4089,7 @@ export type Database = {
           color?: string
           created_at?: string
           description?: string | null
+          document_type?: string | null
           id?: string
           is_active?: boolean
           is_default?: boolean | null
@@ -4031,6 +4105,7 @@ export type Database = {
           color?: string
           created_at?: string
           description?: string | null
+          document_type?: string | null
           id?: string
           is_active?: boolean
           is_default?: boolean | null
@@ -8332,6 +8407,7 @@ export type Database = {
       treatment_options: {
         Row: {
           account_id: string
+          applies_to_headings: Json | null
           base_price: number | null
           created_at: string | null
           id: string
@@ -8342,6 +8418,7 @@ export type Database = {
           pricing_grid_data: Json | null
           pricing_grid_type: string | null
           pricing_method: string | null
+          pricing_rules: Json | null
           required: boolean | null
           source: string | null
           template_id: string | null
@@ -8354,6 +8431,7 @@ export type Database = {
         }
         Insert: {
           account_id: string
+          applies_to_headings?: Json | null
           base_price?: number | null
           created_at?: string | null
           id?: string
@@ -8364,6 +8442,7 @@ export type Database = {
           pricing_grid_data?: Json | null
           pricing_grid_type?: string | null
           pricing_method?: string | null
+          pricing_rules?: Json | null
           required?: boolean | null
           source?: string | null
           template_id?: string | null
@@ -8376,6 +8455,7 @@ export type Database = {
         }
         Update: {
           account_id?: string
+          applies_to_headings?: Json | null
           base_price?: number | null
           created_at?: string | null
           id?: string
@@ -8386,6 +8466,7 @@ export type Database = {
           pricing_grid_data?: Json | null
           pricing_grid_type?: string | null
           pricing_method?: string | null
+          pricing_rules?: Json | null
           required?: boolean | null
           source?: string | null
           template_id?: string | null

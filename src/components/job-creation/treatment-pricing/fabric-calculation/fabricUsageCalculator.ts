@@ -1,41 +1,54 @@
+/**
+ * Fabric Usage Calculator
+ * 
+ * UNIT CONTRACT:
+ * - This calculator expects ALL measurements in CENTIMETERS (CM)
+ * - The caller (VisualMeasurementSheet) is responsible for converting from user's unit to CM
+ * - Results are returned in meters (for linear) or sqm (for area)
+ * 
+ * If you're getting 10x errors, the caller is probably not converting properly.
+ * Check that convertLength(userValue, userUnit, 'cm') is called BEFORE passing here.
+ */
 
 import { FabricCalculationParams, FabricUsageResult } from './types';
 import { calculateOrientation } from './orientationCalculator';
 import { getBlindHemDefaults, calculateBlindSqm, logBlindCalculation } from '@/utils/blindCalculationDefaults';
+import { validateMeasurement } from '@/utils/measurementBoundary';
 
 // Helper to detect if treatment is a blind
 export const isBlind = (treatmentCategory?: string) =>
   !!treatmentCategory && /blind/i.test(treatmentCategory);
 
+/**
+ * Calculate fabric usage for a treatment
+ * 
+ * @param formData - Measurements object with values already converted to CM
+ * @param treatmentTypesData - Array of treatment templates
+ * @param selectedFabricItem - The selected fabric inventory item
+ * @returns FabricUsageResult with meters/yards and details
+ */
 export const calculateFabricUsage = (
   formData: any,
   treatmentTypesData: any[],
   selectedFabricItem?: any
 ): FabricUsageResult => {
-  console.log('🔥 calculateFabricUsage CALLED with:', {
-    formData: {
-      rail_width: formData.rail_width,
-      drop: formData.drop,
-      selected_pricing_method: formData.selected_pricing_method,
-      manufacturing_type: formData.manufacturing_type,
-      fabric_rotated: formData.fabric_rotated,
-      heading_fullness: formData.heading_fullness,
-      selected_heading: formData.selected_heading
-    },
-    selectedFabricItem: selectedFabricItem?.name,
-    treatmentTemplatesCount: treatmentTypesData?.length
-  });
+  // ========== INPUT VALIDATION ==========
+  // Values should be in CM at this point - validate they're reasonable
+  const railWidth = parseFloat(formData.rail_width) || 0;
+  let drop = parseFloat(formData.drop) || 0;
   
-  // ✅ CRITICAL FIX: VisualMeasurementSheet already converts user's unit to CM
-  // So formData.rail_width and formData.drop are ALREADY in CM, not MM
-  // DO NOT divide by 10 again - that creates 10x calculation errors!
-  const railWidth = parseFloat(formData.rail_width) || 0; // Already CM
-  let drop = parseFloat(formData.drop) || 0; // Already CM
+  // Validate inputs are in CM range (not MM or inches passed by mistake)
+  if (railWidth > 0 && !validateMeasurement(railWidth, 'cm', 'fabricUsageCalculator.railWidth')) {
+    console.warn('⚠️ [fabricUsageCalculator] railWidth may be in wrong unit:', railWidth);
+  }
+  if (drop > 0 && !validateMeasurement(drop, 'cm', 'fabricUsageCalculator.drop')) {
+    console.warn('⚠️ [fabricUsageCalculator] drop may be in wrong unit:', drop);
+  }
   
-  console.log('📏 Fabric calculator input (values already converted to CM by VisualMeasurementSheet):', {
+  console.log('📏 [fabricUsageCalculator] Input values (expected in CM):', {
     railWidthCM: railWidth,
     dropCM: drop,
-    note: 'VisualMeasurementSheet converts user unit → CM before passing here'
+    note: 'Caller must convert from user unit to CM before calling'
   });
   
   // Get the treatment template

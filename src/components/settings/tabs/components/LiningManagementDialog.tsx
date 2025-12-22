@@ -286,7 +286,7 @@ export const LiningManagementDialog = ({ open, onOpenChange, editingLining }: Li
                         onChange={handleCsvUpload}
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Format: Width (inches), Price. First row should be headers.
+                        Format: Width, Price. First row should be headers.
                       </p>
                     </div>
 
@@ -392,7 +392,7 @@ export const LiningManagementDialog = ({ open, onOpenChange, editingLining }: Li
                     <Label htmlFor="width">Standard Width</Label>
                     <Input
                       id="width"
-                      placeholder="e.g., 280cm, 110 inches"
+                      placeholder="e.g., 280cm, 110in"
                     />
                   </div>
                 </div>

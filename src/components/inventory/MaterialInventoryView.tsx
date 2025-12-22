@@ -20,7 +20,8 @@ import { QRCodeDisplay } from "./QRCodeDisplay";
 import { InventoryQuickView } from "./InventoryQuickView";
 import { ColorSlatPreview, getColorHex } from "./ColorSlatPreview";
 import { COLOR_PALETTE } from "@/constants/inventoryCategories";
-import { InventorySupplierFilter, matchesSupplierFilter } from "./InventorySupplierFilter";
+import { InventorySupplierFilter } from "./InventorySupplierFilter";
+import { matchesUnifiedSupplier } from "@/hooks/useUnifiedSuppliers";
 import { useVendors } from "@/hooks/useVendors";
 import { TagFilterChips } from "./TagFilterChips";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -111,7 +112,7 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
       item.subcategory === activeCategory;
 
     // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
-    const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
+    const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
     const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
     const matchesLocation = !selectedStorageLocation || item.location === selectedStorageLocation;
     

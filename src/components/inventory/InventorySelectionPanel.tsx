@@ -8,6 +8,7 @@ import { Search, Package, Palette, Wrench, Check, X, Plus, Edit3, ScanLine, Load
 import { FilterButton } from "@/components/library/FilterButton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { QRCodeScanner } from "@/components/inventory/QRCodeScanner";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -30,7 +31,7 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 import { supabase } from "@/integrations/supabase/client";
 import { TreatmentCategory, getTreatmentConfig } from "@/utils/treatmentTypeDetection";
-import { useTreatmentSpecificFabrics } from "@/hooks/useTreatmentSpecificFabrics";
+import { useTreatmentSpecificFabrics, parseUnifiedSupplierId } from "@/hooks/useTreatmentSpecificFabrics";
 import { getAcceptedSubcategories, getTreatmentPrimaryCategory } from "@/constants/inventorySubcategories";
 import { toast } from "sonner";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
@@ -38,7 +39,7 @@ import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithC
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { InventoryCardSkeleton } from "@/components/inventory/InventoryCardSkeleton";
 import { useVendors } from "@/hooks/useVendors";
-import { matchesSupplierFilter } from "./InventorySupplierFilter";
+import { matchesUnifiedSupplier } from "@/hooks/useUnifiedSuppliers";
 import { PriceGroupFilter } from "./PriceGroupFilter";
 import { QuickTypeFilter } from "./QuickTypeFilter";
 import { ColorSwatchSelector } from "./ColorSwatchSelector";
@@ -103,7 +104,13 @@ export const InventorySelectionPanel = ({
   // Debounce search for server-side filtering (300ms delay)
   const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
 
-  // Use treatment-specific fabrics with server-side search, pagination, price group filtering, and TWC parent product filtering
+  // Parse vendor selection into server-side filter
+  const supplierFilter = useMemo(() => {
+    return parseUnifiedSupplierId(selectedVendor);
+  }, [selectedVendor]);
+
+  // Use treatment-specific fabrics with server-side search, pagination, price group filtering, 
+  // TWC parent product filtering, AND server-side vendor/supplier filtering
   const {
     data: fabricsData,
     isLoading: isFabricsLoading,
@@ -111,7 +118,7 @@ export const InventorySelectionPanel = ({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage
-  } = useTreatmentSpecificFabrics(treatmentCategory, debouncedSearchTerm, templateId, parentProductId);
+  } = useTreatmentSpecificFabrics(treatmentCategory, debouncedSearchTerm, templateId, parentProductId, supplierFilter);
 
   // Flatten paginated data into single array
   const treatmentFabrics = useMemo(() => {
@@ -328,19 +335,19 @@ export const InventorySelectionPanel = ({
   // Filter inventory by treatment type and category
   const getInventoryByCategory = (category: string) => {
     // For fabric category, use server-side filtered treatmentFabrics
-    // Apply client-side filters for vendor/collection/tags/price group/quick types
+    // Apply client-side filters ONLY for collection/tags/price group/quick types
+    // (vendor/supplier is now server-side)
     if (category === "fabric") {
       const filtered = treatmentFabrics.filter(item => {
-        // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
-        const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
+        // Vendor/supplier is now filtered server-side, no need to check here
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
-        // NEW: Price group filter
+        // Price group filter
         const matchesPriceGroup = !selectedPriceGroup || item.price_group === selectedPriceGroup;
-        // NEW: Quick type filter (must match ALL selected types)
+        // Quick type filter (must match ALL selected types)
         const matchesQuickTypes = selectedQuickTypes.length === 0 || 
           (item.tags && selectedQuickTypes.every(t => item.tags.includes(t)));
-        return matchesVendor && matchesCollection && matchesTags && matchesPriceGroup && matchesQuickTypes;
+        return matchesCollection && matchesTags && matchesPriceGroup && matchesQuickTypes;
       });
       // Sort results: items starting with search term first, then alphabetically
       const searchLower = searchTerm.toLowerCase();
@@ -358,21 +365,42 @@ export const InventorySelectionPanel = ({
     // For "both" category (vertical blinds with fabric AND material vanes)
     if (category === "both") {
       const searchLower = searchTerm.toLowerCase();
-      // Get both fabric items from treatment-specific fabrics
+      
+      // CRITICAL FIX: When parentProductId is set (TWC-linked), ALL items come from treatmentFabrics
+      // treatmentFabrics is already filtered by parent_product_id AND vendor via useTreatmentSpecificFabrics
+      if (parentProductId) {
+        const filtered = treatmentFabrics.filter(item => {
+          const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
+                               item.description?.toLowerCase().includes(searchLower) ||
+                               item.sku?.toLowerCase().includes(searchLower) ||
+                               item.supplier?.toLowerCase().includes(searchLower) ||
+                               item.vendor?.name?.toLowerCase().includes(searchLower);
+          // Vendor/supplier is already server-side filtered for treatmentFabrics
+          const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
+          const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
+          return matchesSearch && matchesCollection && matchesTags;
+        });
+        
+        console.log('📦 Both tab (TWC-linked): Using ONLY treatmentFabrics:', filtered.length, 'items');
+        return filtered;
+      }
+      
+      // Non-TWC templates: combine fabric from treatmentFabrics + materials from inventory
+      // treatmentFabrics already has server-side vendor filter applied
       const fabricItems = treatmentFabrics.filter(item => {
         const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
                              item.description?.toLowerCase().includes(searchLower) ||
                              item.sku?.toLowerCase().includes(searchLower) ||
                              item.supplier?.toLowerCase().includes(searchLower) ||
                              item.vendor?.name?.toLowerCase().includes(searchLower);
-        // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
-        const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
+        // Vendor/supplier is already server-side filtered for treatmentFabrics
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
-        return matchesSearch && matchesVendor && matchesCollection && matchesTags;
+        return matchesSearch && matchesCollection && matchesTags;
       });
 
-      // Get material items from inventory
+      // Get material items from inventory (only for non-TWC templates)
+      // These still need client-side vendor filtering
       const requiredSubcategories = getTreatmentMaterialSubcategories();
       const materialItems = inventory.filter(item => {
         const matchesCategory = item.category?.toLowerCase() === 'material' || 
@@ -386,15 +414,15 @@ export const InventorySelectionPanel = ({
                              item.sku?.toLowerCase().includes(searchLower) ||
                              item.supplier?.toLowerCase().includes(searchLower) ||
                              item.vendor?.name?.toLowerCase().includes(searchLower);
-        // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
-        const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
+        // Client-side vendor filter for inventory items
+        const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
         
         return matchesCategory && matchesSubcategory && matchesSearch && matchesVendor && matchesCollection && matchesTags;
       });
 
-      console.log('📦 Both tab filtered:', fabricItems.length, 'fabric items +', materialItems.length, 'material items');
+      console.log('📦 Both tab (non-TWC):', fabricItems.length, 'fabric items +', materialItems.length, 'material items');
       return [...fabricItems, ...materialItems];
     }
 
@@ -405,11 +433,34 @@ export const InventorySelectionPanel = ({
       
       console.log('🔍 Filtering materials - Required subcategories:', requiredSubcategories);
       console.log('📊 treatmentFabrics count:', treatmentFabrics.length, '| Raw inventory count:', inventory.length);
+      console.log('🔗 parentProductId:', parentProductId || 'none (non-TWC)');
       
-      // CRITICAL: Use treatmentFabrics if available (already enriched with pricing grids)
-      // treatmentFabrics now includes materials for material-based treatments
+      // CRITICAL FIX: When parentProductId is set (TWC-linked), ALL items come from treatmentFabrics ONLY
+      // treatmentFabrics is already filtered by parent_product_id AND vendor via useTreatmentSpecificFabrics
+      if (parentProductId) {
+        const searchLower = searchTerm.toLowerCase();
+        const filtered = treatmentFabrics.filter(item => {
+          const matchesSearch = item.name?.toLowerCase().includes(searchLower) || 
+                               item.description?.toLowerCase().includes(searchLower) ||
+                               item.sku?.toLowerCase().includes(searchLower) ||
+                               item.supplier?.toLowerCase().includes(searchLower) ||
+                               item.vendor?.name?.toLowerCase().includes(searchLower);
+          // Vendor/supplier is already server-side filtered for treatmentFabrics
+          const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
+          const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
+          return matchesSearch && matchesCollection && matchesTags;
+        });
+        
+        const enrichedCount = filtered.filter(i => i.pricing_grid_data || i.resolved_grid_id).length;
+        console.log(`📦 Material tab (TWC-linked): Using ONLY treatmentFabrics: ${filtered.length} items (${enrichedCount} with pricing grids)`);
+        return filtered;
+      }
+      
+      // Non-TWC templates: Use treatmentFabrics if available, else fall back to inventory
+      // treatmentFabrics already has server-side vendor filter applied
       const sourceData = treatmentFabrics.length > 0 ? treatmentFabrics : inventory;
       const dataSource = treatmentFabrics.length > 0 ? 'treatmentFabrics (enriched)' : 'raw inventory';
+      const useServerSideVendorFilter = treatmentFabrics.length > 0;
       
       console.log('📦 Using data source:', dataSource);
       
@@ -430,8 +481,8 @@ export const InventorySelectionPanel = ({
                              item.sku?.toLowerCase().includes(searchLower) ||
                              item.supplier?.toLowerCase().includes(searchLower) ||
                              item.vendor?.name?.toLowerCase().includes(searchLower);
-        // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
-        const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
+        // Only apply client-side vendor filter if NOT using treatmentFabrics (which is already server-side filtered)
+        const matchesVendor = useServerSideVendorFilter ? true : matchesUnifiedSupplier(item, selectedVendor, vendors);
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
         
@@ -456,8 +507,8 @@ export const InventorySelectionPanel = ({
                              item.sku?.toLowerCase().includes(searchLower) ||
                              item.supplier?.toLowerCase().includes(searchLower) ||
                              item.vendor?.name?.toLowerCase().includes(searchLower);
-        // CRITICAL FIX: Use hybrid vendor/supplier matching for TWC items
-        const matchesVendor = matchesSupplierFilter(item, selectedVendor, vendors);
+        // Use unified vendor/supplier matching
+        const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
         const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
         const matchesTags = selectedTags.length === 0 || (item.tags && selectedTags.some(tag => item.tags.includes(tag)));
         
@@ -542,6 +593,7 @@ export const InventorySelectionPanel = ({
                 imageUrl={imageUrl}
                 color={item.color}
                 productName={item.name}
+                supplierName={item.supplier || item.vendor?.name}
                 category={category}
                 className="w-full h-full object-cover"
                 fillContainer={true}
@@ -614,9 +666,18 @@ export const InventorySelectionPanel = ({
                       : (item.pricing_method ? item.pricing_method.replace(/_/g, ' ') : 'Per metre')}
                   </span>
                 </div>
-                {item.quantity !== undefined && item.quantity > 0 && (
-                  <Badge variant="secondary" className="text-[9px] px-1 py-0 h-3.5">
-                    {item.quantity} {units.fabric || 'm'}
+                {/* Stock indicator with color coding */}
+                {item.quantity !== undefined && (
+                  <Badge 
+                    variant={item.quantity <= 0 ? "destructive" : item.quantity < 10 ? "outline" : "secondary"}
+                    className={cn(
+                      "text-[9px] px-1.5 py-0 h-4 shrink-0",
+                      item.quantity <= 0 && "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+                      item.quantity > 0 && item.quantity < 10 && "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 border-amber-300",
+                      item.quantity >= 10 && "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                    )}
+                  >
+                    {item.quantity <= 0 ? 'Out' : `${item.quantity} ${units.fabric || 'm'}`}
                   </Badge>
                 )}
               </div>

@@ -28,6 +28,8 @@ import { QRCodeDisplay } from "./QRCodeDisplay";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { InventoryMobileCard } from "./InventoryMobileCard";
+import { matchesUnifiedSupplier } from "@/hooks/useUnifiedSuppliers";
+import { useVendors } from "@/hooks/useVendors";
 
 interface WallcoveringInventoryViewProps {
   searchQuery: string;
@@ -48,6 +50,7 @@ const ITEMS_PER_PAGE = 24;
 
 export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection, selectedStorageLocation }: WallcoveringInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
+  const { data: vendors = [] } = useVendors();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [activeCategory, setActiveCategory] = useState("all");
@@ -75,7 +78,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
     const matchesCategory = activeCategory === "all" || 
       item.subcategory === activeCategory;
 
-    const matchesVendor = !selectedVendor || item.vendor_id === selectedVendor;
+    const matchesVendor = matchesUnifiedSupplier(item, selectedVendor, vendors);
     const matchesCollection = !selectedCollection || item.collection_id === selectedCollection;
     const matchesLocation = !selectedStorageLocation || item.location === selectedStorageLocation;
 

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCurtainTemplates } from "@/hooks/useCurtainTemplates";
 import { Switch } from "@/components/ui/switch";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
+// Note: Using getLengthUnitLabel for display labels (e.g., "in" instead of "inches")
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useMemo, useEffect, useRef, useState } from "react";
 import { FabricSelectionSection } from "./dynamic-options/FabricSelectionSection";
@@ -26,6 +27,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Calculator, Ruler } from "lucide-react";
 import { AdaptiveFabricPricingDisplay } from "./fabric-pricing/AdaptiveFabricPricingDisplay";
 import { convertLength } from "@/hooks/useBusinessSettings";
+import { userInputToCM, validateMeasurement } from "@/utils/measurementBoundary";
 import { useProjectFabricPools, calculateFabricNeeds, useUpdateProjectFabricPool, PoolUsage } from "@/hooks/useProjectFabricPool";
 import { PoolUsageDisplay } from "./PoolUsageDisplay";
 import { ProjectFabricPoolSummary } from "./ProjectFabricPoolSummary";
@@ -219,7 +221,8 @@ export const VisualMeasurementSheet = ({
     data: curtainTemplates = []
   } = useCurtainTemplates();
   const {
-    units
+    units,
+    getLengthUnitLabel
   } = useMeasurementUnits();
   console.log("🎯 Current measurement units from settings:", units);
   const {
@@ -386,22 +389,27 @@ export const VisualMeasurementSheet = ({
       });
 
       // ✅ CRITICAL: measurements are in USER'S DISPLAY UNIT (inches, cm, mm, etc.)
-      // Convert from user's display unit → CM at calculation boundary
+      // Use centralized conversion utility to convert to CM for fabric calculations
       const rawWidth = parseFloat(measurements.rail_width) || 0;
       const rawHeight = parseFloat(measurements.drop) || 0;
       const rawPooling = parseFloat(measurements.pooling_amount || "0") || 0;
       
-      // Convert from user's display unit to CM for fabric calculations
-      const width = convertLength(rawWidth, units.length, 'cm');
-      const height = convertLength(rawHeight, units.length, 'cm');
-      const pooling = convertLength(rawPooling, units.length, 'cm');
+      // Validate that raw values look reasonable for the user's unit
+      validateMeasurement(rawWidth, units.length, 'VisualMeasurementSheet.railWidth');
+      validateMeasurement(rawHeight, units.length, 'VisualMeasurementSheet.drop');
       
-      console.log('📐 FABRIC CALC CONVERSION:', { 
+      // Convert from user's display unit to CM using centralized utility
+      const width = userInputToCM(rawWidth, units.length);
+      const height = userInputToCM(rawHeight, units.length);
+      const pooling = userInputToCM(rawPooling, units.length);
+      
+      console.log('📐 FABRIC CALC CONVERSION (using measurementBoundary):', { 
         input: { rawWidth, rawHeight, unit: units.length },
-        output: { widthCm: width, heightCm: height }
+        output: { widthCm: width, heightCm: height },
+        converter: 'userInputToCM'
       });
 
-      // ✅ Create enriched measurements with converted values
+      // ✅ Create enriched measurements with converted values (now in CM)
       const enrichedMeasurementsWithConversion = {
         ...enrichedMeasurements,
         rail_width: width.toString(),
@@ -585,14 +593,8 @@ export const VisualMeasurementSheet = ({
   // Helper function to display measurement values
   const displayValue = (value: any) => {
     if (!hasValue(value)) return "";
-    const unitLabels: Record<string, string> = {
-      'mm': 'mm',
-      'cm': 'cm',
-      'm': 'm',
-      'inches': '"',
-      'feet': "'"
-    };
-    const unitSymbol = unitLabels[units.length] || units.length;
+    // Use the central unit label from useMeasurementUnits
+    const unitSymbol = getLengthUnitLabel('short');
     return `${value}${unitSymbol}`;
   };
 
@@ -1180,7 +1182,7 @@ export const VisualMeasurementSheet = ({
                       onFocus={e => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })} 
                       placeholder="0.00" readOnly={readOnly} className="h-11 pr-14 text-base font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground" />
                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-xs bg-muted px-2 py-0.5 rounded">
-                         {units.length}
+                         {getLengthUnitLabel('short')}
                       </span>
                     </div>
                     <MeasurementSizeWarning
@@ -1205,7 +1207,7 @@ export const VisualMeasurementSheet = ({
                       onFocus={e => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })} 
                       placeholder="0.00" readOnly={readOnly} className="h-11 pr-14 text-base font-bold text-center container-level-2 border-2 border-border focus:border-primary text-card-foreground" />
                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-card-foreground font-semibold text-xs bg-muted px-2 py-0.5 rounded">
-                        {units.length}
+                        {getLengthUnitLabel('short')}
                       </span>
                     </div>
                     <MeasurementSizeWarning
@@ -1324,8 +1326,16 @@ export const VisualMeasurementSheet = ({
                     template={selectedTemplate} 
                     selectedEyeletRing={measurements.selected_eyelet_ring} 
                     onEyeletRingChange={ringId => onMeasurementChange('selected_eyelet_ring', ringId)} 
-                    onHeadingChange={headingId => onMeasurementChange('selected_heading', headingId)}
-                    onLiningChange={liningType => onMeasurementChange('selected_lining', liningType)}
+                    selectedHeading={selectedHeading}
+                    onHeadingChange={headingId => {
+                      onMeasurementChange('selected_heading', headingId);
+                      if (onHeadingChange) onHeadingChange(headingId);
+                    }}
+                    selectedLining={selectedLining}
+                    onLiningChange={liningType => {
+                      onMeasurementChange('selected_lining', liningType);
+                      if (onLiningChange) onLiningChange(liningType);
+                    }}
                     onOptionPriceChange={(optionType, price, name) => {
                       console.log(`Option ${optionType} changed: ${name} - ${price}`);
                     }}

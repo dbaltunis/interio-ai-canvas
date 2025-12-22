@@ -239,42 +239,60 @@ export const DynamicCurtainOptions = ({
       onHeadingChange(headingId);
     }
     
-    // ✅ FIX: Update heading fullness ratio when heading is selected
-    if (heading && heading.metadata) {
+    // ✅ CRITICAL FIX: ALWAYS set heading fullness from the heading's database value
+    // Priority: heading.fullness_ratio > metadata.fullness_ratio > ERROR (no fallback!)
+    if (heading) {
+      // Check for direct fullness_ratio field FIRST (this is the database column)
+      const headingFullness = (heading as any).fullness_ratio;
       const metadata = heading.metadata as any;
       
-      // Check for multiple fullness ratios first
-      if (metadata.use_multiple_ratios && metadata.multiple_fullness_ratios && metadata.multiple_fullness_ratios.length > 0) {
-        console.log('🔥🔥🔥 Setting first fullness from multiple ratios:', metadata.multiple_fullness_ratios[0]);
-        onChange('heading_fullness', metadata.multiple_fullness_ratios[0]);
-      } else if (metadata.fullness_ratio) {
-        console.log('🔥🔥🔥 Setting heading fullness:', metadata.fullness_ratio);
-        onChange('heading_fullness', metadata.fullness_ratio);
+      let fullnessToUse: number | null = null;
+      let fullnessSource = '';
+      
+      // Priority 1: Direct database column fullness_ratio
+      if (typeof headingFullness === 'number' && headingFullness > 0) {
+        fullnessToUse = headingFullness;
+        fullnessSource = 'heading.fullness_ratio (database column)';
+      }
+      // Priority 2: Metadata with multiple ratios
+      else if (metadata?.use_multiple_ratios && metadata?.multiple_fullness_ratios?.length > 0) {
+        fullnessToUse = metadata.multiple_fullness_ratios[0];
+        fullnessSource = 'metadata.multiple_fullness_ratios[0]';
+      }
+      // Priority 3: Metadata single fullness_ratio
+      else if (typeof metadata?.fullness_ratio === 'number' && metadata.fullness_ratio > 0) {
+        fullnessToUse = metadata.fullness_ratio;
+        fullnessSource = 'metadata.fullness_ratio';
+      }
+      
+      if (fullnessToUse !== null) {
+        console.log('✅ Setting heading_fullness:', fullnessToUse, 'from:', fullnessSource, 'heading:', heading.name);
+        onChange('heading_fullness', fullnessToUse);
+        // Also set fullness_ratio for consistency
+        onChange('fullness_ratio', fullnessToUse);
+      } else {
+        // ❌ NO FALLBACK - log error so user knows to fix the heading
+        console.error('❌ HEADING HAS NO FULLNESS_RATIO:', heading.name, 'ID:', heading.id);
+        console.error('❌ This heading needs fullness_ratio configured in Settings > Inventory');
       }
       
       // Check for eyelet rings
       console.log('🔍 DynamicCurtainOptions - Selected heading:', {
         id: heading.id,
         name: heading.name,
-        heading_type: metadata.heading_type,
-        has_eyelet_rings: !!metadata.eyelet_rings,
-        rings: metadata.eyelet_rings
+        fullness_ratio: headingFullness,
+        heading_type: metadata?.heading_type,
+        has_eyelet_rings: !!metadata?.eyelet_rings
       });
       
-      if (metadata.heading_type === 'eyelet' && metadata.eyelet_rings) {
+      if (metadata?.heading_type === 'eyelet' && metadata?.eyelet_rings) {
         setAvailableRings(metadata.eyelet_rings);
-        // Auto-select first ring if none selected
         if (!selectedEyeletRing && metadata.eyelet_rings.length > 0 && onEyeletRingChange) {
           onEyeletRingChange(metadata.eyelet_rings[0].id);
         }
       } else {
         setAvailableRings([]);
       }
-    } else if (heading && (heading as any).fullness_ratio) {
-      // Fallback for headings without metadata
-      console.log('🔥🔥🔥 Setting heading fullness from direct property:', (heading as any).fullness_ratio);
-      onChange('heading_fullness', (heading as any).fullness_ratio);
-      setAvailableRings([]);
     } else {
       setAvailableRings([]);
     }
@@ -546,12 +564,17 @@ export const DynamicCurtainOptions = ({
             <span className="text-sm text-muted-foreground">Select Type</span>
             <div className="w-64">
               <Select
-                value={measurements.selected_heading || ''}
+                value={(() => {
+                  // Normalize heading value - treat 'standard', 'no-heading', empty as 'none'
+                  const val = selectedHeading || measurements.selected_heading;
+                  if (!val || val === 'standard' || val === 'no-heading') return 'none';
+                  return val;
+                })()}
                 onValueChange={handleHeadingChange}
                 disabled={readOnly}
               >
-                <SelectTrigger className={`bg-background border-input ${!measurements.selected_heading && availableHeadings.length > 1 ? 'border-destructive ring-1 ring-destructive/30' : ''}`}>
-                  <SelectValue placeholder={!measurements.selected_heading && availableHeadings.length > 1 ? "⚠️ Select..." : "Select..."} />
+                <SelectTrigger className={`bg-background border-input ${!(selectedHeading || measurements.selected_heading) && availableHeadings.length > 1 ? 'border-destructive ring-1 ring-destructive/30' : ''}`}>
+                  <SelectValue placeholder={!(selectedHeading || measurements.selected_heading) && availableHeadings.length > 1 ? "⚠️ Select..." : "Select..."} />
                 </SelectTrigger>
                 <SelectContent 
                   className="z-[9999] bg-popover border-border shadow-lg max-h-[300px]"
@@ -559,6 +582,15 @@ export const DynamicCurtainOptions = ({
                   sideOffset={5}
                   align="end"
                 >
+                  {/* FIX: Add explicit "No Heading" option so users can select it */}
+                  <SelectItem key="no-heading" value="none">
+                    <div className="flex items-center justify-between w-full gap-4">
+                      <span className="text-muted-foreground">Standard / No Heading</span>
+                      <Badge variant="outline" className="text-xs">
+                        1x fullness
+                      </Badge>
+                    </div>
+                  </SelectItem>
                   {availableHeadings.map(heading => {
                     console.log('🎯 Rendering heading option:', { id: heading.id, name: heading.name });
                     return (
@@ -849,6 +881,13 @@ export const DynamicCurtainOptions = ({
         // Filter: check visibility AND template-level enabled setting
         if (!option.visible || !option.option_values || option.option_values.length === 0) {
           console.log(`⏭️ Skipping option ${option.key}: visible=${option.visible}, values=${option.option_values?.length || 0}`);
+          return null;
+        }
+        
+        // ✅ CRITICAL: Skip heading_type options from TWC - these are already handled by the inventory-based heading selector above
+        // This prevents duplicate "Heading Type" dropdowns from appearing
+        if (option.key.toLowerCase().includes('heading_type') || option.key.toLowerCase().includes('heading-type')) {
+          console.log(`⏭️ Skipping option ${option.key}: heading_type handled by inventory-based selector`);
           return null;
         }
         

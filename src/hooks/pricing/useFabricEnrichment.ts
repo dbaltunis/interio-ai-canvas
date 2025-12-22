@@ -37,11 +37,13 @@ export const useFabricEnrichment = ({ fabricItem, formData }: FabricEnrichmentPa
 
       // Check if fabric has grid routing info
       const hasPriceGroup = fabricItem.price_group;
-      const hasProductCategory = fabricItem.product_category;
+      // ✅ FIX: Use product_category OR subcategory OR treatment_category from formData
+      const productCategory = fabricItem.product_category || fabricItem.subcategory || formData?.treatment_category;
       const hasSystemType = formData?.system_type;
 
-      if (!hasPriceGroup || !hasProductCategory || !hasSystemType) {
-        // No grid info, use fabric as-is
+      if (!hasPriceGroup) {
+        // No price group, can't resolve grid - use fabric as-is
+        console.log('ℹ️ Fabric has no price_group, skipping grid enrichment:', fabricItem.name);
         setEnrichedFabric(fabricItem);
         return;
       }
@@ -50,8 +52,8 @@ export const useFabricEnrichment = ({ fabricItem, formData }: FabricEnrichmentPa
       setIsLoading(true);
       try {
         const gridResult = await resolveGridForProduct({
-          productType: fabricItem.product_category,
-          systemType: formData.system_type,
+          productType: productCategory,
+          systemType: hasSystemType || productCategory, // Fallback to category
           fabricPriceGroup: fabricItem.price_group,
           userId: fabricItem.user_id
         });
