@@ -713,7 +713,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
           // CRITICAL FIX: Calculate totalWidthWithAllowances from restored values
           // rail_width is stored in MM in database, convert to CM for fabric calculation
           const railWidthCm = (md.rail_width || 0) / 10;
-          const fullness = md.heading_fullness || md.fullness_ratio || 2;
+          const fullness = md.heading_fullness || md.fullness_ratio || 1; // ✅ FIX: Use 1 (no multiplication) if no fullness found
           const requiredWidth = railWidthCm * fullness;
           const returns = (md.return_left || 0) + (md.return_right || 0);
           const curtainMultiplier = (md.curtain_type === 'pair' || md.curtain_type === 'double') ? 2 : 1;
@@ -1346,7 +1346,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               // ✅ FIX: Calculate totalWidthWithAllowances directly from raw measurements
               // Never rely on potentially-stale fabricCalculation state
               const railWidthCm = (parseFloat(measurements.rail_width || '0')) / 10; // MM to CM
-              const fullness = fabricCalculation?.fullnessRatio || parseFloat(measurements.heading_fullness || '0') || selectedTemplate?.fullness_ratio || 2;
+              const fullness = fabricCalculation?.fullnessRatio || parseFloat(measurements.heading_fullness || '0') || selectedTemplate?.fullness_ratio || 1; // ✅ FIX: Use 1 if no fullness
               const sideHemCm = fabricCalculation?.sideHems || parseFloat(String(measurements.side_hem || selectedTemplate?.side_hem || 4));
               const returnLeftCm = parseFloat(measurements.return_left || '0');
               const returnRightCm = parseFloat(measurements.return_right || '0');
@@ -1988,8 +1988,9 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               pooling_option: measurements.pooling_option || 'above_floor',
               pooling_amount: measurements.pooling_amount || '',
               // CRITICAL FIX: Use user's heading_fullness selection, NOT template default
-              fullness_ratio: measurements.heading_fullness || measurements.fullness_ratio || selectedTemplate?.fullness_ratio || (treatmentCategory === 'wallpaper' ? 1 : 2),
-              heading_fullness: measurements.heading_fullness || selectedTemplate?.fullness_ratio || 2,
+              // ✅ FIX: No hardcoded fallback - use 1 (no multiplication) if not set
+              fullness_ratio: measurements.heading_fullness || measurements.fullness_ratio || selectedTemplate?.fullness_ratio || 1,
+              heading_fullness: measurements.heading_fullness || measurements.fullness_ratio || selectedTemplate?.fullness_ratio || 1,
               fabric_width_cm: selectedItems.fabric?.fabric_width || selectedItems.fabric?.wallpaper_roll_width || 140,
               window_type: selectedWindowType?.name || 'Room Wall',
               selected_heading: selectedHeading,

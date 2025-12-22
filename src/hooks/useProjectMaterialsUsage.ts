@@ -90,7 +90,8 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
             // Add heading if present
             if (headingDetails?.id && headingDetails?.heading_name) {
               const railWidth = summary.rail_width || 0;
-              const fullnessRatio = 2;
+              // ✅ FIX: Get fullness from measurements_details, not hardcoded
+              const fullnessRatio = (summary.measurements_details as any)?.fullness_ratio || (summary.measurements_details as any)?.heading_fullness || 1;
               const headingLength = (railWidth / 100) * fullnessRatio;
 
               materials.push({
@@ -201,7 +202,8 @@ export const useProjectMaterialsUsage = (projectId: string | undefined) => {
 
           if (headingItem) {
             const windowWidth = calcDetails.dimensions?.width || 0;
-            const fullnessRatio = headingItem.fullness_ratio || 2;
+            // ✅ FIX: Use heading's actual fullness_ratio from database, fallback to 1 (no multiplication)
+            const fullnessRatio = headingItem.fullness_ratio || 1;
             const headingLength = (windowWidth * fullnessRatio) + 0.2;
 
             materials.push({
