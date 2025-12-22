@@ -18,7 +18,9 @@ export const useQuotes = (projectId?: string) => {
     queryFn: async () => {
       if (!effectiveOwnerId) return [];
 
-      // Explicit user filtering for defense-in-depth (RLS is primary protection)
+      // Let RLS handle filtering - it will return all quotes in the account
+      // This includes quotes created by the account owner AND team members
+      // RLS policy checks account ownership, so we don't need explicit user_id filter
       let query = supabase
         .from("quotes")
         .select(`
@@ -39,8 +41,7 @@ export const useQuotes = (projectId?: string) => {
               email
             )
           )
-        `)
-        .eq("user_id", effectiveOwnerId);
+        `);
       
       if (projectId) {
         query = query.eq("project_id", projectId);

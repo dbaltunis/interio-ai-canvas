@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
 import { useToast } from "@/hooks/use-toast";
-import { useProjects, useUpdateProject, useCreateProject } from "@/hooks/useProjects";
+import { useProjects, useProject, useUpdateProject, useCreateProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
 import { useFormattedDate } from "@/hooks/useFormattedDate";
 import { ProjectDetailsTab } from "./tabs/ProjectDetailsTab";
@@ -54,22 +54,22 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const { data: projects } = useProjects();
+  // Use useProject(id) instead of useProjects() to avoid filtering issues
+  // This lets RLS handle permissions properly, especially for team members
+  const { data: project, isLoading: projectLoading } = useProject(jobId);
   const { data: clients } = useClients();
   const updateProject = useUpdateProject();
   const createProject = useCreateProject();
   const { data: duplicates } = useJobDuplicates(jobId);
   const { data: currentQuotes } = useQuotes(jobId);
 
-  // Use defensive loading and state management
-  const project = projects?.find(p => p.id === jobId);
   const client = project?.client_id ? clients?.find(c => c.id === project.client_id) : null;
   
   // Format dates using user preferences
   const { formattedDate: formattedCreatedDate } = useFormattedDate(project?.created_at, false);
   
   // Show loading skeleton while data is being fetched
-  if (!projects || projects.length === 0) {
+  if (projectLoading) {
     return <JobSkeleton />;
   }
 

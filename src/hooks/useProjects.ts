@@ -18,11 +18,12 @@ export const useProjects = () => {
     queryFn: async () => {
       if (!effectiveOwnerId) return [];
 
-      // Explicit effectiveOwnerId filtering for multi-tenant support
+      // Let RLS handle filtering - it will return all projects in the account
+      // This includes projects created by the account owner AND team members
+      // RLS policy checks: get_effective_account_owner(auth.uid()) = get_effective_account_owner(user_id)
       const { data, error } = await supabase
         .from("projects")
         .select("*, clients(name), parent_job_id")
-        .eq("user_id", effectiveOwnerId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -66,18 +67,18 @@ export const useCreateProject = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
+      // Get account owner ID for team members (needed for job number generation and status lookup)
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("parent_account_id")
+        .eq("user_id", user.id)
+        .single();
+      
+      const accountOwnerId = profile?.parent_account_id || user.id;
+
       // Generate job number using number sequences if not provided
       let jobNumber = project.job_number;
       if (!jobNumber || jobNumber.trim() === '') {
-        // Get account owner ID for team members
-        const { data: profile } = await supabase
-          .from("user_profiles")
-          .select("parent_account_id")
-          .eq("user_id", user.id)
-          .single();
-        
-        const accountOwnerId = profile?.parent_account_id || user.id;
-        
         const { data: generatedNumber, error: seqError } = await supabase.rpc("get_next_sequence_number", {
           p_user_id: accountOwnerId,
           p_entity_type: "job",
@@ -98,12 +99,13 @@ export const useCreateProject = () => {
       }
 
       // Get first Project status (slot 5) if status_id not provided
+      // Use accountOwnerId instead of user.id because job_statuses belong to account owner
       let statusId = project.status_id;
       if (!statusId) {
         const { data: firstStatus } = await supabase
           .from("job_statuses")
           .select("id")
-          .eq("user_id", user.id)
+          .eq("user_id", accountOwnerId) // Use accountOwnerId for team members
           .eq("category", "Project")
           .eq("is_active", true)
           .order("slot_number", { ascending: true })
@@ -113,11 +115,12 @@ export const useCreateProject = () => {
         statusId = firstStatus?.id || null;
       }
 
+      // Always set user_id to the current user (not accountOwnerId) so the project belongs to the creator
       const { data, error } = await supabase
         .from("projects")
         .insert({
           ...project,
-          user_id: user.id,
+          user_id: user.id, // Project belongs to the creator
           job_number: jobNumber,
           status_id: statusId,
         })
