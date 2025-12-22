@@ -242,15 +242,9 @@ export function buildTemplate(
       result.pricing_grid_data = template.pricing_grid_data;
     }
     
-    // Making/Stitching charge fields (curtains only)
-    if (template.making_charge_per_meter != null) {
-      result.making_charge_per_meter = parseFloat(template.making_charge_per_meter);
-    }
-    if (template.making_charge_method) {
-      result.making_charge_method = template.making_charge_method;
-    }
-    if (template.heading_making_charges && typeof template.heading_making_charges === 'object') {
-      result.heading_making_charges = template.heading_making_charges;
+    // Heading-specific price overrides (for per-metre pricing)
+    if (template.heading_prices && typeof template.heading_prices === 'object') {
+      result.heading_prices = template.heading_prices;
     }
     
     return result;

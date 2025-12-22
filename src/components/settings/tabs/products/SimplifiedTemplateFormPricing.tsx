@@ -9,7 +9,6 @@ import { HandFinishedToggle } from "./pricing/HandFinishedToggle";
 import { PerMetrePricing } from "./pricing/PerMetrePricing";
 import { PerPanelPricing } from "./pricing/PerPanelPricing";
 import { PerDropPricing } from "./pricing/PerDropPricing";
-import { MakingChargeSection } from "./pricing/MakingChargeSection";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { getUnitLabel } from "@/utils/measurementFormatters";
 import { Sparkles, ArrowRight } from "lucide-react";
@@ -124,6 +123,9 @@ export const SimplifiedTemplateFormPricing = ({
               handPricePerMetre={formData.hand_price_per_metre}
               offersHandFinished={formData.offers_hand_finished}
               heightPriceRanges={formData.height_price_ranges}
+              headingPrices={formData.heading_prices}
+              selectedHeadingIds={formData.selected_heading_ids || []}
+              headings={headings.map(h => ({ id: h.id, name: h.name }))}
               onInputChange={handleInputChange}
             />
           )}
@@ -174,18 +176,6 @@ export const SimplifiedTemplateFormPricing = ({
           )}
         </CardContent>
       </Card>
-
-      {/* Making/Stitching Charge - Curtains only */}
-      {isCurtainOnly && (
-        <MakingChargeSection
-          makingChargePerMeter={formData.making_charge_per_meter || ""}
-          makingChargeMethod={formData.making_charge_method || "per_meter"}
-          headingMakingCharges={formData.heading_making_charges || {}}
-          selectedHeadingIds={formData.selected_heading_ids || []}
-          headings={headings.map(h => ({ id: h.id, name: h.name }))}
-          onInputChange={handleInputChange}
-        />
-      )}
 
       {/* Size Range Section */}
       <Card>

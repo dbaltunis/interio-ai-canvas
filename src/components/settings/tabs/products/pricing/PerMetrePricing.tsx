@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 
@@ -13,11 +15,21 @@ interface PriceRange {
   price?: number; // Legacy field for backward compatibility
 }
 
+interface HeadingPrices {
+  [headingId: string]: {
+    machine_price?: number;
+    hand_price?: number;
+  };
+}
+
 interface PerMetrePricingProps {
   machinePricePerMetre: string;
   handPricePerMetre: string;
   offersHandFinished: boolean;
   heightPriceRanges?: PriceRange[];
+  headingPrices?: HeadingPrices;
+  selectedHeadingIds?: string[];
+  headings?: Array<{ id: string; name: string }>;
   onInputChange: (field: string, value: string) => void;
 }
 
@@ -26,16 +38,28 @@ export const PerMetrePricing = ({
   handPricePerMetre,
   offersHandFinished,
   heightPriceRanges: rawHeightPriceRanges,
+  headingPrices: rawHeadingPrices,
+  selectedHeadingIds = [],
+  headings = [],
   onInputChange
 }: PerMetrePricingProps) => {
   const { units, getLengthUnitLabel } = useMeasurementUnits();
   const currencySymbol = getCurrencySymbol(units.currency || 'USD');
   const isImperial = units.system === 'imperial';
-  const lengthUnitLabel = getLengthUnitLabel('short'); // Use central formatter
+  const lengthUnitLabel = getLengthUnitLabel('short');
   const pricingUnitLabel = isImperial ? 'Yard' : 'Metre';
   
   // Ensure heightPriceRanges is always an array
   const heightPriceRanges: PriceRange[] = Array.isArray(rawHeightPriceRanges) ? rawHeightPriceRanges : [];
+  
+  // Heading price overrides
+  const headingPrices: HeadingPrices = rawHeadingPrices || {};
+  const [showHeadingPrices, setShowHeadingPrices] = useState(
+    Object.keys(headingPrices).length > 0
+  );
+  
+  // Get headings that are selected in the template
+  const selectedHeadings = headings.filter(h => selectedHeadingIds.includes(h.id));
 
   const updateRange = (index: number, field: keyof PriceRange, value: number) => {
     const updated = [...heightPriceRanges];
@@ -49,7 +73,6 @@ export const PerMetrePricing = ({
   };
 
   const addRange = () => {
-    // Auto-calculate min_height from previous range's max_height + 1
     const lastRange = heightPriceRanges[heightPriceRanges.length - 1];
     const newMinHeight = lastRange ? lastRange.max_height + 1 : 1;
     const newMaxHeight = lastRange ? lastRange.max_height + 100 : 200;
@@ -64,6 +87,27 @@ export const PerMetrePricing = ({
       }
     ];
     onInputChange('height_price_ranges', JSON.stringify(updated));
+  };
+
+  const handleHeadingPriceChange = (headingId: string, field: 'machine_price' | 'hand_price', value: string) => {
+    const newPrices = { ...headingPrices };
+    const parsedValue = parseFloat(value);
+    
+    if (!newPrices[headingId]) {
+      newPrices[headingId] = {};
+    }
+    
+    if (value && parsedValue > 0) {
+      newPrices[headingId][field] = parsedValue;
+    } else {
+      delete newPrices[headingId][field];
+      // Remove heading entry if empty
+      if (Object.keys(newPrices[headingId]).length === 0) {
+        delete newPrices[headingId];
+      }
+    }
+    
+    onInputChange("heading_prices", JSON.stringify(newPrices));
   };
 
   return (
@@ -94,6 +138,80 @@ export const PerMetrePricing = ({
           </div>
         )}
       </div>
+
+      {/* Heading-specific price overrides */}
+      {selectedHeadings.length > 0 && (
+        <div className="space-y-3 border-t pt-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="heading-prices"
+                checked={showHeadingPrices}
+                onCheckedChange={setShowHeadingPrices}
+              />
+              <Label htmlFor="heading-prices" className="cursor-pointer text-sm">
+                Different prices by heading
+              </Label>
+            </div>
+            {showHeadingPrices && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setShowHeadingPrices(!showHeadingPrices)}
+              >
+                {showHeadingPrices ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            )}
+          </div>
+
+          {showHeadingPrices && (
+            <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+              <p className="text-xs text-muted-foreground">
+                Override base price for specific headings (blank = use base price)
+              </p>
+              <div className="grid gap-3">
+                {selectedHeadings.map((heading) => (
+                  <div key={heading.id} className="space-y-2 p-3 bg-muted/30 rounded-lg">
+                    <span className="text-sm font-medium">{heading.name}</span>
+                    <div className={`grid gap-2 ${offersHandFinished ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                      <div>
+                        <Label className="text-xs">Machine ({currencySymbol}/{pricingUnitLabel.toLowerCase()})</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder={machinePricePerMetre || "Base price"}
+                          className="h-8"
+                          value={headingPrices[heading.id]?.machine_price || ""}
+                          onChange={(e) => handleHeadingPriceChange(heading.id, 'machine_price', e.target.value)}
+                        />
+                      </div>
+                      {offersHandFinished && (
+                        <div>
+                          <Label className="text-xs">Hand-Finished ({currencySymbol}/{pricingUnitLabel.toLowerCase()})</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder={handPricePerMetre || "Base price"}
+                            className="h-8"
+                            value={headingPrices[heading.id]?.hand_price || ""}
+                            onChange={(e) => handleHeadingPriceChange(heading.id, 'hand_price', e.target.value)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {selectedHeadings.length === 0 && headings.length > 0 && (
+        <p className="text-xs text-muted-foreground border-t pt-3">
+          Select headings in the Heading tab to enable heading-specific pricing
+        </p>
+      )}
 
       <div className="space-y-3 border-t pt-4">
         <div className="flex items-center justify-between">
