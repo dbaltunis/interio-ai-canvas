@@ -239,42 +239,60 @@ export const DynamicCurtainOptions = ({
       onHeadingChange(headingId);
     }
     
-    // ✅ FIX: Update heading fullness ratio when heading is selected
-    if (heading && heading.metadata) {
+    // ✅ CRITICAL FIX: ALWAYS set heading fullness from the heading's database value
+    // Priority: heading.fullness_ratio > metadata.fullness_ratio > ERROR (no fallback!)
+    if (heading) {
+      // Check for direct fullness_ratio field FIRST (this is the database column)
+      const headingFullness = (heading as any).fullness_ratio;
       const metadata = heading.metadata as any;
       
-      // Check for multiple fullness ratios first
-      if (metadata.use_multiple_ratios && metadata.multiple_fullness_ratios && metadata.multiple_fullness_ratios.length > 0) {
-        console.log('🔥🔥🔥 Setting first fullness from multiple ratios:', metadata.multiple_fullness_ratios[0]);
-        onChange('heading_fullness', metadata.multiple_fullness_ratios[0]);
-      } else if (metadata.fullness_ratio) {
-        console.log('🔥🔥🔥 Setting heading fullness:', metadata.fullness_ratio);
-        onChange('heading_fullness', metadata.fullness_ratio);
+      let fullnessToUse: number | null = null;
+      let fullnessSource = '';
+      
+      // Priority 1: Direct database column fullness_ratio
+      if (typeof headingFullness === 'number' && headingFullness > 0) {
+        fullnessToUse = headingFullness;
+        fullnessSource = 'heading.fullness_ratio (database column)';
+      }
+      // Priority 2: Metadata with multiple ratios
+      else if (metadata?.use_multiple_ratios && metadata?.multiple_fullness_ratios?.length > 0) {
+        fullnessToUse = metadata.multiple_fullness_ratios[0];
+        fullnessSource = 'metadata.multiple_fullness_ratios[0]';
+      }
+      // Priority 3: Metadata single fullness_ratio
+      else if (typeof metadata?.fullness_ratio === 'number' && metadata.fullness_ratio > 0) {
+        fullnessToUse = metadata.fullness_ratio;
+        fullnessSource = 'metadata.fullness_ratio';
+      }
+      
+      if (fullnessToUse !== null) {
+        console.log('✅ Setting heading_fullness:', fullnessToUse, 'from:', fullnessSource, 'heading:', heading.name);
+        onChange('heading_fullness', fullnessToUse);
+        // Also set fullness_ratio for consistency
+        onChange('fullness_ratio', fullnessToUse);
+      } else {
+        // ❌ NO FALLBACK - log error so user knows to fix the heading
+        console.error('❌ HEADING HAS NO FULLNESS_RATIO:', heading.name, 'ID:', heading.id);
+        console.error('❌ This heading needs fullness_ratio configured in Settings > Inventory');
       }
       
       // Check for eyelet rings
       console.log('🔍 DynamicCurtainOptions - Selected heading:', {
         id: heading.id,
         name: heading.name,
-        heading_type: metadata.heading_type,
-        has_eyelet_rings: !!metadata.eyelet_rings,
-        rings: metadata.eyelet_rings
+        fullness_ratio: headingFullness,
+        heading_type: metadata?.heading_type,
+        has_eyelet_rings: !!metadata?.eyelet_rings
       });
       
-      if (metadata.heading_type === 'eyelet' && metadata.eyelet_rings) {
+      if (metadata?.heading_type === 'eyelet' && metadata?.eyelet_rings) {
         setAvailableRings(metadata.eyelet_rings);
-        // Auto-select first ring if none selected
         if (!selectedEyeletRing && metadata.eyelet_rings.length > 0 && onEyeletRingChange) {
           onEyeletRingChange(metadata.eyelet_rings[0].id);
         }
       } else {
         setAvailableRings([]);
       }
-    } else if (heading && (heading as any).fullness_ratio) {
-      // Fallback for headings without metadata
-      console.log('🔥🔥🔥 Setting heading fullness from direct property:', (heading as any).fullness_ratio);
-      onChange('heading_fullness', (heading as any).fullness_ratio);
-      setAvailableRings([]);
     } else {
       setAvailableRings([]);
     }

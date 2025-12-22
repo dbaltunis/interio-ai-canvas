@@ -95,7 +95,11 @@ export const calculateTreatmentPricing = (input: TreatmentPricingInput): Treatme
   const seamHems = template?.seam_hems || 0;
   const headerHem = template?.header_allowance || 8;
   const bottomHem = template?.bottom_hem || 8;
-  const fullnessRatio = template?.fullness_ratio || 2;
+  // ✅ FIX: Use 1 (no multiplication) as fallback, log warning if missing
+  const fullnessRatio = template?.fullness_ratio || (() => {
+    console.warn('⚠️ calculateTreatmentPricing: No fullness_ratio in template, using 1 (no multiplication)');
+    return 1;
+  })();
 
   // Pattern repeats (cm) — ensure they influence the cut lengths and widths
   const vRepeatCm = parseFloat(measurements?.vertical_pattern_repeat_cm ?? measurements?.vertical_pattern_repeat ?? measurements?.pattern_repeat_vertical_cm ?? measurements?.pattern_repeat_vertical ?? measurements?.vertical_repeat_cm ?? measurements?.vertical_repeat ?? '0') || 0;
