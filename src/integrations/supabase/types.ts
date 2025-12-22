@@ -2278,6 +2278,7 @@ export type Database = {
           hand_price_per_metre: number | null
           hand_price_per_panel: number | null
           header_allowance: number | null
+          heading_making_charges: Json | null
           heading_name: string | null
           heading_upcharge_per_curtain: number | null
           heading_upcharge_per_metre: number | null
@@ -2295,6 +2296,8 @@ export type Database = {
           machine_price_per_metre: number | null
           machine_price_per_panel: number | null
           machine_price_per_sqm: number | null
+          making_charge_method: string | null
+          making_charge_per_meter: number | null
           manufacturing_type: string
           maximum_height: number | null
           maximum_width: number | null
@@ -2353,6 +2356,7 @@ export type Database = {
           hand_price_per_metre?: number | null
           hand_price_per_panel?: number | null
           header_allowance?: number | null
+          heading_making_charges?: Json | null
           heading_name?: string | null
           heading_upcharge_per_curtain?: number | null
           heading_upcharge_per_metre?: number | null
@@ -2370,6 +2374,8 @@ export type Database = {
           machine_price_per_metre?: number | null
           machine_price_per_panel?: number | null
           machine_price_per_sqm?: number | null
+          making_charge_method?: string | null
+          making_charge_per_meter?: number | null
           manufacturing_type?: string
           maximum_height?: number | null
           maximum_width?: number | null
@@ -2428,6 +2434,7 @@ export type Database = {
           hand_price_per_metre?: number | null
           hand_price_per_panel?: number | null
           header_allowance?: number | null
+          heading_making_charges?: Json | null
           heading_name?: string | null
           heading_upcharge_per_curtain?: number | null
           heading_upcharge_per_metre?: number | null
@@ -2445,6 +2452,8 @@ export type Database = {
           machine_price_per_metre?: number | null
           machine_price_per_panel?: number | null
           machine_price_per_sqm?: number | null
+          making_charge_method?: string | null
+          making_charge_per_meter?: number | null
           manufacturing_type?: string
           maximum_height?: number | null
           maximum_width?: number | null
