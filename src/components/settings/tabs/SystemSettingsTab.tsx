@@ -4,7 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Bell, Shield, Database, Download } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Mail, Bell, Shield, Database, Download, ChevronDown, Package } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useCompactMode } from "@/hooks/useCompactMode";
@@ -15,6 +16,8 @@ import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { NumberSequenceSettings } from "@/components/settings/NumberSequenceSettings";
 import { InventoryDeductionSettings } from "@/components/settings/InventoryDeductionSettings";
 import { StatusManagement } from "../user-management/StatusManagement";
+import { HomekaaraInventoryImport } from "./inventory/HomekaaraInventoryImport";
+import { HardwareBundleCalculator } from "../pricing/HardwareBundleCalculator";
 
 export const SystemSettingsTab = () => {
   const [notifications, setNotifications] = useState({
@@ -59,6 +62,33 @@ export const SystemSettingsTab = () => {
 
       {/* Status Management */}
       <StatusManagement />
+
+      {/* Advanced Tools Section */}
+      <Collapsible>
+        <CollapsibleTrigger asChild>
+          <Card className="cursor-pointer hover:bg-muted/50">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Advanced Inventory Tools
+                </div>
+                <ChevronDown className="h-4 w-4" />
+              </CardTitle>
+              <CardDescription>
+                Hardware bundle calculator and data import tools
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4 mt-4">
+          {/* Hardware Bundle Calculator */}
+          <HardwareBundleCalculator />
+          
+          {/* Homekaara Import Tool */}
+          <HomekaaraInventoryImport />
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Appearance */}
       <Card className="mb-6">
