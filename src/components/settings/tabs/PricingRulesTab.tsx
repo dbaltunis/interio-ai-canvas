@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calculator, Percent, Receipt, Grid3X3, Settings2 } from "lucide-react";
+import { Calculator, Percent, Receipt, Grid3X3, Settings2, Scissors } from "lucide-react";
+import { StitchingPriceManager } from "./products/StitchingPriceManager";
 import { PricingGridCardDashboard } from "../pricing-grids/PricingGridCardDashboard";
 import { PricingGridUploadWizard } from "../pricing-grids/PricingGridUploadWizard";
 import { useMarkupSettings, useUpdateMarkupSettings, MarkupSettings } from "@/hooks/useMarkupSettings";
@@ -142,12 +143,16 @@ export const PricingRulesTab = () => {
         isInheriting={isInheritingSettings}
       />
       
-      {/* Simplified 2-Tab Structure */}
+      {/* 3-Tab Structure: Grids, Stitching, Settings */}
       <Tabs defaultValue="grids" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="grids" className="flex items-center gap-2">
             <Grid3X3 className="h-4 w-4" />
-            My Grids
+            Pricing Grids
+          </TabsTrigger>
+          <TabsTrigger value="stitching" className="flex items-center gap-2">
+            <Scissors className="h-4 w-4" />
+            Stitching
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings2 className="h-4 w-4" />
@@ -167,6 +172,11 @@ export const PricingRulesTab = () => {
           ) : (
             <PricingGridCardDashboard onAddGrid={handleAddGrid} />
           )}
+        </TabsContent>
+
+        {/* Stitching Tab */}
+        <TabsContent value="stitching" className="space-y-4">
+          <StitchingPriceManager />
         </TabsContent>
 
         {/* Settings Tab (Markup & Tax) */}
