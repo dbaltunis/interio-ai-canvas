@@ -28,10 +28,10 @@ export const PerMetrePricing = ({
   heightPriceRanges: rawHeightPriceRanges,
   onInputChange
 }: PerMetrePricingProps) => {
-  const { units } = useMeasurementUnits();
+  const { units, getLengthUnitLabel } = useMeasurementUnits();
   const currencySymbol = getCurrencySymbol(units.currency || 'USD');
   const isImperial = units.system === 'imperial';
-  const lengthUnitLabel = isImperial ? 'inches' : 'cm';
+  const lengthUnitLabel = getLengthUnitLabel('short'); // Use central formatter
   const pricingUnitLabel = isImperial ? 'Yard' : 'Metre';
   
   // Ensure heightPriceRanges is always an array
