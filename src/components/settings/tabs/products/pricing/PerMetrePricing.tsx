@@ -91,20 +91,21 @@ export const PerMetrePricing = ({
 
   const handleHeadingPriceChange = (headingId: string, field: 'machine_price' | 'hand_price', value: string) => {
     const newPrices = { ...headingPrices };
-    const parsedValue = parseFloat(value);
     
     if (!newPrices[headingId]) {
       newPrices[headingId] = {};
     }
     
-    if (value && parsedValue > 0) {
-      newPrices[headingId][field] = parsedValue;
-    } else {
+    // If value is empty or just whitespace, remove the field
+    if (!value || value.trim() === '') {
       delete newPrices[headingId][field];
       // Remove heading entry if empty
       if (Object.keys(newPrices[headingId]).length === 0) {
         delete newPrices[headingId];
       }
+    } else {
+      // Store the numeric value (parseFloat handles "0" correctly)
+      newPrices[headingId][field] = parseFloat(value) || 0;
     }
     
     onInputChange("heading_prices", JSON.stringify(newPrices));
