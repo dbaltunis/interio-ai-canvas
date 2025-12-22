@@ -70,14 +70,14 @@ export const useMeasurementUnits = () => {
       'mm': 'mm',
       'cm': 'cm', 
       'm': 'm',
-      'inches': '"',
+      'inches': '"',  // Short symbol for inches
       'feet': "'"
     };
     const longLabels: Record<string, string> = {
       'mm': 'mm',
       'cm': 'cm', 
       'm': 'm',
-      'inches': 'in',
+      'inches': 'in',  // ✅ FIX: Use 'in' not 'inches' for long format
       'feet': 'ft'
     };
     return format === 'short' 
