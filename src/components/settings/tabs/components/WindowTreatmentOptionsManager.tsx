@@ -25,6 +25,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { SortableOptionItem } from "./SortableOptionItem";
 import { InventorySyncDialog } from "./InventorySyncDialog";
+import { HeadingFilter, HEADING_TYPES } from "./HeadingFilter";
 
 export const WindowTreatmentOptionsManager = () => {
   const queryClient = useQueryClient();
@@ -118,6 +119,7 @@ export const WindowTreatmentOptionsManager = () => {
     pricing_method: 'fixed' as string,
     pricing_grid_data: [] as PricingGridRow[],
     pricing_grid_type: 'width' as PricingGridType,
+    applies_to_headings: [] as string[],
     sub_options: [] as Array<{
       id: string;
       label: string;
@@ -161,6 +163,7 @@ export const WindowTreatmentOptionsManager = () => {
       pricing_method: 'fixed',
       pricing_grid_data: [],
       pricing_grid_type: 'width',
+      applies_to_headings: [],
       sub_options: []
     });
   };
@@ -220,6 +223,7 @@ export const WindowTreatmentOptionsManager = () => {
                 price: Number(formData.price) || 0,
                 pricing_method: formData.pricing_method,
                 pricing_grid_data: formData.pricing_grid_data,
+                applies_to_headings: formData.applies_to_headings,
                 sub_options: formData.sub_options
               },
               inventory_item_id: formData.inventory_item_id || null,
@@ -375,6 +379,7 @@ export const WindowTreatmentOptionsManager = () => {
               pricing_method: formData.pricing_method,
               pricing_grid_data: formData.pricing_grid_data,
               pricing_grid_type: formData.pricing_grid_type,
+              applies_to_headings: formData.applies_to_headings,
               sub_options: formData.sub_options
             },
             inventory_item_id: formData.inventory_item_id || null,
@@ -427,6 +432,7 @@ export const WindowTreatmentOptionsManager = () => {
       pricing_method: value.extra_data?.pricing_method || 'fixed',
       pricing_grid_data: value.extra_data?.pricing_grid_data || [],
       pricing_grid_type: value.extra_data?.pricing_grid_type || 'width',
+      applies_to_headings: value.extra_data?.applies_to_headings || [],
       sub_options: value.extra_data?.sub_options || []
     });
     setEditingValue(value);
@@ -1582,12 +1588,14 @@ export const WindowTreatmentOptionsManager = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="fixed">Fixed Price</SelectItem>
-                          <SelectItem value="per-meter">Per Running Linear Meter</SelectItem>
+                          <SelectItem value="per-meter">Per Running Meter</SelectItem>
+                          <SelectItem value="per-sqm">Per Square Meter</SelectItem>
+                          <SelectItem value="per-panel">Per Panel/Drop</SelectItem>
                           <SelectItem value="pricing-grid">Pricing Grid</SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Fixed: flat price • Per Meter: price × width • Grid: lookup by width × drop
+                        Fixed: flat price • Per Meter: price × width • Per m²: price × area • Per Panel: price × drops • Grid: lookup
                       </p>
                     </div>
 
@@ -1644,6 +1652,19 @@ export const WindowTreatmentOptionsManager = () => {
                         Selecting an item auto-fills the name and price. Price is stored in THIS option, not inventory.
                       </p>
                     </div>
+
+                    {/* Applies to Headings - only show for curtain-related treatments */}
+                    {(activeTreatment === 'curtains' || activeTreatment === 'roman_blinds') && (
+                      <div className="col-span-2">
+                        <HeadingFilter
+                          selectedHeadings={formData.applies_to_headings}
+                          onChange={(headings) => setFormData({ ...formData, applies_to_headings: headings })}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Leave empty to apply to all headings, or select specific headings this option applies to
+                        </p>
+                      </div>
+                    )}
 
                     {/* Sub-Categories Section */}
                     <div className="col-span-2 space-y-3 pt-4 border-t">
@@ -1745,6 +1766,7 @@ export const WindowTreatmentOptionsManager = () => {
                                         <SelectItem value="fixed">Fixed</SelectItem>
                                         <SelectItem value="per-meter">Per m</SelectItem>
                                         <SelectItem value="per-sqm">Per m²</SelectItem>
+                                        <SelectItem value="per-panel">Per Panel</SelectItem>
                                         <SelectItem value="per-unit">Per Unit</SelectItem>
                                       </SelectContent>
                                     </Select>
