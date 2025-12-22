@@ -27,6 +27,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Calculator, Ruler } from "lucide-react";
 import { AdaptiveFabricPricingDisplay } from "./fabric-pricing/AdaptiveFabricPricingDisplay";
 import { convertLength } from "@/hooks/useBusinessSettings";
+import { userInputToCM, validateMeasurement } from "@/utils/measurementBoundary";
 import { useProjectFabricPools, calculateFabricNeeds, useUpdateProjectFabricPool, PoolUsage } from "@/hooks/useProjectFabricPool";
 import { PoolUsageDisplay } from "./PoolUsageDisplay";
 import { ProjectFabricPoolSummary } from "./ProjectFabricPoolSummary";
@@ -388,22 +389,27 @@ export const VisualMeasurementSheet = ({
       });
 
       // ✅ CRITICAL: measurements are in USER'S DISPLAY UNIT (inches, cm, mm, etc.)
-      // Convert from user's display unit → CM at calculation boundary
+      // Use centralized conversion utility to convert to CM for fabric calculations
       const rawWidth = parseFloat(measurements.rail_width) || 0;
       const rawHeight = parseFloat(measurements.drop) || 0;
       const rawPooling = parseFloat(measurements.pooling_amount || "0") || 0;
       
-      // Convert from user's display unit to CM for fabric calculations
-      const width = convertLength(rawWidth, units.length, 'cm');
-      const height = convertLength(rawHeight, units.length, 'cm');
-      const pooling = convertLength(rawPooling, units.length, 'cm');
+      // Validate that raw values look reasonable for the user's unit
+      validateMeasurement(rawWidth, units.length, 'VisualMeasurementSheet.railWidth');
+      validateMeasurement(rawHeight, units.length, 'VisualMeasurementSheet.drop');
       
-      console.log('📐 FABRIC CALC CONVERSION:', { 
+      // Convert from user's display unit to CM using centralized utility
+      const width = userInputToCM(rawWidth, units.length);
+      const height = userInputToCM(rawHeight, units.length);
+      const pooling = userInputToCM(rawPooling, units.length);
+      
+      console.log('📐 FABRIC CALC CONVERSION (using measurementBoundary):', { 
         input: { rawWidth, rawHeight, unit: units.length },
-        output: { widthCm: width, heightCm: height }
+        output: { widthCm: width, heightCm: height },
+        converter: 'userInputToCM'
       });
 
-      // ✅ Create enriched measurements with converted values
+      // ✅ Create enriched measurements with converted values (now in CM)
       const enrichedMeasurementsWithConversion = {
         ...enrichedMeasurements,
         rail_width: width.toString(),

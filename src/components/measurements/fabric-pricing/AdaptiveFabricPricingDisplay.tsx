@@ -7,6 +7,7 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getPriceFromGrid } from "@/hooks/usePricingGrids";
 import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
 import { convertLength } from "@/hooks/useBusinessSettings";
+import { userInputToCM, fromCM, fromMM, validateMeasurement } from "@/utils/measurementBoundary";
 import { PoolUsageDisplay } from "../PoolUsageDisplay";
 import { PoolUsage } from "@/hooks/useProjectFabricPool";
 import { detectTreatmentType, getMeasurementLabels } from "@/utils/treatmentTypeDetection";
@@ -144,11 +145,13 @@ export const AdaptiveFabricPricingDisplay = ({
   };
 
   // CRITICAL: Format measurement with explicit source unit
-  // fabricCalculation values are in CM, raw measurements are in MM
+  // Uses centralized measurementBoundary utilities for consistent conversion
+  // fabricCalculation values are in CM, raw measurements are in user's display unit
   const formatMeasurement = (value: number, sourceUnit: 'mm' | 'cm' = 'mm') => {
-    // Convert source to MM first, then to user's preferred unit
-    const valueMm = sourceUnit === 'cm' ? value * 10 : value;
-    const converted = convertLength(valueMm, 'mm', units.length);
+    // Convert source to user's preferred unit using centralized utility
+    const converted = sourceUnit === 'cm' 
+      ? fromCM(value, units.length) 
+      : fromMM(value, units.length);
     return `${converted.toFixed(1)}${getLengthUnitLabel()}`;
   };
 
@@ -220,12 +223,12 @@ export const AdaptiveFabricPricingDisplay = ({
   let gridDropCm = 0;
   let effectiveGridWidthCm = 0; // For display - shows what was used for lookup
   if (usesPricingGrid && gridDataToUse && measurements.rail_width && measurements.drop) {
-    // ✅ CRITICAL FIX: measurements are in user's display unit, convert TO cm
+    // ✅ CRITICAL FIX: measurements are in user's display unit, convert TO cm using centralized utility
     const rawWidth = parseFloat(measurements.rail_width);
     const rawDrop = parseFloat(measurements.drop);
-    // Convert from user's display unit (could be cm, inches, mm) to CM for grid lookup
-    const rawWidthCm = convertLength(rawWidth, units.length, 'cm');
-    const rawDropCm = convertLength(rawDrop, units.length, 'cm');
+    // Use centralized conversion utility
+    const rawWidthCm = userInputToCM(rawWidth, units.length);
+    const rawDropCm = userInputToCM(rawDrop, units.length);
     
     // ✅ CRITICAL: For CURTAINS/ROMAN, apply fullness + hems + returns BEFORE grid lookup
     const isCurtainForGrid = treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds';
@@ -281,16 +284,14 @@ export const AdaptiveFabricPricingDisplay = ({
     });
   }
 
-  // CRITICAL: Calculate square meters with hems - measurements are in MM
-  // Uses centralized blind calculation defaults for consistency
-  // ✅ FIX: measurements are in USER'S DISPLAY UNIT, convert to CM
+  // ✅ FIX: measurements are in USER'S DISPLAY UNIT, convert to CM using centralized utility
   const calculateSquareMeters = () => {
     if (!measurements.rail_width || !measurements.drop) return 0;
     const rawWidth = parseFloat(measurements.rail_width);
     const rawDrop = parseFloat(measurements.drop);
-    // ✅ CRITICAL FIX: Convert from user's display unit to CM
-    const widthCm = convertLength(rawWidth, units.length, 'cm');
-    const dropCm = convertLength(rawDrop, units.length, 'cm');
+    // Use centralized conversion utility
+    const widthCm = userInputToCM(rawWidth, units.length);
+    const dropCm = userInputToCM(rawDrop, units.length);
 
     // Get hem defaults from template (centralized source)
     const hems = getBlindHemDefaults(template);
@@ -310,12 +311,13 @@ export const AdaptiveFabricPricingDisplay = ({
   };
 
   // Calculate linear meters for roller blinds - waste comes from template
-  // ✅ FIX: measurements are in USER'S DISPLAY UNIT, convert to meters
+  // ✅ FIX: measurements are in USER'S DISPLAY UNIT, convert to meters using centralized utility
   const calculateLinearMeters = () => {
     if (!measurements.drop) return 0;
     const rawDrop = parseFloat(measurements.drop);
-    // ✅ CRITICAL FIX: Convert from user's display unit to meters
-    const dropM = convertLength(rawDrop, units.length, 'cm') / 100; // Convert to meters
+    // Use centralized conversion - first to CM, then divide by 100 to get meters
+    const dropCm = userInputToCM(rawDrop, units.length);
+    const dropM = dropCm / 100;
     // Use template waste if configured, otherwise no waste (fail explicit)
     const wasteMultiplier = template?.waste_percent 
       ? 1 + (template.waste_percent / 100) 
