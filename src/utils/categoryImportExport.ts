@@ -156,6 +156,35 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
     const compatibleTreatmentsRaw = getValue(values, lookup, 'compatible_treatments', 'treatments', 'compatible_with', 'works_with');
     const compatibleTreatments = parseCommaSeparated(compatibleTreatmentsRaw);
     
+    // ✅ CRITICAL FIX: Parse fabric_width with unit detection
+    // Detect inches (54'' or 54" or explicit unit column) and convert to CM (internal standard)
+    const fabricWidthRaw = getValue(values, lookup, 'fabric_width', 'width', 'roll_width', 'material_width');
+    const fabricWidthUnit = getValue(values, lookup, 'fabric_width_unit', 'width_unit', 'unit_width');
+    let fabricWidthCm: number | null = null;
+    
+    if (fabricWidthRaw) {
+      // Check for inch indicators: '' or " suffix, or unit column says inches/in
+      const hasInchSymbol = fabricWidthRaw.includes("''") || fabricWidthRaw.includes('"') || fabricWidthRaw.toLowerCase().includes('inch');
+      const unitIsInches = fabricWidthUnit?.toLowerCase().includes('inch') || fabricWidthUnit?.toLowerCase() === 'in';
+      
+      // Parse the numeric value (strip any non-numeric chars except decimal)
+      const numericValue = parseFloat(fabricWidthRaw.replace(/[^\d.]/g, ''));
+      
+      if (!isNaN(numericValue) && numericValue > 0) {
+        if (hasInchSymbol || unitIsInches) {
+          // Convert inches to CM (internal standard): 1 inch = 2.54 cm
+          fabricWidthCm = numericValue * 2.54;
+          console.log(`📏 CSV Import: Converted fabric width from ${numericValue} inches to ${fabricWidthCm} cm`);
+        } else {
+          // Assume CM if no inch indicator
+          fabricWidthCm = numericValue;
+        }
+      }
+    }
+    
+    // ✅ FIX: Map color to dedicated color field (not just tags)
+    const primaryColor = colorValues.length > 0 ? colorValues[0] : null;
+    
     const item: any = {
       category: 'fabric',
       name: getValue(values, lookup, 'name', 'product_name', 'fabric_name'),
@@ -164,6 +193,7 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
       subcategory: getValue(values, lookup, 'subcategory', 'sub_category', 'type', 'fabric_type'),
       product_category: getValue(values, lookup, 'product_category', 'category', 'treatment_type'),
       tags: colorValues,
+      color: primaryColor, // ✅ Direct color field mapping
       compatible_treatments: compatibleTreatments.length > 0 ? compatibleTreatments : null,
       supplier: getValue(values, lookup, 'supplier', 'vendor', 'manufacturer', 'brand'),
       collection_name: getValue(values, lookup, 'collection_name', 'collection', 'range', 'series'),
@@ -175,7 +205,7 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
       cost_price: parsePrice(getValue(values, lookup, 'cost_price', 'cost', 'buy_price', 'purchase_price', 'wholesale_price', 'cost_per_meter', 'cost_per_metre')),
       selling_price: parsePrice(getValue(values, lookup, 'selling_price', 'sell_price', 'retail_price', 'price', 'rrp', 'price_per_meter', 'price_per_metre')),
       price_per_meter: parsePrice(getValue(values, lookup, 'selling_price', 'sell_price', 'retail_price', 'price', 'rrp', 'price_per_meter', 'price_per_metre')),
-      fabric_width: parseFloat(getValue(values, lookup, 'fabric_width', 'width', 'roll_width', 'material_width')) || null,
+      fabric_width: fabricWidthCm, // ✅ Now properly converted from inches if needed
       fabric_composition: getValue(values, lookup, 'fabric_composition', 'composition', 'material', 'content', 'fibre_content'),
       fabric_grade: getValue(values, lookup, 'fabric_grade', 'grade', 'quality', 'tier'),
       pattern_repeat_vertical: parseFloat(getValue(values, lookup, 'pattern_repeat_vertical', 'vertical_repeat', 'pattern_vertical', 'v_repeat')) || null,
@@ -185,6 +215,7 @@ export const parseFabricCSV = (csvData: string): ValidationResult => {
         maxLength: parseFloat(getValue(values, lookup, 'max_length', 'maximum_length', 'roll_length')) || null,
         rotationAllowance: canRotate,
         priceGroup: getValue(values, lookup, 'price_group', 'pricing_group', 'grid_code', 'price_code') || null,
+        originalWidthUnit: (fabricWidthRaw?.includes("''") || fabricWidthRaw?.includes('"')) ? 'inches' : 'cm', // Track original unit
       },
     };
 

@@ -593,9 +593,11 @@ export const AdaptiveFabricPricingDisplay = ({
                     {displayTotalWidthMm != null 
                       ? formatMeasurement(displayTotalWidthMm, 'mm')
                       : (() => {
-                          // Fallback calculation if engine not active
-                          const railWidthMM = parseFloat(measurements.rail_width) || 0;
-                          const fullness = displayFullness;
+                          // ✅ CRITICAL FIX: measurements.rail_width is in USER'S DISPLAY UNIT (inches, cm, mm)
+                          // Must convert to MM before using in calculations
+                          const rawRailWidth = parseFloat(measurements.rail_width) || 0;
+                          const railWidthMM = convertLength(rawRailWidth, units.length, 'mm');
+                          const fullness = displayFullness || 1;
                           const returnsMM = (fabricCalculation?.returns || 0) * 10;
                           const sideHemsMM = (fabricCalculation?.totalSideHems || 0) * 10;
                           const seamHemMM = (parseFloat(measurements.seam_hems) || 1) * 10;
@@ -609,8 +611,10 @@ export const AdaptiveFabricPricingDisplay = ({
                   <span>Rail Width × Fullness:</span>
                   <span>
                     {(() => {
-                  const railWidthMM = parseFloat(measurements.rail_width) || 0;
-                  return formatMeasurement(railWidthMM * displayFullness, 'mm');
+                  // ✅ FIX: Convert from user's display unit to MM first
+                  const rawRailWidth = parseFloat(measurements.rail_width) || 0;
+                  const railWidthMM = convertLength(rawRailWidth, units.length, 'mm');
+                  return formatMeasurement(railWidthMM * (displayFullness || 1), 'mm');
                 })()}
                   </span>
                 </div>

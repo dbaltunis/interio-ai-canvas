@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { useEnhancedInventory, useCreateEnhancedInventoryItem } from "@/hooks/useEnhancedInventory";
+import { useVendors, useCreateVendor } from "@/hooks/useVendors";
 import { Download, Upload, FileSpreadsheet, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { 
   parseFabricCSV, 
@@ -64,6 +65,8 @@ export const CategoryImportExport = ({ category, onImportComplete }: CategoryImp
 
   const { data: inventory } = useEnhancedInventory();
   const createMutation = useCreateEnhancedInventoryItem();
+  const { data: existingVendors } = useVendors();
+  const createVendorMutation = useCreateVendor();
   const { toast } = useToast();
   
   const config = CATEGORY_CONFIG[category];
@@ -127,10 +130,36 @@ export const CategoryImportExport = ({ category, onImportComplete }: CategoryImp
     setIsImporting(true);
     let successCount = 0;
     let errorCount = 0;
+    
+    // ✅ Track already-created vendors in this import to avoid duplicates
+    const createdVendorsThisImport: Set<string> = new Set();
+    const existingVendorNames = new Set(
+      (existingVendors || []).map(v => v.name?.toLowerCase().trim())
+    );
 
     try {
       for (const item of validationResults.valid) {
         try {
+          // ✅ AUTO-CREATE VENDOR from supplier name if it doesn't exist
+          if (item.supplier && typeof item.supplier === 'string') {
+            const supplierNameLower = item.supplier.toLowerCase().trim();
+            
+            // Check if vendor already exists or was created in this import
+            if (!existingVendorNames.has(supplierNameLower) && !createdVendorsThisImport.has(supplierNameLower)) {
+              try {
+                await createVendorMutation.mutateAsync({
+                  name: item.supplier.trim(),
+                  active: true,
+                });
+                createdVendorsThisImport.add(supplierNameLower);
+                console.log(`✅ Auto-created vendor from CSV: ${item.supplier}`);
+              } catch (vendorError) {
+                // Non-fatal: vendor might already exist, continue with import
+                console.warn(`Could not create vendor "${item.supplier}":`, vendorError);
+              }
+            }
+          }
+          
           await createMutation.mutateAsync({
             ...item,
             category: config.dbCategory,
