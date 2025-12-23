@@ -85,6 +85,9 @@ export interface CurtainTemplate {
   machine_drop_height_prices?: number[];
   hand_drop_height_prices?: number[];
   
+  // Heading-specific price overrides (per-metre pricing)
+  heading_prices?: Record<string, { machine_price?: number; hand_price?: number }>;
+  
   unit_price?: number;
   pricing_grid_data?: any;
   
