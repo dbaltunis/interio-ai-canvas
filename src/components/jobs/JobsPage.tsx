@@ -24,6 +24,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ColumnCustomizationModal } from "./ColumnCustomizationModal";
 import { useColumnPreferences } from "@/hooks/useColumnPreferences";
 
+
 const JobsPage = () => {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -58,20 +59,32 @@ const JobsPage = () => {
   const { data: explicitPermissions } = useQuery({
     queryKey: ['explicit-user-permissions', user?.id],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user) {
+        console.log('[PERMS] No user, returning empty permission----------------------------------------s');
+        return [];
+      }
+  
+      console.log('[PERMS] Fetching permissions for user:----------------------------------------s', user.id);
+  
       const { data, error } = await supabase
         .from('user_permissions')
         .select('permission_name')
         .eq('user_id', user.id);
+  
       if (error) {
-        console.error('[JOBS] Error fetching explicit permissions:', error);
+        console.error('[PERMS] Error fetching explicit permissions:----------------------------------------s', error);
         return [];
       }
+  
+      console.log('[PERMS] Raw permissions from DB:----------------------------------------s', data);
+  
       return data || [];
     },
     enabled: !!user && !permissionsLoading,
+
   });
   
+  console.log(explicitPermissions,'_----------------------------------------------------------------------------');
   // Check if view permissions are explicitly in user_permissions table
   const hasViewAllJobsPermission = explicitPermissions?.some(
     (p: { permission_name: string }) => p.permission_name === 'view_all_jobs'
@@ -80,29 +93,18 @@ const JobsPage = () => {
     (p: { permission_name: string }) => p.permission_name === 'view_assigned_jobs'
   ) ?? false;
   
-  // Check if user has ANY explicit permissions in the user_permissions table
-  // If they do, we should respect ALL permission settings (including missing ones = disabled)
   const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
   
-  // Check if user has explicit job view permissions ENABLED (in the table)
   const hasExplicitViewPermissions = hasViewAllJobsPermission || hasViewAssignedJobsPermission;
   
-  // Determine view access and scope:
-  // - Owners/System Owners: Only bypass restrictions if NO explicit permissions exist in table at all
-  //   If ANY explicit permissions exist in table, respect ALL settings (missing = disabled)
-  // - Admins and Regular users: Always check explicit permissions
-  // - If only view_assigned_jobs: Only see jobs where user_id matches current user OR client assigned to user
-  // - If only view_all_jobs: See all jobs
-  // - If both: See all jobs (view_all_jobs takes precedence)
-  // - If both disabled (not in table): See no jobs
-  const canViewJobsExplicit = isOwner && !hasAnyExplicitPermissions 
-    ? true // Owner with no explicit permissions in table at all = full access
-    : hasViewAllJobsPermission || hasViewAssignedJobsPermission; // Otherwise respect explicit permissions (enabled ones)
-  
-  // Filter by assignment if:
-  // - User is not an Owner, OR
-  // - Owner has ANY explicit permissions in table (respect all settings)
-  // - AND they only have view_assigned_jobs enabled (not view_all_jobs)
+  // Only allow view if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include view permission)
+const canViewJobsExplicit =
+  userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasViewAllJobsPermission || hasViewAssignedJobsPermission
+        : hasViewAllJobsPermission || hasViewAssignedJobsPermission;
+
   const shouldFilterByAssignment = (!isOwner || hasAnyExplicitPermissions) && !hasViewAllJobsPermission && hasViewAssignedJobsPermission;
   
   // Check if create_jobs is explicitly in user_permissions table (enabled)
@@ -110,24 +112,24 @@ const JobsPage = () => {
     (p: { permission_name: string }) => p.permission_name === 'create_jobs'
   ) ?? false;
   
-  // Owners/System Owners: Only bypass restrictions if NO explicit permissions exist in table at all
-  // If ANY explicit permissions exist in table, respect ALL settings (missing = disabled)
-  // Admins and Regular users: Always check explicit permissions
-  const canCreateJobsExplicit = isOwner && !hasAnyExplicitPermissions 
-    ? true // Owner with no explicit permissions in table at all = full access
-    : hasCreateJobsPermission; // Otherwise respect explicit permissions (enabled ones)
+  const canCreateJobsExplicit =
+  userRoleData?.isSystemOwner
+    ? true // System Owner always can create jobs
+    : isOwner && !hasAnyExplicitPermissions
+      ? true
+      : hasCreateJobsPermission;
   
   // Check if delete_jobs is explicitly in user_permissions table (enabled)
   const hasDeleteJobsPermission = explicitPermissions?.some(
     (p: { permission_name: string }) => p.permission_name === 'delete_jobs'
   ) ?? false;
   
-  // Owners/System Owners: Only bypass restrictions if NO explicit permissions exist in table at all
-  // If ANY explicit permissions exist in table, respect ALL settings (missing = disabled)
-  // Admins and Regular users: Always check explicit permissions
-  const canDeleteJobsExplicit = isOwner && !hasAnyExplicitPermissions 
-    ? true // Owner with no explicit permissions in table at all = full access
-    : hasDeleteJobsPermission; // Otherwise respect explicit permissions (enabled ones)
+  const canDeleteJobsExplicit =
+  userRoleData?.isSystemOwner
+    ? true // System Owner always can delete jobs
+    : isOwner && !hasAnyExplicitPermissions
+      ? true
+      : hasDeleteJobsPermission;
   
   // Debug: Log permission state
   useEffect(() => {
@@ -145,18 +147,11 @@ const JobsPage = () => {
     enabled: shouldFetchQuotes
   });
   
-  // Fetch projects and clients to filter by assignment if needed
-  // Only fetch if user has view permissions
   const { data: allProjects = [] } = useProjects({
     enabled: canViewJobsExplicit && !permissionsLoading
   });
   const { data: allClients = [] } = useClients(canViewJobsExplicit && !permissionsLoading);
   
-  // Filter projects and quotes based on permissions:
-  // - If shouldFilterByAssignment is true, only show projects/quotes where:
-  //   1. project.user_id matches current user (jobs created by user), OR
-  //   2. project.client_id has a client with assigned_to === current user (jobs for clients assigned to user)
-  // - Otherwise, show all projects/quotes
   const { filteredProjects, filteredQuotes } = useMemo(() => {
     console.log('[JOBS] Filtering - shouldFilterByAssignment:', shouldFilterByAssignment, 'user.id:', user?.id);
     console.log('[JOBS] Filtering - allProjects count:', allProjects.length, 'allQuotes count:', allQuotes.length, 'allClients count:', allClients.length);

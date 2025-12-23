@@ -44,8 +44,9 @@ export const usePermissionAuditLog = (targetUserId?: string) => {
 };
 
 export const useValidatePermissions = () => {
-  return async (userId: string, permissions: string[]) => {
+  return async (actorUserId:string, userId: string, permissions: string[]) => {
     const { data, error } = await supabase.rpc('validate_permission_dependencies', {
+      actor_user_id: actorUserId,
       user_id_param: userId,
       permissions_param: permissions
     });
