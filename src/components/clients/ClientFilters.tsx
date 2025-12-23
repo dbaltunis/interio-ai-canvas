@@ -27,6 +27,8 @@ interface ClientFiltersProps {
   setLeadSourceFilter: (source: string) => void;
   priorityFilter: string;
   setPriorityFilter: (priority: string) => void;
+  funnelStageFilter: string;
+  setFunnelStageFilter: (stage: string) => void;
   onClearFilters: () => void;
 }
 
@@ -47,6 +49,8 @@ export const ClientFilters = ({
   setLeadSourceFilter,
   priorityFilter,
   setPriorityFilter,
+  funnelStageFilter,
+  setFunnelStageFilter,
   onClearFilters
 }: ClientFiltersProps) => {
   const [filterOpen, setFilterOpen] = useState(false);
@@ -60,6 +64,17 @@ export const ClientFilters = ({
     { value: 'in-production', label: 'In Production' },
     { value: 'completed', label: 'Completed' },
     { value: 'cancelled', label: 'Cancelled' }
+  ];
+
+  const funnelStages = [
+    { value: 'lead', label: 'Lead' },
+    { value: 'contacted', label: 'Contacted' },
+    { value: 'qualified', label: 'Qualified' },
+    { value: 'proposal', label: 'Proposal' },
+    { value: 'negotiation', label: 'Negotiation' },
+    { value: 'customer', label: 'Customer' },
+    { value: 'churned', label: 'Churned' },
+    { value: 'closed', label: 'Closed' }
   ];
 
   const handleStatusToggle = (status: string) => {
@@ -80,7 +95,8 @@ export const ClientFilters = ({
 
   const activeFiltersCount = selectedStatuses.length + selectedProjects.length + selectedTags.length + 
     (clientType !== 'all' ? 1 : 0) + (activityFilter !== 'all' ? 1 : 0) + 
-    (leadSourceFilter !== 'all' ? 1 : 0) + (priorityFilter !== 'all' ? 1 : 0);
+    (leadSourceFilter !== 'all' ? 1 : 0) + (priorityFilter !== 'all' ? 1 : 0) +
+    (funnelStageFilter !== 'all' ? 1 : 0);
   const hasActiveFilters = searchTerm || activeFiltersCount > 0;
 
   // Sample tags - in real app these would come from clients data
@@ -150,6 +166,20 @@ export const ClientFilters = ({
             <SelectItem value="cold_call">Cold Call</SelectItem>
             <SelectItem value="email_campaign">Email Campaign</SelectItem>
             <SelectItem value="social_media">Social Media</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={funnelStageFilter} onValueChange={setFunnelStageFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Funnel Stage" />
+          </SelectTrigger>
+          <SelectContent className="z-[9999] bg-background border border-border shadow-lg">
+            <SelectItem value="all">All Stages</SelectItem>
+            {funnelStages.map((stage) => (
+              <SelectItem key={stage.value} value={stage.value}>
+                {stage.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
@@ -312,6 +342,15 @@ export const ClientFilters = ({
               <X
                 className="h-3 w-3 cursor-pointer"
                 onClick={() => setPriorityFilter('all')}
+              />
+            </Badge>
+          )}
+          {funnelStageFilter !== 'all' && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              Stage: {funnelStages.find(s => s.value === funnelStageFilter)?.label}
+              <X
+                className="h-3 w-3 cursor-pointer"
+                onClick={() => setFunnelStageFilter('all')}
               />
             </Badge>
           )}
