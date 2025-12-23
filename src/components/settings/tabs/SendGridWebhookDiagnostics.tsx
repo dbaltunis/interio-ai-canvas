@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,11 +28,55 @@ interface DiagnosticResult {
   recommendations: string[];
 }
 
+interface WebhookStatus {
+  isConfigured: boolean;
+  configuredAt: string | null;
+  webhookUrl: string | null;
+  isLoading: boolean;
+}
+
 export const SendGridWebhookDiagnostics = () => {
   const [diagnostic, setDiagnostic] = useState<DiagnosticResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [isSetupRunning, setIsSetupRunning] = useState(false);
+  const [webhookStatus, setWebhookStatus] = useState<WebhookStatus>({
+    isConfigured: false,
+    configuredAt: null,
+    webhookUrl: null,
+    isLoading: true
+  });
   const { toast } = useToast();
+
+  // Check existing webhook configuration on mount
+  useEffect(() => {
+    const checkWebhookStatus = async () => {
+      try {
+        const { data: integrationData } = await supabase
+          .from('integration_settings')
+          .select('configuration, api_credentials')
+          .eq('integration_type', 'sendgrid')
+          .maybeSingle();
+
+        const config = integrationData?.configuration as { 
+          webhook_configured?: boolean; 
+          webhook_url?: string;
+          configured_at?: string;
+        } | null;
+
+        setWebhookStatus({
+          isConfigured: config?.webhook_configured === true,
+          configuredAt: config?.configured_at || null,
+          webhookUrl: config?.webhook_url || null,
+          isLoading: false
+        });
+      } catch (error) {
+        console.error("Error checking webhook status:", error);
+        setWebhookStatus(prev => ({ ...prev, isLoading: false }));
+      }
+    };
+
+    checkWebhookStatus();
+  }, []);
 
   const runDiagnostics = async () => {
     setIsRunning(true);
@@ -85,6 +129,14 @@ export const SendGridWebhookDiagnostics = () => {
       if (error) {
         throw error;
       }
+
+      // Update local state immediately
+      setWebhookStatus({
+        isConfigured: true,
+        configuredAt: new Date().toISOString(),
+        webhookUrl: data?.webhook_url || null,
+        isLoading: false
+      });
 
       toast({
         title: "Webhook Setup Complete", 
@@ -315,6 +367,40 @@ export const SendGridWebhookDiagnostics = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Current Webhook Status */}
+          {webhookStatus.isLoading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Checking webhook status...</span>
+            </div>
+          ) : webhookStatus.isConfigured ? (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <span className="font-medium text-green-800">Webhook Configured</span>
+                <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">Active</Badge>
+              </div>
+              <p className="text-sm text-green-700">
+                Your SendGrid webhook is set up and receiving events.
+                {webhookStatus.configuredAt && (
+                  <span className="block mt-1 text-xs text-green-600">
+                    Configured on {new Date(webhookStatus.configuredAt).toLocaleDateString()}
+                  </span>
+                )}
+              </p>
+            </div>
+          ) : (
+            <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="h-5 w-5 text-orange-600" />
+                <span className="font-medium text-orange-800">Webhook Not Configured</span>
+              </div>
+              <p className="text-sm text-orange-700">
+                Click "Setup Webhook" below to enable email tracking (opens, clicks, bounces).
+              </p>
+            </div>
+          )}
+
           <p className="text-sm text-muted-foreground">
             This tool helps diagnose email tracking issues by checking your SendGrid webhook configuration.
             If your emails show fewer opens than expected, this usually means the webhook isn't receiving events from SendGrid.
@@ -331,14 +417,26 @@ export const SendGridWebhookDiagnostics = () => {
               {isRunning ? "Running..." : "Run Diagnostics"}
             </Button>
             
-            <Button
-              onClick={runWebhookSetup}
-              disabled={isSetupRunning}
-              className="flex items-center gap-2"
-            >
-              <Settings className={`h-4 w-4 ${isSetupRunning ? 'animate-spin' : ''}`} />
-              {isSetupRunning ? "Setting up..." : "Setup Webhook"}
-            </Button>
+            {webhookStatus.isConfigured ? (
+              <Button
+                onClick={runWebhookSetup}
+                disabled={isSetupRunning}
+                className="flex items-center gap-2"
+                variant="outline"
+              >
+                <RefreshCw className={`h-4 w-4 ${isSetupRunning ? 'animate-spin' : ''}`} />
+                {isSetupRunning ? "Reconfiguring..." : "Reconfigure Webhook"}
+              </Button>
+            ) : (
+              <Button
+                onClick={runWebhookSetup}
+                disabled={isSetupRunning}
+                className="flex items-center gap-2"
+              >
+                <Settings className={`h-4 w-4 ${isSetupRunning ? 'animate-spin' : ''}`} />
+                {isSetupRunning ? "Setting up..." : "Setup Webhook"}
+              </Button>
+            )}
           </div>
 
           {diagnostic && (
