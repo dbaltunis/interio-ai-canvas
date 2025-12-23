@@ -510,6 +510,12 @@ export function WindowSummaryCard({
                       drop: surface.drop || surface.height || 250,
                       ...surface
                     }}
+                    template={{
+                      id: summary.template_id,
+                      name: summary.template_name,
+                      // ✅ FIX: Pass template image URL - priority: saved image, then from template_details
+                      image_url: (summary as any).template_image_url || (summary.template_details as any)?.image_url || (summary.template_details as any)?.display_image_url
+                    }}
                     selectedItems={{
                       fabric: treatmentType === 'curtains' ? summary.fabric_details : null,
                       hardware: summary.hardware_details,

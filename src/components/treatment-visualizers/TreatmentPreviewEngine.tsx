@@ -57,7 +57,9 @@ export const TreatmentPreviewEngine = ({
   
   // If showing product only, use ProductImageWithColorFallback for clean display
   if (showProductOnly) {
-    const productImage = selectedItems.fabric?.image_url || selectedItems.material?.image_url || template?.image_url;
+    // ✅ PRIORITY: Template image FIRST, then fabric/material image
+    // This ensures treatment templates with custom images are shown even when fabric has no image
+    const productImage = template?.image_url || template?.display_image_url || selectedItems.fabric?.image_url || selectedItems.material?.image_url;
     const productName = selectedItems.fabric?.name || selectedItems.material?.name || template?.name || 'Product';
     const productColor = selectedItems.fabric?.color || selectedItems.material?.color;
     

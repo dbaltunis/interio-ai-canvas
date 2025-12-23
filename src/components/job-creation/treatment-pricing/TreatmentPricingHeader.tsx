@@ -25,8 +25,9 @@ export const TreatmentPricingHeader = ({
   // Get the appropriate display image: selected fabric/material > template custom image > category default
   const categoryDefaultImage = useTemplateDisplayImage(template);
   
-  // Priority: selected fabric/material image > template display image > category default
-  const displayImage = selectedFabric?.image_url || selectedMaterial?.image_url || template?.display_image_url || template?.image_url || categoryDefaultImage;
+  // ✅ FIX: Priority: template display image FIRST > template image > fabric/material image > category default
+  // This ensures treatment templates with custom images show their image when fabric has no image
+  const displayImage = template?.display_image_url || template?.image_url || selectedFabric?.image_url || selectedMaterial?.image_url || categoryDefaultImage;
   const displayColor = selectedFabric?.color || selectedMaterial?.color;
   const displayName = selectedFabric?.name || selectedMaterial?.name || template?.name || windowCovering?.name || productName;
   
