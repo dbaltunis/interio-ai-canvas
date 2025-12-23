@@ -3034,7 +3034,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     const isCurtainOrRomanForCosts = treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds';
                     
                     // Calculate pieces to display (actual pieces, not piecesCharged which is for costing)
-                    const piecesToDisplay = isRailroaded ? horizontalPiecesNeeded : 1;
+                    // For railroaded: use horizontal pieces needed
+                    // For vertical: use widths required (number of fabric widths to cover the total curtain width)
+                    const widthsReqForVertical = engineResult?.widths_required ?? fabricCalculation?.widthsRequired ?? 1;
+                    const piecesToDisplay = isRailroaded ? horizontalPiecesNeeded : widthsReqForVertical;
                     
                     const newCalculatedCosts = {
                       // linearMeters is now per-piece, totalMeters is the total to order
