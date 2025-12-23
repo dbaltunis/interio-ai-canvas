@@ -31,6 +31,7 @@ import { calculateOptionPrices, getOptionEffectivePrice } from "@/utils/calculat
 import { runShadowComparison } from "@/engine/shadowModeRunner";
 import { useCurtainEngine } from "@/engine/useCurtainEngine";
 import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
+import { getManufacturingPrice } from "@/utils/pricing/headingPriceLookup";
 
 /**
  * CRITICAL MEASUREMENT UNIT STANDARD
@@ -1360,9 +1361,20 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               const finalWidthCm = widthWithAllowancesCm * (1 + wastePercent / 100);
               const finalWidthM = finalWidthCm / 100;
               
-              pricePerUnit = manufacturingType === 'hand'
-                ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
-                : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
+              // ✅ FIX: Check heading-specific price overrides first
+              pricePerUnit = getManufacturingPrice(
+                manufacturingType === 'hand',
+                measurements.selected_heading,
+                selectedTemplate.heading_prices,
+                {
+                  machine_price_per_metre: selectedPricingMethod?.machine_price_per_metre,
+                  hand_price_per_metre: selectedPricingMethod?.hand_price_per_metre,
+                },
+                {
+                  machine_price_per_metre: selectedTemplate.machine_price_per_metre,
+                  hand_price_per_metre: selectedTemplate.hand_price_per_metre,
+                }
+              );
               
               // Multiply final width by manufacturing price per meter
               manufacturingCost = pricePerUnit * finalWidthM;
@@ -2864,9 +2876,20 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     } else if (pricingType === 'per_metre') {
                       // ✅ CRITICAL FIX: Use SAME linearMeters as fabric calculation for consistency
                       // This ensures manufacturing cost matches fabric cost display
-                      pricePerUnit = manufacturingType === 'hand'
-                        ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
-                        : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
+                      // ✅ FIX: Check heading-specific price overrides first
+                      pricePerUnit = getManufacturingPrice(
+                        manufacturingType === 'hand',
+                        measurements.selected_heading,
+                        selectedTemplate.heading_prices,
+                        {
+                          machine_price_per_metre: selectedPricingMethod?.machine_price_per_metre,
+                          hand_price_per_metre: selectedPricingMethod?.hand_price_per_metre,
+                        },
+                        {
+                          machine_price_per_metre: selectedTemplate.machine_price_per_metre,
+                          hand_price_per_metre: selectedTemplate.hand_price_per_metre,
+                        }
+                      );
                       
                       // ✅ UNIFIED SOURCE: Use totalMeters (same as fabric cost display)
                       // This ensures manufacturing cost matches fabric cost display exactly
@@ -2875,9 +2898,20 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       manufacturingQuantityLabel = unitIsMetric ? 'm' : 'yd';
                       manufacturingCost = pricePerUnit * manufacturingQuantity;
                     } else {
-                      pricePerUnit = manufacturingType === 'hand'
-                        ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
-                        : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
+                      // ✅ FIX: Check heading-specific price overrides first (fallback case)
+                      pricePerUnit = getManufacturingPrice(
+                        manufacturingType === 'hand',
+                        measurements.selected_heading,
+                        selectedTemplate.heading_prices,
+                        {
+                          machine_price_per_metre: selectedPricingMethod?.machine_price_per_metre,
+                          hand_price_per_metre: selectedPricingMethod?.hand_price_per_metre,
+                        },
+                        {
+                          machine_price_per_metre: selectedTemplate.machine_price_per_metre,
+                          hand_price_per_metre: selectedTemplate.hand_price_per_metre,
+                        }
+                      );
                       manufacturingQuantity = totalMeters; // ✅ Use totalMeters - consistent with fabric cost
                       const fallbackUnitIsMetric = units?.length === 'mm' || units?.length === 'cm' || units?.length === 'm';
                       manufacturingQuantityLabel = fallbackUnitIsMetric ? 'm' : 'yd';

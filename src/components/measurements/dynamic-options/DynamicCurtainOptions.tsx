@@ -12,6 +12,7 @@ import { Loader2, AlertCircle } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
 import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
+import { getManufacturingPrice } from "@/utils/pricing/headingPriceLookup";
 import type { EyeletRing } from "@/hooks/useEyeletRings";
 import { validateTreatmentOptions } from "@/utils/treatmentOptionValidation";
 import { ValidationAlert } from "@/components/shared/ValidationAlert";
@@ -446,9 +447,22 @@ export const DynamicCurtainOptions = ({
     pricing_type: template.pricing_type
   });
 
-  // Determine which prices to use - prefer pricing method prices, fallback to template prices
-  const machinePricePerMetre = selectedPricingMethod?.machine_price_per_metre ?? template.machine_price_per_metre;
-  const handPricePerMetre = selectedPricingMethod?.hand_price_per_metre ?? template.hand_price_per_metre;
+  // Determine which prices to use - prefer heading overrides, then pricing method, then template defaults
+  // ✅ FIX: Check heading-specific price overrides first for per-metre pricing
+  const machinePricePerMetre = getManufacturingPrice(
+    false, // machine
+    measurements.selected_heading,
+    template.heading_prices,
+    { machine_price_per_metre: selectedPricingMethod?.machine_price_per_metre, hand_price_per_metre: selectedPricingMethod?.hand_price_per_metre },
+    { machine_price_per_metre: template.machine_price_per_metre, hand_price_per_metre: template.hand_price_per_metre }
+  );
+  const handPricePerMetre = getManufacturingPrice(
+    true, // hand
+    measurements.selected_heading,
+    template.heading_prices,
+    { machine_price_per_metre: selectedPricingMethod?.machine_price_per_metre, hand_price_per_metre: selectedPricingMethod?.hand_price_per_metre },
+    { machine_price_per_metre: template.machine_price_per_metre, hand_price_per_metre: template.hand_price_per_metre }
+  );
   const machinePricePerDrop = selectedPricingMethod?.machine_price_per_drop ?? template.machine_price_per_drop;
   const handPricePerDrop = selectedPricingMethod?.hand_price_per_drop ?? template.hand_price_per_drop;
   const machinePricePerPanel = selectedPricingMethod?.machine_price_per_panel ?? template.machine_price_per_panel;
