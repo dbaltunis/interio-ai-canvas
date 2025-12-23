@@ -10,6 +10,7 @@ import { useClients, useCreateClient } from "@/hooks/useClients";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ShopifyHistoryImport } from "./ShopifyHistoryImport";
 
 interface ClientImportExportProps {
   onBack: () => void;
@@ -309,6 +310,9 @@ export const ClientImportExport = ({ onBack }: ClientImportExportProps) => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Shopify History Import */}
+      <ShopifyHistoryImport onComplete={onBack} />
 
       {/* CSV Format Guide */}
       <Card>
