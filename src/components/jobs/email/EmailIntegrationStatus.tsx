@@ -1,18 +1,29 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, XCircle, Mail, Settings, AlertTriangle } from "lucide-react";
-import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
-import { useEmailSettings } from "@/hooks/useEmailSettings";
+import { CheckCircle, Mail, Settings } from "lucide-react";
+import { useEmailSetupStatus } from "@/hooks/useIntegrationStatus";
 
 export const EmailIntegrationStatus = () => {
-  const { hasSendGridIntegration } = useIntegrationStatus();
-  const { data: emailSettings } = useEmailSettings();
+  const { hasEmailSettings, hasSendGridIntegration, emailLimit, isLoading } = useEmailSetupStatus();
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <Card className="border-muted">
+        <CardContent className="p-8">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto animate-pulse" />
+            <p className="text-muted-foreground">Loading email settings...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // New user - not configured yet
-  if (!emailSettings) {
+  if (!hasEmailSettings) {
     return (
       <Card className="border-blue-200">
         <CardContent className="p-8">
@@ -42,7 +53,7 @@ export const EmailIntegrationStatus = () => {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground pt-2">
-              ✓ 500 emails/month included • ✓ Advanced tracking • ✓ Ready in 1 minute
+              ✓ {emailLimit} included • ✓ Advanced tracking • ✓ Ready in 1 minute
             </p>
           </div>
         </CardContent>
@@ -50,7 +61,7 @@ export const EmailIntegrationStatus = () => {
     );
   }
 
-  // Configured user - show simple status
+  // Configured user - show simple status (don't need to refetch email settings, already have the info)
   return (
     <Card className="border-green-200 bg-green-50/50">
       <CardContent className="p-6">
@@ -62,11 +73,11 @@ export const EmailIntegrationStatus = () => {
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-semibold text-green-900">Email Service Active</h3>
               <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-                {hasSendGridIntegration ? 'Unlimited' : '500/month'}
+                {emailLimit}
               </Badge>
             </div>
             <p className="text-sm text-green-700 mb-3">
-              Sending as <span className="font-medium">{emailSettings.from_name}</span> ({emailSettings.from_email})
+              Your email sending is configured and ready to use.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button 

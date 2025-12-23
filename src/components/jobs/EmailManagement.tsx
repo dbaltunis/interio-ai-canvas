@@ -12,8 +12,7 @@ import { EmailComposer } from "./email/EmailComposer";
 import { EmailAnalytics } from "./email/EmailAnalytics";
 import { EmailSettings } from "./email/EmailSettings";
 import { EmailIntegrationBanners } from "./email-components/EmailIntegrationBanners";
-import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
-import { useEmailSettings } from "@/hooks/useEmailSettings";
+import { useEmailSetupStatus } from "@/hooks/useIntegrationStatus";
 import { useEmails } from "@/hooks/useEmails";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
@@ -25,8 +24,7 @@ export const EmailManagement = () => {
   const canAccessEmails = useHasPermission('view_jobs'); // Email access tied to jobs permission
   const [showFilters, setShowFilters] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const { hasSendGridIntegration, isLoading: integrationLoading } = useIntegrationStatus();
-  const { data: emailSettings } = useEmailSettings();
+  const { hasEmailSettings, isLoading: integrationLoading } = useEmailSetupStatus();
   const { data: emails = [] } = useEmails();
 
   // Check permissions
@@ -114,12 +112,12 @@ export const EmailManagement = () => {
             <Button 
               onClick={() => setActiveTab("composer")}
               className="bg-primary text-white hover:bg-primary-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!emailSettings}
+              disabled={!hasEmailSettings}
             >
               <Send className="h-4 w-4 mr-2" />
               Compose Email
             </Button>
-            {!emailSettings && (
+            {!hasEmailSettings && (
               <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block z-50">
                 <div className="bg-popover text-popover-foreground text-xs rounded-md p-2 shadow-lg border whitespace-nowrap">
                   Configure your sender name and email in Settings first
@@ -222,8 +220,6 @@ export const EmailManagement = () => {
           <div className="space-y-6 animate-fade-in">
             {/* Integration Status Banners */}
             <EmailIntegrationBanners
-              hasSendGridIntegration={hasSendGridIntegration}
-              hasEmailSettings={!!emailSettings}
               onEmailSettingsClick={handleEmailSettingsClick}
             />
             

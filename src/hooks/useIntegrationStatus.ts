@@ -10,6 +10,14 @@ export interface IntegrationData {
   last_sync?: string;
 }
 
+export interface EmailSetupStatus {
+  hasSendGridIntegration: boolean;
+  hasEmailSettings: boolean;
+  isFullyConfigured: boolean;
+  setupMessage: string | null;
+  emailLimit: string;
+}
+
 export const useIntegrationStatus = () => {
   const { data: integrationStatus, isLoading } = useQuery({
     queryKey: ['integration-status'],
@@ -22,10 +30,12 @@ export const useIntegrationStatus = () => {
         user_id_param: user.id 
       });
 
+      const effectiveOwnerId = accountOwnerId || user.id;
+
       const { data, error } = await supabase
         .from('integration_settings')
         .select('integration_type, active, configuration, api_credentials, last_sync')
-        .eq('account_owner_id', accountOwnerId || user.id)
+        .eq('account_owner_id', effectiveOwnerId)
         .eq('integration_type', 'sendgrid')
         .eq('active', true)
         .maybeSingle();
@@ -49,5 +59,63 @@ export const useIntegrationStatus = () => {
     hasSendGridIntegration: !!integrationStatus && !!hasValidApiKey,
     integrationData: integrationStatus,
     isLoading
+  };
+};
+
+// Combined hook for complete email setup status
+export const useEmailSetupStatus = () => {
+  const { hasSendGridIntegration, isLoading: integrationLoading } = useIntegrationStatus();
+  
+  const { data: emailSettings, isLoading: emailLoading } = useQuery({
+    queryKey: ['email-settings-status'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      // Get account owner for inheritance
+      const { data: accountOwnerId } = await supabase.rpc('get_account_owner', { 
+        user_id_param: user.id 
+      });
+
+      const effectiveOwnerId = accountOwnerId || user.id;
+
+      // First try user's own settings
+      let { data } = await supabase
+        .from('email_settings')
+        .select('id, from_email, from_name, active')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // If no settings, try account owner's settings
+      if (!data && effectiveOwnerId !== user.id) {
+        const { data: ownerSettings } = await supabase
+          .from('email_settings')
+          .select('id, from_email, from_name, active')
+          .eq('user_id', effectiveOwnerId)
+          .maybeSingle();
+        
+        data = ownerSettings;
+      }
+
+      return data;
+    },
+  });
+
+  const hasEmailSettings = !!emailSettings?.from_email && !!emailSettings?.from_name;
+  const isFullyConfigured = hasEmailSettings; // SendGrid is optional, just adds unlimited emails
+
+  // Determine the appropriate message
+  let setupMessage: string | null = null;
+  if (!hasEmailSettings) {
+    setupMessage = 'Configure sender details to start sending emails';
+  }
+
+  return {
+    hasSendGridIntegration,
+    hasEmailSettings,
+    isFullyConfigured,
+    setupMessage,
+    emailLimit: hasSendGridIntegration ? 'Unlimited' : '500/month',
+    isLoading: integrationLoading || emailLoading
   };
 };
