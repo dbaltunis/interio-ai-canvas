@@ -154,8 +154,9 @@ export const calculateOptionPrices = (
     } else if (method === PRICING_METHODS.PER_PANEL) {
       // Per-panel pricing - multiply by curtain/blind count
       // For pairs = 2, for singles = 1
-      const panelCount = fabricCalculation?.curtainCount || 
-                         (measurements as any)?.curtain_type === 'pair' ? 2 : 1;
+      // ✅ FIX: Operator precedence - use nullish coalescing and proper grouping
+      const panelCount = fabricCalculation?.curtainCount ?? 
+                         ((measurements as any)?.curtain_type === 'pair' ? 2 : 1);
       if (basePrice > 0) {
         calculatedPrice = basePrice * panelCount;
         pricingDetails = `${basePrice.toFixed(2)}/panel × ${panelCount} panel(s)`;

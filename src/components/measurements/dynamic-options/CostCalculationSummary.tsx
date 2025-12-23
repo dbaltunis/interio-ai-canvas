@@ -826,12 +826,13 @@ export const CostCalculationSummary = ({
           <Info className="h-4 w-4" />
           <AlertDescription className="text-xs leading-relaxed">
             {(() => {
-              // ✅ SINGLE SOURCE OF TRUTH: Use engineResult → fabricDisplayData → fabricCalculation (in order)
+              // ✅ SINGLE SOURCE OF TRUTH: Use fabricDisplayData or fabricCalculation
               const orientation = fabricDisplayData?.orientation || fabricCalculation?.fabricOrientation || 'vertical';
-              const widthsReq = fabricDisplayData?.horizontalPieces || fabricCalculation?.widthsRequired || 1;
+              // ✅ FIX: Use consistent source for widths - engineResult widths_required is authoritative, fallback to fabricCalculation
+              const widthsReq = engineResult?.widths_required || fabricCalculation?.widthsRequired || 1;
               const horizontalPieces = fabricDisplayData?.horizontalPieces || fabricCalculation?.horizontalPiecesNeeded || 1;
               
-              // ✅ CRITICAL FIX: Use unified source for meters - SAME as fabric line display
+              // ✅ CRITICAL FIX: Use unified source for meters
               const meters = engineResult?.linear_meters 
                 ?? fabricDisplayData?.linearMeters 
                 ?? fabricCalculation?.linearMeters 

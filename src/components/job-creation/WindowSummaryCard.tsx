@@ -681,7 +681,7 @@ export function WindowSummaryCard({
                 <div className="border-t bg-muted/30 p-4">
                   <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border">
                     <Calculator className="h-4 w-4 text-primary" />
-                    <h4 className="text-sm font-semibold text-foreground">Detailed Cost Breakdown</h4>
+                    <h4 className="text-sm font-semibold text-foreground">Cost Breakdown (Trade Prices)</h4>
                   </div>
 
                   {/* Wallpaper calculation details */}
