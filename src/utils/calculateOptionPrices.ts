@@ -20,6 +20,8 @@ interface Measurements {
 
 interface FabricCalculation {
   linearMeters?: number;
+  curtainCount?: number;   // Number of panels/curtains (2 for pair, 1 for single)
+  widthsRequired?: number; // Number of fabric widths/drops
 }
 
 /**
@@ -149,8 +151,25 @@ export const calculateOptionPrices = (
         calculatedPrice = (basePrice / 100) * fabricTotal;
         pricingDetails = `${basePrice}% of fabric`;
       }
+    } else if (method === PRICING_METHODS.PER_PANEL) {
+      // Per-panel pricing - multiply by curtain/blind count
+      // For pairs = 2, for singles = 1
+      // ✅ FIX: Operator precedence - use nullish coalescing and proper grouping
+      const panelCount = fabricCalculation?.curtainCount ?? 
+                         ((measurements as any)?.curtain_type === 'pair' ? 2 : 1);
+      if (basePrice > 0) {
+        calculatedPrice = basePrice * panelCount;
+        pricingDetails = `${basePrice.toFixed(2)}/panel × ${panelCount} panel(s)`;
+      }
+    } else if (method === PRICING_METHODS.PER_DROP) {
+      // Per-drop pricing - multiply by widths/drops required  
+      const dropCount = fabricCalculation?.widthsRequired || 1;
+      if (basePrice > 0) {
+        calculatedPrice = basePrice * dropCount;
+        pricingDetails = `${basePrice.toFixed(2)}/drop × ${dropCount} drop(s)`;
+      }
     }
-    // 'fixed', 'per-unit', 'per-piece', 'per-roll', 'per-panel', 'per-drop' - use base price as-is
+    // 'fixed', 'per-unit', 'per-piece', 'per-roll' - use base price as-is
 
     console.log(`💰 Option price calc: ${option.name}`, {
       basePrice,

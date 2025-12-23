@@ -18,6 +18,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useMarkupSettings } from "@/hooks/useMarkupSettings";
 import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { CostBreakdownGrid, CostBreakdownItem } from "@/components/shared/CostBreakdownGrid";
 
 // Lazy load heavy components - use direct import for now to avoid build issues
 import CalculationBreakdown from "@/components/job-creation/CalculationBreakdown";
@@ -507,6 +508,12 @@ export function WindowSummaryCard({
                       drop: surface.drop || surface.height || 250,
                       ...surface
                     }}
+                    template={{
+                      id: summary.template_id,
+                      name: summary.template_name,
+                      // ✅ FIX: Pass template image URL - priority: saved image, then from template_details
+                      image_url: (summary as any).template_image_url || (summary.template_details as any)?.image_url || (summary.template_details as any)?.display_image_url
+                    }}
                     selectedItems={{
                       fabric: treatmentType === 'curtains' ? summary.fabric_details : null,
                       hardware: summary.hardware_details,
@@ -673,106 +680,67 @@ export function WindowSummaryCard({
               </div>
 
 
-              {/* Expandable Cost Breakdown - Clean, organized breakdown */}
+              {/* Expandable Cost Breakdown - Clean table-based grid */}
               {showBreakdown && (
-                <div className="border-t bg-muted/30">
-                  <div className="p-4 space-y-3">
-                    <div className="flex items-center gap-2 pb-2 border-b border-border">
-                      <Calculator className="h-4 w-4 text-primary" />
-                      <h4 className="text-sm font-semibold text-foreground">Detailed Cost Breakdown</h4>
-                    </div>
+                <div className="border-t bg-muted/30 p-4">
+                  <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border">
+                    <Calculator className="h-4 w-4 text-primary" />
+                    <h4 className="text-sm font-semibold text-foreground">Cost Breakdown (Trade Prices)</h4>
+                  </div>
 
-                    {/* Wallpaper calculation details */}
-                    {treatmentType === 'wallpaper' && summary && summary.measurements_details && (
-                      <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 mb-3">
-                        <div className="text-xs font-semibold text-foreground mb-2">Wallpaper Calculations</div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div>
-                            <span className="text-muted-foreground">Wall Area:</span>
-                            <span className="font-medium text-foreground ml-2">
-                              {(() => {
-                                const wallWidth = Number(summary.measurements_details?.wall_width) || 0;
-                                const wallHeight = Number(summary.measurements_details?.wall_height) || 0;
-                                const areaM2 = (wallWidth * wallHeight) / 10000; // cm² to m²
-                                return areaM2.toFixed(2);
-                              })()} m²
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Strips Required:</span>
-                            <span className="font-medium text-foreground ml-2">{summary.widths_required || 1}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Total Length:</span>
-                            <span className="font-medium text-foreground ml-2">
-                              {(Number(summary.linear_meters) || 0).toFixed(2)}m
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Sold By:</span>
-                            <span className="font-medium text-foreground ml-2">
-                              {summary.fabric_details?.sold_by === 'per_roll' ? 'roll' : 'meter'}
-                            </span>
-                          </div>
+                  {/* Wallpaper calculation details */}
+                  {treatmentType === 'wallpaper' && summary && summary.measurements_details && (
+                    <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 mb-4">
+                      <div className="text-xs font-semibold text-foreground mb-2">Wallpaper Calculations</div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-muted-foreground">Wall Area:</span>
+                          <span className="font-medium text-foreground ml-2">
+                            {(() => {
+                              const wallWidth = Number(summary.measurements_details?.wall_width) || 0;
+                              const wallHeight = Number(summary.measurements_details?.wall_height) || 0;
+                              const areaM2 = (wallWidth * wallHeight) / 10000; // cm² to m²
+                              return areaM2.toFixed(2);
+                            })()} m²
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Strips Required:</span>
+                          <span className="font-medium text-foreground ml-2">{summary.widths_required || 1}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Total Length:</span>
+                          <span className="font-medium text-foreground ml-2">
+                            {(Number(summary.linear_meters) || 0).toFixed(2)}m
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Sold By:</span>
+                          <span className="font-medium text-foreground ml-2">
+                            {summary.fabric_details?.sold_by === 'per_roll' ? 'roll' : 'meter'}
+                          </span>
                         </div>
                       </div>
-                    )}
-
-                    <div className="space-y-3">
-                      {/* Render all breakdown items from enrichedBreakdown */}
-                      {enrichedBreakdown.map((item) => {
-                        // Skip zero-cost items
-                        if (item.total_cost === 0) return null;
-                        const isOption = item.category === 'option' || item.category === 'options';
-                        const hasQuantityPricing = item.quantity && item.unit && item.unit_price;
-                        
-                        return (
-                          <div key={item.id} className={`rounded-lg bg-card border border-border p-3 ${isOption ? 'bg-muted/50' : ''}`}>
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 min-w-0 overflow-hidden">
-                                <div className="text-sm font-semibold text-foreground break-words">{item.name}</div>
-                                {item.description && (
-                                  <div className="text-xs text-muted-foreground mt-1 break-words">{item.description}</div>
-                                )}
-                                {hasQuantityPricing && (
-                                  <div className="text-xs font-medium text-foreground/80 mt-1.5 space-y-0.5">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-muted-foreground">Quantity:</span>
-                                      <span>{Number(item.quantity).toFixed(2)} {item.unit}{Number(item.quantity) > 1 && item.unit !== 'm²' ? 's' : ''}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-muted-foreground">Unit Price:</span>
-                                      <span>{formatCurrency(item.unit_price, userCurrency)}/{item.unit}</span>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="text-right flex-shrink-0">
-                                <div className="text-base font-bold text-foreground">
-                                  {formatCurrency(item.total_cost, userCurrency)}
-                                </div>
-                                {hasQuantityPricing && (
-                                  <div className="text-xs text-muted-foreground mt-1">
-                                    {Number(item.quantity).toFixed(2)} × {formatCurrency(item.unit_price, userCurrency)}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
                     </div>
+                  )}
 
-                    {/* Total - Use displayTotal to match the sum of breakdown items */}
-                    <div className="border-t-2 border-primary/20 pt-3 mt-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-base font-bold text-foreground">Total</span>
-                        <span className="text-xl font-bold text-primary">
-                          {formatCurrency(displayTotal, userCurrency)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Clean table-based cost breakdown grid */}
+                  <CostBreakdownGrid
+                    items={enrichedBreakdown.filter((item: any) => item.total_cost > 0).map((item: any) => ({
+                      id: item.id,
+                      name: item.name,
+                      description: item.description,
+                      quantity: item.quantity,
+                      unit: item.unit,
+                      unit_price: item.unit_price,
+                      total_cost: item.total_cost,
+                      category: item.category,
+                      isIncluded: item.total_cost === 0 && item.name,
+                    } as CostBreakdownItem))}
+                    totalCost={displayTotal}
+                    currency={userCurrency}
+                    showQuotePrice={false}
+                  />
                 </div>
               )}
             </div>

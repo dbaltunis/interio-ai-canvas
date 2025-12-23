@@ -2280,6 +2280,7 @@ export type Database = {
           header_allowance: number | null
           heading_making_charges: Json | null
           heading_name: string | null
+          heading_prices: Json | null
           heading_upcharge_per_curtain: number | null
           heading_upcharge_per_metre: number | null
           height_breakpoint: number | null
@@ -2358,6 +2359,7 @@ export type Database = {
           header_allowance?: number | null
           heading_making_charges?: Json | null
           heading_name?: string | null
+          heading_prices?: Json | null
           heading_upcharge_per_curtain?: number | null
           heading_upcharge_per_metre?: number | null
           height_breakpoint?: number | null
@@ -2436,6 +2438,7 @@ export type Database = {
           header_allowance?: number | null
           heading_making_charges?: Json | null
           heading_name?: string | null
+          heading_prices?: Json | null
           heading_upcharge_per_curtain?: number | null
           heading_upcharge_per_metre?: number | null
           height_breakpoint?: number | null

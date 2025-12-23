@@ -237,6 +237,15 @@ export const calculateBlindCosts = (
             gridPrice: calculatedCost.toFixed(2)
           });
         }
+      } else if (opt.pricingMethod === 'per-panel') {
+        // Per-panel pricing for blinds - multiplied by blind count
+        calculatedCost = basePrice * blindMultiplier;
+        console.log(`💰 Option "${opt.name}" pricing:`, {
+          method: 'per-panel',
+          basePrice,
+          blindMultiplier,
+          calculatedPrice: calculatedCost.toFixed(2)
+        });
       } else {
         // Fixed price (default)
         calculatedCost = basePrice;

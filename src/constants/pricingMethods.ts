@@ -354,13 +354,12 @@ export const isGridPricing = (method: string): boolean => {
  */
 export const isFixedPricing = (method: string): boolean => {
   const normalized = normalizePricingMethod(method);
+  // NOTE: per-panel and per-drop are NOT fixed - they scale with quantity
   const fixedMethods: string[] = [
     PRICING_METHODS.FIXED,
     PRICING_METHODS.PER_UNIT,
     PRICING_METHODS.PER_PIECE,
     PRICING_METHODS.PER_ROLL,
-    PRICING_METHODS.PER_PANEL,
-    PRICING_METHODS.PER_DROP,
   ];
   return fixedMethods.includes(normalized);
 };

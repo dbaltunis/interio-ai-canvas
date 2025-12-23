@@ -134,6 +134,9 @@ interface CostCalculationSummaryProps {
     pricingMethod?: string; 
     optionKey?: string; 
     pricingGridData?: any;
+    calculatedPrice?: number;  // Pre-calculated price from calculateOptionPrices
+    pricingDetails?: string;   // Pre-formatted pricing details string
+    basePrice?: number;        // Original base price before calculation
   }>;
   calculatedFabricCost?: number;
   calculatedLiningCost?: number;
@@ -826,14 +829,16 @@ export const CostCalculationSummary = ({
           <Info className="h-4 w-4" />
           <AlertDescription className="text-xs leading-relaxed">
             {(() => {
-              // ✅ SINGLE SOURCE OF TRUTH: Use engineResult → fabricDisplayData → fabricCalculation (in order)
+              // ✅ SINGLE SOURCE OF TRUTH: Use fabricDisplayData.horizontalPieces which comes from DynamicWindowWorksheet
+              // This is already calculated using engineResult when available
               const orientation = fabricDisplayData?.orientation || fabricCalculation?.fabricOrientation || 'vertical';
-              const widthsReq = fabricDisplayData?.horizontalPieces || fabricCalculation?.widthsRequired || 1;
+              // ✅ FIX: Use fabricDisplayData.horizontalPieces as the SINGLE source - it's set from engineResult in parent
+              const widthsReq = fabricDisplayData?.horizontalPieces ?? engineResult?.widths_required ?? fabricCalculation?.widthsRequired ?? 1;
               const horizontalPieces = fabricDisplayData?.horizontalPieces || fabricCalculation?.horizontalPiecesNeeded || 1;
               
-              // ✅ CRITICAL FIX: Use unified source for meters - SAME as fabric line display
-              const meters = engineResult?.linear_meters 
-                ?? fabricDisplayData?.linearMeters 
+              // ✅ Use fabricDisplayData.totalMeters as primary source - set by parent from engine
+              const meters = fabricDisplayData?.totalMeters 
+                ?? engineResult?.linear_meters 
                 ?? fabricCalculation?.linearMeters 
                 ?? 0;
               const pricePerM = fabricDisplayData?.pricePerMeter || fabricCalculation?.pricePerMeter || 0;
@@ -1029,99 +1034,92 @@ export const CostCalculationSummary = ({
         )}
 
         {/* Individual Options - Show calculated prices based on pricing method */}
+        {/* ✅ CRITICAL FIX: Use pre-calculated prices when available, don't recalculate */}
         {selectedOptions && selectedOptions.length > 0 && selectedOptions.map((option, idx) => {
+          const optionAny = option as any;
           const basePrice = option.price || 0;
           
-          // Calculate actual price based on pricing method
-          let calculatedPrice = basePrice;
-          let pricingDetails = '';
+          // ✅ FIX: Check if option already has calculatedPrice from calculateOptionPrices utility
+          // If so, use it directly - don't recalculate!
+          const hasPreCalculatedPrice = optionAny.calculatedPrice != null && optionAny.calculatedPrice !== basePrice;
           
-          // Get dimensions from measurements for calculation
-          // CRITICAL: Check the unit field - measurements may come in CM (user's unit) not MM
-          const rawWidth = safeParseFloat(measurements?.rail_width, 0) || safeParseFloat(measurements?.width, 0);
-          const rawHeight = safeParseFloat(measurements?.drop, 0) || safeParseFloat(measurements?.height, 0);
-          const measurementUnit = measurements?.unit?.toLowerCase() || 'mm';
+          let displayPrice = hasPreCalculatedPrice ? optionAny.calculatedPrice : basePrice;
+          let pricingDetails = hasPreCalculatedPrice ? (optionAny.pricingDetails || '') : '';
           
-          // Convert to CM based on the actual unit
-          let widthCm: number, heightCm: number;
-          if (measurementUnit === 'cm') {
-            // Already in CM - use directly
-            widthCm = rawWidth;
-            heightCm = rawHeight;
-          } else if (measurementUnit === 'm') {
-            // In meters - multiply by 100
-            widthCm = rawWidth * 100;
-            heightCm = rawHeight * 100;
-          } else {
-            // Assume MM (database standard) - divide by 10
-            // But if value < 1000, it's likely already in CM
-            widthCm = rawWidth > 10000 ? rawWidth / 10 : rawWidth;
-            heightCm = rawHeight > 10000 ? rawHeight / 10 : rawHeight;
-          }
-          
-          // ✅ SINGLE SOURCE OF TRUTH: Use engineResult → fabricDisplayData → fabricCalculation
-          const fabricLinearMeters = engineResult?.linear_meters 
-            ?? fabricDisplayData?.linearMeters 
-            ?? fabricCalculation?.linearMeters 
-            ?? (widthCm / 100);
-          
-          // CRITICAL: Hardware uses ACTUAL rail width, NOT fullness-adjusted fabric meters!
-          // Hardware = tracks, poles, rods, rails - these are physical items matching window width
-          const optionNameLower = (option.name || '').toLowerCase();
-          const optionKeyLower = (option.optionKey || '').toLowerCase();
-          const isHardware = optionNameLower.includes('hardware') || 
-                            optionNameLower.includes('track') || 
-                            optionNameLower.includes('pole') || 
-                            optionNameLower.includes('rod') ||
-                            optionNameLower.includes('rail') ||
-                            optionKeyLower.includes('hardware') ||
-                            optionKeyLower.includes('track') ||
-                            optionKeyLower.includes('pole');
-          
-          // Hardware uses actual rail width in meters, fabric uses fullness-adjusted linear meters
-          const metersForCalculation = isHardware ? (widthCm / 100) : fabricLinearMeters;
-          
-          // Check if hardware has a FIXED LENGTH in its name (e.g., "2.4m", "3m")
-          // These should be priced as fixed units, not per-meter
-          const fixedLengthMatch = optionNameLower.match(/(\d+\.?\d*)\s*m\b/);
-          const hasFixedLength = isHardware && fixedLengthMatch;
-          
-          // Determine if metric based on units settings
-          const isMetric = units?.length?.toLowerCase() !== 'imperial' && units?.length?.toLowerCase() !== 'in' && units?.length?.toLowerCase() !== 'ft';
-          const lengthUnit = getLengthUnitLabel(isMetric);
-          const areaUnit = getAreaUnitLabel(isMetric);
-          
-          if (option.pricingMethod === 'per-meter' && basePrice > 0) {
-            if (hasFixedLength) {
-              // Fixed-length item like "Curtain Track white 2.4m" - price is per unit
-              calculatedPrice = basePrice;
-              pricingDetails = `${formatPrice(basePrice)} per unit`;
+          // Only recalculate if we don't have a pre-calculated price
+          if (!hasPreCalculatedPrice && basePrice > 0) {
+            // Get dimensions from measurements for calculation
+            const rawWidth = safeParseFloat(measurements?.rail_width, 0) || safeParseFloat(measurements?.width, 0);
+            const rawHeight = safeParseFloat(measurements?.drop, 0) || safeParseFloat(measurements?.height, 0);
+            const measurementUnit = measurements?.unit?.toLowerCase() || 'mm';
+            
+            // Convert to CM based on the actual unit
+            let widthCm: number, heightCm: number;
+            if (measurementUnit === 'cm') {
+              widthCm = rawWidth;
+              heightCm = rawHeight;
+            } else if (measurementUnit === 'm') {
+              widthCm = rawWidth * 100;
+              heightCm = rawHeight * 100;
             } else {
-              calculatedPrice = basePrice * metersForCalculation;
-              // ✅ UNIT-AWARE: Convert to user's fabric unit
-              pricingDetails = `${formatPricePerFabricUnit(basePrice)} × ${formatFabricLength(metersForCalculation)}`;
+              widthCm = rawWidth > 10000 ? rawWidth / 10 : rawWidth;
+              heightCm = rawHeight > 10000 ? rawHeight / 10 : rawHeight;
             }
-          } else if (option.pricingMethod === 'per-sqm' && basePrice > 0) {
-            const sqm = (widthCm * heightCm) / 10000;
-            calculatedPrice = basePrice * sqm;
-            pricingDetails = `${formatPrice(basePrice)}/sqm × ${sqm.toFixed(2)}sqm`;
-          } else if (option.pricingMethod === 'pricing-grid' && option.pricingGridData) {
-            calculatedPrice = getPriceFromGrid(option.pricingGridData, widthCm, heightCm);
-            pricingDetails = `Grid lookup`;
+            
+            // ✅ SINGLE SOURCE OF TRUTH: Use engineResult → fabricDisplayData → fabricCalculation
+            const fabricLinearMeters = engineResult?.linear_meters 
+              ?? fabricDisplayData?.linearMeters 
+              ?? fabricCalculation?.linearMeters 
+              ?? (widthCm / 100);
+            
+            // Hardware uses ACTUAL rail width, NOT fullness-adjusted fabric meters
+            const optionNameLower = (option.name || '').toLowerCase();
+            const optionKeyLower = (option.optionKey || '').toLowerCase();
+            const isHardware = optionNameLower.includes('hardware') || 
+                              optionNameLower.includes('track') || 
+                              optionNameLower.includes('pole') || 
+                              optionNameLower.includes('rod') ||
+                              optionNameLower.includes('rail') ||
+                              optionKeyLower.includes('hardware') ||
+                              optionKeyLower.includes('track') ||
+                              optionKeyLower.includes('pole');
+            
+            const metersForCalculation = isHardware ? (widthCm / 100) : fabricLinearMeters;
+            
+            // Check if hardware has a FIXED LENGTH in its name
+            const fixedLengthMatch = optionNameLower.match(/(\d+\.?\d*)\s*m\b/);
+            const hasFixedLength = isHardware && fixedLengthMatch;
+            
+            if (option.pricingMethod === 'per-meter') {
+              if (hasFixedLength) {
+                displayPrice = basePrice;
+                pricingDetails = `${formatPrice(basePrice)} per unit`;
+              } else {
+                displayPrice = basePrice * metersForCalculation;
+                pricingDetails = `${formatPricePerFabricUnit(basePrice)} × ${formatFabricLength(metersForCalculation)}`;
+              }
+            } else if (option.pricingMethod === 'per-sqm') {
+              const sqm = (widthCm * heightCm) / 10000;
+              displayPrice = basePrice * sqm;
+              pricingDetails = `${formatPrice(basePrice)}/sqm × ${sqm.toFixed(2)}sqm`;
+            } else if (option.pricingMethod === 'pricing-grid' && option.pricingGridData) {
+              displayPrice = getPriceFromGrid(option.pricingGridData, widthCm, heightCm);
+              pricingDetails = `Grid lookup`;
+            }
           }
           
           return (
             <div key={idx} className="flex justify-between py-1.5 border-b border-border/50">
               <div className="flex flex-col">
                 <span className="text-card-foreground font-medium">{option.name}</span>
-                {pricingDetails && calculatedPrice > 0 && (
+                {pricingDetails && displayPrice > 0 && (
                   <span className="text-xs text-muted-foreground">
                     {pricingDetails}
                   </span>
                 )}
               </div>
               <span className="font-semibold text-card-foreground">
-                {calculatedPrice > 0 ? formatPrice(calculatedPrice) : <span className="text-muted-foreground text-sm">Included</span>}
+                {displayPrice > 0 ? formatPrice(displayPrice) : <span className="text-muted-foreground text-sm">Included</span>}
               </span>
             </div>
           );

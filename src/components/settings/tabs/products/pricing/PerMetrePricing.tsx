@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
@@ -15,11 +16,15 @@ interface PriceRange {
   price?: number; // Legacy field for backward compatibility
 }
 
+interface HeadingPriceEntry {
+  machine_price?: number;
+  hand_price?: number;
+  machine_available?: boolean;  // defaults to true if undefined
+  hand_available?: boolean;     // defaults to true if undefined
+}
+
 interface HeadingPrices {
-  [headingId: string]: {
-    machine_price?: number;
-    hand_price?: number;
-  };
+  [headingId: string]: HeadingPriceEntry;
 }
 
 interface PerMetrePricingProps {
@@ -30,7 +35,7 @@ interface PerMetrePricingProps {
   headingPrices?: HeadingPrices;
   selectedHeadingIds?: string[];
   headings?: Array<{ id: string; name: string }>;
-  onInputChange: (field: string, value: string) => void;
+  onInputChange: (field: string, value: any) => void;
 }
 
 export const PerMetrePricing = ({
@@ -93,22 +98,36 @@ export const PerMetrePricing = ({
     const newPrices = { ...headingPrices };
     
     if (!newPrices[headingId]) {
-      newPrices[headingId] = {};
+      newPrices[headingId] = { machine_available: true, hand_available: true };
     }
     
     // If value is empty or just whitespace, remove the field
     if (!value || value.trim() === '') {
       delete newPrices[headingId][field];
-      // Remove heading entry if empty
-      if (Object.keys(newPrices[headingId]).length === 0) {
-        delete newPrices[headingId];
-      }
     } else {
       // Store the numeric value (parseFloat handles "0" correctly)
       newPrices[headingId][field] = parseFloat(value) || 0;
     }
     
-    onInputChange("heading_prices", JSON.stringify(newPrices));
+    onInputChange("heading_prices", newPrices);
+  };
+
+  const handleHeadingAvailabilityChange = (headingId: string, field: 'machine_available' | 'hand_available', value: boolean) => {
+    const newPrices = { ...headingPrices };
+    
+    if (!newPrices[headingId]) {
+      newPrices[headingId] = { machine_available: true, hand_available: true };
+    }
+    
+    newPrices[headingId][field] = value;
+    
+    // If disabling a method, clear its price
+    if (!value) {
+      const priceField = field === 'machine_available' ? 'machine_price' : 'hand_price';
+      delete newPrices[headingId][priceField];
+    }
+    
+    onInputChange("heading_prices", newPrices);
   };
 
   return (
@@ -168,40 +187,79 @@ export const PerMetrePricing = ({
           {showHeadingPrices && (
             <div className="space-y-2 pl-4 border-l-2 border-primary/20">
               <p className="text-xs text-muted-foreground">
-                Override base price for specific headings (blank = use base price)
+                Override base price for specific headings. Uncheck to disable a method for that heading.
               </p>
               <div className="grid gap-3">
-                {selectedHeadings.map((heading) => (
-                  <div key={heading.id} className="space-y-2 p-3 bg-muted/30 rounded-lg">
-                    <span className="text-sm font-medium">{heading.name}</span>
-                    <div className={`grid gap-2 ${offersHandFinished ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                      <div>
-                        <Label className="text-xs">Machine ({currencySymbol}/{pricingUnitLabel.toLowerCase()})</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder={machinePricePerMetre || "Base price"}
-                          className="h-8"
-                          value={headingPrices[heading.id]?.machine_price || ""}
-                          onChange={(e) => handleHeadingPriceChange(heading.id, 'machine_price', e.target.value)}
-                        />
-                      </div>
-                      {offersHandFinished && (
-                        <div>
-                          <Label className="text-xs">Hand-Finished ({currencySymbol}/{pricingUnitLabel.toLowerCase()})</Label>
+                {selectedHeadings.map((heading) => {
+                  const headingEntry = headingPrices[heading.id] || {};
+                  const machineAvailable = headingEntry.machine_available !== false;
+                  const handAvailable = headingEntry.hand_available !== false;
+                  
+                  return (
+                    <div key={heading.id} className="space-y-2 p-3 bg-muted/30 rounded-lg">
+                      <span className="text-sm font-medium">{heading.name}</span>
+                      <div className={`grid gap-3 ${offersHandFinished ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                        {/* Machine Column */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id={`machine-${heading.id}`}
+                              checked={machineAvailable}
+                              onCheckedChange={(checked) => 
+                                handleHeadingAvailabilityChange(heading.id, 'machine_available', !!checked)
+                              }
+                            />
+                            <Label htmlFor={`machine-${heading.id}`} className="text-xs cursor-pointer">
+                              Machine ({currencySymbol}/{pricingUnitLabel.toLowerCase()})
+                            </Label>
+                          </div>
                           <Input
                             type="number"
                             step="0.01"
-                            placeholder={handPricePerMetre || "Base price"}
+                            placeholder={machinePricePerMetre || "Base price"}
                             className="h-8"
-                            value={headingPrices[heading.id]?.hand_price || ""}
-                            onChange={(e) => handleHeadingPriceChange(heading.id, 'hand_price', e.target.value)}
+                            disabled={!machineAvailable}
+                            value={machineAvailable ? (headingEntry.machine_price ?? "") : ""}
+                            onChange={(e) => handleHeadingPriceChange(heading.id, 'machine_price', e.target.value)}
                           />
+                          {!machineAvailable && (
+                            <p className="text-xs text-muted-foreground italic">Not available</p>
+                          )}
                         </div>
-                      )}
+                        
+                        {/* Hand-Finished Column */}
+                        {offersHandFinished && (
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                id={`hand-${heading.id}`}
+                                checked={handAvailable}
+                                onCheckedChange={(checked) => 
+                                  handleHeadingAvailabilityChange(heading.id, 'hand_available', !!checked)
+                                }
+                              />
+                              <Label htmlFor={`hand-${heading.id}`} className="text-xs cursor-pointer">
+                                Hand-Finished ({currencySymbol}/{pricingUnitLabel.toLowerCase()})
+                              </Label>
+                            </div>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder={handPricePerMetre || "Base price"}
+                              className="h-8"
+                              disabled={!handAvailable}
+                              value={handAvailable ? (headingEntry.hand_price ?? "") : ""}
+                              onChange={(e) => handleHeadingPriceChange(heading.id, 'hand_price', e.target.value)}
+                            />
+                            {!handAvailable && (
+                              <p className="text-xs text-muted-foreground italic">Not available</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

@@ -31,6 +31,7 @@ import { calculateOptionPrices, getOptionEffectivePrice } from "@/utils/calculat
 import { runShadowComparison } from "@/engine/shadowModeRunner";
 import { useCurtainEngine } from "@/engine/useCurtainEngine";
 import { useFabricEnrichment } from "@/hooks/pricing/useFabricEnrichment";
+import { getManufacturingPrice } from "@/utils/pricing/headingPriceLookup";
 
 /**
  * CRITICAL MEASUREMENT UNIT STANDARD
@@ -726,6 +727,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             totalCost: existingWindowSummary.fabric_cost,
             pricePerMeter: existingWindowSummary.price_per_meter,
             widthsRequired: existingWindowSummary.widths_required,
+            // ✅ FIX: Restore curtainCount from curtain_type for per-panel pricing
+            curtainCount: curtainMultiplier,
             // CRITICAL: Restore all values needed for manufacturing calculation
             returns: returns,
             totalSideHems: totalSideHems,
@@ -1360,9 +1363,20 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               const finalWidthCm = widthWithAllowancesCm * (1 + wastePercent / 100);
               const finalWidthM = finalWidthCm / 100;
               
-              pricePerUnit = manufacturingType === 'hand'
-                ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
-                : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
+              // ✅ FIX: Check heading-specific price overrides first
+              pricePerUnit = getManufacturingPrice(
+                manufacturingType === 'hand',
+                measurements.selected_heading,
+                selectedTemplate.heading_prices,
+                {
+                  machine_price_per_metre: selectedPricingMethod?.machine_price_per_metre,
+                  hand_price_per_metre: selectedPricingMethod?.hand_price_per_metre,
+                },
+                {
+                  machine_price_per_metre: selectedTemplate.machine_price_per_metre,
+                  hand_price_per_metre: selectedTemplate.hand_price_per_metre,
+                }
+              );
               
               // Multiply final width by manufacturing price per meter
               manufacturingCost = pricePerUnit * finalWidthM;
@@ -1623,12 +1637,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                 price: finalHeadingCost || 0,
                 pricingMethod: 'fixed'
               }] : []),
-              // Add manufacturing finish  
-              ...(measurements.manufacturing_type ? [{
-                name: `Manufacturing: ${measurements.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished'}`,
-                price: manufacturingCost || 0,
-                pricingMethod: 'fixed'
-              }] : []),
+              // NOTE: Manufacturing is NOT included here - it's saved separately as manufacturing_cost
+              // Adding it here would cause duplication in totals
               // Add fullness ratio ONLY for curtain/roman treatments
               ...((treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && fabricCalculation?.fullnessRatio ? [{
                 name: `Fullness Ratio: ${fabricCalculation.fullnessRatio}x`,
@@ -1868,7 +1878,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               waste_percent: selectedTemplate?.waste_percent,
               manufacturing_type: selectedTemplate?.manufacturing_type,
               // CRITICAL: Include heading IDs for curtain templates
-              selected_heading_ids: selectedTemplate?.selected_heading_ids || []
+              selected_heading_ids: selectedTemplate?.selected_heading_ids || [],
+              // ✅ FIX: Save template image URL for display in summary cards
+              image_url: selectedTemplate?.image_url || selectedTemplate?.display_image_url,
+              display_image_url: selectedTemplate?.display_image_url || selectedTemplate?.image_url
             },
             treatment_type: specificTreatmentType,
             treatment_category: specificTreatmentType, // CRITICAL: Use specific type, not generic
@@ -2864,9 +2877,20 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     } else if (pricingType === 'per_metre') {
                       // ✅ CRITICAL FIX: Use SAME linearMeters as fabric calculation for consistency
                       // This ensures manufacturing cost matches fabric cost display
-                      pricePerUnit = manufacturingType === 'hand'
-                        ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
-                        : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
+                      // ✅ FIX: Check heading-specific price overrides first
+                      pricePerUnit = getManufacturingPrice(
+                        manufacturingType === 'hand',
+                        measurements.selected_heading,
+                        selectedTemplate.heading_prices,
+                        {
+                          machine_price_per_metre: selectedPricingMethod?.machine_price_per_metre,
+                          hand_price_per_metre: selectedPricingMethod?.hand_price_per_metre,
+                        },
+                        {
+                          machine_price_per_metre: selectedTemplate.machine_price_per_metre,
+                          hand_price_per_metre: selectedTemplate.hand_price_per_metre,
+                        }
+                      );
                       
                       // ✅ UNIFIED SOURCE: Use totalMeters (same as fabric cost display)
                       // This ensures manufacturing cost matches fabric cost display exactly
@@ -2875,9 +2899,20 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       manufacturingQuantityLabel = unitIsMetric ? 'm' : 'yd';
                       manufacturingCost = pricePerUnit * manufacturingQuantity;
                     } else {
-                      pricePerUnit = manufacturingType === 'hand'
-                        ? (selectedPricingMethod?.hand_price_per_metre ?? selectedTemplate.hand_price_per_metre ?? 0)
-                        : (selectedPricingMethod?.machine_price_per_metre ?? selectedTemplate.machine_price_per_metre ?? 0);
+                      // ✅ FIX: Check heading-specific price overrides first (fallback case)
+                      pricePerUnit = getManufacturingPrice(
+                        manufacturingType === 'hand',
+                        measurements.selected_heading,
+                        selectedTemplate.heading_prices,
+                        {
+                          machine_price_per_metre: selectedPricingMethod?.machine_price_per_metre,
+                          hand_price_per_metre: selectedPricingMethod?.hand_price_per_metre,
+                        },
+                        {
+                          machine_price_per_metre: selectedTemplate.machine_price_per_metre,
+                          hand_price_per_metre: selectedTemplate.hand_price_per_metre,
+                        }
+                      );
                       manufacturingQuantity = totalMeters; // ✅ Use totalMeters - consistent with fabric cost
                       const fallbackUnitIsMetric = units?.length === 'mm' || units?.length === 'cm' || units?.length === 'm';
                       manufacturingQuantityLabel = fallbackUnitIsMetric ? 'm' : 'yd';
@@ -2963,9 +2998,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     // Use LOCAL calculated values, NOT stale state!
                     const allDisplayOptions = [
                       // Dynamic options with CALCULATED prices from enrichedOptions
+                      // ✅ FIX: Preserve calculatedPrice so CostCalculationSummary can use it directly
                       ...enrichedOptions.map(opt => ({
                         ...opt,
-                        price: getOptionEffectivePrice(opt), // Use calculated price!
+                        calculatedPrice: getOptionEffectivePrice(opt), // Preserve for display component
                       })),
                       // Add heading if selected and not default
                       ...(selectedHeading && selectedHeading !== 'standard' && selectedHeading !== 'none' ? [{
@@ -2973,12 +3009,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                         price: headingCost, // LOCAL variable, not stale state
                         pricingMethod: 'fixed'
                       }] : []),
-                      // Add manufacturing finish - USE LOCAL manufacturingCost
-                      ...(measurements.manufacturing_type ? [{
-                        name: `Manufacturing: ${measurements.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished'}`,
-                        price: manufacturingCost, // LOCAL variable, not stale state
-                        pricingMethod: 'fixed'
-                      }] : []),
+                      // NOTE: Manufacturing is NOT included in allDisplayOptions - it's displayed separately
+                      // via calculatedManufacturingCost prop to avoid duplication in totals
                       // Add fullness ratio ONLY for curtain/roman treatments
                       ...((treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && fabricCalculation?.fullnessRatio ? [{
                         name: `Fullness Ratio: ${fabricCalculation.fullnessRatio}x`,
@@ -3000,7 +3032,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     const isCurtainOrRomanForCosts = treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds';
                     
                     // Calculate pieces to display (actual pieces, not piecesCharged which is for costing)
-                    const piecesToDisplay = isRailroaded ? horizontalPiecesNeeded : 1;
+                    // For railroaded: use horizontal pieces needed
+                    // For vertical: use widths required (number of fabric widths to cover the total curtain width)
+                    const widthsReqForVertical = engineResult?.widths_required ?? fabricCalculation?.widthsRequired ?? 1;
+                    const piecesToDisplay = isRailroaded ? horizontalPiecesNeeded : widthsReqForVertical;
                     
                     const newCalculatedCosts = {
                       // linearMeters is now per-piece, totalMeters is the total to order
