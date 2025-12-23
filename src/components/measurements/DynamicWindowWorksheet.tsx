@@ -727,6 +727,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
             totalCost: existingWindowSummary.fabric_cost,
             pricePerMeter: existingWindowSummary.price_per_meter,
             widthsRequired: existingWindowSummary.widths_required,
+            // ✅ FIX: Restore curtainCount from curtain_type for per-panel pricing
+            curtainCount: curtainMultiplier,
             // CRITICAL: Restore all values needed for manufacturing calculation
             returns: returns,
             totalSideHems: totalSideHems,
