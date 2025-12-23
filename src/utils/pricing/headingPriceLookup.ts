@@ -5,17 +5,54 @@
  * this function looks up the heading-specific price override.
  */
 
+export interface HeadingPriceEntry {
+  machine_price?: number;
+  hand_price?: number;
+  machine_available?: boolean;  // defaults to true if undefined
+  hand_available?: boolean;     // defaults to true if undefined
+}
+
 export interface HeadingPrices {
-  [headingId: string]: {
-    machine_price?: number;
-    hand_price?: number;
-  };
+  [headingId: string]: HeadingPriceEntry;
 }
 
 export interface PriceResolutionResult {
   price: number;
   source: 'heading_override' | 'pricing_method' | 'template_default' | 'none';
   headingId?: string;
+}
+
+export interface MethodAvailability {
+  machineAvailable: boolean;
+  handAvailable: boolean;
+}
+
+/**
+ * Check which manufacturing methods are available for a heading
+ */
+export function getMethodAvailability(
+  selectedHeadingId: string | undefined | null,
+  headingPrices: HeadingPrices | undefined | null,
+  templateOffersHandFinished: boolean = true
+): MethodAvailability {
+  // Default: both available if template offers hand-finished, otherwise only machine
+  const defaultAvailability: MethodAvailability = {
+    machineAvailable: true,
+    handAvailable: templateOffersHandFinished
+  };
+
+  // If no heading selected or no heading prices, return defaults
+  if (!selectedHeadingId || !headingPrices || !headingPrices[selectedHeadingId]) {
+    return defaultAvailability;
+  }
+
+  const headingEntry = headingPrices[selectedHeadingId];
+
+  return {
+    // Default to true if not explicitly set to false
+    machineAvailable: headingEntry.machine_available !== false,
+    handAvailable: templateOffersHandFinished && headingEntry.hand_available !== false
+  };
 }
 
 /**
