@@ -1635,12 +1635,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                 price: finalHeadingCost || 0,
                 pricingMethod: 'fixed'
               }] : []),
-              // Add manufacturing finish  
-              ...(measurements.manufacturing_type ? [{
-                name: `Manufacturing: ${measurements.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished'}`,
-                price: manufacturingCost || 0,
-                pricingMethod: 'fixed'
-              }] : []),
+              // NOTE: Manufacturing is NOT included here - it's saved separately as manufacturing_cost
+              // Adding it here would cause duplication in totals
               // Add fullness ratio ONLY for curtain/roman treatments
               ...((treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && fabricCalculation?.fullnessRatio ? [{
                 name: `Fullness Ratio: ${fabricCalculation.fullnessRatio}x`,
@@ -3007,12 +3003,8 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                         price: headingCost, // LOCAL variable, not stale state
                         pricingMethod: 'fixed'
                       }] : []),
-                      // Add manufacturing finish - USE LOCAL manufacturingCost
-                      ...(measurements.manufacturing_type ? [{
-                        name: `Manufacturing: ${measurements.manufacturing_type === 'hand' ? 'Hand Finished' : 'Machine Finished'}`,
-                        price: manufacturingCost, // LOCAL variable, not stale state
-                        pricingMethod: 'fixed'
-                      }] : []),
+                      // NOTE: Manufacturing is NOT included in allDisplayOptions - it's displayed separately
+                      // via calculatedManufacturingCost prop to avoid duplication in totals
                       // Add fullness ratio ONLY for curtain/roman treatments
                       ...((treatmentCategory === 'curtains' || treatmentCategory === 'roman_blinds') && fabricCalculation?.fullnessRatio ? [{
                         name: `Fullness Ratio: ${fabricCalculation.fullnessRatio}x`,
