@@ -186,8 +186,16 @@ export const useQuotationSync = ({
           const wallpaperDetails = summary.wallpaper_details || {};
           
           // Extract image URLs separately:
-          // Treatment template image (for parent row - the visual rendering)
-          const treatmentImageUrl = summary.template_image_url || summary.image_url || null;
+          // ✅ FIX: Treatment template image - PRIORITY: template_image_url > template_details.image_url > fabric/material image
+          // This ensures treatment templates with custom images show in quote even when fabric has no image
+          const templateDetails = summary.template_details || {};
+          const treatmentImageUrl = summary.template_image_url || 
+                                    templateDetails.image_url || 
+                                    templateDetails.display_image_url ||
+                                    summary.image_url || 
+                                    materialDetails.image_url || 
+                                    fabricDetails.image_url || 
+                                    null;
           
           // Material/Fabric image from inventory (for child rows - the actual fabric swatch)
           const materialImageUrl = materialDetails.image_url || fabricDetails.image_url || null;
