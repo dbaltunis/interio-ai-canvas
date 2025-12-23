@@ -12,7 +12,7 @@ import { Loader2, AlertCircle } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
 import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
-import { getManufacturingPrice } from "@/utils/pricing/headingPriceLookup";
+import { getManufacturingPrice, getMethodAvailability } from "@/utils/pricing/headingPriceLookup";
 import type { EyeletRing } from "@/hooks/useEyeletRings";
 import { validateTreatmentOptions } from "@/utils/treatmentOptionValidation";
 import { ValidationAlert } from "@/components/shared/ValidationAlert";
@@ -468,6 +468,13 @@ export const DynamicCurtainOptions = ({
   const machinePricePerPanel = selectedPricingMethod?.machine_price_per_panel ?? template.machine_price_per_panel;
   const handPricePerPanel = selectedPricingMethod?.hand_price_per_panel ?? template.hand_price_per_panel;
 
+  // Check method availability based on heading
+  const methodAvailability = getMethodAvailability(
+    measurements.selected_heading,
+    template.heading_prices,
+    template.offers_hand_finished
+  );
+
   // Filter headings based on template's selected_heading_ids
   // If template doesn't specify selected_heading_ids, show all available headings
   const availableHeadings = template.selected_heading_ids && template.selected_heading_ids.length > 0
@@ -798,79 +805,121 @@ export const DynamicCurtainOptions = ({
 
       {/* Manufacturing Finish Type */}
       {template.offers_hand_finished && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h4 className="font-medium text-foreground">Manufacturing Finish</h4>
-              <p className="text-xs text-muted-foreground">Choose between machine or hand-finished</p>
-            </div>
-            <div className="w-64">
-              <Select
-                value={measurements.manufacturing_type || template.manufacturing_type || 'machine'}
-                onValueChange={handleManufacturingTypeChange}
-              >
-                <SelectTrigger className="bg-background border-input">
-                  <SelectValue placeholder="Select finish..." />
-                </SelectTrigger>
-                <SelectContent 
-                  className="z-[9999] bg-popover border-border shadow-lg"
-                  position="popper"
-                  sideOffset={5}
-                  align="end"
-                >
-                  <SelectItem value="machine">
-                    <div className="flex items-center justify-between w-full gap-4">
-                      <span>Machine Finished</span>
-                      {(machinePricePerMetre > 0 || machinePricePerDrop > 0 || machinePricePerPanel > 0) && (
-                        <div className="flex gap-1">
-                          {machinePricePerMetre > 0 && (
-                            <Badge variant="outline" className="text-xs">
-                              {formatCurrency(machinePricePerMetre)}/m
-                            </Badge>
-                          )}
-                          {machinePricePerDrop > 0 && (
-                            <Badge variant="outline" className="text-xs">
-                              {formatCurrency(machinePricePerDrop)}/drop
-                            </Badge>
-                          )}
-                          {machinePricePerPanel > 0 && (
-                            <Badge variant="outline" className="text-xs">
-                              {formatCurrency(machinePricePerPanel)}/panel
-                            </Badge>
+        (() => {
+          const { machineAvailable, handAvailable } = methodAvailability;
+          
+          // Determine current selection and if it's valid
+          const currentManufacturingType = measurements.manufacturing_type || template.manufacturing_type || 'machine';
+          const isCurrentSelectionValid = 
+            (currentManufacturingType === 'machine' && machineAvailable) ||
+            (currentManufacturingType === 'hand' && handAvailable);
+          
+          // Auto-switch to valid option if current selection becomes invalid
+          if (!isCurrentSelectionValid) {
+            const newValue = machineAvailable ? 'machine' : (handAvailable ? 'hand' : 'machine');
+            if (newValue !== currentManufacturingType) {
+              // Use setTimeout to avoid setState during render
+              setTimeout(() => handleManufacturingTypeChange(newValue as 'machine' | 'hand'), 0);
+            }
+          }
+          
+          // If only one option available, show simpler UI
+          if (!machineAvailable || !handAvailable) {
+            const availableMethod = machineAvailable ? 'Machine Finished' : 'Hand Finished';
+            return (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <h4 className="font-medium text-foreground">Manufacturing Finish</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Only {availableMethod.toLowerCase()} is available for this heading
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="text-sm">
+                    {availableMethod}
+                  </Badge>
+                </div>
+              </div>
+            );
+          }
+          
+          // Both options available - show dropdown
+          return (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h4 className="font-medium text-foreground">Manufacturing Finish</h4>
+                  <p className="text-xs text-muted-foreground">Choose between machine or hand-finished</p>
+                </div>
+                <div className="w-64">
+                  <Select
+                    value={currentManufacturingType}
+                    onValueChange={handleManufacturingTypeChange}
+                  >
+                    <SelectTrigger className="bg-background border-input">
+                      <SelectValue placeholder="Select finish..." />
+                    </SelectTrigger>
+                    <SelectContent 
+                      className="z-[9999] bg-popover border-border shadow-lg"
+                      position="popper"
+                      sideOffset={5}
+                      align="end"
+                    >
+                      <SelectItem value="machine">
+                        <div className="flex items-center justify-between w-full gap-4">
+                          <span>Machine Finished</span>
+                          {(machinePricePerMetre > 0 || machinePricePerDrop > 0 || machinePricePerPanel > 0) && (
+                            <div className="flex gap-1">
+                              {machinePricePerMetre > 0 && (
+                                <Badge variant="outline" className="text-xs">
+                                  {formatCurrency(machinePricePerMetre)}/m
+                                </Badge>
+                              )}
+                              {machinePricePerDrop > 0 && (
+                                <Badge variant="outline" className="text-xs">
+                                  {formatCurrency(machinePricePerDrop)}/drop
+                                </Badge>
+                              )}
+                              {machinePricePerPanel > 0 && (
+                                <Badge variant="outline" className="text-xs">
+                                  {formatCurrency(machinePricePerPanel)}/panel
+                                </Badge>
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="hand">
-                    <div className="flex items-center justify-between w-full gap-4">
-                      <span>Hand Finished</span>
-                      {(handPricePerMetre > 0 || handPricePerDrop > 0 || handPricePerPanel > 0) && (
-                        <div className="flex gap-1">
-                          {handPricePerMetre > 0 && (
-                            <Badge variant="outline" className="text-xs">
-                              {formatCurrency(handPricePerMetre)}/m
-                            </Badge>
-                          )}
-                          {handPricePerDrop > 0 && (
-                            <Badge variant="outline" className="text-xs">
-                              {formatCurrency(handPricePerDrop)}/drop
-                            </Badge>
-                          )}
-                          {handPricePerPanel > 0 && (
-                            <Badge variant="outline" className="text-xs">
-                              {formatCurrency(handPricePerPanel)}/panel
-                            </Badge>
+                      </SelectItem>
+                      <SelectItem value="hand">
+                        <div className="flex items-center justify-between w-full gap-4">
+                          <span>Hand Finished</span>
+                          {(handPricePerMetre > 0 || handPricePerDrop > 0 || handPricePerPanel > 0) && (
+                            <div className="flex gap-1">
+                              {handPricePerMetre > 0 && (
+                                <Badge variant="outline" className="text-xs">
+                                  {formatCurrency(handPricePerMetre)}/m
+                                </Badge>
+                              )}
+                              {handPricePerDrop > 0 && (
+                                <Badge variant="outline" className="text-xs">
+                                  {formatCurrency(handPricePerDrop)}/drop
+                                </Badge>
+                              )}
+                              {handPricePerPanel > 0 && (
+                                <Badge variant="outline" className="text-xs">
+                                  {formatCurrency(handPricePerPanel)}/panel
+                                </Badge>
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })()
       )}
 
       {/* Dynamic Treatment Options from Database - Filtered by template settings */}
