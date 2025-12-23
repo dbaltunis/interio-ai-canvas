@@ -76,6 +76,9 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
     making_charge_method: (template as any)?.making_charge_method || "per_meter",
     heading_making_charges: (template as any)?.heading_making_charges || {},
     
+    // Heading-specific price overrides (per-metre pricing)
+    heading_prices: (template as any)?.heading_prices || {},
+    
     // Manufacturing
     header_allowance: template?.header_allowance?.toString() || "8",
     bottom_hem: template?.bottom_hem?.toString() || "15",
@@ -205,6 +208,8 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
         making_charge_per_meter: formData.making_charge_per_meter ? parseFloat(formData.making_charge_per_meter) : null,
         making_charge_method: formData.making_charge_method,
         heading_making_charges: Object.keys(formData.heading_making_charges || {}).length > 0 ? formData.heading_making_charges : null,
+        // Heading-specific price overrides
+        heading_prices: Object.keys(formData.heading_prices || {}).length > 0 ? formData.heading_prices : null,
         // Manufacturing
         header_allowance: formData.header_allowance ? parseFloat(formData.header_allowance) : null,
         bottom_hem: formData.bottom_hem ? parseFloat(formData.bottom_hem) : null,

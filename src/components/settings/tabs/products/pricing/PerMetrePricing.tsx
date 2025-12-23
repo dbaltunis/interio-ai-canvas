@@ -30,7 +30,7 @@ interface PerMetrePricingProps {
   headingPrices?: HeadingPrices;
   selectedHeadingIds?: string[];
   headings?: Array<{ id: string; name: string }>;
-  onInputChange: (field: string, value: string) => void;
+  onInputChange: (field: string, value: any) => void;
 }
 
 export const PerMetrePricing = ({
@@ -108,7 +108,7 @@ export const PerMetrePricing = ({
       newPrices[headingId][field] = parseFloat(value) || 0;
     }
     
-    onInputChange("heading_prices", JSON.stringify(newPrices));
+    onInputChange("heading_prices", newPrices);
   };
 
   return (
