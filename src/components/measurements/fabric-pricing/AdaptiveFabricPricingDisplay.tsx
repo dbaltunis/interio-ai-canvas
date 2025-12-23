@@ -567,7 +567,9 @@ export const AdaptiveFabricPricingDisplay = ({
             <div className="flex justify-between">
               <span>Width:</span>
               <span className={`font-medium ${selectedFabricItem?.fabric_width ? 'text-foreground' : 'text-destructive'}`}>
-                {selectedFabricItem?.fabric_width ? formatFabricWidth(selectedFabricItem.fabric_width) : 'Not set - check inventory'}
+                {selectedFabricItem?.fabric_width 
+                  ? `${formatFabricWidth(selectedFabricItem.fabric_width)} (${(selectedFabricItem.fabric_width / 2.54).toFixed(0)}in)` 
+                  : 'Not set - check inventory'}
               </span>
             </div>
             <div className="flex justify-between">
@@ -584,7 +586,9 @@ export const AdaptiveFabricPricingDisplay = ({
             <div className="flex justify-between">
               <span>Fabric Width:</span>
               <span className={`font-medium ${selectedFabricItem?.fabric_width ? 'text-foreground' : 'text-destructive'}`}>
-                {selectedFabricItem?.fabric_width ? formatFabricWidth(selectedFabricItem.fabric_width) : 'Not set - check inventory'}
+                {selectedFabricItem?.fabric_width 
+                  ? `${formatFabricWidth(selectedFabricItem.fabric_width)} (${(selectedFabricItem.fabric_width / 2.54).toFixed(0)}in)` 
+                  : 'Not set - check inventory'}
               </span>
             </div>
             
@@ -634,11 +638,10 @@ export const AdaptiveFabricPricingDisplay = ({
                   </div>}
                 <div className="flex justify-between pl-2 pt-1 border-t border-border/20">
                   <span>Widths Required:</span>
-                  <span className="font-medium text-foreground">{fabricCalculation.widthsRequired || 0} width(s)</span>
-                </div>
-                <div className="flex justify-between pl-2">
-                  <span>Drops Used:</span>
-                  <span className="font-medium text-foreground">{measurements.quantity || 1} drop(s)</span>
+                  <span className="font-medium text-foreground">
+                    {/* ✅ SINGLE SOURCE OF TRUTH: Use engineResult when available */}
+                    {engineResult?.widths_required ?? fabricCalculation.widthsRequired ?? 0} width(s)
+                  </span>
                 </div>
               </> : <>
                 {/* Width Total - determines linear meters needed */}

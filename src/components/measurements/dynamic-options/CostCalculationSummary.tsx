@@ -829,15 +829,16 @@ export const CostCalculationSummary = ({
           <Info className="h-4 w-4" />
           <AlertDescription className="text-xs leading-relaxed">
             {(() => {
-              // ✅ SINGLE SOURCE OF TRUTH: Use fabricDisplayData or fabricCalculation
+              // ✅ SINGLE SOURCE OF TRUTH: Use fabricDisplayData.horizontalPieces which comes from DynamicWindowWorksheet
+              // This is already calculated using engineResult when available
               const orientation = fabricDisplayData?.orientation || fabricCalculation?.fabricOrientation || 'vertical';
-              // ✅ FIX: Use consistent source for widths - engineResult widths_required is authoritative, fallback to fabricCalculation
-              const widthsReq = engineResult?.widths_required || fabricCalculation?.widthsRequired || 1;
+              // ✅ FIX: Use fabricDisplayData.horizontalPieces as the SINGLE source - it's set from engineResult in parent
+              const widthsReq = fabricDisplayData?.horizontalPieces ?? engineResult?.widths_required ?? fabricCalculation?.widthsRequired ?? 1;
               const horizontalPieces = fabricDisplayData?.horizontalPieces || fabricCalculation?.horizontalPiecesNeeded || 1;
               
-              // ✅ CRITICAL FIX: Use unified source for meters
-              const meters = engineResult?.linear_meters 
-                ?? fabricDisplayData?.linearMeters 
+              // ✅ Use fabricDisplayData.totalMeters as primary source - set by parent from engine
+              const meters = fabricDisplayData?.totalMeters 
+                ?? engineResult?.linear_meters 
                 ?? fabricCalculation?.linearMeters 
                 ?? 0;
               const pricePerM = fabricDisplayData?.pricePerMeter || fabricCalculation?.pricePerMeter || 0;
