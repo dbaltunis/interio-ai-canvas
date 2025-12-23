@@ -159,6 +159,15 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   // Format dates using user preferences
   const { formattedDate: formattedCreatedDate } = useFormattedDate(project?.created_at, false);
   
+  // If user tries to access workroom tab but doesn't have permission, redirect to details
+  // (This handles cases where user navigates directly via URL)
+  // NOTE: This must be called before any conditional returns to follow Rules of Hooks
+  useEffect(() => {
+    if (activeTab === 'workroom' && !canViewWorkroomExplicit && !permissionsLoading && !roleLoading) {
+      setActiveTab('details');
+    }
+  }, [activeTab, canViewWorkroomExplicit, permissionsLoading, roleLoading]);
+  
   // Show loading skeleton while data is being fetched
   if (projectLoading || permissionsLoading || roleLoading || explicitPermissions === undefined || userRoleData === undefined) {
     return <JobSkeleton />;
@@ -221,14 +230,6 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   if (!project) {
     return <JobNotFound onBack={onBack} />;
   }
-
-  // If user tries to access workroom tab but doesn't have permission, redirect to details
-  // (This handles cases where user navigates directly via URL)
-  useEffect(() => {
-    if (activeTab === 'workroom' && !canViewWorkroomExplicit && !permissionsLoading && !roleLoading) {
-      setActiveTab('details');
-    }
-  }, [activeTab, canViewWorkroomExplicit, permissionsLoading, roleLoading]);
 
   const handleUpdateProject = async (projectData: any) => {
     await updateProject.mutateAsync(projectData);
