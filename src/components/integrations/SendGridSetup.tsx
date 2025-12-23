@@ -1,44 +1,55 @@
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
-import { Mail, Key, CheckCircle, XCircle, Loader2, ExternalLink, AlertTriangle } from "lucide-react";
+import { Mail, Key, CheckCircle, XCircle, Loader2, ExternalLink, AlertTriangle, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { useQueryClient } from "@tanstack/react-query";
 
+type ConnectionStatus = 'connected' | 'failed' | 'checking' | 'unknown';
+
 export const SendGridSetup = () => {
   const [apiKey, setApiKey] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('unknown');
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { hasSendGridIntegration, integrationData } = useIntegrationStatus();
+  const { hasSendGridIntegration, integrationData, isLoading: isLoadingStatus } = useIntegrationStatus();
   const queryClient = useQueryClient();
 
-  // Type guard for configuration properties
-  const getConfigurationValue = (config: any, key: string): any => {
-    if (config && typeof config === 'object' && !Array.isArray(config)) {
-      return config[key];
-    }
-    return undefined;
-  };
+  // Get API key from integration data
+  const getStoredApiKey = useCallback((): string => {
+    const apiCredentials = integrationData?.api_credentials;
+    const config = integrationData?.configuration;
+    return apiCredentials?.api_key || config?.api_key || "";
+  }, [integrationData]);
 
-  // Type guard for integration data properties
-  const getIntegrationProperty = (data: any, property: string): any => {
-    if (data && typeof data === 'object') {
-      return data[property];
+  // Test connection (silent mode doesn't show success toast)
+  const testSendGridConnection = useCallback(async (testApiKey: string, silent = false): Promise<boolean> => {
+    if (!testApiKey?.trim()) {
+      if (!silent) {
+        toast({
+          title: "Connection Failed",
+          description: "No API key configured",
+          variant: "destructive",
+        });
+      }
+      setConnectionStatus('failed');
+      setConnectionError("No API key configured");
+      return false;
     }
-    return undefined;
-  };
 
-  const testSendGridConnection = async (testApiKey: string) => {
     setIsTestingConnection(true);
+    setConnectionStatus('checking');
+    setConnectionError(null);
+
     try {
       const response = await fetch("https://api.sendgrid.com/v3/user/profile", {
         headers: {
@@ -49,30 +60,61 @@ export const SendGridSetup = () => {
 
       if (response.ok) {
         const profile = await response.json();
-        toast({
-          title: "Connection Successful",
-          description: `Connected to SendGrid account: ${profile.email}`,
-        });
+        setConnectionStatus('connected');
+        setConnectionError(null);
+        if (!silent) {
+          toast({
+            title: "Connection Successful",
+            description: `Connected to SendGrid account: ${profile.email}`,
+          });
+        }
         return true;
       } else {
-        toast({
-          title: "Connection Failed",
-          description: "Invalid SendGrid API key or insufficient permissions",
-          variant: "destructive",
-        });
+        const errorMsg = response.status === 401 
+          ? "Invalid API key" 
+          : response.status === 403 
+            ? "Insufficient permissions" 
+            : "Connection failed";
+        setConnectionStatus('failed');
+        setConnectionError(errorMsg);
+        if (!silent) {
+          toast({
+            title: "Connection Failed",
+            description: errorMsg,
+            variant: "destructive",
+          });
+        }
         return false;
       }
     } catch (error) {
-      toast({
-        title: "Connection Error",
-        description: "Unable to connect to SendGrid. Please check your internet connection.",
-        variant: "destructive",
-      });
+      const errorMsg = "Unable to connect to SendGrid";
+      setConnectionStatus('failed');
+      setConnectionError(errorMsg);
+      if (!silent) {
+        toast({
+          title: "Connection Error",
+          description: "Unable to connect to SendGrid. Please check your internet connection.",
+          variant: "destructive",
+        });
+      }
       return false;
     } finally {
       setIsTestingConnection(false);
     }
-  };
+  }, [toast]);
+
+  // Auto-validate connection on mount when integration exists
+  useEffect(() => {
+    if (!isLoadingStatus && hasSendGridIntegration) {
+      const storedKey = getStoredApiKey();
+      if (storedKey) {
+        testSendGridConnection(storedKey, true);
+      } else {
+        setConnectionStatus('failed');
+        setConnectionError("API key not found in storage");
+      }
+    }
+  }, [isLoadingStatus, hasSendGridIntegration, getStoredApiKey, testSendGridConnection]);
 
   const setupSendGridIntegration = async () => {
     if (!apiKey.trim()) {
@@ -155,6 +197,42 @@ export const SendGridSetup = () => {
     }
   };
 
+  // Render connection status badge
+  const renderStatusBadge = () => {
+    if (!hasSendGridIntegration) return null;
+
+    switch (connectionStatus) {
+      case 'checking':
+        return (
+          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            Checking...
+          </Badge>
+        );
+      case 'connected':
+        return (
+          <Badge variant="default" className="bg-green-100 text-green-800">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Connected
+          </Badge>
+        );
+      case 'failed':
+        return (
+          <Badge variant="destructive" className="bg-red-100 text-red-800">
+            <XCircle className="h-3 w-3 mr-1" />
+            Connection Failed
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+            <AlertTriangle className="h-3 w-3 mr-1" />
+            Unknown
+          </Badge>
+        );
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -165,12 +243,7 @@ export const SendGridSetup = () => {
           <div>
             <CardTitle className="flex items-center gap-2">
               Custom SendGrid Integration (Optional)
-              {hasSendGridIntegration && (
-                <Badge variant="default" className="bg-green-100 text-green-800">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Connected
-                </Badge>
-              )}
+              {renderStatusBadge()}
             </CardTitle>
             <CardDescription>
               Connect your own SendGrid account for custom branding and unlimited emails
@@ -247,34 +320,78 @@ export const SendGridSetup = () => {
           </>
         ) : (
           <>
-            {/* Integration Status */}
+            {/* Integration Status - Dynamic based on actual connection state */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="font-medium text-green-800">SendGrid Connected</p>
-                    <p className="text-sm text-green-700">
-                      Email service is configured and ready to send emails
-                    </p>
+              {connectionStatus === 'connected' && (
+                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <div>
+                      <p className="font-medium text-green-800">SendGrid Connected</p>
+                      <p className="text-sm text-green-700">
+                        Email service is verified and ready to send emails
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {connectionStatus === 'failed' && (
+                <div className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <XCircle className="h-5 w-5 text-red-600" />
+                    <div>
+                      <p className="font-medium text-red-800">Connection Failed</p>
+                      <p className="text-sm text-red-700">
+                        {connectionError || "Unable to connect to SendGrid. Please re-enter your API key."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {connectionStatus === 'checking' && (
+                <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="h-5 w-5 text-yellow-600 animate-spin" />
+                    <div>
+                      <p className="font-medium text-yellow-800">Verifying Connection...</p>
+                      <p className="text-sm text-yellow-700">
+                        Testing connection to SendGrid
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {connectionStatus === 'unknown' && (
+                <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="h-5 w-5 text-gray-600" />
+                    <div>
+                      <p className="font-medium text-gray-800">Status Unknown</p>
+                      <p className="text-sm text-gray-700">
+                        Click "Test Connection" to verify
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Integration Details */}
               {integrationData?.configuration && (
-                <div className="space-y-2 text-sm bg-gray-50 p-3 rounded-lg">
+                <div className="space-y-2 text-sm bg-muted p-3 rounded-lg">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Webhook Status:</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">
-                      {getConfigurationValue(integrationData.configuration, 'webhook_configured') ? 'Configured' : 'Not Configured'}
+                    <span className="text-muted-foreground">Webhook Status:</span>
+                    <Badge variant="default" className={integrationData.configuration.webhook_configured ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                      {integrationData.configuration.webhook_configured ? 'Configured' : 'Not Configured'}
                     </Badge>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Last Updated:</span>
+                    <span className="text-muted-foreground">Last Updated:</span>
                     <span>
-                      {getIntegrationProperty(integrationData, 'last_sync')
-                        ? new Date(getIntegrationProperty(integrationData, 'last_sync')).toLocaleDateString() 
+                      {integrationData.last_sync
+                        ? new Date(integrationData.last_sync).toLocaleDateString() 
                         : 'Never'
                       }
                     </span>
@@ -286,18 +403,14 @@ export const SendGridSetup = () => {
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    const apiCredentials = getIntegrationProperty(integrationData, 'api_credentials');
-                    const apiKey = apiCredentials && typeof apiCredentials === 'object' ? apiCredentials.api_key : "";
-                    testSendGridConnection(apiKey || "");
-                  }}
+                  onClick={() => testSendGridConnection(getStoredApiKey(), false)}
                   disabled={isTestingConnection}
                   className="flex-1"
                 >
                   {isTestingConnection ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
-                    <CheckCircle className="h-4 w-4 mr-2" />
+                    <RefreshCw className="h-4 w-4 mr-2" />
                   )}
                   Test Connection
                 </Button>
@@ -310,6 +423,17 @@ export const SendGridSetup = () => {
                   Disconnect
                 </Button>
               </div>
+
+              {/* Re-enter API Key option when connection fails */}
+              {connectionStatus === 'failed' && (
+                <Alert className="border-orange-200 bg-orange-50">
+                  <Key className="h-4 w-4 text-orange-600" />
+                  <AlertDescription className="text-orange-800">
+                    <strong>Troubleshooting:</strong> Your API key may have been revoked or expired. 
+                    Disconnect and re-setup with a new API key from SendGrid.
+                  </AlertDescription>
+                </Alert>
+              )}
 
               {/* Warning */}
               <Alert>
