@@ -2995,9 +2995,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     // Use LOCAL calculated values, NOT stale state!
                     const allDisplayOptions = [
                       // Dynamic options with CALCULATED prices from enrichedOptions
+                      // ✅ FIX: Preserve calculatedPrice so CostCalculationSummary can use it directly
                       ...enrichedOptions.map(opt => ({
                         ...opt,
-                        price: getOptionEffectivePrice(opt), // Use calculated price!
+                        calculatedPrice: getOptionEffectivePrice(opt), // Preserve for display component
                       })),
                       // Add heading if selected and not default
                       ...(selectedHeading && selectedHeading !== 'standard' && selectedHeading !== 'none' ? [{
