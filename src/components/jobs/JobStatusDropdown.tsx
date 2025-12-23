@@ -13,12 +13,15 @@ import { useUpdateQuote } from "@/hooks/useQuotes";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useCanEditJob } from "@/hooks/useJobEditPermissions";
+import { useProject } from "@/hooks/useProjects";
 
 interface JobStatusDropdownProps {
   currentStatus?: string; // Legacy: for backward compatibility
   currentStatusId?: string | null; // New: UUID of the status
   jobType: "quote" | "project";
   jobId: string;
+  project?: any; // Optional: if provided, use it directly
   onStatusChange?: (newStatus: string) => void;
 }
 
@@ -26,7 +29,8 @@ export const JobStatusDropdown = ({
   currentStatus, 
   currentStatusId,
   jobType, 
-  jobId, 
+  jobId,
+  project: providedProject,
   onStatusChange 
 }: JobStatusDropdownProps) => {
   const { data: jobStatuses = [] } = useJobStatuses();
@@ -35,11 +39,13 @@ export const JobStatusDropdown = ({
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Permission checks - properly check edit permissions
-  // If both permissions are disabled, no job should be editable
-  const canEditAllJobs = useHasPermission('edit_all_jobs');
-  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
-  const canEditJobs = canEditAllJobs || canEditAssignedJobs; // At least one must be enabled
+  // Fetch project if not provided (for quotes, we might not have project)
+  const { data: fetchedProject } = useProject(jobType === "project" ? jobId : "");
+  const project = providedProject || fetchedProject;
+  
+  // Use explicit permissions hook for edit checks
+  const { canEditJob } = useCanEditJob(project);
+  const canEditJobs = canEditJob ?? false; // Default to false if loading
 
   // Filter statuses based on job type
   const availableStatuses = jobStatuses.filter(status => {

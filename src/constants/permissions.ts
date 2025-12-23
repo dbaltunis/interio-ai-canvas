@@ -73,7 +73,7 @@ export const PERMISSION_DETAILS: Record<string, {
     label: 'Create Jobs', 
     description: 'Create new jobs and quotes', 
     category: 'jobs', 
-    required: ['view_assigned_jobs'] 
+    required: ['view_all_jobs', 'view_assigned_jobs'] // OR logic - requires at least one
   },
   edit_all_jobs: { 
     label: 'Edit Any Job', 
@@ -93,7 +93,7 @@ export const PERMISSION_DETAILS: Record<string, {
     label: 'Delete Jobs', 
     description: 'Permanently remove jobs (cannot be undone)', 
     category: 'jobs', 
-    required: ['view_assigned_jobs'], 
+    required: ['view_all_jobs', 'view_assigned_jobs'], // OR logic - requires at least one
     warning: true 
   },
   

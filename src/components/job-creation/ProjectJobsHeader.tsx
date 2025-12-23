@@ -9,6 +9,7 @@ import { useTreatments } from "@/hooks/useTreatments";
 import { formatCurrency } from "@/utils/currency";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 interface ProjectJobsHeaderProps {
@@ -32,21 +33,8 @@ export const ProjectJobsHeader = ({
   const { data: treatments = [] } = useTreatments(project?.id);
   const currency = useCurrency();
   const { user } = useAuth();
-  const canEditAllJobs = useHasPermission('edit_all_jobs');
-  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
-  // If both permissions are disabled, no job should be editable
-  // If both are enabled, all jobs are editable
-  // If only "Edit Any Job" is enabled, only jobs created by the user should be editable
-  // If only "Edit Assigned Jobs" is enabled, only assigned jobs should be editable
-  const canEditJob = (!canEditAllJobs && !canEditAssignedJobs) 
-    ? false 
-    : (canEditAllJobs && canEditAssignedJobs) 
-      ? true 
-      : (canEditAllJobs && !canEditAssignedJobs) 
-        ? project?.user_id === user?.id 
-        : (canEditAssignedJobs && !canEditAllJobs) 
-          ? project?.user_id === user?.id 
-          : false;
+  // Use explicit permissions hook for edit checks
+  const { canEditJob } = useCanEditJob(project);
 
   // Calculate total amount from treatments for this specific project
   const totalAmount = treatments

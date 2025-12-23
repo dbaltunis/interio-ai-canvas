@@ -32,6 +32,7 @@ import { useQuoteDiscount } from "@/hooks/useQuoteDiscount";
 import { TWCSubmitDialog } from "@/components/integrations/TWCSubmitDialog";
 import { QuoteProfitSummary } from "@/components/pricing/QuoteProfitSummary";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 interface QuotationTabProps {
   projectId: string;
@@ -94,23 +95,9 @@ export const QuotationTab = ({
   const currentQuote = quoteVersions?.find(q => q.id === quoteId);
   const currentVersion = currentQuote?.version || 1;
   const isEmptyVersion = (rooms?.length || 0) === 0 && quoteId;
-  const { user } = useAuth();
-  const canEditAllJobs = useHasPermission('edit_all_jobs');
-  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
-  // If both permissions are disabled, no job should be editable
-  // If both are enabled, all jobs are editable
-  // If only "Edit Any Job" is enabled, only jobs created by the user should be editable
-  // If only "Edit Assigned Jobs" is enabled, only assigned jobs should be editable
-  const canEditJob = (!canEditAllJobs && !canEditAssignedJobs) 
-    ? false 
-    : (canEditAllJobs && canEditAssignedJobs) 
-      ? true 
-      : (canEditAllJobs && !canEditAssignedJobs) 
-        ? project?.user_id === user?.id 
-        : (canEditAssignedJobs && !canEditAllJobs) 
-          ? project?.user_id === user?.id 
-          : false;
-  const isReadOnly = !canEditJob;
+  // Use explicit permissions hook for edit checks
+  const { canEditJob, isLoading: editPermissionsLoading } = useCanEditJob(project);
+  const isReadOnly = !canEditJob || editPermissionsLoading;
 
   // Fetch client data
   const {

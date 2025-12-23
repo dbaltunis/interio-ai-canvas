@@ -11,8 +11,9 @@ type Project = Tables<"projects">;
 type ProjectInsert = TablesInsert<"projects">;
 type ProjectUpdate = TablesUpdate<"projects">;
 
-export const useProjects = () => {
+export const useProjects = (options?: { enabled?: boolean }) => {
   const { effectiveOwnerId } = useEffectiveAccountOwner();
+  const { enabled = true } = options || {};
   
   return useQuery({
     queryKey: ["projects", effectiveOwnerId],
@@ -30,7 +31,7 @@ export const useProjects = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!effectiveOwnerId,
+    enabled: enabled && !!effectiveOwnerId,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

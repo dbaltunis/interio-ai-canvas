@@ -10,7 +10,7 @@ type Quote = Tables<"quotes">;
 type QuoteInsert = TablesInsert<"quotes">;
 type QuoteUpdate = TablesUpdate<"quotes">;
 
-export const useQuotes = (projectId?: string) => {
+export const useQuotes = (projectId?: string, options?: { enabled?: boolean }) => {
   const { effectiveOwnerId } = useEffectiveAccountOwner();
   
   return useQuery({
@@ -52,7 +52,7 @@ export const useQuotes = (projectId?: string) => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!effectiveOwnerId,
+    enabled: (options?.enabled !== false) && !!effectiveOwnerId,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

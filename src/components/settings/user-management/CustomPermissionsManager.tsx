@@ -51,15 +51,69 @@ export const CustomPermissionsManager = ({ userId, userRole, userName }: CustomP
     try {
       const permission = PERMISSION_DETAILS[permissionId];
       let permissionsToUpdate = [permissionId];
+      let permissionsToDisable: string[] = [];
       
-      // If enabling, also enable required permissions
+      // If enabling, check if required permissions are met (OR logic)
       if (enabled && permission?.required?.length) {
-        const missingRequired = permission.required.filter(
-          req => !userPermissions?.includes(req)
+        // Check if at least one required permission is already enabled (OR logic)
+        const hasAtLeastOneRequired = permission.required.some(
+          req => userPermissions?.includes(req)
         );
-        if (missingRequired.length > 0) {
-          permissionsToUpdate = [...missingRequired, permissionId];
-          toast.info(`Also enabled: ${missingRequired.map(r => PERMISSION_DETAILS[r]?.label).join(', ')}`);
+        
+        if (!hasAtLeastOneRequired) {
+          // If none of the required permissions are enabled, enable the first one
+          // This ensures the dependency is satisfied
+          const firstRequired = permission.required[0];
+          permissionsToUpdate = [firstRequired, permissionId];
+          toast.info(`Also enabled: ${PERMISSION_DETAILS[firstRequired]?.label || firstRequired} (required for ${permission.label})`);
+        }
+      }
+      
+      // If disabling, find and disable permissions that depend on this one
+      if (!enabled) {
+        // Database dependency map (OR logic - at least one required)
+        // This matches the database validation function
+        const dbDependencyMap: Record<string, string[]> = {
+          'create_jobs': ['view_all_jobs', 'view_assigned_jobs'],
+          'delete_jobs': ['view_all_jobs', 'view_assigned_jobs'],
+          'create_clients': ['view_all_clients', 'view_assigned_clients'],
+          'delete_clients': ['view_all_clients', 'view_assigned_clients'],
+          'create_appointments': ['view_all_calendar', 'view_own_calendar'],
+          'delete_appointments': ['view_all_calendar', 'view_own_calendar'],
+          'manage_inventory': ['view_inventory'],
+          'manage_window_treatments': ['view_templates', 'view_inventory'],
+          'manage_settings': ['view_settings']
+        };
+        
+        // Find all permissions that depend on the one being disabled
+        const dependentPermissions = Object.entries(dbDependencyMap)
+          .filter(([dependentKey, requiredPermissions]) => {
+            // Only check permissions that are currently enabled
+            if (!userPermissions?.includes(dependentKey)) return false;
+            
+            // Check if the permission being disabled is in the required list
+            if (!requiredPermissions.includes(permissionId)) return false;
+            
+            // Check if there's an alternative required permission still enabled
+            // (OR logic - need at least one of the required permissions)
+            const otherRequired = requiredPermissions.filter(req => req !== permissionId);
+            const hasAlternative = otherRequired.some(req => {
+              // Check if alternative is in the new permissions list (not being disabled)
+              const willStillBeEnabled = req === permissionId 
+                ? enabled // If it's the same permission, check if it's being enabled
+                : userPermissions?.includes(req) && !permissionsToUpdate.includes(req);
+              return willStillBeEnabled;
+            });
+            
+            // Disable only if no alternative is available
+            return !hasAlternative;
+          })
+          .map(([key]) => key);
+        
+        if (dependentPermissions.length > 0) {
+          permissionsToDisable = dependentPermissions;
+          permissionsToUpdate = [...permissionsToUpdate, ...permissionsToDisable];
+          toast.info(`Also disabling dependent permissions: ${permissionsToDisable.map(p => PERMISSION_DETAILS[p]?.label || p).join(', ')}`);
         }
       }
 
@@ -75,7 +129,8 @@ export const CustomPermissionsManager = ({ userId, userRole, userName }: CustomP
       toast.success("Permission updated");
     } catch (error) {
       console.error("Error updating permissions:", error);
-      toast.error("Failed to update permission");
+      const errorMessage = error instanceof Error ? error.message : "Failed to update permission";
+      toast.error(errorMessage);
     } finally {
       setPendingChanges(prev => {
         const updated = new Set(prev);

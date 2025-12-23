@@ -2,6 +2,7 @@ import { WorkroomDocuments } from "@/components/workroom/WorkroomDocuments";
 import { useProjects } from "@/hooks/useProjects";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 
 interface WorkroomTabProps {
   projectId: string;
@@ -9,24 +10,10 @@ interface WorkroomTabProps {
 
 export const WorkroomTab = ({ projectId }: WorkroomTabProps) => {
   const { data: projects } = useProjects();
-  const { user } = useAuth();
   const project = projects?.find(p => p.id === projectId);
-  const canEditAllJobs = useHasPermission('edit_all_jobs');
-  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
-  // If both permissions are disabled, no job should be editable
-  // If both are enabled, all jobs are editable
-  // If only "Edit Any Job" is enabled, only jobs created by the user should be editable
-  // If only "Edit Assigned Jobs" is enabled, only assigned jobs should be editable
-  const canEditJob = (!canEditAllJobs && !canEditAssignedJobs) 
-    ? false 
-    : (canEditAllJobs && canEditAssignedJobs) 
-      ? true 
-      : (canEditAllJobs && !canEditAssignedJobs) 
-        ? project?.user_id === user?.id 
-        : (canEditAssignedJobs && !canEditAllJobs) 
-          ? project?.user_id === user?.id 
-          : false;
-  const isReadOnly = !canEditJob;
+  // Use explicit permissions hook for edit checks
+  const { canEditJob, isLoading: editPermissionsLoading } = useCanEditJob(project);
+  const isReadOnly = !canEditJob || editPermissionsLoading;
 
   return (
     <main className="space-y-4">

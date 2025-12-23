@@ -3,6 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Users, FolderOpen, Calendar, Plus, Settings, MessageCircle, ShoppingCart, Package } from "lucide-react";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface CreateActionDialogProps {
   open: boolean;
@@ -21,6 +26,31 @@ export const CreateActionDialog = ({
   onOpenSettings,
   onOpenTeamHub 
 }: CreateActionDialogProps) => {
+  const { user } = useAuth();
+  const { isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[CreateActionDialog] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+  
+  // Check if create_jobs is explicitly in user_permissions table (ignores role-based)
+  const hasCreateJobsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'create_jobs'
+  ) ?? false;
+  const { toast } = useToast();
+  
   const handleAction = (action: string) => {
     onOpenChange(false);
     // Navigate to the appropriate tab and trigger creation
@@ -32,6 +62,15 @@ export const CreateActionDialog = ({
         createButton?.click();
       }, 150);
     } else if (action === "project") {
+      // Check permission before triggering creation
+      if (!hasCreateJobsPermission) {
+        toast({
+          title: "Permission Denied",
+          description: "You do not have permission to create jobs.",
+          variant: "destructive",
+        });
+        return;
+      }
       onTabChange("projects");
       setTimeout(() => {
         const createButton = document.querySelector('[data-create-project]') as HTMLElement;
@@ -79,19 +118,21 @@ export const CreateActionDialog = ({
             </div>
           </Button>
           
-          <Button
-            onClick={() => handleAction("project")}
-            variant="outline"
-            className="h-16 justify-start gap-4 text-left"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <FolderOpen className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <div className="font-semibold">New Job</div>
-              <div className="text-sm text-muted-foreground">Create a new project</div>
-            </div>
-          </Button>
+          {hasCreateJobsPermission && (
+            <Button
+              onClick={() => handleAction("project")}
+              variant="outline"
+              className="h-16 justify-start gap-4 text-left"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <FolderOpen className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <div className="font-semibold">New Job</div>
+                <div className="text-sm text-muted-foreground">Create a new project</div>
+              </div>
+            </Button>
+          )}
           
           <Button
             onClick={() => handleAction("event")}

@@ -38,8 +38,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useJobDuplicates } from "@/hooks/useJobDuplicates";
 import { DuplicateJobIndicator } from "./DuplicateJobIndicator";
 import { DuplicateJobsSection } from "./DuplicateJobsSection";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useQuotes } from "@/hooks/useQuotes";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useUserRole } from "@/hooks/useUserRole";
+import { Card, CardContent } from "@/components/ui/card";
+import { Shield } from "lucide-react";
 
 
 interface JobDetailPageProps {
@@ -48,11 +53,13 @@ interface JobDetailPageProps {
 }
 
 export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const initialSection = searchParams.get('section');
   const [activeTab, setActiveTab] = useState(() => {
     if (initialSection === 'quotation') return 'quotation';
     if (initialSection === 'rooms') return 'rooms';
+    // workroom permission will be checked later via useEffect
     if (initialSection === 'workroom') return 'workroom';
     return 'details';
   });
@@ -61,6 +68,82 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Get user role to check if they're Owner/System Owner/Admin
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  
+  // Check view permissions explicitly
+  const { isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[JobDetailPage] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+  
+  const hasViewAllJobsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_all_jobs'
+  ) ?? false;
+  const hasViewAssignedJobsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_assigned_jobs'
+  ) ?? false;
+  
+  // Check if user has ANY explicit permissions in the user_permissions table
+  // If they do, we should respect ALL permission settings (including missing ones = disabled)
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+  
+  // Check if user has explicit job view permissions ENABLED (in the table)
+  const hasExplicitViewPermissions = hasViewAllJobsPermission || hasViewAssignedJobsPermission;
+  
+  // Determine if user can view jobs and what scope they have
+  // - Owners/System Owners: Only bypass restrictions if NO explicit permissions exist in table at all
+  //   If ANY explicit permissions exist in table, respect ALL settings (missing = disabled)
+  // - Admins and Regular users: Always check explicit permissions
+  const canViewJobsExplicit = isOwner && !hasAnyExplicitPermissions 
+    ? true // Owner with no explicit permissions in table at all = full access
+    : hasViewAllJobsPermission || hasViewAssignedJobsPermission; // Otherwise respect explicit permissions (enabled ones)
+  
+  // Filter by assignment if:
+  // - User is not an Owner, OR
+  // - Owner has ANY explicit permissions in table (respect all settings)
+  // - AND they only have view_assigned_jobs enabled (not view_all_jobs)
+  const shouldFilterByAssignment = (!isOwner || hasAnyExplicitPermissions) && !hasViewAllJobsPermission && hasViewAssignedJobsPermission;
+  
+  // Check if delete_jobs is explicitly in user_permissions table (enabled)
+  const hasDeleteJobsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'delete_jobs'
+  ) ?? false;
+  
+  // Owners/System Owners: Only bypass restrictions if NO explicit permissions exist in table at all
+  // If ANY explicit permissions exist in table, respect ALL settings (missing = disabled)
+  // Admins and Regular users: Always check explicit permissions
+  const canDeleteJobsExplicit = isOwner && !hasAnyExplicitPermissions 
+    ? true // Owner with no explicit permissions in table at all = full access
+    : hasDeleteJobsPermission; // Otherwise respect explicit permissions (enabled ones)
+  
+  // Check if view_workroom is explicitly in user_permissions table (enabled)
+  const hasViewWorkroomPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_workroom'
+  ) ?? false;
+  
+  // Owners/System Owners: Only bypass restrictions if NO explicit permissions exist in table at all
+  // If ANY explicit permissions exist in table, respect ALL settings (missing = disabled)
+  // Admins and Regular users: Always check explicit permissions
+  const canViewWorkroomExplicit = isOwner && !hasAnyExplicitPermissions 
+    ? true // Owner with no explicit permissions in table at all = full access
+    : hasViewWorkroomPermission; // Otherwise respect explicit permissions (enabled ones)
   
   // Use useProject(id) instead of useProjects() to avoid filtering issues
   // This lets RLS handle permissions properly, especially for team members
@@ -77,14 +160,75 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const { formattedDate: formattedCreatedDate } = useFormattedDate(project?.created_at, false);
   
   // Show loading skeleton while data is being fetched
-  if (projectLoading) {
+  if (projectLoading || permissionsLoading || roleLoading || explicitPermissions === undefined || userRoleData === undefined) {
     return <JobSkeleton />;
+  }
+
+  // Check permissions - block access if user doesn't have view permissions
+  if (!canViewJobsExplicit) {
+    return (
+      <div className="min-h-screen flex items-center justify-center animate-fade-in">
+        <Card className="max-w-md">
+          <CardContent className="text-center p-8">
+            <Shield className="h-12 w-12 mx-auto mb-4 text-destructive" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">Access Denied</h2>
+            <p className="text-muted-foreground mb-4">
+              You do not have permission to view jobs. Please contact your administrator.
+            </p>
+            <Button onClick={onBack} variant="outline">
+              Go Back
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  // If user only has view_assigned_jobs permission, check if this job is assigned to them
+  // Job is assigned if:
+  // 1. project.user_id === current_user.id (created by user), OR
+  // 2. project.client_id has a client with assigned_to === current_user.id (client assigned to user)
+  if (shouldFilterByAssignment && project && user) {
+    const isCreatedByUser = project.user_id === user.id;
+    
+    // Check if client is assigned to user
+    const client = project.client_id ? clients?.find((c: any) => c.id === project.client_id) : null;
+    const isClientAssignedToUser = client?.assigned_to === user.id;
+    
+    const isAssigned = isCreatedByUser || isClientAssignedToUser;
+    
+    if (!isAssigned) {
+      return (
+        <div className="min-h-screen flex items-center justify-center animate-fade-in">
+          <Card className="max-w-md">
+            <CardContent className="text-center p-8">
+              <Shield className="h-12 w-12 mx-auto mb-4 text-destructive" />
+              <h2 className="text-xl font-semibold text-foreground mb-2">Access Denied</h2>
+              <p className="text-muted-foreground mb-4">
+                You can only view jobs assigned to you or jobs for clients assigned to you. This job is not assigned to your account.
+              </p>
+              <Button onClick={onBack} variant="outline">
+                Go Back
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
   }
 
   // Only show 404 if we've confirmed the project doesn't exist after loading
   if (!project) {
     return <JobNotFound onBack={onBack} />;
   }
+
+  // If user tries to access workroom tab but doesn't have permission, redirect to details
+  // (This handles cases where user navigates directly via URL)
+  useEffect(() => {
+    if (activeTab === 'workroom' && !canViewWorkroomExplicit && !permissionsLoading && !roleLoading) {
+      setActiveTab('details');
+    }
+  }, [activeTab, canViewWorkroomExplicit, permissionsLoading, roleLoading]);
 
   const handleUpdateProject = async (projectData: any) => {
     await updateProject.mutateAsync(projectData);
@@ -593,6 +737,16 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   };
 
   const handleDeleteJob = async () => {
+    // Check permission before deleting
+    if (!canDeleteJobsExplicit) {
+      toast({
+        title: "Permission Denied",
+        description: "You do not have permission to delete jobs.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       if (!project) return;
       
@@ -653,10 +807,10 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   };
 
   const allTabs = [
-    { id: "details", label: "Client", mobileLabel: "Client", icon: User },
-    { id: "rooms", label: "Project", mobileLabel: "Project", icon: Package },
-    { id: "quotation", label: "Quote", mobileLabel: "Quote", icon: FileText },
-    { id: "workroom", label: "Workroom", mobileLabel: "Work", icon: Wrench },
+    { id: "details", label: "Client", mobileLabel: "Client", icon: User, disabled: false },
+    { id: "rooms", label: "Project", mobileLabel: "Project", icon: Package, disabled: false },
+    { id: "quotation", label: "Quote", mobileLabel: "Quote", icon: FileText, disabled: false },
+    { id: "workroom", label: "Workroom", mobileLabel: "Work", icon: Wrench, disabled: !canViewWorkroomExplicit },
   ];
 
   const mainTabs = allTabs.slice(0, 3);
@@ -708,6 +862,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 currentStatus={project.status}
                 jobType="project"
                 jobId={project.id}
+                project={project}
                 onStatusChange={(newStatus) => {
                   // Status updated via mutation
                 }}
@@ -726,12 +881,12 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                     onClick: () => setShowArchiveDialog(true),
                     variant: 'warning'
                   },
-                  {
+                  ...(canDeleteJobsExplicit ? [{
                     label: 'Delete Job',
                     icon: <Trash2 className="h-4 w-4" />,
                     onClick: () => setShowDeleteDialog(true),
-                    variant: 'destructive'
-                  }
+                    variant: 'destructive' as const
+                  }] : [])
                 ]}
               />
             </div>
@@ -750,17 +905,20 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 {allTabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
+                  const isDisabled = tab.disabled ?? false;
                   
                   return (
                     <Button
                       key={tab.id}
                       variant="ghost"
-                      onClick={() => setActiveTab(tab.id)}
+                      disabled={isDisabled}
+                      onClick={() => !isDisabled && setActiveTab(tab.id)}
                       className={`hidden lg:flex items-center gap-1.5 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 rounded-none whitespace-nowrap shrink-0 ${
                         isActive
                           ? "border-primary text-foreground bg-primary/5 font-semibold"
                           : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"
-                      }`}
+                      } ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                      title={isDisabled ? "You don't have permission to view this tab" : undefined}
                     >
                       <Icon className="h-4 w-4" />
                       <span>{tab.label}</span>
@@ -772,16 +930,19 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                 {mainTabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
+                  const isDisabled = tab.disabled ?? false;
                   return (
                     <Button
                       key={tab.id}
                       variant="ghost"
-                      onClick={() => setActiveTab(tab.id)}
+                      disabled={isDisabled}
+                      onClick={() => !isDisabled && setActiveTab(tab.id)}
                       className={`flex lg:hidden items-center gap-1.5 px-3 sm:px-4 py-2.5 sm:py-3 transition-all duration-200 text-xs sm:text-sm font-medium border-b-2 rounded-none whitespace-nowrap shrink-0 ${
                         isActive
                           ? "border-primary text-foreground bg-primary/5 font-semibold"
                           : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/50"
-                      }`}
+                      } ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                      title={isDisabled ? "You don't have permission to view this tab" : undefined}
                     >
                       <Icon className="h-4 w-4" />
                       <span className="hidden sm:inline">{tab.label}</span>
@@ -809,11 +970,15 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                     {moreTabs.map((tab) => {
                       const Icon = tab.icon;
                       const isActive = activeTab === tab.id;
+                      const isDisabled = tab.disabled ?? false;
                       return (
                         <DropdownMenuItem
                           key={tab.id}
-                          onClick={() => setActiveTab(tab.id)}
-                          className={`flex items-center gap-3 cursor-pointer py-2.5 ${
+                          onClick={() => !isDisabled && setActiveTab(tab.id)}
+                          disabled={isDisabled}
+                          className={`flex items-center gap-3 py-2.5 ${
+                            isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                          } ${
                             isActive ? "bg-primary/10 text-foreground font-semibold" : ""
                           }`}
                         >
@@ -866,9 +1031,21 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </TabsContent>
 
               <TabsContent value="workroom" className="mt-0">
-                <div className="modern-card p-6">
-                  <WorkroomTab projectId={jobId} />
-                </div>
+                {canViewWorkroomExplicit ? (
+                  <div className="modern-card p-6">
+                    <WorkroomTab projectId={jobId} />
+                  </div>
+                ) : (
+                  <div className="modern-card p-6">
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <Shield className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                      <h3 className="text-lg font-semibold text-foreground mb-2">Access Denied</h3>
+                      <p className="text-muted-foreground">
+                        You don't have permission to view the workroom. Please contact your administrator.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </TabsContent>
             </div>
           </div>

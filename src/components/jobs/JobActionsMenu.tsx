@@ -70,6 +70,37 @@ export const JobActionsMenu = ({
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { data: userRoleData } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  
+  // Check explicit delete permission
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[JobActionsMenu] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user,
+  });
+  
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+  const hasDeleteJobsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'delete_jobs'
+  ) ?? false;
+  
+  const canDeleteJobsExplicit = isOwner && !hasAnyExplicitPermissions 
+    ? true // Owner with no explicit permissions in table at all = full access
+    : hasDeleteJobsPermission; // Otherwise respect explicit permissions (enabled ones)
+  
   const deleteQuote = useDeleteQuote();
   const { refetch } = useQuotes();
 
@@ -90,6 +121,16 @@ export const JobActionsMenu = ({
   };
 
   const handleDeleteJob = async () => {
+    // Check permission before deleting
+    if (!canDeleteJobsExplicit) {
+      toast({
+        title: "Permission Denied",
+        description: "You do not have permission to delete jobs.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       await deleteQuote.mutateAsync(quote.id);
       
@@ -259,13 +300,15 @@ export const JobActionsMenu = ({
             Archive Job
           </DropdownMenuItem>
           
-          <DropdownMenuItem 
-            onClick={() => setShowDeleteDialog(true)}
-            className="text-destructive focus:text-destructive"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete Job
-          </DropdownMenuItem>
+          {canDeleteJobsExplicit && (
+            <DropdownMenuItem 
+              onClick={() => setShowDeleteDialog(true)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete Job
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

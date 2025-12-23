@@ -15,6 +15,7 @@ import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
 import { supabase } from "@/integrations/supabase/client";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 
 interface RoomsTabProps {
   projectId: string;
@@ -49,23 +50,9 @@ export const RoomsTab = ({
   const { data: markupSettings } = useMarkupSettings();
   const createRoom = useCreateRoom();
   const project = projects?.find(p => p.id === projectId);
-  const { user } = useAuth();
-  const canEditAllJobs = useHasPermission('edit_all_jobs');
-  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
-  // If both permissions are disabled, no job should be editable
-  // If both are enabled, all jobs are editable
-  // If only "Edit Any Job" is enabled, only jobs created by the user should be editable
-  // If only "Edit Assigned Jobs" is enabled, only assigned jobs should be editable
-  const canEditJob = (!canEditAllJobs && !canEditAssignedJobs) 
-    ? false 
-    : (canEditAllJobs && canEditAssignedJobs) 
-      ? true 
-      : (canEditAllJobs && !canEditAssignedJobs) 
-        ? project?.user_id === user?.id 
-        : (canEditAssignedJobs && !canEditAllJobs) 
-          ? project?.user_id === user?.id 
-          : false;
-  const isReadOnly = !canEditJob;
+  // Use explicit permissions hook for edit checks
+  const { canEditJob, isLoading: editPermissionsLoading } = useCanEditJob(project);
+  const isReadOnly = !canEditJob || editPermissionsLoading;
 
   // Fetch all room products for this project
   const roomIds = rooms.map(r => r.id);

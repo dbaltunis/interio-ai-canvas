@@ -7,28 +7,15 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 
 export const useJobHandlers = (project: any) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const projectId = project?.project_id || project?.id;
   const clientId = project?.client_id;
-  const { user } = useAuth();
-  const canEditAllJobs = useHasPermission('edit_all_jobs');
-  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
-  // If both permissions are disabled, no job should be editable
-  // If both are enabled, all jobs are editable
-  // If only "Edit Any Job" is enabled, only jobs created by the user should be editable
-  // If only "Edit Assigned Jobs" is enabled, only assigned jobs should be editable
-  const canEditJob = (!canEditAllJobs && !canEditAssignedJobs) 
-    ? false 
-    : (canEditAllJobs && canEditAssignedJobs) 
-      ? true 
-      : (canEditAllJobs && !canEditAssignedJobs) 
-        ? project?.user_id === user?.id 
-        : (canEditAssignedJobs && !canEditAllJobs) 
-          ? project?.user_id === user?.id 
-          : false;
+  // Use explicit permissions hook for edit checks
+  const { canEditJob } = useCanEditJob(project);
   
   const { data: rooms, isLoading: roomsLoading } = useRooms(projectId);
   const { data: allSurfaces } = useSurfaces(projectId);
