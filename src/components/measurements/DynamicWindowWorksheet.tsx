@@ -1878,7 +1878,10 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
               waste_percent: selectedTemplate?.waste_percent,
               manufacturing_type: selectedTemplate?.manufacturing_type,
               // CRITICAL: Include heading IDs for curtain templates
-              selected_heading_ids: selectedTemplate?.selected_heading_ids || []
+              selected_heading_ids: selectedTemplate?.selected_heading_ids || [],
+              // ✅ FIX: Save template image URL for display in summary cards
+              image_url: selectedTemplate?.image_url || selectedTemplate?.display_image_url,
+              display_image_url: selectedTemplate?.display_image_url || selectedTemplate?.image_url
             },
             treatment_type: specificTreatmentType,
             treatment_category: specificTreatmentType, // CRITICAL: Use specific type, not generic
