@@ -1001,6 +1001,9 @@ export const DynamicCurtainOptions = ({
             case 'per-drop':
               methodLabel = '/drop';
               break;
+            case 'per-panel':
+              methodLabel = '/panel';
+              break;
             case 'per-width':
               methodLabel = '/width';
               break;
