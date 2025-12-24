@@ -3,18 +3,22 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { Mail, Phone, User, Building2, MoreHorizontal, Star, Clock, FileText, Trash2, Calendar, FolderKanban } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { formatDistanceToNow, isPast } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { useIsTablet } from "@/hooks/use-tablet";
 import { ClientDetailDrawer } from "./ClientDetailDrawer";
 import { useDeleteClient } from "@/hooks/useClients";
 import { toast } from "sonner";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useClientFilesCount } from "@/hooks/useClientFilesCount";
+import { BulkActionsBar } from "./BulkActionsBar";
+import { CampaignWizard } from "@/components/campaigns/CampaignWizard";
+import { useClientSelection, SelectedClient } from "@/hooks/useClientSelection";
 
 interface Client {
   id: string;
@@ -56,12 +60,62 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [showCampaignWizard, setShowCampaignWizard] = useState(false);
   const deleteClient = useDeleteClient();
   const { formatCurrency } = useFormattedCurrency();
+  
+  // Multi-selection
+  const {
+    selectedClients,
+    selectedCount,
+    selectedWithEmails,
+    toggleClient,
+    selectAll,
+    clearSelection,
+    isSelected,
+  } = useClientSelection();
   
   // Get client IDs for files count query
   const clientIds = useMemo(() => clients?.map(c => c.id) || [], [clients]);
   const { data: filesCount } = useClientFilesCount(clientIds);
+
+  // Convert clients for selection
+  const selectableClients: SelectedClient[] = useMemo(() => 
+    clients?.map(c => ({
+      id: c.id,
+      name: c.name,
+      email: c.email,
+      company_name: c.company_name,
+      funnel_stage: c.funnel_stage,
+    })) || [], 
+    [clients]
+  );
+
+  const allSelected = selectedCount === clients?.length && clients?.length > 0;
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      clearSelection();
+    } else {
+      selectAll(selectableClients);
+    }
+  };
+
+  const handleCheckboxClick = (e: React.MouseEvent, client: Client) => {
+    e.stopPropagation();
+    toggleClient({
+      id: client.id,
+      name: client.name,
+      email: client.email,
+      company_name: client.company_name,
+      funnel_stage: client.funnel_stage,
+    });
+  };
+
+  const handleExportSelected = () => {
+    // Export logic - for now just show a toast
+    toast.success(`Exporting ${selectedCount} clients...`);
+  };
 
   const handleDeleteClick = (e: React.MouseEvent, client: Client) => {
     e.stopPropagation();
@@ -170,7 +224,14 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
              <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-border/50">
-                  <TableHead className="text-muted-foreground font-medium w-16">#</TableHead>
+                  <TableHead className="w-12">
+                    <Checkbox 
+                      checked={allSelected}
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all"
+                    />
+                  </TableHead>
+                  <TableHead className="text-muted-foreground font-medium w-12">#</TableHead>
                   <TableHead className="text-muted-foreground font-medium">Client</TableHead>
                   <TableHead className="text-muted-foreground font-medium">Stage</TableHead>
                   {!isTablet && <TableHead className="text-muted-foreground font-medium">Projects</TableHead>}
@@ -185,13 +246,21 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                   const displayName = client.client_type === 'B2B' ? client.company_name : client.name;
                   const initials = (displayName || 'U').substring(0, 2).toUpperCase();
                   const avatarColor = getClientAvatarColor(displayName || 'Unknown');
+                  const clientIsSelected = isSelected(client.id);
                   
                   return (
                   <TableRow 
                     key={client.id} 
-                    className="hover:bg-muted/50 cursor-pointer border-border/50"
+                    className={`hover:bg-muted/50 cursor-pointer border-border/50 ${clientIsSelected ? 'bg-primary/5' : ''}`}
                     onClick={() => handleClientClick(client)}
                   >
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Checkbox 
+                        checked={clientIsSelected}
+                        onCheckedChange={() => handleCheckboxClick({ stopPropagation: () => {} } as any, client)}
+                        onClick={(e) => handleCheckboxClick(e, client)}
+                      />
+                    </TableCell>
                     <TableCell className="text-muted-foreground font-medium">
                       {index + 1}
                     </TableCell>
@@ -361,6 +430,23 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Actions Bar */}
+      <BulkActionsBar
+        selectedCount={selectedCount}
+        selectedWithEmailsCount={selectedWithEmails.length}
+        onStartCampaign={() => setShowCampaignWizard(true)}
+        onExport={handleExportSelected}
+        onClearSelection={clearSelection}
+      />
+
+      {/* Campaign Wizard */}
+      <CampaignWizard
+        open={showCampaignWizard}
+        onOpenChange={setShowCampaignWizard}
+        selectedClients={selectedClients}
+        onComplete={clearSelection}
+      />
     </Card>
   );
 };

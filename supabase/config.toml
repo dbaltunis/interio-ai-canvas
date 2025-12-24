@@ -131,3 +131,9 @@ verify_jwt = false
 
 [functions.import-homekaara-fabrics]
 verify_jwt = false
+
+[functions.import-shopify-history]
+verify_jwt = true
+
+[functions.campaign-assistant]
+verify_jwt = true
