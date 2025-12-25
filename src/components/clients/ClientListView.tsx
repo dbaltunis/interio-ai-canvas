@@ -52,9 +52,10 @@ interface ClientListViewProps {
   onSearchChange: (term: string) => void;
   onClientClick: (client: Client) => void;
   isLoading: boolean;
+  canDeleteClients?: boolean;
 }
 
-export const ClientListView = ({ clients, onClientClick, isLoading }: ClientListViewProps) => {
+export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteClients = false }: ClientListViewProps) => {
   const isTablet = useIsTablet();
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -124,6 +125,13 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
   };
 
   const handleConfirmDelete = () => {
+    if (!canDeleteClients) {
+      toast.error("You don't have permission to delete clients");
+      setDeleteDialogOpen(false);
+      setClientToDelete(null);
+      return;
+    }
+
     if (clientToDelete) {
       deleteClient.mutate(clientToDelete.id, {
         onSuccess: () => {
@@ -371,14 +379,18 @@ export const ClientListView = ({ clients, onClientClick, isLoading }: ClientList
                             <Calendar className="mr-2 h-4 w-4" />
                             Schedule Meeting
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            onClick={(e) => handleDeleteClick(e, client)}
-                            className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Client
-                          </DropdownMenuItem>
+                          {canDeleteClients && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                onClick={(e) => handleDeleteClick(e, client)}
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Client
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

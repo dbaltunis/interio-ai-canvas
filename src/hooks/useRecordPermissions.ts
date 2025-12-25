@@ -6,7 +6,6 @@ export const useRecordPermissions = () => {
   const canViewAllClients = useHasPermission('view_all_clients');
   const canViewAssignedJobs = useHasPermission('view_assigned_jobs');
   const canViewAllJobs = useHasPermission('view_all_jobs');
-  const canViewProjects = useHasPermission('view_projects');
   const canViewAllProjects = useHasPermission('view_all_jobs'); // projects inherit from jobs
 
   // Edit permissions - use correct permission names
@@ -14,7 +13,6 @@ export const useRecordPermissions = () => {
   const canEditAllClients = useHasPermission('edit_all_clients');
   const canEditOwnJobs = useHasPermission('edit_own_jobs');
   const canEditAllJobs = useHasPermission('edit_all_jobs');
-  const canEditProjects = useHasPermission('edit_projects');
   const canEditAllProjects = useHasPermission('edit_all_jobs'); // projects inherit from jobs
 
   // Helper functions to check record-specific permissions
@@ -44,13 +42,13 @@ export const useRecordPermissions = () => {
 
   const canViewProject = (projectUserId?: string, currentUserId?: string) => {
     if (canViewAllProjects) return true;
-    if (canViewProjects && projectUserId === currentUserId) return true;
+    if (canViewAssignedJobs && projectUserId === currentUserId) return true;
     return false;
   };
 
   const canEditProject = (projectUserId?: string, currentUserId?: string) => {
     if (canEditAllProjects) return true;
-    if (canEditProjects && projectUserId === currentUserId) return true;
+    if (canEditOwnJobs && projectUserId === currentUserId) return true;
     return false;
   };
 
@@ -60,15 +58,15 @@ export const useRecordPermissions = () => {
     canViewAllClients,
     canViewOwnJobs: canViewAssignedJobs,
     canViewAllJobs,
-    canViewOwnProjects: canViewProjects,
+    canViewOwnProjects: canViewAssignedJobs,
     canViewAllProjects,
     
     // Edit permissions (keep backward compatible names in return)
     canEditOwnClients: canEditAssignedClients,
     canEditAllClients,
-    canEditOwnJobs: canEditAssignedJobs,
+    canEditOwnJobs: canEditOwnJobs,
     canEditAllJobs,
-    canEditOwnProjects: canEditProjects,
+    canEditOwnProjects: canEditOwnJobs,
     canEditAllProjects,
 
     // Helper functions

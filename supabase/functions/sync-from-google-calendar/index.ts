@@ -31,14 +31,47 @@ serve(async (req) => {
 
     console.log('Syncing from Google Calendar for user:', user.id);
 
-    // Get the Google Calendar integration
-    const { data: integration, error: integrationError } = await supabase
+    // Get the Google Calendar integration - first try user's own integration
+    let { data: integration, error: integrationError } = await supabase
       .from('integration_settings')
       .select('*')
       .eq('user_id', user.id)
       .eq('integration_type', 'google_calendar')
       .eq('active', true)
       .single();
+
+    // If no integration found for user, check account owner's integration
+    if (integrationError || !integration) {
+      console.log('No integration found for user, checking account owner...');
+      
+      // Get user's profile to find account owner
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('parent_account_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profile?.parent_account_id) {
+        console.log('User has parent account, checking owner integration:', profile.parent_account_id);
+        
+        // Try to get account owner's integration
+        const { data: ownerIntegration, error: ownerError } = await supabase
+          .from('integration_settings')
+          .select('*')
+          .eq('user_id', profile.parent_account_id)
+          .eq('integration_type', 'google_calendar')
+          .eq('active', true)
+          .single();
+
+        if (ownerIntegration) {
+          console.log('Found account owner integration:', ownerIntegration.id);
+          integration = ownerIntegration;
+          integrationError = null;
+        } else {
+          console.error('Account owner integration not found:', ownerError);
+        }
+      }
+    }
 
     if (integrationError || !integration) {
       console.error('Integration not found:', integrationError);

@@ -13,9 +13,10 @@ import { FileViewerDialog } from "./FileViewerDialog";
 interface ClientFilesManagerProps {
   clientId: string;
   userId: string;
+  canEditClient?: boolean;
 }
 
-export const ClientFilesManager = ({ clientId, userId }: ClientFilesManagerProps) => {
+export const ClientFilesManager = ({ clientId, userId, canEditClient = true }: ClientFilesManagerProps) => {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("none");
   const [filterProjectId, setFilterProjectId] = useState<string>("all");
@@ -166,6 +167,7 @@ export const ClientFilesManager = ({ clientId, userId }: ClientFilesManagerProps
                 multiple
                 onChange={handleFileSelect}
                 className="w-full text-sm"
+                disabled={!canEditClient}
               />
               {selectedFiles && selectedFiles.length > 0 && (
                 <div className="mt-2 flex items-center gap-2 text-sm text-accent">
@@ -194,7 +196,7 @@ export const ClientFilesManager = ({ clientId, userId }: ClientFilesManagerProps
                     : projects?.find(p => p.id === value)?.name || "Selected Project";
                   toast.success(`Linked to: ${projectName}`);
                 }}
-                disabled={!selectedFiles || selectedFiles.length === 0}
+                disabled={!canEditClient || !selectedFiles || selectedFiles.length === 0}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="General (No Project)" />
@@ -229,7 +231,7 @@ export const ClientFilesManager = ({ clientId, userId }: ClientFilesManagerProps
             <div className="ml-8">
               <Button
                 onClick={handleUpload}
-                disabled={!selectedFiles || uploadFile.isPending}
+                disabled={!canEditClient || !selectedFiles || uploadFile.isPending}
                 size="lg"
                 className="w-full sm:w-auto px-8"
               >
@@ -313,6 +315,7 @@ export const ClientFilesManager = ({ clientId, userId }: ClientFilesManagerProps
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleDelete(file)}
+                                disabled={!canEditClient}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>

@@ -79,11 +79,16 @@ export const CalendarSyncToolbar = ({
 
   // Auto-sync interval - every 5 minutes when enabled
   useEffect(() => {
-    if (!isConnected || !googleSyncEnabled) return;
+    // Don't sync if not connected or sync is disabled
+    if (!isConnected || !googleSyncEnabled) {
+      return;
+    }
 
-    // Sync immediately on mount
+    // Sync immediately on mount if needed
     const lastSyncTime = integration?.last_sync;
-    if (!lastSyncTime || Date.now() - new Date(lastSyncTime).getTime() > 5 * 60 * 1000) {
+    const shouldSyncNow = !lastSyncTime || Date.now() - new Date(lastSyncTime).getTime() > 5 * 60 * 1000;
+    
+    if (shouldSyncNow) {
       console.log('Initial auto-sync triggered');
       syncFromGoogle();
       syncAllToGoogle();
@@ -91,13 +96,16 @@ export const CalendarSyncToolbar = ({
 
     // Set up interval for background sync every 5 minutes
     const interval = setInterval(() => {
-      console.log('Background auto-sync triggered');
-      syncFromGoogle();
-      syncAllToGoogle();
+      // Double-check connection before syncing
+      if (isConnected && googleSyncEnabled) {
+        console.log('Background auto-sync triggered');
+        syncFromGoogle();
+        syncAllToGoogle();
+      }
     }, 5 * 60 * 1000); // 5 minutes
 
     return () => clearInterval(interval);
-  }, [isConnected, googleSyncEnabled, syncFromGoogle, syncAllToGoogle]);
+  }, [isConnected, googleSyncEnabled, integration?.last_sync, syncFromGoogle, syncAllToGoogle]);
 
   const isMobile = useIsMobile();
   const isDesktop = !isMobile && !isTablet;

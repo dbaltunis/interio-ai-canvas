@@ -14,12 +14,14 @@ interface EnhancedClientEmailHistoryProps {
   clientId: string;
   clientEmail?: string;
   onComposeEmail?: () => void;
+  canEditClient?: boolean;
 }
 
 export const EnhancedClientEmailHistory = ({ 
   clientId, 
   clientEmail, 
-  onComposeEmail 
+  onComposeEmail,
+  canEditClient = true
 }: EnhancedClientEmailHistoryProps) => {
   const { data: emails, isLoading } = useClientEmails(clientId);
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
@@ -198,6 +200,7 @@ export const EnhancedClientEmailHistory = ({
                     variant="outline" 
                     className="mt-2 border-orange-300 hover:bg-orange-100"
                     onClick={handleComposeClick}
+                    disabled={!canEditClient}
                   >
                     <Mail className="h-4 w-4 mr-2" />
                     Send Follow-up
@@ -214,7 +217,7 @@ export const EnhancedClientEmailHistory = ({
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Email History</CardTitle>
           {clientEmail && onComposeEmail && (
-            <Button onClick={handleComposeClick} size="sm">
+            <Button onClick={handleComposeClick} size="sm" disabled={!canEditClient}>
               <Mail className="h-4 w-4 mr-2" />
               Compose Email
             </Button>
@@ -226,7 +229,7 @@ export const EnhancedClientEmailHistory = ({
               <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground mb-4">No emails sent yet</p>
               {clientEmail && onComposeEmail && (
-                <Button onClick={handleComposeClick} variant="outline">
+                <Button onClick={handleComposeClick} variant="outline" disabled={!canEditClient}>
                   <Mail className="h-4 w-4 mr-2" />
                   Send First Email
                 </Button>

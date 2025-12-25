@@ -42,7 +42,7 @@ export const useTeamMembers = () => {
       // 2. Team members (parent_account_id = accountOwnerId)
       const { data: profiles, error } = await supabase
         .from("user_profiles")
-        .select("user_id, display_name, role, is_active, phone_number, avatar_url, created_at, parent_account_id, email")
+        .select("user_id, display_name, role, is_active, phone_number, avatar_url, created_at, parent_account_id")
         .or(`user_id.eq.${accountOwnerId},parent_account_id.eq.${accountOwnerId}`)
         .order("created_at", { ascending: false });
 
@@ -55,7 +55,7 @@ export const useTeamMembers = () => {
         .map((p) => ({
           id: p.user_id,
           name: p.display_name,
-          email: p.user_id === user.id ? (user.email ?? p.email ?? "") : (p.email ?? "Hidden"),
+          email: p.user_id === user.id ? (user.email ?? "") : "Hidden",
           role: p.role || "Staff",
           phone: (p as any).phone_number || undefined,
           active: p.is_active,

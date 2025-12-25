@@ -13,13 +13,15 @@ interface MeasurementsListProps {
   projectId?: string;
   onViewMeasurement: (measurement: any) => void;
   onEditMeasurement: (measurement: any) => void;
+  canEditClient?: boolean;
 }
 
 export const MeasurementsList = ({ 
   clientId, 
   projectId, 
   onViewMeasurement, 
-  onEditMeasurement 
+  onEditMeasurement,
+  canEditClient = true
 }: MeasurementsListProps) => {
   const { data: measurements = [] } = useClientMeasurements(clientId);
   const { data: rooms = [] } = useRooms(projectId);
@@ -103,11 +105,13 @@ export const MeasurementsList = ({
                   size="sm" 
                   variant="ghost"
                   onClick={() => onEditMeasurement(measurement)}
+                  disabled={!canEditClient}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
                 <Button 
-                  size="sm" 
+                  size="sm"
+                  disabled={!canEditClient} 
                   variant="ghost"
                   onClick={() => handleDeleteMeasurement(measurement.id)}
                   className="text-destructive hover:text-destructive/80"

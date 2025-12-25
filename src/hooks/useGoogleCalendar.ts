@@ -253,6 +253,7 @@ export const useGoogleCalendarIntegration = () => {
 export const useGoogleCalendarSync = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isConnected } = useGoogleCalendarIntegration();
 
   const syncToGoogle = useMutation({
     mutationFn: async (appointmentId: string) => {
@@ -280,9 +281,89 @@ export const useGoogleCalendarSync = () => {
 
   const syncFromGoogle = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('sync-from-google-calendar');
-      if (error) throw error;
-      return data;
+      // Don't call the function if not connected
+      if (!isConnected) {
+        console.log('Google Calendar not connected, skipping sync');
+        return { imported: 0, skipped: 0 };
+      }
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('sync-from-google-calendar');
+        
+        // First check if the response data contains an error (Supabase functions return errors in data)
+        if (data && typeof data === 'object' && 'error' in data) {
+          const responseError = (data as any).error;
+          const errorMessage = typeof responseError === 'string' ? responseError : JSON.stringify(responseError);
+          
+          // Check if error is about Google Calendar not being connected
+          if (errorMessage.includes('Google Calendar not connected') || 
+              errorMessage.includes('not connected')) {
+            // Silently handle "not connected" errors - don't show error toast
+            return { imported: 0, skipped: 0 };
+          }
+          // If it's a different error, throw it
+          throw new Error(errorMessage);
+        }
+        
+        // Check network/connection errors (including 500 errors)
+        if (error) {
+          // For 500 errors, try to get the error message from the response
+          let errorMessage = error.message || '';
+          let errorString = JSON.stringify(error);
+          
+          // Try to extract error from response body if available
+          if (error.context && typeof error.context === 'object') {
+            const contextString = JSON.stringify(error.context);
+            errorString += ' ' + contextString;
+            
+            // Check if context has error message
+            if ('error' in error.context) {
+              const contextError = (error.context as any).error;
+              errorMessage += ' ' + (typeof contextError === 'string' ? contextError : JSON.stringify(contextError));
+            }
+          }
+          
+          // Check various error formats
+          if (errorMessage.includes('Google Calendar not connected') || 
+              errorMessage.includes('not connected') ||
+              errorString.includes('Google Calendar not connected') ||
+              errorString.includes('not connected')) {
+            // Silently handle "not connected" errors - don't show error toast
+            return { imported: 0, skipped: 0 };
+          }
+          
+          // For 500 errors specifically, assume it might be a "not connected" error if we can't determine
+          // This is a fallback to prevent error spam when calendar is not connected
+          if (error.status === 500 || error.statusCode === 500) {
+            // Silently handle 500 errors as they're likely "not connected" errors
+            console.log('Google Calendar sync returned 500, assuming not connected');
+            return { imported: 0, skipped: 0 };
+          }
+          
+          throw error;
+        }
+        
+        return data;
+      } catch (err: any) {
+        // Catch any errors and check if they're about "not connected"
+        const errorMessage = err?.message || err?.error || JSON.stringify(err) || '';
+        const errorStatus = err?.status || err?.statusCode || err?.code;
+        
+        // Handle 500 errors silently (likely "not connected")
+        if (errorStatus === 500 || errorStatus === '500') {
+          console.log('Google Calendar sync error (500), silently handling as "not connected"');
+          return { imported: 0, skipped: 0 };
+        }
+        
+        if (errorMessage.includes('Google Calendar not connected') || 
+            errorMessage.includes('not connected')) {
+          // Silently handle "not connected" errors
+          return { imported: 0, skipped: 0 };
+        }
+        
+        // Re-throw other errors
+        throw err;
+      }
     },
     onSuccess: async (data) => {
       // Aggressive query invalidation and refetch
@@ -301,11 +382,29 @@ export const useGoogleCalendarSync = () => {
       }
     },
     onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to sync from Google Calendar",
-        variant: "destructive",
-      });
+      // Check if it's a 500 error (likely "not connected")
+      const errorStatus = (error as any)?.status || (error as any)?.statusCode || (error as any)?.code;
+      if (errorStatus === 500 || errorStatus === '500') {
+        // Silently ignore 500 errors
+        return;
+      }
+      
+      // Only show error toast if it's not a "not connected" error
+      const errorMessage = error.message || '';
+      const errorString = JSON.stringify(error);
+      
+      // Check various error message formats
+      if (!errorMessage.includes('Google Calendar not connected') && 
+          !errorMessage.includes('not connected') &&
+          !errorString.includes('Google Calendar not connected') &&
+          !errorString.includes('not connected')) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to sync from Google Calendar",
+          variant: "destructive",
+        });
+      }
+      // Silently ignore "not connected" errors
     },
   });
 

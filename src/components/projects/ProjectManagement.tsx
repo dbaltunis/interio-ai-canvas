@@ -23,9 +23,13 @@ interface ProjectManagementProps {
 export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocuments }: ProjectManagementProps) => {
   const { data: projects, isLoading } = useProjects();
   const { data: jobStatuses = [] } = useJobStatuses();
-  const canViewProjects = useHasPermission('view_projects');
-  const canCreateProjects = useHasPermission('create_projects');
-  const canEditProjects = useHasPermission('edit_projects');
+  const canViewAllJobs = useHasPermission('view_all_jobs');
+  const canViewAssignedJobs = useHasPermission('view_assigned_jobs');
+  const canViewProjects = canViewAllJobs || canViewAssignedJobs;
+  const canCreateProjects = useHasPermission('create_jobs');
+  const canEditAllJobs = useHasPermission('edit_all_jobs');
+  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
+  const canEditProjects = canEditAllJobs || canEditAssignedJobs;
   const isMobile = useIsMobile();
   const { units } = useMeasurementUnits();
   const currency = units.currency || 'USD';
@@ -108,7 +112,7 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
             </Button>
           </PermissionGuard>
           {!isMobile && (
-            <PermissionGuard permission="create_projects">
+            <PermissionGuard permission="create_jobs">
               <Button onClick={onCreateProject}>
                 <Plus className="mr-2 h-4 w-4" />
                 New Project
@@ -204,7 +208,7 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
             <div className="text-center py-8 text-muted-foreground">
               <Calendar className="mx-auto h-12 w-12 mb-4" />
               <p>No projects found. Create your first project to get started!</p>
-              <PermissionGuard permission="create_projects">
+              <PermissionGuard permission="create_jobs">
                 <Button onClick={onCreateProject} className="mt-4">
                   <Plus className="mr-2 h-4 w-4" />
                   Create Project
@@ -260,7 +264,7 @@ export const ProjectManagement = ({ onViewProject, onCreateProject, onViewDocume
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <PermissionGuard permission="view_projects">
+                        <PermissionGuard permissions={['view_all_jobs', 'view_assigned_jobs']}>
                           <Button 
                             variant="ghost" 
                             size="sm"
