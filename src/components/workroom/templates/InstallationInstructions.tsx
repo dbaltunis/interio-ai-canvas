@@ -111,9 +111,9 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
                 variant="default"
                 size="sm"
                 onClick={handleSaveNotes}
-                disabled={isSaving || !projectId}
+                disabled={isSaving || !projectId || isReadOnly}
                 className="h-8"
-                title={!projectId ? "Project ID required to save notes" : isSaving ? "Saving..." : "Click to save all notes"}
+                title={!projectId ? "Project ID required to save notes" : isSaving ? "Saving..." : isReadOnly ? "You don't have permission to edit" : "Click to save all notes"}
               >
                 <Save className="h-3.5 w-3.5 mr-1" />
                 {isSaving ? "Saving..." : "Save Notes"}
@@ -123,6 +123,7 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
                 size="sm"
                 onClick={() => setEditing(!editing)}
                 className="h-8"
+                disabled={isReadOnly}
               >
                 <Pencil className="h-3.5 w-3.5 mr-1" />
                 {editing ? "Done" : "Edit"}
@@ -154,12 +155,13 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
             
             <div>
               <div className="font-medium">Installation Date</div>
-              {editing ? (
+              {editing && !isReadOnly ? (
                 <Input
                   type="date"
                   value={installationDate}
                   onChange={(e) => setInstallationDate(e.target.value)}
                   className="mt-1"
+                  disabled={isReadOnly}
                 />
               ) : (
                 <div className="text-muted-foreground">{installationDate || "—"}</div>
@@ -168,12 +170,13 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
             
             <div>
               <div className="font-medium">Assigned Installer</div>
-              {editing ? (
+              {editing && !isReadOnly ? (
                 <Input
                   value={getFieldValue('assignedMaker')}
                   onChange={(e) => handleFieldChange('assignedMaker', e.target.value)}
                   className="mt-1"
                   placeholder="Installer name"
+                  disabled={isReadOnly}
                 />
               ) : (
                 <div className="text-muted-foreground">{getFieldValue('assignedMaker') || "—"}</div>
@@ -182,12 +185,13 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
             
             <div className="md:col-span-2">
               <div className="font-medium">Site Address</div>
-              {editing ? (
+              {editing && !isReadOnly ? (
                 <Input
                   value={getFieldValue('shippingAddress')}
                   onChange={(e) => handleFieldChange('shippingAddress', e.target.value)}
                   className="mt-1"
                   placeholder="Installation address"
+                  disabled={isReadOnly}
                 />
               ) : (
                 <div className="text-muted-foreground">{getFieldValue('shippingAddress') || "—"}</div>
@@ -278,6 +282,7 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
                           checked={isComplete}
                           onCheckedChange={() => toggleItemComplete(item.id)}
                           className="no-print"
+                          disabled={isReadOnly}
                         />
                       )}
                       {item.name} - {item.treatmentType}
@@ -384,6 +389,7 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
                         className="text-sm min-h-[60px]"
                         value={itemNotes[item.id] || ""}
                         onChange={(e) => setItemNote(item.id, e.target.value)}
+                        disabled={isReadOnly}
                       />
                     )}
                   </div>

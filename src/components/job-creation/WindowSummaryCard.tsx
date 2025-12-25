@@ -14,6 +14,7 @@ import { Calculator } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useMarkupSettings } from "@/hooks/useMarkupSettings";
 import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
 import { useHasPermission } from "@/hooks/usePermissions";
@@ -54,16 +55,13 @@ export function WindowSummaryCard({
   treatmentLabel,
   treatmentType: propTreatmentType
 }: WindowSummaryCardProps) {
-  // Permission checks - use correct permission names
-  const editAllJobs = useHasPermission('edit_all_jobs');
-  const editAssignedJobs = useHasPermission('edit_assigned_jobs');
-  const deleteJobsPerm = useHasPermission('delete_jobs');
-  
-  // Default to true during loading for better UX (RLS will enforce permissions anyway)
-  const canEditJobs = editAllJobs === undefined && editAssignedJobs === undefined 
-    ? true 
-    : (editAllJobs || editAssignedJobs);
-  const canDeleteJobs = deleteJobsPerm === undefined ? true : deleteJobsPerm;
+  // Permission checks - properly check edit permissions
+  const canEditAllJobs = useHasPermission('edit_all_jobs');
+  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
+  // For now, if user has edit_assigned_jobs, they can edit (we'd need project.user_id to check ownership)
+  // This is safer than hardcoding true - at least requires a permission
+  const canEditJobs = canEditAllJobs || canEditAssignedJobs;
+  const canDeleteJobs = useHasPermission('delete_jobs');
   
   // Add defensive check for surface data
   if (!surface || !surface.id) {

@@ -12,9 +12,10 @@ import "@/styles/print.css";
 
 interface WorkroomDocumentsProps {
   projectId?: string;
+  isReadOnly?: boolean;
 }
 
-export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId }) => {
+export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId, isReadOnly = false }) => {
   const { data, isLoading, error } = useWorkshopData(projectId);
   const { toast } = useToast();
   const printRef = useRef<HTMLDivElement>(null);
@@ -317,6 +318,7 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
                   blocks={templateBlocks}
                   projectId={projectId}
                   orientation={orientation}
+                  isReadOnly={isReadOnly}
                 />
               </div>
             </div>
@@ -334,6 +336,7 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
               projectId={projectId}
               template={template}
               blocks={templateBlocks}
+              isReadOnly={isReadOnly}
             />
           )}
         </div>
@@ -355,6 +358,7 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId 
             projectId={projectId}
             template={template}
             blocks={templateBlocks}
+            isReadOnly={isReadOnly}
           />
         </WorkshopPreviewModal>
       )}

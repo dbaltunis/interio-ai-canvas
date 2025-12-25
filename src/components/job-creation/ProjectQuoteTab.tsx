@@ -19,6 +19,7 @@ import { DetailedQuotationTable } from "@/components/jobs/quotation/DetailedQuot
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { EnhancedVisualEditor } from "@/components/settings/templates/visual-editor/EnhancedVisualEditor";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useReactToPrint } from "react-to-print";
 import { PrintableQuote } from "@/components/jobs/quotation/PrintableQuote";
 import { EmailQuoteModal } from "@/components/jobs/quotation/EmailQuoteModal";
@@ -37,6 +38,23 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   const { data: businessSettings } = useBusinessSettings();
   const { data: templates } = useQuoteTemplates();
   const isAdmin = useHasPermission('manage_settings');
+  const { user } = useAuth();
+  const canEditAllJobs = useHasPermission('edit_all_jobs');
+  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
+  // If both permissions are disabled, no job should be editable
+  // If both are enabled, all jobs are editable
+  // If only "Edit Any Job" is enabled, only jobs created by the user should be editable
+  // If only "Edit Assigned Jobs" is enabled, only assigned jobs should be editable
+  const canEditJob = (!canEditAllJobs && !canEditAssignedJobs) 
+    ? false 
+    : (canEditAllJobs && canEditAssignedJobs) 
+      ? true 
+      : (canEditAllJobs && !canEditAssignedJobs) 
+        ? project?.user_id === user?.id 
+        : (canEditAssignedJobs && !canEditAllJobs) 
+          ? project?.user_id === user?.id 
+          : false;
+  const isReadOnly = !canEditJob;
   const { buildQuotationItems } = useQuotationSync({
     projectId: project?.id || "",
     clientId: project?.client_id || "",
@@ -160,6 +178,7 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
                 size="sm" 
                 variant="secondary"
                 onClick={() => setIsTemplateEditorOpen(true)}
+                disabled={isReadOnly}
               >
                 <Edit3 className="h-4 w-4 mr-2" />
                 Edit Template
@@ -169,7 +188,7 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
               size="sm" 
               variant="default"
               onClick={handlePrint}
-              disabled={!client}
+              disabled={!client || isReadOnly}
             >
               <Download className="h-4 w-4 mr-2" />
               PDF
@@ -178,29 +197,29 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
               size="sm" 
               variant="outline"
               onClick={() => setIsEmailModalOpen(true)}
-              disabled={!client}
+              disabled={!client || isReadOnly}
             >
               <Mail className="h-4 w-4 mr-2" />
               Email
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" disabled={isReadOnly}>
                   <MoreVertical className="h-4 w-4 mr-2" />
                   More
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>
+                <DropdownMenuItem disabled={isReadOnly}>
                   Add Terms & Conditions
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem disabled={isReadOnly}>
                   Add Discount
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem disabled={isReadOnly}>
                   Adjust Markup
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem disabled={isReadOnly}>
                   Export Settings
                 </DropdownMenuItem>
               </DropdownMenuContent>

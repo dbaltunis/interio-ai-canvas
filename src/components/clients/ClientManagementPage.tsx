@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Filter, Download, Users } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useClientStats } from "@/hooks/useClientJobs";
-import { useHasPermission } from "@/hooks/usePermissions";
+import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ClientCreateForm } from "./ClientCreateForm";
 import { ClientProfilePage } from "./ClientProfilePage";
@@ -25,6 +29,7 @@ interface ClientManagementPageProps {
 export const ClientManagementPage = ({
   onTabChange
 }: ClientManagementPageProps = {}) => {
+  const { user } = useAuth();
   const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -46,21 +51,123 @@ export const ClientManagementPage = ({
     assignedTo: "all"
   });
 
-  // Permission checks
-  const canViewClients = useHasPermission('view_clients');
-  const canCreateClients = useHasPermission('create_clients');
-  const canDeleteClients = useHasPermission('delete_clients');
+  // Get user role to check if they're Owner/System Owner/Admin
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+
+  // Explicit check: Check user_permissions table first, then fall back to role for Owners/Admins
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[CLIENTS] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+
+  // Check if view permissions are explicitly in user_permissions table
+  const hasViewAllClientsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_all_clients'
+  ) ?? false;
+  const hasViewAssignedClientsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_assigned_clients'
+  ) ?? false;
+
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+  const hasExplicitViewPermissions = hasViewAllClientsPermission || hasViewAssignedClientsPermission;
+
+  // Owners and System Owners always have full access, regardless of explicit permissions
+  const canViewClientsExplicit =
+    userRoleData?.isSystemOwner || isOwner
+      ? true
+      : isAdmin
+          ? !hasAnyExplicitPermissions || hasViewAllClientsPermission || hasViewAssignedClientsPermission
+          : hasViewAllClientsPermission || hasViewAssignedClientsPermission;
+
+  // Owners never filter by assignment - they always see all clients
+  const shouldFilterByAssignment = !isOwner && !hasViewAllClientsPermission && hasViewAssignedClientsPermission;
+
+  // Check if create_clients is explicitly in user_permissions table (enabled)
+  const hasCreateClientsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'create_clients'
+  ) ?? false;
+
+  // Owners and System Owners always have full access
+  const canCreateClientsExplicit =
+    userRoleData?.isSystemOwner || isOwner
+      ? true
+      : hasCreateClientsPermission;
+
+  // Check if delete_clients is explicitly in user_permissions table (enabled)
+  const hasDeleteClientsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'delete_clients'
+  ) ?? false;
+
+  // System Owner: always can delete
+  // Owner/Admin: only bypass restrictions if NO explicit permissions exist in table at all
+  // If ANY explicit permissions exist, respect ALL settings (missing = disabled)
+  const canDeleteClientsExplicit =
+    userRoleData?.isSystemOwner
+      ? true // System Owner always can delete clients
+      : (isOwner || isAdmin) && !hasAnyExplicitPermissions
+        ? true // Owner/Admin with no explicit permissions = full access
+        : hasDeleteClientsPermission; // Otherwise respect explicit permissions
+
+  // Permission checks (using explicit permissions)
+  const canCreateClients = canCreateClientsExplicit;
+  const canDeleteClients = canDeleteClientsExplicit;
+
+  // Only fetch clients if user has view permissions
+  const shouldFetchClients = canViewClientsExplicit && !permissionsLoading && !roleLoading;
   const {
-    data: clients,
+    data: allClients,
     isLoading
-  } = useClients();
+  } = useClients(shouldFetchClients);
   const {
     data: clientStats,
     isLoading: isLoadingStats
   } = useClientStats();
 
+  // Filter clients by assignment if needed (must be before conditional returns)
+  const filteredClientsByPermission = useMemo(() => {
+    if (!shouldFilterByAssignment || !user || !allClients) {
+      return allClients || [];
+    }
+    
+    // Filter to only show clients assigned to the current user
+    return allClients.filter((client: any) => client.assigned_to === user.id);
+  }, [allClients, shouldFilterByAssignment, user]);
+
+  // Merge clients with their stats (must be before conditional returns)
+  const clientsWithStats = useMemo(() => {
+    return filteredClientsByPermission?.map(client => {
+      const stats = clientStats?.find(stat => stat.clientId === client.id);
+      return {
+        ...client,
+        projectCount: stats?.projectCount || 0,
+        totalValue: stats?.totalValue || 0,
+        quotesData: stats?.quotesData || {
+          draft: 0,
+          sent: 0,
+          accepted: 0,
+          total: 0
+        }
+      };
+    }) || [];
+  }, [filteredClientsByPermission, clientStats]);
+
   // Handle permission loading and preserve navigation state
-  if (canViewClients === undefined) {
+  if (permissionsLoading || roleLoading) {
     // If we're showing client profile, keep showing it during permission refetch
     if (showClientProfile && selectedClient) {
       return <ClientProfilePage clientId={selectedClient.id} onBack={() => {
@@ -74,7 +181,7 @@ export const ClientManagementPage = ({
   }
 
   // If user doesn't have permission to view clients, show access denied
-  if (!canViewClients) {
+  if (!canViewClientsExplicit) {
     return <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-semibold text-foreground mb-2">Access Denied</h2>
@@ -83,21 +190,6 @@ export const ClientManagementPage = ({
       </div>;
   }
 
-  // Merge clients with their stats
-  const clientsWithStats = clients?.map(client => {
-    const stats = clientStats?.find(stat => stat.clientId === client.id);
-    return {
-      ...client,
-      projectCount: stats?.projectCount || 0,
-      totalValue: stats?.totalValue || 0,
-      quotesData: stats?.quotesData || {
-        draft: 0,
-        sent: 0,
-        accepted: 0,
-        total: 0
-      }
-    };
-  }) || [];
   const filteredClients = clientsWithStats.filter(client => {
     const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) || client.email?.toLowerCase().includes(searchTerm.toLowerCase()) || client.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) || client.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStage = filters.stage === 'all' || client.funnel_stage === filters.stage;
@@ -214,7 +306,14 @@ export const ClientManagementPage = ({
       {showFilters && <CRMFilters filters={filters} onFilterChange={handleFilterChange} onReset={clearFilters} />}
 
       {/* Client List */}
-      <ClientListView clients={paginatedClients} searchTerm={searchTerm} onSearchChange={handleSearchChange} onClientClick={handleClientClick} isLoading={isLoading || isLoadingStats} />
+      <ClientListView 
+        clients={paginatedClients} 
+        searchTerm={searchTerm} 
+        onSearchChange={handleSearchChange} 
+        onClientClick={handleClientClick} 
+        isLoading={isLoading || isLoadingStats}
+        canDeleteClients={canDeleteClients}
+      />
 
       {/* Pagination */}
       <JobsPagination currentPage={currentPage} totalItems={totalItems} itemsPerPage={itemsPerPage} onPageChange={handlePageChange} />

@@ -7,8 +7,9 @@ interface CombinedWorkshopInfoProps {
   orientation?: 'portrait' | 'landscape';
   projectId?: string;
   isPrintMode?: boolean;
+  isReadOnly?: boolean;
 }
 
-export const CombinedWorkshopInfo: React.FC<CombinedWorkshopInfoProps> = ({ data, orientation = 'portrait', projectId, isPrintMode = false }) => {
-  return <WorkshopInformation data={data} orientation={orientation} projectId={projectId} isPrintMode={isPrintMode} />;
+export const CombinedWorkshopInfo: React.FC<CombinedWorkshopInfoProps> = ({ data, orientation = 'portrait', projectId, isPrintMode = false, isReadOnly = false }) => {
+  return <WorkshopInformation data={data} orientation={orientation} projectId={projectId} isPrintMode={isPrintMode} isReadOnly={isReadOnly} />;
 };

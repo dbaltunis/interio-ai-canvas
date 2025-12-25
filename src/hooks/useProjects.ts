@@ -11,25 +11,27 @@ type Project = Tables<"projects">;
 type ProjectInsert = TablesInsert<"projects">;
 type ProjectUpdate = TablesUpdate<"projects">;
 
-export const useProjects = () => {
+export const useProjects = (options?: { enabled?: boolean }) => {
   const { effectiveOwnerId } = useEffectiveAccountOwner();
+  const { enabled = true } = options || {};
   
   return useQuery({
     queryKey: ["projects", effectiveOwnerId],
     queryFn: async () => {
       if (!effectiveOwnerId) return [];
 
-      // Explicit effectiveOwnerId filtering for multi-tenant support
+      // Let RLS handle filtering - it will return all projects in the account
+      // This includes projects created by the account owner AND team members
+      // RLS policy checks: get_effective_account_owner(auth.uid()) = get_effective_account_owner(user_id)
       const { data, error } = await supabase
         .from("projects")
         .select("*, clients(name), parent_job_id")
-        .eq("user_id", effectiveOwnerId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
-    enabled: !!effectiveOwnerId,
+    enabled: enabled && !!effectiveOwnerId,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -67,7 +69,7 @@ export const useCreateProject = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Get account owner ID for team members
+      // Get account owner ID for team members (needed for job number generation and status lookup)
       const { data: profile } = await supabase
         .from("user_profiles")
         .select("parent_account_id")
@@ -76,64 +78,51 @@ export const useCreateProject = () => {
       
       const accountOwnerId = profile?.parent_account_id || user.id;
 
-      // Determine the initial status and its document_type
-      let statusId = project.status_id;
-      let entityType: EntityType = 'draft'; // Default to draft for new projects
-
-      if (!statusId) {
-        // Get the default status (or first Project status)
-        const { data: defaultStatus } = await supabase
-          .from("job_statuses")
-          .select("id, document_type")
-          .eq("user_id", accountOwnerId)
-          .eq("is_default", true)
-          .eq("is_active", true)
-          .maybeSingle();
-        
-        if (defaultStatus) {
-          statusId = defaultStatus.id;
-          entityType = (defaultStatus.document_type as EntityType) || 'draft';
-        } else {
-          // Fallback to first active Project status
-          const { data: firstStatus } = await supabase
-            .from("job_statuses")
-            .select("id, document_type")
-            .eq("user_id", accountOwnerId)
-            .eq("category", "Project")
-            .eq("is_active", true)
-            .order("slot_number", { ascending: true })
-            .limit(1)
-            .maybeSingle();
-          
-          if (firstStatus) {
-            statusId = firstStatus.id;
-            entityType = (firstStatus.document_type as EntityType) || 'order';
-          }
-        }
-      } else {
-        // Get the document_type from the provided status
-        const { data: statusData } = await supabase
-          .from("job_statuses")
-          .select("document_type")
-          .eq("id", statusId)
-          .single();
-        
-        if (statusData?.document_type) {
-          entityType = statusData.document_type as EntityType;
-        }
-      }
-
-      // Generate job number using the appropriate number sequence
+      // Generate job number using number sequences if not provided
       let jobNumber = project.job_number;
       if (!jobNumber || jobNumber.trim() === '') {
-        jobNumber = await generateSequenceNumber(accountOwnerId, entityType, 'DOC');
+        const { data: generatedNumber, error: seqError } = await supabase.rpc("get_next_sequence_number", {
+          p_user_id: accountOwnerId,
+          p_entity_type: "job",
+        });
+        
+        if (seqError) {
+          console.error("Error generating job number:", seqError);
+          // Fallback to old method if sequence generation fails
+          const { count } = await supabase
+            .from("projects")
+            .select("*", { count: 'exact', head: true })
+            .eq("user_id", user.id);
+          
+          jobNumber = `JOB-${String(((count || 0) + 1)).padStart(4, '0')}`;
+        } else {
+          jobNumber = generatedNumber || `JOB-${Date.now()}`;
+        }
       }
 
+      // Get first Project status (slot 5) if status_id not provided
+      // Use accountOwnerId instead of user.id because job_statuses belong to account owner
+      let statusId = project.status_id;
+      if (!statusId) {
+        const { data: firstStatus } = await supabase
+          .from("job_statuses")
+          .select("id")
+          .eq("user_id", accountOwnerId) // Use accountOwnerId for team members
+          .eq("category", "Project")
+          .eq("is_active", true)
+          .order("slot_number", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        
+        statusId = firstStatus?.id || null;
+      }
+
+      // Always set user_id to the current user (not accountOwnerId) so the project belongs to the creator
       const { data, error } = await supabase
         .from("projects")
         .insert({
           ...project,
-          user_id: user.id,
+          user_id: user.id, // Project belongs to the creator
           job_number: jobNumber,
           status_id: statusId,
         })

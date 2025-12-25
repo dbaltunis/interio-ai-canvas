@@ -1,14 +1,19 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Shield, FolderOpen, Columns3 } from "lucide-react";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
-import { useCreateProject } from "@/hooks/useProjects";
+import { useCreateProject, useProjects } from "@/hooks/useProjects";
+import { useClients } from "@/hooks/useClients";
 import { useToast } from "@/hooks/use-toast";
-import { useHasPermission } from "@/hooks/usePermissions";
+import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
 import { JobsTableView } from "./JobsTableView";
 import { JobDetailPage } from "./JobDetailPage";
 import { JobsFilter } from "./JobsFilter";
@@ -19,7 +24,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ColumnCustomizationModal } from "./ColumnCustomizationModal";
 import { useColumnPreferences } from "@/hooks/useColumnPreferences";
 
+
 const JobsPage = () => {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedJobId = searchParams.get('jobId');
   const createClientParam = searchParams.get('createClient');
@@ -40,12 +47,168 @@ const JobsPage = () => {
     resetToDefaults 
   } = useColumnPreferences();
   
-  // Permission checks
-  const canViewJobs = useHasPermission('view_jobs');
-  const canCreateJobs = useHasPermission('create_jobs');
   const isMobile = useIsMobile();
   
-  const { data: quotes = [], refetch: refetchQuotes } = useQuotes();
+  // Get user role to check if they're Owner/System Owner/Admin
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  
+  // Explicit check: Check user_permissions table first, then fall back to role for Owners/Admins
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions', user?.id],
+    queryFn: async () => {
+      if (!user) {
+        console.log('[PERMS] No user, returning empty permission----------------------------------------s');
+        return [];
+      }
+  
+      console.log('[PERMS] Fetching permissions for user:----------------------------------------s', user.id);
+  
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+  
+      if (error) {
+        console.error('[PERMS] Error fetching explicit permissions:----------------------------------------s', error);
+        return [];
+      }
+  
+      console.log('[PERMS] Raw permissions from DB:----------------------------------------s', data);
+  
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+
+  });
+  
+  console.log(explicitPermissions,'_----------------------------------------------------------------------------');
+  // Check if view permissions are explicitly in user_permissions table
+  const hasViewAllJobsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_all_jobs'
+  ) ?? false;
+  const hasViewAssignedJobsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_assigned_jobs'
+  ) ?? false;
+  
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+  
+  const hasExplicitViewPermissions = hasViewAllJobsPermission || hasViewAssignedJobsPermission;
+  
+  // Only allow view if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include view permission)
+const canViewJobsExplicit =
+  userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasViewAllJobsPermission || hasViewAssignedJobsPermission
+        : hasViewAllJobsPermission || hasViewAssignedJobsPermission;
+
+  const shouldFilterByAssignment = (!isOwner || hasAnyExplicitPermissions) && !hasViewAllJobsPermission && hasViewAssignedJobsPermission;
+  
+  // Check if create_jobs is explicitly in user_permissions table (enabled)
+  const hasCreateJobsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'create_jobs'
+  ) ?? false;
+  
+  const canCreateJobsExplicit =
+  userRoleData?.isSystemOwner
+    ? true // System Owner always can create jobs
+    : isOwner && !hasAnyExplicitPermissions
+      ? true
+      : hasCreateJobsPermission;
+  
+  // Check if delete_jobs is explicitly in user_permissions table (enabled)
+  const hasDeleteJobsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'delete_jobs'
+  ) ?? false;
+  
+  const canDeleteJobsExplicit =
+  userRoleData?.isSystemOwner
+    ? true // System Owner always can delete jobs
+    : isOwner && !hasAnyExplicitPermissions
+      ? true
+      : hasDeleteJobsPermission;
+  
+  // Debug: Log permission state
+  useEffect(() => {
+    console.log('[JOBS] Permission check - isOwner:', isOwner, 'isAdmin:', isAdmin);
+    console.log('[JOBS] Permission check - hasAnyExplicitPermissions:', hasAnyExplicitPermissions, 'explicitPermissions count:', explicitPermissions?.length);
+    console.log('[JOBS] Permission check - hasExplicitViewPermissions (enabled):', hasExplicitViewPermissions);
+    console.log('[JOBS] Permission check - canViewJobsExplicit:', canViewJobsExplicit, 'shouldFilterByAssignment:', shouldFilterByAssignment);
+    console.log('[JOBS] Permission check - hasViewAllJobsPermission:', hasViewAllJobsPermission, 'hasViewAssignedJobsPermission:', hasViewAssignedJobsPermission);
+    console.log('[JOBS] Explicit permissions:', explicitPermissions?.map((p: { permission_name: string }) => p.permission_name));
+  }, [canViewJobsExplicit, shouldFilterByAssignment, hasViewAllJobsPermission, hasViewAssignedJobsPermission, hasExplicitViewPermissions, hasAnyExplicitPermissions, explicitPermissions, isOwner, isAdmin]);
+  
+  // Only fetch quotes if user has view permissions
+  const shouldFetchQuotes = canViewJobsExplicit && !permissionsLoading;
+  const { data: allQuotes = [], refetch: refetchQuotes } = useQuotes(undefined, {
+    enabled: shouldFetchQuotes
+  });
+  
+  const { data: allProjects = [] } = useProjects({
+    enabled: canViewJobsExplicit && !permissionsLoading
+  });
+  const { data: allClients = [] } = useClients(canViewJobsExplicit && !permissionsLoading);
+  
+  const { filteredProjects, filteredQuotes } = useMemo(() => {
+    console.log('[JOBS] Filtering - shouldFilterByAssignment:', shouldFilterByAssignment, 'user.id:', user?.id);
+    console.log('[JOBS] Filtering - allProjects count:', allProjects.length, 'allQuotes count:', allQuotes.length, 'allClients count:', allClients.length);
+    
+    if (!shouldFilterByAssignment || !user) {
+      console.log('[JOBS] Filtering - No filtering needed, returning all data');
+      return { filteredProjects: allProjects, filteredQuotes: allQuotes };
+    }
+    
+    // Get client IDs where the current user is assigned
+    const assignedClientIds = new Set(
+      allClients
+        .filter((client: any) => client.assigned_to === user.id)
+        .map((client: any) => client.id)
+    );
+    console.log('[JOBS] Filtering - Assigned client IDs:', Array.from(assignedClientIds));
+    
+    // Filter projects where:
+    // 1. project.user_id matches current user (created by user), OR
+    // 2. project.client_id is in assignedClientIds (client assigned to user)
+    const assignedProjects = allProjects.filter((project: any) => {
+      const isCreatedByUser = project.user_id === user.id;
+      const isClientAssignedToUser = project.client_id && assignedClientIds.has(project.client_id);
+      const isAssigned = isCreatedByUser || isClientAssignedToUser;
+      
+      console.log('[JOBS] Filtering - Project:', project.id, 
+        'user_id:', project.user_id, 
+        'client_id:', project.client_id,
+        'isCreatedByUser:', isCreatedByUser,
+        'isClientAssignedToUser:', isClientAssignedToUser,
+        'isAssigned:', isAssigned);
+      
+      return isAssigned;
+    });
+    
+    const assignedProjectIds = new Set(assignedProjects.map((project: any) => project.id));
+    console.log('[JOBS] Filtering - Assigned project IDs:', Array.from(assignedProjectIds));
+    
+    // Filter quotes to only show quotes for assigned projects
+    const filteredQuotes = allQuotes.filter((quote: any) => {
+      const isIncluded = quote.project_id && assignedProjectIds.has(quote.project_id);
+      if (!isIncluded) {
+        console.log('[JOBS] Filtering - Quote excluded:', quote.id, 'project_id:', quote.project_id);
+      }
+      return isIncluded;
+    });
+    
+    console.log('[JOBS] Filtering - Filtered projects count:', assignedProjects.length, 'Filtered quotes count:', filteredQuotes.length);
+    
+    return {
+      filteredProjects: assignedProjects,
+      filteredQuotes
+    };
+  }, [allProjects, allQuotes, allClients, shouldFilterByAssignment, user]);
+  
+  // Use filtered data
+  const quotes = filteredQuotes;
   const createProject = useCreateProject();
   const createQuote = useCreateQuote();
   const updateQuote = useUpdateQuote();
@@ -62,6 +225,16 @@ const JobsPage = () => {
   };
 
   const handleNewJob = async (clientId?: string | null) => {
+    // Check permission before creating - use explicit check
+    if (!canCreateJobsExplicit) {
+      toast({
+        title: "Permission Denied",
+        description: "You do not have permission to create jobs.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       console.log("Creating new job...", clientId ? `for client: ${clientId}` : '');
       
@@ -121,6 +294,16 @@ const JobsPage = () => {
     }
 
     // Quote doesn't have a project (CRM-created quote) - create one
+    // Check permission before creating - use explicit check
+    if (!canCreateJobsExplicit) {
+      toast({
+        title: "Permission Denied",
+        description: "You do not have permission to create jobs.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       console.log("Creating project for CRM quote:", quote);
       
@@ -169,6 +352,39 @@ const JobsPage = () => {
     setSearchTerm("");
     setStatusFilter("all");
   };
+
+  // Check permissions - block access if user doesn't have view permissions
+  // Wait for permissions and role to load
+  if (permissionsLoading || roleLoading || explicitPermissions === undefined || userRoleData === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center animate-fade-in">
+        <Card className="max-w-md">
+          <CardContent className="text-center p-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Loading Permissions</h2>
+            <p className="text-muted-foreground">Checking access permissions...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Block access if user doesn't have view permissions
+  if (!canViewJobsExplicit) {
+    return (
+      <div className="min-h-screen flex items-center justify-center animate-fade-in">
+        <Card className="max-w-md">
+          <CardContent className="text-center p-8">
+            <Shield className="h-12 w-12 mx-auto mb-4 text-destructive" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">Access Denied</h2>
+            <p className="text-muted-foreground mb-4">
+              You do not have permission to view jobs. Please contact your administrator.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Direct rendering - no intermediate pages
   if (selectedJobId) {
@@ -229,10 +445,13 @@ const JobsPage = () => {
               onStatusChange={setStatusFilter}
               onClearFilters={handleClearFilters}
             />
-            {canCreateJobs && !isMobile && (
+            {canCreateJobsExplicit && !isMobile && (
               <Button 
-                onClick={() => handleNewJob()}
-                disabled={createProject.isPending || createQuote.isPending}
+                onClick={() => {
+                  console.log('[JOBS] New Project button clicked, canCreateJobsExplicit:', canCreateJobsExplicit);
+                  handleNewJob();
+                }}
+                disabled={createProject.isPending || createQuote.isPending || !canCreateJobsExplicit}
                 className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md"
                 data-create-project
               >
@@ -250,6 +469,9 @@ const JobsPage = () => {
             searchTerm={searchTerm}
             statusFilter={statusFilter}
             visibleColumns={visibleColumns}
+            filteredQuotes={shouldFilterByAssignment ? quotes : undefined}
+            filteredProjects={shouldFilterByAssignment ? filteredProjects : undefined}
+            canDeleteJobs={canDeleteJobsExplicit}
           />
         </Card>
       </div>

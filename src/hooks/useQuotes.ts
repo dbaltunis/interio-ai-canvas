@@ -10,7 +10,7 @@ type Quote = Tables<"quotes">;
 type QuoteInsert = TablesInsert<"quotes">;
 type QuoteUpdate = TablesUpdate<"quotes">;
 
-export const useQuotes = (projectId?: string) => {
+export const useQuotes = (projectId?: string, options?: { enabled?: boolean }) => {
   const { effectiveOwnerId } = useEffectiveAccountOwner();
   
   return useQuery({
@@ -18,7 +18,9 @@ export const useQuotes = (projectId?: string) => {
     queryFn: async () => {
       if (!effectiveOwnerId) return [];
 
-      // Explicit user filtering for defense-in-depth (RLS is primary protection)
+      // Let RLS handle filtering - it will return all quotes in the account
+      // This includes quotes created by the account owner AND team members
+      // RLS policy checks account ownership, so we don't need explicit user_id filter
       let query = supabase
         .from("quotes")
         .select(`
@@ -39,8 +41,7 @@ export const useQuotes = (projectId?: string) => {
               email
             )
           )
-        `)
-        .eq("user_id", effectiveOwnerId);
+        `);
       
       if (projectId) {
         query = query.eq("project_id", projectId);
@@ -51,7 +52,7 @@ export const useQuotes = (projectId?: string) => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!effectiveOwnerId,
+    enabled: (options?.enabled !== false) && !!effectiveOwnerId,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

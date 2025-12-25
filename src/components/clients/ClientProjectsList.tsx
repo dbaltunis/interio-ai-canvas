@@ -11,6 +11,10 @@ import { formatJobNumber } from "@/lib/format-job-number";
 import { useCreateProject } from "@/hooks/useProjects";
 import { useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface ClientProjectsListProps {
   clientId: string;
@@ -18,12 +22,35 @@ interface ClientProjectsListProps {
 }
 
 export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsListProps) => {
+  const { user } = useAuth();
   const { data: projects, isLoading } = useClientJobs(clientId);
   const navigate = useNavigate();
   const createProject = useCreateProject();
   const createQuote = useCreateQuote();
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
+  const { isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[ClientProjectsList] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+  
+  // Check if create_jobs is explicitly in user_permissions table (ignores role-based)
+  const hasCreateJobsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'create_jobs'
+  ) ?? false;
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -72,6 +99,16 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
   };
 
   const handleCreateProject = async () => {
+    // Check permission before creating
+    if (!hasCreateJobsPermission) {
+      toast({
+        title: "Permission Denied",
+        description: "You do not have permission to create jobs.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsCreating(true);
     try {
       console.log('[CLIENT] Creating new project for client:', clientId);
@@ -139,10 +176,12 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
             <Calendar className="h-5 w-5" />
             Client Projects
           </CardTitle>
-          <Button size="sm" onClick={handleCreateProject} disabled={isCreating}>
-            <Plus className="h-4 w-4 mr-2" />
-            {isCreating ? "Creating..." : "New Project"}
-          </Button>
+          {hasCreateJobsPermission && (
+            <Button size="sm" onClick={handleCreateProject} disabled={isCreating}>
+              <Plus className="h-4 w-4 mr-2" />
+              {isCreating ? "Creating..." : "New Project"}
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -150,10 +189,12 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
           <div className="text-center py-8 text-muted-foreground">
             <Calendar className="mx-auto h-12 w-12 mb-4 opacity-50" />
             <p>No projects found for this client</p>
-            <Button className="mt-2" variant="outline" onClick={handleCreateProject} disabled={isCreating}>
-              <Plus className="h-4 w-4 mr-2" />
-              {isCreating ? "Creating..." : "Create First Project"}
-            </Button>
+            {hasCreateJobsPermission && (
+              <Button className="mt-2" variant="outline" onClick={handleCreateProject} disabled={isCreating}>
+                <Plus className="h-4 w-4 mr-2" />
+                {isCreating ? "Creating..." : "Create First Project"}
+              </Button>
+            )}
           </div>
         ) : (
           <Table>

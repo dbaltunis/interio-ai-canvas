@@ -12,9 +12,10 @@ import { toast } from "sonner";
 
 interface ClientAllNotesSectionProps {
   clientId: string;
+  canEditClient?: boolean;
 }
 
-export const ClientAllNotesSection = ({ clientId }: ClientAllNotesSectionProps) => {
+export const ClientAllNotesSection = ({ clientId, canEditClient = true }: ClientAllNotesSectionProps) => {
   const { notes, projects, isLoading, addNote } = useClientProjectNotes(clientId);
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
@@ -78,6 +79,7 @@ export const ClientAllNotesSection = ({ clientId }: ClientAllNotesSectionProps) 
             size="sm" 
             onClick={() => setIsAddingNote(!isAddingNote)}
             className="gap-2"
+            disabled={!canEditClient}
           >
             {isAddingNote ? (
               <>

@@ -3,6 +3,9 @@ import { RoomCard } from "./RoomCard";
 import { EmptyRoomsState } from "./EmptyRoomsState";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { useHasPermission } from "@/hooks/usePermissions";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useProjects } from "@/hooks/useProjects";
 
 interface RoomsGridProps {
   rooms: any[];
@@ -25,6 +28,7 @@ interface RoomsGridProps {
   isCopyingRoom?: boolean;
   onChangeRoomType: (roomId: string, roomType: string) => void;
   onCreateFromTemplate?: (template: any, customName?: string) => void;
+  isReadOnly?: boolean;
 }
 
 export const RoomsGrid = ({ 
@@ -47,14 +51,15 @@ export const RoomsGrid = ({
   isCreatingRoom,
   isCopyingRoom = false,
   onChangeRoomType,
-  onCreateFromTemplate
+  onCreateFromTemplate,
+  isReadOnly = false
 }: RoomsGridProps) => {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {!rooms || rooms.length === 0 ? (
           <div className="lg:col-span-2">
-            <EmptyRoomsState onCreateRoom={onCreateRoom} isCreatingRoom={isCreatingRoom} />
+            <EmptyRoomsState onCreateRoom={onCreateRoom} isCreatingRoom={isCreatingRoom} isReadOnly={isReadOnly} />
           </div>
         ) : (
           rooms.map((room) => (
@@ -77,6 +82,7 @@ export const RoomsGrid = ({
               onRenameRoom={onRenameRoom}
               onChangeRoomType={onChangeRoomType}
               isCopyingRoom={isCopyingRoom}
+              isReadOnly={isReadOnly}
             />
           ))
         )}
@@ -87,7 +93,7 @@ export const RoomsGrid = ({
         <div className="flex justify-center">
           <Button
             onClick={onCreateRoom}
-            disabled={isCreatingRoom}
+            disabled={isCreatingRoom || isReadOnly}
             variant="outline"
             size="lg"
             className="flex items-center space-x-2 px-6 py-3 border-2 border-dashed border-muted-foreground/30 hover:border-primary hover:bg-primary/5"

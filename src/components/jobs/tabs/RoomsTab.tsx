@@ -13,6 +13,9 @@ import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useMarkupSettings } from "@/hooks/useMarkupSettings";
 import { resolveMarkup, applyMarkup } from "@/utils/pricing/markupResolver";
 import { supabase } from "@/integrations/supabase/client";
+import { useHasPermission } from "@/hooks/usePermissions";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 
 interface RoomsTabProps {
   projectId: string;
@@ -47,6 +50,9 @@ export const RoomsTab = ({
   const { data: markupSettings } = useMarkupSettings();
   const createRoom = useCreateRoom();
   const project = projects?.find(p => p.id === projectId);
+  // Use explicit permissions hook for edit checks
+  const { canEditJob, isLoading: editPermissionsLoading } = useCanEditJob(project);
+  const isReadOnly = !canEditJob || editPermissionsLoading;
 
   // Fetch all room products for this project
   const roomIds = rooms.map(r => r.id);
@@ -201,6 +207,6 @@ export const RoomsTab = ({
       </div>
 
       {/* Enhanced Room Management - This handles all room display and management */}
-      <EnhancedRoomView project={project} clientId={project.client_id} />
+      <EnhancedRoomView project={project} clientId={project.client_id} isReadOnly={isReadOnly} />
     </div>;
 };

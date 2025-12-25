@@ -18,6 +18,7 @@ interface DocumentRendererProps {
   projectId?: string;
   orientation?: 'portrait' | 'landscape';
   isPrintMode?: boolean;
+  isReadOnly?: boolean;
 }
 
 export const DocumentRenderer: React.FC<DocumentRendererProps> = ({ 
@@ -26,7 +27,8 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
   blocks, 
   projectId,
   orientation = 'portrait',
-  isPrintMode = false
+  isPrintMode = false,
+  isReadOnly = false
 }) => {
   // Fetch business settings
   const { data: businessSettings, isLoading: loadingBusinessSettings } = useBusinessSettings();
@@ -141,20 +143,20 @@ export const DocumentRenderer: React.FC<DocumentRendererProps> = ({
 
   switch (template) {
     case "workshop-info":
-      return <CombinedWorkshopInfo data={data} orientation={orientation} projectId={projectId} isPrintMode={isPrintMode} />;
+      return <CombinedWorkshopInfo data={data} orientation={orientation} projectId={projectId} isPrintMode={isPrintMode} isReadOnly={isReadOnly} />;
     case "installation":
       return (
         <Suspense fallback={<div className="p-6">Loading installation template...</div>}>
-          <InstallationInstructions data={data} orientation={orientation} projectId={projectId} isPrintMode={isPrintMode} />
+          <InstallationInstructions data={data} orientation={orientation} projectId={projectId} isPrintMode={isPrintMode} isReadOnly={isReadOnly} />
         </Suspense>
       );
     case "fitting":
       return (
         <Suspense fallback={<div className="p-6">Loading fitting template...</div>}>
-          <FittingInstructions data={data} orientation={orientation} projectId={projectId} isPrintMode={isPrintMode} />
+          <FittingInstructions data={data} orientation={orientation} projectId={projectId} isPrintMode={isPrintMode} isReadOnly={isReadOnly} />
         </Suspense>
       );
     default:
-      return <WorkshopInformation data={data} orientation={orientation} projectId={projectId} isPrintMode={isPrintMode} />;
+      return <WorkshopInformation data={data} orientation={orientation} projectId={projectId} isPrintMode={isPrintMode} isReadOnly={isReadOnly} />;
   }
 };

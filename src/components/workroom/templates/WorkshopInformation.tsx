@@ -15,12 +15,13 @@ interface WorkshopInformationProps {
   orientation?: 'portrait' | 'landscape';
   projectId?: string;
   isPrintMode?: boolean;
+  isReadOnly?: boolean;
 }
 
-export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, orientation = 'portrait', projectId, isPrintMode = false }) => {
+export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, orientation = 'portrait', projectId, isPrintMode = false, isReadOnly = false }) => {
   // Use landscape layout for landscape orientation
   if (orientation === 'landscape') {
-    return <WorkshopInformationLandscape data={data} projectId={projectId} isPrintMode={isPrintMode} />;
+    return <WorkshopInformationLandscape data={data} projectId={projectId} isPrintMode={isPrintMode} isReadOnly={isReadOnly} />;
   }
 
   console.log('🔍 [WorkshopInformation] projectId:', projectId);
@@ -130,9 +131,9 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
                 variant="default"
                 size="sm"
                 onClick={handleSaveNotes}
-                disabled={isSaving || !projectId}
+                disabled={isSaving || !projectId || isReadOnly}
                 className="h-8"
-                title={!projectId ? "Project ID required to save notes" : "Save all notes"}
+                title={!projectId ? "Project ID required to save notes" : isReadOnly ? "You don't have permission to edit" : "Save all notes"}
               >
                 <Save className="h-3.5 w-3.5 mr-1" />
                 {isSaving ? "Saving..." : "Save Notes"}
@@ -181,6 +182,7 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
                 className="text-sm min-h-[80px] bg-white"
                 value={productionNotes}
                 onChange={(e) => setProductionNotes(e.target.value)}
+                disabled={isReadOnly}
               />
             )}
           </CardContent>
@@ -317,6 +319,7 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
                             className="text-[10px] min-h-[60px] resize-none"
                             value={itemNotes[item.id] || ""}
                             onChange={(e) => setItemNote(item.id, e.target.value)}
+                            disabled={isReadOnly}
                           />
                         )}
                       </td>

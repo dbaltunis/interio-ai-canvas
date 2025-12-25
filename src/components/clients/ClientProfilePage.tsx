@@ -16,6 +16,7 @@ import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useClient, useUpdateClient } from "@/hooks/useClients";
 import { useClientJobs, useClientQuotes } from "@/hooks/useClientJobs";
 import { useClientFiles } from "@/hooks/useClientFiles";
+import { useCanEditClient } from "@/hooks/useClientEditPermissions";
 import { EnhancedClientEmailHistory } from "./EnhancedClientEmailHistory";
 import { LeadSourceSelect } from "@/components/crm/LeadSourceSelect";
 import { ClientProjectsList } from "./ClientProjectsList";
@@ -44,6 +45,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const { user } = useAuth();
   const { data: clientFiles } = useClientFiles(clientId, user?.id || '');
   const { formatCurrency } = useFormattedCurrency();
+  const { canEditClient, isLoading: editPermissionLoading } = useCanEditClient(client);
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedClient, setEditedClient] = useState<any>(null);
@@ -68,7 +70,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
     return sum;
   }, 0);
 
-  if (clientLoading) {
+  if (clientLoading || editPermissionLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -94,6 +96,17 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   };
 
   const handleSave = async () => {
+    // Double-check permission before saving
+    if (!canEditClient) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this client",
+        variant: "destructive",
+      });
+      setIsEditing(false);
+      return;
+    }
+
     try {
       await updateClient.mutateAsync({
         id: client.id,
@@ -158,6 +171,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                 size="sm"
                 onClick={handleEdit}
                 className="gap-2"
+                disabled={editPermissionLoading || !canEditClient}
               >
                 <Edit className="h-4 w-4" />
                 Edit
@@ -278,6 +292,10 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                 <Select 
                   value={currentClient.funnel_stage || 'lead'}
                   onValueChange={async (value) => {
+                    if (!canEditClient) {
+                      toast({ title: "Permission Denied", description: "You don't have permission to edit this client", variant: "destructive" });
+                      return;
+                    }
                     try {
                       await updateClient.mutateAsync({
                         id: client.id,
@@ -288,6 +306,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                       toast({ title: "Failed to update stage", variant: "destructive" });
                     }
                   }}
+                  disabled={!canEditClient}
                 >
                   <SelectTrigger className="w-fit h-auto py-1 px-2 border-0 bg-transparent hover:bg-muted/50">
                     <Badge className={getStageColor(currentClient.funnel_stage || 'lead')}>
@@ -311,6 +330,10 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                 <Select 
                   value={currentClient.priority_level || 'medium'}
                   onValueChange={async (value) => {
+                    if (!canEditClient) {
+                      toast({ title: "Permission Denied", description: "You don't have permission to edit this client", variant: "destructive" });
+                      return;
+                    }
                     try {
                       await updateClient.mutateAsync({
                         id: client.id,
@@ -321,6 +344,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                       toast({ title: "Failed to update priority", variant: "destructive" });
                     }
                   }}
+                  disabled={!canEditClient}
                 >
                   <SelectTrigger className="w-fit h-auto py-1 px-2 border-0 bg-transparent hover:bg-muted/50">
                     <Badge variant="secondary" className={
@@ -430,13 +454,13 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
             <CardTitle>Files & Documents</CardTitle>
           </CardHeader>
           <CardContent>
-            <ClientFilesManager clientId={clientId} userId={user.id} />
+            <ClientFilesManager clientId={clientId} userId={user.id} canEditClient={canEditClient} />
           </CardContent>
         </Card>
       )}
 
       {/* All Project Notes Section */}
-      <ClientAllNotesSection clientId={clientId} />
+      <ClientAllNotesSection clientId={clientId} canEditClient={canEditClient} />
 
       {/* Redesigned Tabs Section - 3 tabs: Activity, Emails, Measurements */}
       <div className="mt-8">
@@ -467,7 +491,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
           </TabsList>
 
           <TabsContent value="activity" className="mt-6">
-            <ClientActivityLog clientId={clientId} />
+            <ClientActivityLog clientId={clientId} canEditClient={canEditClient} />
           </TabsContent>
 
           <TabsContent value="emails" className="mt-6">
@@ -475,6 +499,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
               clientId={clientId} 
               clientEmail={client.email}
               onComposeEmail={() => {}}
+              canEditClient={canEditClient}
             />
           </TabsContent>
 
@@ -483,6 +508,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
               clientId={clientId}
               onViewMeasurement={() => {}}
               onEditMeasurement={() => {}}
+              canEditClient={canEditClient}
             />
           </TabsContent>
         </Tabs>

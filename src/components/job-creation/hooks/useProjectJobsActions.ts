@@ -3,6 +3,9 @@ import { useState } from "react";
 import { useCreateRoom } from "@/hooks/useRooms";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
+import { useHasPermission } from "@/hooks/usePermissions";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 
 interface UseProjectJobsActionsProps {
   project: any;
@@ -19,8 +22,20 @@ export const useProjectJobsActions = ({
   const createRoom = useCreateRoom();
   const updateProject = useUpdateProject();
   const { toast } = useToast();
+  // Use explicit permissions hook for edit checks
+  const { canEditJob } = useCanEditJob(project);
 
   const handleCreateRoom = async () => {
+    // Check permissions
+    if (!canEditJob) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Determine the actual project ID
     const projectId = project?.project_id || project?.id;
     if (!projectId) {
@@ -59,6 +74,16 @@ export const useProjectJobsActions = ({
   const handleUpdateProjectName = async (name: string) => {
     if (!name.trim()) {
       throw new Error("Project name cannot be empty");
+    }
+
+    // Check permissions
+    if (!canEditJob) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      throw new Error("Permission denied");
     }
 
     // Determine the actual project ID

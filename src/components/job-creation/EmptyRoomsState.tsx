@@ -6,9 +6,10 @@ import { Plus, Home } from "lucide-react";
 interface EmptyRoomsStateProps {
   onCreateRoom: () => void;
   isCreatingRoom: boolean;
+  isReadOnly?: boolean;
 }
 
-export const EmptyRoomsState = ({ onCreateRoom, isCreatingRoom }: EmptyRoomsStateProps) => {
+export const EmptyRoomsState = ({ onCreateRoom, isCreatingRoom, isReadOnly = false }: EmptyRoomsStateProps) => {
   return (
     <Card className="bg-gradient-to-br from-brand-light to-white border-brand-secondary/20">
       <CardContent className="p-12 text-center">
@@ -25,7 +26,7 @@ export const EmptyRoomsState = ({ onCreateRoom, isCreatingRoom }: EmptyRoomsStat
         
         <Button
           onClick={onCreateRoom}
-          disabled={isCreatingRoom}
+          disabled={isCreatingRoom || isReadOnly}
           size="lg"
           className="bg-brand-primary hover:bg-brand-primary/90"
         >

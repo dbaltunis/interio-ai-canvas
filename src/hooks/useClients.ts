@@ -52,17 +52,29 @@ export const useClient = (id: string) => {
 export const useCreateClient = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { effectiveOwnerId, currentUserId } = useEffectiveAccountOwner();
 
   return useMutation({
     mutationFn: async (client: Omit<ClientInsert, "user_id">) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
+      if (!effectiveOwnerId) {
+        throw new Error("Unable to determine account owner");
+      }
+
+      // If assigned_to is not explicitly provided and current user is a team member,
+      // assign the client to the current user so they can see it
+      const assignedTo = client.assigned_to !== undefined 
+        ? client.assigned_to 
+        : (currentUserId && currentUserId !== effectiveOwnerId ? currentUserId : null);
+
       const { data, error } = await supabase
         .from("clients")
         .insert({
           ...client,
-          user_id: user.id
+          user_id: effectiveOwnerId,
+          assigned_to: assignedTo
         })
         .select()
         .single();

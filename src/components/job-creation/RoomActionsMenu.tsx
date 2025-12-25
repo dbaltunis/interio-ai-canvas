@@ -30,11 +30,9 @@ export const RoomActionsMenu = ({
   const editAssignedJobs = useHasPermission('edit_assigned_jobs');
   const deleteJobs = useHasPermission('delete_jobs');
   
-  // Default to true during loading for better UX (RLS will enforce permissions anyway)
-  const canEditJobs = editAllJobs === undefined && editAssignedJobs === undefined 
-    ? true 
-    : (editAllJobs || editAssignedJobs);
-  const canDeleteJobs = deleteJobs === undefined ? true : deleteJobs;
+  // Only allow editing if user has explicit permission (don't default to true)
+  const canEditJobs = editAllJobs || editAssignedJobs;
+  const canDeleteJobs = deleteJobs;
   
   const roomTypes = [
     { value: "living_room", label: "Living Room", icon: Home },

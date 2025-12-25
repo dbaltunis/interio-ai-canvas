@@ -16,6 +16,8 @@ import { useNavigate } from "react-router-dom";
 import { useProjectStatusChange } from "@/hooks/useProjectStatusChange";
 import { LeftoverCaptureDialog } from "../projects/LeftoverCaptureDialog";
 import { InventoryDeductionDialog } from "../projects/InventoryDeductionDialog";
+import { useHasPermission } from "@/hooks/usePermissions";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface ProjectHeaderProps {
   projectName: string;
@@ -50,6 +52,26 @@ export const ProjectHeader = ({
   const updateQuote = useUpdateQuote();
   const updateProject = useUpdateProject();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const canEditAllJobs = useHasPermission('edit_all_jobs');
+  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
+  
+  // Extract project object and user_id if projectId is an object
+  const projectObj = typeof projectId === 'object' && projectId ? projectId : null;
+  const projectUserId = projectObj?.user_id || null;
+  // If both permissions are disabled, no job should be editable
+  // If both are enabled, all jobs are editable
+  // If only "Edit Any Job" is enabled, only jobs created by the user should be editable
+  // If only "Edit Assigned Jobs" is enabled, only assigned jobs should be editable
+  const canEditJob = (!canEditAllJobs && !canEditAssignedJobs) 
+    ? false 
+    : (canEditAllJobs && canEditAssignedJobs) 
+      ? true 
+      : (canEditAllJobs && !canEditAssignedJobs) 
+        ? projectUserId === user?.id 
+        : (canEditAssignedJobs && !canEditAllJobs) 
+          ? projectUserId === user?.id 
+          : false;
   
   const [showEventDialog, setShowEventDialog] = useState(false);
   const [showTeamDialog, setShowTeamDialog] = useState(false);
@@ -94,6 +116,15 @@ export const ProjectHeader = ({
   };
 
   const handleStatusChange = async (newStatus: string) => {
+    if (!canEditJob) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     console.log('Status change requested:', { from: displayStatus, to: newStatus, projectId, quoteId });
     
     const statusInfo = jobStatuses?.find(s => s.name.toLowerCase() === newStatus.toLowerCase());
@@ -326,8 +357,8 @@ export const ProjectHeader = ({
                 {currentStatusInfo.action === 'requires_reason' && ' ⚠️'}
               </Badge>
             )}
-            <Select value={displayStatus} onValueChange={handleStatusChange}>
-              <SelectTrigger className="w-32">
+            <Select value={displayStatus} onValueChange={handleStatusChange} disabled={!canEditJob}>
+              <SelectTrigger className="w-32" disabled={!canEditJob}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

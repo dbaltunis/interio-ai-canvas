@@ -37,13 +37,20 @@ export const ProjectTabContent = ({
   const { user } = useAuth();
   const client = clients?.find(c => c.id === project.client_id);
   
-  // Permission checks - use correct permission names
-  const canEditAllJobs = useHasPermission('edit_all_jobs');
-  const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
-  const canEditJob = canEditAllJobs || (canEditAssignedJobs && project?.user_id === user?.id);
-  const isReadOnly = !canEditJob;
+  // Use explicit permissions hook for edit checks
+  const { canEditJob, isLoading: editPermissionsLoading } = useCanEditJob(project);
+  const isReadOnly = !canEditJob || editPermissionsLoading;
 
   const handleClientSelect = async (clientId: string) => {
+    if (isReadOnly) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       console.log("Selecting client:", clientId, "for project:", project.id);
       
@@ -73,6 +80,15 @@ export const ProjectTabContent = ({
   };
 
   const handleClientRemove = async () => {
+    if (isReadOnly) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to edit this job.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       console.log("Removing client from project:", project.id);
       
@@ -124,6 +140,7 @@ export const ProjectTabContent = ({
               project={project} 
               onClientSelect={handleClientSelect}
               onClientRemove={handleClientRemove}
+              isReadOnly={isReadOnly}
             />
           </>
         );

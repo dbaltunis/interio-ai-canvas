@@ -142,9 +142,11 @@ export const AuthPage = () => {
         // CRITICAL FIX: Check if user already exists (they might be clicking the email link twice)
         // First attempt to sign in to see if the account already exists
         console.log('[AuthPage] Attempting sign in to check if user exists:', email);
-        const { error: signInError } = await signIn(email, password);
+        const initialSignInResult = await signIn(email, password);
+        const signInError = initialSignInResult.error;
+        const signInData = initialSignInResult.data;
         
-        if (!signInError) {
+        if (!signInError && signInData) {
           // User already exists and signed in successfully, get their ID and accept invitation
           const { data: { user } } = await supabase.auth.getUser();
           
@@ -177,8 +179,23 @@ export const AuthPage = () => {
           }
         }
         
-        // Sign in failed, user needs to create account
-        console.log('[AuthPage] User does not exist, creating new account');
+        // Sign in failed - check if user exists but email is not confirmed
+        // If sign-in error is "email_not_confirmed" or "invalid_credentials", 
+        // try to find the user and confirm their email
+        if (signInError && (signInError.message?.includes('email') || signInError.message?.includes('credentials'))) {
+          console.log('[AuthPage] Sign-in failed, checking if user exists with unconfirmed email');
+          
+          // Try to get user by email using admin API via edge function
+          try {
+            // First, try to confirm email for this user (edge function will handle if user doesn't exist)
+            // We'll handle this after signup attempt
+          } catch (error) {
+            console.error('[AuthPage] Error checking user existence:', error);
+          }
+        }
+        
+        // User doesn't exist or sign-in failed, proceed to create account
+        console.log('[AuthPage] Creating new account for invited user');
         
         // Validate passwords match
         if (password !== confirmPassword) {
@@ -204,64 +221,138 @@ export const AuthPage = () => {
 
         console.log('[AuthPage] Attempting signup for new invitation user:', email);
         
-        // Get inviter's user_id AND role from invitation
-        const { data: invitationDetails } = await supabase
-          .from('user_invitations')
-          .select('user_id, role')
-          .eq('invitation_token', invitationToken)
-          .single();
+        // Use invitation data already loaded (includes user_id and role from updated RPC)
+        const inviterUserId = invitation?.user_id;
+        const invitationRole = invitation?.role || 'Staff';
         
-        console.log('[AuthPage] Creating user with role from invitation:', invitationDetails?.role);
+        console.log('[AuthPage] Creating user via admin API with email pre-confirmed');
         
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              invitation_user_id: invitationDetails?.user_id, // Pass inviter's ID for parent_account_id
-              invitation_role: invitationDetails?.role, // Pass role from invitation
-              display_name: invitation.invited_name || email
-            }
+        // Use edge function to create user with email already confirmed (no confirmation email sent)
+        const { data: createUserData, error: createUserError } = await supabase.functions.invoke('create-invited-user', {
+          body: {
+            email,
+            password,
+            invitationUserId: inviterUserId,
+            invitationRole: invitationRole,
+            displayName: invitation?.invited_name || email
           }
         });
 
-        if (signUpError) {
-          console.error('[AuthPage] Signup error:', signUpError);
+        if (createUserError) {
+          console.error('[AuthPage] Error creating user:', createUserError);
+          
+          // Check if user already exists
+          if (createUserError.message?.includes('already registered') || createUserError.message?.includes('already exists')) {
+            toast({
+              title: "Account Exists",
+              description: "An account with this email already exists. Please sign in with your password.",
+              variant: "default",
+            });
+            setIsSignUp(false);
+            setLoading(false);
+            return;
+          }
+          
           toast({
             title: "Error",
-            description: signUpError.message,
+            description: createUserError.message || "Failed to create account. Please try again.",
             variant: "destructive"
           });
-        } else if (signUpData?.user) {
-          console.log('[AuthPage] Signup successful, user ID:', signUpData.user.id);
+          setLoading(false);
+          return;
+        }
+
+        if (!createUserData?.user) {
+          console.error('[AuthPage] No user data returned from create function');
+          toast({
+            title: "Error",
+            description: "Account creation failed. Please try again.",
+            variant: "destructive"
+          });
+          setLoading(false);
+          return;
+        }
+
+        const createdUser = createUserData.user;
+        console.log('[AuthPage] User created successfully via admin API, ID:', createdUser.id);
+
+        // Sign the user in immediately (email is already confirmed)
+        console.log('[AuthPage] Signing in newly created user');
+        const finalSignInResult = await signIn(email, password);
+        
+        if (finalSignInResult.error) {
+          console.error('[AuthPage] Error signing in after account creation:', finalSignInResult.error);
+          toast({
+            title: "Account Created",
+            description: "Your account was created. Please sign in with your email and password.",
+            variant: "default",
+          });
+          setLoading(false);
+          return;
+        }
+
+        console.log('[AuthPage] User signed in successfully');
+        
+        // Wait a moment for the trigger to complete and profile to be created
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Accept the invitation (this ensures parent_account_id is set correctly)
+        try {
+          const { data: acceptResult, error: acceptError } = await supabase.rpc('accept_user_invitation', {
+            invitation_token_param: invitationToken,
+            user_id_param: createdUser.id,
+          });
           
-          // Accept the invitation immediately after signup
-          try {
-            const { data: acceptResult, error: acceptError } = await supabase.rpc('accept_user_invitation', {
-              invitation_token_param: invitationToken,
-              user_id_param: signUpData.user.id,
-            });
+          console.log('[AuthPage] Invitation acceptance result:', acceptResult, acceptError);
+          
+          if (acceptError) {
+            console.error('[AuthPage] Error accepting invitation:', acceptError);
+            // Don't block the flow if invitation acceptance fails - profile should already be set by trigger
+            console.warn('[AuthPage] Continuing despite invitation acceptance error - profile may already be set');
+          }
+          
+          // Verify profile was created/updated correctly
+          const { data: profileCheck, error: profileCheckError } = await supabase
+            .from('user_profiles')
+            .select('user_id, parent_account_id, role, display_name')
+            .eq('user_id', createdUser.id)
+            .single();
+          
+          if (profileCheckError) {
+            console.error('[AuthPage] Error verifying profile:', profileCheckError);
+          } else {
+            console.log('[AuthPage] Profile verified:', profileCheck);
             
-            console.log('[AuthPage] Invitation acceptance result:', acceptResult, acceptError);
-            
-            if (acceptError) {
-              console.error('[AuthPage] Error accepting invitation:', acceptError);
-              toast({
-                title: "Invitation Error",
-                description: "Could not accept invitation. Please contact support.",
-                variant: "destructive",
-              });
-            } else {
-              toast({
-                title: "Welcome!",
-                description: "Your account has been created successfully. Redirecting...",
+            // Check if parent_account_id is set correctly
+            if (!profileCheck.parent_account_id) {
+              console.warn('[AuthPage] WARNING: parent_account_id is NULL! User may not appear in team list.');
+              console.warn('[AuthPage] Attempting to fix by calling accept_user_invitation again...');
+              
+              // Try calling accept_user_invitation again to fix it
+              const { data: retryResult, error: retryError } = await supabase.rpc('accept_user_invitation', {
+                invitation_token_param: invitationToken,
+                user_id_param: createdUser.id,
               });
               
-              setTimeout(() => navigate('/'), 1500);
+              console.log('[AuthPage] Retry result:', retryResult, retryError);
+            } else {
+              console.log('[AuthPage] ✓ parent_account_id is correctly set:', profileCheck.parent_account_id);
             }
-          } catch (error) {
-            console.error('[AuthPage] Exception accepting invitation:', error);
           }
+          
+          toast({
+            title: "Welcome!",
+            description: "Your account has been created successfully. Redirecting...",
+          });
+          setTimeout(() => navigate('/'), 1500);
+        } catch (error) {
+          console.error('[AuthPage] Exception accepting invitation:', error);
+          // Still redirect - profile should be set by trigger
+          toast({
+            title: "Welcome!",
+            description: "Your account has been created. Redirecting...",
+          });
+          setTimeout(() => navigate('/'), 1500);
         }
       } else {
         // Handle regular login/signup

@@ -12,6 +12,7 @@ import { AddActivityDialog } from "./AddActivityDialog";
 
 interface ClientActivityLogProps {
   clientId: string;
+  canEditClient?: boolean;
 }
 
 const activityIcons: Record<ActivityType, any> = {
@@ -40,7 +41,7 @@ const activityColors: Record<ActivityType, string> = {
   task_completed: "bg-green-100 text-green-700 border-green-300",
 };
 
-export const ClientActivityLog = ({ clientId }: ClientActivityLogProps) => {
+export const ClientActivityLog = ({ clientId, canEditClient = true }: ClientActivityLogProps) => {
   const { data: activities, isLoading } = useClientActivities(clientId);
   const [showAddDialog, setShowAddDialog] = useState(false);
 
@@ -59,7 +60,7 @@ export const ClientActivityLog = ({ clientId }: ClientActivityLogProps) => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Activity Timeline</CardTitle>
-          <Button onClick={() => setShowAddDialog(true)} size="sm">
+          <Button onClick={() => setShowAddDialog(true)} size="sm" disabled={!canEditClient}>
             <StickyNote className="h-4 w-4 mr-2" />
             Add Note
           </Button>
@@ -69,7 +70,7 @@ export const ClientActivityLog = ({ clientId }: ClientActivityLogProps) => {
             <div className="text-center py-12">
               <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground mb-4">No activities recorded yet</p>
-              <Button onClick={() => setShowAddDialog(true)} variant="outline">
+              <Button onClick={() => setShowAddDialog(true)} variant="outline" disabled={!canEditClient}>
                 <StickyNote className="h-4 w-4 mr-2" />
                 Add First Note
               </Button>

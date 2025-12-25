@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCreateClient, useClients, useUpdateClient } from "@/hooks/useClients";
+import { useCanEditClient } from "@/hooks/useClientEditPermissions";
 import { ArrowLeft, Upload, FileText, Camera, Ruler } from "lucide-react";
 
 interface EnhancedClientFormProps {
@@ -55,6 +56,7 @@ export const EnhancedClientForm = ({ onBack, onClientCreated, clientId }: Enhanc
   
   const isEditing = Boolean(clientId);
   const existingClient = clients?.find(c => c.id === clientId);
+  const { canEditClient } = useCanEditClient(existingClient || null);
 
   useEffect(() => {
     if (isEditing && existingClient) {
@@ -89,6 +91,12 @@ export const EnhancedClientForm = ({ onBack, onClientCreated, clientId }: Enhanc
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check permission before saving if editing
+    if (isEditing && !canEditClient) {
+      console.error('Permission denied: Cannot edit this client');
+      return;
+    }
     
     try {
       const clientData = {
@@ -433,7 +441,14 @@ export const EnhancedClientForm = ({ onBack, onClientCreated, clientId }: Enhanc
           <Button type="button" variant="outline" onClick={onBack}>
             Cancel
           </Button>
-          <Button type="submit" disabled={createClient.isPending || updateClient.isPending}>
+          <Button 
+            type="submit" 
+            disabled={
+              createClient.isPending || 
+              updateClient.isPending || 
+              (isEditing && !canEditClient)
+            }
+          >
             {createClient.isPending || updateClient.isPending ? 
               (isEditing ? "Updating..." : "Creating...") : 
               (isEditing ? "Update Client" : "Create Client")

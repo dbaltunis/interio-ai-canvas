@@ -13,16 +13,35 @@ export const useUserPermissions = () => {
         return [];
       }
 
-      // Fetch user profile to get role
-      const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single();
+      // Fetch user profile to get role with retry logic for race conditions
+      let profile = null;
+      let profileError = null;
+      const maxRetries = 3;
+      
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const result = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+        
+        profile = result.data;
+        profileError = result.error;
+        
+        // If profile found or error is not 406/not found, break
+        if (profile || (profileError && profileError.code !== 'PGRST116' && profileError.code !== '406')) {
+          break;
+        }
+        
+        // If 406/not found and not last attempt, wait and retry
+        if (attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        }
+      }
 
-      if (profileError) {
+      if (profileError && profileError.code !== 'PGRST116') {
         console.error('[useUserPermissions] Error fetching user profile:', profileError);
-        return [];
+        // Don't return empty array immediately - try to use default role
       }
 
       const userRole = profile?.role || 'User';

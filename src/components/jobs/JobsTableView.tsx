@@ -62,15 +62,31 @@ interface JobsTableViewProps {
   searchTerm: string;
   statusFilter: string;
   visibleColumns: Array<{ id: string; label: string; visible: boolean; order: number }>;
+  filteredQuotes?: any[]; // Optional: filtered quotes based on permissions
+  filteredProjects?: any[]; // Optional: filtered projects based on permissions
+  canDeleteJobs?: boolean; // Optional: explicit delete permission from parent
 }
 
 const ITEMS_PER_PAGE = 20;
 
-export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleColumns }: JobsTableViewProps) => {
+export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleColumns, filteredQuotes, filteredProjects, canDeleteJobs: canDeleteJobsProp }: JobsTableViewProps) => {
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
-  const { data: quotes = [], isLoading, refetch } = useQuotes();
-  const { data: projects = [] } = useProjects();
+  const { data: allQuotes = [], isLoading, refetch } = useQuotes();
+  const { data: allProjects = [] } = useProjects();
+  
+  // Use filtered data if provided, otherwise use all data
+  // IMPORTANT: If filtered data is provided, it means permissions require filtering
+  const quotes = filteredQuotes !== undefined ? filteredQuotes : allQuotes;
+  const projects = filteredProjects !== undefined ? filteredProjects : allProjects;
+  
+  // Debug logging
+  useEffect(() => {
+    if (filteredQuotes !== undefined || filteredProjects !== undefined) {
+      console.log('[JobsTableView] Using filtered data - quotes:', quotes.length, 'projects:', projects.length);
+      console.log('[JobsTableView] Filtered quotes provided:', filteredQuotes !== undefined, 'Filtered projects provided:', filteredProjects !== undefined);
+    }
+  }, [quotes.length, projects.length, filteredQuotes, filteredProjects]);
   const { data: clients = [] } = useClients();
   const { data: users = [] } = useUsers();
   const { data: jobStatuses = [] } = useJobStatuses();
@@ -79,7 +95,10 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   const updateQuote = useUpdateQuote();
   const queryClient = useQueryClient();
   const userCurrency = useUserCurrency();
-  const canDeleteJobs = useHasPermission('delete_jobs');
+  
+  // Use explicit delete permission from parent if provided, otherwise fall back to useHasPermission
+  const canDeleteJobsFallback = useHasPermission('delete_jobs');
+  const canDeleteJobs = canDeleteJobsProp !== undefined ? canDeleteJobsProp : canDeleteJobsFallback;
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [quoteToDelete, setQuoteToDelete] = useState<any>(null);
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
