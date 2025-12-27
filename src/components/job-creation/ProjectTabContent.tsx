@@ -1,4 +1,3 @@
-
 import { ProjectClientTab } from "./ProjectClientTab";
 import { ProjectJobsTab } from "./ProjectJobsTab";
 import { ProjectQuoteTab } from "./ProjectQuoteTab";
@@ -7,7 +6,7 @@ import { useClients } from "@/hooks/useClients";
 import { useUpdateProject } from "@/hooks/useProjects";
 import { useToast } from "@/hooks/use-toast";
 import { EmailManagement } from "@/components/jobs/EmailManagement";
-import { useHasPermission } from "@/hooks/usePermissions";
+import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lock } from "lucide-react";
