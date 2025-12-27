@@ -14,13 +14,15 @@ interface InstallationInstructionsProps {
   orientation?: 'portrait' | 'landscape';
   projectId?: string;
   isPrintMode?: boolean;
+  isReadOnly?: boolean;
 }
 
 export const InstallationInstructions: React.FC<InstallationInstructionsProps> = ({ 
   data, 
   orientation = 'portrait',
   projectId,
-  isPrintMode = false
+  isPrintMode = false,
+  isReadOnly = false
 }) => {
   console.log('🔍 [InstallationInstructions] projectId:', projectId);
   
