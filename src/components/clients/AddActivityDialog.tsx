@@ -53,7 +53,10 @@ export const AddActivityDialog = ({ clientId, open, onOpenChange }: AddActivityD
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Add Activity Note</DialogTitle>
+          <DialogTitle>Add Client Activity</DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            Log interactions like calls, meetings, and notes. These appear in the Activity Timeline.
+          </p>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -120,14 +123,14 @@ export const AddActivityDialog = ({ clientId, open, onOpenChange }: AddActivityD
 
           <div className="space-y-2">
             <Label>Follow-up Date (Optional)</Label>
-            <Popover>
+            <Popover modal={true}>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-left font-normal">
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {followUpDate ? format(followUpDate, "PPP") : "Select date"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0 z-[100]" align="start" sideOffset={4}>
                 <Calendar
                   mode="single"
                   selected={followUpDate}
