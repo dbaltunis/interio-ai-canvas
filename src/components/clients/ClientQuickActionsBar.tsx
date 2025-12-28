@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mail, Phone, StickyNote, Briefcase, Copy, Loader2 } from 'lucide-react';
+import { Mail, Phone, StickyNote, Briefcase, Loader2 } from 'lucide-react';
 import { QuickEmailDialog } from './QuickEmailDialog';
 import { AddActivityDialog } from './AddActivityDialog';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { useCreateProject } from '@/hooks/useProjects';
-import { useCreateQuote } from '@/hooks/useQuotes';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Client {
   id: string;
@@ -26,8 +26,7 @@ export const ClientQuickActionsBar = ({ client }: ClientQuickActionsBarProps) =>
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const navigate = useNavigate();
-  const createProject = useCreateProject();
-  const createQuote = useCreateQuote();
+  const queryClient = useQueryClient();
 
   const displayName = client.client_type === 'B2B' ? client.company_name : client.name;
 
@@ -40,60 +39,108 @@ export const ClientQuickActionsBar = ({ client }: ClientQuickActionsBarProps) =>
     }
   };
 
-  const handleCopyEmail = async () => {
-    if (client.email) {
-      try {
-        await navigator.clipboard.writeText(client.email);
-        toast.success("Email copied to clipboard");
-      } catch (err) {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = client.email;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        toast.success("Email copied to clipboard");
-      }
-    }
-  };
-
   const handleCreateProject = async () => {
     setIsCreatingProject(true);
     try {
       console.log('[QuickActions] Creating new project for client:', client.id);
       
-      // Create the project
-      const newProject = await createProject.mutateAsync({
-        name: `New Job ${new Date().toLocaleDateString()}`,
-        description: "",
-        status: "planning",
-        client_id: client.id
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in to create a project");
+        return;
+      }
+
+      // Get account owner for team members
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("parent_account_id")
+        .eq("user_id", user.id)
+        .single();
+      
+      const accountOwnerId = profile?.parent_account_id || user.id;
+
+      // Generate job number
+      let jobNumber: string;
+      const { data: generatedNumber, error: seqError } = await supabase.rpc("get_next_sequence_number", {
+        p_user_id: accountOwnerId,
+        p_entity_type: "job",
       });
+      
+      if (seqError) {
+        console.error("Error generating job number:", seqError);
+        jobNumber = `JOB-${Date.now()}`;
+      } else {
+        jobNumber = generatedNumber || `JOB-${Date.now()}`;
+      }
+
+      // Get first Project status using accountOwnerId
+      const { data: firstStatus } = await supabase
+        .from("job_statuses")
+        .select("id")
+        .eq("user_id", accountOwnerId)
+        .eq("category", "Project")
+        .eq("is_active", true)
+        .order("slot_number", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      // Create the project
+      const { data: newProject, error: projectError } = await supabase
+        .from("projects")
+        .insert({
+          name: `New Job ${new Date().toLocaleDateString()}`,
+          description: "",
+          status: "planning",
+          client_id: client.id,
+          user_id: user.id,
+          job_number: jobNumber,
+          status_id: firstStatus?.id || null,
+        })
+        .select()
+        .single();
+
+      if (projectError) {
+        console.error('[QuickActions] Failed to create project:', projectError);
+        throw projectError;
+      }
 
       console.log('[QuickActions] Project created:', newProject.id);
 
       // Create a quote for this project
-      await createQuote.mutateAsync({
-        project_id: newProject.id,
-        client_id: client.id,
-        status: "draft",
-        subtotal: 0,
-        tax_rate: 0,
-        tax_amount: 0,
-        total_amount: 0,
-        notes: "New job created",
-      });
+      const { error: quoteError } = await supabase
+        .from("quotes")
+        .insert({
+          project_id: newProject.id,
+          client_id: client.id,
+          user_id: user.id,
+          status: "draft",
+          subtotal: 0,
+          tax_rate: 0,
+          tax_amount: 0,
+          total_amount: 0,
+          notes: "New job created",
+          quote_number: `QT-${Date.now()}`,
+        });
 
-      console.log('[QuickActions] Quote created, navigating to project');
+      if (quoteError) {
+        console.error('[QuickActions] Failed to create quote:', quoteError);
+        // Don't throw - project was created, just log the quote error
+      }
+
+      console.log('[QuickActions] Quote created, invalidating queries and navigating');
+
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      await queryClient.invalidateQueries({ queryKey: ["quotes"] });
 
       // Navigate to the projects tab with the new job opened
       navigate(`/?tab=projects&jobId=${newProject.id}`);
 
       toast.success("Project created successfully");
-    } catch (error) {
+    } catch (error: any) {
       console.error('[QuickActions] Failed to create project:', error);
-      toast.error("Failed to create project. Please try again.");
+      toast.error(error.message || "Failed to create project. Please try again.");
     } finally {
       setIsCreatingProject(false);
     }
@@ -134,7 +181,7 @@ export const ClientQuickActionsBar = ({ client }: ClientQuickActionsBarProps) =>
           className="gap-1.5"
         >
           <StickyNote className="h-4 w-4" />
-          <span className="hidden sm:inline">Note</span>
+          <span className="hidden sm:inline">Log Activity</span>
         </Button>
 
         {/* Create Project */}
@@ -154,19 +201,6 @@ export const ClientQuickActionsBar = ({ client }: ClientQuickActionsBarProps) =>
             {isCreatingProject ? "Creating..." : "New Project"}
           </span>
         </Button>
-
-        {/* Copy Email (if available) */}
-        {client.email && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleCopyEmail}
-            className="gap-1.5 text-muted-foreground"
-            title="Copy email to clipboard"
-          >
-            <Copy className="h-4 w-4" />
-          </Button>
-        )}
       </div>
 
       <QuickEmailDialog
