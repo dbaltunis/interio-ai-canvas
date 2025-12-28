@@ -43,13 +43,13 @@ export const ClientQuickActionsBar = ({ client }: ClientQuickActionsBarProps) =>
   };
 
   const handleCreateQuote = () => {
-    // Navigate to quotes page with client pre-selected
-    navigate(`/quotes?newQuote=true&clientId=${client.id}`);
+    // Navigate to quotes tab with client pre-selected
+    navigate(`/?tab=quotes&newQuote=true&clientId=${client.id}`);
   };
 
   const handleCreateProject = () => {
-    // Navigate to projects page with client pre-selected
-    navigate(`/projects?newProject=true&clientId=${client.id}`);
+    // Navigate to projects tab with client pre-selected
+    navigate(`/?tab=projects&newProject=true&clientId=${client.id}`);
   };
 
   return (
