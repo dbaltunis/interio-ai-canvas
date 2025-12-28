@@ -49,15 +49,20 @@ export const useCanEditJob = (project: any) => {
     (p: { permission_name: string }) => p.permission_name === 'edit_assigned_jobs'
   ) ?? false;
   
-  // For Owners: Only bypass restrictions if NO explicit permissions exist in table at all
+  // System Owner: ALWAYS has full access regardless of explicit permissions
+  // Owner: Only bypass restrictions if NO explicit permissions exist in table at all
   // If ANY explicit permissions exist, respect ALL settings (missing = disabled)
-  const canEditAllJobs = isOwner && !hasAnyExplicitPermissions 
-    ? true // Owner with no explicit permissions = full access
-    : hasEditAllJobsPermission; // Otherwise respect explicit permissions
+  const canEditAllJobs = userRoleData?.isSystemOwner
+    ? true // System Owner ALWAYS has full access
+    : isOwner && !hasAnyExplicitPermissions 
+      ? true // Owner with no explicit permissions = full access
+      : hasEditAllJobsPermission;
   
-  const canEditAssignedJobs = isOwner && !hasAnyExplicitPermissions
-    ? true // Owner with no explicit permissions = full access
-    : hasEditAssignedJobsPermission; // Otherwise respect explicit permissions
+  const canEditAssignedJobs = userRoleData?.isSystemOwner
+    ? true // System Owner ALWAYS has full access
+    : isOwner && !hasAnyExplicitPermissions
+      ? true // Owner with no explicit permissions = full access
+      : hasEditAssignedJobsPermission;
   
   // Fetch clients to check assignment
   const { data: clients = [] } = useClients();
