@@ -6,10 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCreateActivity, ActivityType } from "@/hooks/useClientActivity";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 interface AddActivityDialogProps {
   clientId: string;
@@ -24,7 +21,7 @@ export const AddActivityDialog = ({ clientId, open, onOpenChange }: AddActivityD
   const [description, setDescription] = useState("");
   const [valueAmount, setValueAmount] = useState("");
   const [teamMember, setTeamMember] = useState("");
-  const [followUpDate, setFollowUpDate] = useState<Date | undefined>();
+  const [followUpDate, setFollowUpDate] = useState("");
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
@@ -36,7 +33,7 @@ export const AddActivityDialog = ({ clientId, open, onOpenChange }: AddActivityD
       description: description.trim() || undefined,
       value_amount: valueAmount ? parseFloat(valueAmount) : undefined,
       team_member: teamMember.trim() || undefined,
-      follow_up_date: followUpDate ? format(followUpDate, "yyyy-MM-dd") : undefined,
+      follow_up_date: followUpDate || undefined,
     });
 
     // Reset form
@@ -44,7 +41,7 @@ export const AddActivityDialog = ({ clientId, open, onOpenChange }: AddActivityD
     setDescription("");
     setValueAmount("");
     setTeamMember("");
-    setFollowUpDate(undefined);
+    setFollowUpDate("");
     setActivityType("note_added");
     onOpenChange(false);
   };
@@ -122,23 +119,14 @@ export const AddActivityDialog = ({ clientId, open, onOpenChange }: AddActivityD
           </div>
 
           <div className="space-y-2">
-            <Label>Follow-up Date (Optional)</Label>
-            <Popover modal={true}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left font-normal">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {followUpDate ? format(followUpDate, "PPP") : "Select date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 z-[100]" align="start" sideOffset={4}>
-                <Calendar
-                  mode="single"
-                  selected={followUpDate}
-                  onSelect={setFollowUpDate}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <Label htmlFor="follow-up-date">Follow-up Date (Optional)</Label>
+            <Input
+              id="follow-up-date"
+              type="date"
+              value={followUpDate}
+              onChange={(e) => setFollowUpDate(e.target.value)}
+              className="w-full"
+            />
           </div>
         </div>
 
