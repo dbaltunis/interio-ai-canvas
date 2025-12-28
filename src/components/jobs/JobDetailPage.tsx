@@ -108,42 +108,48 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const hasExplicitViewPermissions = hasViewAllJobsPermission || hasViewAssignedJobsPermission;
   
   // Determine if user can view jobs and what scope they have
-  // - Owners/System Owners: Only bypass restrictions if NO explicit permissions exist in table at all
-  //   If ANY explicit permissions exist in table, respect ALL settings (missing = disabled)
+  // - System Owner: ALWAYS has full access regardless of explicit permissions
+  // - Owner: Only bypass restrictions if NO explicit permissions exist in table at all
   // - Admins and Regular users: Always check explicit permissions
-  const canViewJobsExplicit = isOwner && !hasAnyExplicitPermissions 
-    ? true // Owner with no explicit permissions in table at all = full access
-    : hasViewAllJobsPermission || hasViewAssignedJobsPermission; // Otherwise respect explicit permissions (enabled ones)
+  const canViewJobsExplicit = userRoleData?.isSystemOwner
+    ? true // System Owner ALWAYS has full access
+    : isOwner && !hasAnyExplicitPermissions 
+      ? true // Owner with no explicit permissions in table at all = full access
+      : hasViewAllJobsPermission || hasViewAssignedJobsPermission;
   
   // Filter by assignment if:
-  // - User is not an Owner, OR
-  // - Owner has ANY explicit permissions in table (respect all settings)
+  // - User is NOT a System Owner (System Owners see everything)
+  // - AND (User is not an Owner, OR Owner has ANY explicit permissions in table)
   // - AND they only have view_assigned_jobs enabled (not view_all_jobs)
-  const shouldFilterByAssignment = (!isOwner || hasAnyExplicitPermissions) && !hasViewAllJobsPermission && hasViewAssignedJobsPermission;
+  const shouldFilterByAssignment = !userRoleData?.isSystemOwner && (!isOwner || hasAnyExplicitPermissions) && !hasViewAllJobsPermission && hasViewAssignedJobsPermission;
   
   // Check if delete_jobs is explicitly in user_permissions table (enabled)
   const hasDeleteJobsPermission = explicitPermissions?.some(
     (p: { permission_name: string }) => p.permission_name === 'delete_jobs'
   ) ?? false;
   
-  // Owners/System Owners: Only bypass restrictions if NO explicit permissions exist in table at all
-  // If ANY explicit permissions exist in table, respect ALL settings (missing = disabled)
+  // System Owner: ALWAYS has full access
+  // Owner: Only bypass restrictions if NO explicit permissions exist in table at all
   // Admins and Regular users: Always check explicit permissions
-  const canDeleteJobsExplicit = isOwner && !hasAnyExplicitPermissions 
-    ? true // Owner with no explicit permissions in table at all = full access
-    : hasDeleteJobsPermission; // Otherwise respect explicit permissions (enabled ones)
+  const canDeleteJobsExplicit = userRoleData?.isSystemOwner
+    ? true // System Owner ALWAYS has full access
+    : isOwner && !hasAnyExplicitPermissions 
+      ? true // Owner with no explicit permissions in table at all = full access
+      : hasDeleteJobsPermission;
   
   // Check if view_workroom is explicitly in user_permissions table (enabled)
   const hasViewWorkroomPermission = explicitPermissions?.some(
     (p: { permission_name: string }) => p.permission_name === 'view_workroom'
   ) ?? false;
   
-  // Owners/System Owners: Only bypass restrictions if NO explicit permissions exist in table at all
-  // If ANY explicit permissions exist in table, respect ALL settings (missing = disabled)
+  // System Owner: ALWAYS has full access
+  // Owner: Only bypass restrictions if NO explicit permissions exist in table at all
   // Admins and Regular users: Always check explicit permissions
-  const canViewWorkroomExplicit = isOwner && !hasAnyExplicitPermissions 
-    ? true // Owner with no explicit permissions in table at all = full access
-    : hasViewWorkroomPermission; // Otherwise respect explicit permissions (enabled ones)
+  const canViewWorkroomExplicit = userRoleData?.isSystemOwner
+    ? true // System Owner ALWAYS has full access
+    : isOwner && !hasAnyExplicitPermissions 
+      ? true // Owner with no explicit permissions in table at all = full access
+      : hasViewWorkroomPermission;
   
   // Use useProject(id) instead of useProjects() to avoid filtering issues
   // This lets RLS handle permissions properly, especially for team members

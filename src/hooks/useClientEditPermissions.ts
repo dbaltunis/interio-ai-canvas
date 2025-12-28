@@ -49,17 +49,20 @@ export const useCanEditClient = (client: any) => {
     (p: { permission_name: string }) => p.permission_name === 'edit_assigned_clients'
   ) ?? false;
   
-  // Owners and System Owners: Only bypass restrictions if NO explicit permissions exist in table at all
+  // System Owner: ALWAYS has full access regardless of explicit permissions
+  // Owner/Admin: Only bypass restrictions if NO explicit permissions exist in table at all
   // If ANY explicit permissions exist, respect ALL settings (missing = disabled)
-  // Admins: Same logic as owners - only bypass if NO explicit permissions exist
-  // If ANY explicit permissions exist, respect ALL settings (missing = disabled)
-  const canEditAllClients = (isOwner || isAdmin) && !hasAnyExplicitPermissions 
-    ? true // Owner/Admin with no explicit permissions = full access
-    : hasEditAllClientsPermission; // Otherwise respect explicit permissions (false if not in table)
+  const canEditAllClients = userRoleData?.isSystemOwner
+    ? true // System Owner ALWAYS has full access
+    : (isOwner || isAdmin) && !hasAnyExplicitPermissions 
+      ? true // Owner/Admin with no explicit permissions = full access
+      : hasEditAllClientsPermission;
   
-  const canEditAssignedClients = (isOwner || isAdmin) && !hasAnyExplicitPermissions
-    ? true // Owner/Admin with no explicit permissions = full access
-    : hasEditAssignedClientsPermission; // Otherwise respect explicit permissions (false if not in table)
+  const canEditAssignedClients = userRoleData?.isSystemOwner
+    ? true // System Owner ALWAYS has full access
+    : (isOwner || isAdmin) && !hasAnyExplicitPermissions
+      ? true // Owner/Admin with no explicit permissions = full access
+      : hasEditAssignedClientsPermission;
   
   // Debug logging for admin permission issues
   if (isAdmin && hasAnyExplicitPermissions) {
