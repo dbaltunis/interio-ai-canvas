@@ -17,7 +17,11 @@ import {
   ShoppingCart
 } from "lucide-react";
 import { useMaterialQueueCount } from "@/hooks/useMaterialQueueCount";
-import { useHasPermission } from "@/hooks/usePermissions";
+import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface MainNavProps {
   activeTab: string;
@@ -41,14 +45,48 @@ const navItems = [
 
 export const MainNav = ({ activeTab, onTabChange }: MainNavProps) => {
   const { data: queueCount } = useMaterialQueueCount();
+  const { user } = useAuth();
   
   // Permission checks
   const canViewJobs = useHasPermission('view_jobs');
   const canCreateJobs = useHasPermission('create_jobs');
-  const canViewInventory = useHasPermission('view_inventory');
   const canViewCalendar = useHasPermission('view_calendar');
   const canViewClients = useHasPermission('view_clients');
   const canViewSettings = useHasPermission('view_settings');
+  
+  // For inventory, check explicit permissions like jobs and clients
+  const { data: userRoleData } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-inventory-nav', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[MainNav] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+  
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+  const hasViewInventoryPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_inventory'
+  ) ?? false;
+  
+  // Works like jobs and clients - check explicit permissions first
+  const canViewInventory = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasViewInventoryPermission
+        : hasViewInventoryPermission;
   
   // Filter nav items based on permissions
   // During loading (undefined), show items to prevent disappearing UI
@@ -58,7 +96,11 @@ export const MainNav = ({ activeTab, onTabChange }: MainNavProps) => {
     // Only hide if explicitly false, not undefined (loading)
     if (item.permission === 'view_jobs') return canViewJobs !== false;
     if (item.permission === 'create_jobs') return canCreateJobs !== false;
-    if (item.permission === 'view_inventory') return canViewInventory !== false;
+    if (item.permission === 'view_inventory') {
+      // Wait for explicit permissions to load
+      if (explicitPermissions === undefined && !userRoleData) return true; // Show during loading
+      return canViewInventory;
+    }
     if (item.permission === 'view_calendar') return canViewCalendar !== false;
     if (item.permission === 'view_clients') return canViewClients !== false;
     if (item.permission === 'view_settings') return canViewSettings !== false;

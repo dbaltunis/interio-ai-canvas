@@ -16,8 +16,10 @@ import { VendorDashboard } from "../vendors/VendorDashboard";
 import { useVendors } from "@/hooks/useVendors";
 import { MaterialInventoryView } from "./MaterialInventoryView";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
-import { useHasPermission, useHasAnyPermission } from "@/hooks/usePermissions";
+import { useHasPermission, useHasAnyPermission, useUserPermissions } from "@/hooks/usePermissions";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -65,10 +67,51 @@ export const ModernInventoryDashboard = () => {
   });
   
   // Permission checks - CRITICAL for data security
-  const canViewInventory = useHasPermission('view_inventory');
-  const canManageInventory = useHasPermission('manage_inventory');
-  const hasAnyInventoryAccessFromHook = useHasAnyPermission(['view_inventory', 'manage_inventory']);
+  // Check explicit permissions first, like jobs and clients
   const { user } = useAuth();
+  const { data: userRoleData } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-inventory-dashboard', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[ModernInventoryDashboard] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+  
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+  const hasViewInventoryPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_inventory'
+  ) ?? false;
+  const hasManageInventoryPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'manage_inventory'
+  ) ?? false;
+  
+  // Works like jobs and clients - check explicit permissions first
+  const canViewInventory = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasViewInventoryPermission
+        : hasViewInventoryPermission;
+  
+  const canManageInventory = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasManageInventoryPermission
+        : hasManageInventoryPermission;
+  
+  const hasAnyInventoryAccessFromHook = canViewInventory || canManageInventory;
   
   // Timeout fallback - if permissions don't load within 5 seconds, grant access to authenticated users
   const [permissionTimeout, setPermissionTimeout] = useState(false);
@@ -297,15 +340,17 @@ export const ModernInventoryDashboard = () => {
             {!isMobile && "Scan"}
           </Button>
 
-          <AddInventoryDialog
-            trigger={
-              <Button variant="default" size={isMobile ? "sm" : "default"}>
-                <Plus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
-                {!isMobile && "Add"}
-              </Button>
-            }
-            onSuccess={refetch}
-          />
+          {canManageInventory && (
+            <AddInventoryDialog
+              trigger={
+                <Button variant="default" size={isMobile ? "sm" : "default"}>
+                  <Plus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
+                  {!isMobile && "Add"}
+                </Button>
+              }
+              onSuccess={refetch}
+            />
+          )}
         </div>
       </div>
 
@@ -347,6 +392,7 @@ export const ModernInventoryDashboard = () => {
             selectedVendor={selectedVendor}
             selectedCollection={selectedCollection}
             selectedStorageLocation={selectedStorageLocation}
+            canManageInventory={canManageInventory}
           />
         </TabsContent>
 
@@ -357,6 +403,7 @@ export const ModernInventoryDashboard = () => {
             selectedVendor={selectedVendor}
             selectedCollection={selectedCollection}
             selectedStorageLocation={selectedStorageLocation}
+            canManageInventory={canManageInventory}
           />
         </TabsContent>
 
@@ -367,11 +414,13 @@ export const ModernInventoryDashboard = () => {
             selectedVendor={selectedVendor}
             selectedCollection={selectedCollection}
             selectedStorageLocation={selectedStorageLocation}
+            canManageInventory={canManageInventory}
           />
         </TabsContent>
 
         <TabsContent value="wallcoverings" className="space-y-6">
-          <WallcoveringInventoryView 
+          <WallcoveringInventoryView
+            canManageInventory={canManageInventory} 
             searchQuery={searchQuery} 
             viewMode={viewMode}
             selectedVendor={selectedVendor}

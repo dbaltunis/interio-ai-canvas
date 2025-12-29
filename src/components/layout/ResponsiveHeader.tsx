@@ -10,7 +10,8 @@ import { AINotificationToast } from '../collaboration/AINotificationToast';
 import { Button } from '@/components/ui/button';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
-import { useHasPermission } from '@/hooks/usePermissions';
+import { useHasPermission, useUserPermissions } from '@/hooks/usePermissions';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 // Hidden for now - TeachingHelpButton needs completion before deployment
@@ -57,14 +58,48 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   const canViewJobs = useHasPermission('view_jobs');
   const canViewClients = useHasPermission('view_clients');
   const canViewCalendar = useHasPermission('view_calendar');
-  const canViewInventory = useHasPermission('view_inventory');
+  
+  // For inventory, check explicit permissions like jobs and clients
+  const { data: userRoleData } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-inventory', userRoleData?.role],
+    queryFn: async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', authUser.id);
+      if (error) {
+        console.error('[ResponsiveHeader] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!userRoleData && !permissionsLoading,
+  });
+  
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+  const hasViewInventoryPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_inventory'
+  ) ?? false;
+  
+  // Works like jobs and clients - check explicit permissions first
+  const canViewInventory = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasViewInventoryPermission
+        : hasViewInventoryPermission;
   
   // Check if ANY permission is still loading (undefined)
   // Only show skeleton when truly loading, not when permissions are determined
-  const permissionsLoading = canViewJobs === undefined || 
+  const permissionsLoadingState = canViewJobs === undefined || 
                              canViewClients === undefined || 
                              canViewCalendar === undefined || 
-                             canViewInventory === undefined;
+                             (explicitPermissions === undefined && !userRoleData);
   
   // Check if user has InteriorApp store AND NOT using Shopify
   const { data: hasOnlineStore } = useQuery({
@@ -138,7 +173,11 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
     if (item.permission === 'view_jobs') return canViewJobs !== false;
     if (item.permission === 'view_clients') return canViewClients !== false;
     if (item.permission === 'view_calendar') return canViewCalendar !== false;
-    if (item.permission === 'view_inventory') return canViewInventory !== false;
+    if (item.permission === 'view_inventory') {
+      // Wait for explicit permissions to load
+      if (explicitPermissions === undefined && !userRoleData) return true; // Show during loading
+      return canViewInventory;
+    }
     if (item.permission === 'has_online_store') return hasOnlineStore === true;
     
     return true; // Default to showing during loading
@@ -163,7 +202,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
 
           {/* Center: Navigation items */}
           <nav className="flex items-center space-x-2 lg:space-x-3">
-            {permissionsLoading ? (
+            {permissionsLoadingState ? (
               // Show skeleton while permissions are loading
               <>
                 {[1, 2, 3, 4, 5].map((i) => (
