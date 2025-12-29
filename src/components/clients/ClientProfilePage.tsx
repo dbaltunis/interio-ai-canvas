@@ -10,8 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
   ArrowLeft, Mail, Phone, MapPin, Building2, User, Edit, Calendar, 
-  FileText, DollarSign, Clock, Save, X, Briefcase, Package
+  FileText, DollarSign, Clock, Save, X, Briefcase, Package, ExternalLink
 } from "lucide-react";
+import { ClientQuickActionsBar } from "./ClientQuickActionsBar";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useClient, useUpdateClient } from "@/hooks/useClients";
 import { useClientJobs, useClientQuotes } from "@/hooks/useClientJobs";
@@ -137,6 +138,11 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
     ? currentClient.company_name 
     : currentClient.name;
 
+  const leadSource = currentClient.lead_source || currentClient.source || 'Direct';
+  const isExternalLead = leadSource.toLowerCase().includes('external') || 
+                         leadSource.toLowerCase().includes('api') ||
+                         leadSource.toLowerCase().includes('website');
+
   return (
     <div className="max-h-screen overflow-y-auto bg-background p-3 sm:p-6 space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
@@ -156,9 +162,22 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
               {currentClient.client_type === 'B2B' ? <Building2 className="h-3 w-3" /> : <User className="h-3 w-3" />}
               {currentClient.client_type || 'B2C'}
             </Badge>
+            {isExternalLead ? (
+              <Badge variant="outline" className="text-xs gap-1">
+                <ExternalLink className="h-3 w-3" />
+                {leadSource}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-xs">
+                {leadSource}
+              </Badge>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Quick Actions Bar */}
+      <ClientQuickActionsBar client={currentClient} />
 
       {/* Client Information - Full Width */}
       <Card>
