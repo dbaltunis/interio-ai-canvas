@@ -115,30 +115,30 @@ export const QuotesListView = ({ onNewQuote, onQuoteSelect, onQuoteEdit }: Quote
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Quotes</h2>
-          <p className="text-gray-600">Manage your project quotes and estimates</p>
+          <h2 className="text-xl font-bold text-foreground tracking-tight">Quotes</h2>
+          <p className="text-sm text-muted-foreground">Manage your project quotes and estimates</p>
         </div>
-        <Button onClick={onNewQuote} variant="brand">
+        <Button onClick={onNewQuote} className="rounded-lg shadow-sm">
           <Plus className="h-4 w-4 mr-2" />
           New Quote
         </Button>
       </div>
 
       {/* Filters */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search quotes by number or client..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 rounded-lg"
           />
         </div>
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-primary"
+          className="px-3 py-2 border border-border rounded-lg bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary/50 transition-colors"
         >
           <option value="all">All Status</option>
           <option value="draft">Draft</option>
@@ -151,43 +151,45 @@ export const QuotesListView = ({ onNewQuote, onQuoteSelect, onQuoteEdit }: Quote
 
       {/* Quotes Table */}
       {filteredQuotes.length === 0 ? (
-        <Card className="p-12 text-center">
+        <Card variant="elevated" className="p-12 text-center">
           <div className="space-y-4">
-            <div className="text-6xl mb-4">📋</div>
-            <h3 className="text-lg font-medium">No quotes found</h3>
-            <p className="text-gray-500 mb-4">
+            <div className="p-4 bg-muted/40 rounded-2xl w-fit mx-auto">
+              <span className="text-4xl">📋</span>
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">No quotes found</h3>
+            <p className="text-sm text-muted-foreground mb-4">
               {searchTerm || filterStatus !== 'all' ? 
                 'No quotes match your current filters.' : 
                 'Get started by creating your first quote.'
               }
             </p>
-            <Button onClick={onNewQuote} className="bg-brand-primary hover:bg-brand-accent text-white">
+            <Button onClick={onNewQuote} className="rounded-lg shadow-sm">
               <Plus className="h-4 w-4 mr-2" />
               Create New Quote
             </Button>
           </div>
         </Card>
       ) : (
-        <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
+        <Card variant="elevated" className="overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50 hover:bg-gray-50">
-                <TableHead className="font-semibold text-gray-900">Quote Number</TableHead>
-                <TableHead className="font-semibold text-gray-900">Client</TableHead>
-                <TableHead className="font-semibold text-gray-900">Status</TableHead>
-                <TableHead className="font-semibold text-gray-900">Total Amount</TableHead>
-                <TableHead className="font-semibold text-gray-900">Created</TableHead>
-                <TableHead className="font-semibold text-gray-900">Valid Until</TableHead>
-                <TableHead className="font-semibold text-gray-900 w-20 text-center">Actions</TableHead>
+              <TableRow className="bg-muted/30 hover:bg-muted/30 border-border/40">
+                <TableHead className="text-xs uppercase tracking-wide font-semibold text-muted-foreground">Quote Number</TableHead>
+                <TableHead className="text-xs uppercase tracking-wide font-semibold text-muted-foreground">Client</TableHead>
+                <TableHead className="text-xs uppercase tracking-wide font-semibold text-muted-foreground">Status</TableHead>
+                <TableHead className="text-xs uppercase tracking-wide font-semibold text-muted-foreground">Total Amount</TableHead>
+                <TableHead className="text-xs uppercase tracking-wide font-semibold text-muted-foreground">Created</TableHead>
+                <TableHead className="text-xs uppercase tracking-wide font-semibold text-muted-foreground">Valid Until</TableHead>
+                <TableHead className="text-xs uppercase tracking-wide font-semibold text-muted-foreground w-20 text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredQuotes.map((quote) => {
                 const client = clientsMap[quote.client_id];
                 return (
-                  <TableRow key={quote.id} className="hover:bg-gray-50 cursor-pointer group">
+                  <TableRow key={quote.id} className="hover:bg-muted/40 cursor-pointer border-border/40 transition-colors group">
                     <TableCell 
-                      className="font-medium text-brand-primary hover:underline"
+                      className="font-medium text-primary hover:underline"
                       onClick={() => onQuoteSelect(quote.id)}
                     >
                       #{quote.quote_number || `QUOTE-${quote.id.slice(0, 8)}`}
@@ -195,17 +197,19 @@ export const QuotesListView = ({ onNewQuote, onQuoteSelect, onQuoteEdit }: Quote
                     
                     <TableCell>
                       {client ? (
-                        <div className="flex items-center space-x-2">
-                          <User className="h-4 w-4 text-gray-400" />
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 bg-muted/60 rounded-lg">
+                            <User className="h-3.5 w-3.5 text-muted-foreground" />
+                          </div>
                           <div>
-                            <div className="font-medium">{client.name}</div>
+                            <div className="font-medium text-foreground">{client.name}</div>
                             {client.company_name && (
-                              <div className="text-xs text-gray-500">{client.company_name}</div>
+                              <div className="text-xs text-muted-foreground">{client.company_name}</div>
                             )}
                           </div>
                         </div>
                       ) : (
-                        <span className="text-gray-500 italic">No client</span>
+                        <span className="text-muted-foreground/60 italic text-sm">No client</span>
                       )}
                     </TableCell>
                     
@@ -213,35 +217,35 @@ export const QuotesListView = ({ onNewQuote, onQuoteSelect, onQuoteEdit }: Quote
                       {getStatusBadge(quote.status)}
                     </TableCell>
                     
-                    <TableCell className="font-medium">
-                      <div className="flex items-center space-x-1">
-                        <DollarSign className="h-4 w-4 text-gray-400" />
+                    <TableCell className="font-semibold text-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
                         <span>{formatCurrency(quote.total_amount || 0)}</span>
                       </div>
                     </TableCell>
                     
-                    <TableCell className="text-gray-600">
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="h-4 w-4 text-gray-400" />
+                    <TableCell className="text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5" />
                         <span className="text-sm">{formattedDates[`created_${quote.id}`] || 'Loading...'}</span>
                       </div>
                     </TableCell>
                     
-                    <TableCell className="text-gray-600">
+                    <TableCell className="text-muted-foreground">
                       {quote.valid_until ? (
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-4 w-4 text-gray-400" />
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="h-3.5 w-3.5" />
                           <span className="text-sm">{formattedDates[`valid_${quote.id}`] || 'Loading...'}</span>
                         </div>
                       ) : (
-                        <span className="text-gray-400 text-sm">No expiry</span>
+                        <span className="text-muted-foreground/60 text-sm">No expiry</span>
                       )}
                     </TableCell>
                     
                     <TableCell className="text-center">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Button variant="ghost" size="icon-sm" className="rounded-lg">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -266,7 +270,7 @@ export const QuotesListView = ({ onNewQuote, onQuoteSelect, onQuoteEdit }: Quote
               })}
             </TableBody>
           </Table>
-        </div>
+        </Card>
       )}
     </div>
   );

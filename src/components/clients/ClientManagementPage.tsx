@@ -272,30 +272,30 @@ export const ClientManagementPage = ({
     return <MobileClientView onClientClick={handleClientClick} />;
   }
   return <div className="bg-background min-h-screen animate-fade-in">
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 p-4 md:p-6 lg:p-8">
         {/* Header - matching Projects page style */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-lg">
+            <div className="p-2.5 bg-primary/10 rounded-xl">
               <Users className="h-6 w-6 text-primary" />
             </div>
-            <h1 className="text-h1 text-foreground">Clients</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Clients</h1>
             <HelpIcon onClick={() => setShowHelp(true)} />
-            <Badge variant="secondary" className="bg-secondary/10 text-secondary border-secondary/20">
+            <Badge variant="muted" className="text-xs">
               {totalItems} clients
             </Badge>
           </div>
         
-          <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={() => setShowFilters(!showFilters)} size="icon" title="Filter">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setShowFilters(!showFilters)} size="icon-sm" className="rounded-lg" title="Filter">
               <Filter className="h-4 w-4" />
             </Button>
             
-            <Button variant="outline" onClick={() => setShowImportExport(true)} size="icon" title="Import/Export">
+            <Button variant="outline" onClick={() => setShowImportExport(true)} size="icon-sm" className="rounded-lg" title="Import/Export">
               <Download className="h-4 w-4" />
             </Button>
             
-            {canCreateClients && <Button onClick={() => setShowCreateForm(true)} className="bg-primary text-primary-foreground hover:bg-primary/90" data-create-client>
+            {canCreateClients && <Button onClick={() => setShowCreateForm(true)} className="rounded-lg shadow-sm" data-create-client>
                 <Plus className="w-4 h-4 mr-2" />
                 New Client
               </Button>}
