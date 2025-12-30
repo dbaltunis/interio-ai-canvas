@@ -315,7 +315,20 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
 
   return (
     <div className="space-y-6">
-      {integration?.is_connected && (
+      {integration?.is_connected && !integration?.access_token && (
+        <Alert className="border-orange-200 bg-orange-50">
+          <AlertTriangle className="h-4 w-4 text-orange-600" />
+          <AlertDescription>
+            <p className="font-semibold text-orange-900 mb-1">Connection Incomplete</p>
+            <p className="text-sm text-orange-800">
+              Your store ({integration.shop_domain}) shows as connected but is missing API credentials. 
+              Please re-enter your access token below to complete the connection.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {integration?.is_connected && integration?.access_token && (
         <Card className="border-green-200 bg-green-50">
           <CardContent className="pt-6">
             <div className="flex items-start justify-between gap-4">
