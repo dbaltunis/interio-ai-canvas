@@ -409,39 +409,42 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
             )}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <ShopifyOAuthGuide />
-
+        <CardContent className="space-y-5">
+          {/* Shop Domain - First so the guide link can use it */}
           <div>
             <Label htmlFor="shop-domain">
-              Shop Domain <span className="text-red-500">*</span>
+              Your Shopify Store URL <span className="text-destructive">*</span>
             </Label>
             <Input
               id="shop-domain"
               value={shopDomain}
               onChange={(e) => setShopDomain(e.target.value)}
-              placeholder="your-store.myshopify.com or paste any Shopify admin URL"
-              className="font-mono"
+              placeholder="my-store.myshopify.com"
+              className="font-mono mt-1.5"
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              💡 Accepted formats: <code>your-store.myshopify.com</code> or full admin URL
+            <p className="text-xs text-muted-foreground mt-1.5">
+              This is your store's <code className="bg-muted px-1 rounded">.myshopify.com</code> URL (not your custom domain)
             </p>
           </div>
 
+          {/* Help Guide - Now after domain so it can use it */}
+          <ShopifyOAuthGuide shopDomain={shopDomain} />
+
+          {/* Access Token */}
           <div>
             <Label htmlFor="access-token">
-              Admin API Access Token <span className="text-red-500">*</span>
+              Admin API Access Token <span className="text-destructive">*</span>
             </Label>
             <Input
               id="access-token"
               type="password"
               value={accessToken}
               onChange={(e) => setAccessToken(e.target.value)}
-              placeholder="shpat_..."
-              className="font-mono"
+              placeholder="shpat_xxxxxxxxxxxxxxxxxxxx"
+              className="font-mono mt-1.5"
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              📋 Copy from: <strong>API credentials</strong> tab → <strong>Admin API access token</strong>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              This token starts with <code className="bg-muted px-1 rounded">shpat_</code> — see the guide above for how to get it
             </p>
           </div>
 
