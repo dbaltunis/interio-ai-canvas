@@ -13,11 +13,16 @@ interface JobsPageHeaderProps {
 export const JobsPageHeader = ({ onQuoteSelect }: JobsPageHeaderProps) => {
   return (
     <div className="flex items-center justify-between">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Jobs</h1>
-        <p className="text-muted-foreground">
-          Manage your window treatment projects and quotes
-        </p>
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 bg-primary/10 rounded-xl shrink-0">
+          <Plus className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Jobs</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage your window treatment projects and quotes
+          </p>
+        </div>
       </div>
     </div>
   );
