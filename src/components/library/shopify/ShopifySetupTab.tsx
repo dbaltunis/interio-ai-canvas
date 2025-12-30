@@ -8,7 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, AlertTriangle, CheckCircle2, XCircle, ShieldCheck } from "lucide-react";
+import { Loader2, AlertTriangle, CheckCircle2, XCircle, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { ShopifyOAuthGuide } from "./ShopifyOAuthGuide";
 
 type ShopifyIntegration = Database['public']['Tables']['shopify_integrations']['Row'];
@@ -39,52 +39,15 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isConnectingOAuth, setIsConnectingOAuth] = useState(false);
   
   const [shopDomain, setShopDomain] = useState(integration?.shop_domain || "");
-  const [accessToken, setAccessToken] = useState("");
-  const [webhookSecret, setWebhookSecret] = useState("");
+  const [clientId, setClientId] = useState(integration?.client_id || "");
+  const [clientSecret, setClientSecret] = useState("");
+  const [showClientSecret, setShowClientSecret] = useState(false);
   
   // Connection test state
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [testResult, setTestResult] = useState<TestResult | null>(null);
-
-  // Token validation
-  const getTokenValidation = () => {
-    if (!accessToken) return { valid: true, message: null, type: null };
-    
-    if (accessToken.startsWith('shpat_')) {
-      return { valid: true, message: 'Valid token format ✓', type: 'success' };
-    }
-    
-    if (accessToken.startsWith('shpss_')) {
-      return { 
-        valid: false, 
-        message: 'This is a Shared Secret, not the Access Token. Look for the "Admin API access token" in the API credentials tab.',
-        type: 'shared_secret'
-      };
-    }
-    
-    if (accessToken.startsWith('shpca_') || accessToken.startsWith('shppa_')) {
-      return { 
-        valid: false, 
-        message: 'This token type is not supported. Please use the Admin API Access Token (starts with shpat_).',
-        type: 'wrong_type'
-      };
-    }
-    
-    if (accessToken.length > 10) {
-      return { 
-        valid: false, 
-        message: 'Invalid format. The Admin API access token should start with "shpat_".',
-        type: 'invalid'
-      };
-    }
-    
-    return { valid: true, message: null, type: null };
-  };
-
-  const tokenValidation = getTokenValidation();
 
   // Extract myshopify.com domain from various formats
   const extractShopDomain = (input: string): string => {
@@ -104,19 +67,10 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
   };
 
   const handleTestConnection = async () => {
-    if (!shopDomain || !accessToken) {
+    if (!shopDomain || !clientId || !clientSecret) {
       toast({
         title: "Missing Information",
-        description: "Please enter both your store URL and access token",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!tokenValidation.valid) {
-      toast({
-        title: "Invalid Token Format",
-        description: tokenValidation.message,
+        description: "Please enter your store URL, Client ID, and Client Secret",
         variant: "destructive"
       });
       return;
@@ -131,7 +85,8 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
       const { data, error } = await supabase.functions.invoke('shopify-test-connection', {
         body: { 
           shop_domain: normalizedDomain, 
-          access_token: accessToken 
+          client_id: clientId,
+          client_secret: clientSecret
         }
       });
 
@@ -165,134 +120,18 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
     }
   };
 
-  const handleOAuthConnect = async () => {
-    if (!shopDomain) {
-      toast({
-        title: "Error",
-        description: "Please enter your shop domain first (e.g., your-store.myshopify.com)",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const normalizedDomain = extractShopDomain(shopDomain);
-    console.log('Normalized domain:', normalizedDomain);
-
-    setIsConnectingOAuth(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { data, error } = await supabase.functions.invoke('shopify-oauth-initiate', {
-        body: { userId: user.id, shopDomain: normalizedDomain }
-      });
-
-      if (error) throw error;
-
-      if (data?.authUrl) {
-        console.log('Opening OAuth URL:', data.authUrl);
-        
-        const width = 600;
-        const height = 700;
-        const left = window.screen.width / 2 - width / 2;
-        const top = window.screen.height / 2 - height / 2;
-        
-        const popup = window.open(
-          data.authUrl,
-          'shopify-oauth',
-          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,resizable=yes,scrollbars=yes`
-        );
-
-        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-          console.error('Popup blocked');
-          toast({
-            title: "Popup Blocked",
-            description: "Please allow popups for this site and try again.",
-            variant: "destructive",
-          });
-          setIsConnectingOAuth(false);
-          
-          setTimeout(() => {
-            if (confirm('Popup was blocked. Open Shopify authorization in this window instead?')) {
-              window.location.href = data.authUrl;
-            } else {
-              setIsConnectingOAuth(false);
-            }
-          }, 2000);
-          return;
-        }
-
-        console.log('Popup opened, waiting for OAuth completion...');
-
-        const handleMessage = (event: MessageEvent) => {
-          console.log('Received message:', event.data);
-          if (event.data?.type === 'shopify-oauth-success') {
-            popup?.close();
-            setIsConnectingOAuth(false);
-            queryClient.invalidateQueries({ queryKey: ["shopify-integration"] });
-            toast({
-              title: "Success",
-              description: "Shopify store connected successfully!",
-            });
-            onSuccess?.();
-            window.removeEventListener('message', handleMessage);
-          } else if (event.data?.type === 'shopify-oauth-error') {
-            popup?.close();
-            setIsConnectingOAuth(false);
-            toast({
-              title: "Error",
-              description: event.data.message || "Failed to connect Shopify store",
-              variant: "destructive",
-            });
-            window.removeEventListener('message', handleMessage);
-          }
-        };
-
-        window.addEventListener('message', handleMessage);
-
-        const checkPopupClosed = setInterval(() => {
-          if (popup?.closed) {
-            console.log('Popup closed');
-            clearInterval(checkPopupClosed);
-            setIsConnectingOAuth(false);
-            window.removeEventListener('message', handleMessage);
-          }
-        }, 500);
-      } else {
-        throw new Error('Failed to generate OAuth URL');
-      }
-    } catch (error: any) {
-      console.error('OAuth error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to initiate OAuth",
-        variant: "destructive"
-      });
-      setIsConnectingOAuth(false);
-    }
-  };
-
   const handleSave = async () => {
-    if (!shopDomain) {
+    if (!shopDomain || !clientId || !clientSecret) {
       toast({
         title: "Error",
-        description: "Shop domain is required",
+        description: "All fields are required",
         variant: "destructive"
       });
       return;
     }
 
-    if (!tokenValidation.valid) {
-      toast({
-        title: "Invalid Token",
-        description: tokenValidation.message,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // If token provided but not tested, test first
-    if (accessToken && connectionStatus !== 'success') {
+    // If not tested, test first
+    if (connectionStatus !== 'success') {
       toast({
         title: "Please Test Connection First",
         description: "Click 'Test Connection' to verify your credentials before connecting.",
@@ -308,13 +147,28 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
 
       const normalizedDomain = extractShopDomain(shopDomain);
       
+      // Get the access token from the test result (it was already fetched)
+      const { data: tokenData, error: tokenError } = await supabase.functions.invoke('shopify-test-connection', {
+        body: { 
+          shop_domain: normalizedDomain, 
+          client_id: clientId,
+          client_secret: clientSecret,
+          save_token: true
+        }
+      });
+
+      if (tokenError) throw tokenError;
+      if (!tokenData.success) throw new Error(tokenData.error);
+
       const { data, error } = await supabase
         .from('shopify_integrations')
         .upsert([{
           user_id: user.id,
           shop_domain: normalizedDomain,
-          access_token: accessToken || undefined,
-          webhook_secret: webhookSecret || undefined,
+          client_id: clientId,
+          client_secret: clientSecret,
+          access_token: tokenData.access_token,
+          token_expires_at: tokenData.token_expires_at,
           is_connected: true,
         }], {
           onConflict: 'user_id,shop_domain',
@@ -352,32 +206,6 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
     }
   };
 
-  const handleSyncSettingChange = async (field: keyof ShopifyIntegrationUpdate, value: boolean) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { error } = await supabase
-        .from('shopify_integrations')
-        .update({ [field]: value })
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      queryClient.invalidateQueries({ queryKey: ["shopify-integration"] });
-      toast({
-        title: "Success",
-        description: "Setting updated successfully",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleDisconnect = async () => {
     if (!confirm('Are you sure you want to disconnect this Shopify store? This will stop all syncing.')) {
       return;
@@ -412,15 +240,15 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
   const handleSwitchStore = () => {
     if (confirm('Switch to a different store? You can enter new credentials below.')) {
       setShopDomain("");
-      setAccessToken("");
-      setWebhookSecret("");
+      setClientId("");
+      setClientSecret("");
       setConnectionStatus('idle');
       setTestResult(null);
     }
   };
 
   const isDisconnected = integration?.shop_domain && !integration?.is_connected;
-  const canConnect = shopDomain && accessToken && tokenValidation.valid && connectionStatus === 'success';
+  const canConnect = shopDomain && clientId && clientSecret && connectionStatus === 'success';
 
   return (
     <div className="space-y-6">
@@ -431,7 +259,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
             <p className="font-semibold text-orange-900 mb-1">Connection Incomplete</p>
             <p className="text-sm text-orange-800">
               Your store ({integration.shop_domain}) shows as connected but is missing API credentials. 
-              Please re-enter your access token below to complete the connection.
+              Please re-enter your credentials below to complete the connection.
             </p>
           </AlertDescription>
         </Alert>
@@ -505,7 +333,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
           <CardDescription>
             {isDisconnected 
               ? "Enter credentials below to reconnect or connect a different store"
-              : "Enter your Shopify store credentials. Follow the guide below to get your API token."
+              : "Enter your Shopify app credentials. Follow the guide below to get them."
             }
           </CardDescription>
         </CardHeader>
@@ -534,60 +362,56 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
           {/* Help Guide */}
           <ShopifyOAuthGuide shopDomain={shopDomain} />
 
-          {/* Access Token with validation feedback */}
+          {/* Client ID */}
           <div>
-            <Label htmlFor="access-token">
-              Admin API Access Token <span className="text-destructive">*</span>
+            <Label htmlFor="client-id">
+              Client ID <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="client-id"
+              value={clientId}
+              onChange={(e) => {
+                setClientId(e.target.value);
+                setConnectionStatus('idle');
+                setTestResult(null);
+              }}
+              placeholder="Copy from Settings page in Dev Dashboard"
+              className="font-mono mt-1.5"
+            />
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Found on the <strong>Settings</strong> page of your app in the Dev Dashboard
+            </p>
+          </div>
+
+          {/* Client Secret */}
+          <div>
+            <Label htmlFor="client-secret">
+              Client Secret <span className="text-destructive">*</span>
             </Label>
             <div className="relative mt-1.5">
               <Input
-                id="access-token"
-                type="password"
-                value={accessToken}
+                id="client-secret"
+                type={showClientSecret ? "text" : "password"}
+                value={clientSecret}
                 onChange={(e) => {
-                  setAccessToken(e.target.value);
+                  setClientSecret(e.target.value);
                   setConnectionStatus('idle');
                   setTestResult(null);
                 }}
-                placeholder="shpat_xxxxxxxxxxxxxxxxxxxx"
-                className={`font-mono pr-10 ${
-                  !tokenValidation.valid ? 'border-destructive focus-visible:ring-destructive' : 
-                  tokenValidation.type === 'success' ? 'border-green-500 focus-visible:ring-green-500' : ''
-                }`}
+                placeholder="Click 'Manage client credentials' to reveal"
+                className="font-mono pr-10"
               />
-              {accessToken && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  {tokenValidation.valid && tokenValidation.type === 'success' ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  ) : !tokenValidation.valid ? (
-                    <XCircle className="h-4 w-4 text-destructive" />
-                  ) : null}
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => setShowClientSecret(!showClientSecret)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showClientSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
-            
-            {/* Token validation messages */}
-            {tokenValidation.type === 'success' && (
-              <p className="text-xs text-green-600 mt-1.5 flex items-center gap-1">
-                <CheckCircle2 className="h-3 w-3" />
-                {tokenValidation.message}
-              </p>
-            )}
-            
-            {!tokenValidation.valid && (
-              <Alert variant="destructive" className="mt-2">
-                <XCircle className="h-4 w-4" />
-                <AlertDescription className="text-sm">
-                  {tokenValidation.message}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {!accessToken && (
-              <p className="text-xs text-muted-foreground mt-1.5">
-                The token starts with <code className="bg-muted px-1 rounded font-semibold">shpat_</code> — see the guide above for how to get it
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Click <strong>"Manage client credentials"</strong> on Settings page, then copy the secret
+            </p>
           </div>
 
           {/* Connection test result */}
@@ -617,25 +441,11 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
             </Alert>
           )}
 
-          <div>
-            <Label htmlFor="webhook-secret">Webhook Secret (Optional)</Label>
-            <Input
-              id="webhook-secret"
-              type="password"
-              value={webhookSecret}
-              onChange={(e) => setWebhookSecret(e.target.value)}
-              placeholder="Optional for added security"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Optional: Add webhook signature verification for enhanced security
-            </p>
-          </div>
-
           <div className="flex gap-2">
             <Button 
               variant="outline"
               onClick={handleTestConnection} 
-              disabled={connectionStatus === 'testing' || !shopDomain || !accessToken || !tokenValidation.valid}
+              disabled={connectionStatus === 'testing' || !shopDomain || !clientId || !clientSecret}
               className="flex-1"
             >
               {connectionStatus === 'testing' ? (
@@ -676,7 +486,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
             </Button>
           </div>
           
-          {shopDomain && accessToken && tokenValidation.valid && connectionStatus !== 'success' && (
+          {shopDomain && clientId && clientSecret && connectionStatus !== 'success' && (
             <p className="text-xs text-muted-foreground text-center">
               👆 Please test your connection before connecting
             </p>
