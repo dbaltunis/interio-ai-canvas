@@ -13,14 +13,20 @@ export const useShopifyIntegrationReal = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Try to get user's own integration first
-      const { data, error } = await supabase
+      // Try to get user's own integrations - handle multiple records
+      const { data: allIntegrations, error } = await supabase
         .from('shopify_integrations')
         .select('*')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .order('updated_at', { ascending: false });
 
       if (error) throw error;
+      
+      // Find best integration: connected with token > connected without token > any
+      const data = allIntegrations?.find(i => i.is_connected && i.access_token) 
+        || allIntegrations?.find(i => i.is_connected)
+        || allIntegrations?.[0]
+        || null;
       
       // If no integration found, check account owner's integration
       if (!data) {
