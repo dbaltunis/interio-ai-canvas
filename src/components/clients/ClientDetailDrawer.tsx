@@ -117,10 +117,10 @@ export const ClientDetailDrawer = ({ open, onOpenChange, client, canEdit = true 
     const isEditing = editingField === field;
     
     return (
-      <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 group">
+      <div className="flex items-start gap-3 p-3 rounded-xl bg-muted/40 group transition-colors hover:bg-muted/60">
         <div className="text-muted-foreground mt-0.5">{icon}</div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
+          <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide mb-0.5">{label}</p>
           {isEditing ? (
             <div className="flex items-center gap-2">
               {multiline ? (
@@ -134,27 +134,25 @@ export const ClientDetailDrawer = ({ open, onOpenChange, client, canEdit = true 
                 <Input
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
-                  className="h-8 text-sm"
+                  inputSize="sm"
                   autoFocus
                 />
               )}
               <div className="flex gap-1">
                 <Button
-                  size="icon"
+                  size="icon-sm"
                   variant="ghost"
-                  className="h-7 w-7"
                   onClick={() => handleSaveEdit(field)}
                   disabled={updateClient.isPending}
                 >
-                  <Check className="h-4 w-4 text-green-600" />
+                  <Check className="h-3.5 w-3.5 text-green-600" />
                 </Button>
                 <Button
-                  size="icon"
+                  size="icon-sm"
                   variant="ghost"
-                  className="h-7 w-7"
                   onClick={handleCancelEdit}
                 >
-                  <X className="h-4 w-4 text-destructive" />
+                  <X className="h-3.5 w-3.5 text-destructive" />
                 </Button>
               </div>
             </div>
@@ -163,9 +161,9 @@ export const ClientDetailDrawer = ({ open, onOpenChange, client, canEdit = true 
               <p className="text-sm font-medium break-words">{value || <span className="text-muted-foreground italic">Not set</span>}</p>
               {canEdit && (
                 <Button
-                  size="icon"
+                  size="icon-xs"
                   variant="ghost"
-                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={() => handleStartEdit(field, value || "")}
                 >
                   <Edit2 className="h-3 w-3" />
@@ -182,16 +180,16 @@ export const ClientDetailDrawer = ({ open, onOpenChange, client, canEdit = true 
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0">
         {/* Header with avatar and stage selector */}
-        <div className="sticky top-0 z-10 bg-background border-b">
-          <SheetHeader className="p-6 pb-4">
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border/60">
+          <SheetHeader className="p-5 pb-4">
             <div className="flex items-start gap-4">
-              <Avatar className="h-14 w-14 flex-shrink-0">
-                <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+              <Avatar className="h-12 w-12 flex-shrink-0 shadow-sm">
+                <AvatarFallback className="bg-primary/10 text-primary text-base font-semibold">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <SheetTitle className="text-xl leading-tight">{displayName}</SheetTitle>
+                <SheetTitle className="text-lg leading-tight tracking-tight">{displayName}</SheetTitle>
                 {client.client_type === 'B2B' && client.contact_person && (
                   <p className="text-sm text-muted-foreground mt-0.5">{client.contact_person}</p>
                 )}
@@ -203,7 +201,7 @@ export const ClientDetailDrawer = ({ open, onOpenChange, client, canEdit = true 
                     onValueChange={handleStageChange}
                     disabled={!canEdit || updateClient.isPending}
                   >
-                    <SelectTrigger className={`w-auto h-7 px-2 text-xs font-medium ${currentStage.color} border-0`}>
+                    <SelectTrigger className={`w-auto h-7 px-2.5 text-xs font-medium rounded-lg ${currentStage.color} border-0`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -220,12 +218,12 @@ export const ClientDetailDrawer = ({ open, onOpenChange, client, canEdit = true 
                   
                   {/* Lead Source Badge */}
                   {isExternalLead ? (
-                    <Badge variant="outline" className="text-xs gap-1">
+                    <Badge variant="muted" size="sm" className="gap-1">
                       <ExternalLink className="h-3 w-3" />
                       {leadSource}
                     </Badge>
                   ) : (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" size="sm">
                       {leadSource}
                     </Badge>
                   )}
@@ -233,7 +231,7 @@ export const ClientDetailDrawer = ({ open, onOpenChange, client, canEdit = true 
                 
                 {/* Time in stage */}
                 {client.stage_changed_at && (
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-1.5">
                     In this stage {formatDistanceToNow(new Date(client.stage_changed_at), { addSuffix: false })}
                   </p>
                 )}
@@ -242,39 +240,39 @@ export const ClientDetailDrawer = ({ open, onOpenChange, client, canEdit = true 
           </SheetHeader>
 
           {/* Quick Actions Bar */}
-          <div className="px-6 pb-4">
+          <div className="px-5 pb-4">
             <ClientQuickActionsBar client={client} />
           </div>
         </div>
 
         {/* Tabs Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-          <div className="px-6 pt-2">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="activity" className="text-xs">
-                <Activity className="h-3.5 w-3.5 mr-1.5" />
+          <div className="px-5 pt-3">
+            <TabsList variant="segment" className="grid w-full grid-cols-4 p-1">
+              <TabsTrigger value="activity" className="text-xs gap-1.5 rounded-lg">
+                <Activity className="h-3.5 w-3.5" />
                 Activity
               </TabsTrigger>
-              <TabsTrigger value="details" className="text-xs">
-                <User className="h-3.5 w-3.5 mr-1.5" />
+              <TabsTrigger value="details" className="text-xs gap-1.5 rounded-lg">
+                <User className="h-3.5 w-3.5" />
                 Details
               </TabsTrigger>
-              <TabsTrigger value="emails" className="text-xs">
-                <Mail className="h-3.5 w-3.5 mr-1.5" />
+              <TabsTrigger value="emails" className="text-xs gap-1.5 rounded-lg">
+                <Mail className="h-3.5 w-3.5" />
                 Emails
               </TabsTrigger>
-              <TabsTrigger value="files" className="text-xs">
-                <File className="h-3.5 w-3.5 mr-1.5" />
+              <TabsTrigger value="files" className="text-xs gap-1.5 rounded-lg">
+                <File className="h-3.5 w-3.5" />
                 Files
               </TabsTrigger>
             </TabsList>
           </div>
 
-          <TabsContent value="activity" className="p-6 pt-4 m-0">
+          <TabsContent value="activity" className="p-5 pt-4 m-0">
             <ClientActivityLog clientId={client.id} canEditClient={canEdit} />
           </TabsContent>
 
-          <TabsContent value="details" className="p-6 pt-4 m-0 space-y-3">
+          <TabsContent value="details" className="p-5 pt-4 m-0 space-y-2.5">
             {/* Contact Info */}
             {renderEditableField("email", client.email, <Mail className="h-4 w-4" />, "Email")}
             {renderEditableField("phone", client.phone, <Phone className="h-4 w-4" />, "Phone")}
@@ -288,23 +286,23 @@ export const ClientDetailDrawer = ({ open, onOpenChange, client, canEdit = true 
             )}
             
             {/* Type */}
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/40">
               {client.client_type === 'B2B' ? (
                 <Building2 className="h-4 w-4 text-muted-foreground" />
               ) : (
                 <User className="h-4 w-4 text-muted-foreground" />
               )}
               <div>
-                <p className="text-xs text-muted-foreground">Type</p>
+                <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Type</p>
                 <p className="text-sm font-medium">{client.client_type || 'B2C'}</p>
               </div>
             </div>
 
             {/* Lead Source Details */}
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/40">
               <Globe className="h-4 w-4 text-muted-foreground" />
               <div>
-                <p className="text-xs text-muted-foreground">Lead Source</p>
+                <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Lead Source</p>
                 <p className="text-sm font-medium">{leadSource}</p>
               </div>
             </div>
@@ -314,10 +312,10 @@ export const ClientDetailDrawer = ({ open, onOpenChange, client, canEdit = true 
             
             {/* Created At */}
             {client.created_at && (
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/40">
                 <Briefcase className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Added</p>
+                  <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Added</p>
                   <p className="text-sm font-medium">
                     {new Date(client.created_at).toLocaleDateString()} ({formatDistanceToNow(new Date(client.created_at), { addSuffix: true })})
                   </p>
@@ -326,14 +324,14 @@ export const ClientDetailDrawer = ({ open, onOpenChange, client, canEdit = true 
             )}
           </TabsContent>
 
-          <TabsContent value="emails" className="p-6 pt-4 m-0">
+          <TabsContent value="emails" className="p-5 pt-4 m-0">
             <ClientEmailHistory 
               clientId={client.id} 
               clientEmail={client.email}
             />
           </TabsContent>
 
-          <TabsContent value="files" className="p-6 pt-4 m-0">
+          <TabsContent value="files" className="p-5 pt-4 m-0">
             {user && (
               <ClientFilesManager 
                 clientId={client.id} 
