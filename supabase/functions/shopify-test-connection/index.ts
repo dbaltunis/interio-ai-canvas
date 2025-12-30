@@ -11,37 +11,15 @@ serve(async (req) => {
   }
 
   try {
-    const { shop_domain, access_token } = await req.json();
+    const { shop_domain, client_id, client_secret, save_token } = await req.json();
 
     console.log('[Shopify Test] Testing connection to:', shop_domain);
 
     // Validate inputs
-    if (!shop_domain || !access_token) {
+    if (!shop_domain || !client_id || !client_secret) {
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Missing shop domain or access token' 
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Check token format
-    if (!access_token.startsWith('shpat_')) {
-      let errorMessage = 'Invalid token format. The Admin API access token should start with "shpat_".';
-      
-      if (access_token.startsWith('shpss_')) {
-        errorMessage = 'You entered a Shared Secret (shpss_) instead of the Admin API Access Token (shpat_). The Access Token is found in the "API credentials" tab after installing your app.';
-      } else if (access_token.startsWith('shpca_')) {
-        errorMessage = 'You entered a Client API Access Token (shpca_) instead of the Admin API Access Token (shpat_). Please use the Admin API Access Token from the "API credentials" tab.';
-      } else if (access_token.startsWith('shppa_')) {
-        errorMessage = 'You entered a Private App Access Token (shppa_) which is deprecated. Please create a new app in the Dev Dashboard to get a token starting with "shpat_".';
-      }
-
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: errorMessage,
-        error_type: 'invalid_token_format'
+        error: 'Missing shop domain, client ID, or client secret' 
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -56,37 +34,47 @@ serve(async (req) => {
       }
     }
 
-    // Test connection with a simple API call
-    const response = await fetch(
-      `https://${normalizedDomain}/admin/api/2024-01/shop.json`,
-      {
-        headers: {
-          'X-Shopify-Access-Token': access_token,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    console.log('[Shopify Test] Normalized domain:', normalizedDomain);
 
-    if (!response.ok) {
-      const status = response.status;
-      let errorMessage = 'Failed to connect to Shopify';
-      let errorType = 'connection_failed';
+    // Exchange client credentials for an access token
+    const tokenUrl = `https://${normalizedDomain}/admin/oauth/access_token`;
+    
+    console.log('[Shopify Test] Requesting access token from:', tokenUrl);
 
-      if (status === 401) {
-        errorMessage = 'Invalid access token. Please check that you copied the correct Admin API Access Token from Shopify.';
-        errorType = 'invalid_token';
+    const tokenResponse = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        client_id: client_id,
+        client_secret: client_secret,
+        grant_type: 'client_credentials',
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const status = tokenResponse.status;
+      let errorMessage = 'Failed to authenticate with Shopify';
+      let errorType = 'auth_failed';
+
+      if (status === 400) {
+        const errorData = await tokenResponse.text();
+        console.error('[Shopify Test] Token exchange error:', errorData);
+        errorMessage = 'Invalid client credentials. Please check your Client ID and Client Secret are correct.';
+        errorType = 'invalid_credentials';
+      } else if (status === 401) {
+        errorMessage = 'Invalid Client ID or Client Secret. Please double-check your credentials.';
+        errorType = 'invalid_credentials';
       } else if (status === 403) {
-        errorMessage = 'Access denied. The app may not have the required permissions. Please ensure you enabled the correct API scopes.';
-        errorType = 'insufficient_permissions';
+        errorMessage = 'Access denied. Make sure your app is installed on this store.';
+        errorType = 'not_installed';
       } else if (status === 404) {
-        errorMessage = 'Store not found. Please check that you entered the correct store URL (e.g., your-store.myshopify.com).';
+        errorMessage = 'Store not found. Please check that you entered the correct store URL.';
         errorType = 'store_not_found';
-      } else if (status === 429) {
-        errorMessage = 'Too many requests. Please wait a moment and try again.';
-        errorType = 'rate_limited';
       }
 
-      console.error('[Shopify Test] Connection failed:', status, errorMessage);
+      console.error('[Shopify Test] Token exchange failed:', status, errorMessage);
       
       return new Response(JSON.stringify({ 
         success: false, 
@@ -99,12 +87,54 @@ serve(async (req) => {
       });
     }
 
-    const shopData = await response.json();
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+    
+    // Calculate token expiration (24 hours from now for client credentials)
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    console.log('[Shopify Test] Got access token, testing API access...');
+
+    // Test connection with a simple API call using the new token
+    const shopResponse = await fetch(
+      `https://${normalizedDomain}/admin/api/2024-01/shop.json`,
+      {
+        headers: {
+          'X-Shopify-Access-Token': accessToken,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!shopResponse.ok) {
+      const status = shopResponse.status;
+      let errorMessage = 'Failed to connect to Shopify API';
+
+      if (status === 401) {
+        errorMessage = 'Access token is invalid. Please check your app permissions.';
+      } else if (status === 403) {
+        errorMessage = 'Access denied. Please ensure you enabled the required API scopes (read_products, read_orders, etc.).';
+      }
+
+      console.error('[Shopify Test] API test failed:', status);
+      
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: errorMessage,
+        error_type: 'api_test_failed',
+        status_code: status
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const shopData = await shopResponse.json();
     const shop = shopData.shop;
 
     console.log('[Shopify Test] Connection successful:', shop.name);
 
-    return new Response(JSON.stringify({ 
+    const response: any = { 
       success: true, 
       shop: {
         name: shop.name,
@@ -114,7 +144,15 @@ serve(async (req) => {
         plan_name: shop.plan_name,
         currency: shop.currency,
       }
-    }), {
+    };
+
+    // If save_token is true, include the token data for saving
+    if (save_token) {
+      response.access_token = accessToken;
+      response.token_expires_at = expiresAt;
+    }
+
+    return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

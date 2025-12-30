@@ -71,6 +71,10 @@ export interface ShopifyIntegration {
   last_sync_at: string | null;
   created_at: string | null;
   updated_at: string | null;
+  // New Client Credentials fields
+  client_id: string | null;
+  client_secret: string | null;
+  token_expires_at: string | null;
 }
 
 export interface ManualQuoteItem {
