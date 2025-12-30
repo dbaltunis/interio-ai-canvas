@@ -41,36 +41,47 @@ serve(async (req) => {
     
     console.log('[Shopify Test] Requesting access token from:', tokenUrl);
 
+    // IMPORTANT: Shopify requires application/x-www-form-urlencoded, NOT JSON
     const tokenResponse = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({
+      body: new URLSearchParams({
         client_id: client_id,
         client_secret: client_secret,
         grant_type: 'client_credentials',
-      }),
+      }).toString(),
     });
 
     if (!tokenResponse.ok) {
       const status = tokenResponse.status;
+      const errorData = await tokenResponse.text();
+      console.error('[Shopify Test] Token exchange error:', status, errorData);
+      
       let errorMessage = 'Failed to authenticate with Shopify';
       let errorType = 'auth_failed';
 
       if (status === 400) {
-        const errorData = await tokenResponse.text();
-        console.error('[Shopify Test] Token exchange error:', errorData);
-        errorMessage = 'Invalid client credentials. Please check your Client ID and Client Secret are correct.';
-        errorType = 'invalid_credentials';
+        // Check for specific Shopify errors in response
+        if (errorData.includes('app_not_installed') || errorData.includes('not installed')) {
+          errorMessage = 'Your app is not installed on this store yet. Go to Dev Dashboard → Overview → Select your store → Click "Install" to install the app first.';
+          errorType = 'app_not_installed';
+        } else if (errorData.includes('invalid_client')) {
+          errorMessage = 'Invalid Client ID or Client Secret. Please double-check your credentials from the Dev Dashboard Settings page.';
+          errorType = 'invalid_credentials';
+        } else {
+          errorMessage = 'Invalid credentials. Please verify your Client ID and Client Secret are correct.';
+          errorType = 'invalid_credentials';
+        }
       } else if (status === 401) {
         errorMessage = 'Invalid Client ID or Client Secret. Please double-check your credentials.';
         errorType = 'invalid_credentials';
       } else if (status === 403) {
-        errorMessage = 'Access denied. Make sure your app is installed on this store.';
+        errorMessage = 'Access denied. Make sure your app is installed on this store and has the required API scopes.';
         errorType = 'not_installed';
       } else if (status === 404) {
-        errorMessage = 'Store not found. Please check that you entered the correct store URL.';
+        errorMessage = 'Store not found. Please check that you entered the correct store URL (e.g., your-store.myshopify.com).';
         errorType = 'store_not_found';
       }
 
