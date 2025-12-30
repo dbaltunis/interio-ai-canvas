@@ -601,16 +601,113 @@ html {
   color: hsl(var(--foreground) / 0.85) !important;
 }
 
-/* Remove shadows from all interactive elements for cleaner design */
-button, .btn, [role="button"], input, textarea, select {
-  box-shadow: none !important;
+/* ============================================================================
+   2026 Modern Design Utilities
+   ============================================================================ */
+
+/* Page layout utilities */
+.page-container {
+  @apply p-4 sm:p-6 lg:p-8;
 }
 
-/* Auth/Login specific shadow removal */
-[data-auth], [data-login], .auth-form, .login-form {
-  box-shadow: none !important;
+.page-header {
+  @apply mb-6 space-y-1;
 }
 
+.page-title {
+  @apply text-2xl font-semibold tracking-tight text-foreground;
+}
+
+.page-description {
+  @apply text-sm text-muted-foreground;
+}
+
+/* Section utilities */
+.section-gap {
+  @apply space-y-6;
+}
+
+.card-gap {
+  @apply space-y-4;
+}
+
+/* Interactive utilities */
+.interactive-hover {
+  @apply transition-all duration-200 hover:bg-muted/50 cursor-pointer;
+}
+
+.interactive-press {
+  @apply transition-transform duration-150 active:scale-[0.98];
+}
+
+/* Subtle focus ring */
+.focus-ring-subtle {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-0;
+}
+
+/* Card hover effect */
+.card-hover {
+  @apply transition-all duration-200 hover:shadow-card-hover hover:border-primary/20;
+}
+
+/* Text utilities */
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+/* Scrollbar utilities */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.4);
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Skeleton loading */
+.skeleton {
+  @apply animate-pulse bg-muted rounded-md;
+}
+
+/* Divider */
+.divider {
+  @apply h-px w-full bg-border/60;
+}
+
+.divider-vertical {
+  @apply w-px h-full bg-border/60;
+}
+
+/* Remove forced shadow removal - we want shadows now */
 /* Container hierarchy with clear contrast levels */
 .container-level-1 {
   background: hsl(var(--card));
