@@ -30,17 +30,17 @@ interface KPICardProps {
 export const KPICard = ({ title, value, subtitle, icon: Icon, trend, loading, target }: KPICardProps) => {
   if (loading) {
     return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+      <Card variant="elevated" className="overflow-hidden">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
             <Icon className="h-4 w-4" />
             {title}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            <Skeleton className="h-8 w-20" />
-            <Skeleton className="h-4 w-32" />
+          <div className="space-y-2.5">
+            <Skeleton className="h-7 w-20" />
+            <Skeleton className="h-3.5 w-28" />
           </div>
         </CardContent>
       </Card>
@@ -54,30 +54,35 @@ export const KPICard = ({ title, value, subtitle, icon: Icon, trend, loading, ta
   const progressStatus = hasTarget ? getProgressStatus(progress) : null;
 
   return (
-    <Card className="group">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-          <Icon className="h-4 w-4 text-primary" />
+    <Card variant="elevated" className="group overflow-hidden transition-all duration-200 hover:shadow-card-hover">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+          <div className="p-1.5 rounded-md bg-primary/10">
+            <Icon className="h-3.5 w-3.5 text-primary" />
+          </div>
           {title}
           {hasTarget && (
-            <Badge variant="outline" className="ml-auto text-xs">
+            <Badge variant="muted" size="sm" className="ml-auto">
               <Target className="h-3 w-3 mr-1" />
               {getPeriodLabel(target.period)}
             </Badge>
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2.5">
         <div className="flex items-baseline justify-between">
-          <div className="text-2xl font-bold text-foreground">{value}</div>
+          <div className="text-xl md:text-2xl font-bold text-foreground tracking-tight">{value}</div>
           {trend && (
-            <div className="flex items-center gap-1 text-sm">
+            <div className="flex items-center gap-1 text-xs">
               {trend.isPositive ? (
-                <TrendingUp className="h-4 w-4 text-green-500" />
+                <TrendingUp className="h-3.5 w-3.5 text-green-500" />
               ) : (
-                <TrendingDown className="h-4 w-4 text-red-500" />
+                <TrendingDown className="h-3.5 w-3.5 text-red-500" />
               )}
-              <span className={trend.isPositive ? "text-green-600" : "text-red-600"}>
+              <span className={cn(
+                "font-medium",
+                trend.isPositive ? "text-green-600" : "text-red-600"
+              )}>
                 {trend.isPositive ? "+" : ""}{trend.value}%
               </span>
             </div>
@@ -85,7 +90,7 @@ export const KPICard = ({ title, value, subtitle, icon: Icon, trend, loading, ta
         </div>
         
         {subtitle && (
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
+          <p className="text-xs text-muted-foreground">{subtitle}</p>
         )}
         
         {/* Target Progress Section */}

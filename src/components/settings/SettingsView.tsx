@@ -83,90 +83,80 @@ export const SettingsView = () => {
   const canViewWindowTreatments = canViewWindowTreatmentsRaw !== false;
   const canManageMarkup = canManageSettingsRaw !== false; // Only owners/admins can manage pricing
 
-  return <div className="space-y-8 animate-fade-in">
+  return <div className="space-y-6 animate-fade-in">
       {/* Enhanced Header */}
-      <div className="flex flex-col gap-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-xl shrink-0">
-              <Settings className="h-6 w-6 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Settings</h2>
-              
-            </div>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 bg-primary/10 rounded-xl shrink-0">
+          <Settings className="h-5 w-5 text-primary" />
         </div>
-        
-        {/* Action Buttons - Stack on mobile */}
-        
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Settings</h2>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-        <TabsList className="modern-card p-1 h-auto bg-muted/30 backdrop-blur-sm flex flex-wrap gap-1 justify-start">
-          <TabsTrigger value="personal" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            <User className="h-4 w-4" />
-            <span className="hidden sm:inline font-medium">Personal</span>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList variant="segment" className="p-1 h-auto bg-muted/40 flex flex-wrap gap-0.5 justify-start rounded-xl">
+          <TabsTrigger value="personal" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+            <User className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Personal</span>
           </TabsTrigger>
           
           {/* HIDDEN: Billing tab - Not ready yet
-          <TabsTrigger value="billing" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            <CreditCard className="h-4 w-4" />
-            <span className="hidden sm:inline font-medium">Billing</span>
+          <TabsTrigger value="billing" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+            <CreditCard className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Billing</span>
           </TabsTrigger>
           */}
           
-          {canViewSettings && <TabsTrigger value="business" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              <Building2 className="h-4 w-4" />
-              <span className="hidden sm:inline font-medium">Business</span>
+          {canViewSettings && <TabsTrigger value="business" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+              <Building2 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Business</span>
             </TabsTrigger>}
 
           
-          {canViewSettings && <TabsTrigger value="units" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              <Ruler className="h-4 w-4" />
-              <span className="hidden sm:inline font-medium">Units</span>
+          {canViewSettings && <TabsTrigger value="units" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+              <Ruler className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Units</span>
             </TabsTrigger>}
           
-          {canViewWindowTreatments && <TabsTrigger value="window-coverings" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              <Package className="h-4 w-4" />
-              <span className="hidden sm:inline font-medium">Products</span>
+          {canViewWindowTreatments && <TabsTrigger value="window-coverings" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+              <Package className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Products</span>
             </TabsTrigger>}
           
-          {canManageMarkup && <TabsTrigger value="pricing" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              <Calculator className="h-4 w-4" />
-              <span className="hidden sm:inline font-medium">Markup & Tax</span>
+          {canManageMarkup && <TabsTrigger value="pricing" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+              <Calculator className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Markup & Tax</span>
             </TabsTrigger>}
           
-          {canManageUsers && <TabsTrigger value="users" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline font-medium">Team</span>
+          {canManageUsers && <TabsTrigger value="users" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+              <Users className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Team</span>
             </TabsTrigger>}
           
-          {canViewSettings && <TabsTrigger value="documents" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline font-medium">Documents</span>
+          {canViewSettings && <TabsTrigger value="documents" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+              <FileText className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Documents</span>
             </TabsTrigger>}
           
           
-          {canViewSettings && <TabsTrigger value="system" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              <Globe className="h-4 w-4" />
-              <span className="hidden sm:inline font-medium">System</span>
+          {canViewSettings && <TabsTrigger value="system" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+              <Globe className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">System</span>
             </TabsTrigger>}
           
-          <TabsTrigger value="notifications" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline font-medium">Alerts</span>
+          <TabsTrigger value="notifications" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+            <Bell className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Alerts</span>
           </TabsTrigger>
           
-          {canViewSettings && <TabsTrigger value="integrations" className="flex items-center gap-2 px-3 py-2.5 text-xs transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              <Zap className="h-4 w-4" />
-              <span className="hidden sm:inline font-medium">Integrations</span>
+          {canViewSettings && <TabsTrigger value="integrations" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+              <Zap className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Integrations</span>
             </TabsTrigger>}
         </TabsList>
 
         <TabsContent value="personal" className="animate-fade-in">
-          <Card className="hover:shadow-md transition-all duration-300">
-            <CardContent className="p-6">
+          <Card variant="elevated" className="transition-shadow">
+            <CardContent className="p-5 md:p-6">
               <PersonalSettingsTab />
             </CardContent>
           </Card>
@@ -174,8 +164,8 @@ export const SettingsView = () => {
 
         {/* HIDDEN: Billing tab content - Not ready yet
         <TabsContent value="billing" className="animate-fade-in">
-          <Card className="hover:shadow-md transition-all duration-300">
-            <CardContent className="p-6">
+          <Card variant="elevated" className="transition-shadow">
+            <CardContent className="p-5 md:p-6">
               <BillingTab />
             </CardContent>
           </Card>
@@ -183,8 +173,8 @@ export const SettingsView = () => {
         */}
 
         {canViewSettings && <TabsContent value="business" className="animate-fade-in">
-            <Card className="hover:shadow-md transition-all duration-300">
-              <CardContent className="p-6">
+            <Card variant="elevated" className="transition-shadow">
+              <CardContent className="p-5 md:p-6">
                 <BusinessSettingsTab />
               </CardContent>
             </Card>
@@ -192,16 +182,16 @@ export const SettingsView = () => {
 
 
         {canViewSettings && <TabsContent value="units" className="animate-fade-in">
-            <Card className="hover:shadow-md transition-all duration-300">
-              <CardContent className="p-6">
+            <Card variant="elevated" className="transition-shadow">
+              <CardContent className="p-5 md:p-6">
                 <MeasurementUnitsTab />
               </CardContent>
             </Card>
           </TabsContent>}
 
         {canViewWindowTreatments && <TabsContent value="window-coverings" className="animate-fade-in">
-            <Card className="hover:shadow-md transition-all duration-300">
-              <CardContent className="p-6">
+            <Card variant="elevated" className="transition-shadow">
+              <CardContent className="p-5 md:p-6">
                 <WindowCoveringsTab 
                   createTemplateData={createTemplateData}
                   onTemplateCreated={() => setCreateTemplateData(null)}
@@ -213,24 +203,24 @@ export const SettingsView = () => {
           </TabsContent>}
 
         {canManageMarkup && <TabsContent value="pricing" className="animate-fade-in">
-            <Card className="hover:shadow-md transition-all duration-300">
-              <CardContent className="p-6">
+            <Card variant="elevated" className="transition-shadow">
+              <CardContent className="p-5 md:p-6">
                 <PricingRulesTab />
               </CardContent>
             </Card>
           </TabsContent>}
 
         {canManageUsers && <TabsContent value="users" className="animate-fade-in">
-            <Card className="hover:shadow-md transition-all duration-300">
-              <CardContent className="p-6">
+            <Card variant="elevated" className="transition-shadow">
+              <CardContent className="p-5 md:p-6">
                 <UserManagementTab />
               </CardContent>
             </Card>
           </TabsContent>}
 
         {canViewSettings && <TabsContent value="documents" className="animate-fade-in">
-            <Card className="hover:shadow-md transition-all duration-300">
-              <CardContent className="p-6">
+            <Card variant="elevated" className="transition-shadow">
+              <CardContent className="p-5 md:p-6">
                 <DocumentTemplatesTab />
               </CardContent>
             </Card>
@@ -238,32 +228,32 @@ export const SettingsView = () => {
 
 
         {canViewSettings && <TabsContent value="system" className="animate-fade-in">
-            <Card className="hover:shadow-md transition-all duration-300">
-              <CardContent className="p-6">
+            <Card variant="elevated" className="transition-shadow">
+              <CardContent className="p-5 md:p-6">
                 <SystemSettingsTab />
               </CardContent>
             </Card>
           </TabsContent>}
 
         <TabsContent value="notifications" className="animate-fade-in">
-          <Card className="hover:shadow-md transition-all duration-300">
-            <CardContent className="p-6">
+          <Card variant="elevated" className="transition-shadow">
+            <CardContent className="p-5 md:p-6">
               <NotificationManagementTab />
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="security" className="animate-fade-in">
-          <Card className="hover:shadow-md transition-all duration-300">
-            <CardContent className="p-6">
+          <Card variant="elevated" className="transition-shadow">
+            <CardContent className="p-5 md:p-6">
               <SecurityPrivacyTab />
             </CardContent>
           </Card>
         </TabsContent>
 
         {canViewSettings && <TabsContent value="integrations" className="animate-fade-in">
-            <Card className="hover:shadow-md transition-all duration-300">
-              <CardContent className="p-6">
+            <Card variant="elevated" className="transition-shadow">
+              <CardContent className="p-5 md:p-6">
                 <IntegrationsTab />
               </CardContent>
             </Card>
