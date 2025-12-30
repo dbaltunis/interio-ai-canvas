@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, HelpCircle } from "lucide-react";
+import { ExternalLink, HelpCircle, AlertTriangle } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -14,14 +14,9 @@ interface ShopifyOAuthGuideProps {
 }
 
 export const ShopifyOAuthGuide = ({ shopDomain }: ShopifyOAuthGuideProps) => {
-  // Generate the custom apps URL based on the shop domain
-  const getCustomAppsUrl = () => {
-    if (!shopDomain || shopDomain.trim() === '') {
-      return 'https://admin.shopify.com/store/YOUR-STORE/settings/apps/development';
-    }
-    // Extract store name from domain
-    const storeName = shopDomain.replace('.myshopify.com', '').replace(/^https?:\/\//, '');
-    return `https://admin.shopify.com/store/${storeName}/settings/apps/development`;
+  // Generate the Dev Dashboard URL
+  const getDevDashboardUrl = () => {
+    return 'https://partners.shopify.com/';
   };
 
   return (
@@ -34,10 +29,18 @@ export const ShopifyOAuthGuide = ({ shopDomain }: ShopifyOAuthGuideProps) => {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          To connect your Shopify store, you need to create a "Custom App" in your Shopify admin and get an API access token.
+          To connect your Shopify store, you need to create an app in the <strong>Shopify Dev Dashboard</strong> and get an Admin API access token.
         </p>
+
+        <Alert className="bg-amber-50 border-amber-200">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-xs text-amber-900">
+            <strong>Note:</strong> Shopify deprecated "legacy custom apps" on Jan 1, 2026. 
+            Use the new <strong>Dev Dashboard</strong> method below.
+          </AlertDescription>
+        </Alert>
         
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion type="single" collapsible className="w-full" defaultValue="steps">
           <AccordionItem value="steps" className="border-none">
             <AccordionTrigger className="text-sm font-medium text-primary hover:no-underline py-2">
               📖 Show me the step-by-step instructions
@@ -50,18 +53,18 @@ export const ShopifyOAuthGuide = ({ shopDomain }: ShopifyOAuthGuideProps) => {
                     1
                   </div>
                   <div className="space-y-2 w-full">
-                    <p className="font-medium text-sm">Go to Shopify Apps Settings</p>
+                    <p className="font-medium text-sm">Open Shopify Dev Dashboard</p>
                     <p className="text-xs text-muted-foreground">
-                      In your Shopify admin, go to <strong>Settings → Apps and sales channels → Develop apps</strong>
+                      In your Shopify admin, go to <strong>Settings → Apps → App development</strong>, then click <strong>"Build apps in Dev Dashboard"</strong>.
                     </p>
                     <Button 
                       variant="outline" 
                       size="sm" 
                       className="h-7 text-xs"
-                      onClick={() => window.open(getCustomAppsUrl(), '_blank')}
+                      onClick={() => window.open(getDevDashboardUrl(), '_blank')}
                     >
                       <ExternalLink className="h-3 w-3 mr-1.5" />
-                      Open Apps Settings
+                      Open Shopify Dev Dashboard
                     </Button>
                   </div>
                 </div>
@@ -72,10 +75,12 @@ export const ShopifyOAuthGuide = ({ shopDomain }: ShopifyOAuthGuideProps) => {
                     2
                   </div>
                   <div className="space-y-2">
-                    <p className="font-medium text-sm">Enable Custom App Development</p>
+                    <p className="font-medium text-sm">Create a New App</p>
                     <p className="text-xs text-muted-foreground">
-                      If you see a button "Allow custom app development", click it and confirm.
-                      <br />This only needs to be done once.
+                      In the Dev Dashboard, click <strong>"Create an app"</strong>.
+                      <br />Choose <strong>"Create app manually"</strong>.
+                      <br />Name it something like <strong>"InterioApp Integration"</strong>.
+                      <br />Select your store to install on.
                     </p>
                   </div>
                 </div>
@@ -86,9 +91,21 @@ export const ShopifyOAuthGuide = ({ shopDomain }: ShopifyOAuthGuideProps) => {
                     3
                   </div>
                   <div className="space-y-2">
-                    <p className="font-medium text-sm">Create a New Custom App</p>
+                    <p className="font-medium text-sm">Configure Admin API Access</p>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Go to the <strong>"Configuration"</strong> tab in your app.
+                      <br />Under <strong>"Admin API integration"</strong>, click <strong>"Configure"</strong>.
+                      <br />Enable these required scopes:
+                    </p>
+                    <div className="bg-muted/50 p-2 rounded text-xs font-mono space-y-0.5">
+                      <p>☑️ read_products</p>
+                      <p>☑️ write_products</p>
+                      <p>☑️ read_orders</p>
+                      <p>☑️ read_inventory</p>
+                      <p>☑️ write_inventory</p>
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      Click <strong>"Create an app"</strong> button. Name it something like "InterioApp Integration".
+                      Click <strong>"Save"</strong> to save the configuration.
                     </p>
                   </div>
                 </div>
@@ -99,19 +116,11 @@ export const ShopifyOAuthGuide = ({ shopDomain }: ShopifyOAuthGuideProps) => {
                     4
                   </div>
                   <div className="space-y-2">
-                    <p className="font-medium text-sm">Configure Admin API Scopes</p>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Click <strong>"Configure Admin API scopes"</strong> and enable these permissions:
-                    </p>
-                    <div className="bg-muted/50 p-2 rounded text-xs font-mono space-y-0.5">
-                      <p>☑️ read_products</p>
-                      <p>☑️ write_products</p>
-                      <p>☑️ read_orders</p>
-                      <p>☑️ read_inventory</p>
-                      <p>☑️ write_inventory</p>
-                    </div>
+                    <p className="font-medium text-sm">Install the App to Your Store</p>
                     <p className="text-xs text-muted-foreground">
-                      Then click <strong>"Save"</strong>.
+                      Go to the <strong>"Overview"</strong> tab.
+                      <br />Click <strong>"Select store"</strong> and choose your store.
+                      <br />Click <strong>"Install app"</strong> and approve the permissions.
                     </p>
                   </div>
                 </div>
@@ -122,11 +131,11 @@ export const ShopifyOAuthGuide = ({ shopDomain }: ShopifyOAuthGuideProps) => {
                     5
                   </div>
                   <div className="space-y-2">
-                    <p className="font-medium text-sm">Install the App & Get Your Token</p>
+                    <p className="font-medium text-sm">Get Your Admin API Access Token</p>
                     <p className="text-xs text-muted-foreground">
-                      Click <strong>"Install app"</strong> at the top right, then confirm.
-                      <br />After installation, go to the <strong>"API credentials"</strong> tab.
-                      <br />Under <strong>"Admin API access token"</strong>, click <strong>"Reveal token once"</strong>.
+                      After installation, go to the <strong>"API credentials"</strong> tab.
+                      <br />Find <strong>"Admin API access token"</strong>.
+                      <br />Click <strong>"Reveal token once"</strong> and copy it immediately.
                     </p>
                   </div>
                 </div>
@@ -137,7 +146,7 @@ export const ShopifyOAuthGuide = ({ shopDomain }: ShopifyOAuthGuideProps) => {
                     6
                   </div>
                   <div className="space-y-2">
-                    <p className="font-medium text-sm">Copy & Paste Here</p>
+                    <p className="font-medium text-sm">Paste the Token Here</p>
                     <p className="text-xs text-muted-foreground">
                       Copy the token (starts with <code className="bg-muted px-1 rounded">shpat_</code>) and paste it in the field below.
                     </p>
@@ -147,7 +156,7 @@ export const ShopifyOAuthGuide = ({ shopDomain }: ShopifyOAuthGuideProps) => {
                 <Alert className="bg-amber-50 border-amber-200 mt-4">
                   <AlertDescription className="text-xs text-amber-900">
                     <strong>⚠️ Important:</strong> The access token can only be viewed once! 
-                    Copy it immediately and paste it below. If you lose it, you'll need to create a new custom app.
+                    Copy it immediately and paste it below. If you lose it, you'll need to uninstall and reinstall the app.
                   </AlertDescription>
                 </Alert>
               </div>
@@ -160,7 +169,7 @@ export const ShopifyOAuthGuide = ({ shopDomain }: ShopifyOAuthGuideProps) => {
             variant="link" 
             size="sm" 
             className="h-auto p-0 text-xs"
-            onClick={() => window.open('https://help.shopify.com/en/manual/apps/app-types/custom-apps', '_blank')}
+            onClick={() => window.open('https://shopify.dev/docs/apps/build/authentication-authorization/access-tokens/generate-app-access-tokens-admin', '_blank')}
           >
             <ExternalLink className="h-3 w-3 mr-1" />
             Official Shopify Documentation
