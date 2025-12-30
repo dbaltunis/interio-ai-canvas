@@ -38,12 +38,15 @@ serve(async (req) => {
       });
     }
 
-    // Get Shopify integration
+    // Get Shopify integration (handle multiple records by getting most recent connected one)
     const { data: integration, error: integrationError } = await supabase
       .from('shopify_integrations')
       .select('shop_domain, access_token')
       .eq('user_id', user.id)
-      .single();
+      .eq('is_connected', true)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (integrationError || !integration) {
       return new Response(JSON.stringify({ error: 'Shopify integration not found' }), {

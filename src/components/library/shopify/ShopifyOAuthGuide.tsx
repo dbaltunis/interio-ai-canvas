@@ -32,11 +32,15 @@ export const ShopifyOAuthGuide = ({ shopDomain }: ShopifyOAuthGuideProps) => {
           To connect your Shopify store, you need to create an app in the <strong>Shopify Dev Dashboard</strong> and get an Admin API access token.
         </p>
 
-        <Alert className="bg-amber-50 border-amber-200">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-xs text-amber-900">
-            <strong>Note:</strong> Shopify deprecated "legacy custom apps" on Jan 1, 2026. 
-            Use the new <strong>Dev Dashboard</strong> method below.
+        {/* Token type clarification */}
+        <Alert className="bg-blue-50 border-blue-200">
+          <AlertTriangle className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-xs text-blue-900">
+            <strong>Which token to use?</strong>
+            <div className="mt-1 space-y-0.5">
+              <p className="text-green-700">✅ <strong>Admin API access token</strong> (starts with <code className="bg-white/50 px-1 rounded">shpat_</code>)</p>
+              <p className="text-red-700">❌ <strong>NOT</strong> the API secret key / Shared secret (starts with <code className="bg-white/50 px-1 rounded">shpss_</code>)</p>
+            </div>
           </AlertDescription>
         </Alert>
         

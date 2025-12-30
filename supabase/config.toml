@@ -140,3 +140,6 @@ verify_jwt = true
 
 [functions.receive-external-lead]
 verify_jwt = false
+
+[functions.shopify-test-connection]
+verify_jwt = false
