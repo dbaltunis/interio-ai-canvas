@@ -107,18 +107,25 @@ export const ShopifyOAuthGuide = ({ shopDomain }: ShopifyOAuthGuideProps) => {
                   </div>
                 </div>
 
-                {/* Step 4 */}
-                <div className="flex gap-3">
-                  <div className="bg-primary text-primary-foreground rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                {/* Step 4 - CRITICAL - Made prominent */}
+                <div className="flex gap-3 bg-amber-50 border border-amber-200 rounded-lg p-3 -ml-1">
+                  <div className="bg-amber-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold flex-shrink-0">
                     4
                   </div>
                   <div className="space-y-2">
-                    <p className="font-medium text-sm">Install the App to Your Store</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="font-medium text-sm text-amber-900">⚠️ Install the App to Your Store (REQUIRED)</p>
+                    <p className="text-xs text-amber-800">
+                      <strong>This step is critical!</strong> Your credentials won't work until you install the app.
+                      <br /><br />
                       Go to the <strong>"Overview"</strong> tab.
                       <br />Click <strong>"Select store"</strong> and choose your store.
                       <br />Click <strong>"Install"</strong> and approve the permissions.
                     </p>
+                    <Alert className="bg-amber-100 border-amber-300 py-2">
+                      <AlertDescription className="text-xs text-amber-900 font-medium">
+                        ❗ If you skip this step, you'll get an "app_not_installed" error when testing the connection.
+                      </AlertDescription>
+                    </Alert>
                   </div>
                 </div>
 
