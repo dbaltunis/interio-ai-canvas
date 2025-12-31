@@ -361,7 +361,6 @@ export const CalendarSyncToolbar = ({
                 checked={googleSyncEnabled}
                 onCheckedChange={handleSyncToggle}
                 disabled={isSyncingFromGoogle || isSyncingAll}
-                className="scale-75"
               />
               <Tooltip>
                 <TooltipTrigger asChild>
