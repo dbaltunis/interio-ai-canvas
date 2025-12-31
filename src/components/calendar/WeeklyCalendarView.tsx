@@ -854,27 +854,26 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
                                    {/* Task content - distinct display */}
                                     {event.isTask && (
-                                      <div 
-                                        className="flex items-center gap-1.5 h-full px-2 cursor-pointer hover:opacity-80 transition-opacity"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          const newStatus = event.status === 'completed' ? 'in_progress' : 'completed';
-                                          updateTask.mutate({
-                                            id: event.id,
-                                            status: newStatus
-                                          });
-                                        }}
-                                      >
+                                      <div className="flex items-center gap-1.5 h-full px-2">
                                         {/* Circular checkbox */}
                                         <button
+                                          type="button"
                                           className={`
                                             flex-shrink-0 w-3 h-3 lg:w-4 lg:h-4 rounded-full border-2 flex items-center justify-center
-                                            transition-all duration-200
+                                            transition-all duration-200 cursor-pointer touch-manipulation
                                             ${event.status === 'completed' 
                                               ? "border-primary bg-primary" 
                                               : "border-muted-foreground bg-white hover:border-primary"
                                             }
                                           `}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const newStatus = event.status === 'completed' ? 'in_progress' : 'completed';
+                                            updateTask.mutate({
+                                              id: event.id,
+                                              status: newStatus
+                                            });
+                                          }}
                                         >
                                           {event.status === 'completed' && (
                                             <CheckCheck className="h-2 w-2 lg:h-2.5 lg:w-2.5 text-white" strokeWidth={3} />
