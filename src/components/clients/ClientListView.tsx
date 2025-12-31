@@ -267,8 +267,13 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox 
                         checked={clientIsSelected}
-                        onCheckedChange={() => handleCheckboxClick({ stopPropagation: () => {} } as any, client)}
-                        onClick={(e) => handleCheckboxClick(e, client)}
+                        onCheckedChange={() => toggleClient({
+                          id: client.id,
+                          name: client.name,
+                          email: client.email,
+                          company_name: client.company_name,
+                          funnel_stage: client.funnel_stage,
+                        })}
                       />
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
