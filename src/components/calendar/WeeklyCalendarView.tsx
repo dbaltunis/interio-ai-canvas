@@ -828,13 +828,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   <div 
                                     {...listeners}
                                     {...attributes}
-                                    className="absolute top-0.5 right-0.5 w-3 h-3 md:w-4 md:h-4 bg-black/20 rounded hover:bg-black/30 cursor-move z-20 flex items-center justify-center"
+                                    className="absolute top-0.5 right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 lg:w-4 lg:h-4 bg-black/20 rounded hover:bg-black/30 cursor-move z-20 flex items-center justify-center"
                                     title="Drag to move event"
                                   >
                                     <div className="flex flex-col gap-px">
-                                      <div className="w-0.5 h-0.5 md:w-1 md:h-1 bg-current rounded-full opacity-60"></div>
-                                      <div className="w-0.5 h-0.5 md:w-1 md:h-1 bg-current rounded-full opacity-60"></div>
-                                      <div className="w-0.5 h-0.5 md:w-1 md:h-1 bg-current rounded-full opacity-60"></div>
+                                      <div className="w-0.5 h-0.5 bg-current rounded-full opacity-60"></div>
+                                      <div className="w-0.5 h-0.5 bg-current rounded-full opacity-60"></div>
+                                      <div className="w-0.5 h-0.5 bg-current rounded-full opacity-60"></div>
                                     </div>
                                   </div>
                                  )}
@@ -868,7 +868,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                         {/* Circular checkbox */}
                                         <button
                                           className={`
-                                            flex-shrink-0 w-3 h-3 md:w-4 md:h-4 rounded-full border-2 flex items-center justify-center
+                                            flex-shrink-0 w-3 h-3 lg:w-4 lg:h-4 rounded-full border-2 flex items-center justify-center
                                             transition-all duration-200
                                             ${event.status === 'completed' 
                                               ? "border-primary bg-primary" 
@@ -877,7 +877,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                           `}
                                         >
                                           {event.status === 'completed' && (
-                                            <CheckCheck className="h-2 w-2 md:h-2.5 md:w-2.5 text-white" strokeWidth={3} />
+                                            <CheckCheck className="h-2 w-2 lg:h-2.5 lg:w-2.5 text-white" strokeWidth={3} />
                                           )}
                                         </button>
                                         <div className="font-medium text-[10px] leading-[1.2] break-words flex-1 min-w-0 text-foreground" style={{
@@ -938,7 +938,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                          
                                          {/* User avatar - hide on tablet and narrow events, only show on desktop */}
                                          {!event.isAvailableSlot && !isNarrowEvent && finalHeight > 35 && (
-                                           <div className="hidden lg:flex flex-shrink-0 mr-5">
+                                           <div className="hidden xl:flex flex-shrink-0 mr-5">
                                              <Avatar className="h-5 w-5">
                                                <AvatarImage src="" alt="" />
                                                <AvatarFallback className="text-[8px] bg-background/50 text-foreground font-medium">
