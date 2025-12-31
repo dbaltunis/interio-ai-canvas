@@ -54,6 +54,11 @@ serve(async (req) => {
         userPrompt = `Suggest best send times for a ${context.campaignType} campaign to ${context.recipientCount} business contacts.`;
         break;
 
+      case 'generate-content':
+        systemPrompt = `You are an expert email copywriter. Generate a professional, personalized email based on the campaign type. Use {{client_name}} and {{company_name}} as personalization tokens. Keep it concise, friendly, and action-oriented. Format as JSON: { "subject": "subject line under 60 chars", "content": "HTML email body with <p> tags" }`;
+        userPrompt = `Generate a ${context.campaignType} email for ${context.recipientCount} recipients. Make it professional but warm.`;
+        break;
+
       default:
         throw new Error(`Unknown action: ${action}`);
     }
