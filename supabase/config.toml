@@ -1,5 +1,8 @@
 project_id = "ldgrcodffsalkevafbkb"
 
+[functions.check-email-deliverability]
+verify_jwt = true
+
 [functions.create-booking]
 verify_jwt = false
 
@@ -139,4 +142,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.receive-external-lead]
+verify_jwt = false
+
+[functions.shopify-test-connection]
 verify_jwt = false
