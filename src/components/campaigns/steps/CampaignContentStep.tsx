@@ -61,12 +61,14 @@ export const CampaignContentStep = ({
   const [spamScore, setSpamScore] = useState<number | null>(null);
   const [spamIssues, setSpamIssues] = useState<string[]>([]);
   const [isCheckingSpam, setIsCheckingSpam] = useState(false);
+  const [spamCheckProgress, setSpamCheckProgress] = useState(0);
+  const [spamCheckPhase, setSpamCheckPhase] = useState<string>('');
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [showTemplates, setShowTemplates] = useState(!content);
   const [activeTab, setActiveTab] = useState<string>("edit");
-  const { isLoading, getSubjectIdeas, checkSpamRisk } = useCampaignAssistant();
+  const { isLoading, getSubjectIdeas } = useCampaignAssistant();
 
-  // Auto spam check with debounce
+  // Auto spam check with debounce - LOCAL ONLY (no AI for faster response)
   const checkSpamLocal = useCallback(() => {
     const textToCheck = (subject + ' ' + content).toLowerCase();
     const foundWords: string[] = [];
@@ -81,39 +83,53 @@ export const CampaignContentStep = ({
     return { score, issues: foundWords.slice(0, 5).map(w => `Contains spam trigger: "${w}"`) };
   }, [subject, content]);
 
-  // Auto-check spam when content changes (debounced)
+  // Auto-check spam when content changes (debounced) - Fast local check
   useEffect(() => {
     if (subject.length < 3 && content.length < 10) {
       setSpamScore(null);
       setSpamIssues([]);
+      setSpamCheckProgress(0);
+      setSpamCheckPhase('');
       return;
     }
 
     setIsCheckingSpam(true);
-    const timer = setTimeout(async () => {
-      // First try AI check
-      try {
-        const result = await checkSpamRisk(subject, content);
-        if (result && typeof result.score === 'number') {
-          setSpamScore(result.score);
-          setSpamIssues(result.issues || []);
-        } else {
-          // Fallback to local check
-          const local = checkSpamLocal();
-          setSpamScore(local.score);
-          setSpamIssues(local.issues);
-        }
-      } catch {
-        // Fallback to local check
-        const local = checkSpamLocal();
-        setSpamScore(local.score);
-        setSpamIssues(local.issues);
+    setSpamCheckProgress(0);
+    setSpamCheckPhase('Analyzing subject line...');
+    
+    // Progress simulation with phases
+    const phases = [
+      { progress: 25, phase: 'Analyzing subject line...' },
+      { progress: 50, phase: 'Scanning email body...' },
+      { progress: 75, phase: 'Checking spam triggers...' },
+      { progress: 100, phase: 'Generating score...' },
+    ];
+    
+    let phaseIndex = 0;
+    const progressInterval = setInterval(() => {
+      if (phaseIndex < phases.length) {
+        setSpamCheckProgress(phases[phaseIndex].progress);
+        setSpamCheckPhase(phases[phaseIndex].phase);
+        phaseIndex++;
       }
-      setIsCheckingSpam(false);
-    }, 1500);
+    }, 200);
 
-    return () => clearTimeout(timer);
-  }, [subject, content, checkSpamRisk, checkSpamLocal]);
+    const timer = setTimeout(() => {
+      clearInterval(progressInterval);
+      // Use fast local check
+      const local = checkSpamLocal();
+      setSpamScore(local.score);
+      setSpamIssues(local.issues);
+      setIsCheckingSpam(false);
+      setSpamCheckProgress(0);
+      setSpamCheckPhase('');
+    }, 1000); // 1 second for smooth UX
+
+    return () => {
+      clearTimeout(timer);
+      clearInterval(progressInterval);
+    };
+  }, [subject, content, checkSpamLocal]);
 
   const handleGetAISubjects = async () => {
     const result = await getSubjectIdeas({
@@ -350,15 +366,24 @@ Use personalization tokens like {{client_name}} to make each email personal."
               </div>
             </Tabs>
 
-            {/* Stats Bar with Inline Spam Score */}
+            {/* Stats Bar with Spam Check Progress */}
             <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
               <span>{charCount} characters • {wordCount} words</span>
               <div className="flex items-center gap-2">
                 {isCheckingSpam ? (
-                  <span className="flex items-center gap-1 text-muted-foreground">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Checking...
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 text-primary">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span className="text-xs">{spamCheckPhase}</span>
+                    </div>
+                    <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-primary transition-all duration-200 rounded-full"
+                        style={{ width: `${spamCheckProgress}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-medium">{spamCheckProgress}%</span>
+                  </div>
                 ) : spamScore !== null ? (
                   <span className={`flex items-center gap-1 ${
                     spamScore > 50 ? 'text-destructive' : 
