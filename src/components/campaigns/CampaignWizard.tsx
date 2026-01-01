@@ -21,6 +21,8 @@ interface CampaignWizardProps {
     type: CampaignData['type'];
     subject: string;
     content: string;
+    fromTemplate?: boolean;
+    templateName?: string;
   };
 }
 
@@ -168,6 +170,8 @@ export const CampaignWizard = ({
             subject={campaignData.subject}
             content={campaignData.content}
             recipientCount={campaignData.recipients.length}
+            fromTemplate={initialData?.fromTemplate}
+            templateName={initialData?.templateName}
             onUpdateName={(name) => updateCampaignData({ name })}
             onUpdateType={(type) => updateCampaignData({ type })}
             onUpdateSubject={(subject) => updateCampaignData({ subject })}
