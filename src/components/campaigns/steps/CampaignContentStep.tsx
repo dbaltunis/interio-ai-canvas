@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -18,12 +18,15 @@ import {
   Rocket,
   RefreshCw,
   Heart,
-  Megaphone
+  Megaphone,
+  Shield
 } from "lucide-react";
 import { useCampaignAssistant } from "@/hooks/useCampaignAssistant";
 import { RichTextEditor } from "@/components/jobs/email-components/RichTextEditor";
 import { EmailPreviewPane } from "@/components/campaigns/shared/EmailPreviewPane";
 import { TemplateGallery } from "@/components/campaigns/shared/TemplateGallery";
+import { DeliverabilityScoreCard } from "@/components/campaigns/DeliverabilityScoreCard";
+import { useEmailDeliverability, analyzeEmailContent, calculateDeliverabilityScore } from "@/hooks/useEmailDeliverability";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -80,78 +83,25 @@ export const CampaignContentStep = ({
   onUpdateContent,
 }: CampaignContentStepProps) => {
   const [aiSubjects, setAiSubjects] = useState<string[]>([]);
-  const [spamScore, setSpamScore] = useState<number | null>(null);
-  const [spamIssues, setSpamIssues] = useState<string[]>([]);
-  const [isCheckingSpam, setIsCheckingSpam] = useState(false);
-  const [spamCheckProgress, setSpamCheckProgress] = useState(0);
-  const [spamCheckPhase, setSpamCheckPhase] = useState<string>('');
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [showTemplates, setShowTemplates] = useState(!content);
   const [activeTab, setActiveTab] = useState<string>("edit");
   const { isLoading, getSubjectIdeas } = useCampaignAssistant();
+  
+  // Fetch deliverability data
+  const { data: deliverabilityData, isLoading: isLoadingDeliverability } = useEmailDeliverability();
 
-  // Auto spam check with debounce - LOCAL ONLY (no AI for faster response)
-  const checkSpamLocal = useCallback(() => {
-    const textToCheck = (subject + ' ' + content).toLowerCase();
-    const foundWords: string[] = [];
-    
-    SPAM_WORDS.forEach(word => {
-      if (textToCheck.includes(word.toLowerCase())) {
-        foundWords.push(word);
-      }
-    });
+  // Calculate content analysis and deliverability score
+  const contentAnalysis = useMemo(() => 
+    analyzeEmailContent(subject, content),
+    [subject, content]
+  );
 
-    const score = Math.min(100, foundWords.length * 15);
-    return { score, issues: foundWords.slice(0, 5).map(w => `Contains spam trigger: "${w}"`) };
-  }, [subject, content]);
+  const deliverabilityScore = useMemo(() => 
+    calculateDeliverabilityScore(deliverabilityData, contentAnalysis, []),
+    [deliverabilityData, contentAnalysis]
+  );
 
-  // Auto-check spam when content changes (debounced) - Fast local check
-  useEffect(() => {
-    if (subject.length < 3 && content.length < 10) {
-      setSpamScore(null);
-      setSpamIssues([]);
-      setSpamCheckProgress(0);
-      setSpamCheckPhase('');
-      return;
-    }
-
-    setIsCheckingSpam(true);
-    setSpamCheckProgress(0);
-    setSpamCheckPhase('Analyzing subject line...');
-    
-    // Progress simulation with phases
-    const phases = [
-      { progress: 25, phase: 'Analyzing subject line...' },
-      { progress: 50, phase: 'Scanning email body...' },
-      { progress: 75, phase: 'Checking spam triggers...' },
-      { progress: 100, phase: 'Generating score...' },
-    ];
-    
-    let phaseIndex = 0;
-    const progressInterval = setInterval(() => {
-      if (phaseIndex < phases.length) {
-        setSpamCheckProgress(phases[phaseIndex].progress);
-        setSpamCheckPhase(phases[phaseIndex].phase);
-        phaseIndex++;
-      }
-    }, 200);
-
-    const timer = setTimeout(() => {
-      clearInterval(progressInterval);
-      // Use fast local check
-      const local = checkSpamLocal();
-      setSpamScore(local.score);
-      setSpamIssues(local.issues);
-      setIsCheckingSpam(false);
-      setSpamCheckProgress(0);
-      setSpamCheckPhase('');
-    }, 1000); // 1 second for smooth UX
-
-    return () => {
-      clearTimeout(timer);
-      clearInterval(progressInterval);
-    };
-  }, [subject, content, checkSpamLocal]);
 
   const handleGetAISubjects = async () => {
     const result = await getSubjectIdeas({
@@ -408,49 +358,47 @@ Use personalization tokens like {{client_name}} to make each email personal."
               </div>
             </Tabs>
 
-            {/* Stats Bar with Spam Check Progress */}
+            {/* Stats Bar with Deliverability Score */}
             <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
               <span>{charCount} characters • {wordCount} words</span>
               <div className="flex items-center gap-2">
-                {isCheckingSpam ? (
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 text-primary">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      <span className="text-xs">{spamCheckPhase}</span>
-                    </div>
-                    <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-primary transition-all duration-200 rounded-full"
-                        style={{ width: `${spamCheckProgress}%` }}
-                      />
-                    </div>
-                    <span className="text-xs font-medium">{spamCheckProgress}%</span>
+                {isLoadingDeliverability ? (
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span>Checking...</span>
                   </div>
-                ) : spamScore !== null ? (
-                  <span className={`flex items-center gap-1 ${
-                    spamScore > 50 ? 'text-destructive' : 
-                    spamScore > 25 ? 'text-amber-600' : 
-                    'text-green-600'
-                  }`}>
-                    {spamScore > 25 ? (
-                      <AlertTriangle className="h-3 w-3" />
-                    ) : (
-                      <CheckCircle2 className="h-3 w-3" />
-                    )}
-                    Spam: {spamScore}/100
-                  </span>
-                ) : null}
+                ) : (
+                  <DeliverabilityScoreCard
+                    percentage={deliverabilityScore.percentage}
+                    breakdown={deliverabilityScore.breakdown}
+                    recommendations={deliverabilityScore.recommendations}
+                    compact={true}
+                  />
+                )}
               </div>
             </div>
           </div>
 
-          {/* Spam Issues (only show if there are issues) */}
-          {spamScore !== null && spamScore > 25 && spamIssues.length > 0 && (
-            <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800">
-              <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
-              <div className="text-sm text-amber-800 dark:text-amber-200">
-                <span className="font-medium">Suggestions: </span>
-                {spamIssues.slice(0, 3).join(' • ')}
+          {/* Deliverability Warning (show if score is low) */}
+          {deliverabilityScore.warningLevel !== 'none' && deliverabilityScore.recommendations.length > 0 && (
+            <div className={cn(
+              "flex items-start gap-3 p-3 rounded-lg border",
+              deliverabilityScore.warningLevel === 'high' 
+                ? "border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-800"
+                : "border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800"
+            )}>
+              <Shield className={cn(
+                "h-4 w-4 mt-0.5 shrink-0",
+                deliverabilityScore.warningLevel === 'high' ? "text-red-600" : "text-amber-600"
+              )} />
+              <div className={cn(
+                "text-sm",
+                deliverabilityScore.warningLevel === 'high' 
+                  ? "text-red-800 dark:text-red-200"
+                  : "text-amber-800 dark:text-amber-200"
+              )}>
+                <span className="font-medium">Improve deliverability: </span>
+                {deliverabilityScore.recommendations.slice(0, 2).join(' • ')}
               </div>
             </div>
           )}
