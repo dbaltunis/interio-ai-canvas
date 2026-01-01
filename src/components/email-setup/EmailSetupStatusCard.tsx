@@ -1,24 +1,17 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, AlertCircle, XCircle, Settings, Play, ExternalLink } from "lucide-react";
+import { CheckCircle, Loader2 } from "lucide-react";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
-import { useEmailSettings } from "@/hooks/useEmailSettings";
-import { useState } from "react";
-import { EmailSetupWizard } from "./EmailSetupWizard";
-
-interface SetupItem {
-  id: string;
-  title: string;
-  description: string;
-  status: 'complete' | 'warning' | 'error' | 'pending';
-  action?: () => void;
-  actionLabel?: string;
-  externalLink?: string;
-}
+import { useEmailDeliverability, analyzeEmailContent, calculateDeliverabilityScore } from "@/hooks/useEmailDeliverability";
+import { DeliverabilityScoreCard } from "@/components/campaigns/DeliverabilityScoreCard";
 
 export const EmailSetupStatusCard = () => {
   const { hasSendGridIntegration } = useIntegrationStatus();
+  const { data: deliverabilityData, isLoading } = useEmailDeliverability();
+
+  // Calculate score with empty content (just domain/reputation factors)
+  const contentAnalysis = analyzeEmailContent('', '');
+  const deliverabilityScore = calculateDeliverabilityScore(deliverabilityData, contentAnalysis, []);
 
   return (
     <Card className="border-green-200 bg-green-50">
@@ -32,15 +25,29 @@ export const EmailSetupStatusCard = () => {
               ✅ Email Service Ready
               <Badge variant="default" className="bg-green-600 text-white">Active</Badge>
             </h3>
-            <p className="text-green-800 mb-2">
+            <p className="text-green-800 mb-3">
               {hasSendGridIntegration 
                 ? "Using your custom SendGrid account for email delivery"
                 : "Email service is active (500 emails/month included)"
               }
             </p>
-            <div className="text-sm text-green-700">
-              You can now send quotes and notifications to your customers with full tracking
-            </div>
+            
+            {/* Deliverability Score */}
+            {isLoading ? (
+              <div className="flex items-center gap-2 text-green-700 text-sm">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Checking deliverability...
+              </div>
+            ) : (
+              <div className="mt-4">
+                <DeliverabilityScoreCard
+                  percentage={deliverabilityScore.percentage}
+                  breakdown={deliverabilityScore.breakdown}
+                  recommendations={deliverabilityScore.recommendations}
+                  showDetails={true}
+                />
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
