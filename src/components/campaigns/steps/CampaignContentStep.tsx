@@ -373,6 +373,8 @@ Use personalization tokens like {{client_name}} to make each email personal."
                     breakdown={deliverabilityScore.breakdown}
                     recommendations={deliverabilityScore.recommendations}
                     compact={true}
+                    usingSharedService={deliverabilityScore.usingSharedService}
+                    serviceInfo={deliverabilityScore.serviceInfo}
                   />
                 )}
               </div>

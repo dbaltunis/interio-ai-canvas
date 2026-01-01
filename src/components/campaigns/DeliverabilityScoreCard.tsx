@@ -35,23 +35,33 @@ interface DeliverabilityScoreCardProps {
   isLoading?: boolean;
   compact?: boolean;
   showDetails?: boolean;
+  usingSharedService?: boolean;
+  serviceInfo?: {
+    provider: 'Resend' | 'SendGrid';
+    domain: string;
+    status: 'fully_authenticated' | 'partial' | 'not_configured';
+  };
 }
 
 const FACTOR_CONFIG = [
   { 
     key: 'domainAuth' as const, 
     label: 'Domain Authentication', 
+    sharedLabel: 'Domain Authentication (Handled by InterioApp)',
     weight: '40%',
     icon: Shield,
     helpText: 'SPF, DKIM, DMARC records',
     fixUrl: 'https://app.sendgrid.com/settings/sender_auth',
+    sharedMessage: 'Fully configured via noreply@interioapp.com',
   },
   { 
     key: 'reputation' as const, 
     label: 'Sender Reputation', 
+    sharedLabel: 'Sender Reputation (Established Domain)',
     weight: '25%',
     icon: TrendingUp,
     helpText: 'Based on domain age & sending history',
+    sharedMessage: 'interioapp.com has good sending history',
   },
   { 
     key: 'content' as const, 
@@ -89,6 +99,8 @@ export const DeliverabilityScoreCard = ({
   isLoading = false,
   compact = false,
   showDetails = true,
+  usingSharedService = false,
+  serviceInfo,
 }: DeliverabilityScoreCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -209,17 +221,36 @@ export const DeliverabilityScoreCard = ({
       {/* Breakdown */}
       {showDetails && (
         <div className="p-4 space-y-3">
+          {/* Shared service banner */}
+          {usingSharedService && (
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg p-3 mb-3">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-blue-600 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-blue-900 dark:text-blue-100">
+                    Sending via InterioApp Shared Service
+                  </p>
+                  <p className="text-blue-700 dark:text-blue-300 text-xs mt-0.5">
+                    Domain authentication is fully handled. Emails sent from noreply@interioapp.com
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {FACTOR_CONFIG.map(factor => {
             const data = breakdown[factor.key];
             const Icon = factor.icon;
             const scorePercentage = (data.score / data.max) * 100;
+            const isSharedFactor = usingSharedService && (factor.key === 'domainAuth' || factor.key === 'reputation');
+            const displayLabel = isSharedFactor && factor.sharedLabel ? factor.sharedLabel : factor.label;
 
             return (
               <div key={factor.key} className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Icon className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">{factor.label}</span>
+                    <span className="text-sm font-medium">{displayLabel}</span>
                     <span className="text-xs text-muted-foreground">({factor.weight})</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -228,7 +259,10 @@ export const DeliverabilityScoreCard = ({
                   </div>
                 </div>
                 <Progress value={scorePercentage} className="h-1.5" />
-                {data.status !== 'good' && factor.fixUrl && (
+                {isSharedFactor && factor.sharedMessage && (
+                  <p className="text-xs text-muted-foreground">{factor.sharedMessage}</p>
+                )}
+                {!isSharedFactor && data.status !== 'good' && factor.fixUrl && (
                   <a 
                     href={factor.fixUrl}
                     target="_blank"

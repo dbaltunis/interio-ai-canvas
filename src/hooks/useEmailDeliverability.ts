@@ -21,6 +21,12 @@ interface DeliverabilityReport {
     total: number;
   };
   recommendations: string[];
+  usingSharedService: boolean;
+  serviceInfo?: {
+    provider: 'Resend' | 'SendGrid';
+    domain: string;
+    status: 'fully_authenticated' | 'partial' | 'not_configured';
+  };
 }
 
 interface ContentAnalysis {
@@ -44,6 +50,12 @@ interface DeliverabilityScore {
   recommendations: string[];
   canSend: boolean;
   warningLevel: 'none' | 'low' | 'medium' | 'high';
+  usingSharedService: boolean;
+  serviceInfo?: {
+    provider: 'Resend' | 'SendGrid';
+    domain: string;
+    status: 'fully_authenticated' | 'partial' | 'not_configured';
+  };
 }
 
 // Comprehensive spam word list
@@ -175,28 +187,39 @@ export const calculateDeliverabilityScore = (
   };
 
   const recommendations: string[] = [];
+  const usingSharedService = deliverabilityData?.usingSharedService ?? false;
+  const serviceInfo = deliverabilityData?.serviceInfo;
 
   // Domain Authentication (40%)
   if (deliverabilityData) {
-    const { domainAuthentication } = deliverabilityData;
-    if (domainAuthentication.spf.valid) breakdown.domainAuth.score += 15;
-    if (domainAuthentication.dkim.valid) breakdown.domainAuth.score += 15;
-    if (domainAuthentication.dmarc.valid) breakdown.domainAuth.score += 10;
+    // If using shared service, domain auth is already handled
+    if (usingSharedService) {
+      breakdown.domainAuth.score = 40; // Full score
+      breakdown.domainAuth.status = 'good';
+      breakdown.reputation.score = deliverabilityData.scores.reputation;
+      breakdown.reputation.status = 'good';
+    } else {
+      // Custom SendGrid - check their domain auth
+      const { domainAuthentication } = deliverabilityData;
+      if (domainAuthentication.spf.valid) breakdown.domainAuth.score += 15;
+      if (domainAuthentication.dkim.valid) breakdown.domainAuth.score += 15;
+      if (domainAuthentication.dmarc.valid) breakdown.domainAuth.score += 10;
 
-    if (!domainAuthentication.spf.valid) {
-      recommendations.push('Configure SPF record for your domain');
-    }
-    if (!domainAuthentication.dkim.valid) {
-      recommendations.push('Set up DKIM signing in SendGrid');
-    }
-    if (!domainAuthentication.dmarc.valid) {
-      recommendations.push('Add DMARC policy to DNS');
-    }
+      if (!domainAuthentication.spf.valid) {
+        recommendations.push('Configure SPF record for your domain');
+      }
+      if (!domainAuthentication.dkim.valid) {
+        recommendations.push('Set up DKIM signing in SendGrid');
+      }
+      if (!domainAuthentication.dmarc.valid) {
+        recommendations.push('Add DMARC policy to DNS');
+      }
 
-    // Reputation (25%)
-    breakdown.reputation.score = deliverabilityData.scores.reputation;
-    if (deliverabilityData.senderReputation.isNewDomain) {
-      recommendations.push('Build sender reputation with consistent sending');
+      // Reputation (25%)
+      breakdown.reputation.score = deliverabilityData.scores.reputation;
+      if (deliverabilityData.senderReputation.isNewDomain) {
+        recommendations.push('Build sender reputation with consistent sending');
+      }
     }
   } else {
     // No data = assume worst case for domain auth, medium for reputation
@@ -258,5 +281,7 @@ export const calculateDeliverabilityScore = (
     recommendations: recommendations.slice(0, 5), // Top 5 recommendations
     canSend: percentage >= 30, // Allow sending above 30%
     warningLevel,
+    usingSharedService,
+    serviceInfo,
   };
 };
