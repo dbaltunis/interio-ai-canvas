@@ -5,9 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, ChevronRight, Send, Check } from "lucide-react";
 import { SelectedClient } from "@/hooks/useClientSelection";
 import { CampaignRecipientsStep } from "./steps/CampaignRecipientsStep";
-import { CampaignTypeStep } from "./steps/CampaignTypeStep";
 import { CampaignContentStep } from "./steps/CampaignContentStep";
-import { CampaignScheduleStep } from "./steps/CampaignScheduleStep";
 import { CampaignReviewStep } from "./steps/CampaignReviewStep";
 import { useCreateEmailCampaign } from "@/hooks/useEmailCampaigns";
 import { toast } from "sonner";
@@ -37,11 +35,9 @@ export interface CampaignData {
 }
 
 const STEPS = [
-  { id: 1, title: 'Recipients', description: 'Review contacts' },
-  { id: 2, title: 'Type', description: 'Choose approach' },
-  { id: 3, title: 'Content', description: 'Write message' },
-  { id: 4, title: 'Schedule', description: 'When to send' },
-  { id: 5, title: 'Review', description: 'Confirm' },
+  { id: 1, title: 'Recipients', description: 'Select contacts' },
+  { id: 2, title: 'Content', description: 'Write message' },
+  { id: 3, title: 'Review', description: 'Schedule & send' },
 ];
 
 export const CampaignWizard = ({
@@ -89,13 +85,11 @@ export const CampaignWizard = ({
       case 1:
         return campaignData.recipients.length > 0;
       case 2:
-        return campaignData.type && campaignData.name.trim().length > 0;
+        return campaignData.name.trim().length > 0 && 
+               campaignData.subject.trim().length > 0 && 
+               campaignData.content.trim().length > 0;
       case 3:
-        return campaignData.subject.trim().length > 0 && campaignData.content.trim().length > 0;
-      case 4:
         return campaignData.sendImmediately || campaignData.scheduledAt;
-      case 5:
-        return true;
       default:
         return false;
     }
@@ -168,37 +162,25 @@ export const CampaignWizard = ({
         );
       case 2:
         return (
-          <CampaignTypeStep
-            type={campaignData.type}
-            name={campaignData.name}
-            recipientCount={campaignData.recipients.length}
-            onUpdateType={(type) => updateCampaignData({ type })}
-            onUpdateName={(name) => updateCampaignData({ name })}
-          />
-        );
-      case 3:
-        return (
           <CampaignContentStep
+            name={campaignData.name}
+            type={campaignData.type}
             subject={campaignData.subject}
             content={campaignData.content}
-            campaignType={campaignData.type}
             recipientCount={campaignData.recipients.length}
+            onUpdateName={(name) => updateCampaignData({ name })}
+            onUpdateType={(type) => updateCampaignData({ type })}
             onUpdateSubject={(subject) => updateCampaignData({ subject })}
             onUpdateContent={(content) => updateCampaignData({ content })}
           />
         );
-      case 4:
+      case 3:
         return (
-          <CampaignScheduleStep
-            sendImmediately={campaignData.sendImmediately}
-            scheduledAt={campaignData.scheduledAt}
+          <CampaignReviewStep 
+            campaignData={campaignData}
             onUpdateSendImmediately={(sendImmediately) => updateCampaignData({ sendImmediately })}
             onUpdateScheduledAt={(scheduledAt) => updateCampaignData({ scheduledAt })}
           />
-        );
-      case 5:
-        return (
-          <CampaignReviewStep campaignData={campaignData} />
         );
       default:
         return null;

@@ -14,19 +14,27 @@ import {
   Edit3,
   CheckCircle2,
   User,
-  Building2
+  Building2,
+  Rocket,
+  RefreshCw,
+  Heart,
+  Megaphone
 } from "lucide-react";
 import { useCampaignAssistant } from "@/hooks/useCampaignAssistant";
 import { RichTextEditor } from "@/components/jobs/email-components/RichTextEditor";
 import { EmailPreviewPane } from "@/components/campaigns/shared/EmailPreviewPane";
 import { TemplateGallery } from "@/components/campaigns/shared/TemplateGallery";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface CampaignContentStepProps {
+  name: string;
+  type: 'outreach' | 'follow-up' | 're-engagement' | 'announcement';
   subject: string;
   content: string;
-  campaignType: string;
   recipientCount?: number;
+  onUpdateName: (name: string) => void;
+  onUpdateType: (type: 'outreach' | 'follow-up' | 're-engagement' | 'announcement') => void;
   onUpdateSubject: (subject: string) => void;
   onUpdateContent: (content: string) => void;
 }
@@ -34,6 +42,13 @@ interface CampaignContentStepProps {
 const PERSONALIZATION_TOKENS = [
   { token: '{{client_name}}', label: 'Client Name', icon: User },
   { token: '{{company_name}}', label: 'Company', icon: Building2 },
+];
+
+const CAMPAIGN_TYPES = [
+  { value: 'outreach' as const, label: 'Outreach', icon: Rocket, color: 'text-blue-500 bg-blue-50 border-blue-200' },
+  { value: 'follow-up' as const, label: 'Follow-up', icon: RefreshCw, color: 'text-purple-500 bg-purple-50 border-purple-200' },
+  { value: 're-engagement' as const, label: 'Re-engage', icon: Heart, color: 'text-pink-500 bg-pink-50 border-pink-200' },
+  { value: 'announcement' as const, label: 'Announce', icon: Megaphone, color: 'text-orange-500 bg-orange-50 border-orange-200' },
 ];
 
 // Comprehensive spam word list for local detection
@@ -50,10 +65,13 @@ const SPAM_WORDS = [
 ];
 
 export const CampaignContentStep = ({
+  name,
+  type,
   subject,
   content,
-  campaignType,
   recipientCount = 0,
+  onUpdateName,
+  onUpdateType,
   onUpdateSubject,
   onUpdateContent,
 }: CampaignContentStepProps) => {
@@ -134,7 +152,7 @@ export const CampaignContentStep = ({
   const handleGetAISubjects = async () => {
     const result = await getSubjectIdeas({
       recipientCount,
-      campaignType: campaignType as any,
+      campaignType: type as any,
     });
     if (result?.subjects) {
       setAiSubjects(result.subjects);
@@ -166,7 +184,7 @@ export const CampaignContentStep = ({
       };
       
       await new Promise(resolve => setTimeout(resolve, 800));
-      onUpdateContent(templates[campaignType] || templates['outreach']);
+      onUpdateContent(templates[type] || templates['outreach']);
       setShowTemplates(false);
     } finally {
       setIsGeneratingContent(false);
@@ -191,12 +209,49 @@ export const CampaignContentStep = ({
 
   return (
     <div className="space-y-5">
+      {/* Campaign Name & Type - Compact Header */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="campaign-name" className="text-sm font-medium">Campaign Name</Label>
+          <Input
+            id="campaign-name"
+            placeholder="e.g., Q4 Outreach Campaign"
+            value={name}
+            onChange={(e) => onUpdateName(e.target.value)}
+            className="h-10"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Type</Label>
+          <div className="flex gap-1.5">
+            {CAMPAIGN_TYPES.map((ct) => {
+              const Icon = ct.icon;
+              const isSelected = type === ct.value;
+              return (
+                <button
+                  key={ct.value}
+                  type="button"
+                  onClick={() => onUpdateType(ct.value)}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border text-xs font-medium transition-all",
+                    isSelected ? ct.color : "border-border text-muted-foreground hover:border-muted-foreground/50"
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{ct.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* Template Selection (shown initially or when empty) */}
       {showTemplates && (
         <div className="space-y-3">
           <TemplateGallery 
             onSelectTemplate={handleSelectTemplate}
-            selectedCategory={campaignType}
+            selectedCategory={type}
           />
           <div className="flex justify-center">
             <Button
@@ -334,7 +389,7 @@ export const CampaignContentStep = ({
                     placeholder="Write your email message here...
 
 Use personalization tokens like {{client_name}} to make each email personal."
-                    className="min-h-[280px]"
+                    className="min-h-[200px]"
                   />
                 </TabsContent>
                 <TabsContent value="preview" className="mt-3">
@@ -354,7 +409,7 @@ Use personalization tokens like {{client_name}} to make each email personal."
                     placeholder="Write your email message here...
 
 Use personalization tokens like {{client_name}} to make each email personal."
-                    className="min-h-[320px]"
+                    className="min-h-[220px]"
                   />
                 </div>
                 <div className="border border-border rounded-xl p-4 bg-muted/30">
