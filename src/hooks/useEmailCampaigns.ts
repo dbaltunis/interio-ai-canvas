@@ -35,12 +35,16 @@ export const useEmailCampaigns = () => {
 
 export const useCreateEmailCampaign = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (campaignData: Omit<EmailCampaign, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
+      // Validate required fields
+      if (!campaignData.name?.trim()) throw new Error('Campaign name is required');
+      if (!campaignData.subject?.trim()) throw new Error('Email subject is required');
+      if (!campaignData.content?.trim()) throw new Error('Email content is required');
+
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      if (!user) throw new Error('User not authenticated. Please log in.');
 
       const { data, error } = await supabase
         .from('email_campaigns')
@@ -48,22 +52,17 @@ export const useCreateEmailCampaign = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error creating campaign:', error);
+        throw new Error(error.message || 'Failed to save campaign');
+      }
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
-      toast({
-        title: "Success",
-        description: "Email campaign created successfully",
-      });
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to create email campaign",
-        variant: "destructive",
-      });
+      console.error('Campaign creation mutation error:', error);
     },
   });
 };

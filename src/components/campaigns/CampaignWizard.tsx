@@ -109,11 +109,10 @@ export const CampaignWizard = ({
         recipient_count: campaignData.recipients.length,
       });
 
-      toast.success(`Campaign "${campaignData.name}" created successfully!`);
-      onComplete();
+      // Close dialog FIRST so toast appears on top
       onOpenChange(false);
       
-      // Reset wizard
+      // Reset wizard state
       setCurrentStep(1);
       setCampaignData({
         name: '',
@@ -123,8 +122,15 @@ export const CampaignWizard = ({
         sendImmediately: true,
         recipients: [],
       });
+
+      // Show toast AFTER dialog closes (with small delay for animation)
+      setTimeout(() => {
+        toast.success(`Campaign "${campaignData.name}" created successfully! View it in the Emails tab.`);
+        onComplete();
+      }, 150);
     } catch (error) {
-      toast.error("Failed to create campaign");
+      console.error("Campaign creation error:", error);
+      toast.error("Failed to create campaign. Please try again.");
     }
   };
 
