@@ -31,9 +31,10 @@ import { InlinePaymentConfig } from "@/components/jobs/quotation/InlinePaymentCo
 import { useQuoteDiscount } from "@/hooks/useQuoteDiscount";
 import { TWCSubmitDialog } from "@/components/integrations/TWCSubmitDialog";
 import { QuoteProfitSummary } from "@/components/pricing/QuoteProfitSummary";
-import { useHasPermission } from "@/hooks/usePermissions";
+import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
 import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
 interface QuotationTabProps {
   projectId: string;
   quoteId?: string;
@@ -98,6 +99,35 @@ export const QuotationTab = ({
   // Use explicit permissions hook for edit checks
   const { canEditJob, isLoading: editPermissionsLoading } = useCanEditJob(project);
   const isReadOnly = !canEditJob || editPermissionsLoading;
+  const { user } = useAuth();
+  const { data: userRoleData, isLoading: userRoleLoading } = useUserRole();
+  const { data: explicitPermissions, isLoading: permissionsLoading } = useUserPermissions();
+
+  // Check send_emails permission
+  const { data: hasSendEmailsPermission } = useQuery({
+    queryKey: ['has-permission', user?.id, 'send_emails', explicitPermissions, userRoleData],
+    queryFn: async () => {
+      if (!user || userRoleLoading || permissionsLoading) return undefined;
+      
+      const role = userRoleData?.role;
+      if (role === 'System Owner') return true;
+      
+      // Check explicit permission
+      const hasExplicit = explicitPermissions?.includes('send_emails');
+      if (hasExplicit !== undefined) return hasExplicit;
+      
+      // Role-based defaults
+      if (['Owner', 'Admin'].includes(role || '')) {
+        return hasExplicit ?? true; // Default true if no explicit permission set
+      }
+      
+      return hasExplicit ?? false;
+    },
+    enabled: !!user && !userRoleLoading && !permissionsLoading,
+  });
+
+  const canSendEmails = hasSendEmailsPermission ?? undefined;
+  const isPermissionLoaded = canSendEmails !== undefined;
 
   // Fetch client data
   const {
@@ -433,6 +463,15 @@ export const QuotationTab = ({
     subject: string;
     message: string;
   }) => {
+    if (!isPermissionLoaded || !canSendEmails) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to send emails.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const element = document.getElementById('quote-live-preview');
     if (!element) {
       toast({
@@ -647,7 +686,23 @@ export const QuotationTab = ({
             </Button>
 
             {/* Secondary Actions */}
-            <Button variant="outline" size="sm" onClick={() => setIsEmailModalOpen(true)} disabled={isGeneratingPDF || !selectedTemplate || isReadOnly} className="h-9 px-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                if (!isPermissionLoaded || !canSendEmails) {
+                  toast({
+                    title: "Permission Denied",
+                    description: "You don't have permission to send emails.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                setIsEmailModalOpen(true);
+              }} 
+              disabled={isGeneratingPDF || !selectedTemplate || isReadOnly || !isPermissionLoaded || !canSendEmails} 
+              className="h-9 px-4"
+            >
               <Mail className="h-4 w-4 mr-2" />
               Email
             </Button>

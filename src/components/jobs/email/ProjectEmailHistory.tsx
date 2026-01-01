@@ -42,6 +42,11 @@ import { useEmails } from "@/hooks/useEmails";
 import { format } from "date-fns";
 import { EmailDetailDialog } from "../email-components/EmailDetailDialog";
 import type { Email } from "@/hooks/useEmails";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 interface AttachmentData {
   filename: string;
@@ -63,6 +68,36 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
   const [focusedIndex, setFocusedIndex] = useState(0);
   
   const { data: emails = [], isLoading } = useEmails();
+  const { user } = useAuth();
+  const { data: userRoleData, isLoading: userRoleLoading } = useUserRole();
+  const { data: explicitPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { toast } = useToast();
+
+  // Check view_email_kpis permission
+  const { data: hasViewEmailKPIsPermission } = useQuery({
+    queryKey: ['has-permission', user?.id, 'view_email_kpis', explicitPermissions, userRoleData],
+    queryFn: async () => {
+      if (!user || userRoleLoading || permissionsLoading) return undefined;
+      
+      const role = userRoleData?.role;
+      if (role === 'System Owner') return true;
+      
+      // Check explicit permission
+      const hasExplicit = explicitPermissions?.includes('view_email_kpis');
+      if (hasExplicit !== undefined) return hasExplicit;
+      
+      // Role-based defaults
+      if (['Owner', 'Admin'].includes(role || '')) {
+        return hasExplicit ?? true; // Default true if no explicit permission set
+      }
+      
+      return hasExplicit ?? false;
+    },
+    enabled: !!user && !userRoleLoading && !permissionsLoading,
+  });
+
+  const canViewEmailKPIs = hasViewEmailKPIsPermission ?? undefined;
+  const isPermissionLoaded = canViewEmailKPIs !== undefined;
   
   // Filter emails for this project
   const projectEmails = emails.filter(email => {
@@ -120,6 +155,14 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
   }, [currentPage]);
 
   const handleEmailClick = (email: Email) => {
+    if (!isPermissionLoaded || !canViewEmailKPIs) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to view email performance metrics.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSelectedEmail(email);
     setEmailDetailOpen(true);
   };
@@ -230,6 +273,7 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
               }`}
               onClick={() => handleEmailClick(email)}
               onMouseEnter={() => setFocusedIndex(index)}
+              className={!isPermissionLoaded || !canViewEmailKPIs ? "cursor-default" : ""}
             >
               {/* Status Indicator */}
               <div className="flex-shrink-0">
@@ -276,10 +320,22 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={(e) => {
-                    e.stopPropagation();
-                    handleEmailClick(email);
-                  }}>
+                  <DropdownMenuItem 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!isPermissionLoaded || !canViewEmailKPIs) {
+                        toast({
+                          title: "Permission Denied",
+                          description: "You don't have permission to view email performance metrics.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      handleEmailClick(email);
+                    }}
+                    disabled={!isPermissionLoaded || !canViewEmailKPIs}
+                    className={!isPermissionLoaded || !canViewEmailKPIs ? "opacity-50 cursor-not-allowed" : ""}
+                  >
                     <Eye className="h-4 w-4 mr-2" />
                     View Details
                   </DropdownMenuItem>

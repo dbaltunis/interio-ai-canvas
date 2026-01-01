@@ -46,26 +46,6 @@ export const ModernInventoryDashboard = () => {
   const { data: userRole, isLoading: userRoleLoading } = useUserRole();
   const isMobile = useIsMobile();
   
-  // Check if user is Owner/Admin for admin tab - log for debugging
-  const isOwnerOrAdmin = !userRoleLoading && (
-    userRole?.role === 'Owner' || 
-    userRole?.role === 'Admin' || 
-    userRole?.role === 'System Owner' || 
-    userRole?.isAdmin === true || 
-    userRole?.isOwner === true ||
-    userRole?.isSystemOwner === true
-  );
-  
-  // Debug logging - remove after confirming it works
-  console.log('[Admin Tab Debug]', { 
-    role: userRole?.role, 
-    isOwner: userRole?.isOwner, 
-    isAdmin: userRole?.isAdmin, 
-    isSystemOwner: userRole?.isSystemOwner,
-    isOwnerOrAdmin,
-    userRoleLoading 
-  });
-  
   // Permission checks - CRITICAL for data security
   // Check explicit permissions first, like jobs and clients
   const { user } = useAuth();
@@ -97,6 +77,9 @@ export const ModernInventoryDashboard = () => {
   const hasManageInventoryPermission = explicitPermissions?.some(
     (p: { permission_name: string }) => p.permission_name === 'manage_inventory'
   ) ?? false;
+  const hasManageInventoryAdminPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'manage_inventory_admin'
+  ) ?? false;
   
   // Works like jobs and clients - check explicit permissions first
   const canViewInventory = userRoleData?.isSystemOwner
@@ -110,6 +93,21 @@ export const ModernInventoryDashboard = () => {
     : (isOwner || isAdmin)
         ? !hasAnyExplicitPermissions || hasManageInventoryPermission
         : hasManageInventoryPermission;
+
+  // Only allow admin access if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include manage_inventory_admin)
+  const canManageInventoryAdmin =
+    userRoleData?.isSystemOwner
+      ? true
+      : (isOwner || isAdmin)
+          ? !hasAnyExplicitPermissions || hasManageInventoryAdminPermission
+          : hasManageInventoryAdminPermission;
+
+  // Redirect away from admin tab if user doesn't have permission
+  useEffect(() => {
+    if (activeTab === "admin" && !canManageInventoryAdmin && !permissionsLoading && !userRoleLoading && explicitPermissions !== undefined) {
+      setActiveTab("fabrics");
+    }
+  }, [activeTab, canManageInventoryAdmin, permissionsLoading, userRoleLoading, explicitPermissions]);
   
   const hasAnyInventoryAccessFromHook = canViewInventory || canManageInventory;
   
@@ -377,12 +375,15 @@ export const ModernInventoryDashboard = () => {
                 <Package className="h-4 w-4" />
                 Vendors
               </TabsTrigger>
-              {isOwnerOrAdmin && (
-                <TabsTrigger value="admin" className="flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Admin
-                </TabsTrigger>
-              )}
+              <TabsTrigger 
+                value="admin" 
+                className="flex items-center gap-2"
+                disabled={!canManageInventoryAdmin && !permissionsLoading && !userRoleLoading && explicitPermissions !== undefined}
+                title={!canManageInventoryAdmin && !permissionsLoading && !userRoleLoading && explicitPermissions !== undefined ? "You don't have permission to access inventory administration" : undefined}
+              >
+                <Shield className="h-4 w-4" />
+                Admin
+              </TabsTrigger>
             </TabsList>
 
         <TabsContent value="fabrics" className="space-y-6">
@@ -433,7 +434,7 @@ export const ModernInventoryDashboard = () => {
           <VendorDashboard />
         </TabsContent>
 
-        {isOwnerOrAdmin && (
+        {canManageInventoryAdmin && (
           <TabsContent value="admin" className="space-y-6">
             <InventoryAdminPanel />
           </TabsContent>

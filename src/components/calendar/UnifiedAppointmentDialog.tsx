@@ -30,6 +30,11 @@ import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { getAvatarColor, getInitials } from "@/lib/avatar-utils";
 import { TimezoneUtils } from "@/utils/timezoneUtils";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useToast } from "@/hooks/use-toast";
 
 interface UnifiedAppointmentDialogProps {
   open: boolean;
@@ -77,6 +82,8 @@ export const UnifiedAppointmentDialog = ({
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
 
+  const { user } = useAuth();
+  const { toast } = useToast();
   const createAppointment = useCreateAppointment();
   const updateAppointment = useUpdateAppointment();
   const deleteAppointment = useDeleteAppointment();
@@ -91,6 +98,45 @@ export const UnifiedAppointmentDialog = ({
   
   // Fetch event owner profile if editing an appointment
   const { data: eventOwnerProfile } = useUserProfile(appointment?.user_id);
+
+  // Permission checks - following the same pattern as jobs
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-appointment-dialog', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[UnifiedAppointmentDialog] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+
+  // Check if create_appointments is explicitly in user_permissions table
+  const hasCreateAppointmentsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'create_appointments'
+  ) ?? false;
+
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+
+  // Only allow create if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include create_appointments)
+  // Note: Editing existing appointments doesn't require create permission
+  const canCreateAppointments =
+    userRoleData?.isSystemOwner
+      ? true
+      : (isOwner || isAdmin)
+          ? !hasAnyExplicitPermissions || hasCreateAppointmentsPermission
+          : hasCreateAppointmentsPermission;
 
   const connectedProviders = providers.filter(p => p.connected);
   const selectedProvider = providers.find(p => p.provider === videoProvider);
@@ -179,6 +225,27 @@ export const UnifiedAppointmentDialog = ({
     console.log('handleSubmit called with event:', event);
     console.log('isEditing:', isEditing);
     console.log('appointment:', appointment);
+    
+    // Check permission for creating new appointments (editing doesn't require create permission)
+    if (!isEditing) {
+      const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+      if (isPermissionLoaded && !canCreateAppointments) {
+        toast({
+          title: "Permission Denied",
+          description: "You don't have permission to create appointments.",
+          variant: "destructive",
+        });
+        return;
+      }
+      // Don't allow creation while permissions are loading
+      if (!isPermissionLoaded) {
+        toast({
+          title: "Loading",
+          description: "Please wait while permissions are being checked...",
+        });
+        return;
+      }
+    }
     
     if (!event.title || !event.date || !event.startTime || !event.endTime) {
       console.log('Validation failed:', {
@@ -387,6 +454,22 @@ export const UnifiedAppointmentDialog = ({
             {isEditing ? 'Edit Event' : 'New Event'}
           </DialogTitle>
         </DialogHeader>
+        
+        {/* Permission Warning for Creating New Appointments */}
+        {!isEditing && (() => {
+          const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+          if (isPermissionLoaded && !canCreateAppointments) {
+            return (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  You don't have permission to create appointments. Please contact your administrator.
+                </AlertDescription>
+              </Alert>
+            );
+          }
+          return null;
+        })()}
         
         <div className="space-y-5">
           {/* Title */}
@@ -828,20 +911,29 @@ export const UnifiedAppointmentDialog = ({
 
           {/* Action Buttons */}
           <div className="flex gap-3">
-            <Button
-              onClick={handleSubmit}
-              disabled={!event.title || !event.date || !event.startTime || !event.endTime || !isValidDateRange || isSaving}
-              className="flex-1 h-10"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {isEditing ? 'Updating...' : 'Creating...'}
-                </>
-              ) : (
-                isEditing ? 'Update Event' : 'Create Event'
-              )}
-            </Button>
+            {(() => {
+              const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+              const shouldDisableForCreate = !isEditing && isPermissionLoaded && !canCreateAppointments;
+              const isFormValid = event.title && event.date && event.startTime && event.endTime && isValidDateRange;
+              
+              return (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!isFormValid || isSaving || shouldDisableForCreate}
+                  className="flex-1 h-10"
+                  title={shouldDisableForCreate ? "You don't have permission to create appointments" : undefined}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {isEditing ? 'Updating...' : 'Creating...'}
+                    </>
+                  ) : (
+                    isEditing ? 'Update Event' : 'Create Event'
+                  )}
+                </Button>
+              );
+            })()}
 
             {isEditing && (
               <>

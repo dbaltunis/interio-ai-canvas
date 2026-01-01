@@ -18,6 +18,11 @@ import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { Shield } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 export const EmailManagement = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -26,6 +31,36 @@ export const EmailManagement = () => {
   const [showHelp, setShowHelp] = useState(false);
   const { hasEmailSettings, isLoading: integrationLoading } = useEmailSetupStatus();
   const { data: emails = [] } = useEmails();
+  const { user } = useAuth();
+  const { data: userRoleData, isLoading: userRoleLoading } = useUserRole();
+  const { data: explicitPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { toast } = useToast();
+
+  // Check send_emails permission
+  const { data: hasSendEmailsPermission } = useQuery({
+    queryKey: ['has-permission', user?.id, 'send_emails', explicitPermissions, userRoleData],
+    queryFn: async () => {
+      if (!user || userRoleLoading || permissionsLoading) return undefined;
+      
+      const role = userRoleData?.role;
+      if (role === 'System Owner') return true;
+      
+      // Check explicit permission
+      const hasExplicit = explicitPermissions?.includes('send_emails');
+      if (hasExplicit !== undefined) return hasExplicit;
+      
+      // Role-based defaults
+      if (['Owner', 'Admin'].includes(role || '')) {
+        return hasExplicit ?? true; // Default true if no explicit permission set
+      }
+      
+      return hasExplicit ?? false;
+    },
+    enabled: !!user && !userRoleLoading && !permissionsLoading,
+  });
+
+  const canSendEmails = hasSendEmailsPermission ?? undefined;
+  const isPermissionLoaded = canSendEmails !== undefined;
 
   // Check permissions
   if (canAccessEmails === undefined) {
@@ -108,24 +143,32 @@ export const EmailManagement = () => {
             </Button>
           )}
           
-          <div className="relative group">
-            <Button 
-              onClick={() => setActiveTab("composer")}
-              className="bg-primary text-white hover:bg-primary-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!hasEmailSettings}
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Compose Email
-            </Button>
-            {!hasEmailSettings && (
-              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block z-50">
-                <div className="bg-popover text-popover-foreground text-xs rounded-md p-2 shadow-lg border whitespace-nowrap">
-                  Configure your sender name and email in Settings first
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-popover" />
-                </div>
-              </div>
-            )}
-          </div>
+          <Button 
+            onClick={() => {
+              if (!isPermissionLoaded || !canSendEmails) {
+                toast({
+                  title: "Permission Denied",
+                  description: "You don't have permission to send emails.",
+                  variant: "destructive",
+                });
+                return;
+              }
+              if (!hasEmailSettings) {
+                toast({
+                  title: "Email Settings Required",
+                  description: "Please configure your sender name and email in Settings first.",
+                  variant: "destructive",
+                });
+                return;
+              }
+              setActiveTab("composer");
+            }}
+            className="bg-primary text-white hover:bg-primary-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!hasEmailSettings || !isPermissionLoaded || !canSendEmails}
+          >
+            <Send className="h-4 w-4 mr-2" />
+            Compose Email
+          </Button>
         </div>
       </div>
       

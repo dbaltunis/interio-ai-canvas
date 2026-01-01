@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Users, FolderOpen, Calendar, Plus, Settings, MessageCircle, ShoppingCart, Package } from "lucide-react";
-import { useUserPermissions } from "@/hooks/usePermissions";
+import { useUserPermissions, useHasPermission } from "@/hooks/usePermissions";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface CreateActionDialogProps {
   open: boolean;
@@ -28,6 +29,9 @@ export const CreateActionDialog = ({
 }: CreateActionDialogProps) => {
   const { user } = useAuth();
   const { isLoading: permissionsLoading } = useUserPermissions();
+  const { data: userRoleData } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
   const { data: explicitPermissions } = useQuery({
     queryKey: ['explicit-user-permissions', user?.id],
     queryFn: async () => {
@@ -49,6 +53,19 @@ export const CreateActionDialog = ({
   const hasCreateJobsPermission = explicitPermissions?.some(
     (p: { permission_name: string }) => p.permission_name === 'create_jobs'
   ) ?? false;
+  
+  // Check view_settings permission
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+  const hasViewSettingsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_settings'
+  ) ?? false;
+  
+  const canViewSettings = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasViewSettingsPermission
+        : hasViewSettingsPermission;
+  
   const { toast } = useToast();
   
   const handleAction = (action: string) => {
@@ -87,6 +104,14 @@ export const CreateActionDialog = ({
     } else if (action === "purchasing") {
       onTabChange("ordering-hub");
     } else if (action === "settings") {
+      if (canViewSettings === false) {
+        toast({
+          title: "Permission Denied",
+          description: "You don't have permission to view settings.",
+          variant: "destructive",
+        });
+        return;
+      }
       onOpenSettings?.();
     } else if (action === "team") {
       onOpenTeamHub?.();
@@ -206,6 +231,7 @@ export const CreateActionDialog = ({
             onClick={() => handleAction("settings")}
             variant="outline"
             className="h-14 justify-start gap-4 text-left"
+            disabled={canViewSettings === false}
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
               <Settings className="h-4 w-4 text-muted-foreground" />

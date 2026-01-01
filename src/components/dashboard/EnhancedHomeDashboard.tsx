@@ -81,6 +81,7 @@ export const EnhancedHomeDashboard = () => {
   const canViewEmails = useHasPermission('view_emails');
   const canViewInventory = useHasPermission('view_inventory');
   const canViewTeamPerformance = useHasPermission('view_team_performance');
+  const canViewTeamMembers = useHasPermission('view_team_members');
   const canViewPrimaryKPIs = useHasPermission('view_primary_kpis');
   const canViewEmailKPIs = useHasPermission('view_email_kpis');
   const canViewRevenueKPIs = useHasPermission('view_revenue_kpis');
@@ -116,12 +117,13 @@ export const EnhancedHomeDashboard = () => {
       if (widget.requiredPermission === 'view_emails') return canViewEmails !== false;
       if (widget.requiredPermission === 'view_inventory') return canViewInventory !== false;
       if (widget.requiredPermission === 'view_team_performance') return canViewTeamPerformance !== false;
+      if (widget.requiredPermission === 'view_team_members') return canViewTeamMembers !== false;
 
       return true; // Default to showing during loading
     });
     
     return filtered;
-  }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, isShopifyConnected, hasOnlineStore.data, hasOnlineStore.isLoading]);
+  }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, canViewTeamMembers, isShopifyConnected, hasOnlineStore.data, hasOnlineStore.isLoading]);
 
   // Debug logging for Shopify status
   console.log('[Dashboard] Integration Status:', {

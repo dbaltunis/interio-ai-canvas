@@ -10,6 +10,12 @@ import { X, Plus, Send, Paperclip, Users } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useSendEmail } from "@/hooks/useSendEmail";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface ProjectEmailComposerProps {
   projectId: string;
@@ -35,6 +41,35 @@ export const ProjectEmailComposer = ({
   const { data: clients = [] } = useClients();
   const sendEmailMutation = useSendEmail();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { data: userRoleData, isLoading: userRoleLoading } = useUserRole();
+  const { data: explicitPermissions, isLoading: permissionsLoading } = useUserPermissions();
+
+  // Check send_emails permission
+  const { data: hasSendEmailsPermission } = useQuery({
+    queryKey: ['has-permission', user?.id, 'send_emails', explicitPermissions, userRoleData],
+    queryFn: async () => {
+      if (!user || userRoleLoading || permissionsLoading) return undefined;
+      
+      const role = userRoleData?.role;
+      if (role === 'System Owner') return true;
+      
+      // Check explicit permission
+      const hasExplicit = explicitPermissions?.includes('send_emails');
+      if (hasExplicit !== undefined) return hasExplicit;
+      
+      // Role-based defaults
+      if (['Owner', 'Admin'].includes(role || '')) {
+        return hasExplicit ?? true; // Default true if no explicit permission set
+      }
+      
+      return hasExplicit ?? false;
+    },
+    enabled: !!user && !userRoleLoading && !permissionsLoading,
+  });
+
+  const canSendEmails = hasSendEmailsPermission ?? undefined;
+  const isPermissionLoaded = canSendEmails !== undefined;
 
   const emailTemplates = [
     {
@@ -96,6 +131,15 @@ export const ProjectEmailComposer = ({
   };
 
   const handleSendEmail = async () => {
+    if (!isPermissionLoaded || !canSendEmails) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to send emails.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (emailData.recipients.length === 0) {
       toast({
         title: "Error",
@@ -159,6 +203,15 @@ export const ProjectEmailComposer = ({
       </CardHeader>
 
       <CardContent className="space-y-6">
+        {isPermissionLoaded && !canSendEmails && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              You don't have permission to send emails.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {/* Email Template Selection */}
         <div className="space-y-2">
           <Label>Email Template</Label>
@@ -298,7 +351,7 @@ export const ProjectEmailComposer = ({
           )}
           <Button
             onClick={handleSendEmail}
-            disabled={sendEmailMutation.isPending}
+            disabled={sendEmailMutation.isPending || !isPermissionLoaded || !canSendEmails}
             className="flex items-center gap-2"
           >
             <Send className="h-4 w-4" />

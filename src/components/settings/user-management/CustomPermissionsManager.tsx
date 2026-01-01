@@ -18,9 +18,11 @@ interface CustomPermissionsManagerProps {
   userId: string;
   userRole: string;
   userName: string;
+  canManageTeam?: boolean;
+  isPermissionLoaded?: boolean;
 }
 
-export const CustomPermissionsManager = ({ userId, userRole, userName }: CustomPermissionsManagerProps) => {
+export const CustomPermissionsManager = ({ userId, userRole, userName, canManageTeam = true, isPermissionLoaded = true }: CustomPermissionsManagerProps) => {
   const { data: currentUserRole } = useUserRole();
   const { data: userPermissions, isLoading } = useCustomPermissions(userId);
   const updatePermissions = useUpdateCustomPermissions();
@@ -46,6 +48,16 @@ export const CustomPermissionsManager = ({ userId, userRole, userName }: CustomP
   const roleDefaults = getPermissionsForRole(userRole);
 
   const handlePermissionToggle = async (permissionId: string, enabled: boolean) => {
+    // Check permission before toggling
+    if (isPermissionLoaded && !canManageTeam) {
+      toast.error("You don't have permission to manage team permissions.");
+      return;
+    }
+    if (!isPermissionLoaded) {
+      toast.error("Please wait while permissions are being checked...");
+      return;
+    }
+
     setPendingChanges(prev => new Set([...prev, permissionId]));
     
     try {
@@ -227,7 +239,7 @@ export const CustomPermissionsManager = ({ userId, userRole, userName }: CustomP
                         id={`perm-${key}`}
                         checked={isEnabled}
                         onCheckedChange={(checked) => handlePermissionToggle(key, checked)}
-                        disabled={updatePermissions.isPending || isLoading || isPending}
+                        disabled={updatePermissions.isPending || isLoading || isPending || (isPermissionLoaded && !canManageTeam)}
                       />
                     </div>
                   );

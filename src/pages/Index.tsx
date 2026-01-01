@@ -249,6 +249,11 @@ const Index = () => {
     (p: { permission_name: string }) => p.permission_name === 'view_inventory'
   ) ?? false;
   
+  // Check if view_emails is explicitly in user_permissions table
+  const hasViewEmailsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_emails'
+  ) ?? false;
+  
   // Works like jobs and clients:
   // - System Owner: always has access
   // - Owner/Admin: only bypass restrictions if NO explicit permissions exist in table at all
@@ -259,6 +264,12 @@ const Index = () => {
     : (isOwner || isAdmin)
         ? !hasAnyExplicitPermissions || hasViewInventoryPermission
         : hasViewInventoryPermission;
+
+  const canViewEmails = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasViewEmailsPermission
+        : hasViewEmailsPermission;
   
   // Session timeout removed in v2.3.7 - users stay logged in via Supabase auto-refresh
   
@@ -297,7 +308,30 @@ const Index = () => {
         sessionStorage.setItem('active_tab', 'dashboard');
       }
     }
-  }, [canViewInventory, activeTab, searchParams, setSearchParams, permissionsLoading, explicitPermissions]);
+
+    // Redirect away from emails tab if user doesn't have permission
+    if (canViewEmails === false) {
+      const urlTab = searchParams.get('tab');
+      const currentTab = activeTab;
+      
+      // If URL has emails tab, redirect immediately
+      if (urlTab === 'emails') {
+        console.warn('[NAV] Index: Blocking emails tab in URL - user lacks permission, redirecting to dashboard');
+        setSearchParams({ tab: 'dashboard' }, { replace: true });
+        setActiveTab('dashboard');
+        sessionStorage.setItem('active_tab', 'dashboard');
+        return;
+      }
+      
+      // If current active tab is emails, redirect immediately
+      if (currentTab === 'emails') {
+        console.warn('[NAV] Index: User lacks view_emails permission, redirecting from emails tab');
+        setSearchParams({ tab: 'dashboard' }, { replace: true });
+        setActiveTab('dashboard');
+        sessionStorage.setItem('active_tab', 'dashboard');
+      }
+    }
+  }, [canViewInventory, canViewEmails, activeTab, searchParams, setSearchParams, permissionsLoading, explicitPermissions]);
 
   // Sync activeTab with URL (single source of truth) - but validate permissions first
   useEffect(() => {
@@ -315,6 +349,23 @@ const Index = () => {
         // If permission is explicitly false, block it
         if (canViewInventory === false) {
           console.warn('[NAV] Index: Blocking inventory tab access - user lacks permission');
+          setSearchParams({ tab: 'dashboard' }, { replace: true });
+          setActiveTab('dashboard');
+          sessionStorage.setItem('active_tab', 'dashboard');
+          return;
+        }
+      }
+
+      // BLOCK emails tab if user doesn't have permission (works like inventory)
+      if (urlTab === 'emails') {
+        // Wait for permissions to load
+        if (permissionsLoading || explicitPermissions === undefined) {
+          console.warn('[NAV] Index: Permission loading, deferring emails tab until permission check completes');
+          return;
+        }
+        // If permission is explicitly false, block it
+        if (canViewEmails === false) {
+          console.warn('[NAV] Index: Blocking emails tab access - user lacks permission');
           setSearchParams({ tab: 'dashboard' }, { replace: true });
           setActiveTab('dashboard');
           sessionStorage.setItem('active_tab', 'dashboard');
@@ -383,6 +434,14 @@ const Index = () => {
           </Suspense>
         );
       case "emails":
+        // Only render if user has permission (after permissions are loaded)
+        if (explicitPermissions !== undefined && !permissionsLoading && !canViewEmails) {
+          return (
+            <div className="p-6 text-center">
+              <p className="text-destructive">You don't have permission to view emails.</p>
+            </div>
+          );
+        }
         return (
           <Suspense fallback={<EmailManagementSkeleton />}>
             <ComponentWrapper>

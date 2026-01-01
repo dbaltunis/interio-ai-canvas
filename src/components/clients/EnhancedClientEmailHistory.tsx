@@ -9,6 +9,11 @@ import { useClientEmails } from "@/hooks/useClientEmails";
 import { formatDistanceToNow } from "date-fns";
 import { useState, useRef, useEffect } from "react";
 import { EmailComposer } from "../jobs/email/EmailComposer";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 interface EnhancedClientEmailHistoryProps {
   clientId: string;
@@ -27,6 +32,36 @@ export const EnhancedClientEmailHistory = ({
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
   const [showComposer, setShowComposer] = useState(false);
   const emailSectionRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const { data: userRoleData, isLoading: userRoleLoading } = useUserRole();
+  const { data: explicitPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { toast } = useToast();
+
+  // Check send_emails permission
+  const { data: hasSendEmailsPermission } = useQuery({
+    queryKey: ['has-permission', user?.id, 'send_emails', explicitPermissions, userRoleData],
+    queryFn: async () => {
+      if (!user || userRoleLoading || permissionsLoading) return undefined;
+      
+      const role = userRoleData?.role;
+      if (role === 'System Owner') return true;
+      
+      // Check explicit permission
+      const hasExplicit = explicitPermissions?.includes('send_emails');
+      if (hasExplicit !== undefined) return hasExplicit;
+      
+      // Role-based defaults
+      if (['Owner', 'Admin'].includes(role || '')) {
+        return hasExplicit ?? true; // Default true if no explicit permission set
+      }
+      
+      return hasExplicit ?? false;
+    },
+    enabled: !!user && !userRoleLoading && !permissionsLoading,
+  });
+
+  const canSendEmails = hasSendEmailsPermission ?? undefined;
+  const isPermissionLoaded = canSendEmails !== undefined;
 
   useEffect(() => {
     // Store ref in window for external scrolling
@@ -95,6 +130,14 @@ export const EnhancedClientEmailHistory = ({
   };
 
   const handleComposeClick = () => {
+    if (!isPermissionLoaded || !canSendEmails) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to send emails.",
+        variant: "destructive",
+      });
+      return;
+    }
     setShowComposer(true);
     if (onComposeEmail) {
       onComposeEmail();
@@ -200,7 +243,7 @@ export const EnhancedClientEmailHistory = ({
                     variant="outline" 
                     className="mt-2 border-orange-300 hover:bg-orange-100"
                     onClick={handleComposeClick}
-                    disabled={!canEditClient}
+                    disabled={!canEditClient || !isPermissionLoaded || !canSendEmails}
                   >
                     <Mail className="h-4 w-4 mr-2" />
                     Send Follow-up
@@ -217,7 +260,11 @@ export const EnhancedClientEmailHistory = ({
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Email History</CardTitle>
           {clientEmail && onComposeEmail && (
-            <Button onClick={handleComposeClick} size="sm" disabled={!canEditClient}>
+            <Button 
+              onClick={handleComposeClick} 
+              size="sm" 
+              disabled={!canEditClient || !isPermissionLoaded || !canSendEmails}
+            >
               <Mail className="h-4 w-4 mr-2" />
               Compose Email
             </Button>
@@ -229,7 +276,11 @@ export const EnhancedClientEmailHistory = ({
               <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground mb-4">No emails sent yet</p>
               {clientEmail && onComposeEmail && (
-                <Button onClick={handleComposeClick} variant="outline" disabled={!canEditClient}>
+                <Button 
+                  onClick={handleComposeClick} 
+                  variant="outline" 
+                  disabled={!canEditClient || !isPermissionLoaded || !canSendEmails}
+                >
                   <Mail className="h-4 w-4 mr-2" />
                   Send First Email
                 </Button>

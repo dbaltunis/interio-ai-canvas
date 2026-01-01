@@ -91,6 +91,7 @@ export const DashboardWidgetCustomizer = ({
   const canViewEmails = useHasPermission('view_emails');
   const canViewInventory = useHasPermission('view_inventory');
   const canViewTeamPerformance = useHasPermission('view_team_performance');
+  const canViewTeamMembers = useHasPermission('view_team_members');
 
   // Check integration statuses
   const { integration: shopifyIntegration, isLoading: isLoadingShopify } = useShopifyIntegrationReal();
@@ -137,11 +138,12 @@ export const DashboardWidgetCustomizer = ({
       if (widget.requiredPermission === 'view_emails') return canViewEmails !== false;
       if (widget.requiredPermission === 'view_inventory') return canViewInventory !== false;
       if (widget.requiredPermission === 'view_team_performance') return canViewTeamPerformance !== false;
+      if (widget.requiredPermission === 'view_team_members') return canViewTeamMembers !== false;
 
       // Default to showing during loading
       return true;
     });
-  }, [widgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, canViewTeamPerformance, isShopifyConnected, hasOnlineStore, isLoading]);
+  }, [widgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, canViewTeamPerformance, canViewTeamMembers, isShopifyConnected, hasOnlineStore, isLoading]);
 
   const filteredWidgets = filter === "all" 
     ? permissionFilteredWidgets 

@@ -9,20 +9,65 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 const Settings = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const hasViewSettings = useHasPermission('view_settings');
-  const hasViewProfile = useHasPermission('view_profile');
-  const canAccessSettings = hasViewSettings || hasViewProfile;
+  const { user } = useAuth();
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-settings', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[Settings] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+
+  // Check if user has ANY explicit permissions in the table
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+  
+  // Check if view_settings is explicitly in user_permissions table
+  const hasViewSettingsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_settings'
+  ) ?? false;
+
+  // Works like jobs, clients, inventory, and emails:
+  // - System Owner: always has access
+  // - Owner/Admin: only bypass restrictions if NO explicit permissions exist in table at all
+  //   If ANY explicit permissions exist, respect ALL settings (missing = disabled)
+  // - Staff/Regular users: Always check explicit permissions
+  const canViewSettings = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasViewSettingsPermission
+        : hasViewSettingsPermission;
   
   const handleBackToApp = () => {
     navigate('/', { replace: true });
   };
 
+
   // Show loading while permissions are being checked
-  if (hasViewSettings === undefined || hasViewProfile === undefined) {
+  if (permissionsLoading || explicitPermissions === undefined || roleLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center animate-fade-in">
         <Card className="max-w-md">
@@ -38,7 +83,7 @@ const Settings = () => {
     );
   }
 
-  if (!canAccessSettings) {
+  if (canViewSettings === false) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center animate-fade-in">
         <Card className="max-w-md">
@@ -47,7 +92,7 @@ const Settings = () => {
               <SettingsIcon className="h-8 w-8 text-red-600" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-2">Settings Access Required</h3>
-            <p className="text-muted-foreground mb-6">You need profile or settings permissions to access this page.</p>
+            <p className="text-muted-foreground mb-6">You don't have permission to view settings.</p>
             <Button onClick={handleBackToApp} variant="outline" className="hover-lift">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to App

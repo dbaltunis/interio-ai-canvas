@@ -22,6 +22,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useToast } from "@/hooks/use-toast";
 
 interface MainNavProps {
   activeTab: string;
@@ -33,7 +34,7 @@ const navItems = [
   { id: "projects", label: "Projects", icon: FolderOpen, permission: "view_jobs" },
   { id: "job-editor", label: "Job Editor", icon: PlusCircle, permission: "create_jobs" },
   { id: "quotes", label: "Quote Builder", icon: FileText, permission: "view_jobs" },
-  { id: "emails", label: "Emails", icon: BookOpen, permission: "view_jobs" },
+  { id: "emails", label: "Emails", icon: BookOpen, permission: "view_emails" },
   { id: "workshop", label: "Work Orders", icon: Wrench, permission: "view_jobs" },
   { id: "inventory", label: "Product Library", icon: Package, permission: "view_inventory" },
   { id: "ordering-hub", label: "Ordering Hub", icon: ShoppingCart, badge: true, permission: "view_inventory" },
@@ -46,6 +47,7 @@ const navItems = [
 export const MainNav = ({ activeTab, onTabChange }: MainNavProps) => {
   const { data: queueCount } = useMaterialQueueCount();
   const { user } = useAuth();
+  const { toast } = useToast();
   
   // Permission checks
   const canViewJobs = useHasPermission('view_jobs');
@@ -54,13 +56,13 @@ export const MainNav = ({ activeTab, onTabChange }: MainNavProps) => {
   const canViewClients = useHasPermission('view_clients');
   const canViewSettings = useHasPermission('view_settings');
   
-  // For inventory, check explicit permissions like jobs and clients
+  // For inventory and emails, check explicit permissions like jobs and clients
   const { data: userRoleData } = useUserRole();
   const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
   const isAdmin = userRoleData?.isAdmin || false;
   const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
   const { data: explicitPermissions } = useQuery({
-    queryKey: ['explicit-user-permissions-inventory-nav', user?.id],
+    queryKey: ['explicit-user-permissions-nav', user?.id],
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await supabase
@@ -80,6 +82,9 @@ export const MainNav = ({ activeTab, onTabChange }: MainNavProps) => {
   const hasViewInventoryPermission = explicitPermissions?.some(
     (p: { permission_name: string }) => p.permission_name === 'view_inventory'
   ) ?? false;
+  const hasViewEmailsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_emails'
+  ) ?? false;
   
   // Works like jobs and clients - check explicit permissions first
   const canViewInventory = userRoleData?.isSystemOwner
@@ -87,8 +92,14 @@ export const MainNav = ({ activeTab, onTabChange }: MainNavProps) => {
     : (isOwner || isAdmin)
         ? !hasAnyExplicitPermissions || hasViewInventoryPermission
         : hasViewInventoryPermission;
+
+  const canViewEmails = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasViewEmailsPermission
+        : hasViewEmailsPermission;
   
-  // Filter nav items based on permissions
+  // Filter nav items based on permissions (but keep emails visible, just disabled)
   // During loading (undefined), show items to prevent disappearing UI
   const visibleNavItems = navItems.filter(item => {
     if (!item.permission) return true; // No permission required
@@ -101,9 +112,12 @@ export const MainNav = ({ activeTab, onTabChange }: MainNavProps) => {
       if (explicitPermissions === undefined && !userRoleData) return true; // Show during loading
       return canViewInventory;
     }
+    // Keep emails tab visible but will be disabled
+    if (item.permission === 'view_emails') return true;
+    // Keep settings tab visible but will be disabled
+    if (item.permission === 'view_settings') return true;
     if (item.permission === 'view_calendar') return canViewCalendar !== false;
     if (item.permission === 'view_clients') return canViewClients !== false;
-    if (item.permission === 'view_settings') return canViewSettings !== false;
     
     return true; // Default to showing during loading
   });
@@ -116,6 +130,34 @@ export const MainNav = ({ activeTab, onTabChange }: MainNavProps) => {
             const Icon = item.icon;
             const showBadge = item.badge && queueCount && queueCount > 0;
             
+            // Check if emails tab should be disabled
+            const isEmailsTab = item.id === 'emails';
+            const isEmailsDisabled = isEmailsTab && explicitPermissions !== undefined && !permissionsLoading && !canViewEmails;
+            
+            // Check if settings tab should be disabled
+            const isSettingsTab = item.id === 'settings';
+            const isSettingsDisabled = isSettingsTab && canViewSettings === false && !permissionsLoading;
+            
+            const handleClick = () => {
+              if (isEmailsDisabled) {
+                toast({
+                  title: "Permission Denied",
+                  description: "You don't have permission to view emails.",
+                  variant: "destructive",
+                });
+                return;
+              }
+              if (isSettingsDisabled) {
+                toast({
+                  title: "Permission Denied",
+                  description: "You don't have permission to view settings.",
+                  variant: "destructive",
+                });
+                return;
+              }
+              onTabChange(item.id);
+            };
+            
             return (
               <Button
                 key={item.id}
@@ -124,9 +166,11 @@ export const MainNav = ({ activeTab, onTabChange }: MainNavProps) => {
                   "w-full justify-start transition-all duration-200 text-sm font-medium relative",
                   activeTab === item.id 
                     ? "bg-primary text-primary-foreground hover:bg-primary/90 font-semibold" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                  (isEmailsDisabled || isSettingsDisabled) && "opacity-50 cursor-not-allowed"
                 )}
-                onClick={() => onTabChange(item.id)}
+                onClick={handleClick}
+                disabled={isEmailsDisabled || isSettingsDisabled}
               >
                 <Icon className="mr-3 h-4 w-4" />
                 {item.label}

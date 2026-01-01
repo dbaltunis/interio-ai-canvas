@@ -3,7 +3,10 @@ import { Package, AlertTriangle, Settings2 } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
-import { useHasPermission } from "@/hooks/usePermissions";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { cn } from "@/lib/utils";
 
@@ -16,22 +19,47 @@ import { CompactImportExport } from "./admin/CompactImportExport";
 import { BulkInventoryImport } from "@/components/settings/tabs/inventory/BulkInventoryImport";
 
 export const InventoryAdminPanel = () => {
+  const { user } = useAuth();
   const { data: inventory, isLoading } = useEnhancedInventory();
-  const { data: userRole } = useUserRole();
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
   const { units } = useMeasurementUnits();
-  const hasAdminPermission = useHasPermission('manage_inventory_admin');
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-admin-panel', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[InventoryAdminPanel] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+
+  // Check if manage_inventory_admin is explicitly in user_permissions table
+  const hasManageInventoryAdminPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'manage_inventory_admin'
+  ) ?? false;
+
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+
+  // Only allow admin access if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include manage_inventory_admin)
+  const canManageInventoryAdmin =
+    userRoleData?.isSystemOwner
+      ? true
+      : (isOwner || isAdmin)
+          ? !hasAnyExplicitPermissions || hasManageInventoryAdminPermission
+          : hasManageInventoryAdminPermission;
 
   const currencySymbol = getCurrencySymbol(units.currency);
-
-  // Permission check - Owner/Admin or has manage_inventory_admin permission
-  const isOwnerOrAdmin = 
-    userRole?.role === 'Owner' || 
-    userRole?.role === 'Admin' || 
-    userRole?.role === 'System Owner' ||
-    userRole?.isAdmin === true || 
-    userRole?.isOwner === true ||
-    userRole?.isSystemOwner === true ||
-    hasAdminPermission;
 
   // Calculate financial summaries
   const financialSummary = useMemo(() => {
@@ -177,7 +205,20 @@ export const InventoryAdminPanel = () => {
 
   const handlePrint = () => window.print();
 
-  if (!isOwnerOrAdmin) {
+  // Show loading state while permissions are being checked
+  if (permissionsLoading || roleLoading || explicitPermissions === undefined) {
+    return (
+      <div className="flex items-center justify-center p-8 md:p-12">
+        <div className="text-center space-y-4">
+          <Package className="h-12 w-12 text-muted-foreground mx-auto animate-pulse" />
+          <p className="text-muted-foreground">Loading permissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied if user doesn't have permission
+  if (!canManageInventoryAdmin) {
     return (
       <div className="flex items-center justify-center p-8 md:p-12">
         <div className="max-w-md text-center space-y-4">

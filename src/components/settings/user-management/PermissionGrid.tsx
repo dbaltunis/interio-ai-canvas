@@ -8,9 +8,10 @@ import { PERMISSION_CATEGORIES, PERMISSION_DETAILS } from "@/constants/permissio
 interface PermissionGridProps {
   permissions: string[];
   onToggle: (permission: string, enabled: boolean) => void;
+  disabled?: boolean;
 }
 
-export const PermissionGrid = ({ permissions, onToggle }: PermissionGridProps) => {
+export const PermissionGrid = ({ permissions, onToggle, disabled = false }: PermissionGridProps) => {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Filter permissions based on search
@@ -83,6 +84,7 @@ export const PermissionGrid = ({ permissions, onToggle }: PermissionGridProps) =
                         checked={isEnabled}
                         onCheckedChange={(checked) => onToggle(permissionKey, !!checked)}
                         className="mt-0.5"
+                        disabled={disabled}
                       />
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
