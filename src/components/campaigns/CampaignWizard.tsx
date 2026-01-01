@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, ChevronRight, Send, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Send, Check, Loader2, CheckCircle2 } from "lucide-react";
 import { SelectedClient } from "@/hooks/useClientSelection";
 import { CampaignRecipientsStep } from "./steps/CampaignRecipientsStep";
 import { CampaignContentStep } from "./steps/CampaignContentStep";
@@ -37,6 +37,8 @@ export interface CampaignData {
   recipients: SelectedClient[];
 }
 
+type SendingState = 'idle' | 'sending' | 'success';
+
 const STEPS = [
   { id: 1, title: 'Recipients', description: 'Select contacts' },
   { id: 2, title: 'Content', description: 'Write message' },
@@ -51,6 +53,7 @@ export const CampaignWizard = ({
   initialData,
 }: CampaignWizardProps) => {
   const [currentStep, setCurrentStep] = useState(initialData ? 1 : 1);
+  const [sendingState, setSendingState] = useState<SendingState>('idle');
   const [campaignData, setCampaignData] = useState<CampaignData>({
     name: initialData?.name || '',
     type: initialData?.type || 'outreach',
@@ -72,6 +75,7 @@ export const CampaignWizard = ({
         recipients: selectedClients.filter(c => c.email),
       });
       setCurrentStep(1);
+      setSendingState('idle');
     }
   }, [open, initialData, selectedClients]);
 
@@ -119,19 +123,26 @@ export const CampaignWizard = ({
   };
 
   const handleLaunch = async () => {
+    const recipientCount = campaignData.recipients.length;
+    const campaignName = campaignData.name;
+    const isImmediate = campaignData.sendImmediately;
+
+    // Show sending state immediately
+    setSendingState('sending');
+
     try {
       // First create the campaign record
       const campaign = await createCampaign.mutateAsync({
         name: campaignData.name,
         subject: campaignData.subject,
         content: campaignData.content,
-        status: 'draft', // Start as draft, will be updated to sending
+        status: 'draft',
         scheduled_at: campaignData.scheduledAt?.toISOString(),
-        recipient_count: campaignData.recipients.length,
+        recipient_count: recipientCount,
       });
 
       // If sending immediately, execute the campaign
-      if (campaignData.sendImmediately) {
+      if (isImmediate) {
         await executeCampaign.mutateAsync({
           campaignId: campaign.id,
           campaignData: {
@@ -147,30 +158,36 @@ export const CampaignWizard = ({
         });
       }
 
-      // Close dialog FIRST so toast appears on top
-      onOpenChange(false);
-      
-      // Reset wizard state
-      setCurrentStep(1);
-      setCampaignData({
-        name: '',
-        type: 'outreach',
-        subject: '',
-        content: '',
-        sendImmediately: true,
-        recipients: [],
-      });
+      // Show success state briefly
+      setSendingState('success');
 
-      // Show toast AFTER dialog closes (with small delay for animation)
+      // Close dialog after brief success display
       setTimeout(() => {
-        const message = campaignData.sendImmediately 
-          ? `Campaign "${campaignData.name}" is being sent to ${campaignData.recipients.length} recipients!`
-          : `Campaign "${campaignData.name}" scheduled successfully!`;
+        onOpenChange(false);
+        
+        // Reset wizard state
+        setCurrentStep(1);
+        setSendingState('idle');
+        setCampaignData({
+          name: '',
+          type: 'outreach',
+          subject: '',
+          content: '',
+          sendImmediately: true,
+          recipients: [],
+        });
+
+        // Show toast and complete
+        const message = isImmediate 
+          ? `Campaign "${campaignName}" sent to ${recipientCount} recipients!`
+          : `Campaign "${campaignName}" scheduled successfully!`;
         toast.success(message);
         onComplete();
-      }, 150);
+      }, 800);
+
     } catch (error) {
       console.error("Campaign creation error:", error);
+      setSendingState('idle');
       toast.error("Failed to create campaign. Please try again.");
     }
   };
@@ -215,8 +232,43 @@ export const CampaignWizard = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      // Don't allow closing while sending
+      if (sendingState !== 'idle') return;
+      onOpenChange(newOpen);
+    }}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        {/* Sending Overlay */}
+        {sendingState !== 'idle' && (
+          <div className="absolute inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
+            {sendingState === 'sending' ? (
+              <>
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-semibold">Sending Campaign...</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Sending to {campaignData.recipients.length} recipients
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <CheckCircle2 className="h-8 w-8 text-green-600" />
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-green-700 dark:text-green-400">Campaign Sent!</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {campaignData.recipients.length} emails queued for delivery
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Header with Progress */}
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border space-y-4">
           <div className="flex items-center justify-between">
@@ -307,11 +359,11 @@ export const CampaignWizard = ({
           ) : (
             <Button
               onClick={handleLaunch}
-              disabled={createCampaign.isPending || executeCampaign.isPending}
+              disabled={sendingState !== 'idle'}
               className="gap-1.5 bg-primary hover:bg-primary/90"
             >
               <Send className="h-4 w-4" />
-              {createCampaign.isPending || executeCampaign.isPending ? 'Sending...' : 'Launch Campaign'}
+              Launch Campaign
             </Button>
           )}
         </div>
