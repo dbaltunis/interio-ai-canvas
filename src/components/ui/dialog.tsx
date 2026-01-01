@@ -20,7 +20,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:pointer-events-auto data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:pointer-events-none",
+      "fixed inset-0 z-[9998] bg-black/40 backdrop-blur-[6px] data-[state=open]:animate-in data-[state=open]:pointer-events-auto data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:pointer-events-none",
       className
     )}
     onClick={(e) => e.stopPropagation()}
@@ -43,16 +43,16 @@ const DialogContent = React.forwardRef<
         onInteractOutside={onInteractOutside}
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          "fixed left-[50%] top-[50%] z-[9999] flex flex-col w-[calc(100%-2rem)] max-w-[95vw] md:max-w-4xl lg:max-w-5xl xl:max-w-6xl translate-x-[-50%] translate-y-[-50%] gap-3 md:gap-4 lg:gap-6 border-2 bg-card text-card-foreground border-border p-4 md:p-6 lg:p-8 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-98 data-[state=open]:zoom-in-98 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] rounded-lg md:rounded-xl will-change-transform max-h-[85vh] md:max-h-[90vh] overflow-y-auto pointer-events-auto",
+          "fixed left-[50%] top-[50%] z-[9999] flex flex-col w-[calc(100%-2rem)] max-w-[95vw] md:max-w-4xl lg:max-w-5xl xl:max-w-6xl translate-x-[-50%] translate-y-[-50%] gap-4 md:gap-5 lg:gap-6 border bg-card text-card-foreground border-border p-5 md:p-6 lg:p-8 shadow-modal duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 rounded-2xl will-change-transform max-h-[85vh] md:max-h-[90vh] overflow-y-auto pointer-events-auto",
           className
         )}
         {...props}
       >
         {children}
         <DialogPrimitive.Close 
-          className="absolute right-3 top-3 md:right-4 md:top-4 z-10 rounded-md p-1.5 md:p-2 bg-background hover:bg-accent text-foreground border border-border opacity-90 transition-all hover:opacity-100 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring disabled:pointer-events-none"
+          className="absolute right-4 top-4 md:right-5 md:top-5 z-10 rounded-full p-2 bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-150 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
         >
-          <X className="h-4 w-4 md:h-5 md:w-5" />
+          <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>

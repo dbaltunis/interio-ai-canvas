@@ -81,12 +81,12 @@ export const JobCard = ({
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => onJobSelect(quote.id)}>
-      <CardHeader className="pb-3">
+    <Card variant="elevated" className="transition-all duration-200 hover:shadow-card-hover cursor-pointer group" onClick={() => onJobSelect(quote.id)}>
+      <CardHeader className="pb-2.5">
         <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center space-x-2">
-              <h3 className="font-semibold text-lg">{quote.quote_number}</h3>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-base tracking-tight">{quote.quote_number}</h3>
               <Badge className={`${getStatusColor(quote.status)} text-xs`}>
                 {(() => {
                   const statusDetails = jobStatuses.find(s => s.name.toLowerCase() === quote.status?.toLowerCase());
@@ -94,26 +94,26 @@ export const JobCard = ({
                 })()}
               </Badge>
             </div>
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground flex items-center">
-                <Calendar className="h-3 w-3 mr-1" />
+            <div className="space-y-0.5">
+              <p className="text-xs text-muted-foreground flex items-center">
+                <Calendar className="h-3 w-3 mr-1.5" />
                 Created {formatDistanceToNow(new Date(quote.created_at), { addSuffix: true })}
               </p>
               {owner && (
                 <p className="text-xs text-muted-foreground flex items-center">
-                  <User className="h-3 w-3 mr-1" />
+                  <User className="h-3 w-3 mr-1.5" />
                   Owner: {owner.display_name || owner.email}
                 </p>
               )}
             </div>
           </div>
           
-          <div className="flex space-x-1" onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="sm" onClick={() => onJobSelect(quote.id)}>
-              <Eye className="h-3 w-3" />
+          <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+            <Button variant="ghost" size="icon-sm" onClick={() => onJobSelect(quote.id)}>
+              <Eye className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => onJobSelect(quote.id)}>
-              <Edit className="h-3 w-3" />
+            <Button variant="ghost" size="icon-sm" onClick={() => onJobSelect(quote.id)}>
+              <Edit className="h-3.5 w-3.5" />
             </Button>
             <JobActionsMenu 
               quote={quote}
@@ -125,11 +125,11 @@ export const JobCard = ({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         {/* Client Information */}
         {client && (
           <div 
-            className="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+            className="p-3 bg-muted/40 dark:bg-muted/20 rounded-xl cursor-pointer hover:bg-muted/60 transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               onClientEdit?.(client.id);
@@ -137,24 +137,24 @@ export const JobCard = ({
           >
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                   {client.client_type === 'B2B' ? (
                     <Building2 className="h-4 w-4 text-blue-600" />
                   ) : (
                     <User className="h-4 w-4 text-primary" />
                   )}
-                  <span className="font-medium">
+                  <span className="font-medium text-sm">
                     {client.client_type === 'B2B' ? client.company_name : client.name}
                   </span>
                 </div>
                 
                 {client.client_type === 'B2B' && client.contact_person && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Contact: {client.contact_person}
                   </p>
                 )}
                 
-                <div className="flex items-center space-x-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
                   {client.email && (
                     <span className="flex items-center">
                       <Mail className="h-3 w-3 mr-1" />
@@ -170,8 +170,8 @@ export const JobCard = ({
                 </div>
               </div>
               
-              <Badge variant="outline" className={`text-xs ${
-                client.client_type === 'B2B' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-secondary/20 text-secondary-foreground border-secondary'
+              <Badge variant="muted" size="sm" className={`${
+                client.client_type === 'B2B' ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400' : ''
               }`}>
                 {client.client_type || 'B2C'}
               </Badge>
@@ -181,12 +181,12 @@ export const JobCard = ({
 
         {/* Project Information with Rooms & Treatments */}
         {project && (
-          <div className="p-3 bg-blue-50 rounded-lg space-y-3">
+          <div className="p-3 bg-blue-50/70 dark:bg-blue-950/30 rounded-xl space-y-2.5">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-blue-600" />
-                  <span className="font-medium">{project.name}</span>
+                  <span className="font-medium text-sm">{project.name}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Job #{formatJobNumber(project.job_number)}
@@ -199,7 +199,7 @@ export const JobCard = ({
                 )}
               </div>
               
-              <Badge variant="outline" className={`text-xs ${getStatusColor(project.status || 'draft')}`}>
+              <Badge variant="muted" size="sm" className={getStatusColor(project.status || 'draft')}>
                 {(() => {
                   const statusDetails = jobStatuses.find(s => s.name.toLowerCase() === project.status?.toLowerCase());
                   return statusDetails ? statusDetails.name : (project.status?.replace('_', ' ').toUpperCase() || 'DRAFT');
@@ -208,43 +208,43 @@ export const JobCard = ({
             </div>
 
             {/* Project Content Summary */}
-            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-blue-200">
+            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-blue-200/50 dark:border-blue-800/30">
               <div className="text-center">
-                <div className="flex items-center justify-center space-x-1">
+                <div className="flex items-center justify-center gap-1">
                   <Home className="h-3 w-3 text-blue-600" />
-                  <span className="text-xs font-medium text-blue-800">{rooms?.length || 0}</span>
+                  <span className="text-xs font-semibold text-blue-800 dark:text-blue-300">{rooms?.length || 0}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">Rooms</p>
+                <p className="text-[10px] text-muted-foreground">Rooms</p>
               </div>
               
               <div className="text-center">
-                <div className="flex items-center justify-center space-x-1">
+                <div className="flex items-center justify-center gap-1">
                   <Square className="h-3 w-3 text-blue-600" />
-                  <span className="text-xs font-medium text-blue-800">{surfaces?.length || 0}</span>
+                  <span className="text-xs font-semibold text-blue-800 dark:text-blue-300">{surfaces?.length || 0}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">Windows</p>
+                <p className="text-[10px] text-muted-foreground">Windows</p>
               </div>
               
               <div className="text-center">
-                <div className="flex items-center justify-center space-x-1">
+                <div className="flex items-center justify-center gap-1">
                   <Palette className="h-3 w-3 text-blue-600" />
-                  <span className="text-xs font-medium text-blue-800">{treatments?.length || 0}</span>
+                  <span className="text-xs font-semibold text-blue-800 dark:text-blue-300">{treatments?.length || 0}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">Treatments</p>
+                <p className="text-[10px] text-muted-foreground">Treatments</p>
               </div>
             </div>
 
             {/* Room List */}
             {rooms && rooms.length > 0 && (
-              <div className="pt-2 border-t border-blue-200">
+              <div className="pt-2 border-t border-blue-200/50 dark:border-blue-800/30">
                 <div className="flex flex-wrap gap-1">
                   {rooms.slice(0, 3).map((room: any) => (
-                    <Badge key={room.id} variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                    <Badge key={room.id} variant="secondary" size="sm" className="bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
                       {room.name}
                     </Badge>
                   ))}
                   {rooms.length > 3 && (
-                    <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                    <Badge variant="secondary" size="sm" className="bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
                       +{rooms.length - 3} more
                     </Badge>
                   )}
@@ -255,9 +255,9 @@ export const JobCard = ({
         )}
 
         {/* Job Value */}
-        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-          <span className="text-sm font-medium text-green-800">Total Value</span>
-          <div className="flex items-center space-x-1">
+        <div className="flex items-center justify-between p-3 bg-green-50/70 dark:bg-green-950/30 rounded-xl">
+          <span className="text-sm font-medium text-green-800 dark:text-green-300">Total Value</span>
+          <div className="flex items-center gap-1">
             <DollarSign className="h-4 w-4 text-green-600" />
             <span className="font-bold text-green-600">
               {formatCurrency(quote.total_amount || 0)}
@@ -267,7 +267,7 @@ export const JobCard = ({
 
         {/* Notes (if any) */}
         {quote.notes && (
-          <div className="text-sm text-muted-foreground">
+          <div className="text-xs text-muted-foreground">
             <p className="line-clamp-2">{quote.notes}</p>
           </div>
         )}

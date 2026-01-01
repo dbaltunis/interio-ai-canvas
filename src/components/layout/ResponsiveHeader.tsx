@@ -204,10 +204,10 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   return (
     <>
       {/* Desktop Header - hidden on mobile/tablet, they use bottom nav */}
-      <header className="sticky top-0 z-40 w-full border-b glass-morphism-strong hidden lg:block"
+      <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/95 backdrop-blur-md shadow-xs hidden lg:block"
         data-tour-id="header-profile"
       >
-        <div className="flex h-16 items-center justify-between px-6 max-w-full">
+        <div className="flex h-14 items-center justify-between px-6 max-w-full">
           {/* Left: Logo */}
           <div className="flex items-center">
             <BrandHeader size="xl" showTagline={true} />
@@ -219,7 +219,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
               // Show skeleton while permissions are loading
               <>
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} className="h-9 w-24" />
+                  <Skeleton key={i} className="h-9 w-20 rounded-lg" />
                 ))}
               </>
             ) : (
@@ -268,10 +268,10 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                     data-tour-id={item.tourId}
                   >
                     <Icon className={cn(
-                      "h-4 w-4 transition-transform",
-                      activeTab === item.id && "scale-110"
+                      "h-4 w-4 transition-transform duration-200",
+                      activeTab === item.id && "scale-105"
                     )} />
-                    <span className={cn(activeTab === item.id && "font-semibold")}>{item.label}</span>
+                    <span>{item.label}</span>
                   </button>
                 );
               })

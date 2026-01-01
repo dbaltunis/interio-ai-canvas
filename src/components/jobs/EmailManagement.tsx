@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Plus, Settings, BarChart3, Filter, ChevronDown, Home, Send } from "lucide-react";
 import { EmailDashboard } from "./email/EmailDashboard";
 import { EmailComposer } from "./email/EmailComposer";
-// import { EmailCampaigns } from "./email/EmailCampaigns"; // Hidden until feature is fully implemented
+import { EmailCampaigns } from "./email/EmailCampaigns";
 import { EmailAnalytics } from "./email/EmailAnalytics";
 import { EmailSettings } from "./email/EmailSettings";
 import { EmailIntegrationBanners } from "./email-components/EmailIntegrationBanners";
@@ -191,16 +191,14 @@ export const EmailManagement = () => {
             <span className="hidden sm:inline">Compose</span>
             <span className="sm:hidden">Write</span>
           </TabsTrigger>
-          {/* CAMPAIGNS TAB - Hidden until feature is fully implemented
           <TabsTrigger 
             value="campaigns" 
             className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50"
           >
-            <BarChart3 className="w-4 h-4" />
+            <Send className="w-4 h-4" />
             <span className="hidden sm:inline">Campaigns</span>
             <span className="sm:hidden">Camps</span>
           </TabsTrigger>
-          */}
           <TabsTrigger 
             value="analytics" 
             className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50"
@@ -232,7 +230,6 @@ export const EmailManagement = () => {
             </CardContent>
           </Card>
         );
-      /* CAMPAIGNS CASE - Hidden until feature is fully implemented
       case "campaigns":
         return (
           <Card className="bg-card border-border rounded-lg shadow-sm animate-fade-in">
@@ -241,7 +238,6 @@ export const EmailManagement = () => {
             </CardContent>
           </Card>
         );
-      */
       case "analytics":
         return (
           <Card className="bg-card border-border rounded-lg shadow-sm animate-fade-in">

@@ -266,19 +266,21 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
   }
 
   return (
-    <Card className="border-border/50">
+    <Card variant="elevated" className="overflow-hidden">
       <CardContent className="p-0">
         {!clients || clients.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <User className="mx-auto h-12 w-12 mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-medium mb-2">No clients found</h3>
-            <p className="text-muted-foreground mb-4">Try adjusting your filters or add a new client.</p>
+          <div className="text-center py-16 text-muted-foreground">
+            <div className="p-4 bg-muted/40 rounded-2xl w-fit mx-auto mb-4">
+              <User className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2 text-foreground">No clients found</h3>
+            <p className="text-sm text-muted-foreground mb-4">Try adjusting your filters or add a new client.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
              <Table>
               <TableHeader>
-                <TableRow className="hover:bg-transparent border-border/50">
+                <TableRow className="hover:bg-transparent border-border/40 bg-muted/30">
                   <TableHead className="w-12">
                     <Checkbox 
                       checked={allSelected}
@@ -286,14 +288,14 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                       aria-label="Select all"
                     />
                   </TableHead>
-                  <TableHead className="text-muted-foreground font-medium w-12">#</TableHead>
-                  <TableHead className="text-muted-foreground font-medium">Client</TableHead>
-                  <TableHead className="text-muted-foreground font-medium">Stage</TableHead>
-                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Projects</TableHead>}
-                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Total Value</TableHead>}
-                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Last Activity</TableHead>}
-                  {!isTablet && <TableHead className="text-muted-foreground font-medium">Documents</TableHead>}
-                  <TableHead className="text-muted-foreground font-medium text-right">Actions</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold w-12">#</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Client</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Stage</TableHead>
+                  {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Projects</TableHead>}
+                  {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Total Value</TableHead>}
+                  {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Last Activity</TableHead>}
+                  {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Documents</TableHead>}
+                  <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -306,23 +308,28 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                   return (
                   <TableRow 
                     key={client.id} 
-                    className={`hover:bg-muted/50 cursor-pointer border-border/50 ${clientIsSelected ? 'bg-primary/5' : ''}`}
+                    className={`hover:bg-muted/40 cursor-pointer border-border/40 transition-colors ${clientIsSelected ? 'bg-primary/5' : ''}`}
                     onClick={() => handleClientClick(client)}
                   >
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox 
                         checked={clientIsSelected}
-                        onCheckedChange={() => handleCheckboxClick({ stopPropagation: () => {} } as any, client)}
-                        onClick={(e) => handleCheckboxClick(e, client)}
+                        onCheckedChange={() => toggleClient({
+                          id: client.id,
+                          name: client.name,
+                          email: client.email,
+                          company_name: client.company_name,
+                          funnel_stage: client.funnel_stage,
+                        })}
                       />
                     </TableCell>
-                    <TableCell className="text-muted-foreground font-medium">
+                    <TableCell className="text-muted-foreground text-sm">
                       {index + 1}
                     </TableCell>
                     
                     <TableCell className="font-medium max-w-[280px]">
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9 flex-shrink-0">
+                        <Avatar className="h-10 w-10 flex-shrink-0 shadow-sm border border-border/40">
                           <AvatarFallback className={`${avatarColor} text-white text-xs font-semibold`}>
                             {initials}
                           </AvatarFallback>
@@ -342,7 +349,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                             </div>
                           )}
                           {client.email && (
-                            <div className="text-xs text-muted-foreground truncate max-w-[200px]">
+                            <div className="text-xs text-muted-foreground/80 truncate max-w-[200px]">
                               {client.email}
                             </div>
                           )}
@@ -351,14 +358,14 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                     </TableCell>
                     
                     <TableCell>
-                      <Badge className={`${getStageColor(client.funnel_stage || 'lead')} border text-xs font-medium`} variant="outline">
+                      <Badge className={`${getStageColor(client.funnel_stage || 'lead')} border text-xs font-medium rounded-md`} variant="outline">
                         {(client.funnel_stage || 'lead').replace('_', ' ').toUpperCase()}
                       </Badge>
                     </TableCell>
                     
                     {!isTablet && (
                       <TableCell>
-                        <Badge variant="outline" className="text-xs flex items-center gap-1 w-fit">
+                        <Badge variant="muted" className="text-xs flex items-center gap-1.5 w-fit">
                           <FolderKanban className="h-3 w-3" />
                           {client.projectCount || 0}
                         </Badge>
@@ -368,11 +375,11 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                     {!isTablet && (
                       <TableCell>
                         {client.totalValue && client.totalValue > 0 ? (
-                          <div className="font-bold text-foreground">
+                          <div className="font-semibold text-foreground">
                             {formatCurrency(client.totalValue)}
                           </div>
                         ) : (
-                          <div className="text-muted-foreground text-sm">—</div>
+                          <div className="text-muted-foreground/60 text-sm">—</div>
                         )}
                       </TableCell>
                     )}
@@ -385,7 +392,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                             {formatDistanceToNow(new Date(client.last_contact_date), { addSuffix: true })}
                           </div>
                         ) : (
-                          <div className="text-muted-foreground text-sm">No activity</div>
+                          <div className="text-muted-foreground/60 text-sm">No activity</div>
                         )}
                       </TableCell>
                     )}
@@ -393,7 +400,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                     {!isTablet && (
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs flex items-center gap-1">
+                          <Badge variant="muted" className="text-xs flex items-center gap-1.5">
                             <FileText className="h-3 w-3" />
                             {filesCount?.[client.id] || 0}
                           </Badge>
@@ -404,11 +411,11 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="icon-sm" className="rounded-lg" onClick={(e) => e.stopPropagation()}>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 bg-popover z-50">
+                        <DropdownMenuContent align="end" className="w-48">
                           <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
                             <User className="mr-2 h-4 w-4" />
                             View Details

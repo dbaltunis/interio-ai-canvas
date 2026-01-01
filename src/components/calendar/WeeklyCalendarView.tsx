@@ -828,13 +828,13 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                   <div 
                                     {...listeners}
                                     {...attributes}
-                                    className="absolute top-1 right-1 w-4 h-4 bg-black/20 rounded hover:bg-black/30 cursor-move z-20 flex items-center justify-center"
+                                    className="absolute top-0.5 right-0.5 w-2.5 h-2.5 md:w-3 md:h-3 lg:w-4 lg:h-4 bg-black/20 rounded hover:bg-black/30 cursor-move z-20 flex items-center justify-center"
                                     title="Drag to move event"
                                   >
-                                    <div className="flex flex-col gap-[1px]">
-                                      <div className="w-1 h-1 bg-current rounded-full opacity-60"></div>
-                                      <div className="w-1 h-1 bg-current rounded-full opacity-60"></div>
-                                      <div className="w-1 h-1 bg-current rounded-full opacity-60"></div>
+                                    <div className="flex flex-col gap-px">
+                                      <div className="w-0.5 h-0.5 bg-current rounded-full opacity-60"></div>
+                                      <div className="w-0.5 h-0.5 bg-current rounded-full opacity-60"></div>
+                                      <div className="w-0.5 h-0.5 bg-current rounded-full opacity-60"></div>
                                     </div>
                                   </div>
                                  )}
@@ -854,30 +854,29 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
 
                                    {/* Task content - distinct display */}
                                     {event.isTask && (
-                                      <div 
-                                        className="flex items-center gap-1.5 h-full px-2 cursor-pointer hover:opacity-80 transition-opacity"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          const newStatus = event.status === 'completed' ? 'in_progress' : 'completed';
-                                          updateTask.mutate({
-                                            id: event.id,
-                                            status: newStatus
-                                          });
-                                        }}
-                                      >
+                                      <div className="flex items-center gap-1.5 h-full px-2">
                                         {/* Circular checkbox */}
                                         <button
+                                          type="button"
                                           className={`
-                                            flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center
-                                            transition-all duration-200
+                                            flex-shrink-0 w-3 h-3 lg:w-4 lg:h-4 rounded-full border-2 flex items-center justify-center
+                                            transition-all duration-200 cursor-pointer touch-manipulation
                                             ${event.status === 'completed' 
                                               ? "border-primary bg-primary" 
                                               : "border-muted-foreground bg-white hover:border-primary"
                                             }
                                           `}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const newStatus = event.status === 'completed' ? 'in_progress' : 'completed';
+                                            updateTask.mutate({
+                                              id: event.id,
+                                              status: newStatus
+                                            });
+                                          }}
                                         >
                                           {event.status === 'completed' && (
-                                            <CheckCheck className="h-2.5 w-2.5 text-white" strokeWidth={3} />
+                                            <CheckCheck className="h-2 w-2 lg:h-2.5 lg:w-2.5 text-white" strokeWidth={3} />
                                           )}
                                         </button>
                                         <div className="font-medium text-[10px] leading-[1.2] break-words flex-1 min-w-0 text-foreground" style={{
@@ -938,7 +937,7 @@ export const WeeklyCalendarView = ({ currentDate, onEventClick, onTimeSlotClick,
                                          
                                          {/* User avatar - hide on tablet and narrow events, only show on desktop */}
                                          {!event.isAvailableSlot && !isNarrowEvent && finalHeight > 35 && (
-                                           <div className="hidden lg:flex flex-shrink-0 mr-5">
+                                           <div className="hidden xl:flex flex-shrink-0 mr-5">
                                              <Avatar className="h-5 w-5">
                                                <AvatarImage src="" alt="" />
                                                <AvatarFallback className="text-[8px] bg-background/50 text-foreground font-medium">

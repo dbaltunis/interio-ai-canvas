@@ -20,6 +20,11 @@ interface SpamCheckResult {
   suggestions: string[];
 }
 
+interface GeneratedEmailContent {
+  subject: string;
+  content: string;
+}
+
 interface TimingSuggestion {
   bestDays: string[];
   bestTimes: string[];
@@ -91,10 +96,31 @@ export const useCampaignAssistant = () => {
     }
   };
 
+  const generateEmailContent = async (context: CampaignContext): Promise<GeneratedEmailContent | null> => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('campaign-assistant', {
+        body: { action: 'generate-content', context }
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
+
+      return data.result as GeneratedEmailContent;
+    } catch (error) {
+      console.error('Failed to generate email content:', error);
+      toast.error('Failed to generate email content');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     isLoading,
     getSubjectIdeas,
     checkSpamRisk,
     getTimingSuggestions,
+    generateEmailContent,
   };
 };

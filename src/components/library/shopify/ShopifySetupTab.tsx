@@ -3,13 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Loader2, AlertTriangle, CheckCircle2, XCircle, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { ShopifyOAuthGuide } from "./ShopifyOAuthGuide";
 
 type ShopifyIntegration = Database['public']['Tables']['shopify_integrations']['Row'];
@@ -20,162 +19,122 @@ interface ShopifySetupTabProps {
   onSuccess?: () => void;
 }
 
+type ConnectionStatus = 'idle' | 'testing' | 'success' | 'error';
+
+interface TestResult {
+  success: boolean;
+  shop?: {
+    name: string;
+    email: string;
+    domain: string;
+    myshopify_domain: string;
+    plan_name: string;
+    currency: string;
+  };
+  error?: string;
+  error_type?: string;
+}
+
 export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isConnectingOAuth, setIsConnectingOAuth] = useState(false);
   
   const [shopDomain, setShopDomain] = useState(integration?.shop_domain || "");
-  const [accessToken, setAccessToken] = useState("");
-  const [webhookSecret, setWebhookSecret] = useState("");
+  const [clientId, setClientId] = useState(integration?.client_id || "");
+  const [clientSecret, setClientSecret] = useState("");
+  const [showClientSecret, setShowClientSecret] = useState(false);
+  
+  // Connection test state
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
 
   // Extract myshopify.com domain from various formats
   const extractShopDomain = (input: string): string => {
-    // Remove protocol
     let domain = input.replace(/^https?:\/\//, '');
-    
-    // Extract from admin URL (admin.shopify.com/store/shop-name/...)
     const adminMatch = domain.match(/admin\.shopify\.com\/store\/([^\/]+)/);
     if (adminMatch) {
       return `${adminMatch[1]}.myshopify.com`;
     }
-    
-    // Remove trailing slash and path
     domain = domain.split('/')[0];
-    
-    // If already myshopify.com, return as is
     if (domain.includes('.myshopify.com')) {
       return domain;
     }
-    
-    // If just store name, add .myshopify.com
     if (!domain.includes('.')) {
       return `${domain}.myshopify.com`;
     }
-    
     return domain;
   };
 
-  const handleOAuthConnect = async () => {
-    if (!shopDomain) {
+  const handleTestConnection = async () => {
+    if (!shopDomain || !clientId || !clientSecret) {
       toast({
-        title: "Error",
-        description: "Please enter your shop domain first (e.g., your-store.myshopify.com)",
+        title: "Missing Information",
+        description: "Please enter your store URL, Client ID, and Client Secret",
         variant: "destructive"
       });
       return;
     }
 
-    // Extract and normalize shop domain
-    const normalizedDomain = extractShopDomain(shopDomain);
-    console.log('Normalized domain:', normalizedDomain);
+    setConnectionStatus('testing');
+    setTestResult(null);
 
-    setIsConnectingOAuth(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // Call edge function to get OAuth URL
-      const { data, error } = await supabase.functions.invoke('shopify-oauth-initiate', {
-        body: { userId: user.id, shopDomain: normalizedDomain }
+      const normalizedDomain = extractShopDomain(shopDomain);
+      
+      const { data, error } = await supabase.functions.invoke('shopify-test-connection', {
+        body: { 
+          shop_domain: normalizedDomain, 
+          client_id: clientId,
+          client_secret: clientSecret
+        }
       });
 
       if (error) throw error;
 
-      if (data?.authUrl) {
-        console.log('Opening OAuth URL:', data.authUrl);
-        
-        // Try to open popup
-        const width = 600;
-        const height = 700;
-        const left = window.screen.width / 2 - width / 2;
-        const top = window.screen.height / 2 - height / 2;
-        
-        const popup = window.open(
-          data.authUrl,
-          'shopify-oauth',
-          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,resizable=yes,scrollbars=yes`
-        );
-
-        // Check if popup was blocked
-        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-          console.error('Popup blocked');
-          toast({
-            title: "Popup Blocked",
-            description: "Please allow popups for this site and try again. Or click the button below to continue in this window.",
-            variant: "destructive",
-          });
-          setIsConnectingOAuth(false);
-          
-          // Fallback: open in same window after 2 seconds
-          setTimeout(() => {
-            if (confirm('Popup was blocked. Open Shopify authorization in this window instead?')) {
-              window.location.href = data.authUrl;
-            } else {
-              setIsConnectingOAuth(false);
-            }
-          }, 2000);
-          return;
-        }
-
-        console.log('Popup opened, waiting for OAuth completion...');
-
-        // Listen for successful OAuth completion
-        const handleMessage = (event: MessageEvent) => {
-          console.log('Received message:', event.data);
-          if (event.data?.type === 'shopify-oauth-success') {
-            popup?.close();
-            setIsConnectingOAuth(false);
-            queryClient.invalidateQueries({ queryKey: ["shopify-integration"] });
-            toast({
-              title: "Success",
-              description: "Shopify store connected successfully!",
-            });
-            onSuccess?.();
-            window.removeEventListener('message', handleMessage);
-          } else if (event.data?.type === 'shopify-oauth-error') {
-            popup?.close();
-            setIsConnectingOAuth(false);
-            toast({
-              title: "Error",
-              description: event.data.message || "Failed to connect Shopify store",
-              variant: "destructive",
-            });
-            window.removeEventListener('message', handleMessage);
-          }
-        };
-
-        window.addEventListener('message', handleMessage);
-
-        // Check if popup was closed manually
-        const checkPopupClosed = setInterval(() => {
-          if (popup?.closed) {
-            console.log('Popup closed');
-            clearInterval(checkPopupClosed);
-            setIsConnectingOAuth(false);
-            window.removeEventListener('message', handleMessage);
-          }
-        }, 500);
+      setTestResult(data);
+      
+      if (data.success) {
+        setConnectionStatus('success');
+        toast({
+          title: "Connection Successful! 🎉",
+          description: `Connected to ${data.shop?.name || normalizedDomain}`,
+        });
       } else {
-        throw new Error('Failed to generate OAuth URL');
+        setConnectionStatus('error');
+        toast({
+          title: "Connection Failed",
+          description: data.error || "Could not connect to Shopify",
+          variant: "destructive"
+        });
       }
     } catch (error: any) {
-      console.error('OAuth error:', error);
+      console.error('Test connection error:', error);
+      setConnectionStatus('error');
+      setTestResult({ success: false, error: error.message });
       toast({
-        title: "Error",
-        description: error.message || "Failed to initiate OAuth",
+        title: "Connection Test Failed",
+        description: error.message || "An error occurred while testing the connection",
         variant: "destructive"
       });
-      setIsConnectingOAuth(false);
     }
   };
 
   const handleSave = async () => {
-    if (!shopDomain) {
+    if (!shopDomain || !clientId || !clientSecret) {
       toast({
         title: "Error",
-        description: "Shop domain is required",
+        description: "All fields are required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // If not tested, test first
+    if (connectionStatus !== 'success') {
+      toast({
+        title: "Please Test Connection First",
+        description: "Click 'Test Connection' to verify your credentials before connecting.",
         variant: "destructive"
       });
       return;
@@ -188,13 +147,28 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
 
       const normalizedDomain = extractShopDomain(shopDomain);
       
+      // Get the access token from the test result (it was already fetched)
+      const { data: tokenData, error: tokenError } = await supabase.functions.invoke('shopify-test-connection', {
+        body: { 
+          shop_domain: normalizedDomain, 
+          client_id: clientId,
+          client_secret: clientSecret,
+          save_token: true
+        }
+      });
+
+      if (tokenError) throw tokenError;
+      if (!tokenData.success) throw new Error(tokenData.error);
+
       const { data, error } = await supabase
         .from('shopify_integrations')
         .upsert([{
           user_id: user.id,
           shop_domain: normalizedDomain,
-          access_token: accessToken || undefined,
-          webhook_secret: webhookSecret || undefined,
+          client_id: clientId,
+          client_secret: clientSecret,
+          access_token: tokenData.access_token,
+          token_expires_at: tokenData.token_expires_at,
           is_connected: true,
         }], {
           onConflict: 'user_id,shop_domain',
@@ -216,8 +190,8 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
       queryClient.invalidateQueries({ queryKey: ["shopify-integration"] });
       queryClient.invalidateQueries({ queryKey: ["job_statuses"] });
       toast({
-        title: "Success",
-        description: "Shopify integration updated successfully",
+        title: "Success! 🎉",
+        description: `Connected to ${testResult?.shop?.name || normalizedDomain}`,
       });
 
       onSuccess?.();
@@ -230,46 +204,6 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleSyncSettingChange = async (field: keyof ShopifyIntegrationUpdate, value: boolean) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { error } = await supabase
-        .from('shopify_integrations')
-        .update({ [field]: value })
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      queryClient.invalidateQueries({ queryKey: ["shopify-integration"] });
-      toast({
-        title: "Success",
-        description: "Setting updated successfully",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleTest = async () => {
-    toast({
-      title: "Connection Test",
-      description: "Testing connection to Shopify store...",
-    });
-    
-    setTimeout(() => {
-      toast({
-        title: "Test Successful",
-        description: "Successfully connected to Shopify store",
-      });
-    }, 2000);
   };
 
   const handleDisconnect = async () => {
@@ -306,16 +240,32 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
   const handleSwitchStore = () => {
     if (confirm('Switch to a different store? You can enter new credentials below.')) {
       setShopDomain("");
-      setAccessToken("");
-      setWebhookSecret("");
+      setClientId("");
+      setClientSecret("");
+      setConnectionStatus('idle');
+      setTestResult(null);
     }
   };
 
   const isDisconnected = integration?.shop_domain && !integration?.is_connected;
+  const canConnect = shopDomain && clientId && clientSecret && connectionStatus === 'success';
 
   return (
     <div className="space-y-6">
-      {integration?.is_connected && (
+      {integration?.is_connected && !integration?.access_token && (
+        <Alert className="border-orange-200 bg-orange-50">
+          <AlertTriangle className="h-4 w-4 text-orange-600" />
+          <AlertDescription>
+            <p className="font-semibold text-orange-900 mb-1">Connection Incomplete</p>
+            <p className="text-sm text-orange-800">
+              Your store ({integration.shop_domain}) shows as connected but is missing API credentials. 
+              Please re-enter your credentials below to complete the connection.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {integration?.is_connected && integration?.access_token && (
         <Card className="border-green-200 bg-green-50">
           <CardContent className="pt-6">
             <div className="flex items-start justify-between gap-4">
@@ -383,81 +333,164 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
           <CardDescription>
             {isDisconnected 
               ? "Enter credentials below to reconnect or connect a different store"
-              : "Enter your Shopify store credentials. Don't have them yet?"
+              : "Enter your Shopify app credentials. Follow the guide below to get them."
             }
-            {!isDisconnected && (
-              <Button 
-                variant="link" 
-                className="h-auto p-0 ml-1"
-                onClick={() => window.open('https://help.shopify.com/en/manual/apps/app-types/custom-apps', '_blank')}
-              >
-                Learn how to get your API credentials →
-              </Button>
-            )}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <ShopifyOAuthGuide />
-
+        <CardContent className="space-y-5">
+          {/* Shop Domain */}
           <div>
             <Label htmlFor="shop-domain">
-              Shop Domain <span className="text-red-500">*</span>
+              Your Shopify Store URL <span className="text-destructive">*</span>
             </Label>
             <Input
               id="shop-domain"
               value={shopDomain}
-              onChange={(e) => setShopDomain(e.target.value)}
-              placeholder="your-store.myshopify.com or paste any Shopify admin URL"
-              className="font-mono"
+              onChange={(e) => {
+                setShopDomain(e.target.value);
+                setConnectionStatus('idle');
+                setTestResult(null);
+              }}
+              placeholder="my-store.myshopify.com"
+              className="font-mono mt-1.5"
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              💡 Accepted formats: <code>your-store.myshopify.com</code> or full admin URL
+            <p className="text-xs text-muted-foreground mt-1.5">
+              This is your store's <code className="bg-muted px-1 rounded">.myshopify.com</code> URL (not your custom domain)
             </p>
           </div>
 
+          {/* Help Guide */}
+          <ShopifyOAuthGuide shopDomain={shopDomain} />
+
+          {/* Client ID */}
           <div>
-            <Label htmlFor="access-token">
-              Admin API Access Token <span className="text-red-500">*</span>
+            <Label htmlFor="client-id">
+              Client ID <span className="text-destructive">*</span>
             </Label>
             <Input
-              id="access-token"
-              type="password"
-              value={accessToken}
-              onChange={(e) => setAccessToken(e.target.value)}
-              placeholder="shpat_..."
-              className="font-mono"
+              id="client-id"
+              value={clientId}
+              onChange={(e) => {
+                setClientId(e.target.value);
+                setConnectionStatus('idle');
+                setTestResult(null);
+              }}
+              placeholder="Copy from Settings page in Dev Dashboard"
+              className="font-mono mt-1.5"
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              📋 Copy from: <strong>API credentials</strong> tab → <strong>Admin API access token</strong>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Found on the <strong>Settings</strong> page of your app in the Dev Dashboard
             </p>
           </div>
 
+          {/* Client Secret */}
           <div>
-            <Label htmlFor="webhook-secret">Webhook Secret (Optional)</Label>
-            <Input
-              id="webhook-secret"
-              type="password"
-              value={webhookSecret}
-              onChange={(e) => setWebhookSecret(e.target.value)}
-              placeholder="Optional for added security"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Optional: Add webhook signature verification for enhanced security
+            <Label htmlFor="client-secret">
+              Client Secret <span className="text-destructive">*</span>
+            </Label>
+            <div className="relative mt-1.5">
+              <Input
+                id="client-secret"
+                type={showClientSecret ? "text" : "password"}
+                value={clientSecret}
+                onChange={(e) => {
+                  setClientSecret(e.target.value);
+                  setConnectionStatus('idle');
+                  setTestResult(null);
+                }}
+                placeholder="Click 'Manage client credentials' to reveal"
+                className="font-mono pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowClientSecret(!showClientSecret)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showClientSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Click <strong>"Manage client credentials"</strong> on Settings page, then copy the secret
             </p>
           </div>
 
-          <div className="flex space-x-2">
-            <Button onClick={handleSave} disabled={isLoading} className="flex-1">
+          {/* Connection test result */}
+          {testResult && (
+            <Alert className={testResult.success ? 'border-green-200 bg-green-50' : 'border-destructive/20 bg-destructive/5'}>
+              {testResult.success ? (
+                <ShieldCheck className="h-4 w-4 text-green-600" />
+              ) : (
+                <XCircle className="h-4 w-4 text-destructive" />
+              )}
+              <AlertDescription>
+                {testResult.success ? (
+                  <div className="text-green-900">
+                    <p className="font-semibold mb-1">✅ Connection verified!</p>
+                    <p className="text-sm">
+                      Store: <strong>{testResult.shop?.name}</strong>
+                      {testResult.shop?.plan_name && ` (${testResult.shop.plan_name})`}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-destructive">
+                    <p className="font-semibold mb-1">❌ Connection failed</p>
+                    <p className="text-sm">{testResult.error}</p>
+                  </div>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={handleTestConnection} 
+              disabled={connectionStatus === 'testing' || !shopDomain || !clientId || !clientSecret}
+              className="flex-1"
+            >
+              {connectionStatus === 'testing' ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Testing...
+                </>
+              ) : connectionStatus === 'success' ? (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
+                  Verified ✓
+                </>
+              ) : connectionStatus === 'error' ? (
+                <>
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Retry Test
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  Test Connection
+                </>
+              )}
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              disabled={isLoading || !canConnect} 
+              className="flex-1"
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  Connecting...
                 </>
               ) : (
                 isDisconnected ? "Reconnect Store" : "Connect Store"
               )}
             </Button>
           </div>
+          
+          {shopDomain && clientId && clientSecret && connectionStatus !== 'success' && (
+            <p className="text-xs text-muted-foreground text-center">
+              👆 Please test your connection before connecting
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -1,11 +1,11 @@
-
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Send, Eye, Edit, Copy, Trash2, Calendar, Users } from "lucide-react";
+import { Plus, Send, Eye, Edit, Copy, Trash2, Calendar, Users, Sparkles } from "lucide-react";
 import { useEmailCampaigns } from "@/hooks/useEmailCampaigns";
+import { useClients } from "@/hooks/useClients";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -18,25 +18,69 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { CampaignWizard } from "@/components/campaigns/CampaignWizard";
+import type { SelectedClient } from "@/hooks/useClientSelection";
+
+// Template presets for quick start
+const TEMPLATE_PRESETS = {
+  newsletter: {
+    name: 'Newsletter Campaign',
+    type: 'announcement' as const,
+    subject: 'Latest Updates from {{company_name}}',
+    content: `<p>Hi {{client_name}},</p>
+<p>We're excited to share the latest updates from our team!</p>
+<p>[Add your newsletter content here]</p>
+<p>Best regards,<br/>The Team</p>`,
+  },
+  followup: {
+    name: 'Follow-up Campaign',
+    type: 'follow-up' as const,
+    subject: 'Following up on your recent inquiry',
+    content: `<p>Hi {{client_name}},</p>
+<p>I wanted to follow up on our recent conversation and see if you have any questions about the quote we provided.</p>
+<p>We'd love to help you move forward with your project. Please let me know if there's anything I can assist with.</p>
+<p>Best regards</p>`,
+  },
+  promotion: {
+    name: 'Promotional Campaign',
+    type: 'outreach' as const,
+    subject: 'Special Offer for You!',
+    content: `<p>Hi {{client_name}},</p>
+<p>We have an exclusive offer just for you!</p>
+<p>[Add your promotional details here]</p>
+<p>Don't miss out on this limited-time opportunity.</p>
+<p>Best regards</p>`,
+  },
+};
 
 export const EmailCampaigns = () => {
   const { data: campaigns = [], isLoading, error } = useEmailCampaigns();
+  const { data: rawClients = [] } = useClients();
   const { toast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
+  const [showCampaignWizard, setShowCampaignWizard] = useState(false);
+  const [templatePreset, setTemplatePreset] = useState<keyof typeof TEMPLATE_PRESETS | null>(null);
+
+  // Convert clients to SelectedClient format for the wizard
+  const clientsForWizard: SelectedClient[] = useMemo(() => {
+    return rawClients.map(client => ({
+      id: client.id,
+      name: client.name,
+      email: client.email || undefined,
+      company_name: client.company_name || undefined,
+      funnel_stage: client.funnel_stage || undefined,
+    }));
+  }, [rawClients]);
 
   const handleNewCampaign = () => {
-    toast({
-      title: "Coming Soon",
-      description: "Campaign creation feature is currently in development.",
-    });
+    setTemplatePreset(null);
+    setShowCampaignWizard(true);
   };
 
-  const handleUseTemplate = (templateName: string) => {
-    toast({
-      title: "Coming Soon",
-      description: `${templateName} template will be available soon.`,
-    });
+  const handleUseTemplate = (templateKey: keyof typeof TEMPLATE_PRESETS) => {
+    setTemplatePreset(templateKey);
+    setShowCampaignWizard(true);
   };
 
   const handleViewCampaign = (campaignId: string) => {
@@ -126,6 +170,26 @@ export const EmailCampaigns = () => {
 
   return (
     <div className="space-y-6">
+      {/* Campaign Wizard */}
+      <CampaignWizard 
+        open={showCampaignWizard} 
+        onOpenChange={(open) => {
+          setShowCampaignWizard(open);
+          if (!open) setTemplatePreset(null);
+        }}
+        selectedClients={clientsForWizard}
+        onComplete={() => {
+          setShowCampaignWizard(false);
+          setTemplatePreset(null);
+        }}
+        initialData={templatePreset ? { 
+          ...TEMPLATE_PRESETS[templatePreset], 
+          fromTemplate: true,
+          templateName: templatePreset === 'newsletter' ? 'Newsletter' : 
+                       templatePreset === 'followup' ? 'Follow-up' : 'Promotion'
+        } : undefined}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -140,50 +204,114 @@ export const EmailCampaigns = () => {
         </Button>
       </div>
 
-      {/* Campaign Templates */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Start Templates</CardTitle>
+      {/* Draft Campaigns Section */}
+      {campaigns.filter(c => c.status === 'draft').length > 0 && (
+        <Card className="border-amber-200 bg-gradient-to-br from-amber-50/50 to-orange-50/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-amber-500/10">
+                <Edit className="h-4 w-4 text-amber-600" />
+              </div>
+              <CardTitle className="text-base text-amber-800">Continue Your Drafts</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {campaigns.filter(c => c.status === 'draft').slice(0, 3).map((campaign) => (
+                <div 
+                  key={campaign.id}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-amber-200 bg-white/80 hover:bg-white cursor-pointer transition-all hover:shadow-md"
+                  onClick={() => handleEditCampaign(campaign.id)}
+                >
+                  <div className="p-2 rounded-lg bg-amber-100">
+                    <Send className="h-4 w-4 text-amber-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">{campaign.name}</div>
+                    <div className="text-xs text-muted-foreground truncate">{campaign.subject || 'No subject'}</div>
+                  </div>
+                  <Badge className="bg-amber-100 text-amber-700 border-amber-200">Draft</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Campaign Templates - Colorful */}
+      <Card className="overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-primary/5 via-purple-500/5 to-pink-500/5">
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            Quick Start Templates
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="border rounded-lg p-4 hover:bg-muted/50 cursor-pointer">
-              <div className="flex items-center gap-2 mb-2">
-                <Send className="h-5 w-5 text-primary" />
-                <h3 className="font-medium">Newsletter</h3>
+            {/* Newsletter - Blue Theme */}
+            <div className="group relative overflow-hidden border-2 rounded-2xl p-5 transition-all hover:shadow-lg hover:border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-400/20 to-indigo-400/20 rounded-full -translate-y-8 translate-x-8" />
+              <div className="relative">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/25">
+                    <Send className="h-5 w-5 text-white" />
+                  </div>
+                  <h3 className="font-semibold text-blue-900">Newsletter</h3>
+                </div>
+                <p className="text-sm text-blue-700/70 mb-4">
+                  Share updates and news with all your clients
+                </p>
+                <Button 
+                  className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-md" 
+                  onClick={() => handleUseTemplate("newsletter")}
+                >
+                  Use Template
+                </Button>
               </div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Send updates and news to all your clients
-              </p>
-              <Button variant="outline" size="sm" className="w-full" onClick={() => handleUseTemplate("Newsletter")}>
-                Use Template
-              </Button>
             </div>
 
-            <div className="border rounded-lg p-4 hover:bg-muted/50 cursor-pointer">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="h-5 w-5 text-accent" />
-                <h3 className="font-medium">Follow-up</h3>
+            {/* Follow-up - Purple Theme */}
+            <div className="group relative overflow-hidden border-2 rounded-2xl p-5 transition-all hover:shadow-lg hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full -translate-y-8 translate-x-8" />
+              <div className="relative">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-500/25">
+                    <Calendar className="h-5 w-5 text-white" />
+                  </div>
+                  <h3 className="font-semibold text-purple-900">Follow-up</h3>
+                </div>
+                <p className="text-sm text-purple-700/70 mb-4">
+                  Follow up on quotes and project updates
+                </p>
+                <Button 
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-md"
+                  onClick={() => handleUseTemplate("followup")}
+                >
+                  Use Template
+                </Button>
               </div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Follow up on quotes and project updates
-              </p>
-              <Button variant="outline" size="sm" className="w-full" onClick={() => handleUseTemplate("Follow-up")}>
-                Use Template
-              </Button>
             </div>
 
-            <div className="border rounded-lg p-4 hover:bg-muted/50 cursor-pointer">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="h-5 w-5 text-primary" />
-                <h3 className="font-medium">Promotion</h3>
+            {/* Promotion - Green Theme */}
+            <div className="group relative overflow-hidden border-2 rounded-2xl p-5 transition-all hover:shadow-lg hover:border-emerald-300 bg-gradient-to-br from-emerald-50 to-teal-50">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-400/20 to-teal-400/20 rounded-full -translate-y-8 translate-x-8" />
+              <div className="relative">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/25">
+                    <Users className="h-5 w-5 text-white" />
+                  </div>
+                  <h3 className="font-semibold text-emerald-900">Promotion</h3>
+                </div>
+                <p className="text-sm text-emerald-700/70 mb-4">
+                  Promote special offers and services
+                </p>
+                <Button 
+                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-md"
+                  onClick={() => handleUseTemplate("promotion")}
+                >
+                  Use Template
+                </Button>
               </div>
-              <p className="text-sm text-muted-foreground mb-3">
-                Promote special offers and services
-              </p>
-              <Button variant="outline" size="sm" className="w-full" onClick={() => handleUseTemplate("Promotion")}>
-                Use Template
-              </Button>
             </div>
           </div>
         </CardContent>

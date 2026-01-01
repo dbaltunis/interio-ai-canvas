@@ -1,112 +1,215 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Mail, Calendar, FileText, CheckCircle2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Users, Mail, Calendar as CalendarIcon, Send, Zap, Clock, Info } from "lucide-react";
 import { format } from "date-fns";
 import { CampaignData } from "../CampaignWizard";
 
 interface CampaignReviewStepProps {
   campaignData: CampaignData;
+  onUpdateSendImmediately: (value: boolean) => void;
+  onUpdateScheduledAt: (date?: Date) => void;
 }
 
-const TYPE_LABELS = {
+const TYPE_LABELS: Record<string, string> = {
   'outreach': 'New Lead Outreach',
   'follow-up': 'Follow-up',
   're-engagement': 'Re-engagement',
   'announcement': 'Announcement',
 };
 
-export const CampaignReviewStep = ({ campaignData }: CampaignReviewStepProps) => {
+const STAGE_COLORS: Record<string, string> = {
+  'lead': 'bg-blue-100 text-blue-700 border-blue-200',
+  'contacted': 'bg-purple-100 text-purple-700 border-purple-200',
+  'quoted': 'bg-amber-100 text-amber-700 border-amber-200',
+  'negotiating': 'bg-orange-100 text-orange-700 border-orange-200',
+  'won': 'bg-green-100 text-green-700 border-green-200',
+  'lost': 'bg-red-100 text-red-700 border-red-200',
+};
+
+export const CampaignReviewStep = ({ 
+  campaignData, 
+  onUpdateSendImmediately,
+  onUpdateScheduledAt 
+}: CampaignReviewStepProps) => {
+  const [time, setTime] = useState("09:00");
+
+  // Strip HTML for preview
+  const plainContent = campaignData.content.replace(/<[^>]*>/g, '').substring(0, 120);
+
+  const handleDateSelect = (date?: Date) => {
+    if (date) {
+      const [hours, minutes] = time.split(':').map(Number);
+      date.setHours(hours, minutes, 0, 0);
+      onUpdateScheduledAt(date);
+    } else {
+      onUpdateScheduledAt(undefined);
+    }
+  };
+
+  const handleTimeChange = (newTime: string) => {
+    setTime(newTime);
+    if (campaignData.scheduledAt) {
+      const [hours, minutes] = newTime.split(':').map(Number);
+      const newDate = new Date(campaignData.scheduledAt);
+      newDate.setHours(hours, minutes, 0, 0);
+      onUpdateScheduledAt(newDate);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 text-green-600 mb-4">
-        <CheckCircle2 className="h-5 w-5" />
-        <span className="font-medium">Ready to launch!</span>
-      </div>
+    <div className="space-y-5">
+      {/* Schedule Options - Compact */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">When to send?</Label>
+        <RadioGroup
+          value={campaignData.sendImmediately ? 'now' : 'scheduled'}
+          onValueChange={(value) => onUpdateSendImmediately(value === 'now')}
+          className="grid grid-cols-2 gap-3"
+        >
+          <label
+            className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+              campaignData.sendImmediately
+                ? 'border-primary bg-primary/5'
+                : 'border-border hover:border-muted-foreground/30'
+            }`}
+          >
+            <RadioGroupItem value="now" />
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary" />
+              <span className="font-medium text-sm">Send Now</span>
+            </div>
+          </label>
 
-      {/* Campaign Summary */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Campaign Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Name</span>
-            <span className="font-medium">{campaignData.name}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Type</span>
-            <Badge variant="outline">{TYPE_LABELS[campaignData.type]}</Badge>
-          </div>
-        </CardContent>
-      </Card>
+          <label
+            className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+              !campaignData.sendImmediately
+                ? 'border-primary bg-primary/5'
+                : 'border-border hover:border-muted-foreground/30'
+            }`}
+          >
+            <RadioGroupItem value="scheduled" />
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-primary" />
+              <span className="font-medium text-sm">Schedule</span>
+            </div>
+          </label>
+        </RadioGroup>
 
-      {/* Recipients */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Recipients
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Total recipients</span>
-            <Badge variant="secondary">{campaignData.recipients.length} contacts</Badge>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Email Preview */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Mail className="h-4 w-4" />
-            Email Preview
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <span className="text-sm text-muted-foreground">Subject</span>
-            <p className="font-medium mt-1">{campaignData.subject}</p>
-          </div>
-          <div>
-            <span className="text-sm text-muted-foreground">Content preview</span>
-            <div className="mt-1 p-3 bg-muted/50 rounded-lg text-sm max-h-[120px] overflow-y-auto whitespace-pre-wrap">
-              {campaignData.content.substring(0, 300)}
-              {campaignData.content.length > 300 && '...'}
+        {/* Date/Time Picker - Inline */}
+        {!campaignData.sendImmediately && (
+          <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-muted/50">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start text-left font-normal h-9"
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {campaignData.scheduledAt ? format(campaignData.scheduledAt, 'PP') : 'Pick date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={campaignData.scheduledAt}
+                    onSelect={handleDateSelect}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="time" className="text-xs">Time</Label>
+              <Input
+                id="time"
+                type="time"
+                value={time}
+                onChange={(e) => handleTimeChange(e.target.value)}
+                className="h-9"
+              />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
 
-      {/* Schedule */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Schedule
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Send time</span>
-            {campaignData.sendImmediately ? (
-              <Badge className="bg-green-100 text-green-800 border-green-200">
-                Immediately
-              </Badge>
-            ) : campaignData.scheduledAt ? (
-              <span className="font-medium">
-                {format(campaignData.scheduledAt, 'PPP')} at {format(campaignData.scheduledAt, 'p')}
-              </span>
-            ) : (
-              <span className="text-muted-foreground">Not set</span>
-            )}
+      {/* Recipients List */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            Recipients ({campaignData.recipients.length})
+          </Label>
+        </div>
+        <ScrollArea className="h-[140px] border border-border rounded-lg">
+          <div className="p-2 space-y-1">
+            {campaignData.recipients.map((recipient) => (
+              <div 
+                key={recipient.id} 
+                className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors"
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/40 text-primary text-xs font-medium">
+                    {getInitials(recipient.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{recipient.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{recipient.email}</p>
+                </div>
+                {recipient.funnel_stage && (
+                  <Badge 
+                    variant="outline" 
+                    className={`text-[10px] capitalize ${STAGE_COLORS[recipient.funnel_stage] || 'bg-muted text-muted-foreground'}`}
+                  >
+                    {recipient.funnel_stage}
+                  </Badge>
+                )}
+              </div>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        </ScrollArea>
+      </div>
+
+      {/* Compact Email Preview */}
+      <div className="border border-border rounded-lg overflow-hidden">
+        <div className="bg-muted/50 px-3 py-2 border-b border-border flex items-center gap-2">
+          <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium">{campaignData.name}</span>
+          <Badge variant="secondary" className="text-[10px] ml-auto">
+            {TYPE_LABELS[campaignData.type]}
+          </Badge>
+        </div>
+        <div className="p-3 space-y-1.5">
+          <p className="text-sm font-medium">{campaignData.subject}</p>
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {plainContent}{campaignData.content.length > 120 && '...'}
+          </p>
+        </div>
+      </div>
+
+      {/* Tip */}
+      <div className="flex items-start gap-2 p-2.5 rounded-lg bg-blue-50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
+        <Info className="h-3.5 w-3.5 text-blue-600 mt-0.5" />
+        <p className="text-xs text-blue-800 dark:text-blue-200">
+          <strong>Tip:</strong> Emails sent 9-11 AM Tue-Thu get the highest open rates.
+        </p>
+      </div>
     </div>
   );
 };

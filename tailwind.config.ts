@@ -110,9 +110,12 @@ export default {
 				}
 			},
 			borderRadius: {
+				xs: '4px',
 				sm: '6px',
-				md: '8px',
-				lg: '12px',
+				md: '10px',
+				lg: '14px',
+				xl: '18px',
+				'2xl': '24px',
 				pill: '9999px',
 				// Keep existing shadcn radius for compatibility
 				'radius-lg': 'var(--radius)',
@@ -120,9 +123,40 @@ export default {
 				'radius-sm': 'calc(var(--radius) - 4px)'
 			},
 			boxShadow: {
-				sm: 'none',
-				md: 'none',
-				lg: 'none',
+				xs: '0 1px 2px hsl(var(--foreground) / 0.04)',
+				sm: '0 1px 3px hsl(var(--foreground) / 0.06), 0 1px 2px hsl(var(--foreground) / 0.04)',
+				md: '0 4px 6px -1px hsl(var(--foreground) / 0.08), 0 2px 4px -2px hsl(var(--foreground) / 0.05)',
+				lg: '0 10px 15px -3px hsl(var(--foreground) / 0.08), 0 4px 6px -4px hsl(var(--foreground) / 0.04)',
+				xl: '0 20px 25px -5px hsl(var(--foreground) / 0.1), 0 8px 10px -6px hsl(var(--foreground) / 0.05)',
+				card: '0 1px 3px hsl(var(--foreground) / 0.04), 0 1px 2px hsl(var(--foreground) / 0.02)',
+				'card-hover': '0 4px 12px hsl(var(--foreground) / 0.08), 0 2px 4px hsl(var(--foreground) / 0.04)',
+				dropdown: '0 4px 16px -2px hsl(var(--foreground) / 0.12), 0 2px 4px -2px hsl(var(--foreground) / 0.06)',
+				modal: '0 24px 48px -12px hsl(var(--foreground) / 0.18), 0 12px 24px -8px hsl(var(--foreground) / 0.08)',
+			},
+			fontSize: {
+				'2xs': ['0.6875rem', { lineHeight: '1rem' }], // 11px
+				xs: ['0.8125rem', { lineHeight: '1.125rem' }], // 13px
+				sm: ['0.875rem', { lineHeight: '1.25rem' }], // 14px
+				base: ['0.9375rem', { lineHeight: '1.5rem' }], // 15px
+				lg: ['1.125rem', { lineHeight: '1.75rem' }], // 18px
+				xl: ['1.375rem', { lineHeight: '1.875rem' }], // 22px
+				'2xl': ['1.75rem', { lineHeight: '2.125rem' }], // 28px
+				'3xl': ['2rem', { lineHeight: '2.5rem' }], // 32px
+			},
+			letterSpacing: {
+				tighter: '-0.025em',
+				tight: '-0.02em',
+				normal: '0',
+				wide: '0.01em',
+			},
+			transitionTimingFunction: {
+				'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
+				'bounce-soft': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+			},
+			transitionDuration: {
+				'150': '150ms',
+				'200': '200ms',
+				'250': '250ms',
 			},
 			keyframes: {
 				'accordion-down': {
