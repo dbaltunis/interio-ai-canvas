@@ -1,10 +1,21 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Users, Mail, Calendar, Send } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Users, Mail, Calendar as CalendarIcon, Send, Zap, Clock, Info } from "lucide-react";
 import { format } from "date-fns";
 import { CampaignData } from "../CampaignWizard";
 
 interface CampaignReviewStepProps {
   campaignData: CampaignData;
+  onUpdateSendImmediately: (value: boolean) => void;
+  onUpdateScheduledAt: (date?: Date) => void;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -14,67 +25,191 @@ const TYPE_LABELS: Record<string, string> = {
   'announcement': 'Announcement',
 };
 
-export const CampaignReviewStep = ({ campaignData }: CampaignReviewStepProps) => {
+const STAGE_COLORS: Record<string, string> = {
+  'lead': 'bg-blue-100 text-blue-700 border-blue-200',
+  'contacted': 'bg-purple-100 text-purple-700 border-purple-200',
+  'quoted': 'bg-amber-100 text-amber-700 border-amber-200',
+  'negotiating': 'bg-orange-100 text-orange-700 border-orange-200',
+  'won': 'bg-green-100 text-green-700 border-green-200',
+  'lost': 'bg-red-100 text-red-700 border-red-200',
+};
+
+export const CampaignReviewStep = ({ 
+  campaignData, 
+  onUpdateSendImmediately,
+  onUpdateScheduledAt 
+}: CampaignReviewStepProps) => {
+  const [time, setTime] = useState("09:00");
+
   // Strip HTML for preview
-  const plainContent = campaignData.content.replace(/<[^>]*>/g, '').substring(0, 150);
+  const plainContent = campaignData.content.replace(/<[^>]*>/g, '').substring(0, 120);
+
+  const handleDateSelect = (date?: Date) => {
+    if (date) {
+      const [hours, minutes] = time.split(':').map(Number);
+      date.setHours(hours, minutes, 0, 0);
+      onUpdateScheduledAt(date);
+    } else {
+      onUpdateScheduledAt(undefined);
+    }
+  };
+
+  const handleTimeChange = (newTime: string) => {
+    setTime(newTime);
+    if (campaignData.scheduledAt) {
+      const [hours, minutes] = newTime.split(':').map(Number);
+      const newDate = new Date(campaignData.scheduledAt);
+      newDate.setHours(hours, minutes, 0, 0);
+      onUpdateScheduledAt(newDate);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Simple Summary Card */}
-      <div className="bg-muted/30 rounded-xl p-5 space-y-4">
-        <h3 className="font-semibold text-lg">{campaignData.name}</h3>
-        
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="flex items-center gap-2">
+    <div className="space-y-5">
+      {/* Schedule Options - Compact */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">When to send?</Label>
+        <RadioGroup
+          value={campaignData.sendImmediately ? 'now' : 'scheduled'}
+          onValueChange={(value) => onUpdateSendImmediately(value === 'now')}
+          className="grid grid-cols-2 gap-3"
+        >
+          <label
+            className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+              campaignData.sendImmediately
+                ? 'border-primary bg-primary/5'
+                : 'border-border hover:border-muted-foreground/30'
+            }`}
+          >
+            <RadioGroupItem value="now" />
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary" />
+              <span className="font-medium text-sm">Send Now</span>
+            </div>
+          </label>
+
+          <label
+            className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+              !campaignData.sendImmediately
+                ? 'border-primary bg-primary/5'
+                : 'border-border hover:border-muted-foreground/30'
+            }`}
+          >
+            <RadioGroupItem value="scheduled" />
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-primary" />
+              <span className="font-medium text-sm">Schedule</span>
+            </div>
+          </label>
+        </RadioGroup>
+
+        {/* Date/Time Picker - Inline */}
+        {!campaignData.sendImmediately && (
+          <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-muted/50">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start text-left font-normal h-9"
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {campaignData.scheduledAt ? format(campaignData.scheduledAt, 'PP') : 'Pick date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={campaignData.scheduledAt}
+                    onSelect={handleDateSelect}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="time" className="text-xs">Time</Label>
+              <Input
+                id="time"
+                type="time"
+                value={time}
+                onChange={(e) => handleTimeChange(e.target.value)}
+                className="h-9"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Recipients List */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium flex items-center gap-2">
             <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Recipients:</span>
-            <Badge variant="secondary">{campaignData.recipients.length}</Badge>
+            Recipients ({campaignData.recipients.length})
+          </Label>
+        </div>
+        <ScrollArea className="h-[140px] border border-border rounded-lg">
+          <div className="p-2 space-y-1">
+            {campaignData.recipients.map((recipient) => (
+              <div 
+                key={recipient.id} 
+                className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors"
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/40 text-primary text-xs font-medium">
+                    {getInitials(recipient.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{recipient.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{recipient.email}</p>
+                </div>
+                {recipient.funnel_stage && (
+                  <Badge 
+                    variant="outline" 
+                    className={`text-[10px] capitalize ${STAGE_COLORS[recipient.funnel_stage] || 'bg-muted text-muted-foreground'}`}
+                  >
+                    {recipient.funnel_stage}
+                  </Badge>
+                )}
+              </div>
+            ))}
           </div>
-          
-          <div className="flex items-center gap-2">
-            <Send className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Type:</span>
-            <span>{TYPE_LABELS[campaignData.type] || campaignData.type}</span>
-          </div>
-          
-          <div className="col-span-2 flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Schedule:</span>
-            {campaignData.sendImmediately ? (
-              <Badge className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
-                Send Immediately
-              </Badge>
-            ) : campaignData.scheduledAt ? (
-              <span>{format(campaignData.scheduledAt, 'PPP')} at {format(campaignData.scheduledAt, 'p')}</span>
-            ) : (
-              <span className="text-muted-foreground">Not scheduled</span>
-            )}
-          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Compact Email Preview */}
+      <div className="border border-border rounded-lg overflow-hidden">
+        <div className="bg-muted/50 px-3 py-2 border-b border-border flex items-center gap-2">
+          <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium">{campaignData.name}</span>
+          <Badge variant="secondary" className="text-[10px] ml-auto">
+            {TYPE_LABELS[campaignData.type]}
+          </Badge>
+        </div>
+        <div className="p-3 space-y-1.5">
+          <p className="text-sm font-medium">{campaignData.subject}</p>
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {plainContent}{campaignData.content.length > 120 && '...'}
+          </p>
         </div>
       </div>
 
-      {/* Email Preview */}
-      <div className="border border-border rounded-xl overflow-hidden">
-        <div className="bg-muted/50 px-4 py-2 border-b border-border flex items-center gap-2">
-          <Mail className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Email Preview</span>
-        </div>
-        <div className="p-4 space-y-2">
-          <div className="text-sm">
-            <span className="text-muted-foreground">Subject: </span>
-            <span className="font-medium">{campaignData.subject}</span>
-          </div>
-          <div className="text-sm text-muted-foreground border-t border-border pt-3 mt-3">
-            {plainContent}
-            {campaignData.content.length > 150 && '...'}
-          </div>
-        </div>
+      {/* Tip */}
+      <div className="flex items-start gap-2 p-2.5 rounded-lg bg-blue-50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
+        <Info className="h-3.5 w-3.5 text-blue-600 mt-0.5" />
+        <p className="text-xs text-blue-800 dark:text-blue-200">
+          <strong>Tip:</strong> Emails sent 9-11 AM Tue-Thu get the highest open rates.
+        </p>
       </div>
-
-      {/* Simple CTA */}
-      <p className="text-center text-sm text-muted-foreground">
-        Click <strong>Launch Campaign</strong> below to send your emails.
-      </p>
     </div>
   );
 };
