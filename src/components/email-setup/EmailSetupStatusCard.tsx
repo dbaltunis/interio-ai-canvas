@@ -28,7 +28,7 @@ export const EmailSetupStatusCard = () => {
             <p className="text-green-800 mb-3">
               {hasSendGridIntegration 
                 ? "Using your custom SendGrid account for email delivery"
-                : "Email service is active (500 emails/month included)"
+                : "Email service is active via InterioApp (500 emails/month included)"
               }
             </p>
             
@@ -45,6 +45,8 @@ export const EmailSetupStatusCard = () => {
                   breakdown={deliverabilityScore.breakdown}
                   recommendations={deliverabilityScore.recommendations}
                   showDetails={true}
+                  usingSharedService={deliverabilityScore.usingSharedService}
+                  serviceInfo={deliverabilityScore.serviceInfo}
                 />
               </div>
             )}

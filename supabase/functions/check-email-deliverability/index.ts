@@ -25,6 +25,12 @@ interface DeliverabilityReport {
     total: number;
   };
   recommendations: string[];
+  usingSharedService: boolean;
+  serviceInfo?: {
+    provider: 'Resend' | 'SendGrid';
+    domain: string;
+    status: 'fully_authenticated' | 'partial' | 'not_configured';
+  };
 }
 
 serve(async (req) => {
@@ -69,7 +75,51 @@ serve(async (req) => {
     const fromEmail = emailSettings?.from_email || '';
     const fromDomain = fromEmail.includes('@') ? fromEmail.split('@')[1] : '';
 
-    // Initialize report with defaults (no SendGrid = can't verify)
+    // Check if user has custom SendGrid integration
+    const apiKey = integration?.api_credentials?.api_key;
+    const hasCustomSendGrid = !!apiKey;
+
+    // If user doesn't have custom SendGrid, they're using shared Resend
+    // interioapp.com is already fully authenticated
+    if (!hasCustomSendGrid) {
+      console.log('User is on shared Resend service - returning pre-configured deliverability');
+      
+      const sharedServiceReport: DeliverabilityReport = {
+        domainAuthentication: {
+          spf: { valid: true, record: 'Managed by InterioApp' },
+          dkim: { valid: true, configured: true },
+          dmarc: { valid: true, policy: 'Managed by InterioApp' },
+        },
+        senderReputation: {
+          isNewDomain: false,
+          sendingVolume: 'medium',
+          estimatedScore: 85, // Established domain with good reputation
+        },
+        scores: {
+          domainAuth: 40, // Full score - handled by InterioApp
+          reputation: 21, // 85% of 25 = ~21
+          total: 61,
+        },
+        recommendations: [
+          'Upgrade to custom SendGrid to send from your own domain',
+        ],
+        usingSharedService: true,
+        serviceInfo: {
+          provider: 'Resend',
+          domain: 'interioapp.com',
+          status: 'fully_authenticated',
+        },
+      };
+
+      return new Response(JSON.stringify(sharedServiceReport), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // User has custom SendGrid - check their domain authentication
+    console.log('User has custom SendGrid - checking their domain authentication');
+
+    // Initialize report for SendGrid users
     let report: DeliverabilityReport = {
       domainAuthentication: {
         spf: { valid: false },
@@ -83,16 +133,20 @@ serve(async (req) => {
       },
       scores: {
         domainAuth: 0,
-        reputation: 15, // New domains get ~60% reputation score
+        reputation: 15,
         total: 15,
       },
       recommendations: [],
+      usingSharedService: false,
+      serviceInfo: {
+        provider: 'SendGrid',
+        domain: fromDomain || 'Not configured',
+        status: 'not_configured',
+      },
     };
 
-    // If user has SendGrid integration, check their domain status
-    const apiKey = integration?.api_credentials?.api_key;
-    
-    if (apiKey && fromDomain) {
+    // Check SendGrid domain authentication
+    if (fromDomain) {
       console.log(`Checking SendGrid domain authentication for: ${fromDomain}`);
 
       // Get authenticated domains from SendGrid
@@ -115,6 +169,8 @@ serve(async (req) => {
 
         if (matchingDomain) {
           console.log(`Found matching domain: ${matchingDomain.domain}, valid: ${matchingDomain.valid}`);
+          
+          report.serviceInfo!.status = matchingDomain.valid ? 'fully_authenticated' : 'partial';
           
           // SPF status
           const spfRecord = matchingDomain.dns?.mail_cname || matchingDomain.dns?.spf;
@@ -205,10 +261,6 @@ serve(async (req) => {
       } catch (statsError) {
         console.error('Error fetching SendGrid stats:', statsError);
       }
-    } else if (!apiKey) {
-      // No SendGrid = using default email service
-      report.recommendations.push('Connect your own SendGrid account for better deliverability');
-      report.senderReputation.estimatedScore = 70; // Default service has decent reputation
     }
 
     // Calculate scores based on weights
