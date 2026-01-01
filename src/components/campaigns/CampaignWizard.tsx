@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -18,6 +18,12 @@ interface CampaignWizardProps {
   onOpenChange: (open: boolean) => void;
   selectedClients: SelectedClient[];
   onComplete: () => void;
+  initialData?: {
+    name: string;
+    type: CampaignData['type'];
+    subject: string;
+    content: string;
+  };
 }
 
 export interface CampaignData {
@@ -43,16 +49,32 @@ export const CampaignWizard = ({
   onOpenChange,
   selectedClients,
   onComplete,
+  initialData,
 }: CampaignWizardProps) => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(initialData ? 1 : 1);
   const [campaignData, setCampaignData] = useState<CampaignData>({
-    name: '',
-    type: 'outreach',
-    subject: '',
-    content: '',
+    name: initialData?.name || '',
+    type: initialData?.type || 'outreach',
+    subject: initialData?.subject || '',
+    content: initialData?.content || '',
     sendImmediately: true,
     recipients: selectedClients.filter(c => c.email),
   });
+
+  // Reset state when dialog opens with initialData
+  useEffect(() => {
+    if (open) {
+      setCampaignData({
+        name: initialData?.name || '',
+        type: initialData?.type || 'outreach',
+        subject: initialData?.subject || '',
+        content: initialData?.content || '',
+        sendImmediately: true,
+        recipients: selectedClients.filter(c => c.email),
+      });
+      setCurrentStep(1);
+    }
+  }, [open, initialData, selectedClients]);
 
   const createCampaign = useCreateEmailCampaign();
 

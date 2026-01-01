@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Send, Eye, Edit, Copy, Trash2, Calendar, Users } from "lucide-react";
 import { useEmailCampaigns } from "@/hooks/useEmailCampaigns";
+import { useClients } from "@/hooks/useClients";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -18,23 +19,68 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { CampaignWizard } from "@/components/campaigns/CampaignWizard";
+import type { SelectedClient } from "@/hooks/useClientSelection";
+
+// Template presets for quick start
+const TEMPLATE_PRESETS = {
+  newsletter: {
+    name: 'Newsletter Campaign',
+    type: 'announcement' as const,
+    subject: 'Latest Updates from {{company_name}}',
+    content: `<p>Hi {{client_name}},</p>
+<p>We're excited to share the latest updates from our team!</p>
+<p>[Add your newsletter content here]</p>
+<p>Best regards,<br/>The Team</p>`,
+  },
+  followup: {
+    name: 'Follow-up Campaign',
+    type: 'follow-up' as const,
+    subject: 'Following up on your recent inquiry',
+    content: `<p>Hi {{client_name}},</p>
+<p>I wanted to follow up on our recent conversation and see if you have any questions about the quote we provided.</p>
+<p>We'd love to help you move forward with your project. Please let me know if there's anything I can assist with.</p>
+<p>Best regards</p>`,
+  },
+  promotion: {
+    name: 'Promotional Campaign',
+    type: 'outreach' as const,
+    subject: 'Special Offer for You!',
+    content: `<p>Hi {{client_name}},</p>
+<p>We have an exclusive offer just for you!</p>
+<p>[Add your promotional details here]</p>
+<p>Don't miss out on this limited-time opportunity.</p>
+<p>Best regards</p>`,
+  },
+};
 
 export const EmailCampaigns = () => {
   const { data: campaigns = [], isLoading, error } = useEmailCampaigns();
+  const { data: rawClients = [] } = useClients();
   const { toast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
   const [showCampaignWizard, setShowCampaignWizard] = useState(false);
+  const [templatePreset, setTemplatePreset] = useState<keyof typeof TEMPLATE_PRESETS | null>(null);
+
+  // Convert clients to SelectedClient format for the wizard
+  const clientsForWizard: SelectedClient[] = useMemo(() => {
+    return rawClients.map(client => ({
+      id: client.id,
+      name: client.name,
+      email: client.email || undefined,
+      company_name: client.company_name || undefined,
+      funnel_stage: client.funnel_stage || undefined,
+    }));
+  }, [rawClients]);
 
   const handleNewCampaign = () => {
+    setTemplatePreset(null);
     setShowCampaignWizard(true);
   };
 
-  const handleUseTemplate = (templateName: string) => {
-    toast({
-      title: "Coming Soon",
-      description: `${templateName} template will be available soon.`,
-    });
+  const handleUseTemplate = (templateKey: keyof typeof TEMPLATE_PRESETS) => {
+    setTemplatePreset(templateKey);
+    setShowCampaignWizard(true);
   };
 
   const handleViewCampaign = (campaignId: string) => {
@@ -127,9 +173,16 @@ export const EmailCampaigns = () => {
       {/* Campaign Wizard */}
       <CampaignWizard 
         open={showCampaignWizard} 
-        onOpenChange={setShowCampaignWizard}
-        selectedClients={[]}
-        onComplete={() => setShowCampaignWizard(false)}
+        onOpenChange={(open) => {
+          setShowCampaignWizard(open);
+          if (!open) setTemplatePreset(null);
+        }}
+        selectedClients={clientsForWizard}
+        onComplete={() => {
+          setShowCampaignWizard(false);
+          setTemplatePreset(null);
+        }}
+        initialData={templatePreset ? TEMPLATE_PRESETS[templatePreset] : undefined}
       />
 
       {/* Header */}
@@ -161,7 +214,7 @@ export const EmailCampaigns = () => {
               <p className="text-sm text-muted-foreground mb-3">
                 Send updates and news to all your clients
               </p>
-              <Button variant="outline" size="sm" className="w-full" onClick={() => handleUseTemplate("Newsletter")}>
+              <Button variant="outline" size="sm" className="w-full" onClick={() => handleUseTemplate("newsletter")}>
                 Use Template
               </Button>
             </div>
@@ -174,7 +227,7 @@ export const EmailCampaigns = () => {
               <p className="text-sm text-muted-foreground mb-3">
                 Follow up on quotes and project updates
               </p>
-              <Button variant="outline" size="sm" className="w-full" onClick={() => handleUseTemplate("Follow-up")}>
+              <Button variant="outline" size="sm" className="w-full" onClick={() => handleUseTemplate("followup")}>
                 Use Template
               </Button>
             </div>
@@ -187,7 +240,7 @@ export const EmailCampaigns = () => {
               <p className="text-sm text-muted-foreground mb-3">
                 Promote special offers and services
               </p>
-              <Button variant="outline" size="sm" className="w-full" onClick={() => handleUseTemplate("Promotion")}>
+              <Button variant="outline" size="sm" className="w-full" onClick={() => handleUseTemplate("promotion")}>
                 Use Template
               </Button>
             </div>
