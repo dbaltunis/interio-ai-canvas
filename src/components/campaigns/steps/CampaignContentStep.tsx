@@ -1,23 +1,26 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
+import {
   Lightbulb, 
   Sparkles, 
   AlertTriangle, 
   Loader2, 
-  Wand2, 
-  Plus,
+  Wand2,
   Eye,
-  Edit3
+  Edit3,
+  CheckCircle2,
+  User,
+  Building2
 } from "lucide-react";
 import { useCampaignAssistant } from "@/hooks/useCampaignAssistant";
 import { RichTextEditor } from "@/components/jobs/email-components/RichTextEditor";
 import { EmailPreviewPane } from "@/components/campaigns/shared/EmailPreviewPane";
 import { TemplateGallery } from "@/components/campaigns/shared/TemplateGallery";
+import { toast } from "sonner";
 
 interface CampaignContentStepProps {
   subject: string;
@@ -29,8 +32,21 @@ interface CampaignContentStepProps {
 }
 
 const PERSONALIZATION_TOKENS = [
-  { token: '{{client_name}}', label: 'Client Name', icon: '👤' },
-  { token: '{{company_name}}', label: 'Company', icon: '🏢' },
+  { token: '{{client_name}}', label: 'Client Name', icon: User },
+  { token: '{{company_name}}', label: 'Company', icon: Building2 },
+];
+
+// Comprehensive spam word list for local detection
+const SPAM_WORDS = [
+  'free', 'urgent', 'act now', 'limited time', 'click here', 'buy now',
+  'order now', 'don\'t miss', 'exclusive deal', 'special offer', 'winner',
+  'congratulations', 'you won', 'cash prize', 'make money', 'earn money',
+  'extra income', 'no obligation', 'risk free', 'satisfaction guaranteed',
+  'double your', 'increase your', 'unlimited', '100% free', 'best price',
+  'lowest price', 'amazing', 'incredible', 'unbelievable', 'miracle',
+  '!!!', '???', 'URGENT', 'IMPORTANT', 'ACT NOW', 'LIMITED',
+  'credit card', 'no credit check', 'no questions asked', 'apply now',
+  'call now', 'subscribe', 'unsubscribe', 'opt-in', 'opt-out'
 ];
 
 export const CampaignContentStep = ({
@@ -44,16 +60,60 @@ export const CampaignContentStep = ({
   const [aiSubjects, setAiSubjects] = useState<string[]>([]);
   const [spamScore, setSpamScore] = useState<number | null>(null);
   const [spamIssues, setSpamIssues] = useState<string[]>([]);
+  const [isCheckingSpam, setIsCheckingSpam] = useState(false);
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [showTemplates, setShowTemplates] = useState(!content);
   const [activeTab, setActiveTab] = useState<string>("edit");
   const { isLoading, getSubjectIdeas, checkSpamRisk } = useCampaignAssistant();
-  
-  // Basic spam word detection (local fallback)
-  const spamWords = ['free', 'urgent', 'act now', 'limited time', '!!!', 'click here'];
-  const hasLocalSpamWords = spamWords.some(word => 
-    subject.toLowerCase().includes(word) || content.toLowerCase().includes(word)
-  );
+
+  // Auto spam check with debounce
+  const checkSpamLocal = useCallback(() => {
+    const textToCheck = (subject + ' ' + content).toLowerCase();
+    const foundWords: string[] = [];
+    
+    SPAM_WORDS.forEach(word => {
+      if (textToCheck.includes(word.toLowerCase())) {
+        foundWords.push(word);
+      }
+    });
+
+    const score = Math.min(100, foundWords.length * 15);
+    return { score, issues: foundWords.slice(0, 5).map(w => `Contains spam trigger: "${w}"`) };
+  }, [subject, content]);
+
+  // Auto-check spam when content changes (debounced)
+  useEffect(() => {
+    if (subject.length < 3 && content.length < 10) {
+      setSpamScore(null);
+      setSpamIssues([]);
+      return;
+    }
+
+    setIsCheckingSpam(true);
+    const timer = setTimeout(async () => {
+      // First try AI check
+      try {
+        const result = await checkSpamRisk(subject, content);
+        if (result && typeof result.score === 'number') {
+          setSpamScore(result.score);
+          setSpamIssues(result.issues || []);
+        } else {
+          // Fallback to local check
+          const local = checkSpamLocal();
+          setSpamScore(local.score);
+          setSpamIssues(local.issues);
+        }
+      } catch {
+        // Fallback to local check
+        const local = checkSpamLocal();
+        setSpamScore(local.score);
+        setSpamIssues(local.issues);
+      }
+      setIsCheckingSpam(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [subject, content, checkSpamRisk, checkSpamLocal]);
 
   const handleGetAISubjects = async () => {
     const result = await getSubjectIdeas({
@@ -68,7 +128,6 @@ export const CampaignContentStep = ({
   const handleGenerateContent = async () => {
     setIsGeneratingContent(true);
     try {
-      // Generate content based on campaign type
       const templates: Record<string, string> = {
         'outreach': `<p>Hi {{client_name}},</p>
 <p>I hope this email finds you well. I wanted to reach out because I believe we could help {{company_name}} achieve its goals.</p>
@@ -90,7 +149,6 @@ export const CampaignContentStep = ({
 <p>Best regards</p>`,
       };
       
-      // Simulate AI generation delay
       await new Promise(resolve => setTimeout(resolve, 800));
       onUpdateContent(templates[campaignType] || templates['outreach']);
       setShowTemplates(false);
@@ -99,19 +157,9 @@ export const CampaignContentStep = ({
     }
   };
 
-  const handleCheckSpam = async () => {
-    if (subject.length > 5 && content.length > 20) {
-      const result = await checkSpamRisk(subject, content);
-      if (result) {
-        setSpamScore(result.score);
-        setSpamIssues(result.issues || []);
-      }
-    }
-  };
-
-  const insertToken = (token: string) => {
-    // Insert at cursor position if possible, otherwise append
+  const insertToken = (token: string, label: string) => {
     onUpdateContent(content + ' ' + token);
+    toast.success(`Inserted ${label}`, { duration: 1500 });
   };
 
   const handleSelectTemplate = (template: { subject: string; content: string }) => {
@@ -197,41 +245,20 @@ export const CampaignContentStep = ({
             )}
           </div>
 
-          {/* Personalization Tokens */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Personalization Tokens</Label>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowTemplates(true)}
-                className="h-7 text-xs gap-1.5"
-              >
-                <Lightbulb className="h-3.5 w-3.5" />
-                Browse Templates
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {PERSONALIZATION_TOKENS.map((item) => (
-                <Badge
-                  key={item.token}
-                  variant="secondary"
-                  className="cursor-pointer hover:bg-primary/20 hover:border-primary/40 transition-colors py-1.5 px-3 gap-1.5"
-                  onClick={() => insertToken(item.token)}
-                >
-                  <Plus className="h-3 w-3" />
-                  <span>{item.icon}</span>
-                  {item.label}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
           {/* Email Content with Split View */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">Email Content</Label>
               <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowTemplates(true)}
+                  className="h-7 text-xs gap-1.5"
+                >
+                  <Lightbulb className="h-3.5 w-3.5" />
+                  Templates
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -246,21 +273,27 @@ export const CampaignContentStep = ({
                   )}
                   Generate with AI
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCheckSpam}
-                  disabled={isLoading || plainTextContent.length < 20}
-                  className="h-7 text-xs gap-1.5"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                  )}
-                  Spam Check
-                </Button>
               </div>
+            </div>
+
+            {/* Personalization Tokens - Clickable Buttons */}
+            <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+              <span className="text-xs text-muted-foreground mr-1">Click to insert:</span>
+              {PERSONALIZATION_TOKENS.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Button
+                    key={item.token}
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => insertToken(item.token, item.label)}
+                    className="h-7 text-xs gap-1.5 hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    <Icon className="h-3 w-3" />
+                    {item.label}
+                  </Button>
+                );
+              })}
             </div>
 
             {/* Tabs for Edit/Preview on Mobile, Split on Desktop */}
@@ -317,44 +350,40 @@ Use personalization tokens like {{client_name}} to make each email personal."
               </div>
             </Tabs>
 
-            {/* Stats Bar */}
+            {/* Stats Bar with Inline Spam Score */}
             <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
               <span>{charCount} characters • {wordCount} words</span>
-              {spamScore === null && hasLocalSpamWords && (
-                <span className="text-amber-600 flex items-center gap-1">
-                  <AlertTriangle className="h-3 w-3" />
-                  Potential spam words detected
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {isCheckingSpam ? (
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Checking...
+                  </span>
+                ) : spamScore !== null ? (
+                  <span className={`flex items-center gap-1 ${
+                    spamScore > 50 ? 'text-destructive' : 
+                    spamScore > 25 ? 'text-amber-600' : 
+                    'text-green-600'
+                  }`}>
+                    {spamScore > 25 ? (
+                      <AlertTriangle className="h-3 w-3" />
+                    ) : (
+                      <CheckCircle2 className="h-3 w-3" />
+                    )}
+                    Spam: {spamScore}/100
+                  </span>
+                ) : null}
+              </div>
             </div>
           </div>
 
-          {/* AI Spam Check Result */}
-          {spamScore !== null && (
-            <div className={`flex items-start gap-3 p-4 rounded-xl border ${
-              spamScore > 50 ? 'bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800' : 
-              spamScore > 25 ? 'bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800' : 
-              'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800'
-            }`}>
-              <AlertTriangle className={`h-5 w-5 mt-0.5 ${
-                spamScore > 50 ? 'text-red-600' : 
-                spamScore > 25 ? 'text-amber-600' : 
-                'text-green-600'
-              }`} />
-              <div className="text-sm flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <strong>Spam Score: {spamScore}/100</strong>
-                  <Badge variant={spamScore > 50 ? 'destructive' : spamScore > 25 ? 'secondary' : 'default'} className="text-xs">
-                    {spamScore > 50 ? 'High Risk' : spamScore > 25 ? 'Medium Risk' : 'Low Risk'}
-                  </Badge>
-                </div>
-                {spamIssues.length > 0 && (
-                  <ul className="mt-2 text-muted-foreground list-disc list-inside space-y-0.5">
-                    {spamIssues.map((issue, i) => (
-                      <li key={i}>{issue}</li>
-                    ))}
-                  </ul>
-                )}
+          {/* Spam Issues (only show if there are issues) */}
+          {spamScore !== null && spamScore > 25 && spamIssues.length > 0 && (
+            <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800">
+              <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
+              <div className="text-sm text-amber-800 dark:text-amber-200">
+                <span className="font-medium">Suggestions: </span>
+                {spamIssues.slice(0, 3).join(' • ')}
               </div>
             </div>
           )}
