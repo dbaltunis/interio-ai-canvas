@@ -33,6 +33,8 @@ interface CampaignContentStepProps {
   subject: string;
   content: string;
   recipientCount?: number;
+  fromTemplate?: boolean;
+  templateName?: string;
   onUpdateName: (name: string) => void;
   onUpdateType: (type: 'outreach' | 'follow-up' | 're-engagement' | 'announcement') => void;
   onUpdateSubject: (subject: string) => void;
@@ -70,6 +72,8 @@ export const CampaignContentStep = ({
   subject,
   content,
   recipientCount = 0,
+  fromTemplate = false,
+  templateName,
   onUpdateName,
   onUpdateType,
   onUpdateSubject,
@@ -209,41 +213,24 @@ export const CampaignContentStep = ({
 
   return (
     <div className="space-y-5">
-      {/* Campaign Name & Type - Compact Header */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
+      {/* Campaign Name - With optional template badge */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
           <Label htmlFor="campaign-name" className="text-sm font-medium">Campaign Name</Label>
-          <Input
-            id="campaign-name"
-            placeholder="e.g., Q4 Outreach Campaign"
-            value={name}
-            onChange={(e) => onUpdateName(e.target.value)}
-            className="h-10"
-          />
+          {fromTemplate && templateName && (
+            <Badge variant="secondary" className="gap-1.5 bg-primary/10 text-primary border-primary/20">
+              <CheckCircle2 className="h-3 w-3" />
+              {templateName} Template
+            </Badge>
+          )}
         </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Type</Label>
-          <div className="flex gap-1.5">
-            {CAMPAIGN_TYPES.map((ct) => {
-              const Icon = ct.icon;
-              const isSelected = type === ct.value;
-              return (
-                <button
-                  key={ct.value}
-                  type="button"
-                  onClick={() => onUpdateType(ct.value)}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border text-xs font-medium transition-all",
-                    isSelected ? ct.color : "border-border text-muted-foreground hover:border-muted-foreground/50"
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{ct.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <Input
+          id="campaign-name"
+          placeholder="e.g., Q4 Outreach Campaign"
+          value={name}
+          onChange={(e) => onUpdateName(e.target.value)}
+          className="h-10"
+        />
       </div>
 
       {/* Template Selection (shown initially or when empty) */}

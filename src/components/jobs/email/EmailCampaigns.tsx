@@ -182,7 +182,12 @@ export const EmailCampaigns = () => {
           setShowCampaignWizard(false);
           setTemplatePreset(null);
         }}
-        initialData={templatePreset ? TEMPLATE_PRESETS[templatePreset] : undefined}
+        initialData={templatePreset ? { 
+          ...TEMPLATE_PRESETS[templatePreset], 
+          fromTemplate: true,
+          templateName: templatePreset === 'newsletter' ? 'Newsletter' : 
+                       templatePreset === 'followup' ? 'Follow-up' : 'Promotion'
+        } : undefined}
       />
 
       {/* Header */}
