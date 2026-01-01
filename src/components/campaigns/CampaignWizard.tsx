@@ -8,6 +8,7 @@ import { CampaignRecipientsStep } from "./steps/CampaignRecipientsStep";
 import { CampaignContentStep } from "./steps/CampaignContentStep";
 import { CampaignReviewStep } from "./steps/CampaignReviewStep";
 import { useCreateEmailCampaign } from "@/hooks/useEmailCampaigns";
+import { useCampaignExecution } from "@/hooks/useCampaignExecution";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -75,6 +76,7 @@ export const CampaignWizard = ({
   }, [open, initialData, selectedClients]);
 
   const createCampaign = useCreateEmailCampaign();
+  const executeCampaign = useCampaignExecution();
 
   const progress = (currentStep / STEPS.length) * 100;
 
@@ -118,14 +120,32 @@ export const CampaignWizard = ({
 
   const handleLaunch = async () => {
     try {
-      await createCampaign.mutateAsync({
+      // First create the campaign record
+      const campaign = await createCampaign.mutateAsync({
         name: campaignData.name,
         subject: campaignData.subject,
         content: campaignData.content,
-        status: campaignData.sendImmediately ? 'sending' : 'scheduled',
+        status: 'draft', // Start as draft, will be updated to sending
         scheduled_at: campaignData.scheduledAt?.toISOString(),
         recipient_count: campaignData.recipients.length,
       });
+
+      // If sending immediately, execute the campaign
+      if (campaignData.sendImmediately) {
+        await executeCampaign.mutateAsync({
+          campaignId: campaign.id,
+          campaignData: {
+            name: campaignData.name,
+            subject: campaignData.subject,
+            content: campaignData.content,
+            selectedClients: campaignData.recipients,
+            personalization: {
+              useClientName: true,
+              useCompanyName: true,
+            },
+          },
+        });
+      }
 
       // Close dialog FIRST so toast appears on top
       onOpenChange(false);
@@ -143,7 +163,10 @@ export const CampaignWizard = ({
 
       // Show toast AFTER dialog closes (with small delay for animation)
       setTimeout(() => {
-        toast.success(`Campaign "${campaignData.name}" created successfully! View it in the Emails tab.`);
+        const message = campaignData.sendImmediately 
+          ? `Campaign "${campaignData.name}" is being sent to ${campaignData.recipients.length} recipients!`
+          : `Campaign "${campaignData.name}" scheduled successfully!`;
+        toast.success(message);
         onComplete();
       }, 150);
     } catch (error) {
@@ -284,11 +307,11 @@ export const CampaignWizard = ({
           ) : (
             <Button
               onClick={handleLaunch}
-              disabled={createCampaign.isPending}
+              disabled={createCampaign.isPending || executeCampaign.isPending}
               className="gap-1.5 bg-primary hover:bg-primary/90"
             >
               <Send className="h-4 w-4" />
-              {createCampaign.isPending ? 'Launching...' : 'Launch Campaign'}
+              {createCampaign.isPending || executeCampaign.isPending ? 'Sending...' : 'Launch Campaign'}
             </Button>
           )}
         </div>
