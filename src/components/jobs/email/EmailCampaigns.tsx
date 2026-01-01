@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,18 +17,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { CampaignWizard } from "@/components/campaigns/CampaignWizard";
 
 export const EmailCampaigns = () => {
   const { data: campaigns = [], isLoading, error } = useEmailCampaigns();
   const { toast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
+  const [showCampaignWizard, setShowCampaignWizard] = useState(false);
 
   const handleNewCampaign = () => {
-    toast({
-      title: "Coming Soon",
-      description: "Campaign creation feature is currently in development.",
-    });
+    setShowCampaignWizard(true);
   };
 
   const handleUseTemplate = (templateName: string) => {
@@ -126,6 +124,14 @@ export const EmailCampaigns = () => {
 
   return (
     <div className="space-y-6">
+      {/* Campaign Wizard */}
+      <CampaignWizard 
+        open={showCampaignWizard} 
+        onOpenChange={setShowCampaignWizard}
+        selectedClients={[]}
+        onComplete={() => setShowCampaignWizard(false)}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
