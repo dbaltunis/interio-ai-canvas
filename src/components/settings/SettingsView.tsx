@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Package, Ruler, Zap, Layers, Play, Users, FileText, Globe, Shield, Bell, User, Building2, CreditCard, Calculator, Sparkles } from "lucide-react";
+import { Settings, Package, Ruler, Zap, Users, FileText, Globe, Bell, User, Building2, Calculator, MessageCircle } from "lucide-react";
 import { PersonalSettingsTab } from "./tabs/PersonalSettingsTab";
 import { BusinessSettingsTab } from "./tabs/BusinessSettingsTab";
 import { BillingTab } from "./tabs/BillingTab";
@@ -15,6 +15,7 @@ import { PricingRulesTab } from "./tabs/PricingRulesTab";
 import { TutorialOverlay } from "./TutorialOverlay";
 import { InteractiveOnboarding } from "./InteractiveOnboarding";
 import { NotificationManagementTab } from "./tabs/NotificationManagementTab";
+import { CommunicationsTab } from "./tabs/CommunicationsTab";
 import { EnhancedPersonalizationTab } from "./tabs/EnhancedPersonalizationTab";
 import { SecurityPrivacyTab } from "./tabs/SecurityPrivacyTab";
 import { Button } from "@/components/ui/button";
@@ -143,9 +144,14 @@ export const SettingsView = () => {
               <span className="hidden sm:inline">System</span>
             </TabsTrigger>}
           
+          {canViewSettings && <TabsTrigger value="communications" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+              <MessageCircle className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Communications</span>
+            </TabsTrigger>}
+          
           <TabsTrigger value="notifications" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
             <Bell className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Alerts</span>
+            <span className="hidden sm:inline">Notifications</span>
           </TabsTrigger>
           
           {canViewSettings && <TabsTrigger value="integrations" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
@@ -231,6 +237,14 @@ export const SettingsView = () => {
             <Card variant="elevated" className="transition-shadow">
               <CardContent className="p-5 md:p-6">
                 <SystemSettingsTab />
+              </CardContent>
+            </Card>
+          </TabsContent>}
+
+        {canViewSettings && <TabsContent value="communications" className="animate-fade-in">
+            <Card variant="elevated" className="transition-shadow">
+              <CardContent className="p-5 md:p-6">
+                <CommunicationsTab />
               </CardContent>
             </Card>
           </TabsContent>}
