@@ -9369,6 +9369,118 @@ export type Database = {
           },
         ]
       }
+      whatsapp_message_logs: {
+        Row: {
+          account_owner_id: string
+          client_id: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          media_url: string | null
+          message_body: string | null
+          status: string | null
+          status_updated_at: string | null
+          template_id: string | null
+          to_number: string
+          twilio_message_sid: string | null
+          user_id: string
+        }
+        Insert: {
+          account_owner_id: string
+          client_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          media_url?: string | null
+          message_body?: string | null
+          status?: string | null
+          status_updated_at?: string | null
+          template_id?: string | null
+          to_number: string
+          twilio_message_sid?: string | null
+          user_id: string
+        }
+        Update: {
+          account_owner_id?: string
+          client_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          media_url?: string | null
+          message_body?: string | null
+          status?: string | null
+          status_updated_at?: string | null
+          template_id?: string | null
+          to_number?: string
+          twilio_message_sid?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_message_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_message_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_message_logs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_templates: {
+        Row: {
+          account_owner_id: string
+          content: string
+          created_at: string | null
+          id: string
+          is_shared_template: boolean | null
+          name: string
+          status: string | null
+          template_type: string
+          twilio_template_sid: string | null
+          updated_at: string | null
+          variables: Json | null
+        }
+        Insert: {
+          account_owner_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+          is_shared_template?: boolean | null
+          name: string
+          status?: string | null
+          template_type: string
+          twilio_template_sid?: string | null
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Update: {
+          account_owner_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_shared_template?: boolean | null
+          name?: string
+          status?: string | null
+          template_type?: string
+          twilio_template_sid?: string | null
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Relationships: []
+      }
       window_coverings: {
         Row: {
           active: boolean | null
