@@ -6,12 +6,16 @@ import { Bell, MessageSquare, Send, Crown, Zap } from "lucide-react";
 import { NotificationTemplatesManager } from "@/components/notifications/NotificationTemplatesManager";
 import { BroadcastNotificationPanel } from "@/components/notifications/BroadcastNotificationPanel";
 import { NotificationTestPanel } from "@/components/notifications/NotificationTestPanel";
+import { WhatsAppTemplateManager } from "@/components/messaging/WhatsAppTemplateManager";
 import { useUserSubscription } from "@/hooks/useUserSubscription";
+import { useSubscriptionFeatures } from "@/hooks/useSubscriptionFeatures";
 
 export const NotificationManagementTab = () => {
   const { data: subscription } = useUserSubscription();
+  const { hasFeature } = useSubscriptionFeatures();
 
   const isPremiumUser = subscription?.plan?.name !== 'Basic';
+  const hasWhatsApp = hasFeature('whatsapp');
 
   return (
     <div className="space-y-6">
@@ -34,7 +38,7 @@ export const NotificationManagementTab = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="flex items-center gap-3 p-4 border rounded-lg">
               <div className="p-2 bg-blue-100 rounded-full">
                 <Bell className="h-4 w-4 text-blue-600" />
@@ -71,6 +75,20 @@ export const NotificationManagementTab = () => {
                 </p>
               </div>
             </div>
+            <div className="flex items-center gap-3 p-4 border rounded-lg">
+              <div className={`p-2 rounded-full ${hasWhatsApp ? 'bg-green-100' : 'bg-muted'}`}>
+                <MessageSquare className={`h-4 w-4 ${hasWhatsApp ? 'text-green-600' : 'text-muted-foreground'}`} />
+              </div>
+              <div>
+                <p className="font-medium text-sm flex items-center gap-1">
+                  WhatsApp
+                  {hasWhatsApp && <Badge variant="default" className="text-[10px] px-1">PRO</Badge>}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {hasWhatsApp ? 'Enterprise feature' : 'Enterprise only'}
+                </p>
+              </div>
+            </div>
           </div>
           
           {!isPremiumUser && (
@@ -87,6 +105,7 @@ export const NotificationManagementTab = () => {
                 <Badge variant="outline">Built-in SMS service</Badge>
                 <Badge variant="outline">Broadcast messaging</Badge>
                 <Badge variant="outline">Usage tracking</Badge>
+                <Badge variant="outline">WhatsApp (Enterprise)</Badge>
               </div>
             </div>
           )}
@@ -98,11 +117,15 @@ export const NotificationManagementTab = () => {
 
       {/* Notification Management Tabs */}
       <Tabs defaultValue="templates" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="templates">Message Templates</TabsTrigger>
           <TabsTrigger value="broadcast" disabled={!isPremiumUser}>
             Broadcast Messages
             {!isPremiumUser && <Crown className="h-3 w-3 ml-1" />}
+          </TabsTrigger>
+          <TabsTrigger value="whatsapp" className="flex items-center gap-1">
+            WhatsApp
+            {!hasWhatsApp && <Crown className="h-3 w-3 ml-1" />}
           </TabsTrigger>
         </TabsList>
         
@@ -125,6 +148,10 @@ export const NotificationManagementTab = () => {
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="whatsapp" className="mt-6">
+          <WhatsAppTemplateManager />
         </TabsContent>
       </Tabs>
     </div>
