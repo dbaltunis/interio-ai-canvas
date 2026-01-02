@@ -13,7 +13,8 @@ export type FeatureKey =
   | 'wallpapers'
   | 'shopify'
   | 'erp_integrations'
-  | 'online_store';
+  | 'online_store'
+  | 'whatsapp';
 
 interface FeatureAccess {
   [key: string]: boolean;

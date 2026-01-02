@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Mail, FileText, Briefcase, Phone } from 'lucide-react';
+import { Mail, FileText, Briefcase, Phone, MessageSquare } from 'lucide-react';
 import { QuickEmailDialog } from './QuickEmailDialog';
 import { QuickInvoiceDialog } from './QuickInvoiceDialog';
 import { QuickJobDialog } from './QuickJobDialog';
+import { WhatsAppMessageDialog } from '@/components/messaging/WhatsAppMessageDialog';
+import { useSubscriptionFeatures } from '@/hooks/useSubscriptionFeatures';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ClientQuickActionsProps {
   client: {
@@ -19,6 +23,10 @@ export const ClientQuickActions = ({ client }: ClientQuickActionsProps) => {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [jobDialogOpen, setJobDialogOpen] = useState(false);
+  const [whatsAppDialogOpen, setWhatsAppDialogOpen] = useState(false);
+  const { hasFeature } = useSubscriptionFeatures();
+  
+  const hasWhatsApp = hasFeature('whatsapp');
 
   const actions = [
     {
@@ -74,6 +82,46 @@ export const ClientQuickActions = ({ client }: ClientQuickActionsProps) => {
                 </Button>
               );
             })}
+            
+            {/* WhatsApp Button - Enterprise Only */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="relative">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={!hasWhatsApp || !client.phone}
+                      onClick={() => setWhatsAppDialogOpen(true)}
+                      className={`h-9 px-3 transition-all duration-200 ${
+                        hasWhatsApp 
+                          ? 'text-green-600 hover:text-green-700 hover:bg-green-50' 
+                          : 'text-muted-foreground opacity-60'
+                      }`}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-1.5" />
+                      <span className="hidden sm:inline text-xs">WhatsApp</span>
+                    </Button>
+                    {!hasWhatsApp && (
+                      <Badge 
+                        variant="secondary" 
+                        className="absolute -top-2 -right-2 text-[9px] px-1 py-0 h-4 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-700 border-amber-200"
+                      >
+                        PRO
+                      </Badge>
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {!hasWhatsApp 
+                    ? 'WhatsApp messaging requires Enterprise plan' 
+                    : !client.phone 
+                      ? 'Client has no phone number' 
+                      : 'Send WhatsApp message'
+                  }
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </Card>
@@ -93,6 +141,12 @@ export const ClientQuickActions = ({ client }: ClientQuickActionsProps) => {
       <QuickJobDialog
         open={jobDialogOpen}
         onOpenChange={setJobDialogOpen}
+        client={client}
+      />
+      
+      <WhatsAppMessageDialog
+        open={whatsAppDialogOpen}
+        onOpenChange={setWhatsAppDialogOpen}
         client={client}
       />
     </>
