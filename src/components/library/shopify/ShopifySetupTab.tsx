@@ -10,6 +10,10 @@ import { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, AlertTriangle, CheckCircle2, XCircle, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { ShopifyOAuthGuide } from "./ShopifyOAuthGuide";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
 
 type ShopifyIntegration = Database['public']['Tables']['shopify_integrations']['Row'];
 type ShopifyIntegrationUpdate = Database['public']['Tables']['shopify_integrations']['Update'];
@@ -36,6 +40,7 @@ interface TestResult {
 }
 
 export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps) => {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -48,6 +53,45 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
   // Connection test state
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [testResult, setTestResult] = useState<TestResult | null>(null);
+
+  // Permission checks - following the same pattern as other settings
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-shopify-setup', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[ShopifySetupTab] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+
+  // Check if manage_shopify is explicitly in user_permissions table
+  const hasManageShopifyPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'manage_shopify'
+  ) ?? false;
+
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+
+  // Check manage_shopify permission using the same pattern
+  const canManageShopify = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasManageShopifyPermission
+        : hasManageShopifyPermission;
+
+  const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
 
   // Extract myshopify.com domain from various formats
   const extractShopDomain = (input: string): string => {
@@ -67,6 +111,21 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
   };
 
   const handleTestConnection = async () => {
+    if (!isPermissionLoaded) {
+      toast({
+        title: "Loading",
+        description: "Please wait while permissions are being checked...",
+      });
+      return;
+    }
+    if (!canManageShopify) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to manage Shopify settings.",
+        variant: "destructive"
+      });
+      return;
+    }
     if (!shopDomain || !clientId || !clientSecret) {
       toast({
         title: "Missing Information",
@@ -121,6 +180,21 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
   };
 
   const handleSave = async () => {
+    if (!isPermissionLoaded) {
+      toast({
+        title: "Loading",
+        description: "Please wait while permissions are being checked...",
+      });
+      return;
+    }
+    if (!canManageShopify) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to manage Shopify settings.",
+        variant: "destructive"
+      });
+      return;
+    }
     if (!shopDomain || !clientId || !clientSecret) {
       toast({
         title: "Error",
@@ -207,6 +281,21 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
   };
 
   const handleDisconnect = async () => {
+    if (!isPermissionLoaded) {
+      toast({
+        title: "Loading",
+        description: "Please wait while permissions are being checked...",
+      });
+      return;
+    }
+    if (!canManageShopify) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to manage Shopify settings.",
+        variant: "destructive"
+      });
+      return;
+    }
     if (!confirm('Are you sure you want to disconnect this Shopify store? This will stop all syncing.')) {
       return;
     }
@@ -238,6 +327,21 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
   };
 
   const handleSwitchStore = () => {
+    if (!isPermissionLoaded) {
+      toast({
+        title: "Loading",
+        description: "Please wait while permissions are being checked...",
+      });
+      return;
+    }
+    if (!canManageShopify) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to manage Shopify settings.",
+        variant: "destructive"
+      });
+      return;
+    }
     if (confirm('Switch to a different store? You can enter new credentials below.')) {
       setShopDomain("");
       setClientId("");
@@ -252,6 +356,18 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
 
   return (
     <div className="space-y-6">
+      {isPermissionLoaded && !canManageShopify && (
+        <Alert className="border-orange-200 bg-orange-50">
+          <AlertTriangle className="h-4 w-4 text-orange-600" />
+          <AlertDescription>
+            <p className="font-semibold text-orange-900 mb-1">Permission Required</p>
+            <p className="text-sm text-orange-800">
+              You don't have permission to manage Shopify settings. Contact your administrator to configure Shopify integration.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {integration?.is_connected && !integration?.access_token && (
         <Alert className="border-orange-200 bg-orange-50">
           <AlertTriangle className="h-4 w-4 text-orange-600" />
@@ -284,6 +400,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
                   variant="outline" 
                   size="sm"
                   onClick={handleSwitchStore}
+                  disabled={!canManageShopify && isPermissionLoaded}
                   className="w-full"
                 >
                   Change Store
@@ -292,7 +409,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
                   variant="destructive" 
                   size="sm"
                   onClick={handleDisconnect} 
-                  disabled={isLoading}
+                  disabled={isLoading || (!canManageShopify && isPermissionLoaded)}
                   className="w-full"
                 >
                   {isLoading ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
@@ -317,6 +434,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
               size="sm" 
               variant="outline"
               onClick={handleSwitchStore}
+              disabled={!canManageShopify && isPermissionLoaded}
               className="bg-white"
             >
               Connect Different Store
@@ -353,6 +471,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
               }}
               placeholder="my-store.myshopify.com"
               className="font-mono mt-1.5"
+              disabled={!canManageShopify && isPermissionLoaded}
             />
             <p className="text-xs text-muted-foreground mt-1.5">
               This is your store's <code className="bg-muted px-1 rounded">.myshopify.com</code> URL (not your custom domain)
@@ -377,6 +496,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
               }}
               placeholder="Copy from Settings page in Dev Dashboard"
               className="font-mono mt-1.5"
+              disabled={!canManageShopify && isPermissionLoaded}
             />
             <p className="text-xs text-muted-foreground mt-1.5">
               Found on the <strong>Settings</strong> page of your app in the Dev Dashboard
@@ -400,6 +520,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
                 }}
                 placeholder="Click 'Manage client credentials' to reveal"
                 className="font-mono pr-10"
+                disabled={!canManageShopify && isPermissionLoaded}
               />
               <button
                 type="button"
@@ -445,7 +566,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
             <Button 
               variant="outline"
               onClick={handleTestConnection} 
-              disabled={connectionStatus === 'testing' || !shopDomain || !clientId || !clientSecret}
+              disabled={connectionStatus === 'testing' || !shopDomain || !clientId || !clientSecret || (!canManageShopify && isPermissionLoaded)}
               className="flex-1"
             >
               {connectionStatus === 'testing' ? (
@@ -472,7 +593,7 @@ export const ShopifySetupTab = ({ integration, onSuccess }: ShopifySetupTabProps
             </Button>
             <Button 
               onClick={handleSave} 
-              disabled={isLoading || !canConnect} 
+              disabled={isLoading || !canConnect || (!canManageShopify && isPermissionLoaded)} 
               className="flex-1"
             >
               {isLoading ? (

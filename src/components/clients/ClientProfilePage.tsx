@@ -46,7 +46,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const { user } = useAuth();
   const { data: clientFiles } = useClientFiles(clientId, user?.id || '');
   const { formatCurrency } = useFormattedCurrency();
-  const { canEditClient, isLoading: editPermissionLoading } = useCanEditClient(client);
+  const { canEditClient, canEditAllClients, isLoading: editPermissionLoading } = useCanEditClient(client);
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedClient, setEditedClient] = useState<any>(null);
@@ -177,7 +177,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
       </div>
 
       {/* Quick Actions Bar */}
-      <ClientQuickActionsBar client={currentClient} />
+      <ClientQuickActionsBar client={currentClient} canEditClient={canEditClient} />
 
       {/* Client Information - Full Width */}
       <Card>
@@ -463,8 +463,10 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </Card>
       </div>
 
-      {/* Client Projects Section */}
-      <ClientProjectsList clientId={clientId} onTabChange={onTabChange} />
+      {/* Client Projects Section - Only show if user has edit_all_clients permission */}
+      {canEditClient && (
+        <ClientProjectsList clientId={clientId} onTabChange={onTabChange} />
+      )}
 
       {/* Client Files Section */}
       {user && (

@@ -106,11 +106,11 @@ export const WindowCoveringsTab = ({
   const handleTemplateCloned = (templateId: string) => {
     // Only switch to templates tab if user has permission
     if (canViewTemplates && !permissionsLoading && !roleLoading && explicitPermissions !== undefined) {
-      setActiveTab("templates");
-      setHighlightedTemplateId(templateId);
-      
-      // Clear highlight after animation
-      setTimeout(() => setHighlightedTemplateId(null), 3000);
+    setActiveTab("templates");
+    setHighlightedTemplateId(templateId);
+    
+    // Clear highlight after animation
+    setTimeout(() => setHighlightedTemplateId(null), 3000);
     }
   };
 
@@ -160,15 +160,15 @@ export const WindowCoveringsTab = ({
             </TabsList>
 
             {canViewTemplates && (
-              <TabsContent value="templates" className="mt-6">
-                <CurtainTemplatesManager 
-                  highlightedTemplateId={highlightedTemplateId}
-                  createTemplateData={createTemplateData}
-                  onTemplateCreated={onTemplateCreated}
-                  editTemplateId={editTemplateId}
-                  onTemplateEdited={onTemplateEdited}
-                />
-              </TabsContent>
+            <TabsContent value="templates" className="mt-6">
+              <CurtainTemplatesManager 
+                highlightedTemplateId={highlightedTemplateId}
+                createTemplateData={createTemplateData}
+                onTemplateCreated={onTemplateCreated}
+                editTemplateId={editTemplateId}
+                onTemplateEdited={onTemplateEdited}
+              />
+            </TabsContent>
             )}
 
             {hasTWCIntegration && (

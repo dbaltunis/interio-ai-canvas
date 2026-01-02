@@ -86,11 +86,6 @@ export const TeamMembersWidget = () => {
           ? !hasAnyExplicitPermissions || hasSendTeamMessagesPermission
           : hasSendTeamMessagesPermission;
 
-  // Don't render if user doesn't have permission (after permissions are loaded)
-  if (explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canViewTeamMembers) {
-    return null;
-  }
-
   const handleAddTeamMember = () => {
     console.log('Add team member clicked, navigating to settings...');
     console.log('User role:', userRoleData);
@@ -119,17 +114,14 @@ export const TeamMembersWidget = () => {
     // Check permission before opening message dialog
     const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
     if (isPermissionLoaded && !canSendTeamMessages) {
-      toast({
-        title: "Permission Denied",
+      toast.error("Permission Denied", {
         description: "You don't have permission to send team messages.",
-        variant: "destructive",
       });
       return;
     }
     // Don't allow opening while permissions are loading
     if (!isPermissionLoaded) {
-      toast({
-        title: "Loading",
+      toast("Loading", {
         description: "Please wait while permissions are being checked...",
       });
       return;
@@ -179,6 +171,12 @@ export const TeamMembersWidget = () => {
       supabase.removeChannel(channel);
     };
   }, [user?.id, teamMembers]);
+
+  // Don't render if user doesn't have permission (after permissions are loaded)
+  // This must be after all hooks to avoid "Rendered fewer hooks than expected" error
+  if (explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canViewTeamMembers) {
+    return null;
+  }
 
   // Filter out current user and sort team members
   const otherTeamMembers = teamMembers.filter(member => member.id !== user?.id);
