@@ -17,10 +17,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEmailAnalytics } from "@/hooks/useEmailAnalytics";
 import type { Email } from "@/hooks/useEmails";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useCanSendEmails } from "@/hooks/useCanSendEmails";
+import { useCanViewEmailKPIs } from "@/hooks/useCanViewEmailKPIs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
@@ -44,35 +43,9 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
   const [previewAttachment, setPreviewAttachment] = useState<any>(null);
   const { data: emailAnalytics = [] } = useEmailAnalytics(email?.id || "");
   const { user } = useAuth();
-  const { data: userRoleData, isLoading: userRoleLoading } = useUserRole();
-  const { data: explicitPermissions, isLoading: permissionsLoading } = useUserPermissions();
   const { toast } = useToast();
-
-  // Check view_email_kpis permission
-  const { data: hasViewEmailKPIsPermission } = useQuery({
-    queryKey: ['has-permission', user?.id, 'view_email_kpis', explicitPermissions, userRoleData],
-    queryFn: async () => {
-      if (!user || userRoleLoading || permissionsLoading) return undefined;
-      
-      const role = userRoleData?.role;
-      if (role === 'System Owner') return true;
-      
-      // Check explicit permission
-      const hasExplicit = explicitPermissions?.includes('view_email_kpis');
-      if (hasExplicit !== undefined) return hasExplicit;
-      
-      // Role-based defaults
-      if (['Owner', 'Admin'].includes(role || '')) {
-        return hasExplicit ?? true; // Default true if no explicit permission set
-      }
-      
-      return hasExplicit ?? false;
-    },
-    enabled: !!user && !userRoleLoading && !permissionsLoading,
-  });
-
-  const canViewEmailKPIs = hasViewEmailKPIsPermission ?? undefined;
-  const isPermissionLoaded = canViewEmailKPIs !== undefined;
+  const { canSendEmails, isPermissionLoaded: isSendEmailsPermissionLoaded } = useCanSendEmails();
+  const { canViewEmailKPIs, isPermissionLoaded: isViewPermissionLoaded } = useCanViewEmailKPIs();
 
   // Auto-refresh email data every 10 seconds
   useEffect(() => {
@@ -335,7 +308,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
           )}
 
           {/* Email Analytics KPIs */}
-          {isPermissionLoaded && !canViewEmailKPIs ? (
+          {isViewPermissionLoaded && !canViewEmailKPIs ? (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
@@ -400,7 +373,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
 
 
           {/* Attachments Section */}
-          {isPermissionLoaded && canViewEmailKPIs && currentEmail.content && currentEmail.content.includes('attachment') && (
+          {isViewPermissionLoaded && canViewEmailKPIs && currentEmail.content && currentEmail.content.includes('attachment') && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -423,7 +396,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
 
 
             {/* Email Activity Timeline */}
-            {isPermissionLoaded && canViewEmailKPIs && (
+            {isViewPermissionLoaded && canViewEmailKPIs && (
             <Card>
               <CardHeader>
                 <CardTitle>Email Activity Timeline</CardTitle>
@@ -671,6 +644,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                    variant="outline" 
                    className="flex items-center gap-2"
                    onClick={handleFollowUp}
+                   disabled={!isSendEmailsPermissionLoaded || !canSendEmails}
                  >
                    <Mail className="h-4 w-4" />
                    Follow Up

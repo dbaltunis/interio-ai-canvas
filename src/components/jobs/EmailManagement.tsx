@@ -19,9 +19,7 @@ import { HelpIcon } from "@/components/ui/help-icon";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { Shield } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
+import { useCanSendEmails } from "@/hooks/useCanSendEmails";
 import { useToast } from "@/hooks/use-toast";
 
 export const EmailManagement = () => {
@@ -32,35 +30,8 @@ export const EmailManagement = () => {
   const { hasEmailSettings, isLoading: integrationLoading } = useEmailSetupStatus();
   const { data: emails = [] } = useEmails();
   const { user } = useAuth();
-  const { data: userRoleData, isLoading: userRoleLoading } = useUserRole();
-  const { data: explicitPermissions, isLoading: permissionsLoading } = useUserPermissions();
   const { toast } = useToast();
-
-  // Check send_emails permission
-  const { data: hasSendEmailsPermission } = useQuery({
-    queryKey: ['has-permission', user?.id, 'send_emails', explicitPermissions, userRoleData],
-    queryFn: async () => {
-      if (!user || userRoleLoading || permissionsLoading) return undefined;
-      
-      const role = userRoleData?.role;
-      if (role === 'System Owner') return true;
-      
-      // Check explicit permission
-      const hasExplicit = explicitPermissions?.includes('send_emails');
-      if (hasExplicit !== undefined) return hasExplicit;
-      
-      // Role-based defaults
-      if (['Owner', 'Admin'].includes(role || '')) {
-        return hasExplicit ?? true; // Default true if no explicit permission set
-      }
-      
-      return hasExplicit ?? false;
-    },
-    enabled: !!user && !userRoleLoading && !permissionsLoading,
-  });
-
-  const canSendEmails = hasSendEmailsPermission ?? undefined;
-  const isPermissionLoaded = canSendEmails !== undefined;
+  const { canSendEmails, isPermissionLoaded } = useCanSendEmails();
 
   // Check permissions
   if (canAccessEmails === undefined) {

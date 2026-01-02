@@ -31,10 +31,10 @@ import { InlinePaymentConfig } from "@/components/jobs/quotation/InlinePaymentCo
 import { useQuoteDiscount } from "@/hooks/useQuoteDiscount";
 import { TWCSubmitDialog } from "@/components/integrations/TWCSubmitDialog";
 import { QuoteProfitSummary } from "@/components/pricing/QuoteProfitSummary";
-import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
+import { useHasPermission } from "@/hooks/usePermissions";
 import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useCanSendEmails } from "@/hooks/useCanSendEmails";
 interface QuotationTabProps {
   projectId: string;
   quoteId?: string;
@@ -100,34 +100,7 @@ export const QuotationTab = ({
   const { canEditJob, isLoading: editPermissionsLoading } = useCanEditJob(project);
   const isReadOnly = !canEditJob || editPermissionsLoading;
   const { user } = useAuth();
-  const { data: userRoleData, isLoading: userRoleLoading } = useUserRole();
-  const { data: explicitPermissions, isLoading: permissionsLoading } = useUserPermissions();
-
-  // Check send_emails permission
-  const { data: hasSendEmailsPermission } = useQuery({
-    queryKey: ['has-permission', user?.id, 'send_emails', explicitPermissions, userRoleData],
-    queryFn: async () => {
-      if (!user || userRoleLoading || permissionsLoading) return undefined;
-      
-      const role = userRoleData?.role;
-      if (role === 'System Owner') return true;
-      
-      // Check explicit permission
-      const hasExplicit = explicitPermissions?.includes('send_emails');
-      if (hasExplicit !== undefined) return hasExplicit;
-      
-      // Role-based defaults
-      if (['Owner', 'Admin'].includes(role || '')) {
-        return hasExplicit ?? true; // Default true if no explicit permission set
-      }
-      
-      return hasExplicit ?? false;
-    },
-    enabled: !!user && !userRoleLoading && !permissionsLoading,
-  });
-
-  const canSendEmails = hasSendEmailsPermission ?? undefined;
-  const isPermissionLoaded = canSendEmails !== undefined;
+  const { canSendEmails, isPermissionLoaded } = useCanSendEmails();
 
   // Fetch client data
   const {

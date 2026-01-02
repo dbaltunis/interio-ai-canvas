@@ -10,9 +10,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useState, useRef, useEffect } from "react";
 import { EmailComposer } from "../jobs/email/EmailComposer";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
+import { useCanSendEmails } from "@/hooks/useCanSendEmails";
 import { useToast } from "@/hooks/use-toast";
 
 interface EnhancedClientEmailHistoryProps {
@@ -33,35 +31,8 @@ export const EnhancedClientEmailHistory = ({
   const [showComposer, setShowComposer] = useState(false);
   const emailSectionRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-  const { data: userRoleData, isLoading: userRoleLoading } = useUserRole();
-  const { data: explicitPermissions, isLoading: permissionsLoading } = useUserPermissions();
   const { toast } = useToast();
-
-  // Check send_emails permission
-  const { data: hasSendEmailsPermission } = useQuery({
-    queryKey: ['has-permission', user?.id, 'send_emails', explicitPermissions, userRoleData],
-    queryFn: async () => {
-      if (!user || userRoleLoading || permissionsLoading) return undefined;
-      
-      const role = userRoleData?.role;
-      if (role === 'System Owner') return true;
-      
-      // Check explicit permission
-      const hasExplicit = explicitPermissions?.includes('send_emails');
-      if (hasExplicit !== undefined) return hasExplicit;
-      
-      // Role-based defaults
-      if (['Owner', 'Admin'].includes(role || '')) {
-        return hasExplicit ?? true; // Default true if no explicit permission set
-      }
-      
-      return hasExplicit ?? false;
-    },
-    enabled: !!user && !userRoleLoading && !permissionsLoading,
-  });
-
-  const canSendEmails = hasSendEmailsPermission ?? undefined;
-  const isPermissionLoaded = canSendEmails !== undefined;
+  const { canSendEmails, isPermissionLoaded } = useCanSendEmails();
 
   useEffect(() => {
     // Store ref in window for external scrolling

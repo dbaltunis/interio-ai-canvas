@@ -1,12 +1,9 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Eye, Reply, RefreshCw, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
+import { useCanSendEmails } from "@/hooks/useCanSendEmails";
+import { useCanViewEmailKPIs } from "@/hooks/useCanViewEmailKPIs";
 
 interface EmailRowActionsProps {
   email: any;
@@ -24,35 +21,8 @@ export const EmailRowActions = ({
   isResending 
 }: EmailRowActionsProps) => {
   const { toast } = useToast();
-  const { user } = useAuth();
-  const { data: userRoleData, isLoading: userRoleLoading } = useUserRole();
-  const { data: explicitPermissions, isLoading: permissionsLoading } = useUserPermissions();
-
-  // Check view_email_kpis permission
-  const { data: hasViewEmailKPIsPermission } = useQuery({
-    queryKey: ['has-permission', user?.id, 'view_email_kpis', explicitPermissions, userRoleData],
-    queryFn: async () => {
-      if (!user || userRoleLoading || permissionsLoading) return undefined;
-      
-      const role = userRoleData?.role;
-      if (role === 'System Owner') return true;
-      
-      // Check explicit permission
-      const hasExplicit = explicitPermissions?.includes('view_email_kpis');
-      if (hasExplicit !== undefined) return hasExplicit;
-      
-      // Role-based defaults
-      if (['Owner', 'Admin'].includes(role || '')) {
-        return hasExplicit ?? true; // Default true if no explicit permission set
-      }
-      
-      return hasExplicit ?? false;
-    },
-    enabled: !!user && !userRoleLoading && !permissionsLoading,
-  });
-
-  const canViewEmailKPIs = hasViewEmailKPIsPermission ?? undefined;
-  const isPermissionLoaded = canViewEmailKPIs !== undefined;
+  const { canSendEmails, isPermissionLoaded: isSendEmailsPermissionLoaded } = useCanSendEmails();
+  const { canViewEmailKPIs, isPermissionLoaded: isViewPermissionLoaded } = useCanViewEmailKPIs();
   
   const handleCopyEmail = () => {
     navigator.clipboard.writeText(email.recipient_email);
@@ -63,7 +33,7 @@ export const EmailRowActions = ({
   };
 
   const handleViewClick = () => {
-    if (!isPermissionLoaded || !canViewEmailKPIs) {
+    if (!isViewPermissionLoaded || !canViewEmailKPIs) {
       toast({
         title: "Permission Denied",
         description: "You don't have permission to view email performance metrics.",
@@ -72,6 +42,18 @@ export const EmailRowActions = ({
       return;
     }
     onView();
+  };
+  
+  const handleFollowUpClick = () => {
+    if (!isSendEmailsPermissionLoaded || !canSendEmails) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to send emails.",
+        variant: "destructive",
+      });
+      return;
+    }
+    onFollowUp();
   };
 
   const canResend = ['bounced', 'failed'].includes(email.status);
@@ -94,8 +76,8 @@ export const EmailRowActions = ({
             e.stopPropagation();
             handleViewClick();
           }}
-          disabled={!isPermissionLoaded || !canViewEmailKPIs}
-          className={!isPermissionLoaded || !canViewEmailKPIs ? "opacity-50 cursor-not-allowed" : ""}
+          disabled={!isViewPermissionLoaded || !canViewEmailKPIs}
+          className={!isViewPermissionLoaded || !canViewEmailKPIs ? "opacity-50 cursor-not-allowed" : ""}
         >
           <Eye className="h-4 w-4 mr-2" />
           View Details
@@ -103,8 +85,10 @@ export const EmailRowActions = ({
         <DropdownMenuItem 
           onClick={(e) => {
             e.stopPropagation();
-            onFollowUp();
+            handleFollowUpClick();
           }}
+          disabled={!isSendEmailsPermissionLoaded || !canSendEmails}
+          className={!isSendEmailsPermissionLoaded || !canSendEmails ? "opacity-50 cursor-not-allowed" : ""}
         >
           <Reply className="h-4 w-4 mr-2" />
           Send Follow-up

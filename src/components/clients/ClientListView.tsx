@@ -20,9 +20,7 @@ import { BulkActionsBar } from "./BulkActionsBar";
 import { CampaignWizard } from "@/components/campaigns/CampaignWizard";
 import { useClientSelection, SelectedClient } from "@/hooks/useClientSelection";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
+import { useCanSendEmails } from "@/hooks/useCanSendEmails";
 import { useToast } from "@/hooks/use-toast";
 
 interface Client {
@@ -70,35 +68,8 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
   const deleteClient = useDeleteClient();
   const { formatCurrency } = useFormattedCurrency();
   const { user } = useAuth();
-  const { data: userRoleData, isLoading: userRoleLoading } = useUserRole();
-  const { data: explicitPermissions, isLoading: permissionsLoading } = useUserPermissions();
   const { toast } = useToast();
-
-  // Check send_emails permission
-  const { data: hasSendEmailsPermission } = useQuery({
-    queryKey: ['has-permission', user?.id, 'send_emails', explicitPermissions, userRoleData],
-    queryFn: async () => {
-      if (!user || userRoleLoading || permissionsLoading) return undefined;
-      
-      const role = userRoleData?.role;
-      if (role === 'System Owner') return true;
-      
-      // Check explicit permission
-      const hasExplicit = explicitPermissions?.some((p: { permission_name: string }) => p.permission_name === 'send_emails');
-      if (hasExplicit !== undefined) return hasExplicit;
-      
-      // Role-based defaults
-      if (['Owner', 'Admin'].includes(role || '')) {
-        return hasExplicit ?? true; // Default true if no explicit permission set
-      }
-      
-      return hasExplicit ?? false;
-    },
-    enabled: !!user && !userRoleLoading && !permissionsLoading,
-  });
-
-  const canSendEmails = hasSendEmailsPermission ?? undefined;
-  const isPermissionLoaded = canSendEmails !== undefined;
+  const { canSendEmails, isPermissionLoaded } = useCanSendEmails();
   
   // Multi-selection
   const {

@@ -27,9 +27,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { EmailDashboardSkeleton } from "./skeleton/EmailDashboardSkeleton";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissions } from "@/hooks/usePermissions";
-import { useQuery } from "@tanstack/react-query";
+import { useCanViewEmailKPIs } from "@/hooks/useCanViewEmailKPIs";
 interface EmailDashboardProps {
   showFilters?: boolean;
   setShowFilters?: (show: boolean) => void;
@@ -78,34 +76,7 @@ export const EmailDashboard = ({
   } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { data: userRoleData, isLoading: userRoleLoading } = useUserRole();
-  const { data: explicitPermissions, isLoading: permissionsLoading } = useUserPermissions();
-
-  // Check view_email_kpis permission
-  const { data: hasViewEmailKPIsPermission } = useQuery({
-    queryKey: ['has-permission', user?.id, 'view_email_kpis', explicitPermissions, userRoleData],
-    queryFn: async () => {
-      if (!user || userRoleLoading || permissionsLoading) return undefined;
-      
-      const role = userRoleData?.role;
-      if (role === 'System Owner') return true;
-      
-      // Check explicit permission
-      const hasExplicit = explicitPermissions?.includes('view_email_kpis');
-      if (hasExplicit !== undefined) return hasExplicit;
-      
-      // Role-based defaults
-      if (['Owner', 'Admin'].includes(role || '')) {
-        return hasExplicit ?? true; // Default true if no explicit permission set
-      }
-      
-      return hasExplicit ?? false;
-    },
-    enabled: !!user && !userRoleLoading && !permissionsLoading,
-  });
-
-  const canViewEmailKPIs = hasViewEmailKPIsPermission ?? undefined;
-  const isPermissionLoaded = canViewEmailKPIs !== undefined;
+  const { canViewEmailKPIs, isPermissionLoaded } = useCanViewEmailKPIs();
 
   // Set up real-time subscriptions for email updates
   useEffect(() => {
