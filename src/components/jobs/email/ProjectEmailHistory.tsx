@@ -42,6 +42,9 @@ import { useEmails } from "@/hooks/useEmails";
 import { format } from "date-fns";
 import { EmailDetailDialog } from "../email-components/EmailDetailDialog";
 import type { Email } from "@/hooks/useEmails";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useCanViewEmailKPIs } from "@/hooks/useCanViewEmailKPIs";
+import { useToast } from "@/hooks/use-toast";
 
 interface AttachmentData {
   filename: string;
@@ -63,6 +66,8 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
   const [focusedIndex, setFocusedIndex] = useState(0);
   
   const { data: emails = [], isLoading } = useEmails();
+  const { toast } = useToast();
+  const { canViewEmailKPIs, isPermissionLoaded } = useCanViewEmailKPIs();
   
   // Filter emails for this project
   const projectEmails = emails.filter(email => {
@@ -120,6 +125,14 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
   }, [currentPage]);
 
   const handleEmailClick = (email: Email) => {
+    if (!isPermissionLoaded || !canViewEmailKPIs) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to view email performance metrics.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSelectedEmail(email);
     setEmailDetailOpen(true);
   };
@@ -230,6 +243,7 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
               }`}
               onClick={() => handleEmailClick(email)}
               onMouseEnter={() => setFocusedIndex(index)}
+              className={!isPermissionLoaded || !canViewEmailKPIs ? "cursor-default" : ""}
             >
               {/* Status Indicator */}
               <div className="flex-shrink-0">
@@ -276,10 +290,22 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={(e) => {
-                    e.stopPropagation();
-                    handleEmailClick(email);
-                  }}>
+                  <DropdownMenuItem 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!isPermissionLoaded || !canViewEmailKPIs) {
+                        toast({
+                          title: "Permission Denied",
+                          description: "You don't have permission to view email performance metrics.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      handleEmailClick(email);
+                    }}
+                    disabled={!isPermissionLoaded || !canViewEmailKPIs}
+                    className={!isPermissionLoaded || !canViewEmailKPIs ? "opacity-50 cursor-not-allowed" : ""}
+                  >
                     <Eye className="h-4 w-4 mr-2" />
                     View Details
                   </DropdownMenuItem>

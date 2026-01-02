@@ -9,9 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Send, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Send, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { useCanSendEmails } from '@/hooks/useCanSendEmails';
 
 interface QuickEmailDialogProps {
   open: boolean;
@@ -28,8 +30,19 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { canSendEmails, isPermissionLoaded } = useCanSendEmails();
 
   const handleSend = async () => {
+    if (!isPermissionLoaded || !canSendEmails) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to send emails.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!subject.trim() || !message.trim()) {
       toast({
         title: "Error",
@@ -98,6 +111,15 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
         </DialogHeader>
         
         <div className="space-y-4 pt-4">
+          {isPermissionLoaded && !canSendEmails && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                You don't have permission to send emails.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div className="space-y-2">
             <Label htmlFor="to">To</Label>
             <Input
@@ -139,7 +161,7 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
             </Button>
             <Button
               onClick={handleSend}
-              disabled={sending || !subject.trim() || !message.trim()}
+              disabled={sending || !subject.trim() || !message.trim() || !isPermissionLoaded || !canSendEmails}
             >
               {sending ? (
                 <>

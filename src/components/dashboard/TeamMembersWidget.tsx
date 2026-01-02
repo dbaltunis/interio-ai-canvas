@@ -22,6 +22,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { getAvatarColor, getInitials } from "@/lib/avatar-utils";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
 
 export const TeamMembersWidget = () => {
   const { user } = useAuth();
@@ -29,14 +31,64 @@ export const TeamMembersWidget = () => {
   const { data: teamMembers = [], isLoading } = useTeamMembers();
   const { data: presenceData = [] } = useTeamPresence();
   const { openConversation, conversations = [] } = useDirectMessages();
-  const { data: userRole } = useUserRole();
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>();
   const [recentMessageUsers, setRecentMessageUsers] = useState<Set<string>>(new Set());
 
+  // Permission checks - following the same pattern as jobs
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-team-widget', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[TeamMembersWidget] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+
+  // Check if view_team_members is explicitly in user_permissions table
+  const hasViewTeamMembersPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_team_members'
+  ) ?? false;
+
+  // Check if send_team_messages is explicitly in user_permissions table
+  const hasSendTeamMessagesPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'send_team_messages'
+  ) ?? false;
+
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+
+  // Only allow view if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include view_team_members)
+  const canViewTeamMembers =
+    userRoleData?.isSystemOwner
+      ? true
+      : (isOwner || isAdmin)
+          ? !hasAnyExplicitPermissions || hasViewTeamMembersPermission
+          : hasViewTeamMembersPermission;
+
+  // Only allow send if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include send_team_messages)
+  const canSendTeamMessages =
+    userRoleData?.isSystemOwner
+      ? true
+      : (isOwner || isAdmin)
+          ? !hasAnyExplicitPermissions || hasSendTeamMessagesPermission
+          : hasSendTeamMessagesPermission;
+
   const handleAddTeamMember = () => {
     console.log('Add team member clicked, navigating to settings...');
-    console.log('User role:', userRole);
+    console.log('User role:', userRoleData);
     navigate('/?tab=settings&section=users');
   };
 
@@ -59,6 +111,21 @@ export const TeamMembersWidget = () => {
   };
 
   const handleSendMessage = (userId: string) => {
+    // Check permission before opening message dialog
+    const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+    if (isPermissionLoaded && !canSendTeamMessages) {
+      toast.error("Permission Denied", {
+        description: "You don't have permission to send team messages.",
+      });
+      return;
+    }
+    // Don't allow opening while permissions are loading
+    if (!isPermissionLoaded) {
+      toast("Loading", {
+        description: "Please wait while permissions are being checked...",
+      });
+      return;
+    }
     setSelectedUserId(userId);
     setMessageDialogOpen(true);
     openConversation(userId);
@@ -104,6 +171,12 @@ export const TeamMembersWidget = () => {
       supabase.removeChannel(channel);
     };
   }, [user?.id, teamMembers]);
+
+  // Don't render if user doesn't have permission (after permissions are loaded)
+  // This must be after all hooks to avoid "Rendered fewer hooks than expected" error
+  if (explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canViewTeamMembers) {
+    return null;
+  }
 
   // Filter out current user and sort team members
   const otherTeamMembers = teamMembers.filter(member => member.id !== user?.id);
@@ -158,7 +231,7 @@ export const TeamMembersWidget = () => {
             <Users className="h-4 w-4" />
             Team
           </CardTitle>
-          {userRole?.isAdmin && (
+          {isAdmin && (
             <Button 
               size="sm" 
               variant="ghost" 
@@ -190,7 +263,11 @@ export const TeamMembersWidget = () => {
                 return (
                   <div
                     key={member.id}
-                    className="flex items-center gap-2 sm:gap-2.5 p-2 sm:p-3 rounded-lg bg-background border border-border hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
+                    className={`flex items-center gap-2 sm:gap-2.5 p-2 sm:p-3 rounded-lg bg-background border border-border transition-all ${
+                      explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canSendTeamMessages
+                        ? 'cursor-not-allowed opacity-50'
+                        : 'cursor-pointer hover:border-primary/40 hover:bg-primary/5'
+                    }`}
                     onClick={() => handleSendMessage(member.id)}
                   >
                   <div className="relative shrink-0">

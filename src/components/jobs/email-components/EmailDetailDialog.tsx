@@ -16,6 +16,12 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useEmailAnalytics } from "@/hooks/useEmailAnalytics";
 import type { Email } from "@/hooks/useEmails";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useToast } from "@/hooks/use-toast";
+import { useCanSendEmails } from "@/hooks/useCanSendEmails";
+import { useCanViewEmailKPIs } from "@/hooks/useCanViewEmailKPIs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface EmailDetailDialogProps {
   open: boolean;
@@ -36,6 +42,10 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
   const [isSendingFollowUp, setIsSendingFollowUp] = useState(false);
   const [previewAttachment, setPreviewAttachment] = useState<any>(null);
   const { data: emailAnalytics = [] } = useEmailAnalytics(email?.id || "");
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { canSendEmails, isPermissionLoaded: isSendEmailsPermissionLoaded } = useCanSendEmails();
+  const { canViewEmailKPIs, isPermissionLoaded: isViewPermissionLoaded } = useCanViewEmailKPIs();
 
   // Auto-refresh email data every 10 seconds
   useEffect(() => {
@@ -298,7 +308,15 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
           )}
 
           {/* Email Analytics KPIs */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {isViewPermissionLoaded && !canViewEmailKPIs ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                You don't have permission to view email performance metrics.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="flex items-center justify-center gap-1 mb-2">
@@ -351,10 +369,11 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
               </CardContent>
             </Card>
           </div>
+          )}
 
 
           {/* Attachments Section */}
-          {currentEmail.content && currentEmail.content.includes('attachment') && (
+          {isViewPermissionLoaded && canViewEmailKPIs && currentEmail.content && currentEmail.content.includes('attachment') && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -377,6 +396,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
 
 
             {/* Email Activity Timeline */}
+            {isViewPermissionLoaded && canViewEmailKPIs && (
             <Card>
               <CardHeader>
                 <CardTitle>Email Activity Timeline</CardTitle>
@@ -507,6 +527,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                </div>
              </CardContent>
            </Card>
+            )}
 
            {/* Email Content */}
            <Card>
@@ -623,6 +644,7 @@ export const EmailDetailDialog = ({ open, onOpenChange, email, onResendEmail, is
                    variant="outline" 
                    className="flex items-center gap-2"
                    onClick={handleFollowUp}
+                   disabled={!isSendEmailsPermissionLoaded || !canSendEmails}
                  >
                    <Mail className="h-4 w-4" />
                    Follow Up

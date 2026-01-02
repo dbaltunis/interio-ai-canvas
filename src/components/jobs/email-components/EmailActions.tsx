@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { RefreshCw, MessageSquare, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useCanSendEmails } from "@/hooks/useCanSendEmails";
 
 interface Email {
   id: string;
@@ -36,6 +37,7 @@ export const EmailActions = ({
   showFollowUp 
 }: EmailActionsProps) => {
   const { toast } = useToast();
+  const { canSendEmails, isPermissionLoaded } = useCanSendEmails();
   const canResend = ['bounced', 'failed'].includes(email.status);
 
   const handleCopyContent = () => {
@@ -66,7 +68,7 @@ export const EmailActions = ({
         variant="outline"
         onClick={onStartFollowUp}
         className="flex items-center gap-2"
-        disabled={showFollowUp}
+        disabled={showFollowUp || !isPermissionLoaded || !canSendEmails}
       >
         <MessageSquare className="h-4 w-4" />
         Send Follow-up Email

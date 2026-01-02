@@ -10,6 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useCreateScheduler, useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 import { useToast } from "@/hooks/use-toast";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { cn } from "@/lib/utils";
 
 interface AppointmentSchedulerSliderProps {
@@ -56,9 +61,48 @@ const WEEKDAYS = [
 ];
 
 export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSchedulerSliderProps) => {
+  const { user } = useAuth();
   const { toast } = useToast();
   const createScheduler = useCreateScheduler();
   const { data: schedulers } = useAppointmentSchedulers();
+
+  // Permission checks - following the same pattern as jobs
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-scheduler-slider', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[AppointmentSchedulerSlider] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+
+  // Check if create_appointments is explicitly in user_permissions table
+  const hasCreateAppointmentsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'create_appointments'
+  ) ?? false;
+
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+
+  // Only allow create if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include create_appointments)
+  const canCreateAppointments =
+    userRoleData?.isSystemOwner
+      ? true
+      : (isOwner || isAdmin)
+          ? !hasAnyExplicitPermissions || hasCreateAppointmentsPermission
+          : hasCreateAppointmentsPermission;
 
   const [form, setForm] = useState<SchedulerForm>({
     name: "",
@@ -87,6 +131,25 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
   const [activeTab, setActiveTab] = useState<'create' | 'preview'>('create');
 
   const handleSubmit = async () => {
+    // Check permission before creating scheduler
+    const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+    if (isPermissionLoaded && !canCreateAppointments) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to create appointments.",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Don't allow creation while permissions are loading
+    if (!isPermissionLoaded) {
+      toast({
+        title: "Loading",
+        description: "Please wait while permissions are being checked...",
+      });
+      return;
+    }
+
     // Validate required fields
     if (!form.name.trim()) {
       toast({
@@ -690,9 +753,20 @@ export const AppointmentSchedulerSlider = ({ isOpen, onClose }: AppointmentSched
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={createScheduler.isPending}>
-              {createScheduler.isPending ? 'Creating...' : 'Create Schedule'}
-            </Button>
+            {(() => {
+              const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+              const shouldDisable = createScheduler.isPending || (isPermissionLoaded && !canCreateAppointments);
+              
+              return (
+                <Button 
+                  onClick={handleSubmit} 
+                  disabled={shouldDisable}
+                  title={isPermissionLoaded && !canCreateAppointments ? "You don't have permission to create appointments" : undefined}
+                >
+                  {createScheduler.isPending ? 'Creating...' : 'Create Schedule'}
+                </Button>
+              );
+            })()}
           </div>
         </div>
       </div>

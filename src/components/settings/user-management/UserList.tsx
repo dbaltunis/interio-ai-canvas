@@ -10,6 +10,11 @@ import { useDeleteUser } from "@/hooks/useUpdateUser";
 import { ErrorBoundary } from "@/components/performance/ErrorBoundary";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserInvitations, useDeleteInvitation, useResendInvitation } from "@/hooks/useUserInvitations";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 interface User {
   id: string;
@@ -27,6 +32,8 @@ interface UserListProps {
 }
 
 export const UserList = ({ users, onInviteUser, isLoading = false }: UserListProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -38,6 +45,44 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
   const resendInvitation = useResendInvitation();
   
   const pendingInvitations = invitations.filter(inv => inv.status === 'pending');
+
+  // Permission checks - following the same pattern as jobs
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-user-list', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[UserList] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+
+  // Check if manage_team is explicitly in user_permissions table
+  const hasManageTeamPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'manage_team'
+  ) ?? false;
+
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+
+  // Only allow manage if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include manage_team)
+  const canManageTeam =
+    userRoleData?.isSystemOwner
+      ? true
+      : (isOwner || isAdmin)
+          ? !hasAnyExplicitPermissions || hasManageTeamPermission
+          : hasManageTeamPermission;
 
   // Get current user ID
   useEffect(() => {
@@ -56,8 +101,48 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
   );
 
   const handleEditUser = useCallback((user: User) => {
+    // Check permission before opening edit dialog
+    const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+    if (isPermissionLoaded && !canManageTeam) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to manage team members.",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Don't allow opening while permissions are loading
+    if (!isPermissionLoaded) {
+      toast({
+        title: "Loading",
+        description: "Please wait while permissions are being checked...",
+      });
+      return;
+    }
     setEditingUser(user);
-  }, []);
+  }, [explicitPermissions, permissionsLoading, roleLoading, canManageTeam, toast]);
+
+  const handleInviteUser = () => {
+    // Check permission before opening invite dialog
+    const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+    if (isPermissionLoaded && !canManageTeam) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to invite team members.",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Don't allow opening while permissions are loading
+    if (!isPermissionLoaded) {
+      toast({
+        title: "Loading",
+        description: "Please wait while permissions are being checked...",
+      });
+      return;
+    }
+    onInviteUser();
+  };
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
@@ -82,7 +167,12 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
                 </CardDescription>
               </div>
             </div>
-            <Button onClick={onInviteUser} size="sm" className="gap-2">
+            <Button 
+              onClick={handleInviteUser} 
+              size="sm" 
+              className="gap-2"
+              disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam}
+            >
               <UserPlus className="h-4 w-4" />
               Invite
             </Button>
@@ -173,7 +263,11 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
               filteredUsers.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${
+                    explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam
+                      ? 'cursor-not-allowed opacity-50'
+                      : 'cursor-pointer hover:bg-muted/50'
+                  }`}
                   onClick={() => handleEditUser(user)}
                 >
                   <div className="flex items-center gap-3">
@@ -208,6 +302,7 @@ export const UserList = ({ users, onInviteUser, isLoading = false }: UserListPro
                         e.stopPropagation();
                         handleEditUser(user);
                       }}
+                      disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam}
                     >
                       <Edit className="h-3.5 w-3.5" />
                     </Button>

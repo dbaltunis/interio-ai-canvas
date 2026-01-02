@@ -7,10 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus, Send, Paperclip, Users, Eye, Save } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { X, Plus, Send, Paperclip, Users, Eye, Save, AlertCircle } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useSendEmail } from "@/hooks/useSendEmail";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useCanSendEmails } from "@/hooks/useCanSendEmails";
 
 interface EmailComposerProps {
   onClose?: () => void;
@@ -19,6 +22,8 @@ interface EmailComposerProps {
 
 export const EmailComposer = ({ onClose, clientId }: EmailComposerProps) => {
   const { data: clients = [] } = useClients();
+  const { user } = useAuth();
+  const { canSendEmails, isPermissionLoaded } = useCanSendEmails();
   
   // Find the client if clientId is provided
   const targetClient = clientId ? clients.find(c => c.id === clientId) : null;
@@ -116,6 +121,15 @@ export const EmailComposer = ({ onClose, clientId }: EmailComposerProps) => {
   };
 
   const handleSendEmail = async () => {
+    if (!isPermissionLoaded || !canSendEmails) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to send emails.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (emailData.recipients.length === 0) {
       toast({
         title: "Error",
@@ -182,6 +196,15 @@ export const EmailComposer = ({ onClose, clientId }: EmailComposerProps) => {
       </CardHeader>
 
       <CardContent className="space-y-6">
+        {isPermissionLoaded && !canSendEmails && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              You don't have permission to send emails.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {!showPreview ? (
           <>
             {/* Template Selection */}
@@ -383,7 +406,7 @@ export const EmailComposer = ({ onClose, clientId }: EmailComposerProps) => {
           </Button>
           <Button
             onClick={handleSendEmail}
-            disabled={sendEmailMutation.isPending}
+            disabled={sendEmailMutation.isPending || !isPermissionLoaded || !canSendEmails}
             className="flex items-center gap-2"
           >
             <Send className="h-4 w-4" />

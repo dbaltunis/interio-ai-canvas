@@ -19,9 +19,10 @@ interface Client {
 
 interface ClientQuickActionsBarProps {
   client: Client;
+  canEditClient?: boolean;
 }
 
-export const ClientQuickActionsBar = ({ client }: ClientQuickActionsBarProps) => {
+export const ClientQuickActionsBar = ({ client, canEditClient = true }: ClientQuickActionsBarProps) => {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
@@ -173,34 +174,38 @@ export const ClientQuickActionsBar = ({ client }: ClientQuickActionsBarProps) =>
           <span className="hidden sm:inline">Call</span>
         </Button>
 
-        {/* Add Note */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setNoteDialogOpen(true)}
-          className="gap-1.5"
-        >
-          <StickyNote className="h-4 w-4" />
-          <span className="hidden sm:inline">Log Activity</span>
-        </Button>
+        {/* Add Note - Only show if user can edit this client */}
+        {canEditClient && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setNoteDialogOpen(true)}
+            className="gap-1.5"
+          >
+            <StickyNote className="h-4 w-4" />
+            <span className="hidden sm:inline">Log Activity</span>
+          </Button>
+        )}
 
-        {/* Create Project */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleCreateProject}
-          disabled={isCreatingProject}
-          className="gap-1.5"
-        >
-          {isCreatingProject ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Briefcase className="h-4 w-4" />
-          )}
-          <span className="hidden sm:inline">
-            {isCreatingProject ? "Creating..." : "New Project"}
-          </span>
-        </Button>
+        {/* Create Project - Only show if user can edit this client */}
+        {canEditClient && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCreateProject}
+            disabled={isCreatingProject}
+            className="gap-1.5"
+          >
+            {isCreatingProject ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Briefcase className="h-4 w-4" />
+            )}
+            <span className="hidden sm:inline">
+              {isCreatingProject ? "Creating..." : "New Project"}
+            </span>
+          </Button>
+        )}
       </div>
 
       <QuickEmailDialog

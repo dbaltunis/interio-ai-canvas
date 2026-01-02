@@ -42,44 +42,69 @@ export const useCanEditClient = (client: any) => {
   const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
   
   // Check if edit permissions are explicitly enabled
-  const hasEditAllClientsPermission = explicitPermissions?.some(
+  // IMPORTANT: Only check if explicitPermissions is loaded (not undefined)
+  const hasEditAllClientsPermission = explicitPermissions !== undefined && explicitPermissions.some(
     (p: { permission_name: string }) => p.permission_name === 'edit_all_clients'
-  ) ?? false;
-  const hasEditAssignedClientsPermission = explicitPermissions?.some(
+  );
+  const hasEditAssignedClientsPermission = explicitPermissions !== undefined && explicitPermissions.some(
     (p: { permission_name: string }) => p.permission_name === 'edit_assigned_clients'
-  ) ?? false;
+  );
   
   // System Owner: ALWAYS has full access regardless of explicit permissions
-  // Owner/Admin: Only bypass restrictions if NO explicit permissions exist in table at all
-  // If ANY explicit permissions exist, respect ALL settings (missing = disabled)
+  // Owner: Only bypass restrictions if NO explicit permissions exist in table at all
+  // Admin: if NO explicit permissions exist, they have full access; if explicit permissions exist, MUST respect them (no bypass)
+  // Staff: Always check explicit permissions (no special bypass)
+  // Logic matches view permissions in ClientManagementPage - Admin gets special treatment only when no explicit permissions exist
   const canEditAllClients = userRoleData?.isSystemOwner
     ? true // System Owner ALWAYS has full access
-    : (isOwner || isAdmin) && !hasAnyExplicitPermissions 
-      ? true // Owner/Admin with no explicit permissions = full access
-      : hasEditAllClientsPermission;
+    : isOwner && !hasAnyExplicitPermissions
+      ? true // Owner with no explicit permissions = full access
+      : isAdmin && !hasAnyExplicitPermissions
+        ? true // Admin with no explicit permissions = full access
+        : hasEditAllClientsPermission; // Owner/Admin with explicit permissions OR Staff: need edit permission
   
   const canEditAssignedClients = userRoleData?.isSystemOwner
     ? true // System Owner ALWAYS has full access
-    : (isOwner || isAdmin) && !hasAnyExplicitPermissions
-      ? true // Owner/Admin with no explicit permissions = full access
-      : hasEditAssignedClientsPermission;
+    : isOwner && !hasAnyExplicitPermissions
+      ? true // Owner with no explicit permissions = full access
+      : isAdmin && !hasAnyExplicitPermissions
+        ? true // Admin with no explicit permissions = full access
+        : hasEditAssignedClientsPermission; // Owner/Admin with explicit permissions OR Staff: need edit permission
   
-  // Debug logging for admin permission issues
-  if (isAdmin && hasAnyExplicitPermissions) {
-    console.log('[useCanEditClient] Admin with explicit permissions:', {
-      hasAnyExplicitPermissions,
-      hasEditAllClientsPermission,
-      hasEditAssignedClientsPermission,
-      canEditAllClients,
-      canEditAssignedClients,
-      explicitPermissions: explicitPermissions?.map(p => p.permission_name)
-    });
-  }
+  // Debug logging for permission issues
+  console.log('[useCanEditClient] Permission check:', {
+    isSystemOwner: userRoleData?.isSystemOwner,
+    isOwner,
+    isAdmin,
+    hasAnyExplicitPermissions,
+    hasEditAllClientsPermission,
+    hasEditAssignedClientsPermission,
+    canEditAllClients,
+    canEditAssignedClients,
+    explicitPermissions: explicitPermissions?.map(p => p.permission_name),
+    explicitPermissionsCount: explicitPermissions?.length ?? 0,
+    permissionsLoading,
+    clientId: client?.id,
+    clientCreatedBy: client?.created_by,
+    userId: user?.id,
+    userRoleData: {
+      isOwner: userRoleData?.isOwner,
+      isSystemOwner: userRoleData?.isSystemOwner,
+      isAdmin: userRoleData?.isAdmin
+    }
+  });
   
   // Determine if this specific client can be edited
+  // IMPORTANT: Wait for permissions to load before making decision
   const canEditClient = (() => {
+    // If permissions are still loading, return false (will be re-evaluated when loaded)
+    if (permissionsLoading || explicitPermissions === undefined) {
+      return false;
+    }
+    
     // If both permissions are disabled, cannot edit (applies to everyone including owners/admins with explicit permissions)
     if (!canEditAllClients && !canEditAssignedClients) {
+      console.log('[useCanEditClient] Both edit permissions disabled');
       return false;
     }
     
@@ -94,18 +119,40 @@ export const useCanEditClient = (client: any) => {
     }
     
     // If only "Edit Assigned Clients" is enabled, can edit clients:
-    // 1. Created by them (client.user_id === user.id), OR
-    // 2. Assigned to them (client.assigned_to === user.id)
+    // - Created by the current user (created_by === user.id), OR
+    // - Assigned to the current user (assigned_to === user.id)
+    // This matches the Jobs pattern where "Edit Assigned Jobs" checks both creation and assignment
     if (canEditAssignedClients && !canEditAllClients) {
-      if (!client || !user) return false;
+      if (!client || !user) {
+        console.log('[useCanEditClient] Missing client or user');
+        return false;
+      }
       
       // Check if client was created by the user
-      const isCreatedByUser = client.user_id === user.id;
+      const isCreatedByUser = client.created_by === user.id;
       
       // Check if client is assigned to the user
       const isAssignedToUser = client.assigned_to === user.id;
       
-      return isCreatedByUser || isAssignedToUser;
+      // Also check user_id as fallback for older clients that might not have created_by set
+      const isCreatedByUserFallback = client.created_by === null && client.user_id === user.id;
+      
+      const canEdit = isCreatedByUser || isAssignedToUser || isCreatedByUserFallback;
+      
+      console.log('[useCanEditClient] Checking edit_assigned_clients permission:', {
+        clientId: client.id,
+        clientName: client.name,
+        userId: user.id,
+        clientCreatedBy: client.created_by,
+        clientAssignedTo: client.assigned_to,
+        clientUserId: client.user_id,
+        isCreatedByUser,
+        isAssignedToUser,
+        isCreatedByUserFallback,
+        canEdit
+      });
+      
+      return canEdit;
     }
     
     return false;

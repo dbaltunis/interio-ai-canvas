@@ -25,8 +25,8 @@ export const BulkUserActions = ({ users, selectedUsers, onSelectAll, onClearSele
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
   
-  const canManageUsers = useHasPermission('manage_users');
-  const canExport = useHasPermission('view_analytics') || useHasPermission('manage_users');
+  const canManageUsers = useHasPermission('manage_team');
+  const canExport = useHasPermission('view_analytics') || useHasPermission('manage_team');
 
   const allSelected = users.length > 0 && selectedUsers.length === users.length;
   const someSelected = selectedUsers.length > 0 && selectedUsers.length < users.length;

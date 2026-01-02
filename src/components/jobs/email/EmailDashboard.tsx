@@ -26,6 +26,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { EmailDashboardSkeleton } from "./skeleton/EmailDashboardSkeleton";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useCanViewEmailKPIs } from "@/hooks/useCanViewEmailKPIs";
 interface EmailDashboardProps {
   showFilters?: boolean;
   setShowFilters?: (show: boolean) => void;
@@ -73,6 +75,8 @@ export const EmailDashboard = ({
     toast
   } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { canViewEmailKPIs, isPermissionLoaded } = useCanViewEmailKPIs();
 
   // Set up real-time subscriptions for email updates
   useEffect(() => {
@@ -197,6 +201,14 @@ export const EmailDashboard = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showEmailDetail, focusedIndex, paginatedEmails]);
   const handleViewEmail = (email: any) => {
+    if (!isPermissionLoaded || !canViewEmailKPIs) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to view email performance metrics.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSelectedEmail(email);
     setShowEmailDetail(true);
   };
@@ -382,19 +394,31 @@ export const EmailDashboard = ({
               <TableBody>
                 {paginatedEmails.map((email, index) => <TableRow 
                     key={email.id} 
-                    className={`hover:bg-muted/50 cursor-pointer transition-colors ${
+                    className={`transition-colors ${
                       index === focusedIndex ? 'bg-muted/50 ring-2 ring-primary/20' : ''
+                    } ${
+                      !isPermissionLoaded || !canViewEmailKPIs 
+                        ? "cursor-default" 
+                        : "hover:bg-muted/50 cursor-pointer"
                     }`}
                     onClick={() => handleViewEmail(email)}
                     onMouseEnter={() => setFocusedIndex(index)}
                   >
                     <TableCell onClick={e => e.stopPropagation()}>
-                      <button onClick={() => handleViewEmail(email)} className="font-medium text-foreground hover:text-primary text-left">
+                      <button 
+                        onClick={() => handleViewEmail(email)} 
+                        className={`font-medium text-foreground text-left ${!isPermissionLoaded || !canViewEmailKPIs ? "cursor-default hover:text-foreground" : "hover:text-primary"}`}
+                        disabled={!isPermissionLoaded || !canViewEmailKPIs}
+                      >
                         {email.subject}
                       </button>
                     </TableCell>
                     <TableCell onClick={e => e.stopPropagation()}>
-                      <button onClick={() => handleViewEmail(email)} className="text-sm hover:text-primary text-left">
+                      <button 
+                        onClick={() => handleViewEmail(email)} 
+                        className={`text-sm text-left ${!isPermissionLoaded || !canViewEmailKPIs ? "cursor-default hover:text-foreground" : "hover:text-primary"}`}
+                        disabled={!isPermissionLoaded || !canViewEmailKPIs}
+                      >
                         <div>{email.recipient_email}</div>
                         {email.client_id && <div className="text-xs text-muted-foreground">
                             {clients.find(c => c.id === email.client_id)?.name}

@@ -37,6 +37,7 @@ interface WallcoveringInventoryViewProps {
   selectedVendor?: string;
   selectedCollection?: string;
   selectedStorageLocation?: string;
+  canManageInventory?: boolean;
 }
 
 const WALLCOVERING_CATEGORIES = [
@@ -48,7 +49,7 @@ const WALLCOVERING_CATEGORIES = [
 
 const ITEMS_PER_PAGE = 24;
 
-export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection, selectedStorageLocation }: WallcoveringInventoryViewProps) => {
+export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection, selectedStorageLocation, canManageInventory = false }: WallcoveringInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { data: vendors = [] } = useVendors();
   const { toast } = useToast();
@@ -160,20 +161,22 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
         <p className="text-sm text-muted-foreground">
           {filteredItems.length} wallcovering{filteredItems.length !== 1 ? 's' : ''} found
         </p>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline">
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Import/Export
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Import/Export Wallcoverings</DialogTitle>
-            </DialogHeader>
-            <CategoryImportExport category="wallpaper" onImportComplete={refetch} />
-          </DialogContent>
-        </Dialog>
+        {canManageInventory && (
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Import/Export
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Import/Export Wallcoverings</DialogTitle>
+              </DialogHeader>
+              <CategoryImportExport category="wallpaper" onImportComplete={refetch} />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {/* Category Tabs */}
@@ -192,7 +195,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
 
         {WALLCOVERING_CATEGORIES.map((cat) => (
           <TabsContent key={cat.key} value={cat.key} className="mt-6 space-y-4">
-            {selectedItems.length > 0 && (
+            {selectedItems.length > 0 && canManageInventory && (
         <InventoryBulkActionsBar
           selectedCount={selectedItems.length}
           onClearSelection={clearSelection}
@@ -222,28 +225,30 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
                           <Wallpaper className="h-12 w-12 text-muted-foreground" />
                         </div>
                       )}
-                      <div className="absolute top-2 right-2 flex gap-1">
-                        <EditInventoryDialog 
-                          item={item}
-                          trigger={
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          }
-                        />
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => handleDelete(item.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {canManageInventory && (
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <EditInventoryDialog 
+                            item={item}
+                            trigger={
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            }
+                          />
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleDelete(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base line-clamp-1">{item.name}</CardTitle>
@@ -342,8 +347,8 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
                         isSelected={selectedItems.includes(item.id)}
                         onSelect={(checked) => selectItem(item.id, checked)}
                         onClick={() => {}}
-                        onEdit={() => {}}
-                        onDelete={() => handleDelete(item.id)}
+                        onEdit={canManageInventory ? () => {} : undefined}
+                        onDelete={canManageInventory ? () => handleDelete(item.id) : undefined}
                         formatPrice={formatPrice}
                         stockUnit={stockUnit}
                       />
@@ -383,7 +388,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
                         <TableHead className="text-xs">Price</TableHead>
                         <TableHead className="text-xs">Stock</TableHead>
                         <TableHead className="text-xs hidden lg:table-cell">QR</TableHead>
-                        <TableHead className="text-xs">Actions</TableHead>
+                        {canManageInventory && <TableHead className="text-xs">Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -477,26 +482,28 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
                                 </PopoverContent>
                               </Popover>
                             </TableCell>
-                            <TableCell className="px-2 py-1">
-                              <div className="flex items-center gap-1">
-                                <EditInventoryDialog 
-                                  item={item}
-                                  trigger={
-                                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                      <Edit className="h-3 w-3" />
-                                    </Button>
-                                  }
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => handleDelete(item.id)}
-                                >
-                                  <Trash2 className="h-3 w-3 text-destructive" />
-                                </Button>
-                              </div>
-                            </TableCell>
+                            {canManageInventory && (
+                              <TableCell className="px-2 py-1">
+                                <div className="flex items-center gap-1">
+                                  <EditInventoryDialog 
+                                    item={item}
+                                    trigger={
+                                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                        <Edit className="h-3 w-3" />
+                                      </Button>
+                                    }
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    onClick={() => handleDelete(item.id)}
+                                  >
+                                    <Trash2 className="h-3 w-3 text-destructive" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            )}
                           </TableRow>
                         );
                       })}

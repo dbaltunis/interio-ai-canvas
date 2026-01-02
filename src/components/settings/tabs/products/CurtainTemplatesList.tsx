@@ -17,9 +17,10 @@ import { cn } from "@/lib/utils";
 interface CurtainTemplatesListProps {
   onEdit: (template: CurtainTemplate) => void;
   highlightedTemplateId?: string | null;
+  canManageTemplates?: boolean;
 }
 
-export const CurtainTemplatesList = ({ onEdit, highlightedTemplateId }: CurtainTemplatesListProps) => {
+export const CurtainTemplatesList = ({ onEdit, highlightedTemplateId, canManageTemplates = false }: CurtainTemplatesListProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: templates = [], isLoading } = useCurtainTemplates();
@@ -170,16 +171,20 @@ export const CurtainTemplatesList = ({ onEdit, highlightedTemplateId }: CurtainT
       {templates.length > 0 && (
         <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
           <div className="flex items-center gap-3">
-            <Checkbox
-              checked={selectedIds.length === templates.length}
-              onCheckedChange={toggleSelectAll}
-              id="select-all"
-            />
-            <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
-              Select All ({selectedIds.length}/{templates.length})
-            </label>
+            {canManageTemplates && (
+              <>
+                <Checkbox
+                  checked={selectedIds.length === templates.length}
+                  onCheckedChange={toggleSelectAll}
+                  id="select-all"
+                />
+                <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+                  Select All ({selectedIds.length}/{templates.length})
+                </label>
+              </>
+            )}
           </div>
-          {selectedIds.length > 0 && (
+          {selectedIds.length > 0 && canManageTemplates && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm">
@@ -218,11 +223,13 @@ export const CurtainTemplatesList = ({ onEdit, highlightedTemplateId }: CurtainT
           <CardHeader>
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3 flex-1">
-                <Checkbox
-                  checked={selectedIds.includes(template.id)}
-                  onCheckedChange={() => toggleSelect(template.id)}
-                  className="mt-1"
-                />
+                {canManageTemplates && (
+                  <Checkbox
+                    checked={selectedIds.includes(template.id)}
+                    onCheckedChange={() => toggleSelect(template.id)}
+                    className="mt-1"
+                  />
+                )}
                 <div className="flex-1">
                   <CardTitle className="text-lg">{template.name}</CardTitle>
                   <CardDescription>{template.description}</CardDescription>
@@ -244,36 +251,40 @@ export const CurtainTemplatesList = ({ onEdit, highlightedTemplateId }: CurtainT
                       id={`store-${template.id}`}
                       checked={template.is_store_visible ?? true}
                       onCheckedChange={() => handleToggleStoreVisibility(template.id, template.is_store_visible ?? true)}
+                      disabled={!canManageTemplates}
                     />
                   </div>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handleDuplicate(template)}
-                  disabled={createTemplate.isPending}
-                >
-                  {createTemplate.isPending ? (
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => onEdit(template)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
+              {canManageTemplates && (
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleDuplicate(template)}
+                    disabled={createTemplate.isPending}
+                    title="Duplicate template"
+                  >
+                    {createTemplate.isPending ? (
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => onEdit(template)}
+                    title="Edit template"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" title="Delete template">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete Template</AlertDialogTitle>
@@ -289,7 +300,8 @@ export const CurtainTemplatesList = ({ onEdit, highlightedTemplateId }: CurtainT
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-              </div>
+                </div>
+              )}
             </div>
           </CardHeader>
           <CardContent>

@@ -6,12 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { User as UserIcon, Shield, LayoutDashboard } from "lucide-react";
 import { useUpdateUser } from "@/hooks/useUpdateUser";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@/hooks/useUsers";
 import { CustomPermissionsManager } from "./CustomPermissionsManager";
 import { DashboardConfigManager } from "./DashboardConfigManager";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EditUserDialogProps {
   user: User | null;
@@ -20,6 +26,7 @@ interface EditUserDialogProps {
 }
 
 export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps) => {
+  const { user: currentUser } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [role, setRole] = useState("Staff");
   const [isActive, setIsActive] = useState(true);
@@ -28,8 +35,65 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
   const updateUser = useUpdateUser();
   const { toast } = useToast();
 
+  // Permission checks - following the same pattern as jobs
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-edit-user', currentUser?.id],
+    queryFn: async () => {
+      if (!currentUser) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', currentUser.id);
+      if (error) {
+        console.error('[EditUserDialog] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!currentUser && !permissionsLoading,
+  });
+
+  // Check if manage_team is explicitly in user_permissions table
+  const hasManageTeamPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'manage_team'
+  ) ?? false;
+
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+
+  // Only allow manage if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include manage_team)
+  const canManageTeam =
+    userRoleData?.isSystemOwner
+      ? true
+      : (isOwner || isAdmin)
+          ? !hasAnyExplicitPermissions || hasManageTeamPermission
+          : hasManageTeamPermission;
+
   const handleSave = async () => {
     if (!user) return;
+
+    // Check permission before saving
+    const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+    if (isPermissionLoaded && !canManageTeam) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to manage team members.",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Don't allow saving while permissions are loading
+    if (!isPermissionLoaded) {
+      toast({
+        title: "Loading",
+        description: "Please wait while permissions are being checked...",
+      });
+      return;
+    }
 
     // Prevent demoting Owner to a non-Owner role
     if (user.role === 'Owner' && role !== 'Owner') {
@@ -106,6 +170,14 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
           </TabsList>
 
           <TabsContent value="basic" className="space-y-4 mt-4">
+          {explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                You don't have permission to manage team members.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="grid gap-2">
             <Label htmlFor="displayName">Display Name</Label>
             <Input
@@ -113,6 +185,7 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Enter display name"
+              disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam}
             />
           </div>
           
@@ -128,7 +201,11 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
           
           <div className="grid gap-2">
             <Label htmlFor="role">Role</Label>
-            <Select value={role} onValueChange={setRole} disabled={user?.role === 'Owner'}>
+            <Select 
+              value={role} 
+              onValueChange={setRole} 
+              disabled={user?.role === 'Owner' || (explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam)}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
@@ -154,6 +231,7 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="Enter phone number"
+              disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam}
             />
           </div>
           
@@ -162,6 +240,7 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
               id="isActive"
               checked={isActive}
               onCheckedChange={setIsActive}
+              disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam}
             />
             <Label htmlFor="isActive">Active User</Label>
           </div>
@@ -176,7 +255,7 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
             </Button>
             <Button 
               onClick={handleSave}
-              disabled={updateUser.isPending || !displayName.trim()}
+              disabled={updateUser.isPending || !displayName.trim() || (explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam)}
             >
               {updateUser.isPending ? "Saving..." : "Save Changes"}
             </Button>
@@ -189,6 +268,8 @@ export const EditUserDialog = ({ user, open, onOpenChange }: EditUserDialogProps
                 userId={user.id}
                 userRole={role}
                 userName={displayName || user.name || "User"}
+                canManageTeam={canManageTeam}
+                isPermissionLoaded={explicitPermissions !== undefined && !permissionsLoading && !roleLoading}
               />
             )}
           </TabsContent>

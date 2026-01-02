@@ -345,13 +345,6 @@ export const PERMISSION_DETAILS: Record<string, {
     category: 'inventory', 
     required: ['view_purchasing'] 
   },
-  manage_users: { 
-    label: 'Manage Users', 
-    description: 'Invite and manage team members', 
-    category: 'team', 
-    required: [], 
-    warning: true 
-  },
 };
 
 // Permission labels for quick lookup
@@ -373,7 +366,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     // Additional permissions
     'view_profile', 'view_shopify', 'manage_shopify', 'view_emails', 'send_emails',
     'view_workroom', 'view_primary_kpis', 'view_email_kpis', 'view_revenue_kpis',
-    'view_purchasing', 'manage_purchasing', 'manage_users'
+    'view_purchasing', 'manage_purchasing'
   ],
   Owner: [
     // Full access to everything
@@ -387,7 +380,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     // Additional permissions
     'view_profile', 'view_shopify', 'manage_shopify', 'view_emails', 'send_emails',
     'view_workroom', 'view_primary_kpis', 'view_email_kpis', 'view_revenue_kpis',
-    'view_purchasing', 'manage_purchasing', 'manage_users'
+    'view_purchasing', 'manage_purchasing'
   ],
   Admin: [
     // Full access except some sensitive settings
@@ -401,7 +394,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     // Additional permissions
     'view_profile', 'view_shopify', 'view_emails', 'send_emails',
     'view_workroom', 'view_primary_kpis', 'view_email_kpis', 'view_revenue_kpis',
-    'view_purchasing', 'manage_purchasing', 'manage_users'
+    'view_purchasing', 'manage_purchasing'
   ],
   Manager: [
     // Team oversight, can see costs but not manage all settings

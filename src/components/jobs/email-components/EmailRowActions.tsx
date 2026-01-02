@@ -1,8 +1,9 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Eye, Reply, RefreshCw, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useCanSendEmails } from "@/hooks/useCanSendEmails";
+import { useCanViewEmailKPIs } from "@/hooks/useCanViewEmailKPIs";
 
 interface EmailRowActionsProps {
   email: any;
@@ -20,6 +21,8 @@ export const EmailRowActions = ({
   isResending 
 }: EmailRowActionsProps) => {
   const { toast } = useToast();
+  const { canSendEmails, isPermissionLoaded: isSendEmailsPermissionLoaded } = useCanSendEmails();
+  const { canViewEmailKPIs, isPermissionLoaded: isViewPermissionLoaded } = useCanViewEmailKPIs();
   
   const handleCopyEmail = () => {
     navigator.clipboard.writeText(email.recipient_email);
@@ -27,6 +30,30 @@ export const EmailRowActions = ({
       title: "Email Copied",
       description: "Recipient email address copied to clipboard"
     });
+  };
+
+  const handleViewClick = () => {
+    if (!isViewPermissionLoaded || !canViewEmailKPIs) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to view email performance metrics.",
+        variant: "destructive",
+      });
+      return;
+    }
+    onView();
+  };
+  
+  const handleFollowUpClick = () => {
+    if (!isSendEmailsPermissionLoaded || !canSendEmails) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to send emails.",
+        variant: "destructive",
+      });
+      return;
+    }
+    onFollowUp();
   };
 
   const canResend = ['bounced', 'failed'].includes(email.status);
@@ -47,8 +74,10 @@ export const EmailRowActions = ({
         <DropdownMenuItem 
           onClick={(e) => {
             e.stopPropagation();
-            onView();
+            handleViewClick();
           }}
+          disabled={!isViewPermissionLoaded || !canViewEmailKPIs}
+          className={!isViewPermissionLoaded || !canViewEmailKPIs ? "opacity-50 cursor-not-allowed" : ""}
         >
           <Eye className="h-4 w-4 mr-2" />
           View Details
@@ -56,8 +85,10 @@ export const EmailRowActions = ({
         <DropdownMenuItem 
           onClick={(e) => {
             e.stopPropagation();
-            onFollowUp();
+            handleFollowUpClick();
           }}
+          disabled={!isSendEmailsPermissionLoaded || !canSendEmails}
+          className={!isSendEmailsPermissionLoaded || !canSendEmails ? "opacity-50 cursor-not-allowed" : ""}
         >
           <Reply className="h-4 w-4 mr-2" />
           Send Follow-up
