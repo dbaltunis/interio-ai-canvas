@@ -153,7 +153,7 @@ export const WhatsAppTemplateManager = () => {
                 </div>
               </div>
               <div className="text-xs text-green-600 bg-green-100 p-2 rounded">
-                <strong>Want to use your own number?</strong> Contact support to upgrade to Enterprise BYOA (Bring Your Own Account) with your own Twilio WhatsApp number.
+                <strong>Want to use your own number?</strong> Configure your Twilio WhatsApp credentials in the "WhatsApp Configuration" section above.
               </div>
             </div>
           </div>
