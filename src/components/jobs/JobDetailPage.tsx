@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Package, FileText, Wrench, Clock, MoreHorizontal, Copy, Archive, Trash2 } from "lucide-react";
+import { ArrowLeft, User, Package, FileText, Wrench, Clock, MoreHorizontal, Copy, Archive, Trash2, MessageCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,6 +45,7 @@ import { useUserPermissions } from "@/hooks/usePermissions";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Card, CardContent } from "@/components/ui/card";
 import { Shield } from "lucide-react";
+import { ContactClientDialog } from "@/components/messaging/ContactClientDialog";
 
 
 interface JobDetailPageProps {
@@ -65,6 +66,7 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [showContactDialog, setShowContactDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -862,8 +864,21 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </div>
             </div>
 
-            {/* Right Side: Status + Actions */}
-            <div className="flex items-center gap-3 shrink-0">
+            {/* Right Side: Contact + Status + Actions */}
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              {/* Contact Button */}
+              {client && (client.email || client.phone) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowContactDialog(true)}
+                  className="border-green-200 text-green-700 hover:bg-green-50"
+                >
+                  <MessageCircle className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">Contact</span>
+                </Button>
+              )}
+              
               <JobStatusDropdown
                 currentStatusId={project.status_id}
                 currentStatus={project.status}
@@ -1099,6 +1114,20 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Contact Client Dialog */}
+      {client && (
+        <ContactClientDialog
+          open={showContactDialog}
+          onOpenChange={setShowContactDialog}
+          client={{
+            id: client.id,
+            name: client.name,
+            email: client.email,
+            phone: client.phone,
+          }}
+        />
+      )}
     </div>
   );
 };

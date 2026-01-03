@@ -27,6 +27,48 @@ export const CommunicationsTab = () => {
         </p>
       </div>
 
+      {/* Quick Start Guide */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Quick Start Guide</CardTitle>
+          <CardDescription>Where to find and use each communication channel</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-3 bg-background rounded-lg border">
+              <div className="flex items-center gap-2 mb-2">
+                <Mail className="h-4 w-4 text-blue-600" />
+                <span className="font-medium text-sm">Email</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Client profiles → Quick Actions → Email, or Email Management page
+              </p>
+            </div>
+            <div className="p-3 bg-background rounded-lg border">
+              <div className="flex items-center gap-2 mb-2">
+                <Phone className="h-4 w-4 text-purple-600" />
+                <span className="font-medium text-sm">SMS</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {hasTwilioIntegration 
+                  ? 'Client profiles → Quick Actions → SMS'
+                  : 'Setup Twilio below, then use from Client profiles'}
+              </p>
+            </div>
+            <div className="p-3 bg-background rounded-lg border border-green-200">
+              <div className="flex items-center gap-2 mb-2">
+                <MessageSquare className="h-4 w-4 text-green-600" />
+                <span className="font-medium text-sm">WhatsApp</span>
+                <Badge variant="default" className="text-[10px] bg-green-600">Ready</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Client profiles → Quick Actions → WhatsApp, or Job pages → Contact button
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Status Overview */}
       <Card>
         <CardHeader className="pb-3">
