@@ -55,11 +55,18 @@ export const useSubscriptionFeatures = () => {
         .single();
 
       if (subError || !subscription) {
-        console.log('No active subscription found');
+        console.log('No active subscription found - enabling all features by default');
+        // Until subscription system is fully implemented, enable all features
         return {
-          crm: true, // Basic features always available
+          crm: true,
           quoting: true,
           manual_quotes: true,
+          calendar: true,
+          email: true,
+          inventory: true,
+          window_treatments: true,
+          wallpapers: true,
+          whatsapp: true,
         } as FeatureAccess;
       }
 

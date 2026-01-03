@@ -2,10 +2,9 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Clock, CheckCircle, AlertCircle, Crown, ExternalLink } from "lucide-react";
+import { MessageSquare, Clock, CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useSubscriptionFeatures } from "@/hooks/useSubscriptionFeatures";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface WhatsAppTemplate {
@@ -20,12 +19,9 @@ interface WhatsAppTemplate {
 }
 
 export const WhatsAppTemplateManager = () => {
-  const { hasFeature } = useSubscriptionFeatures();
-  const canUseWhatsApp = hasFeature('whatsapp');
-
   const { data: templates, isLoading } = useQuery({
     queryKey: ['whatsapp-templates'],
-    enabled: canUseWhatsApp,
+    enabled: true,
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
@@ -105,22 +101,6 @@ export const WhatsAppTemplateManager = () => {
     return <Badge variant="outline">{types[type] || type}</Badge>;
   };
 
-  if (!canUseWhatsApp) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Crown className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Enterprise Feature</h3>
-          <p className="text-center text-muted-foreground mb-4 max-w-md">
-            WhatsApp messaging is available exclusively for Enterprise plan users. 
-            Upgrade to send appointment reminders, quote notifications, and project updates via WhatsApp.
-          </p>
-          <Badge variant="outline">Upgrade to Enterprise</Badge>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* WhatsApp Info Card */}
@@ -129,7 +109,6 @@ export const WhatsAppTemplateManager = () => {
           <CardTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-green-500" />
             WhatsApp Business Messaging
-            <Badge variant="default" className="ml-2">Enterprise</Badge>
           </CardTitle>
           <CardDescription>
             Send WhatsApp messages to clients using pre-approved templates. 
