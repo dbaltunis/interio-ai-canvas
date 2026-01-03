@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Mail, MessageSquare, Phone, ExternalLink, Send, Paperclip, X } from "lucide-react";
+import { Mail, MessageSquare, Phone, ExternalLink, Send, Paperclip, X, Loader2 } from "lucide-react";
 import { format, isToday, isYesterday, isSameDay } from "date-fns";
 import { UnifiedMessage, useUnifiedCommunications } from "@/hooks/useUnifiedCommunications";
 import { WhatsAppStatusIcon } from "./WhatsAppStatusIcon";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { useSendWhatsApp } from "@/hooks/useSendWhatsApp";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface MessagePreviewDrawerProps {
   open: boolean;
@@ -37,6 +39,8 @@ export const MessagePreviewDrawer = ({
   const navigate = useNavigate();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [messageText, setMessageText] = useState("");
+  const sendWhatsApp = useSendWhatsApp();
+  const queryClient = useQueryClient();
 
   // Use prop clientId or fall back to message's clientId
   const clientId = propClientId || message?.clientId || undefined;
@@ -87,16 +91,33 @@ export const MessagePreviewDrawer = ({
     }
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!messageText.trim() || !clientId) return;
     
-    // Determine channel based on filter or last message
+    // For WhatsApp channel, send directly
+    if (channelFilter === 'whatsapp' && displayPhone) {
+      try {
+        await sendWhatsApp.mutateAsync({
+          to: displayPhone,
+          message: messageText.trim(),
+          clientId: clientId,
+        });
+        setMessageText("");
+        // Invalidate to refresh messages
+        queryClient.invalidateQueries({ queryKey: ['unified-communications', clientId] });
+        queryClient.invalidateQueries({ queryKey: ['client-whatsapp-messages', clientId] });
+      } catch (error) {
+        console.error('Failed to send WhatsApp:', error);
+      }
+      return;
+    }
+    
+    // Fallback to callbacks if provided
     if (channelFilter === 'whatsapp' && onComposeWhatsApp) {
       onComposeWhatsApp(clientId);
     } else if (channelFilter === 'email' && onComposeEmail) {
       onComposeEmail(clientId);
     } else {
-      // Default: use last message channel
       const lastMessage = filteredMessages?.[0];
       if (lastMessage?.channel === 'whatsapp' && onComposeWhatsApp) {
         onComposeWhatsApp(clientId);
@@ -304,9 +325,13 @@ export const MessagePreviewDrawer = ({
             size="icon"
             className="h-10 w-10 flex-shrink-0 rounded-full bg-[#00A884] hover:bg-[#00A884]/90 text-white"
             onClick={handleSend}
-            disabled={!messageText.trim()}
+            disabled={!messageText.trim() || sendWhatsApp.isPending}
           >
-            <Send className="h-5 w-5" />
+            {sendWhatsApp.isPending ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Send className="h-5 w-5" />
+            )}
           </Button>
         </div>
       </SheetContent>
