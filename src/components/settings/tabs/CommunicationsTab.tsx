@@ -94,19 +94,19 @@ export const CommunicationsTab = () => {
               </Badge>
             </div>
             
-            {/* WhatsApp - Included or BYOA */}
-            <div className="flex items-center gap-3 p-3 border rounded-lg border-green-200 bg-green-50/50">
-              <div className="p-2 rounded-full bg-green-100">
-                <MessageSquare className="h-4 w-4 text-green-600" />
+            {/* WhatsApp - BYOA Only */}
+            <div className={`flex items-center gap-3 p-3 border rounded-lg ${hasOwnWhatsApp ? 'border-green-200 bg-green-50/50' : 'border-amber-200 bg-amber-50/50'}`}>
+              <div className={`p-2 rounded-full ${hasOwnWhatsApp ? 'bg-green-100' : 'bg-amber-100'}`}>
+                <MessageSquare className={`h-4 w-4 ${hasOwnWhatsApp ? 'text-green-600' : 'text-amber-600'}`} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm">WhatsApp</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {hasOwnWhatsApp ? 'Your own number connected' : 'Ready to use — shared number'}
+                  {hasOwnWhatsApp ? 'Your Twilio connected' : 'Connect your Twilio account'}
                 </p>
               </div>
-              <Badge variant="default" className={`text-[10px] shrink-0 ${hasOwnWhatsApp ? 'bg-blue-600' : 'bg-green-600'}`}>
-                {hasOwnWhatsApp ? 'BYOA' : 'Included'}
+              <Badge variant={hasOwnWhatsApp ? "default" : "outline"} className={`text-[10px] shrink-0 ${hasOwnWhatsApp ? 'bg-green-600' : 'border-amber-300 text-amber-700'}`}>
+                {hasOwnWhatsApp ? 'Active' : 'Optional'}
               </Badge>
             </div>
           </div>
