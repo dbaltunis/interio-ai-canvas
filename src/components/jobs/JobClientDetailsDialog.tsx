@@ -14,7 +14,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { WhatsAppMessageDialog } from "@/components/messaging/WhatsAppMessageDialog";
+import { MessagePreviewDrawer } from "@/components/messaging/MessagePreviewDrawer";
 
 interface JobClientDetailsDialogProps {
   open: boolean;
@@ -177,18 +177,15 @@ export const JobClientDetailsDialog = ({ open, onOpenChange, client }: JobClient
       </DialogContent>
     </Dialog>
     
-    {/* WhatsApp Dialog */}
-    {client.phone && (
-      <WhatsAppMessageDialog
-        open={showWhatsAppDialog}
-        onOpenChange={setShowWhatsAppDialog}
-        client={{
-          id: client.id,
-          name: client.name,
-          phone: client.phone,
-        }}
-      />
-    )}
+    {/* WhatsApp Conversation Drawer */}
+    <MessagePreviewDrawer
+      open={showWhatsAppDialog}
+      onOpenChange={setShowWhatsAppDialog}
+      clientId={client.id}
+      clientName={client.name}
+      clientPhone={client.phone || undefined}
+      channelFilter="whatsapp"
+    />
     </>
   );
 };

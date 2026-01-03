@@ -24,7 +24,8 @@ import { useReactToPrint } from "react-to-print";
 import { PrintableQuote } from "@/components/jobs/quotation/PrintableQuote";
 import { EmailQuoteModal } from "@/components/jobs/quotation/EmailQuoteModal";
 import { useQuoteTemplates } from "@/hooks/useQuoteTemplates";
-import { WhatsAppMessageDialog } from "@/components/messaging/WhatsAppMessageDialog";
+import { MessagePreviewDrawer } from "@/components/messaging/MessagePreviewDrawer";
+
 interface ProjectQuoteTabProps {
   project: any;
   shouldHighlightNewQuote?: boolean;
@@ -334,17 +335,15 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
         }}
       />
 
-      {/* WhatsApp Dialog */}
+      {/* WhatsApp Conversation Drawer */}
       {client && (
-        <WhatsAppMessageDialog
+        <MessagePreviewDrawer
           open={isWhatsAppDialogOpen}
           onOpenChange={setIsWhatsAppDialogOpen}
-          client={{
-            id: client.id,
-            name: client.name,
-            phone: client.phone
-          }}
-          projectId={project?.id}
+          clientId={client.id}
+          clientName={client.name}
+          clientPhone={client.phone || undefined}
+          channelFilter="whatsapp"
         />
       )}
 
