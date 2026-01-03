@@ -272,33 +272,28 @@ export const EmailSettings = () => {
   );
 };
 
-// Separate component for WhatsApp sender info
+// Simple WhatsApp sender info
 const WhatsAppSenderCard = () => {
   const { effectiveOwnerId } = useEffectiveAccountOwner();
   
-  // Fetch business settings for company name
   const { data: businessSettings } = useQuery({
     queryKey: ['business-settings', effectiveOwnerId],
     queryFn: async () => {
       if (!effectiveOwnerId) return null;
-      
       const { data } = await supabase
         .from('business_settings')
         .select('company_name')
         .eq('user_id', effectiveOwnerId)
         .maybeSingle();
-      
       return data;
     },
     enabled: !!effectiveOwnerId,
   });
 
-  // Fetch Twilio integration settings
   const { data: twilioSettings } = useQuery({
     queryKey: ['twilio-settings', effectiveOwnerId],
     queryFn: async () => {
       if (!effectiveOwnerId) return null;
-      
       const { data } = await supabase
         .from('integration_settings')
         .select('configuration, active')
@@ -306,7 +301,6 @@ const WhatsAppSenderCard = () => {
         .eq('integration_type', 'twilio')
         .eq('active', true)
         .maybeSingle();
-      
       return data;
     },
     enabled: !!effectiveOwnerId,
@@ -329,73 +323,22 @@ const WhatsAppSenderCard = () => {
             <MessageSquare className="h-5 w-5 text-green-600" />
             WhatsApp Sender
           </CardTitle>
-          <Badge variant="outline" className={hasCustomTwilio 
-            ? "bg-green-50 text-green-700 border-green-200" 
-            : "bg-amber-50 text-amber-700 border-amber-200"
-          }>
-            {hasCustomTwilio ? (
-              <>
-                <Check className="h-3 w-3 mr-1" />
-                Your Business
-              </>
-            ) : (
-              "Sandbox Mode"
-            )}
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <Check className="h-3 w-3 mr-1" />
+            Ready
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent>
         <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
           <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
             <Phone className="h-5 w-5 text-green-600" />
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Sender Name</p>
-            <p className="text-lg font-medium">{senderName}</p>
-            <p className="text-xs text-muted-foreground font-mono">{senderNumber}</p>
+            <p className="font-medium">{senderName}</p>
+            <p className="text-sm text-muted-foreground font-mono">{senderNumber}</p>
           </div>
         </div>
-
-        {!hasCustomTwilio && (
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-3">
-            <div className="flex items-start gap-2">
-              <span className="text-amber-600 text-lg">⚠️</span>
-              <div>
-                <p className="font-medium text-amber-800">Sandbox Mode - Recipients must opt-in first!</p>
-                <p className="text-sm text-amber-700 mt-1">
-                  Messages will NOT be delivered until the recipient joins the Twilio sandbox.
-                </p>
-              </div>
-            </div>
-            
-            <div className="p-3 bg-amber-100/60 rounded text-sm space-y-2">
-              <p className="font-medium text-amber-800">How to enable delivery:</p>
-              <ol className="text-amber-700 space-y-1 list-decimal list-inside">
-                <li>Ask your recipient to open WhatsApp</li>
-                <li>Have them send <code className="bg-amber-200/70 px-1.5 py-0.5 rounded font-mono text-xs">join &lt;your-sandbox-code&gt;</code> to <strong>+1 415 523 8886</strong></li>
-                <li>After receiving confirmation, they can receive your messages</li>
-              </ol>
-              <a 
-                href="https://console.twilio.com/us1/develop/sms/try-it-out/whatsapp-learn" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-amber-800 hover:text-amber-900 font-medium underline text-xs mt-2"
-              >
-                Get your sandbox code from Twilio Console →
-              </a>
-            </div>
-
-            <p className="text-xs text-amber-600">
-              Want to message anyone without opt-in? Configure your own Twilio WhatsApp Business number in Settings → Integrations → Communications.
-            </p>
-          </div>
-        )}
-
-        {hasCustomTwilio && (
-          <p className="text-sm text-muted-foreground">
-            Messages are sent from your verified WhatsApp Business account. No recipient opt-in required.
-          </p>
-        )}
       </CardContent>
     </Card>
   );
