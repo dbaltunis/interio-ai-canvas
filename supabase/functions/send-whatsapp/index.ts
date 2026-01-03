@@ -51,13 +51,15 @@ serve(async (req) => {
     console.log(`User ${user.id} requesting WhatsApp send`);
 
     // Check for user-specific BYOA settings - REQUIRED for WhatsApp
-    const { data: userSettings } = await supabase
+    // Don't require verified=true, just check if credentials exist
+    const { data: userSettings, error: settingsError } = await supabase
       .from('whatsapp_user_settings')
       .select('*')
       .eq('user_id', user.id)
       .eq('use_own_account', true)
-      .eq('verified', true)
       .single();
+
+    console.log('User settings query result:', { userSettings, settingsError });
 
     // BYOA is required - no fallback to shared credentials
     if (!userSettings?.account_sid || !userSettings?.auth_token || !userSettings?.whatsapp_number) {
