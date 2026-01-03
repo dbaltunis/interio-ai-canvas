@@ -72,7 +72,7 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
     enabled: open,
   });
 
-  const isWhatsAppConfigured = whatsappSettings?.use_own_account && whatsappSettings?.whatsapp_number;
+  const isWhatsAppConfigured = whatsappSettings?.use_own_account && whatsappSettings?.verified;
 
   // Update mediaUrl when defaultMediaUrl changes
   useEffect(() => {
