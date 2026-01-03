@@ -2,7 +2,8 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Clock, CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { MessageSquare, Clock, CheckCircle, AlertCircle, ExternalLink, PartyPopper } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -103,17 +104,33 @@ export const WhatsAppTemplateManager = () => {
 
   return (
     <div className="space-y-6">
+      {/* Included Feature Banner */}
+      <Alert className="border-green-200 bg-green-50">
+        <PartyPopper className="h-4 w-4 text-green-600" />
+        <AlertTitle className="text-green-800">WhatsApp Messaging is Included</AlertTitle>
+        <AlertDescription className="text-green-700">
+          No setup required — start messaging clients immediately! Messages are sent from the shared InterioApp WhatsApp Business number at no additional cost.
+        </AlertDescription>
+      </Alert>
+
       {/* WhatsApp Info Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-green-500" />
-            WhatsApp Business Messaging
-          </CardTitle>
-          <CardDescription>
-            Send WhatsApp messages to clients using pre-approved templates. 
-            Messages are sent from the shared InterioApp WhatsApp Business number.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-green-500" />
+                WhatsApp Business Messaging
+              </CardTitle>
+              <CardDescription>
+                Send WhatsApp messages to clients using pre-approved templates
+              </CardDescription>
+            </div>
+            <Badge variant="default" className="bg-green-600">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Ready to Use
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="p-4 bg-muted/50 rounded-lg space-y-3">
