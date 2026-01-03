@@ -29,7 +29,7 @@ export const ProjectNavigation = ({
     { id: "jobs", label: "Rooms & Treatments", icon: Box },
     { id: "quote", label: "Quotation", icon: FileText },
     { id: "workshop", label: "Workroom", icon: Wrench, permission: canViewWorkroom },
-    { id: "emails", label: "Emails", icon: Mail, permission: canViewEmails },
+    { id: "emails", label: "Messages", icon: Mail, permission: canViewEmails },
     { id: "calendar", label: "Calendar", icon: Calendar, permission: canViewCalendar },
   ];
 
