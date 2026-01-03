@@ -5,9 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Mail, MessageSquare, Phone, Settings2 } from "lucide-react";
 import { EmailSettingsTab } from "../EmailSettingsTab";
 import { WhatsAppTemplateManager } from "@/components/messaging/WhatsAppTemplateManager";
+import { WhatsAppBYOASetup } from "@/components/messaging/WhatsAppBYOASetup";
 import { TwilioIntegrationTab } from "@/components/integrations/TwilioIntegrationTab";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { useIntegrations } from "@/hooks/useIntegrations";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const CommunicationsTab = () => {
   const { hasSendGridIntegration } = useIntegrationStatus();
@@ -16,6 +19,23 @@ export const CommunicationsTab = () => {
   // Check Twilio integration
   const twilioIntegration = integrations.find(i => i.integration_type === 'twilio');
   const hasTwilioIntegration = twilioIntegration?.active === true;
+
+  // Check WhatsApp BYOA status
+  const { data: whatsappSettings } = useQuery({
+    queryKey: ['whatsapp-user-settings'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data } = await supabase
+        .from('whatsapp_user_settings')
+        .select('use_own_account, verified')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      return data;
+    }
+  });
+
+  const hasOwnWhatsApp = whatsappSettings?.use_own_account && whatsappSettings?.verified;
 
   return (
     <div className="space-y-6">
@@ -111,7 +131,7 @@ export const CommunicationsTab = () => {
               </Badge>
             </div>
             
-            {/* WhatsApp - Included */}
+            {/* WhatsApp - Included or BYOA */}
             <div className="flex items-center gap-3 p-3 border rounded-lg border-green-200 bg-green-50/50">
               <div className="p-2 rounded-full bg-green-100">
                 <MessageSquare className="h-4 w-4 text-green-600" />
@@ -119,11 +139,11 @@ export const CommunicationsTab = () => {
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm">WhatsApp</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  Ready to use — no setup needed
+                  {hasOwnWhatsApp ? 'Your own number connected' : 'Ready to use — shared number'}
                 </p>
               </div>
-              <Badge variant="default" className="text-[10px] shrink-0 bg-green-600">
-                Included
+              <Badge variant="default" className={`text-[10px] shrink-0 ${hasOwnWhatsApp ? 'bg-blue-600' : 'bg-green-600'}`}>
+                {hasOwnWhatsApp ? 'BYOA' : 'Included'}
               </Badge>
             </div>
           </div>
@@ -155,7 +175,8 @@ export const CommunicationsTab = () => {
           <TwilioIntegrationTab />
         </TabsContent>
 
-        <TabsContent value="whatsapp" className="mt-6">
+        <TabsContent value="whatsapp" className="mt-6 space-y-6">
+          <WhatsAppBYOASetup />
           <WhatsAppTemplateManager />
         </TabsContent>
       </Tabs>

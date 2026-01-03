@@ -9369,6 +9369,63 @@ export type Database = {
           },
         ]
       }
+      whatsapp_incoming_messages: {
+        Row: {
+          account_owner_id: string
+          client_id: string | null
+          created_at: string | null
+          from_number: string
+          id: string
+          media_url: string | null
+          message_body: string | null
+          read: boolean | null
+          received_at: string | null
+          replied: boolean | null
+          twilio_message_sid: string | null
+        }
+        Insert: {
+          account_owner_id: string
+          client_id?: string | null
+          created_at?: string | null
+          from_number: string
+          id?: string
+          media_url?: string | null
+          message_body?: string | null
+          read?: boolean | null
+          received_at?: string | null
+          replied?: boolean | null
+          twilio_message_sid?: string | null
+        }
+        Update: {
+          account_owner_id?: string
+          client_id?: string | null
+          created_at?: string | null
+          from_number?: string
+          id?: string
+          media_url?: string | null
+          message_body?: string | null
+          read?: boolean | null
+          received_at?: string | null
+          replied?: boolean | null
+          twilio_message_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_incoming_messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_incoming_messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_message_logs: {
         Row: {
           account_owner_id: string
@@ -9478,6 +9535,45 @@ export type Database = {
           twilio_template_sid?: string | null
           updated_at?: string | null
           variables?: Json | null
+        }
+        Relationships: []
+      }
+      whatsapp_user_settings: {
+        Row: {
+          account_sid: string | null
+          auth_token: string | null
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          use_own_account: boolean | null
+          user_id: string
+          verified: boolean | null
+          verified_at: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          account_sid?: string | null
+          auth_token?: string | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          use_own_account?: boolean | null
+          user_id: string
+          verified?: boolean | null
+          verified_at?: string | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          account_sid?: string | null
+          auth_token?: string | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          use_own_account?: boolean | null
+          user_id?: string
+          verified?: boolean | null
+          verified_at?: string | null
+          whatsapp_number?: string | null
         }
         Relationships: []
       }

@@ -200,7 +200,7 @@ export const WhatsAppMessageHistory = () => {
                 <Button 
                   variant="outline" 
                   className="w-full justify-between"
-                  onClick={() => navigate('/?tab=jobs')}
+                  onClick={() => navigate('/?tab=projects')}
                 >
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30">

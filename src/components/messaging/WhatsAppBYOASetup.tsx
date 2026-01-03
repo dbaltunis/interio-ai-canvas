@@ -1,0 +1,357 @@
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { 
+  MessageSquare, 
+  Check, 
+  AlertCircle, 
+  Loader2, 
+  ExternalLink,
+  Shield,
+  Phone,
+  Building2
+} from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface WhatsAppUserSettings {
+  id: string;
+  user_id: string;
+  use_own_account: boolean;
+  account_sid: string | null;
+  auth_token: string | null;
+  whatsapp_number: string | null;
+  verified: boolean;
+  verified_at: string | null;
+}
+
+export const WhatsAppBYOASetup = () => {
+  const queryClient = useQueryClient();
+  const [useOwnAccount, setUseOwnAccount] = useState(false);
+  const [accountSid, setAccountSid] = useState("");
+  const [authToken, setAuthToken] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  // Fetch existing settings
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ['whatsapp-user-settings'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from('whatsapp_user_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching WhatsApp settings:', error);
+        return null;
+      }
+
+      if (data) {
+        setUseOwnAccount(data.use_own_account);
+        setAccountSid(data.account_sid || "");
+        setAuthToken(data.auth_token || "");
+        setWhatsappNumber(data.whatsapp_number || "");
+      }
+
+      return data as WhatsAppUserSettings | null;
+    }
+  });
+
+  // Save settings mutation
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const settingsData = {
+        user_id: user.id,
+        use_own_account: useOwnAccount,
+        account_sid: useOwnAccount ? accountSid : null,
+        auth_token: useOwnAccount ? authToken : null,
+        whatsapp_number: useOwnAccount ? whatsappNumber : null,
+        verified: false,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('whatsapp_user_settings')
+        .upsert(settingsData, { onConflict: 'user_id' });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('WhatsApp settings saved');
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-user-settings'] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to save settings');
+    }
+  });
+
+  // Verify credentials by sending a test message
+  const verifyCredentials = async () => {
+    if (!accountSid || !authToken || !whatsappNumber) {
+      toast.error('Please fill in all credentials first');
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      // Call edge function to verify
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+        body: {
+          to: whatsappNumber, // Send to own number as test
+          message: '✅ InterioApp WhatsApp integration verified successfully!',
+          testMode: true
+        }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      // Mark as verified
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('whatsapp_user_settings')
+          .update({ 
+            verified: true, 
+            verified_at: new Date().toISOString() 
+          })
+          .eq('user_id', user.id);
+      }
+
+      toast.success('Credentials verified! Test message sent.');
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-user-settings'] });
+    } catch (error: any) {
+      toast.error(error.message || 'Verification failed');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="py-8 flex justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Current Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-green-600" />
+            WhatsApp Configuration
+          </CardTitle>
+          <CardDescription>
+            Choose how you want to send WhatsApp messages
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Option Toggle */}
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">Use Your Own WhatsApp Business Number</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Connect your Twilio account with your own WhatsApp Business number
+              </p>
+            </div>
+            <Switch 
+              checked={useOwnAccount} 
+              onCheckedChange={setUseOwnAccount}
+            />
+          </div>
+
+          {!useOwnAccount && (
+            <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
+              <Check className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800 dark:text-green-200">
+                <strong>Using InterioApp Shared Number</strong> - Messages will be sent from the InterioApp 
+                business WhatsApp number. This is ready to use with no setup required.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {useOwnAccount && (
+            <div className="space-y-6 pt-4 border-t">
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  You need a <strong>Twilio account</strong> with a <strong>WhatsApp-enabled phone number</strong>. 
+                  <a 
+                    href="https://www.twilio.com/docs/whatsapp/quickstart" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 ml-1 text-primary hover:underline"
+                  >
+                    Learn more <ExternalLink className="h-3 w-3" />
+                  </a>
+                </AlertDescription>
+              </Alert>
+
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="accountSid">Twilio Account SID</Label>
+                  <Input
+                    id="accountSid"
+                    placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    value={accountSid}
+                    onChange={(e) => setAccountSid(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Found in your Twilio Console dashboard
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="authToken">Twilio Auth Token</Label>
+                  <Input
+                    id="authToken"
+                    type="password"
+                    placeholder="••••••••••••••••••••••••••••••••"
+                    value={authToken}
+                    onChange={(e) => setAuthToken(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Keep this secret! Found in your Twilio Console
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="whatsappNumber">WhatsApp Business Number</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="whatsappNumber"
+                      placeholder="+1234567890"
+                      value={whatsappNumber}
+                      onChange={(e) => setWhatsappNumber(e.target.value)}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Your Twilio WhatsApp-enabled number with country code
+                  </p>
+                </div>
+              </div>
+
+              {/* Verification Status */}
+              {settings?.verified && (
+                <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
+                  <Shield className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800 dark:text-green-200 flex items-center gap-2">
+                    <Check className="h-4 w-4" />
+                    <span>Credentials verified and working</span>
+                    {settings.verified_at && (
+                      <span className="text-xs opacity-75">
+                        (verified {new Date(settings.verified_at).toLocaleDateString()})
+                      </span>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex gap-3">
+                <Button 
+                  onClick={() => saveMutation.mutate()}
+                  disabled={saveMutation.isPending || !accountSid || !authToken || !whatsappNumber}
+                >
+                  {saveMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Credentials'
+                  )}
+                </Button>
+
+                <Button 
+                  variant="outline"
+                  onClick={verifyCredentials}
+                  disabled={isVerifying || !accountSid || !authToken || !whatsappNumber}
+                >
+                  {isVerifying ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      <Phone className="h-4 w-4 mr-2" />
+                      Test & Verify
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {!useOwnAccount && settings?.use_own_account && (
+            <Button 
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending}
+            >
+              Switch to Shared Number
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Help Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Why Use Your Own Number?</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <h4 className="font-medium flex items-center gap-2">
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  Shared Number
+                </Badge>
+              </h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>✓ No setup required</li>
+                <li>✓ Works immediately</li>
+                <li>✓ Messages from "InterioApp"</li>
+                <li>• Clients see shared number</li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium flex items-center gap-2">
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                  Your Own Number
+                </Badge>
+              </h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>✓ Your business name & branding</li>
+                <li>✓ Clients see your number</li>
+                <li>✓ Can receive replies directly</li>
+                <li>• Requires Twilio account</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};

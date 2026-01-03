@@ -49,7 +49,14 @@ serve(async (req) => {
 
     console.log(`User ${user.id} requesting WhatsApp send`);
 
-    // WhatsApp is available to all authenticated users via shared InterioApp number
+    // Check for user-specific BYOA settings first
+    const { data: userSettings } = await supabase
+      .from('whatsapp_user_settings')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('use_own_account', true)
+      .eq('verified', true)
+      .single();
 
     // Parse request body
     const body: WhatsAppRequest = await req.json();
@@ -63,10 +70,24 @@ serve(async (req) => {
       throw new Error('Either message or templateId is required');
     }
 
-    // Get Twilio credentials
-    const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-    const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-    const twilioWhatsAppNumber = Deno.env.get('TWILIO_WHATSAPP_NUMBER');
+    // Get Twilio credentials - prefer user's own account if available
+    let twilioAccountSid: string;
+    let twilioAuthToken: string;
+    let twilioWhatsAppNumber: string;
+
+    if (userSettings?.account_sid && userSettings?.auth_token && userSettings?.whatsapp_number) {
+      // Use user's own BYOA credentials
+      console.log('Using user BYOA credentials');
+      twilioAccountSid = userSettings.account_sid;
+      twilioAuthToken = userSettings.auth_token;
+      twilioWhatsAppNumber = userSettings.whatsapp_number;
+    } else {
+      // Fall back to shared InterioApp credentials
+      console.log('Using shared InterioApp credentials');
+      twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID')!;
+      twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN')!;
+      twilioWhatsAppNumber = Deno.env.get('TWILIO_WHATSAPP_NUMBER')!;
+    }
 
     if (!twilioAccountSid || !twilioAuthToken || !twilioWhatsAppNumber) {
       throw new Error('Twilio WhatsApp credentials not configured');
