@@ -219,7 +219,7 @@ export const ClientQuickActionsBar = ({ client, onEdit, canEditClient }: ClientQ
         </Button>
 
         {/* Edit Client */}
-        {canEditClient && onEdit && (
+        {onEdit && (
           <Button
             variant="outline"
             size="sm"
