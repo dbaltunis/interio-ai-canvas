@@ -253,6 +253,8 @@ export const ClientCommunicationsTab = ({
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         message={selectedMessage}
+        onComposeWhatsApp={onComposeWhatsApp ? () => onComposeWhatsApp() : undefined}
+        onComposeEmail={onComposeEmail ? () => onComposeEmail() : undefined}
       />
     </>
   );
