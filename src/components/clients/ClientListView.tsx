@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 
-import { Mail, Phone, User, Building2, MoreHorizontal, Star, Clock, FileText, Trash2, Calendar, FolderKanban } from "lucide-react";
+import { Mail, Phone, User, Building2, MoreHorizontal, Star, Clock, FileText, Trash2, Calendar, FolderKanban, MessageSquare } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow } from "date-fns";
@@ -19,6 +19,7 @@ import { useClientFilesCount } from "@/hooks/useClientFilesCount";
 import { BulkActionsBar } from "./BulkActionsBar";
 import { CampaignWizard } from "@/components/campaigns/CampaignWizard";
 import { useClientSelection, SelectedClient } from "@/hooks/useClientSelection";
+import { WhatsAppMessageDialog } from "@/components/messaging/WhatsAppMessageDialog";
 
 interface Client {
   id: string;
@@ -62,6 +63,8 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [showCampaignWizard, setShowCampaignWizard] = useState(false);
+  const [whatsAppClient, setWhatsAppClient] = useState<Client | null>(null);
+  const [whatsAppDialogOpen, setWhatsAppDialogOpen] = useState(false);
   const deleteClient = useDeleteClient();
   const { formatCurrency } = useFormattedCurrency();
   
@@ -382,6 +385,17 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                             <Phone className="mr-2 h-4 w-4" />
                             Call Client
                           </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setWhatsAppClient(client);
+                              setWhatsAppDialogOpen(true);
+                            }}
+                            disabled={!client.phone}
+                          >
+                            <MessageSquare className="mr-2 h-4 w-4 text-green-600" />
+                            WhatsApp
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
                             <Calendar className="mr-2 h-4 w-4" />
                             Schedule Meeting
@@ -466,6 +480,19 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
         selectedClients={selectedClients}
         onComplete={clearSelection}
       />
+
+      {/* WhatsApp Dialog */}
+      {whatsAppClient && (
+        <WhatsAppMessageDialog
+          open={whatsAppDialogOpen}
+          onOpenChange={setWhatsAppDialogOpen}
+          client={{
+            id: whatsAppClient.id,
+            name: whatsAppClient.client_type === 'B2B' ? whatsAppClient.company_name || whatsAppClient.name : whatsAppClient.name,
+            phone: whatsAppClient.phone
+          }}
+        />
+      )}
     </Card>
   );
 };

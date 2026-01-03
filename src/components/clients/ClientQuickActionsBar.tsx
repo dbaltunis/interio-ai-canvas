@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mail, Phone, StickyNote, Briefcase, Loader2 } from 'lucide-react';
+import { Mail, Phone, StickyNote, Briefcase, Loader2, MessageSquare } from 'lucide-react';
 import { QuickEmailDialog } from './QuickEmailDialog';
 import { AddActivityDialog } from './AddActivityDialog';
+import { WhatsAppMessageDialog } from '@/components/messaging/WhatsAppMessageDialog';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +25,7 @@ interface ClientQuickActionsBarProps {
 export const ClientQuickActionsBar = ({ client }: ClientQuickActionsBarProps) => {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [whatsAppDialogOpen, setWhatsAppDialogOpen] = useState(false);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -173,6 +175,18 @@ export const ClientQuickActionsBar = ({ client }: ClientQuickActionsBarProps) =>
           <span className="hidden sm:inline">Call</span>
         </Button>
 
+        {/* WhatsApp Action */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setWhatsAppDialogOpen(true)}
+          disabled={!client.phone}
+          className="gap-1.5 text-green-600 hover:text-green-700 hover:bg-green-50"
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span className="hidden sm:inline">WhatsApp</span>
+        </Button>
+
         {/* Add Note */}
         <Button
           variant="outline"
@@ -217,6 +231,16 @@ export const ClientQuickActionsBar = ({ client }: ClientQuickActionsBarProps) =>
         clientId={client.id}
         open={noteDialogOpen}
         onOpenChange={setNoteDialogOpen}
+      />
+      
+      <WhatsAppMessageDialog
+        open={whatsAppDialogOpen}
+        onOpenChange={setWhatsAppDialogOpen}
+        client={{
+          id: client.id,
+          name: displayName || client.name,
+          phone: client.phone
+        }}
       />
     </>
   );
