@@ -25,11 +25,6 @@ export const useSendWhatsApp = () => {
 
   return useMutation({
     mutationFn: async (params: SendWhatsAppParams): Promise<WhatsAppResponse> => {
-      // Check feature access
-      if (!hasFeature('whatsapp')) {
-        throw new Error('WhatsApp messaging requires Enterprise plan');
-      }
-
       // Validate phone number
       if (!params.to) {
         throw new Error('Phone number is required');

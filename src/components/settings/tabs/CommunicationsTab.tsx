@@ -2,23 +2,16 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Mail, MessageSquare, Phone, Send, Crown, CheckCircle, Settings2 } from "lucide-react";
+import { Mail, MessageSquare, Phone, Settings2 } from "lucide-react";
 import { EmailSettingsTab } from "../EmailSettingsTab";
 import { WhatsAppTemplateManager } from "@/components/messaging/WhatsAppTemplateManager";
 import { TwilioIntegrationTab } from "@/components/integrations/TwilioIntegrationTab";
-import { useSubscriptionFeatures } from "@/hooks/useSubscriptionFeatures";
-import { useUserSubscription } from "@/hooks/useUserSubscription";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { useIntegrations } from "@/hooks/useIntegrations";
 
 export const CommunicationsTab = () => {
-  const { hasFeature } = useSubscriptionFeatures();
-  const { data: subscription } = useUserSubscription();
   const { hasSendGridIntegration } = useIntegrationStatus();
   const { integrations } = useIntegrations();
-  
-  const hasWhatsApp = hasFeature('whatsapp');
-  const isPremiumUser = subscription?.plan?.name !== 'Basic';
   
   // Check Twilio integration
   const twilioIntegration = integrations.find(i => i.integration_type === 'twilio');
@@ -75,20 +68,17 @@ export const CommunicationsTab = () => {
             </div>
             
             <div className="flex items-center gap-3 p-3 border rounded-lg">
-              <div className={`p-2 rounded-full ${hasWhatsApp ? 'bg-green-100' : 'bg-muted'}`}>
-                <MessageSquare className={`h-4 w-4 ${hasWhatsApp ? 'text-green-600' : 'text-muted-foreground'}`} />
+              <div className="p-2 rounded-full bg-green-100">
+                <MessageSquare className="h-4 w-4 text-green-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm flex items-center gap-1">
-                  WhatsApp
-                  {!hasWhatsApp && <Crown className="h-3 w-3 text-amber-500" />}
-                </p>
+                <p className="font-medium text-sm">WhatsApp</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {hasWhatsApp ? 'Enterprise feature' : 'Upgrade required'}
+                  Business messaging
                 </p>
               </div>
-              <Badge variant={hasWhatsApp ? "default" : "outline"} className="text-[10px] shrink-0">
-                {hasWhatsApp ? 'Active' : 'Pro'}
+              <Badge variant="default" className="text-[10px] shrink-0">
+                Active
               </Badge>
             </div>
           </div>
@@ -109,7 +99,6 @@ export const CommunicationsTab = () => {
           <TabsTrigger value="whatsapp" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             <span className="hidden sm:inline">WhatsApp</span>
-            {!hasWhatsApp && <Crown className="h-3 w-3" />}
           </TabsTrigger>
         </TabsList>
         
