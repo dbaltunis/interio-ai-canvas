@@ -3,16 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
-  Mail, MessageSquare, Search, Filter, CheckCircle, Clock, AlertCircle, 
-  Eye, MousePointer, Phone, Calendar, MessageCircle
+  Mail, MessageSquare, Search, CheckCircle, Clock, AlertCircle, 
+  Eye, MousePointer, Phone, MessageCircle, Plus
 } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { useUnifiedCommunications, UnifiedMessage } from "@/hooks/useUnifiedCommunications";
 import { MessagePreviewDrawer } from "@/components/messaging/MessagePreviewDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface ClientCommunicationsTabProps {
   clientId: string;
@@ -39,8 +39,7 @@ export const ClientCommunicationsTab = ({
       const query = searchQuery.toLowerCase();
       return (
         msg.preview.toLowerCase().includes(query) ||
-        msg.subject?.toLowerCase().includes(query) ||
-        msg.clientName.toLowerCase().includes(query)
+        msg.subject?.toLowerCase().includes(query)
       );
     }
     return true;
@@ -65,166 +64,160 @@ export const ClientCommunicationsTab = ({
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5" />
+        <CardHeader className="py-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <MessageCircle className="h-4 w-4" />
             Communications
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <Skeleton key={i} className="h-20 w-full" />
+        <CardContent className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-14 w-full" />
           ))}
         </CardContent>
       </Card>
     );
   }
 
+  const totalMessages = messages?.length || 0;
+
   return (
     <>
       <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5" />
+        <CardHeader className="py-3 pb-2">
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <MessageCircle className="h-4 w-4" />
               Communications
+              {totalMessages > 0 && (
+                <span className="text-xs text-muted-foreground font-normal">({totalMessages})</span>
+              )}
             </CardTitle>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="gap-1">
+            <div className="flex items-center gap-1">
+              {/* Channel filter buttons - minimal */}
+              <Button
+                variant={channelFilter === 'all' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setChannelFilter('all')}
+                className="h-6 px-2 text-xs"
+              >
+                All
+              </Button>
+              <Button
+                variant={channelFilter === 'email' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setChannelFilter('email')}
+                className="h-6 px-2 text-xs gap-1"
+              >
                 <Mail className="h-3 w-3" />
                 {emailCount}
-              </Badge>
-              <Badge variant="outline" className="gap-1 text-green-700 border-green-200">
+              </Button>
+              <Button
+                variant={channelFilter === 'whatsapp' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setChannelFilter('whatsapp')}
+                className="h-6 px-2 text-xs gap-1 text-green-700"
+              >
                 <MessageSquare className="h-3 w-3" />
                 {whatsappCount}
-              </Badge>
+              </Button>
             </div>
           </div>
           
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-3 mt-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          {/* Search - compact */}
+          {totalMessages > 5 && (
+            <div className="relative mt-2">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
               <Input
-                placeholder="Search messages..."
+                placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="h-7 pl-7 text-xs"
               />
             </div>
-            <Tabs value={channelFilter} onValueChange={(v) => setChannelFilter(v as any)}>
-              <TabsList className="h-9">
-                <TabsTrigger value="all" className="text-xs px-3">All</TabsTrigger>
-                <TabsTrigger value="email" className="text-xs px-3 gap-1">
-                  <Mail className="h-3 w-3" /> Email
-                </TabsTrigger>
-                <TabsTrigger value="whatsapp" className="text-xs px-3 gap-1">
-                  <MessageSquare className="h-3 w-3" /> WhatsApp
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+          )}
         </CardHeader>
         
-        <CardContent>
+        <CardContent className="pt-2">
           {filteredMessages.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                <MessageCircle className="h-8 w-8 text-muted-foreground" />
+            <div className="text-center py-8">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                <MessageCircle className="h-5 w-5 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-medium mb-2">No messages yet</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {channelFilter === 'all' 
-                  ? 'Start a conversation with this client'
-                  : `No ${channelFilter === 'email' ? 'emails' : 'WhatsApp messages'} found`}
+              <p className="text-sm text-muted-foreground mb-3">
+                {totalMessages === 0 ? 'No messages yet' : 'No matches'}
               </p>
-              <div className="flex justify-center gap-2">
-                {onComposeEmail && (
-                  <Button variant="outline" size="sm" onClick={onComposeEmail}>
-                    <Mail className="h-4 w-4 mr-2" />
-                    Send Email
-                  </Button>
-                )}
-                {onComposeWhatsApp && (
-                  <Button variant="outline" size="sm" onClick={onComposeWhatsApp} className="text-green-700">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Send WhatsApp
-                  </Button>
-                )}
-              </div>
+              {totalMessages === 0 && (
+                <div className="flex justify-center gap-2">
+                  {onComposeEmail && (
+                    <Button variant="outline" size="sm" onClick={onComposeEmail} className="h-7 text-xs">
+                      <Mail className="h-3 w-3 mr-1" />
+                      Email
+                    </Button>
+                  )}
+                  {onComposeWhatsApp && (
+                    <Button variant="outline" size="sm" onClick={onComposeWhatsApp} className="h-7 text-xs text-green-700">
+                      <MessageSquare className="h-3 w-3 mr-1" />
+                      WhatsApp
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
-            <ScrollArea className="h-[400px]">
-              <div className="space-y-2">
+            <ScrollArea className="h-[320px]">
+              <div className="space-y-1">
                 {filteredMessages.map((message) => {
-                  const ChannelIcon = message.channel === 'email' ? Mail : MessageSquare;
-                  const iconColor = message.channel === 'email' ? 'text-blue-600' : 'text-green-600';
-                  const bgColor = message.channel === 'email' ? 'bg-blue-50' : 'bg-green-50';
-
+                  const isEmail = message.channel === 'email';
+                  
                   return (
                     <div
                       key={`${message.channel}-${message.id}`}
-                      className="group relative flex items-start gap-3 p-3 rounded-lg border border-border/60 bg-card/50 hover:border-border hover:bg-card hover:shadow-sm transition-all cursor-pointer"
+                      className="group flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => handleMessageClick(message)}
                     >
-                      {/* Channel Icon */}
-                      <div className={`flex-shrink-0 p-2 rounded-lg ${bgColor}`}>
-                        <ChannelIcon className={`h-4 w-4 ${iconColor}`} />
+                      {/* Channel indicator - minimal */}
+                      <div className={cn(
+                        "flex-shrink-0 w-6 h-6 rounded flex items-center justify-center",
+                        isEmail ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-600"
+                      )}>
+                        {isEmail ? <Mail className="h-3 w-3" /> : <MessageSquare className="h-3 w-3" />}
                       </div>
 
                       {/* Content */}
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
-                            {message.channel === 'email' 
-                              ? message.subject || 'No Subject'
-                              : 'WhatsApp Message'}
-                          </h4>
-                          <div className="flex items-center gap-1 shrink-0">
-                            {getStatusIcon(message.status)}
-                            <span className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(message.sentAt), { addSuffix: true })}
-                            </span>
-                          </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-medium truncate">
+                            {isEmail ? (message.subject || 'No Subject') : 'Message'}
+                          </span>
+                          {getStatusIcon(message.status)}
                         </div>
-
-                        <p className="text-xs text-muted-foreground line-clamp-2">
+                        <p className="text-xs text-muted-foreground truncate">
                           {message.preview}
                         </p>
+                      </div>
 
-                        {/* Engagement indicators for email */}
-                        {message.channel === 'email' && ((message.openCount ?? 0) > 0 || (message.clickCount ?? 0) > 0) && (
-                          <div className="flex items-center gap-2 pt-1">
+                      {/* Meta */}
+                      <div className="flex flex-col items-end gap-0.5 shrink-0">
+                        <span className="text-[10px] text-muted-foreground">
+                          {formatDistanceToNow(new Date(message.sentAt), { addSuffix: false })}
+                        </span>
+                        {isEmail && ((message.openCount ?? 0) > 0 || (message.clickCount ?? 0) > 0) && (
+                          <div className="flex items-center gap-1">
                             {(message.openCount ?? 0) > 0 && (
-                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Eye className="h-3 w-3" />
+                              <span className="flex items-center text-[10px] text-muted-foreground">
+                                <Eye className="h-2.5 w-2.5 mr-0.5" />
                                 {message.openCount}
                               </span>
                             )}
                             {(message.clickCount ?? 0) > 0 && (
-                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <MousePointer className="h-3 w-3" />
+                              <span className="flex items-center text-[10px] text-muted-foreground">
+                                <MousePointer className="h-2.5 w-2.5 mr-0.5" />
                                 {message.clickCount}
                               </span>
                             )}
                           </div>
                         )}
-
-                        {/* Recipient info */}
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
-                          {message.recipientEmail && (
-                            <span className="flex items-center gap-1">
-                              <Mail className="h-3 w-3" />
-                              {message.recipientEmail}
-                            </span>
-                          )}
-                          {message.recipientPhone && (
-                            <span className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              {message.recipientPhone}
-                            </span>
-                          )}
-                        </div>
                       </div>
                     </div>
                   );
