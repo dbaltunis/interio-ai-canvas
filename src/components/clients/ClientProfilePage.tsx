@@ -204,7 +204,14 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
       </div>
 
       {/* Quick Actions Bar */}
-      <ClientQuickActionsBar client={currentClient} />
+      <ClientQuickActionsBar 
+        client={currentClient} 
+        onEdit={() => {
+          handleEdit();
+          setDetailsOpen(true);
+        }}
+        canEditClient={canEditClient}
+      />
 
       {/* Main Content Area - Three Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
