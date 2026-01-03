@@ -44,13 +44,28 @@ export const MessagePreviewDrawer = ({
 
   // Use prop clientId or fall back to message's clientId
   const clientId = propClientId || message?.clientId || undefined;
-  const { data: allMessages } = useUnifiedCommunications(clientId);
+  const { data: allMessages, refetch } = useUnifiedCommunications(clientId);
+  
+  // Local optimistic messages for instant UI feedback
+  const [optimisticMessages, setOptimisticMessages] = useState<UnifiedMessage[]>([]);
 
+  // Combine real messages with optimistic messages
+  const combinedMessages = [...(allMessages || []), ...optimisticMessages];
+  
   // Filter messages by channel if specified
-  const filteredMessages = allMessages?.filter(msg => {
+  const filteredMessages = combinedMessages.filter(msg => {
     if (channelFilter === 'all') return true;
     return msg.channel === channelFilter;
-  }) || [];
+  });
+  
+  // Clear optimistic messages when real data refreshes
+  useEffect(() => {
+    if (allMessages && optimisticMessages.length > 0) {
+      // Check if optimistic messages are now in real data
+      const realIds = new Set(allMessages.map(m => m.id));
+      setOptimisticMessages(prev => prev.filter(m => !realIds.has(m.id)));
+    }
+  }, [allMessages]);
 
   // Auto-scroll to bottom when drawer opens or messages change
   useEffect(() => {
@@ -94,20 +109,55 @@ export const MessagePreviewDrawer = ({
   const handleSend = async () => {
     if (!messageText.trim() || !clientId) return;
     
+    const messageContent = messageText.trim();
+    
     // For WhatsApp channel, send directly
     if (channelFilter === 'whatsapp' && displayPhone) {
+      // Create optimistic message for immediate UI feedback
+      const optimisticMsg: UnifiedMessage = {
+        id: `optimistic-${Date.now()}`,
+        channel: 'whatsapp',
+        clientId: clientId,
+        clientName: displayName,
+        subject: null,
+        preview: messageContent,
+        fullContent: messageContent,
+        sentAt: new Date().toISOString(),
+        status: 'sending',
+        recipientEmail: null,
+        recipientPhone: displayPhone,
+        projectId: null,
+        projectName: null,
+      };
+      
+      // Add optimistic message immediately
+      setOptimisticMessages(prev => [...prev, optimisticMsg]);
+      setMessageText("");
+      
+      // Scroll to bottom
+      setTimeout(() => {
+        scrollAreaRef.current?.scrollTo({
+          top: scrollAreaRef.current.scrollHeight,
+          behavior: 'smooth'
+        });
+      }, 50);
+      
       try {
         await sendWhatsApp.mutateAsync({
           to: displayPhone,
-          message: messageText.trim(),
+          message: messageContent,
           clientId: clientId,
         });
-        setMessageText("");
-        // Invalidate to refresh messages
-        queryClient.invalidateQueries({ queryKey: ['unified-communications', clientId] });
-        queryClient.invalidateQueries({ queryKey: ['client-whatsapp-messages', clientId] });
+        
+        // Invalidate queries with partial matching and force refetch
+        await queryClient.invalidateQueries({ queryKey: ['unified-communications'] });
+        await queryClient.invalidateQueries({ queryKey: ['client-whatsapp-messages'] });
+        await queryClient.invalidateQueries({ queryKey: ['whatsapp-messages'] });
+        await refetch();
       } catch (error) {
         console.error('Failed to send WhatsApp:', error);
+        // Remove optimistic message on error
+        setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
       }
       return;
     }
