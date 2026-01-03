@@ -5,12 +5,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Check, Loader2 } from "lucide-react";
+import { Mail, Check, Loader2, MessageSquare, Phone } from "lucide-react";
 import { useEmailSettings, useUpdateEmailSettings } from "@/hooks/useEmailSettings";
 import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { useState, useEffect } from "react";
 import { TestEmailButton } from "@/components/email-setup/TestEmailButton";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
 export const EmailSettings = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -262,6 +265,96 @@ export const EmailSettings = () => {
           Want to send from your own domain? Configure SendGrid in Settings → Integrations.
         </p>
       )}
+
+      {/* WhatsApp Sender Information */}
+      <WhatsAppSenderCard />
     </div>
+  );
+};
+
+// Separate component for WhatsApp sender info
+const WhatsAppSenderCard = () => {
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+  
+  // Fetch Twilio integration settings
+  const { data: twilioSettings } = useQuery({
+    queryKey: ['twilio-settings', effectiveOwnerId],
+    queryFn: async () => {
+      if (!effectiveOwnerId) return null;
+      
+      const { data } = await supabase
+        .from('integration_settings')
+        .select('configuration, active')
+        .eq('account_owner_id', effectiveOwnerId)
+        .eq('integration_type', 'twilio')
+        .eq('active', true)
+        .maybeSingle();
+      
+      return data;
+    },
+    enabled: !!effectiveOwnerId,
+  });
+
+  const config = twilioSettings?.configuration as { 
+    twilio_phone_number?: string;
+    account_sid?: string;
+  } | null;
+
+  const hasCustomTwilio = !!config?.account_sid && !!config?.twilio_phone_number;
+  const senderNumber = hasCustomTwilio ? config?.twilio_phone_number : '+1 415 523 8886';
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-green-600" />
+            WhatsApp Sender
+          </CardTitle>
+          <Badge variant="outline" className={hasCustomTwilio 
+            ? "bg-green-50 text-green-700 border-green-200" 
+            : "bg-blue-50 text-blue-700 border-blue-200"
+          }>
+            {hasCustomTwilio ? (
+              <>
+                <Check className="h-3 w-3 mr-1" />
+                Custom Account
+              </>
+            ) : (
+              "Shared Service"
+            )}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+          <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+            <Phone className="h-5 w-5 text-green-600" />
+          </div>
+          <div>
+            <p className="text-sm font-medium">From Number</p>
+            <p className="text-lg font-mono">{senderNumber}</p>
+          </div>
+        </div>
+
+        {!hasCustomTwilio && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm text-amber-800">
+              <strong>Note:</strong> Messages are sent via the shared InterioApp WhatsApp Business number. 
+              Recipients must have joined the sandbox to receive messages.
+            </p>
+            <p className="text-xs text-amber-600 mt-2">
+              Want to use your own business number? Configure Twilio in Settings → Integrations → Communications.
+            </p>
+          </div>
+        )}
+
+        {hasCustomTwilio && (
+          <p className="text-sm text-muted-foreground">
+            Messages are sent from your custom Twilio WhatsApp Business account.
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 };

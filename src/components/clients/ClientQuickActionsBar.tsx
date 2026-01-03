@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Mail, Phone, StickyNote, Briefcase, Loader2, MessageSquare } from 'lucide-react';
 import { QuickEmailDialog } from './QuickEmailDialog';
 import { AddActivityDialog } from './AddActivityDialog';
-import { WhatsAppMessageDialog } from '@/components/messaging/WhatsAppMessageDialog';
+import { MessagePreviewDrawer } from '@/components/messaging/MessagePreviewDrawer';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,7 +25,7 @@ interface ClientQuickActionsBarProps {
 export const ClientQuickActionsBar = ({ client }: ClientQuickActionsBarProps) => {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
-  const [whatsAppDialogOpen, setWhatsAppDialogOpen] = useState(false);
+  const [messageDrawerOpen, setMessageDrawerOpen] = useState(false);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -175,11 +175,11 @@ export const ClientQuickActionsBar = ({ client }: ClientQuickActionsBarProps) =>
           <span className="hidden sm:inline">Call</span>
         </Button>
 
-        {/* WhatsApp Action */}
+        {/* WhatsApp Action - Opens conversation drawer */}
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setWhatsAppDialogOpen(true)}
+          onClick={() => setMessageDrawerOpen(true)}
           disabled={!client.phone}
           className="gap-1.5 text-green-600 hover:text-green-700 hover:bg-green-50"
         >
@@ -233,14 +233,11 @@ export const ClientQuickActionsBar = ({ client }: ClientQuickActionsBarProps) =>
         onOpenChange={setNoteDialogOpen}
       />
       
-      <WhatsAppMessageDialog
-        open={whatsAppDialogOpen}
-        onOpenChange={setWhatsAppDialogOpen}
-        client={{
-          id: client.id,
-          name: displayName || client.name,
-          phone: client.phone
-        }}
+      <MessagePreviewDrawer
+        open={messageDrawerOpen}
+        onOpenChange={setMessageDrawerOpen}
+        clientId={client.id}
+        channelFilter="whatsapp"
       />
     </>
   );
