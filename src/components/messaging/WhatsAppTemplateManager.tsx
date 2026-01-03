@@ -132,9 +132,35 @@ export const WhatsAppTemplateManager = () => {
             </Badge>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Sender Number Explanation */}
+          <div className="p-4 border-2 border-green-300 bg-green-50 rounded-lg">
+            <h4 className="font-medium text-sm text-green-800 mb-3 flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              How Messages Are Sent
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">
+                  📱
+                </div>
+                <div>
+                  <p className="font-medium text-sm text-green-900">Messages sent from: InterioApp Business Number</p>
+                  <p className="text-xs text-green-700 mt-1">
+                    Your clients will receive messages from our verified WhatsApp Business account. 
+                    The message will include your company name.
+                  </p>
+                </div>
+              </div>
+              <div className="text-xs text-green-600 bg-green-100 p-2 rounded">
+                <strong>Want to use your own number?</strong> Contact support to upgrade to Enterprise BYOA (Bring Your Own Account) with your own Twilio WhatsApp number.
+              </div>
+            </div>
+          </div>
+
+          {/* How it works */}
           <div className="p-4 bg-muted/50 rounded-lg space-y-3">
-            <h4 className="font-medium text-sm">How WhatsApp Business Messaging Works</h4>
+            <h4 className="font-medium text-sm">WhatsApp Business Rules</h4>
             <ul className="text-sm text-muted-foreground space-y-2">
               <li className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
@@ -152,16 +178,29 @@ export const WhatsAppTemplateManager = () => {
           </div>
 
           {/* Where to use WhatsApp */}
-          <div className="mt-4 p-4 border border-green-200 bg-green-50 rounded-lg">
-            <h4 className="font-medium text-sm text-green-800 mb-2">Where to Send WhatsApp Messages</h4>
-            <ul className="text-sm text-green-700 space-y-2">
-              <li className="flex items-center gap-2">
-                <span className="w-5 h-5 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
-                <span><strong>Client Profiles:</strong> Quick Actions → WhatsApp button</span>
+          <div className="p-4 border border-primary/20 bg-primary/5 rounded-lg">
+            <h4 className="font-medium text-sm mb-3">Where to Send WhatsApp Messages</h4>
+            <ul className="text-sm space-y-3">
+              <li className="flex items-start gap-3">
+                <span className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold shrink-0">1</span>
+                <div>
+                  <span className="font-medium">From Client Profiles</span>
+                  <p className="text-xs text-muted-foreground">Go to Clients → Select a client → Click "WhatsApp" in Quick Actions</p>
+                </div>
               </li>
-              <li className="flex items-center gap-2">
-                <span className="w-5 h-5 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
-                <span><strong>Email Management:</strong> WhatsApp tab to view message history</span>
+              <li className="flex items-start gap-3">
+                <span className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold shrink-0">2</span>
+                <div>
+                  <span className="font-medium">From Job Pages</span>
+                  <p className="text-xs text-muted-foreground">Open any Job → Click "Contact" button → Choose WhatsApp</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold shrink-0">3</span>
+                <div>
+                  <span className="font-medium">View Message History</span>
+                  <p className="text-xs text-muted-foreground">Go to Email Management → WhatsApp tab to see all sent messages</p>
+                </div>
               </li>
             </ul>
           </div>

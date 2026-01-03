@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,9 +10,11 @@ import {
   User, 
   Calendar,
   FileText,
-  ExternalLink
+  ExternalLink,
+  MessageSquare
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { WhatsAppMessageDialog } from "@/components/messaging/WhatsAppMessageDialog";
 
 interface JobClientDetailsDialogProps {
   open: boolean;
@@ -20,6 +23,8 @@ interface JobClientDetailsDialogProps {
 }
 
 export const JobClientDetailsDialog = ({ open, onOpenChange, client }: JobClientDetailsDialogProps) => {
+  const [showWhatsAppDialog, setShowWhatsAppDialog] = useState(false);
+  
   if (!client) return null;
 
   const handleEmailClient = () => {
@@ -34,7 +39,12 @@ export const JobClientDetailsDialog = ({ open, onOpenChange, client }: JobClient
     }
   };
 
+  const handleWhatsApp = () => {
+    setShowWhatsAppDialog(true);
+  };
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
@@ -96,10 +106,21 @@ export const JobClientDetailsDialog = ({ open, onOpenChange, client }: JobClient
                   <Phone className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">{client.phone}</span>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleCallClient}>
-                  <Phone className="h-4 w-4 mr-2" />
-                  Call
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleWhatsApp}
+                    className="border-green-200 text-green-700 hover:bg-green-50"
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    WhatsApp
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleCallClient}>
+                    <Phone className="h-4 w-4 mr-2" />
+                    Call
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -155,5 +176,19 @@ export const JobClientDetailsDialog = ({ open, onOpenChange, client }: JobClient
         </div>
       </DialogContent>
     </Dialog>
+    
+    {/* WhatsApp Dialog */}
+    {client.phone && (
+      <WhatsAppMessageDialog
+        open={showWhatsAppDialog}
+        onOpenChange={setShowWhatsAppDialog}
+        client={{
+          id: client.id,
+          name: client.name,
+          phone: client.phone,
+        }}
+      />
+    )}
+    </>
   );
 };
