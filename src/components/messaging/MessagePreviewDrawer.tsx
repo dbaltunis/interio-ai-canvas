@@ -58,14 +58,6 @@ export const MessagePreviewDrawer = ({
     return msg.channel === channelFilter;
   });
   
-  // Clear optimistic messages when real data refreshes
-  useEffect(() => {
-    if (allMessages && optimisticMessages.length > 0) {
-      // Check if optimistic messages are now in real data
-      const realIds = new Set(allMessages.map(m => m.id));
-      setOptimisticMessages(prev => prev.filter(m => !realIds.has(m.id)));
-    }
-  }, [allMessages]);
 
   // Auto-scroll to bottom when drawer opens or messages change
   useEffect(() => {
@@ -154,6 +146,8 @@ export const MessagePreviewDrawer = ({
         await queryClient.invalidateQueries({ queryKey: ['client-whatsapp-messages'] });
         await queryClient.invalidateQueries({ queryKey: ['whatsapp-messages'] });
         await refetch();
+        // Clear all optimistic messages after refetch - real data now loaded
+        setOptimisticMessages([]);
       } catch (error) {
         console.error('Failed to send WhatsApp:', error);
         // Remove optimistic message on error
