@@ -10,6 +10,7 @@ interface SendWhatsAppParams {
   templateVariables?: Record<string, string>;
   mediaUrl?: string;
   clientId?: string;
+  projectId?: string;
 }
 
 interface WhatsAppResponse {

@@ -13,6 +13,7 @@ interface WhatsAppRequest {
   templateVariables?: Record<string, string>;
   mediaUrl?: string;
   clientId?: string;
+  projectId?: string;
 }
 
 serve(async (req) => {
@@ -60,7 +61,7 @@ serve(async (req) => {
 
     // Parse request body
     const body: WhatsAppRequest = await req.json();
-    const { to, message, templateId, templateVariables, mediaUrl, clientId } = body;
+    const { to, message, templateId, templateVariables, mediaUrl, clientId, projectId } = body;
 
     if (!to) {
       throw new Error('Phone number (to) is required');
@@ -175,6 +176,7 @@ serve(async (req) => {
         account_owner_id: accountOwnerId,
         user_id: user.id,
         client_id: clientId || null,
+        project_id: projectId || null,
         to_number: to,
         template_id: templateId || null,
         message_body: messageBody,

@@ -1126,6 +1126,8 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
             email: client.email,
             phone: client.phone,
           }}
+          project={project}
+          projectId={project?.id}
         />
       )}
     </div>

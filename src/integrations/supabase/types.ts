@@ -9435,6 +9435,7 @@ export type Database = {
           id: string
           media_url: string | null
           message_body: string | null
+          project_id: string | null
           status: string | null
           status_updated_at: string | null
           template_id: string | null
@@ -9450,6 +9451,7 @@ export type Database = {
           id?: string
           media_url?: string | null
           message_body?: string | null
+          project_id?: string | null
           status?: string | null
           status_updated_at?: string | null
           template_id?: string | null
@@ -9465,6 +9467,7 @@ export type Database = {
           id?: string
           media_url?: string | null
           message_body?: string | null
+          project_id?: string | null
           status?: string | null
           status_updated_at?: string | null
           template_id?: string | null
@@ -9485,6 +9488,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_message_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
           {
