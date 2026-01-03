@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mail, Phone, StickyNote, Briefcase, Loader2, MessageSquare } from 'lucide-react';
+import { Mail, Phone, StickyNote, Briefcase, Loader2, MessageSquare, Edit } from 'lucide-react';
 import { QuickEmailDialog } from './QuickEmailDialog';
 import { AddActivityDialog } from './AddActivityDialog';
 import { MessagePreviewDrawer } from '@/components/messaging/MessagePreviewDrawer';
@@ -20,9 +20,11 @@ interface Client {
 
 interface ClientQuickActionsBarProps {
   client: Client;
+  onEdit?: () => void;
+  canEditClient?: boolean;
 }
 
-export const ClientQuickActionsBar = ({ client }: ClientQuickActionsBarProps) => {
+export const ClientQuickActionsBar = ({ client, onEdit, canEditClient }: ClientQuickActionsBarProps) => {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [messageDrawerOpen, setMessageDrawerOpen] = useState(false);
@@ -215,6 +217,19 @@ export const ClientQuickActionsBar = ({ client }: ClientQuickActionsBarProps) =>
             {isCreatingProject ? "Creating..." : "New Project"}
           </span>
         </Button>
+
+        {/* Edit Client */}
+        {canEditClient && onEdit && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onEdit}
+            className="gap-1.5"
+          >
+            <Edit className="h-4 w-4" />
+            <span className="hidden sm:inline">Edit</span>
+          </Button>
+        )}
       </div>
 
       <QuickEmailDialog
