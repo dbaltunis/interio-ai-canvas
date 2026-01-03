@@ -95,6 +95,20 @@ serve(async (req) => {
     const fromNumber = `whatsapp:${twilioWhatsAppNumber.startsWith('+') ? twilioWhatsAppNumber : '+' + twilioWhatsAppNumber}`;
     const toNumber = `whatsapp:${to.startsWith('+') ? to : '+' + to}`;
 
+    // Validate that To and From are different numbers
+    const fromClean = fromNumber.replace(/\D/g, '');
+    const toClean = toNumber.replace(/\D/g, '');
+
+    if (fromClean === toClean) {
+      console.log('Cannot send message - To and From numbers are the same');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Cannot send WhatsApp message to your own business number. Please use a different recipient phone number.',
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log(`Sending WhatsApp from ${fromNumber} to ${toNumber}`);
 
     // Build message body
