@@ -44,7 +44,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { JobNotesDialog } from "./JobNotesDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { EmailStatusDisplay } from "./EmailStatusDisplay";
+import { ProjectCommunicationsDisplay } from "./ProjectCommunicationsDisplay";
+import { useProjectCommunicationStats } from "@/hooks/useProjectCommunicationStats";
 import { JobsPagination } from "./JobsPagination";
 import { JobsTableSkeleton } from "./skeleton/JobsTableSkeleton";
 import { useUserCurrency, formatCurrency } from "@/components/job-creation/treatment-pricing/window-covering-options/currencyUtils";
@@ -111,6 +112,10 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
   const [duplicateData, setDuplicateData] = useState<Record<string, any>>({});
   const updateProject = useUpdateProject();
   const createProject = useCreateProject();
+
+  // Fetch communication stats for all projects
+  const projectsInfo = projects.map(p => ({ projectId: p.id, clientId: p.client_id }));
+  const { data: projectCommStats = {} } = useProjectCommunicationStats(projectsInfo);
 
   // Filter columns for tablet view - show only 5 most important columns
   const tabletImportantColumns = ['job_no', 'client', 'status', 'total', 'actions'];
@@ -824,9 +829,8 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
       case 'emails':
         return (
           <div onClick={(e) => e.stopPropagation()}>
-            <EmailStatusDisplay 
-              jobId={project.id}
-              clientEmail={client?.email}
+            <ProjectCommunicationsDisplay 
+              stats={projectCommStats[project.id]}
             />
           </div>
         );
