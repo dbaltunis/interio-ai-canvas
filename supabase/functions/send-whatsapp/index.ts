@@ -49,34 +49,7 @@ serve(async (req) => {
 
     console.log(`User ${user.id} requesting WhatsApp send`);
 
-    // Check if user has WhatsApp feature access
-    const { data: subscription } = await supabase
-      .from('user_subscriptions')
-      .select(`
-        *,
-        subscription_plan:subscription_plans(features_included)
-      `)
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
-
-    const hasWhatsApp = subscription?.subscription_plan?.features_included?.whatsapp === true;
-    
-    // Also check for user add-ons
-    const { data: addOns } = await supabase
-      .from('user_subscription_add_ons')
-      .select('*, add_on:subscription_add_ons(feature_key)')
-      .eq('user_id', user.id)
-      .eq('is_active', true);
-
-    const hasWhatsAppAddOn = addOns?.some((a: any) => a.add_on?.feature_key === 'whatsapp');
-
-    if (!hasWhatsApp && !hasWhatsAppAddOn) {
-      return new Response(
-        JSON.stringify({ error: 'WhatsApp messaging requires Enterprise plan or WhatsApp add-on' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // WhatsApp is available to all authenticated users via shared InterioApp number
 
     // Parse request body
     const body: WhatsAppRequest = await req.json();

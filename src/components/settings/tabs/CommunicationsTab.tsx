@@ -59,11 +59,11 @@ export const CommunicationsTab = () => {
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm">SMS</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {hasTwilioIntegration ? 'Twilio configured' : 'Not configured'}
+                  {hasTwilioIntegration ? 'Your Twilio' : 'Requires your Twilio'}
                 </p>
               </div>
               <Badge variant={hasTwilioIntegration ? "default" : "outline"} className="text-[10px] shrink-0">
-                {hasTwilioIntegration ? 'Active' : 'Setup'}
+                {hasTwilioIntegration ? 'Active' : 'BYOA'}
               </Badge>
             </div>
             
@@ -74,7 +74,7 @@ export const CommunicationsTab = () => {
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm">WhatsApp</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  Business messaging
+                  Shared InterioApp number
                 </p>
               </div>
               <Badge variant="default" className="text-[10px] shrink-0">
