@@ -199,6 +199,16 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
           </div>
         ) : (
           <>
+            {/* Sandbox warning banner */}
+            <div className="px-3 py-2 bg-amber-50 border-b border-amber-200">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-amber-700">
+                  <strong>Sandbox Mode:</strong> Recipient must have joined the Twilio sandbox to receive messages.
+                </p>
+              </div>
+            </div>
+
             {/* Chat preview area */}
             <div className="flex-1 p-4 bg-[#ECE5DD] dark:bg-[#0B141A] min-h-[200px] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiLz48cGF0aCBmaWxsPSIjMDAwIiBmaWxsLW9wYWNpdHk9Ii4wNSIgZD0iTTIwIDIwbTIgMGEyIDIgMCAxIDAgLTQgMGEyIDIgMCAxIDAgNCAwIi8+PC9nPjwvc3ZnPg==')]">
               {getPreviewMessage() && (

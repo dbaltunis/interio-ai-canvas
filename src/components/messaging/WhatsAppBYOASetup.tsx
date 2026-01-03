@@ -40,6 +40,23 @@ export const WhatsAppBYOASetup = () => {
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
 
+  // Fetch business settings for company name
+  const { data: businessSettings } = useQuery({
+    queryKey: ['whatsapp-business-settings'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data } = await supabase
+        .from('business_settings')
+        .select('company_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      return data;
+    }
+  });
+
   // Fetch existing settings
   const { data: settings, isLoading } = useQuery({
     queryKey: ['whatsapp-user-settings'],
@@ -153,17 +170,21 @@ export const WhatsAppBYOASetup = () => {
   }
 
   // Determine current sender display
+  const businessName = businessSettings?.company_name || 'InterioApp';
+  
   const getCurrentSenderInfo = () => {
     if (settings?.use_own_account && settings.whatsapp_number) {
       return {
-        label: 'Your Business Number',
+        label: businessName,
+        sublabel: 'Your Business Number',
         number: settings.whatsapp_number,
         verified: settings.verified,
         isSandbox: false
       };
     }
     return {
-      label: 'Twilio Sandbox',
+      label: businessName,
+      sublabel: 'Twilio Sandbox',
       number: '+1 (415) 523-8886',
       verified: true,
       isSandbox: true
@@ -196,13 +217,14 @@ export const WhatsAppBYOASetup = () => {
                 )} />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Messages sent from</p>
+                <p className="text-xs text-muted-foreground">Messages sent as</p>
+                <p className="font-medium">{senderInfo.label}</p>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">{senderInfo.label}</span>
-                  <span className="text-sm text-muted-foreground">({senderInfo.number})</span>
+                  <span className="text-xs text-muted-foreground">{senderInfo.sublabel}</span>
+                  <span className="text-xs text-muted-foreground">({senderInfo.number})</span>
                   {senderInfo.verified && (
                     <Check className={cn(
-                      "h-4 w-4",
+                      "h-3 w-3",
                       senderInfo.isSandbox ? "text-amber-600" : "text-green-600"
                     )} />
                   )}
