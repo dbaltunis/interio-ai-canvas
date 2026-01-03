@@ -646,11 +646,7 @@ export const QuotationTab = ({
               {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
             </Button>
 
-            {/* Secondary Actions */}
-            <Button variant="outline" size="sm" onClick={() => setIsEmailModalOpen(true)} disabled={isGeneratingPDF || !selectedTemplate || isReadOnly} className="h-9 px-4">
-              <Mail className="h-4 w-4 mr-2" />
-              Email
-            </Button>
+            {/* Email action is available via Contact button in JobDetailPage header */}
 
             {/* Discount Button */}
             <Button variant="outline" size="sm" onClick={handleAddDiscount} disabled={createQuote.isPending || isReadOnly} className="h-9 px-4">
