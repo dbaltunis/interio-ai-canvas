@@ -11,83 +11,46 @@ import { useIntegrationStatus } from "@/hooks/useIntegrationStatus";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-
 export const CommunicationsTab = () => {
-  const { hasSendGridIntegration } = useIntegrationStatus();
-  const { integrations } = useIntegrations();
-  
+  const {
+    hasSendGridIntegration
+  } = useIntegrationStatus();
+  const {
+    integrations
+  } = useIntegrations();
+
   // Check Twilio integration
   const twilioIntegration = integrations.find(i => i.integration_type === 'twilio');
   const hasTwilioIntegration = twilioIntegration?.active === true;
 
   // Check WhatsApp BYOA status
-  const { data: whatsappSettings } = useQuery({
+  const {
+    data: whatsappSettings
+  } = useQuery({
     queryKey: ['whatsapp-user-settings'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await supabase
-        .from('whatsapp_user_settings')
-        .select('use_own_account, verified')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const {
+        data
+      } = await supabase.from('whatsapp_user_settings').select('use_own_account, verified').eq('user_id', user.id).maybeSingle();
       return data;
     }
   });
-
   const hasOwnWhatsApp = whatsappSettings?.use_own_account && whatsappSettings?.verified;
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Header */}
       <div>
         <h3 className="text-lg font-medium">Communications</h3>
-        <p className="text-sm text-muted-foreground">
-          Configure how you communicate with clients via email, SMS, and WhatsApp
-        </p>
+        
       </div>
 
       {/* Quick Start Guide */}
-      <Card className="border-primary/20 bg-primary/5">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Quick Start Guide</CardTitle>
-          <CardDescription>Where to find and use each communication channel</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-3 bg-background rounded-lg border">
-              <div className="flex items-center gap-2 mb-2">
-                <Mail className="h-4 w-4 text-blue-600" />
-                <span className="font-medium text-sm">Email</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Client profiles → Quick Actions → Email, or Email Management page
-              </p>
-            </div>
-            <div className="p-3 bg-background rounded-lg border">
-              <div className="flex items-center gap-2 mb-2">
-                <Phone className="h-4 w-4 text-purple-600" />
-                <span className="font-medium text-sm">SMS</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {hasTwilioIntegration 
-                  ? 'Client profiles → Quick Actions → SMS'
-                  : 'Setup Twilio below, then use from Client profiles'}
-              </p>
-            </div>
-            <div className="p-3 bg-background rounded-lg border border-green-200">
-              <div className="flex items-center gap-2 mb-2">
-                <MessageSquare className="h-4 w-4 text-green-600" />
-                <span className="font-medium text-sm">WhatsApp</span>
-                <Badge variant="default" className="text-[10px] bg-green-600">Ready</Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Client profiles → Quick Actions → WhatsApp, or Job pages → Contact button
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      
 
       {/* Status Overview */}
       <Card>
@@ -180,6 +143,5 @@ export const CommunicationsTab = () => {
           <WhatsAppTemplateManager />
         </TabsContent>
       </Tabs>
-    </div>
-  );
+    </div>;
 };
