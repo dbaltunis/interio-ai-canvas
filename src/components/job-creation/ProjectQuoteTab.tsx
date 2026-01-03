@@ -344,6 +344,7 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
             name: client.name,
             phone: client.phone
           }}
+          projectId={project?.id}
         />
       )}
 

@@ -6,8 +6,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Mail, MessageSquare, Phone, ExternalLink } from 'lucide-react';
+import { Mail, MessageSquare, Phone, ExternalLink, FileText } from 'lucide-react';
 import { WhatsAppMessageDialog } from './WhatsAppMessageDialog';
+import { EmailQuoteModal } from '@/components/jobs/quotation/EmailQuoteModal';
 
 interface ContactClientDialogProps {
   open: boolean;
@@ -18,19 +19,31 @@ interface ContactClientDialogProps {
     email?: string | null;
     phone?: string | null;
   };
+  project?: any;
+  projectId?: string;
 }
 
 export const ContactClientDialog: React.FC<ContactClientDialogProps> = ({
   open,
   onOpenChange,
   client,
+  project,
+  projectId,
 }) => {
   const [showWhatsAppDialog, setShowWhatsAppDialog] = useState(false);
+  const [showEmailQuoteModal, setShowEmailQuoteModal] = useState(false);
 
   const handleEmail = () => {
-    if (client.email) {
-      window.open(`mailto:${client.email}`, '_blank');
+    // If we have a project context, open the EmailQuoteModal for proper email with attachments
+    if (project) {
+      setShowEmailQuoteModal(true);
       onOpenChange(false);
+    } else {
+      // Fallback to mailto for simple contact
+      if (client.email) {
+        window.open(`mailto:${client.email}`, '_blank');
+        onOpenChange(false);
+      }
     }
   };
 
@@ -67,10 +80,18 @@ export const ContactClientDialog: React.FC<ContactClientDialogProps> = ({
                   <Mail className="h-5 w-5 text-blue-600" />
                 </div>
                 <div className="text-left flex-1">
-                  <p className="font-medium">Send Email</p>
+                  <p className="font-medium">
+                    {project ? 'Email with Quote' : 'Send Email'}
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     {client.email || 'No email address'}
                   </p>
+                  {project && client.email && (
+                    <p className="text-xs text-blue-600 mt-0.5 flex items-center gap-1">
+                      <FileText className="h-3 w-3" />
+                      Attach quote PDF
+                    </p>
+                  )}
                 </div>
                 {client.email && <ExternalLink className="h-4 w-4 text-muted-foreground" />}
               </div>
@@ -134,6 +155,20 @@ export const ContactClientDialog: React.FC<ContactClientDialogProps> = ({
             id: client.id,
             name: client.name,
             phone: client.phone,
+          }}
+          projectId={projectId || project?.id}
+        />
+      )}
+
+      {/* Email Quote Modal - for project context */}
+      {project && (
+        <EmailQuoteModal
+          isOpen={showEmailQuoteModal}
+          onClose={() => setShowEmailQuoteModal(false)}
+          project={project}
+          client={client}
+          onSend={() => {
+            setShowEmailQuoteModal(false);
           }}
         />
       )}

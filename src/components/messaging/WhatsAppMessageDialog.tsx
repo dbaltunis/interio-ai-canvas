@@ -32,6 +32,9 @@ interface WhatsAppMessageDialogProps {
     name: string;
     phone?: string;
   };
+  projectId?: string;
+  quoteId?: string;
+  defaultMediaUrl?: string;
 }
 
 interface WhatsAppTemplate {
@@ -48,14 +51,24 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
   open,
   onOpenChange,
   client,
+  projectId,
+  quoteId,
+  defaultMediaUrl,
 }) => {
   const [messageType, setMessageType] = useState<'template' | 'freeform'>('template');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [message, setMessage] = useState('');
   const [templateVariables, setTemplateVariables] = useState<Record<string, string>>({});
-  const [mediaUrl, setMediaUrl] = useState('');
+  const [mediaUrl, setMediaUrl] = useState(defaultMediaUrl || '');
 
   const sendWhatsApp = useSendWhatsApp();
+
+  // Update mediaUrl when defaultMediaUrl changes
+  React.useEffect(() => {
+    if (defaultMediaUrl) {
+      setMediaUrl(defaultMediaUrl);
+    }
+  }, [defaultMediaUrl]);
 
   // Fetch templates
   const { data: templates = [], isLoading: loadingTemplates } = useQuery({
@@ -120,6 +133,7 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
         templateVariables: messageType === 'template' ? templateVariables : undefined,
         mediaUrl: mediaUrl || undefined,
         clientId: client.id,
+        projectId: projectId,
       });
       
       onOpenChange(false);
@@ -127,7 +141,7 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
       setMessage('');
       setSelectedTemplate('');
       setTemplateVariables({});
-      setMediaUrl('');
+      setMediaUrl(defaultMediaUrl || '');
     } catch (error) {
       // Error is handled by the hook
     }
