@@ -33,8 +33,7 @@ export const useUnifiedCommunications = (clientId?: string) => {
         .from("emails")
         .select(`
           *,
-          clients:client_id (name),
-          projects:project_id (name)
+          clients:client_id (name)
         `)
         .eq("user_id", effectiveOwnerId)
         .order("created_at", { ascending: false });
@@ -76,8 +75,8 @@ export const useUnifiedCommunications = (clientId?: string) => {
         channel: 'email' as const,
         clientId: email.client_id,
         clientName: email.clients?.name || email.recipient_email || 'Unknown',
-        projectId: email.project_id,
-        projectName: email.projects?.name || null,
+        projectId: null,
+        projectName: null,
         subject: email.subject,
         preview: email.subject || 'No subject',
         fullContent: email.html_body || email.text_body || '',
