@@ -252,6 +252,8 @@ export const ClientQuickActionsBar = ({ client, onEdit, canEditClient }: ClientQ
         open={messageDrawerOpen}
         onOpenChange={setMessageDrawerOpen}
         clientId={client.id}
+        clientName={displayName || client.name}
+        clientPhone={client.phone}
         channelFilter="whatsapp"
       />
     </>
