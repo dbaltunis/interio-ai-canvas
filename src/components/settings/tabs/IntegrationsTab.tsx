@@ -2,13 +2,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Zap, CreditCard, MessageSquare, Calendar, Package, Building, Database, AlertCircle, CheckCircle2, Globe, Truck } from "lucide-react";
+import { Mail, Zap, CreditCard, Calendar, Package, Building, Database, AlertCircle, CheckCircle2, Globe, Truck } from "lucide-react";
 import { SendGridIntegrationTab } from "./SendGridIntegrationTab";
 import { GoogleCalendarTab } from "./GoogleCalendarTab";
 import { TIGPIMIntegrationTab } from "@/components/integrations/TIGPIMIntegrationTab";
 import { MYOBExoIntegrationTab } from "@/components/integrations/MYOBExoIntegrationTab";
 import { RFMSIntegrationTab } from "@/components/integrations/RFMSIntegrationTab";
-import { TwilioIntegrationTab } from "@/components/integrations/TwilioIntegrationTab";
 import { TWCIntegrationTab } from "@/components/integrations/TWCIntegrationTab";
 import { WebsiteAPIIntegrationTab } from "@/components/integrations/WebsiteAPIIntegrationTab";
 import { ShopifySetupTab } from "@/components/library/shopify/ShopifySetupTab";
@@ -35,7 +34,7 @@ export const IntegrationsTab = () => {
       <div>
         <h3 className="text-lg font-medium">Integrations</h3>
         <p className="text-sm text-muted-foreground">
-          Connect your business with external services and APIs
+          Connect with external services like ERP, PIM, calendars, and payments
         </p>
       </div>
 
@@ -84,10 +83,6 @@ export const IntegrationsTab = () => {
           <TabsTrigger value="payments" className="flex items-center gap-2">
             <CreditCard className="h-4 w-4" />
             Payments
-          </TabsTrigger>
-          <TabsTrigger value="communication" className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Communication
           </TabsTrigger>
           <TabsTrigger value="website" className="flex items-center gap-2">
             <Globe className="h-4 w-4" />
@@ -142,10 +137,6 @@ export const IntegrationsTab = () => {
 
         <TabsContent value="payments">
           <StripeIntegrationTab />
-        </TabsContent>
-
-        <TabsContent value="communication">
-          <TwilioIntegrationTab />
         </TabsContent>
 
         <TabsContent value="website">
