@@ -14,15 +14,19 @@ import { useNavigate } from "react-router-dom";
 interface MessagePreviewDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  message: UnifiedMessage | null;
-  onComposeWhatsApp?: (clientId: string) => void;
-  onComposeEmail?: (clientId: string) => void;
+  message?: UnifiedMessage | null;
+  clientId?: string;
+  channelFilter?: 'all' | 'email' | 'whatsapp';
+  onComposeWhatsApp?: (clientId?: string) => void;
+  onComposeEmail?: (clientId?: string) => void;
 }
 
 export const MessagePreviewDrawer = ({ 
   open, 
   onOpenChange, 
   message,
+  clientId: propClientId,
+  channelFilter = 'all',
   onComposeWhatsApp,
   onComposeEmail
 }: MessagePreviewDrawerProps) => {
@@ -30,9 +34,15 @@ export const MessagePreviewDrawer = ({
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [messageText, setMessageText] = useState("");
 
-  // Fetch ALL messages for this client
-  const clientId = message?.clientId || undefined;
+  // Use prop clientId or fall back to message's clientId
+  const clientId = propClientId || message?.clientId || undefined;
   const { data: allMessages } = useUnifiedCommunications(clientId);
+
+  // Filter messages by channel if specified
+  const filteredMessages = allMessages?.filter(msg => {
+    if (channelFilter === 'all') return true;
+    return msg.channel === channelFilter;
+  }) || [];
 
   // Auto-scroll to bottom when drawer opens or messages change
   useEffect(() => {
@@ -44,9 +54,12 @@ export const MessagePreviewDrawer = ({
         });
       }, 100);
     }
-  }, [open, allMessages?.length]);
+  }, [open, filteredMessages?.length]);
 
-  if (!message) return null;
+  // Get client info from first message if no message prop provided
+  const clientInfo = message || filteredMessages?.[0];
+
+  if (!clientId || !clientInfo) return null;
 
   const getInitials = (name: string) => {
     return name
@@ -63,22 +76,30 @@ export const MessagePreviewDrawer = ({
   };
 
   const handleCall = () => {
-    if (message.recipientPhone) {
-      window.open(`tel:${message.recipientPhone}`, '_self');
+    const phone = clientInfo.recipientPhone;
+    if (phone) {
+      window.open(`tel:${phone}`, '_self');
     }
   };
 
   const handleSend = () => {
     if (!messageText.trim() || !clientId) return;
     
-    // Determine channel based on last message or default to WhatsApp
-    const lastMessage = allMessages?.[0];
-    if (lastMessage?.channel === 'whatsapp' && onComposeWhatsApp) {
+    // Determine channel based on filter or last message
+    if (channelFilter === 'whatsapp' && onComposeWhatsApp) {
       onComposeWhatsApp(clientId);
-    } else if (onComposeEmail) {
+    } else if (channelFilter === 'email' && onComposeEmail) {
       onComposeEmail(clientId);
-    } else if (onComposeWhatsApp) {
-      onComposeWhatsApp(clientId);
+    } else {
+      // Default: use last message channel
+      const lastMessage = filteredMessages?.[0];
+      if (lastMessage?.channel === 'whatsapp' && onComposeWhatsApp) {
+        onComposeWhatsApp(clientId);
+      } else if (onComposeEmail) {
+        onComposeEmail(clientId);
+      } else if (onComposeWhatsApp) {
+        onComposeWhatsApp(clientId);
+      }
     }
     
     setMessageText("");
@@ -90,9 +111,9 @@ export const MessagePreviewDrawer = ({
     return format(date, "MMMM d, yyyy");
   };
 
-  // Group messages by date
+  // Group messages by date (oldest first for display)
   const groupedMessages: { date: Date; messages: UnifiedMessage[] }[] = [];
-  const sortedMessages = [...(allMessages || [])].sort(
+  const sortedMessages = [...filteredMessages].sort(
     (a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime()
   );
 
@@ -107,6 +128,8 @@ export const MessagePreviewDrawer = ({
     }
   });
 
+  const channelLabel = channelFilter === 'email' ? 'Email' : channelFilter === 'whatsapp' ? 'WhatsApp' : 'Messages';
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md p-0 flex flex-col">
@@ -114,17 +137,17 @@ export const MessagePreviewDrawer = ({
         <div className="flex items-center gap-3 px-4 py-3 bg-[#075E54] dark:bg-[#1F2C34] text-white">
           <Avatar className="h-10 w-10 border-2 border-white/20">
             <AvatarFallback className="bg-white/20 text-white font-medium">
-              {getInitials(message.clientName)}
+              {getInitials(clientInfo.clientName)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold truncate">{message.clientName}</h3>
+            <h3 className="font-semibold truncate">{clientInfo.clientName}</h3>
             <p className="text-xs text-white/70">
-              {message.recipientPhone || message.recipientEmail}
+              {channelLabel} • {filteredMessages.length} message{filteredMessages.length !== 1 ? 's' : ''}
             </p>
           </div>
           <div className="flex items-center gap-1">
-            {message.recipientPhone && (
+            {clientInfo.recipientPhone && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -166,7 +189,7 @@ export const MessagePreviewDrawer = ({
                   
                   return (
                     <div key={`${msg.channel}-${msg.id}`} className="space-y-2">
-                      {/* Project link if different from current context */}
+                      {/* Project link if available */}
                       {msg.projectName && (
                         <button
                           onClick={() => handleProjectClick(msg.projectId!)}
@@ -229,12 +252,16 @@ export const MessagePreviewDrawer = ({
             ))}
 
             {/* Empty state */}
-            {(!allMessages || allMessages.length === 0) && (
+            {filteredMessages.length === 0 && (
               <div className="text-center py-12">
                 <div className="w-12 h-12 rounded-full bg-white/50 dark:bg-white/10 flex items-center justify-center mx-auto mb-3">
-                  <MessageSquare className="h-6 w-6 text-muted-foreground" />
+                  {channelFilter === 'email' ? (
+                    <Mail className="h-6 w-6 text-muted-foreground" />
+                  ) : (
+                    <MessageSquare className="h-6 w-6 text-muted-foreground" />
+                  )}
                 </div>
-                <p className="text-sm text-muted-foreground">No messages yet</p>
+                <p className="text-sm text-muted-foreground">No {channelLabel.toLowerCase()} yet</p>
               </div>
             )}
           </div>
