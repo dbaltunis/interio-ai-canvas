@@ -2,27 +2,18 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Send, Image, Loader2, AlertCircle } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { MessageSquare, Send, Loader2, AlertCircle, X } from 'lucide-react';
 import { useSendWhatsApp } from '@/hooks/useSendWhatsApp';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { WhatsAppMediaUpload } from './WhatsAppMediaUpload';
+import { WhatsAppStatusIcon } from './WhatsAppStatusIcon';
+import { cn } from '@/lib/utils';
 
 interface WhatsAppMessageDialogProps {
   open: boolean;
@@ -55,7 +46,6 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
   quoteId,
   defaultMediaUrl,
 }) => {
-  const [messageType, setMessageType] = useState<'template' | 'freeform'>('template');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [message, setMessage] = useState('');
   const [templateVariables, setTemplateVariables] = useState<Record<string, string>>({});
@@ -64,7 +54,7 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
   const sendWhatsApp = useSendWhatsApp();
 
   // Update mediaUrl when defaultMediaUrl changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (defaultMediaUrl) {
       setMediaUrl(defaultMediaUrl);
     }
@@ -82,7 +72,6 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
 
       if (error) throw error;
       
-      // Parse the variables field properly
       return (data || []).map(t => ({
         ...t,
         variables: Array.isArray(t.variables) ? t.variables : JSON.parse(t.variables as string || '[]')
@@ -94,12 +83,11 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
   // Get the selected template
   const template = templates.find((t) => t.id === selectedTemplate);
 
-  // Reset variables when template changes
+  // Reset variables when template changes and auto-fill message
   useEffect(() => {
     if (template) {
       const initialVars: Record<string, string> = {};
       template.variables.forEach((v: string) => {
-        // Pre-fill client_name if available
         if (v === 'client_name') {
           initialVars[v] = client.name;
         } else {
@@ -107,19 +95,39 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
         }
       });
       setTemplateVariables(initialVars);
+      
+      // Auto-fill message from template
+      let content = template.content;
+      for (const [key, value] of Object.entries(initialVars)) {
+        content = content.replace(new RegExp(`{{${key}}}`, 'g'), value || `[${key}]`);
+      }
+      setMessage(content);
     }
   }, [template, client.name]);
 
   // Generate preview message
   const getPreviewMessage = () => {
-    if (messageType === 'freeform') return message;
-    if (!template) return '';
-
-    let preview = template.content;
-    for (const [key, value] of Object.entries(templateVariables)) {
-      preview = preview.replace(new RegExp(`{{${key}}}`, 'g'), value || `[${key}]`);
+    if (!message) return '';
+    
+    if (selectedTemplate && template) {
+      let preview = template.content;
+      for (const [key, value] of Object.entries(templateVariables)) {
+        preview = preview.replace(new RegExp(`{{${key}}}`, 'g'), value || `[${key}]`);
+      }
+      return preview;
     }
-    return preview;
+    
+    return message;
+  };
+
+  const handleTemplateSelect = (templateId: string) => {
+    if (selectedTemplate === templateId) {
+      // Deselect
+      setSelectedTemplate('');
+      setMessage('');
+    } else {
+      setSelectedTemplate(templateId);
+    }
   };
 
   const handleSend = async () => {
@@ -128,9 +136,9 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
     try {
       await sendWhatsApp.mutateAsync({
         to: client.phone,
-        message: messageType === 'freeform' ? message : undefined,
-        templateId: messageType === 'template' ? selectedTemplate : undefined,
-        templateVariables: messageType === 'template' ? templateVariables : undefined,
+        message: message || undefined,
+        templateId: selectedTemplate || undefined,
+        templateVariables: selectedTemplate ? templateVariables : undefined,
         mediaUrl: mediaUrl || undefined,
         clientId: client.id,
         projectId: projectId,
@@ -147,173 +155,183 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
     }
   };
 
-  const canSend = client.phone && (
-    (messageType === 'freeform' && message.trim()) ||
-    (messageType === 'template' && selectedTemplate)
-  );
+  const canSend = client.phone && message.trim();
+
+  const formatPhoneNumber = (phone: string) => {
+    // Format for display: +1 (555) 123-4567
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 11 && cleaned.startsWith('1')) {
+      return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+    }
+    return phone;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-green-600" />
-            Send WhatsApp to {client.name}
-            <Badge variant="secondary" className="ml-2 bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-700 border-amber-200">
-              Enterprise
-            </Badge>
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[440px] p-0 gap-0 overflow-hidden">
+        {/* Header - WhatsApp style */}
+        <div className="flex items-center gap-3 px-4 py-3 bg-[#075E54] dark:bg-[#1F2C34] text-white">
+          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-white/20">
+            <MessageSquare className="h-5 w-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold truncate">{client.name}</h3>
+            <p className="text-xs text-white/70">{client.phone ? formatPhoneNumber(client.phone) : 'No phone'}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-white hover:bg-white/10"
+            onClick={() => onOpenChange(false)}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
 
-        {!client.phone && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              This client doesn't have a phone number. Add a phone number to send WhatsApp messages.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {client.phone && (
-          <div className="space-y-4">
-            {/* Message Type Selection */}
-            <div className="flex gap-2">
-              <Button
-                variant={messageType === 'template' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setMessageType('template')}
-              >
-                Use Template
-              </Button>
-              <Button
-                variant={messageType === 'freeform' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setMessageType('freeform')}
-              >
-                Free-form Message
-              </Button>
+        {!client.phone ? (
+          <div className="p-4">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                This client doesn't have a phone number. Add a phone number to send WhatsApp messages.
+              </AlertDescription>
+            </Alert>
+          </div>
+        ) : (
+          <>
+            {/* Chat preview area */}
+            <div className="flex-1 p-4 bg-[#ECE5DD] dark:bg-[#0B141A] min-h-[200px] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiLz48cGF0aCBmaWxsPSIjMDAwIiBmaWxsLW9wYWNpdHk9Ii4wNSIgZD0iTTIwIDIwbTIgMGEyIDIgMCAxIDAgLTQgMGEyIDIgMCAxIDAgNCAwIi8+PC9nPjwvc3ZnPg==')]">
+              {getPreviewMessage() && (
+                <div className="flex justify-end">
+                  <div className="max-w-[85%] bg-[#DCF8C6] dark:bg-[#005C4B] rounded-lg rounded-tr-none p-3 shadow-sm">
+                    <p className="text-sm text-[#303030] dark:text-white whitespace-pre-wrap break-words">
+                      {getPreviewMessage()}
+                    </p>
+                    {mediaUrl && (
+                      <div className="mt-2 rounded overflow-hidden">
+                        {/\.(jpg|jpeg|png|gif|webp)$/i.test(mediaUrl) ? (
+                          <img src={mediaUrl} alt="Attachment" className="max-h-32 rounded" />
+                        ) : (
+                          <div className="flex items-center gap-2 p-2 bg-black/5 rounded text-xs">
+                            📎 Attachment
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex items-center justify-end gap-1 mt-1">
+                      <span className="text-[10px] text-[#667781] dark:text-white/60">
+                        {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <WhatsAppStatusIcon status="pending" className="opacity-60" />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {!getPreviewMessage() && (
+                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                  Type a message or select a template
+                </div>
+              )}
             </div>
 
-            {messageType === 'freeform' && (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="text-xs">
-                  Free-form messages only work if the client has messaged you within the last 24 hours (WhatsApp policy).
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Template Selection */}
-            {messageType === 'template' && (
-              <div className="space-y-3">
-                <div>
-                  <Label>Select Template</Label>
-                  <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={loadingTemplates ? "Loading..." : "Choose a template"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {templates.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>
-                          {t.name}
-                          {t.is_shared_template && (
-                            <span className="ml-2 text-xs text-muted-foreground">(Pre-approved)</span>
+            {/* Quick templates */}
+            {templates.length > 0 && (
+              <div className="px-3 py-2 border-t border-border bg-background">
+                <ScrollArea className="w-full">
+                  <div className="flex gap-2 pb-1">
+                    {loadingTemplates ? (
+                      <div className="text-xs text-muted-foreground px-2">Loading templates...</div>
+                    ) : (
+                      templates.map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => handleTemplateSelect(t.id)}
+                          className={cn(
+                            "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                            "border hover:border-green-500",
+                            selectedTemplate === t.id
+                              ? "bg-green-600 text-white border-green-600"
+                              : "bg-muted/50 text-foreground border-border hover:bg-muted"
                           )}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Template Variables */}
-                {template && template.variables.length > 0 && (
-                  <div className="space-y-2">
-                    <Label>Fill in variables</Label>
-                    {template.variables.map((variable: string) => (
-                      <div key={variable}>
-                        <Label className="text-xs text-muted-foreground capitalize">
-                          {variable.replace(/_/g, ' ')}
-                        </Label>
-                        <Input
-                          value={templateVariables[variable] || ''}
-                          onChange={(e) =>
-                            setTemplateVariables((prev) => ({
-                              ...prev,
-                              [variable]: e.target.value,
-                            }))
-                          }
-                          placeholder={`Enter ${variable.replace(/_/g, ' ')}`}
-                        />
-                      </div>
-                    ))}
+                        >
+                          {t.name}
+                        </button>
+                      ))
+                    )}
                   </div>
-                )}
+                </ScrollArea>
               </div>
             )}
 
-            {/* Free-form Message */}
-            {messageType === 'freeform' && (
-              <div>
-                <Label>Message</Label>
-                <Textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Type your message..."
-                  rows={4}
+            {/* Media preview */}
+            {mediaUrl && (
+              <div className="px-3 py-2 border-t border-border bg-muted/30">
+                <WhatsAppMediaUpload
+                  currentMediaUrl={mediaUrl}
+                  onMediaUploaded={setMediaUrl}
+                  onRemoveMedia={() => setMediaUrl('')}
                 />
               </div>
             )}
 
-            {/* Media URL (optional) */}
-            <div>
-              <Label className="flex items-center gap-1">
-                <Image className="h-3 w-3" />
-                Media URL (optional)
-              </Label>
-              <Input
-                value={mediaUrl}
-                onChange={(e) => setMediaUrl(e.target.value)}
-                placeholder="https://example.com/image.jpg"
+            {/* Input area */}
+            <div className="flex items-end gap-2 p-3 border-t border-border bg-background">
+              {/* Media upload buttons */}
+              <WhatsAppMediaUpload
+                currentMediaUrl=""
+                onMediaUploaded={setMediaUrl}
+                onRemoveMedia={() => setMediaUrl('')}
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Add an image or document URL to send with the message
-              </p>
+
+              {/* Message input */}
+              <div className="flex-1 relative">
+                <Textarea
+                  value={message}
+                  onChange={(e) => {
+                    setMessage(e.target.value);
+                    // Clear template selection if user edits
+                    if (selectedTemplate) {
+                      setSelectedTemplate('');
+                    }
+                  }}
+                  placeholder="Type a message..."
+                  className="min-h-[40px] max-h-[120px] resize-none rounded-2xl pr-4 py-2.5 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-green-500"
+                  rows={1}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey && canSend) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Send button */}
+              <Button
+                onClick={handleSend}
+                disabled={!canSend || sendWhatsApp.isPending}
+                size="icon"
+                className="h-10 w-10 rounded-full bg-[#25D366] hover:bg-[#128C7E] text-white flex-shrink-0"
+              >
+                {sendWhatsApp.isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Send className="h-5 w-5" />
+                )}
+              </Button>
             </div>
 
-            {/* Preview */}
-            {getPreviewMessage() && (
-              <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
-                <p className="text-xs font-medium text-green-700 dark:text-green-300 mb-1">Preview</p>
-                <p className="text-sm text-green-900 dark:text-green-100 whitespace-pre-wrap">
-                  {getPreviewMessage()}
+            {/* 24-hour window notice */}
+            {!selectedTemplate && message && (
+              <div className="px-3 pb-2 bg-background">
+                <p className="text-[10px] text-muted-foreground text-center">
+                  Free-form messages require the client to have messaged you within 24 hours
                 </p>
               </div>
             )}
-          </div>
+          </>
         )}
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSend}
-            disabled={!canSend || sendWhatsApp.isPending}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            {sendWhatsApp.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Sending...
-              </>
-            ) : (
-              <>
-                <Send className="h-4 w-4 mr-2" />
-                Send WhatsApp
-              </>
-            )}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

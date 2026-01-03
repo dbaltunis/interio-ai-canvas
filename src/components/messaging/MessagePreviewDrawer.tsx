@@ -1,11 +1,13 @@
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Mail, MessageSquare, User, Phone, Calendar, Eye, MousePointer, CheckCircle, Clock, AlertCircle, Reply, Forward, ExternalLink } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Mail, MessageSquare, Phone, ExternalLink, Reply, X } from "lucide-react";
 import { format } from "date-fns";
 import { UnifiedMessage } from "@/hooks/useUnifiedCommunications";
+import { WhatsAppStatusIcon } from "./WhatsAppStatusIcon";
+import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface MessagePreviewDrawerProps {
   open: boolean;
@@ -20,157 +22,177 @@ export const MessagePreviewDrawer = ({
   message,
   onReply 
 }: MessagePreviewDrawerProps) => {
+  const navigate = useNavigate();
+
   if (!message) return null;
 
-  const getStatusBadge = (status: string, channel: 'email' | 'whatsapp') => {
-    const statusLower = status.toLowerCase();
-    if (['sent', 'delivered'].includes(statusLower)) {
-      return (
-        <Badge className="bg-green-100 text-green-700 border-green-200">
-          <CheckCircle className="h-3 w-3 mr-1" />
-          {statusLower === 'delivered' ? 'Delivered' : 'Sent'}
-        </Badge>
-      );
-    }
-    if (['pending', 'queued'].includes(statusLower)) {
-      return (
-        <Badge variant="secondary">
-          <Clock className="h-3 w-3 mr-1" />
-          Pending
-        </Badge>
-      );
-    }
-    if (statusLower === 'failed') {
-      return (
-        <Badge variant="destructive">
-          <AlertCircle className="h-3 w-3 mr-1" />
-          Failed
-        </Badge>
-      );
-    }
-    return <Badge variant="outline">{status}</Badge>;
+  const isWhatsApp = message.channel === 'whatsapp';
+  const ChannelIcon = isWhatsApp ? MessageSquare : Mail;
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
-  const ChannelIcon = message.channel === 'email' ? Mail : MessageSquare;
-  const channelColor = message.channel === 'email' ? 'text-blue-600' : 'text-green-600';
-  const channelBgColor = message.channel === 'email' ? 'bg-blue-50' : 'bg-green-50';
+  const handleProjectClick = () => {
+    if (message.projectId) {
+      navigate(`/jobs/${message.projectId}`);
+      onOpenChange(false);
+    }
+  };
+
+  const handleCall = () => {
+    if (message.recipientPhone) {
+      window.open(`tel:${message.recipientPhone}`, '_self');
+    }
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg">
-        <SheetHeader className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${channelBgColor}`}>
-              <ChannelIcon className={`h-5 w-5 ${channelColor}`} />
-            </div>
-            <div className="flex-1">
-              <SheetTitle className="text-left">
-                {message.channel === 'email' ? message.subject || 'No Subject' : 'WhatsApp Message'}
-              </SheetTitle>
-              <p className="text-sm text-muted-foreground">
-                {message.channel === 'email' ? 'Email' : 'WhatsApp'} • {format(new Date(message.sentAt), 'PPp')}
-              </p>
-            </div>
+      <SheetContent className="w-full sm:max-w-md p-0 flex flex-col">
+        {/* Header */}
+        <div className={cn(
+          "flex items-center gap-3 px-4 py-3",
+          isWhatsApp 
+            ? "bg-[#075E54] dark:bg-[#1F2C34] text-white" 
+            : "bg-blue-600 dark:bg-blue-800 text-white"
+        )}>
+          <Avatar className="h-10 w-10 border-2 border-white/20">
+            <AvatarFallback className="bg-white/20 text-white font-medium">
+              {getInitials(message.clientName)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold truncate">{message.clientName}</h3>
+            <p className="text-xs text-white/70 flex items-center gap-2">
+              {message.recipientPhone || message.recipientEmail}
+              <span>•</span>
+              {format(new Date(message.sentAt), 'MMM d, yyyy')}
+            </p>
           </div>
-        </SheetHeader>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-white hover:bg-white/10"
+            onClick={() => onOpenChange(false)}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
 
-        <ScrollArea className="h-[calc(100vh-200px)] mt-6">
-          <div className="space-y-6">
-            {/* Metadata */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">To:</span>
-                <span className="font-medium">{message.clientName}</span>
+        {/* Project link */}
+        {message.projectName && (
+          <button
+            onClick={handleProjectClick}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm bg-muted/50 hover:bg-muted transition-colors text-left"
+          >
+            <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="truncate text-muted-foreground">
+              Project: <span className="text-foreground font-medium">{message.projectName}</span>
+            </span>
+          </button>
+        )}
+
+        {/* Chat area */}
+        <ScrollArea className="flex-1 p-4">
+          <div className={cn(
+            "min-h-[200px] rounded-lg p-4",
+            isWhatsApp 
+              ? "bg-[#ECE5DD] dark:bg-[#0B141A]" 
+              : "bg-blue-50 dark:bg-blue-950/20"
+          )}>
+            {/* Subject for emails */}
+            {!isWhatsApp && message.subject && (
+              <div className="mb-4 pb-3 border-b border-border">
+                <p className="text-sm font-medium">{message.subject}</p>
               </div>
-              
-              {message.recipientEmail && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Email:</span>
-                  <span>{message.recipientEmail}</span>
-                </div>
-              )}
-              
-              {message.recipientPhone && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Phone:</span>
-                  <span>{message.recipientPhone}</span>
-                </div>
-              )}
-              
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Sent:</span>
-                <span>{format(new Date(message.sentAt), 'PPpp')}</span>
-              </div>
+            )}
 
-              {message.projectName && (
-                <div className="flex items-center gap-2 text-sm">
-                  <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Project:</span>
-                  <span>{message.projectName}</span>
-                </div>
-              )}
-            </div>
-
-            <Separator />
-
-            {/* Status & Engagement */}
-            <div className="flex flex-wrap gap-2">
-              {getStatusBadge(message.status, message.channel)}
-              
-              {message.channel === 'email' && (
-                <>
-                  {(message.openCount ?? 0) > 0 && (
-                    <Badge variant="outline" className="gap-1">
-                      <Eye className="h-3 w-3" />
-                      Opened {message.openCount}x
-                    </Badge>
-                  )}
-                  {(message.clickCount ?? 0) > 0 && (
-                    <Badge variant="outline" className="gap-1">
-                      <MousePointer className="h-3 w-3" />
-                      Clicked {message.clickCount}x
-                    </Badge>
-                  )}
-                </>
-              )}
-            </div>
-
-            <Separator />
-
-            {/* Message Content */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Message Content</h4>
-              <div className="p-4 bg-muted/50 rounded-lg">
-                {message.channel === 'email' && message.fullContent ? (
+            {/* Message bubble */}
+            <div className="flex justify-end">
+              <div className={cn(
+                "max-w-[90%] rounded-lg p-3 shadow-sm",
+                isWhatsApp 
+                  ? "bg-[#DCF8C6] dark:bg-[#005C4B] rounded-tr-none" 
+                  : "bg-white dark:bg-muted rounded-tr-none"
+              )}>
+                {/* Email HTML content */}
+                {!isWhatsApp && message.fullContent ? (
                   <div 
-                    className="prose prose-sm max-w-none dark:prose-invert"
+                    className="prose prose-sm max-w-none dark:prose-invert text-sm"
                     dangerouslySetInnerHTML={{ __html: message.fullContent }}
                   />
                 ) : (
-                  <p className="text-sm whitespace-pre-wrap">{message.fullContent || message.preview}</p>
+                  <p className={cn(
+                    "text-sm whitespace-pre-wrap break-words",
+                    isWhatsApp ? "text-[#303030] dark:text-white" : "text-foreground"
+                  )}>
+                    {message.fullContent || message.preview}
+                  </p>
                 )}
+
+                {/* Timestamp and status */}
+                <div className="flex items-center justify-end gap-1 mt-2">
+                  <span className={cn(
+                    "text-[10px]",
+                    isWhatsApp ? "text-[#667781] dark:text-white/60" : "text-muted-foreground"
+                  )}>
+                    {format(new Date(message.sentAt), 'h:mm a')}
+                  </span>
+                  {isWhatsApp && <WhatsAppStatusIcon status={message.status} />}
+                </div>
               </div>
             </div>
+
+            {/* Email engagement stats */}
+            {!isWhatsApp && ((message.openCount ?? 0) > 0 || (message.clickCount ?? 0) > 0) && (
+              <div className="flex items-center gap-3 mt-4 pt-3 border-t border-border text-xs text-muted-foreground">
+                {(message.openCount ?? 0) > 0 && (
+                  <span>👁 Opened {message.openCount}x</span>
+                )}
+                {(message.clickCount ?? 0) > 0 && (
+                  <span>🖱 Clicked {message.clickCount}x</span>
+                )}
+              </div>
+            )}
           </div>
         </ScrollArea>
 
-        {/* Actions */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t flex gap-2">
+        {/* Action bar */}
+        <div className="flex items-center gap-2 p-3 border-t border-border bg-background">
           <Button 
             variant="outline" 
+            size="sm"
             className="flex-1"
             onClick={() => onReply?.(message)}
           >
             <Reply className="h-4 w-4 mr-2" />
             Reply
           </Button>
-          <Button variant="outline" className="flex-1">
-            <Forward className="h-4 w-4 mr-2" />
-            Forward
+          {message.recipientPhone && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleCall}
+            >
+              <Phone className="h-4 w-4 mr-2" />
+              Call
+            </Button>
+          )}
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              onReply?.(message);
+              onOpenChange(false);
+            }}
+          >
+            <ChannelIcon className="h-4 w-4 mr-2" />
+            New
           </Button>
         </div>
       </SheetContent>
