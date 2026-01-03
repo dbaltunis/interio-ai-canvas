@@ -16,6 +16,8 @@ interface MessagePreviewDrawerProps {
   onOpenChange: (open: boolean) => void;
   message?: UnifiedMessage | null;
   clientId?: string;
+  clientName?: string;
+  clientPhone?: string;
   channelFilter?: 'all' | 'email' | 'whatsapp';
   onComposeWhatsApp?: (clientId?: string) => void;
   onComposeEmail?: (clientId?: string) => void;
@@ -26,6 +28,8 @@ export const MessagePreviewDrawer = ({
   onOpenChange, 
   message,
   clientId: propClientId,
+  clientName: propClientName,
+  clientPhone: propClientPhone,
   channelFilter = 'all',
   onComposeWhatsApp,
   onComposeEmail
@@ -58,8 +62,10 @@ export const MessagePreviewDrawer = ({
 
   // Get client info from first message if no message prop provided
   const clientInfo = message || filteredMessages?.[0];
+  const displayName = propClientName || clientInfo?.clientName || 'Unknown';
+  const displayPhone = propClientPhone || clientInfo?.recipientPhone;
 
-  if (!clientId || !clientInfo) return null;
+  if (!clientId) return null;
 
   const getInitials = (name: string) => {
     return name
@@ -76,9 +82,8 @@ export const MessagePreviewDrawer = ({
   };
 
   const handleCall = () => {
-    const phone = clientInfo.recipientPhone;
-    if (phone) {
-      window.open(`tel:${phone}`, '_self');
+    if (displayPhone) {
+      window.open(`tel:${displayPhone}`, '_self');
     }
   };
 
@@ -137,17 +142,17 @@ export const MessagePreviewDrawer = ({
         <div className="flex items-center gap-3 px-4 py-3 bg-[#075E54] dark:bg-[#1F2C34] text-white">
           <Avatar className="h-10 w-10 border-2 border-white/20">
             <AvatarFallback className="bg-white/20 text-white font-medium">
-              {getInitials(clientInfo.clientName)}
+              {getInitials(displayName)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold truncate">{clientInfo.clientName}</h3>
+            <h3 className="font-semibold truncate">{displayName}</h3>
             <p className="text-xs text-white/70">
               {channelLabel} • {filteredMessages.length} message{filteredMessages.length !== 1 ? 's' : ''}
             </p>
           </div>
           <div className="flex items-center gap-1">
-            {clientInfo.recipientPhone && (
+            {displayPhone && (
               <Button
                 variant="ghost"
                 size="icon"

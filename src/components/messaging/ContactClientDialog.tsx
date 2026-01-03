@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Mail, MessageSquare, Phone, ExternalLink, FileText } from 'lucide-react';
-import { WhatsAppMessageDialog } from './WhatsAppMessageDialog';
+import { MessagePreviewDrawer } from './MessagePreviewDrawer';
 import { EmailQuoteModal } from '@/components/jobs/quotation/EmailQuoteModal';
 
 interface ContactClientDialogProps {
@@ -146,19 +146,15 @@ export const ContactClientDialog: React.FC<ContactClientDialogProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* WhatsApp Dialog */}
-      {client.phone && (
-        <WhatsAppMessageDialog
-          open={showWhatsAppDialog}
-          onOpenChange={setShowWhatsAppDialog}
-          client={{
-            id: client.id,
-            name: client.name,
-            phone: client.phone,
-          }}
-          projectId={projectId || project?.id}
-        />
-      )}
+      {/* WhatsApp Conversation Drawer */}
+      <MessagePreviewDrawer
+        open={showWhatsAppDialog}
+        onOpenChange={setShowWhatsAppDialog}
+        clientId={client.id}
+        clientName={client.name}
+        clientPhone={client.phone || undefined}
+        channelFilter="whatsapp"
+      />
 
       {/* Email Quote Modal - for project context */}
       {project && (
