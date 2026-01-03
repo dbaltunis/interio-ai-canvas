@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Calendar, DollarSign, AlertCircle, CheckCircle, Clock, ExternalLink } from "lucide-react";
+import { Plus, Calendar, DollarSign, AlertCircle, CheckCircle, Clock, ExternalLink, MessageSquare } from "lucide-react";
 import { useClientJobs } from "@/hooks/useClientJobs";
 import { useNavigate } from "react-router-dom";
 import { formatJobNumber } from "@/lib/format-job-number";
@@ -15,6 +14,7 @@ import { useUserPermissions } from "@/hooks/usePermissions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useUnifiedClientNotes } from "@/hooks/useUnifiedClientNotes";
 
 interface ClientProjectsListProps {
   clientId: string;
@@ -25,6 +25,7 @@ interface ClientProjectsListProps {
 export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: ClientProjectsListProps) => {
   const { user } = useAuth();
   const { data: projects, isLoading } = useClientJobs(clientId);
+  const { notesByProject } = useUnifiedClientNotes(clientId);
   const navigate = useNavigate();
   const createProject = useCreateProject();
   const createQuote = useCreateQuote();
@@ -185,23 +186,34 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
           </div>
         ) : (
           <>
-            {projects.slice(0, 5).map((project) => (
-              <div
-                key={project.id}
-                className="flex items-center justify-between gap-2 p-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer group"
-                onClick={() => handleViewProject(project.id)}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium truncate">{project.name}</div>
-                  {project.job_number && (
-                    <div className="text-[10px] text-muted-foreground">#{formatJobNumber(project.job_number)}</div>
-                  )}
+            {projects.slice(0, 5).map((project) => {
+              const notesCount = notesByProject[project.id] || 0;
+              return (
+                <div
+                  key={project.id}
+                  className="flex items-center justify-between gap-2 p-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer group"
+                  onClick={() => handleViewProject(project.id)}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium truncate flex items-center gap-1">
+                      {project.name}
+                      {notesCount > 0 && (
+                        <span className="inline-flex items-center gap-0.5 text-[9px] text-muted-foreground">
+                          <MessageSquare className="h-2.5 w-2.5" />
+                          {notesCount}
+                        </span>
+                      )}
+                    </div>
+                    {project.job_number && (
+                      <div className="text-[10px] text-muted-foreground">#{formatJobNumber(project.job_number)}</div>
+                    )}
+                  </div>
+                  <Badge className={`${getStatusColor(project.status || 'planning')} text-[9px] px-1 py-0 h-4 shrink-0`} variant="secondary">
+                    {(project.status || 'planning').replace('_', ' ')}
+                  </Badge>
                 </div>
-                <Badge className={`${getStatusColor(project.status || 'planning')} text-[9px] px-1 py-0 h-4 shrink-0`} variant="secondary">
-                  {(project.status || 'planning').replace('_', ' ')}
-                </Badge>
-              </div>
-            ))}
+              );
+            })}
             {projects.length > 5 && (
               <Button variant="ghost" size="sm" className="w-full h-6 text-[10px]" onClick={() => onTabChange?.('projects')}>
                 +{projects.length - 5} more projects
@@ -261,11 +273,21 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
               </TableRow>
             </TableHeader>
             <TableBody>
-              {projects.map((project) => (
+              {projects.map((project) => {
+                const notesCount = notesByProject[project.id] || 0;
+                return (
                 <TableRow key={project.id} className="hover:bg-muted/50">
                   <TableCell>
                     <div>
-                      <div className="font-medium">{project.name}</div>
+                      <div className="font-medium flex items-center gap-2">
+                        {project.name}
+                        {notesCount > 0 && (
+                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            <MessageSquare className="h-3 w-3" />
+                            {notesCount}
+                          </span>
+                        )}
+                      </div>
                       {project.job_number && (
                         <div className="text-sm text-muted-foreground">
                           Job #{formatJobNumber(project.job_number)}
@@ -313,7 +335,8 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         )}
