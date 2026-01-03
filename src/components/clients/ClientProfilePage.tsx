@@ -244,6 +244,43 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                   {isEditing ? (
                     <div className="space-y-2">
                       <div className="space-y-1">
+                        <Label className="text-[10px]">Name</Label>
+                        <Input
+                          value={editedClient.name || ''}
+                          onChange={(e) => setEditedClient({ ...editedClient, name: e.target.value })}
+                          className="h-7 text-xs"
+                          placeholder="Client name"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px]">Email</Label>
+                        <Input
+                          type="email"
+                          value={editedClient.email || ''}
+                          onChange={(e) => setEditedClient({ ...editedClient, email: e.target.value })}
+                          className="h-7 text-xs"
+                          placeholder="Email address"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px]">Phone</Label>
+                        <Input
+                          value={editedClient.phone || ''}
+                          onChange={(e) => setEditedClient({ ...editedClient, phone: e.target.value })}
+                          className="h-7 text-xs"
+                          placeholder="Phone number"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px]">Address</Label>
+                        <Input
+                          value={editedClient.address || ''}
+                          onChange={(e) => setEditedClient({ ...editedClient, address: e.target.value })}
+                          className="h-7 text-xs"
+                          placeholder="Address"
+                        />
+                      </div>
+                      <div className="space-y-1">
                         <Label className="text-[10px]">Priority</Label>
                         <Select 
                           value={editedClient.priority_level || 'medium'}
