@@ -76,6 +76,9 @@ serve(async (req) => {
     let twilioAuthToken: string;
     let twilioWhatsAppNumber: string;
 
+    let isSandboxMode = false;
+    const SANDBOX_NUMBER = '+14155238886';
+    
     if (userSettings?.account_sid && userSettings?.auth_token && userSettings?.whatsapp_number) {
       // Use user's own BYOA credentials
       console.log('Using user BYOA credentials');
@@ -92,6 +95,13 @@ serve(async (req) => {
 
     if (!twilioAccountSid || !twilioAuthToken || !twilioWhatsAppNumber) {
       throw new Error('Twilio WhatsApp credentials not configured');
+    }
+    
+    // Check if using sandbox number
+    const cleanedNumber = twilioWhatsAppNumber.replace(/[\s\-]/g, '');
+    if (cleanedNumber === SANDBOX_NUMBER || cleanedNumber === '14155238886') {
+      isSandboxMode = true;
+      console.log('WARNING: Using Twilio Sandbox number - messages will only be delivered to opted-in recipients');
     }
 
     // Format phone numbers for WhatsApp
@@ -194,7 +204,9 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         messageSid: twilioResult.sid,
-        status: twilioResult.status 
+        status: twilioResult.status,
+        sandboxMode: isSandboxMode,
+        warning: isSandboxMode ? 'Using Twilio Sandbox. Messages only deliver to opted-in recipients. Upgrade to WhatsApp Business API for production.' : undefined
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

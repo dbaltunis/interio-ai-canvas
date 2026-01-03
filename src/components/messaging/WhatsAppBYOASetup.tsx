@@ -127,7 +127,9 @@ export const WhatsAppBYOASetup = () => {
 
   const businessName = businessSettings?.company_name || 'InterioApp';
   const hasOwnNumber = settings?.use_own_account && settings.whatsapp_number;
-  const senderNumber = hasOwnNumber ? settings.whatsapp_number : '+1 415 523 8886';
+  const SANDBOX_NUMBER = '+14155238886';
+  const senderNumber = hasOwnNumber ? settings.whatsapp_number : SANDBOX_NUMBER;
+  const isSandboxMode = !hasOwnNumber;
 
   const handleToggle = (checked: boolean) => {
     setUseOwnAccount(checked);
@@ -139,22 +141,75 @@ export const WhatsAppBYOASetup = () => {
 
   return (
     <div className="space-y-4">
+      {/* Sandbox Warning */}
+      {isSandboxMode && (
+        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
+          <CardContent className="py-3">
+            <div className="flex items-start gap-3">
+              <div className="p-1.5 rounded-full bg-amber-100 dark:bg-amber-900 mt-0.5">
+                <MessageSquare className="h-4 w-4 text-amber-600" />
+              </div>
+              <div className="flex-1 space-y-1">
+                <p className="font-medium text-amber-800 dark:text-amber-200 text-sm">Sandbox Mode (Development Only)</p>
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  Messages will only be delivered to recipients who have opted-in to the sandbox. 
+                  For production use, upgrade to Twilio WhatsApp Business API.
+                </p>
+                <a 
+                  href="https://console.twilio.com/us1/develop/sms/senders/whatsapp-senders" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs text-amber-600 hover:text-amber-800 underline"
+                >
+                  Upgrade to WhatsApp Business API →
+                </a>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Simple Sender Display */}
-      <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20">
+      <Card className={cn(
+        isSandboxMode 
+          ? "border-amber-200 bg-amber-50/50 dark:bg-amber-950/20"
+          : "border-green-200 bg-green-50/50 dark:bg-green-950/20"
+      )}>
         <CardContent className="py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-green-100 dark:bg-green-900">
-                <MessageSquare className="h-5 w-5 text-green-600" />
+              <div className={cn(
+                "p-2 rounded-full",
+                isSandboxMode 
+                  ? "bg-amber-100 dark:bg-amber-900" 
+                  : "bg-green-100 dark:bg-green-900"
+              )}>
+                <MessageSquare className={cn(
+                  "h-5 w-5",
+                  isSandboxMode ? "text-amber-600" : "text-green-600"
+                )} />
               </div>
               <div>
                 <p className="font-medium">{businessName}</p>
                 <p className="text-sm text-muted-foreground font-mono">{senderNumber}</p>
               </div>
             </div>
-            <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">
-              <Check className="h-3 w-3 mr-1" />
-              Ready
+            <Badge 
+              variant="outline" 
+              className={cn(
+                isSandboxMode 
+                  ? "bg-amber-100 text-amber-700 border-amber-200"
+                  : "bg-green-100 text-green-700 border-green-200"
+              )}
+            >
+              {isSandboxMode ? (
+                <>Sandbox</>
+              ) : (
+                <>
+                  <Check className="h-3 w-3 mr-1" />
+                  Production
+                </>
+              )}
             </Badge>
           </div>
         </CardContent>
