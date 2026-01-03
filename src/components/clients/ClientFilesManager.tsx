@@ -14,9 +14,10 @@ interface ClientFilesManagerProps {
   clientId: string;
   userId: string;
   canEditClient?: boolean;
+  compact?: boolean;
 }
 
-export const ClientFilesManager = ({ clientId, userId, canEditClient = true }: ClientFilesManagerProps) => {
+export const ClientFilesManager = ({ clientId, userId, canEditClient = true, compact = false }: ClientFilesManagerProps) => {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("none");
   const [filterProjectId, setFilterProjectId] = useState<string>("all");
@@ -111,6 +112,123 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true }: C
     return acc;
   }, {} as Record<string, typeof files>);
 
+  const getFileTypeBadge = (fileType: string) => {
+    if (fileType.startsWith('image/')) return { label: 'IMG', color: 'bg-purple-100 text-purple-700' };
+    if (fileType.includes('pdf')) return { label: 'PDF', color: 'bg-red-100 text-red-700' };
+    if (fileType.includes('word') || fileType.includes('document')) return { label: 'DOC', color: 'bg-blue-100 text-blue-700' };
+    return { label: 'FILE', color: 'bg-gray-100 text-gray-700' };
+  };
+
+  // Compact mode for sidebar
+  if (compact) {
+    return (
+      <div className="space-y-1.5">
+        {isLoading ? (
+          <div className="text-center py-2 text-[10px] text-muted-foreground">Loading...</div>
+        ) : !files || files.length === 0 ? (
+          <div className="text-center py-3">
+            <p className="text-[10px] text-muted-foreground mb-2">No files yet</p>
+            {canEditClient && (
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={(e) => {
+                    setSelectedFiles(e.target.files);
+                    if (e.target.files && e.target.files.length > 0) {
+                      handleUpload();
+                    }
+                  }}
+                  className="hidden"
+                />
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-6 text-[10px] px-2"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-2.5 w-2.5 mr-1" />
+                  Add File
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {files.slice(0, 4).map((file) => {
+              const typeBadge = getFileTypeBadge(file.file_type || '');
+              return (
+                <div
+                  key={file.id}
+                  className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/50 transition-colors group"
+                >
+                  <div className="flex-shrink-0">{getFileIcon(file.file_type || '')}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] font-medium truncate">{file.file_name}</div>
+                  </div>
+                  <Badge className={`${typeBadge.color} text-[8px] px-1 py-0 h-3.5`}>{typeBadge.label}</Badge>
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="ghost" size="icon" onClick={() => handleViewFile(file)} className="h-5 w-5">
+                      <Eye className="h-2.5 w-2.5" />
+                    </Button>
+                    {canEditClient && (
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(file)} className="h-5 w-5 text-destructive">
+                        <Trash2 className="h-2.5 w-2.5" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            {files.length > 4 && (
+              <div className="text-[10px] text-muted-foreground text-center py-1">
+                +{files.length - 4} more files
+              </div>
+            )}
+            {canEditClient && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={(e) => {
+                    setSelectedFiles(e.target.files);
+                    if (e.target.files && e.target.files.length > 0) {
+                      handleUpload();
+                    }
+                  }}
+                  className="hidden"
+                />
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="w-full h-6 text-[10px] mt-1"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadFile.isPending}
+                >
+                  <Upload className="h-2.5 w-2.5 mr-1" />
+                  {uploadFile.isPending ? 'Uploading...' : 'Add File'}
+                </Button>
+              </>
+            )}
+          </>
+        )}
+        
+        {currentFile && (
+          <FileViewerDialog
+            open={viewerOpen}
+            onOpenChange={setViewerOpen}
+            fileUrl={currentFile.url}
+            fileName={currentFile.name}
+            fileType={currentFile.type}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Full mode (original)
   return (
     <Card>
       <CardHeader>
