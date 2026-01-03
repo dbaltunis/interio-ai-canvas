@@ -169,55 +169,76 @@ export const ClientCommunicationsTab = ({
               <div className="space-y-1">
                 {filteredMessages.map((message) => {
                   const isEmail = message.channel === 'email';
+                  const status = message.status.toLowerCase();
+                  const isDelivered = ['delivered', 'read', 'opened'].includes(status);
+                  const isRead = ['read', 'opened'].includes(status) || (message.openCount ?? 0) > 0;
                   
                   return (
                     <div
                       key={`${message.channel}-${message.id}`}
-                      className="group flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
+                      className="group flex items-start gap-2 p-2 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer"
                       onClick={() => handleMessageClick(message)}
                     >
                       {/* Channel indicator - minimal */}
                       <div className={cn(
-                        "flex-shrink-0 w-6 h-6 rounded flex items-center justify-center",
-                        isEmail ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-600"
+                        "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-0.5",
+                        isEmail ? "bg-blue-100 text-blue-600" : "bg-green-100 text-green-600"
                       )}>
-                        {isEmail ? <Mail className="h-3 w-3" /> : <MessageSquare className="h-3 w-3" />}
+                        {isEmail ? <Mail className="h-3.5 w-3.5" /> : <MessageSquare className="h-3.5 w-3.5" />}
                       </div>
 
-                      {/* Content */}
+                      {/* Content as chat bubble */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 mb-0.5">
                           <span className="text-xs font-medium truncate">
-                            {isEmail ? (message.subject || 'No Subject') : 'Message'}
+                            {isEmail ? (message.subject || 'No Subject') : 'WhatsApp'}
                           </span>
-                          {getStatusIcon(message.status)}
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {message.preview}
-                        </p>
-                      </div>
-
-                      {/* Meta */}
-                      <div className="flex flex-col items-end gap-0.5 shrink-0">
-                        <span className="text-[10px] text-muted-foreground">
-                          {formatDistanceToNow(new Date(message.sentAt), { addSuffix: false })}
-                        </span>
-                        {isEmail && ((message.openCount ?? 0) > 0 || (message.clickCount ?? 0) > 0) && (
+                        <div className={cn(
+                          "rounded-lg rounded-tl-sm p-2 max-w-full",
+                          isEmail ? "bg-blue-50 dark:bg-blue-900/20" : "bg-green-50 dark:bg-green-900/20"
+                        )}>
+                          <p className="text-xs text-foreground line-clamp-2">
+                            {message.preview}
+                          </p>
+                        </div>
+                        
+                        {/* Status row */}
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-[10px] text-muted-foreground">
+                            {formatDistanceToNow(new Date(message.sentAt), { addSuffix: false })}
+                          </span>
                           <div className="flex items-center gap-1">
-                            {(message.openCount ?? 0) > 0 && (
-                              <span className="flex items-center text-[10px] text-muted-foreground">
-                                <Eye className="h-2.5 w-2.5 mr-0.5" />
-                                {message.openCount}
-                              </span>
+                            {isEmail && ((message.openCount ?? 0) > 0 || (message.clickCount ?? 0) > 0) && (
+                              <>
+                                {(message.openCount ?? 0) > 0 && (
+                                  <span className="flex items-center text-[10px] text-blue-600">
+                                    <Eye className="h-2.5 w-2.5 mr-0.5" />
+                                    {message.openCount}
+                                  </span>
+                                )}
+                                {(message.clickCount ?? 0) > 0 && (
+                                  <span className="flex items-center text-[10px] text-blue-600">
+                                    <MousePointer className="h-2.5 w-2.5 mr-0.5" />
+                                    {message.clickCount}
+                                  </span>
+                                )}
+                              </>
                             )}
-                            {(message.clickCount ?? 0) > 0 && (
-                              <span className="flex items-center text-[10px] text-muted-foreground">
-                                <MousePointer className="h-2.5 w-2.5 mr-0.5" />
-                                {message.clickCount}
-                              </span>
+                            {/* WhatsApp-style double checkmarks */}
+                            {!isEmail && (
+                              <div className="flex items-center">
+                                {isRead ? (
+                                  <span className="text-blue-500">✓✓</span>
+                                ) : isDelivered ? (
+                                  <span className="text-muted-foreground">✓✓</span>
+                                ) : (
+                                  <span className="text-muted-foreground">✓</span>
+                                )}
+                              </div>
                             )}
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   );

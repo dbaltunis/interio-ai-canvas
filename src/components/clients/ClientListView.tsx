@@ -249,7 +249,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                   <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Stage</TableHead>
                   {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Projects</TableHead>}
                   {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Total Value</TableHead>}
-                  {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Last Activity</TableHead>}
+                  {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Communications</TableHead>}
                   {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Documents</TableHead>}
                   <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold text-right">Actions</TableHead>
                 </TableRow>
@@ -342,14 +342,16 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                     
                     {!isTablet && (
                       <TableCell>
-                        {client.last_contact_date ? (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Clock className="h-3.5 w-3.5" />
-                            {formatDistanceToNow(new Date(client.last_contact_date), { addSuffix: true })}
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <Mail className="h-3.5 w-3.5 text-blue-500" />
+                            <span className="text-xs">0</span>
                           </div>
-                        ) : (
-                          <div className="text-muted-foreground/60 text-sm">No activity</div>
-                        )}
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <MessageSquare className="h-3.5 w-3.5 text-green-500" />
+                            <span className="text-xs">0</span>
+                          </div>
+                        </div>
                       </TableCell>
                     )}
                     

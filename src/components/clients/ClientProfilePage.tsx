@@ -208,33 +208,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
 
       {/* Main Content Area - Three Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left Column - Communications */}
-        <div className="lg:col-span-5">
-          <ClientCommunicationsTab 
-            clientId={clientId} 
-            clientEmail={client.email}
-          />
-        </div>
-
-        {/* Middle Column - Projects (Elevated) */}
-        <div className="lg:col-span-4">
-          <Card>
-            <CardHeader className="py-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Briefcase className="h-4 w-4" />
-                  Projects
-                </CardTitle>
-                <Badge variant="secondary" className="text-xs">{projects?.length || 0}</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0 pb-3">
-              <ClientProjectsList clientId={clientId} onTabChange={onTabChange} compact />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column - Client Details & Files (Collapsible) */}
+        {/* Left Column - Client Details & Files (Collapsible) */}
         <div className="lg:col-span-3 space-y-3">
           <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
             <Card>
@@ -346,6 +320,32 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
               </CardContent>
             </Card>
           )}
+        </div>
+
+        {/* Middle Column - Projects (Elevated) */}
+        <div className="lg:col-span-4">
+          <Card>
+            <CardHeader className="py-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  Projects
+                </CardTitle>
+                <Badge variant="secondary" className="text-xs">{projects?.length || 0}</Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0 pb-3">
+              <ClientProjectsList clientId={clientId} onTabChange={onTabChange} compact />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column - Communications */}
+        <div className="lg:col-span-5">
+          <ClientCommunicationsTab 
+            clientId={clientId} 
+            clientEmail={client.email}
+          />
         </div>
       </div>
 
