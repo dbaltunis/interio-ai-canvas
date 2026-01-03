@@ -16,6 +16,7 @@ import { useDeleteClient } from "@/hooks/useClients";
 import { toast } from "sonner";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useClientFilesCount } from "@/hooks/useClientFilesCount";
+import { useClientCommunicationStats } from "@/hooks/useClientCommunicationStats";
 import { BulkActionsBar } from "./BulkActionsBar";
 import { CampaignWizard } from "@/components/campaigns/CampaignWizard";
 import { useClientSelection, SelectedClient } from "@/hooks/useClientSelection";
@@ -79,9 +80,10 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
     isSelected,
   } = useClientSelection();
   
-  // Get client IDs for files count query
+  // Get client IDs for files count and communication stats queries
   const clientIds = useMemo(() => clients?.map(c => c.id) || [], [clients]);
   const { data: filesCount } = useClientFilesCount(clientIds);
+  const { data: communicationStats } = useClientCommunicationStats(clientIds);
 
   // Convert clients for selection
   const selectableClients: SelectedClient[] = useMemo(() => 
@@ -345,11 +347,11 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1 text-muted-foreground">
                             <Mail className="h-3.5 w-3.5 text-blue-500" />
-                            <span className="text-xs">0</span>
+                            <span className="text-xs">{communicationStats?.[client.id]?.emailCount || 0}</span>
                           </div>
                           <div className="flex items-center gap-1 text-muted-foreground">
                             <MessageSquare className="h-3.5 w-3.5 text-green-500" />
-                            <span className="text-xs">0</span>
+                            <span className="text-xs">{communicationStats?.[client.id]?.whatsappCount || 0}</span>
                           </div>
                         </div>
                       </TableCell>
