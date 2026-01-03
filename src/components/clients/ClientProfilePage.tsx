@@ -50,7 +50,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedClient, setEditedClient] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("projects");
+  const [activeTab, setActiveTab] = useState("notes");
   const [detailsOpen, setDetailsOpen] = useState(false);
   
   // Calculate portfolio value from closed/completed projects only
@@ -206,65 +206,69 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
       {/* Quick Actions Bar */}
       <ClientQuickActionsBar client={currentClient} />
 
-      {/* Main Content Area - Two Columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left Column - Communications (Primary, takes more space) */}
-        <div className="lg:col-span-2">
+      {/* Main Content Area - Three Columns */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* Left Column - Communications */}
+        <div className="lg:col-span-5">
           <ClientCommunicationsTab 
             clientId={clientId} 
             clientEmail={client.email}
           />
         </div>
 
-        {/* Right Column - Client Details (Collapsible) */}
-        <div className="space-y-4">
+        {/* Middle Column - Projects (Elevated) */}
+        <div className="lg:col-span-4">
+          <Card>
+            <CardHeader className="py-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  Projects
+                </CardTitle>
+                <Badge variant="secondary" className="text-xs">{projects?.length || 0}</Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0 pb-3">
+              <ClientProjectsList clientId={clientId} onTabChange={onTabChange} compact />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column - Client Details & Files (Collapsible) */}
+        <div className="lg:col-span-3 space-y-3">
           <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
             <Card>
               <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-3">
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-2.5 px-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium">Client Details</CardTitle>
-                    <div className="flex items-center gap-2">
+                    <CardTitle className="text-xs font-medium">Details</CardTitle>
+                    <div className="flex items-center gap-1">
                       {!detailsOpen && canEditClient && (
                         <Button 
                           variant="ghost" 
-                          size="sm"
+                          size="icon"
                           onClick={(e) => { e.stopPropagation(); handleEdit(); setDetailsOpen(true); }}
-                          className="h-7 px-2"
+                          className="h-5 w-5"
                         >
-                          <Edit className="h-3 w-3" />
+                          <Edit className="h-2.5 w-2.5" />
                         </Button>
                       )}
-                      {detailsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {detailsOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                     </div>
                   </div>
                 </CardHeader>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <CardContent className="pt-0 pb-4 space-y-3">
+                <CardContent className="pt-0 pb-3 px-3 space-y-2">
                   {isEditing ? (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <div className="space-y-1">
-                        <Label className="text-xs">Email</Label>
-                        <div className="flex items-center gap-2 p-2 bg-muted/30 rounded text-sm">
-                          <Mail className="h-3 w-3 text-muted-foreground" />
-                          {currentClient.email}
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Phone</Label>
-                        <div className="flex items-center gap-2 p-2 bg-muted/30 rounded text-sm">
-                          <Phone className="h-3 w-3 text-muted-foreground" />
-                          {currentClient.phone || 'Not provided'}
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Priority</Label>
+                        <Label className="text-[10px]">Priority</Label>
                         <Select 
                           value={editedClient.priority_level || 'medium'}
                           onValueChange={(value) => setEditedClient({ ...editedClient, priority_level: value })}
                         >
-                          <SelectTrigger className="h-8 text-sm">
+                          <SelectTrigger className="h-7 text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -275,38 +279,37 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                         </Select>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs">Lead Source</Label>
+                        <Label className="text-[10px]">Lead Source</Label>
                         <LeadSourceSelect
                           value={editedClient.lead_source || 'other'}
                           onValueChange={(value) => setEditedClient({ ...editedClient, lead_source: value })}
                         />
                       </div>
-                      <div className="flex gap-2 pt-2">
-                        <Button size="sm" variant="outline" onClick={handleCancel} disabled={updateClient.isPending} className="flex-1">
-                          <X className="h-3 w-3 mr-1" /> Cancel
+                      <div className="flex gap-2 pt-1">
+                        <Button size="sm" variant="outline" onClick={handleCancel} disabled={updateClient.isPending} className="flex-1 h-6 text-[10px]">
+                          <X className="h-2.5 w-2.5 mr-0.5" /> Cancel
                         </Button>
-                        <Button size="sm" onClick={handleSave} disabled={updateClient.isPending} className="flex-1">
-                          <Save className="h-3 w-3 mr-1" /> Save
+                        <Button size="sm" onClick={handleSave} disabled={updateClient.isPending} className="flex-1 h-6 text-[10px]">
+                          <Save className="h-2.5 w-2.5 mr-0.5" /> Save
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-3 w-3 text-muted-foreground" />
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <Mail className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
                         <span className="truncate">{currentClient.email || 'No email'}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-3 w-3 text-muted-foreground" />
+                      <div className="flex items-center gap-1.5">
+                        <Phone className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
                         <span>{currentClient.phone || 'No phone'}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-3 w-3 text-muted-foreground" />
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
                         <span className="truncate">{currentClient.address || 'No address'}</span>
                       </div>
-                      <div className="flex items-center gap-2 pt-1">
-                        <span className="text-xs text-muted-foreground">Priority:</span>
-                        <Badge variant="secondary" className={`text-xs ${
+                      <div className="flex items-center gap-1.5 pt-0.5">
+                        <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 h-4 ${
                           currentClient.priority_level === 'high' ? 'bg-red-100 text-red-700' :
                           currentClient.priority_level === 'low' ? 'bg-gray-100 text-gray-700' :
                           'bg-yellow-100 text-yellow-700'
@@ -315,8 +318,8 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                         </Badge>
                       </div>
                       {canEditClient && (
-                        <Button variant="outline" size="sm" onClick={handleEdit} className="w-full mt-2 h-7 text-xs">
-                          <Edit className="h-3 w-3 mr-1" /> Edit Details
+                        <Button variant="outline" size="sm" onClick={handleEdit} className="w-full mt-1 h-6 text-[10px]">
+                          <Edit className="h-2.5 w-2.5 mr-1" /> Edit
                         </Button>
                       )}
                     </div>
@@ -326,60 +329,52 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
             </Card>
           </Collapsible>
 
-          {/* Files Quick Access */}
+          {/* Files Compact */}
           {user && (
             <Card>
-              <CardHeader className="py-3">
+              <CardHeader className="py-2.5 px-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
+                  <CardTitle className="text-xs font-medium flex items-center gap-1.5">
+                    <FileText className="h-3 w-3" />
                     Files
                   </CardTitle>
-                  <Badge variant="secondary" className="text-xs">{clientFiles?.length || 0}</Badge>
+                  <Badge variant="secondary" className="text-[10px] h-4 px-1.5">{clientFiles?.length || 0}</Badge>
                 </div>
               </CardHeader>
-              <CardContent className="py-2">
-                <ClientFilesManager clientId={clientId} userId={user.id} canEditClient={canEditClient} />
+              <CardContent className="py-0 pb-2 px-3">
+                <ClientFilesManager clientId={clientId} userId={user.id} canEditClient={canEditClient} compact />
               </CardContent>
             </Card>
           )}
         </div>
       </div>
 
-      {/* Secondary Content Tabs */}
+      {/* Secondary Content Tabs - Notes, Activity, Measurements only */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="h-9 w-full justify-start bg-muted/30 p-1">
-          <TabsTrigger value="projects" className="text-xs gap-1 px-3 data-[state=active]:bg-background">
-            <Briefcase className="h-3 w-3" />
-            Projects
-          </TabsTrigger>
-          <TabsTrigger value="notes" className="text-xs gap-1 px-3 data-[state=active]:bg-background">
+        <TabsList className="h-8 w-auto bg-muted/30 p-0.5">
+          <TabsTrigger value="notes" className="text-xs gap-1 px-2.5 h-7 data-[state=active]:bg-background">
             <FileText className="h-3 w-3" />
             Notes
           </TabsTrigger>
-          <TabsTrigger value="activity" className="text-xs gap-1 px-3 data-[state=active]:bg-background">
+          <TabsTrigger value="activity" className="text-xs gap-1 px-2.5 h-7 data-[state=active]:bg-background">
             <Clock className="h-3 w-3" />
             Activity
           </TabsTrigger>
-          <TabsTrigger value="measurements" className="text-xs gap-1 px-3 data-[state=active]:bg-background">
+          <TabsTrigger value="measurements" className="text-xs gap-1 px-2.5 h-7 data-[state=active]:bg-background">
             <Package className="h-3 w-3" />
             Measurements
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="projects" className="mt-4">
-          <ClientProjectsList clientId={clientId} onTabChange={onTabChange} />
-        </TabsContent>
-
-        <TabsContent value="notes" className="mt-4">
+        <TabsContent value="notes" className="mt-3">
           <ClientAllNotesSection clientId={clientId} canEditClient={canEditClient} />
         </TabsContent>
 
-        <TabsContent value="activity" className="mt-4">
+        <TabsContent value="activity" className="mt-3">
           <ClientActivityLog clientId={clientId} canEditClient={canEditClient} />
         </TabsContent>
 
-        <TabsContent value="measurements" className="mt-4">
+        <TabsContent value="measurements" className="mt-3">
           <MeasurementsList 
             clientId={clientId}
             onViewMeasurement={() => {}}

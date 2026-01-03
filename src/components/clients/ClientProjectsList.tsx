@@ -19,9 +19,10 @@ import { useAuth } from "@/components/auth/AuthProvider";
 interface ClientProjectsListProps {
   clientId: string;
   onTabChange?: (tab: string) => void;
+  compact?: boolean;
 }
 
-export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsListProps) => {
+export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: ClientProjectsListProps) => {
   const { user } = useAuth();
   const { data: projects, isLoading } = useClientJobs(clientId);
   const navigate = useNavigate();
@@ -165,9 +166,60 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
   };
 
   if (isLoading) {
-    return <div className="text-center py-4">Loading projects...</div>;
+    return <div className="text-center py-4 text-xs text-muted-foreground">Loading projects...</div>;
   }
 
+  // Compact mode for sidebar
+  if (compact) {
+    return (
+      <div className="space-y-1.5">
+        {!projects || projects.length === 0 ? (
+          <div className="text-center py-4">
+            <p className="text-xs text-muted-foreground mb-2">No projects yet</p>
+            {hasCreateJobsPermission && (
+              <Button size="sm" variant="outline" onClick={handleCreateProject} disabled={isCreating} className="h-6 text-[10px] px-2">
+                <Plus className="h-2.5 w-2.5 mr-1" />
+                {isCreating ? "..." : "New"}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <>
+            {projects.slice(0, 5).map((project) => (
+              <div
+                key={project.id}
+                className="flex items-center justify-between gap-2 p-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer group"
+                onClick={() => handleViewProject(project.id)}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-medium truncate">{project.name}</div>
+                  {project.job_number && (
+                    <div className="text-[10px] text-muted-foreground">#{formatJobNumber(project.job_number)}</div>
+                  )}
+                </div>
+                <Badge className={`${getStatusColor(project.status || 'planning')} text-[9px] px-1 py-0 h-4 shrink-0`} variant="secondary">
+                  {(project.status || 'planning').replace('_', ' ')}
+                </Badge>
+              </div>
+            ))}
+            {projects.length > 5 && (
+              <Button variant="ghost" size="sm" className="w-full h-6 text-[10px]" onClick={() => onTabChange?.('projects')}>
+                +{projects.length - 5} more projects
+              </Button>
+            )}
+            {hasCreateJobsPermission && (
+              <Button size="sm" variant="outline" onClick={handleCreateProject} disabled={isCreating} className="w-full h-6 text-[10px] mt-1">
+                <Plus className="h-2.5 w-2.5 mr-1" />
+                {isCreating ? "Creating..." : "New Project"}
+              </Button>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // Full mode (for tabs/standalone)
   return (
     <Card>
       <CardHeader>

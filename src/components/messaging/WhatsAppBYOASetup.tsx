@@ -16,6 +16,7 @@ import {
   Phone,
   Building2
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -157,13 +158,15 @@ export const WhatsAppBYOASetup = () => {
       return {
         label: 'Your Business Number',
         number: settings.whatsapp_number,
-        verified: settings.verified
+        verified: settings.verified,
+        isSandbox: false
       };
     }
     return {
-      label: 'InterioApp Shared',
-      number: '+1 (555) 000-0000', // Placeholder - replace with actual shared number
-      verified: true
+      label: 'Twilio Sandbox',
+      number: '+1 (415) 523-8886',
+      verified: true,
+      isSandbox: true
     };
   };
 
@@ -172,12 +175,25 @@ export const WhatsAppBYOASetup = () => {
   return (
     <div className="space-y-4">
       {/* Current Sender Status - Prominent Display */}
-      <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20">
+      <Card className={cn(
+        "border",
+        senderInfo.isSandbox 
+          ? "border-amber-200 bg-amber-50/50 dark:bg-amber-950/20" 
+          : "border-green-200 bg-green-50/50 dark:bg-green-950/20"
+      )}>
         <CardContent className="py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-green-100 dark:bg-green-900">
-                <MessageSquare className="h-5 w-5 text-green-600" />
+              <div className={cn(
+                "p-2 rounded-full",
+                senderInfo.isSandbox 
+                  ? "bg-amber-100 dark:bg-amber-900" 
+                  : "bg-green-100 dark:bg-green-900"
+              )}>
+                <MessageSquare className={cn(
+                  "h-5 w-5",
+                  senderInfo.isSandbox ? "text-amber-600" : "text-green-600"
+                )} />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Messages sent from</p>
@@ -185,18 +201,51 @@ export const WhatsAppBYOASetup = () => {
                   <span className="font-medium">{senderInfo.label}</span>
                   <span className="text-sm text-muted-foreground">({senderInfo.number})</span>
                   {senderInfo.verified && (
-                    <Check className="h-4 w-4 text-green-600" />
+                    <Check className={cn(
+                      "h-4 w-4",
+                      senderInfo.isSandbox ? "text-amber-600" : "text-green-600"
+                    )} />
                   )}
                 </div>
               </div>
             </div>
-            <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">
-              <div className="w-2 h-2 rounded-full bg-green-500 mr-1.5 animate-pulse" />
-              Ready
+            <Badge variant="outline" className={cn(
+              senderInfo.isSandbox 
+                ? "bg-amber-100 text-amber-700 border-amber-200" 
+                : "bg-green-100 text-green-700 border-green-200"
+            )}>
+              <div className={cn(
+                "w-2 h-2 rounded-full mr-1.5 animate-pulse",
+                senderInfo.isSandbox ? "bg-amber-500" : "bg-green-500"
+              )} />
+              {senderInfo.isSandbox ? "Sandbox" : "Ready"}
             </Badge>
           </div>
         </CardContent>
       </Card>
+
+      {/* Sandbox Warning */}
+      {senderInfo.isSandbox && (
+        <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800 dark:text-amber-200">
+            <strong>Twilio Sandbox Mode:</strong> Recipients must join the sandbox first to receive messages.
+            <div className="mt-2 p-2 bg-amber-100/50 rounded text-xs space-y-1">
+              <p className="font-medium">How to test:</p>
+              <p>1. Have your recipient send <code className="bg-amber-200/50 px-1 rounded">join &lt;your-sandbox-code&gt;</code> to <strong>+1 415 523 8886</strong></p>
+              <p>2. After joining, they can receive messages from your app</p>
+              <a 
+                href="https://www.twilio.com/docs/whatsapp/sandbox" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-amber-700 hover:underline font-medium"
+              >
+                View sandbox setup guide <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Configuration */}
       <Card>
