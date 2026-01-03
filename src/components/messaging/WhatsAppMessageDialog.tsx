@@ -6,7 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageSquare, Send, Loader2, AlertCircle, X } from 'lucide-react';
+import { MessageSquare, Send, Loader2, AlertCircle, X, Settings } from 'lucide-react';
 import { useSendWhatsApp } from '@/hooks/useSendWhatsApp';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { WhatsAppMediaUpload } from './WhatsAppMediaUpload';
 import { WhatsAppStatusIcon } from './WhatsAppStatusIcon';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 interface WhatsAppMessageDialogProps {
   open: boolean;
@@ -53,6 +54,26 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
 
   const sendWhatsApp = useSendWhatsApp();
 
+  // Check if WhatsApp is configured (BYOA)
+  const { data: whatsappSettings, isLoading: loadingSettings } = useQuery({
+    queryKey: ['whatsapp-user-settings'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data } = await supabase
+        .from('whatsapp_user_settings')
+        .select('use_own_account, verified, whatsapp_number')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      return data;
+    },
+    enabled: open,
+  });
+
+  const isWhatsAppConfigured = whatsappSettings?.use_own_account && whatsappSettings?.whatsapp_number;
+
   // Update mediaUrl when defaultMediaUrl changes
   useEffect(() => {
     if (defaultMediaUrl) {
@@ -77,7 +98,7 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
         variables: Array.isArray(t.variables) ? t.variables : JSON.parse(t.variables as string || '[]')
       })) as WhatsAppTemplate[];
     },
-    enabled: open,
+    enabled: open && !!isWhatsAppConfigured,
   });
 
   // Get the selected template
@@ -155,7 +176,7 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
     }
   };
 
-  const canSend = client.phone && message.trim();
+  const canSend = client.phone && message.trim() && isWhatsAppConfigured;
 
   const formatPhoneNumber = (phone: string) => {
     // Format for display: +1 (555) 123-4567
@@ -188,7 +209,32 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
           </Button>
         </div>
 
-        {!client.phone ? (
+        {loadingSettings ? (
+          <div className="p-8 flex justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : !isWhatsAppConfigured ? (
+          // WhatsApp not configured - show setup required
+          <div className="p-6">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="p-3 rounded-full bg-amber-100">
+                <MessageSquare className="h-6 w-6 text-amber-600" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-semibold">WhatsApp Setup Required</h3>
+                <p className="text-sm text-muted-foreground">
+                  Connect your Twilio WhatsApp Business account to send messages.
+                </p>
+              </div>
+              <Button asChild variant="outline" className="gap-2">
+                <Link to="/settings" onClick={() => onOpenChange(false)}>
+                  <Settings className="h-4 w-4" />
+                  Go to Settings
+                </Link>
+              </Button>
+            </div>
+          </div>
+        ) : !client.phone ? (
           <div className="p-4">
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -199,16 +245,6 @@ export const WhatsAppMessageDialog: React.FC<WhatsAppMessageDialogProps> = ({
           </div>
         ) : (
           <>
-            {/* Sandbox warning banner */}
-            <div className="px-3 py-2 bg-amber-50 border-b border-amber-200">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-amber-700">
-                  <strong>Sandbox Mode:</strong> Recipient must have joined the Twilio sandbox to receive messages.
-                </p>
-              </div>
-            </div>
-
             {/* Chat preview area */}
             <div className="flex-1 p-4 bg-[#ECE5DD] dark:bg-[#0B141A] min-h-[200px] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiLz48cGF0aCBmaWxsPSIjMDAwIiBmaWxsLW9wYWNpdHk9Ii4wNSIgZD0iTTIwIDIwbTIgMGEyIDIgMCAxIDAgLTQgMGEyIDIgMCAxIDAgNCAwIi8+PC9nPjwvc3ZnPg==')]">
               {getPreviewMessage() && (

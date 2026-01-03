@@ -11,7 +11,8 @@ import {
   Loader2, 
   Phone,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  ExternalLink
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -125,11 +126,9 @@ export const WhatsAppBYOASetup = () => {
     );
   }
 
-  const businessName = businessSettings?.company_name || 'InterioApp';
-  const hasOwnNumber = settings?.use_own_account && settings.whatsapp_number;
-  const SANDBOX_NUMBER = '+14155238886';
-  const senderNumber = hasOwnNumber ? settings.whatsapp_number : SANDBOX_NUMBER;
-  const isSandboxMode = !hasOwnNumber;
+  const businessName = businessSettings?.company_name || 'Your Business';
+  const hasOwnNumber = settings?.use_own_account && settings.whatsapp_number && settings.verified;
+  const isConfigured = settings?.use_own_account && settings.whatsapp_number;
 
   const handleToggle = (checked: boolean) => {
     setUseOwnAccount(checked);
@@ -139,83 +138,151 @@ export const WhatsAppBYOASetup = () => {
     }
   };
 
-  return (
-    <div className="space-y-4">
-      {/* Sandbox Warning */}
-      {isSandboxMode && (
-        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
-          <CardContent className="py-3">
-            <div className="flex items-start gap-3">
-              <div className="p-1.5 rounded-full bg-amber-100 dark:bg-amber-900 mt-0.5">
-                <MessageSquare className="h-4 w-4 text-amber-600" />
+  // Not configured - show setup prompt
+  if (!isConfigured) {
+    return (
+      <div className="space-y-4">
+        {/* Setup Required Card */}
+        <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20">
+          <CardContent className="py-6">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-900">
+                <MessageSquare className="h-6 w-6 text-amber-600" />
               </div>
-              <div className="flex-1 space-y-1">
-                <p className="font-medium text-amber-800 dark:text-amber-200 text-sm">Sandbox Mode (Development Only)</p>
-                <p className="text-xs text-amber-700 dark:text-amber-300">
-                  Messages will only be delivered to recipients who have opted-in to the sandbox. 
-                  For production use, upgrade to Twilio WhatsApp Business API.
+              <div className="space-y-2">
+                <h3 className="font-semibold text-lg">Connect WhatsApp Business</h3>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  WhatsApp messaging requires a Twilio account with WhatsApp Business API enabled.
+                  Connect your Twilio credentials to start sending WhatsApp messages to clients.
                 </p>
-                <a 
-                  href="https://console.twilio.com/us1/develop/sms/senders/whatsapp-senders" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-xs text-amber-600 hover:text-amber-800 underline"
-                >
-                  Upgrade to WhatsApp Business API →
-                </a>
               </div>
+              <a 
+                href="https://console.twilio.com/us1/develop/sms/senders/whatsapp-senders" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+              >
+                Get started with Twilio WhatsApp
+                <ExternalLink className="h-3 w-3" />
+              </a>
             </div>
           </CardContent>
         </Card>
-      )}
 
-      {/* Simple Sender Display */}
-      <Card className={cn(
-        isSandboxMode 
-          ? "border-amber-200 bg-amber-50/50 dark:bg-amber-950/20"
-          : "border-green-200 bg-green-50/50 dark:bg-green-950/20"
-      )}>
+        {/* Setup Form */}
+        <Card>
+          <CardContent className="py-4">
+            <div 
+              className="flex items-center justify-between cursor-pointer"
+              onClick={() => setShowCredentials(!showCredentials)}
+            >
+              <div className="flex items-center gap-3">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">Connect Your Twilio Account</p>
+                  <p className="text-sm text-muted-foreground">Enter your WhatsApp Business credentials</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch 
+                  checked={useOwnAccount} 
+                  onCheckedChange={handleToggle}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                {showCredentials ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+            </div>
+
+            {showCredentials && (
+              <div className="mt-4 pt-4 border-t space-y-4">
+                <div className="grid gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="accountSid" className="text-sm">Account SID</Label>
+                    <Input
+                      id="accountSid"
+                      placeholder="ACxxxxxxxx..."
+                      value={accountSid}
+                      onChange={(e) => setAccountSid(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="authToken" className="text-sm">Auth Token</Label>
+                    <Input
+                      id="authToken"
+                      type="password"
+                      placeholder="••••••••"
+                      value={authToken}
+                      onChange={(e) => setAuthToken(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="whatsappNumber" className="text-sm">WhatsApp Number</Label>
+                    <Input
+                      id="whatsappNumber"
+                      placeholder="+1234567890"
+                      value={whatsappNumber}
+                      onChange={(e) => setWhatsappNumber(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Your Twilio WhatsApp-enabled phone number
+                    </p>
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={() => saveMutation.mutate()}
+                  disabled={saveMutation.isPending || !accountSid || !authToken || !whatsappNumber}
+                  size="sm"
+                >
+                  {saveMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save & Connect'
+                  )}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Configured - show status and edit option
+  return (
+    <div className="space-y-4">
+      {/* Connected Status */}
+      <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20">
         <CardContent className="py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={cn(
-                "p-2 rounded-full",
-                isSandboxMode 
-                  ? "bg-amber-100 dark:bg-amber-900" 
-                  : "bg-green-100 dark:bg-green-900"
-              )}>
-                <MessageSquare className={cn(
-                  "h-5 w-5",
-                  isSandboxMode ? "text-amber-600" : "text-green-600"
-                )} />
+              <div className="p-2 rounded-full bg-green-100 dark:bg-green-900">
+                <MessageSquare className="h-5 w-5 text-green-600" />
               </div>
               <div>
                 <p className="font-medium">{businessName}</p>
-                <p className="text-sm text-muted-foreground font-mono">{senderNumber}</p>
+                <p className="text-sm text-muted-foreground font-mono">{settings?.whatsapp_number}</p>
               </div>
             </div>
             <Badge 
               variant="outline" 
-              className={cn(
-                isSandboxMode 
-                  ? "bg-amber-100 text-amber-700 border-amber-200"
-                  : "bg-green-100 text-green-700 border-green-200"
-              )}
+              className="bg-green-100 text-green-700 border-green-200"
             >
-              {isSandboxMode ? (
-                <>Sandbox</>
-              ) : (
-                <>
-                  <Check className="h-3 w-3 mr-1" />
-                  Production
-                </>
-              )}
+              <Check className="h-3 w-3 mr-1" />
+              Connected
             </Badge>
           </div>
         </CardContent>
       </Card>
 
-      {/* Use Own Number Toggle */}
+      {/* Edit Credentials */}
       <Card>
         <CardContent className="py-4">
           <div 
@@ -225,22 +292,15 @@ export const WhatsAppBYOASetup = () => {
             <div className="flex items-center gap-3">
               <Phone className="h-4 w-4 text-muted-foreground" />
               <div>
-                <p className="font-medium">Use Your Own WhatsApp Business Number</p>
-                <p className="text-sm text-muted-foreground">Connect your Twilio account</p>
+                <p className="font-medium">Edit Twilio Credentials</p>
+                <p className="text-sm text-muted-foreground">Update your WhatsApp Business settings</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Switch 
-                checked={useOwnAccount} 
-                onCheckedChange={handleToggle}
-                onClick={(e) => e.stopPropagation()}
-              />
-              {showCredentials ? (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              )}
-            </div>
+            {showCredentials ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
           </div>
 
           {showCredentials && (
@@ -294,7 +354,7 @@ export const WhatsAppBYOASetup = () => {
                     Saving...
                   </>
                 ) : (
-                  'Save'
+                  'Update'
                 )}
               </Button>
             </div>

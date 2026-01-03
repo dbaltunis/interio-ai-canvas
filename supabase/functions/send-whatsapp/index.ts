@@ -50,7 +50,7 @@ serve(async (req) => {
 
     console.log(`User ${user.id} requesting WhatsApp send`);
 
-    // Check for user-specific BYOA settings first
+    // Check for user-specific BYOA settings - REQUIRED for WhatsApp
     const { data: userSettings } = await supabase
       .from('whatsapp_user_settings')
       .select('*')
@@ -58,6 +58,18 @@ serve(async (req) => {
       .eq('use_own_account', true)
       .eq('verified', true)
       .single();
+
+    // BYOA is required - no fallback to shared credentials
+    if (!userSettings?.account_sid || !userSettings?.auth_token || !userSettings?.whatsapp_number) {
+      console.log('No BYOA credentials found - WhatsApp requires own Twilio account');
+      return new Response(
+        JSON.stringify({ 
+          error: 'WhatsApp requires your own Twilio account. Configure it in Settings > Communications.',
+          requiresSetup: true
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Parse request body
     const body: WhatsAppRequest = await req.json();
@@ -71,38 +83,11 @@ serve(async (req) => {
       throw new Error('Either message or templateId is required');
     }
 
-    // Get Twilio credentials - prefer user's own account if available
-    let twilioAccountSid: string;
-    let twilioAuthToken: string;
-    let twilioWhatsAppNumber: string;
-
-    let isSandboxMode = false;
-    const SANDBOX_NUMBER = '+14155238886';
-    
-    if (userSettings?.account_sid && userSettings?.auth_token && userSettings?.whatsapp_number) {
-      // Use user's own BYOA credentials
-      console.log('Using user BYOA credentials');
-      twilioAccountSid = userSettings.account_sid;
-      twilioAuthToken = userSettings.auth_token;
-      twilioWhatsAppNumber = userSettings.whatsapp_number;
-    } else {
-      // Fall back to shared InterioApp credentials
-      console.log('Using shared InterioApp credentials');
-      twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID')!;
-      twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN')!;
-      twilioWhatsAppNumber = Deno.env.get('TWILIO_WHATSAPP_NUMBER')!;
-    }
-
-    if (!twilioAccountSid || !twilioAuthToken || !twilioWhatsAppNumber) {
-      throw new Error('Twilio WhatsApp credentials not configured');
-    }
-    
-    // Check if using sandbox number
-    const cleanedNumber = twilioWhatsAppNumber.replace(/[\s\-]/g, '');
-    if (cleanedNumber === SANDBOX_NUMBER || cleanedNumber === '14155238886') {
-      isSandboxMode = true;
-      console.log('WARNING: Using Twilio Sandbox number - messages will only be delivered to opted-in recipients');
-    }
+    // Use BYOA credentials
+    console.log('Using user BYOA credentials');
+    const twilioAccountSid = userSettings.account_sid;
+    const twilioAuthToken = userSettings.auth_token;
+    const twilioWhatsAppNumber = userSettings.whatsapp_number;
 
     // Format phone numbers for WhatsApp
     const fromNumber = `whatsapp:${twilioWhatsAppNumber.startsWith('+') ? twilioWhatsAppNumber : '+' + twilioWhatsAppNumber}`;
@@ -204,9 +189,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         messageSid: twilioResult.sid,
-        status: twilioResult.status,
-        sandboxMode: isSandboxMode,
-        warning: isSandboxMode ? 'Using Twilio Sandbox. Messages only deliver to opted-in recipients. Upgrade to WhatsApp Business API for production.' : undefined
+        status: twilioResult.status
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
