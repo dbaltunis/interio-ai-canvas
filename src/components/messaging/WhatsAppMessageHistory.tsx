@@ -2,11 +2,12 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, CheckCircle, Clock, AlertCircle, RefreshCw, User, Phone, Send } from "lucide-react";
+import { MessageSquare, CheckCircle, Clock, AlertCircle, RefreshCw, User, Phone, Users, Briefcase, ArrowRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 interface WhatsAppMessageLog {
   id: string;
@@ -22,6 +23,7 @@ interface WhatsAppMessageLog {
 }
 
 export const WhatsAppMessageHistory = () => {
+  const navigate = useNavigate();
   const { data: messages, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['whatsapp-message-logs'],
     queryFn: async () => {
@@ -167,24 +169,55 @@ export const WhatsAppMessageHistory = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No messages yet</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                WhatsApp messages you send will appear here.
-              </p>
-              <div className="text-sm text-muted-foreground">
-                <p className="font-medium mb-2">How to send WhatsApp messages:</p>
-                <ul className="space-y-1">
-                  <li className="flex items-center justify-center gap-2">
-                    <Send className="h-3 w-3" />
-                    Go to a Client profile → Quick Actions → WhatsApp
-                  </li>
-                  <li className="flex items-center justify-center gap-2">
-                    <Send className="h-3 w-3" />
-                    Or from any Job page with a client attached
-                  </li>
-                </ul>
+              <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4">
+                <MessageSquare className="h-8 w-8 text-green-600" />
               </div>
+              <h3 className="text-lg font-medium mb-2">No messages yet</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Send your first WhatsApp message to a client
+              </p>
+              
+              <div className="max-w-md mx-auto space-y-3">
+                <p className="text-sm font-medium text-muted-foreground mb-3">Send WhatsApp from:</p>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-between"
+                  onClick={() => navigate('/?tab=clients')}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                      <Users className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium">Clients Page</p>
+                      <p className="text-xs text-muted-foreground">Select a client → Quick Actions → WhatsApp</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-between"
+                  onClick={() => navigate('/?tab=jobs')}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30">
+                      <Briefcase className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-medium">Jobs Page</p>
+                      <p className="text-xs text-muted-foreground">Open any job → Contact button → WhatsApp</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </div>
+              
+              <p className="text-xs text-muted-foreground mt-6">
+                Messages are sent from the InterioApp Business Number
+              </p>
             </div>
           )}
         </CardContent>
