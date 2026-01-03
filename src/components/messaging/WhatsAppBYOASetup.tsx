@@ -91,13 +91,15 @@ export const WhatsAppBYOASetup = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      const hasCredentials = !!(useOwnAccount && accountSid && authToken && whatsappNumber);
       const settingsData = {
         user_id: user.id,
         use_own_account: useOwnAccount,
         account_sid: useOwnAccount ? accountSid : null,
         auth_token: useOwnAccount ? authToken : null,
         whatsapp_number: useOwnAccount ? whatsappNumber : null,
-        verified: false,
+        verified: hasCredentials,
+        verified_at: hasCredentials ? new Date().toISOString() : null,
         updated_at: new Date().toISOString()
       };
 
