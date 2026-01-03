@@ -20,7 +20,7 @@ export const JobsPageTabs = ({
   const tabs = [
     { id: "jobs" as const, label: "Jobs", count: jobsCount },
     { id: "clients" as const, label: "Clients", count: clientsCount },
-    { id: "emails" as const, label: "Emails", count: emailsCount },
+    { id: "emails" as const, label: "Messages", count: emailsCount },
     { id: "analytics" as const, label: "Analytics", count: 0 }
   ];
 
