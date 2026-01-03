@@ -18,7 +18,7 @@ import { useClient, useUpdateClient } from "@/hooks/useClients";
 import { useClientJobs, useClientQuotes } from "@/hooks/useClientJobs";
 import { useClientFiles } from "@/hooks/useClientFiles";
 import { useCanEditClient } from "@/hooks/useClientEditPermissions";
-import { EnhancedClientEmailHistory } from "./EnhancedClientEmailHistory";
+import { ClientCommunicationsTab } from "./ClientCommunicationsTab";
 import { LeadSourceSelect } from "@/components/crm/LeadSourceSelect";
 import { ClientProjectsList } from "./ClientProjectsList";
 import { MeasurementsList } from "../measurements/MeasurementsList";
@@ -50,7 +50,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedClient, setEditedClient] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("activity");
+  const [activeTab, setActiveTab] = useState("communications");
   
   // Calculate portfolio value from closed/completed projects only
   // Use project.quote data since quotes may not have client_id set directly
@@ -481,24 +481,24 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
       {/* All Project Notes Section */}
       <ClientAllNotesSection clientId={clientId} canEditClient={canEditClient} />
 
-      {/* Redesigned Tabs Section - 3 tabs: Activity, Emails, Measurements */}
+      {/* Redesigned Tabs Section - 3 tabs: Communications, Activity Log, Measurements */}
       <div className="mt-8">
         <h3 className="text-lg font-semibold mb-4">More Details</h3>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/30">
             <TabsTrigger 
+              value="communications" 
+              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              <Mail className="h-5 w-5" />
+              <span className="font-medium">Communications</span>
+            </TabsTrigger>
+            <TabsTrigger 
               value="activity" 
               className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
             >
               <Clock className="h-5 w-5" />
-              <span className="font-medium">Activity</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="emails" 
-              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm"
-            >
-              <Mail className="h-5 w-5" />
-              <span className="font-medium">Emails</span>
+              <span className="font-medium">Activity Log</span>
             </TabsTrigger>
             <TabsTrigger 
               value="measurements" 
@@ -509,17 +509,15 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="activity" className="mt-6">
-            <ClientActivityLog clientId={clientId} canEditClient={canEditClient} />
-          </TabsContent>
-
-          <TabsContent value="emails" className="mt-6">
-            <EnhancedClientEmailHistory 
+          <TabsContent value="communications" className="mt-6">
+            <ClientCommunicationsTab 
               clientId={clientId} 
               clientEmail={client.email}
-              onComposeEmail={() => {}}
-              canEditClient={canEditClient}
             />
+          </TabsContent>
+
+          <TabsContent value="activity" className="mt-6">
+            <ClientActivityLog clientId={clientId} canEditClient={canEditClient} />
           </TabsContent>
 
           <TabsContent value="measurements" className="mt-6">
