@@ -5,19 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Plus, Settings, BarChart3, Filter, ChevronDown, Home, Send } from "lucide-react";
+import { Mail, Plus, Settings, BarChart3, Filter, ChevronDown, Home, Send, MessageSquare, Shield } from "lucide-react";
 import { EmailDashboard } from "./email/EmailDashboard";
 import { EmailComposer } from "./email/EmailComposer";
 import { EmailCampaigns } from "./email/EmailCampaigns";
 import { EmailAnalytics } from "./email/EmailAnalytics";
 import { EmailSettings } from "./email/EmailSettings";
 import { EmailIntegrationBanners } from "./email-components/EmailIntegrationBanners";
+import { WhatsAppMessageHistory } from "@/components/messaging/WhatsAppMessageHistory";
 import { useEmailSetupStatus } from "@/hooks/useIntegrationStatus";
 import { useEmails } from "@/hooks/useEmails";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { useHasPermission } from "@/hooks/usePermissions";
-import { Shield } from "lucide-react";
 
 export const EmailManagement = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -165,6 +165,17 @@ export const EmailManagement = () => {
             <span className="sm:hidden">Stats</span>
           </TabsTrigger>
           <TabsTrigger 
+            value="whatsapp" 
+            className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50"
+          >
+            <MessageSquare className="w-4 h-4 text-green-600" />
+            <span className="hidden sm:inline">WhatsApp</span>
+            <span className="sm:hidden">WA</span>
+            <Badge variant="secondary" className="ml-1 text-[10px] px-1 py-0 bg-green-100 text-green-700 border-green-200">
+              Included
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger 
             value="settings" 
             className="flex items-center gap-2 px-4 py-3 transition-all duration-200 text-sm font-medium border-b-2 border-transparent data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:bg-primary/5 rounded-none text-muted-foreground hover:text-foreground hover:border-border/50"
           >
@@ -200,6 +211,14 @@ export const EmailManagement = () => {
           <Card className="bg-card border-border rounded-lg shadow-sm animate-fade-in">
             <CardContent className="p-6">
               <EmailAnalytics />
+            </CardContent>
+          </Card>
+        );
+      case "whatsapp":
+        return (
+          <Card className="bg-card border-border rounded-lg shadow-sm animate-fade-in">
+            <CardContent className="p-6">
+              <WhatsAppMessageHistory />
             </CardContent>
           </Card>
         );
