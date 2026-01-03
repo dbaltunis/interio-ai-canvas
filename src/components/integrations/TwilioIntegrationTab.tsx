@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { MessageSquare, Phone, Check, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { MessageSquare, Phone, Check, AlertCircle, Eye, EyeOff, Info, ExternalLink } from "lucide-react";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import { useToast } from "@/hooks/use-toast";
 import type { IntegrationType } from "@/types/integrations";
@@ -109,6 +109,28 @@ export const TwilioIntegrationTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Optional Feature Info Banner */}
+      {!twilioIntegration?.active && (
+        <Alert className="border-amber-200 bg-amber-50">
+          <Info className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-800">SMS is an Optional Feature</AlertTitle>
+          <AlertDescription className="text-amber-700">
+            <p className="mb-2">
+              SMS messaging requires your own Twilio account. You will be billed directly by Twilio for SMS usage — there are no additional fees from InterioApp.
+            </p>
+            <a 
+              href="https://www.twilio.com/en-us/sms/pricing" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-amber-800 hover:text-amber-900 font-medium underline"
+            >
+              View Twilio SMS pricing
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Status Card */}
       <Card>
         <CardHeader>
@@ -120,7 +142,7 @@ export const TwilioIntegrationTab = () => {
               <div>
                 <CardTitle className="text-lg">Twilio SMS Integration</CardTitle>
                 <CardDescription>
-                  Configure Twilio for SMS messaging capabilities
+                  Optional: Connect your own Twilio account to enable SMS messaging
                 </CardDescription>
               </div>
             </div>
@@ -133,7 +155,7 @@ export const TwilioIntegrationTab = () => {
               ) : (
                 <Badge variant="secondary">
                   <AlertCircle className="h-3 w-3 mr-1" />
-                  Inactive
+                  Not Configured
                 </Badge>
               )}
             </div>

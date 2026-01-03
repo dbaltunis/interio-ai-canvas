@@ -37,6 +37,7 @@ export const CommunicationsTab = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Email - Shared or Custom */}
             <div className="flex items-center gap-3 p-3 border rounded-lg">
               <div className={`p-2 rounded-full ${hasSendGridIntegration ? 'bg-green-100' : 'bg-muted'}`}>
                 <Mail className={`h-4 w-4 ${hasSendGridIntegration ? 'text-green-600' : 'text-muted-foreground'}`} />
@@ -44,41 +45,43 @@ export const CommunicationsTab = () => {
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm">Email</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {hasSendGridIntegration ? 'Custom SendGrid' : 'Shared service'}
+                  {hasSendGridIntegration ? 'Your SendGrid account' : 'Shared service'}
                 </p>
               </div>
               <Badge variant={hasSendGridIntegration ? "default" : "secondary"} className="text-[10px] shrink-0">
-                {hasSendGridIntegration ? 'Custom' : 'Shared'}
+                {hasSendGridIntegration ? 'Custom' : 'Included'}
               </Badge>
             </div>
             
-            <div className="flex items-center gap-3 p-3 border rounded-lg">
-              <div className={`p-2 rounded-full ${hasTwilioIntegration ? 'bg-green-100' : 'bg-muted'}`}>
-                <Phone className={`h-4 w-4 ${hasTwilioIntegration ? 'text-green-600' : 'text-muted-foreground'}`} />
+            {/* SMS - Optional BYOA */}
+            <div className={`flex items-center gap-3 p-3 border rounded-lg ${hasTwilioIntegration ? '' : 'border-amber-200 bg-amber-50/50'}`}>
+              <div className={`p-2 rounded-full ${hasTwilioIntegration ? 'bg-green-100' : 'bg-amber-100'}`}>
+                <Phone className={`h-4 w-4 ${hasTwilioIntegration ? 'text-green-600' : 'text-amber-600'}`} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm">SMS</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {hasTwilioIntegration ? 'Your Twilio' : 'Requires your Twilio'}
+                  {hasTwilioIntegration ? 'Your Twilio connected' : 'Optional — add your Twilio'}
                 </p>
               </div>
-              <Badge variant={hasTwilioIntegration ? "default" : "outline"} className="text-[10px] shrink-0">
-                {hasTwilioIntegration ? 'Active' : 'BYOA'}
+              <Badge variant={hasTwilioIntegration ? "default" : "outline"} className={`text-[10px] shrink-0 ${!hasTwilioIntegration ? 'border-amber-300 text-amber-700' : ''}`}>
+                {hasTwilioIntegration ? 'Active' : 'Optional'}
               </Badge>
             </div>
             
-            <div className="flex items-center gap-3 p-3 border rounded-lg">
+            {/* WhatsApp - Included */}
+            <div className="flex items-center gap-3 p-3 border rounded-lg border-green-200 bg-green-50/50">
               <div className="p-2 rounded-full bg-green-100">
                 <MessageSquare className="h-4 w-4 text-green-600" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm">WhatsApp</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  Shared InterioApp number
+                  Ready to use — no setup needed
                 </p>
               </div>
-              <Badge variant="default" className="text-[10px] shrink-0">
-                Active
+              <Badge variant="default" className="text-[10px] shrink-0 bg-green-600">
+                Included
               </Badge>
             </div>
           </div>
