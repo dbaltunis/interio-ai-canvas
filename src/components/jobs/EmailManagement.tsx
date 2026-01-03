@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Plus, Settings, BarChart3, Filter, ChevronDown, Home, Send, MessageSquare, Shield } from "lucide-react";
+import { Mail, Settings, BarChart3, Filter, Home, Send, MessageSquare, Shield } from "lucide-react";
 import { EmailDashboard } from "./email/EmailDashboard";
 import { EmailComposer } from "./email/EmailComposer";
 import { EmailCampaigns } from "./email/EmailCampaigns";
@@ -85,16 +85,16 @@ export const EmailManagement = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary-light rounded-lg">
-            <Mail className="h-6 w-6 text-primary" />
+          <div className="p-2 bg-primary-light rounded-lg">
+            <MessageSquare className="h-5 w-5 text-primary" />
           </div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-foreground">Email Management</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-foreground">Communications</h1>
             <HelpIcon onClick={() => setShowHelp(true)} />
+            <Badge variant="secondary" className="text-xs">
+              {emails?.length || 0}
+            </Badge>
           </div>
-          <Badge className="bg-accent-light text-accent border-accent">
-            {emails?.length || 0} emails
-          </Badge>
         </div>
         <div className="flex items-center space-x-3">
           {activeTab === "dashboard" && (
@@ -171,9 +171,6 @@ export const EmailManagement = () => {
             <MessageSquare className="w-4 h-4 text-green-600" />
             <span className="hidden sm:inline">WhatsApp</span>
             <span className="sm:hidden">WA</span>
-            <Badge variant="secondary" className="ml-1 text-[10px] px-1 py-0 bg-green-100 text-green-700 border-green-200">
-              Included
-            </Badge>
           </TabsTrigger>
           <TabsTrigger 
             value="settings" 

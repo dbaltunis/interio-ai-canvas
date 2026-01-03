@@ -151,16 +151,61 @@ export const WhatsAppBYOASetup = () => {
     );
   }
 
+  // Determine current sender display
+  const getCurrentSenderInfo = () => {
+    if (settings?.use_own_account && settings.whatsapp_number) {
+      return {
+        label: 'Your Business Number',
+        number: settings.whatsapp_number,
+        verified: settings.verified
+      };
+    }
+    return {
+      label: 'InterioApp Shared',
+      number: '+1 (555) 000-0000', // Placeholder - replace with actual shared number
+      verified: true
+    };
+  };
+
+  const senderInfo = getCurrentSenderInfo();
+
   return (
-    <div className="space-y-6">
-      {/* Current Status */}
+    <div className="space-y-4">
+      {/* Current Sender Status - Prominent Display */}
+      <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-green-100 dark:bg-green-900">
+                <MessageSquare className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Messages sent from</p>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{senderInfo.label}</span>
+                  <span className="text-sm text-muted-foreground">({senderInfo.number})</span>
+                  {senderInfo.verified && (
+                    <Check className="h-4 w-4 text-green-600" />
+                  )}
+                </div>
+              </div>
+            </div>
+            <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">
+              <div className="w-2 h-2 rounded-full bg-green-500 mr-1.5 animate-pulse" />
+              Ready
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Configuration */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-green-600" />
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Building2 className="h-4 w-4" />
             WhatsApp Configuration
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs">
             Choose how you want to send WhatsApp messages
           </CardDescription>
         </CardHeader>
