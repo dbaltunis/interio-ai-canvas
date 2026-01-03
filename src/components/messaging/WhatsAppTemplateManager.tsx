@@ -150,6 +150,21 @@ export const WhatsAppTemplateManager = () => {
               </li>
             </ul>
           </div>
+
+          {/* Where to use WhatsApp */}
+          <div className="mt-4 p-4 border border-green-200 bg-green-50 rounded-lg">
+            <h4 className="font-medium text-sm text-green-800 mb-2">Where to Send WhatsApp Messages</h4>
+            <ul className="text-sm text-green-700 space-y-2">
+              <li className="flex items-center gap-2">
+                <span className="w-5 h-5 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                <span><strong>Client Profiles:</strong> Quick Actions → WhatsApp button</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-5 h-5 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                <span><strong>Email Management:</strong> WhatsApp tab to view message history</span>
+              </li>
+            </ul>
+          </div>
         </CardContent>
       </Card>
 
