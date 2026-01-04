@@ -192,113 +192,53 @@ export const ShopifyAnalyticsCard = () => {
         </div>
       </CardHeader>
       <CardContent className="pt-0 space-y-3">
-        {/* Product Sync Section */}
-        <div className="p-3 rounded-lg border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5">
-              <Package className="h-3.5 w-3.5 text-primary shrink-0" />
-              <h3 className="font-semibold text-xs">Product Sync Status</h3>
-            </div>
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
-              {integration?.last_sync_at ? `Last: ${formatDate(integration.last_sync_at)}` : 'Not synced'}
-            </Badge>
+        {/* Product Sync - Compact inline */}
+        {canManageShopify && (
+          <div className="flex items-center gap-2 p-2 rounded-lg border border-border/50 bg-muted/30">
+            <Package className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="text-xs text-muted-foreground">{productStats?.totalProducts || 0} products</span>
+            <div className="flex-1" />
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => handleProductSync('pull')}
+              disabled={isSyncingImport || isSyncingExport}
+              className="h-6 px-2"
+            >
+              <ArrowDownLeft className={`h-3 w-3 ${isSyncingImport ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => handleProductSync('push')}
+              disabled={isSyncingImport || isSyncingExport || (productStats?.totalProducts || 0) === 0}
+              className="h-6 px-2"
+            >
+              <ArrowUpRight className={`h-3 w-3 ${isSyncingExport ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
-          
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            <div className="p-2 rounded-md bg-card border border-border">
-              <div className="text-[10px] text-muted-foreground mb-0.5 truncate">InterioApp Inventory</div>
-              <div className="text-lg font-bold text-primary">{productStats?.totalProducts || 0}</div>
-              <div className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                {productStats?.categories || 0} categories
-              </div>
-            </div>
-            <div className="p-2 rounded-md bg-card border border-border">
-              <div className="text-[10px] text-muted-foreground mb-0.5 truncate">Shopify Store</div>
-              <div className="text-lg font-bold text-orange-600">?</div>
-              <div className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                Click "Import" to check
-              </div>
-            </div>
-          </div>
+        )}
 
-          {(productStats?.totalProducts || 0) === 0 && (
-            <div className="mb-2 p-1.5 bg-amber-500/10 border border-amber-500/20 rounded text-[10px] text-amber-600">
-              <strong>Note:</strong> Add products in Library/Inventory first
-            </div>
-          )}
-
-          {canManageShopify && (
-            <div className="flex gap-1.5">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleProductSync('pull')}
-                disabled={isSyncingImport || isSyncingExport}
-                className="flex-1 gap-1 h-8 px-2"
-                title="Import products from Shopify to InterioApp"
-              >
-                <ArrowDownLeft className={`h-3 w-3 shrink-0 ${isSyncingImport ? 'animate-spin' : ''}`} />
-                <span className="text-[10px] truncate">Import</span>
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleProductSync('push')}
-                disabled={isSyncingImport || isSyncingExport || (productStats?.totalProducts || 0) === 0}
-                className="flex-1 gap-1 h-8 px-2"
-                title="Export InterioApp products to Shopify"
-              >
-                <ArrowUpRight className={`h-3 w-3 shrink-0 ${isSyncingExport ? 'animate-spin' : ''}`} />
-                <span className="text-[10px] truncate">Export</span>
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {/* Analytics Grid - Responsive */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="p-3 rounded-lg border bg-card">
-            <div className="flex items-center text-muted-foreground mb-2">
-              <ShoppingBag className="h-3.5 w-3.5 mr-1.5" />
-              <span className="text-xs font-medium">Total Orders</span>
-            </div>
-            <p className="text-xl font-bold">{analytics.total_orders}</p>
-            <p className="text-xs text-muted-foreground truncate">
-              {analytics.orders_this_month} this month
-            </p>
+        {/* Analytics Grid - Simplified */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="p-2 rounded-lg border border-border/50 bg-card">
+            <div className="text-[10px] text-muted-foreground mb-0.5">Revenue</div>
+            <p className="text-lg font-bold">{formatCurrency(analytics.total_revenue)}</p>
           </div>
 
-          <div className="p-3 rounded-lg border bg-card">
-            <div className="flex items-center text-muted-foreground mb-2">
-              <DollarSign className="h-3.5 w-3.5 mr-1.5" />
-              <span className="text-xs font-medium">Total Revenue</span>
-            </div>
-            <p className="text-xl font-bold truncate">{formatCurrency(analytics.total_revenue)}</p>
-            <p className="text-xs text-muted-foreground truncate">
-              {formatCurrency(analytics.revenue_this_month)} this month
-            </p>
+          <div className="p-2 rounded-lg border border-border/50 bg-card">
+            <div className="text-[10px] text-muted-foreground mb-0.5">Orders</div>
+            <p className="text-lg font-bold">{analytics.total_orders}</p>
           </div>
 
-          <div className="p-3 rounded-lg border bg-card">
-            <div className="flex items-center text-muted-foreground mb-2">
-              <Users className="h-3.5 w-3.5 mr-1.5" />
-              <span className="text-xs font-medium">Customers</span>
-            </div>
-            <p className="text-xl font-bold">{analytics.total_customers}</p>
-            <p className="text-xs text-muted-foreground truncate">
-              Total registered
-            </p>
+          <div className="p-2 rounded-lg border border-border/50 bg-card">
+            <div className="text-[10px] text-muted-foreground mb-0.5">Customers</div>
+            <p className="text-lg font-bold">{analytics.total_customers}</p>
           </div>
 
-          <div className="p-3 rounded-lg border bg-card">
-            <div className="flex items-center text-muted-foreground mb-2">
-              <TrendingUp className="h-3.5 w-3.5 mr-1.5" />
-              <span className="text-xs font-medium">Avg Order Value</span>
-            </div>
-            <p className="text-xl font-bold truncate">{formatCurrency(analytics.avg_order_value)}</p>
-            <p className="text-xs text-muted-foreground truncate">
-              Per transaction
-            </p>
+          <div className="p-2 rounded-lg border border-border/50 bg-card">
+            <div className="text-[10px] text-muted-foreground mb-0.5">Avg Order</div>
+            <p className="text-lg font-bold">{formatCurrency(analytics.avg_order_value)}</p>
           </div>
         </div>
       </CardContent>

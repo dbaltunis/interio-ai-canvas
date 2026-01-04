@@ -128,12 +128,12 @@ const DashboardContent = () => {
     filteredOutCount: getEnabledWidgets().length - enabledWidgets.length
   });
 
-  // Compact metrics for top row
+  // Compact metrics for top row - use real data, trends will be calculated from batched query
   const compactMetrics = [
-    { id: "revenue", label: "Revenue", value: stats?.totalRevenue || 0, icon: DollarSign, isCurrency: true, trend: { value: 12.5, isPositive: true } },
+    { id: "revenue", label: "Revenue", value: stats?.totalRevenue || 0, icon: DollarSign, isCurrency: true },
     { id: "projects", label: "Active Projects", value: stats?.totalClients || 0, icon: FileText },
     { id: "quotes", label: "Pending Quotes", value: stats?.pendingQuotes || 0, icon: FileText },
-    { id: "clients", label: "Clients", value: stats?.totalClients || 0, icon: Users, trend: { value: 8.2, isPositive: true } },
+    { id: "clients", label: "Clients", value: stats?.totalClients || 0, icon: Users },
   ];
 
   return (
@@ -147,7 +147,7 @@ const DashboardContent = () => {
       {/* Charts Row - Revenue trend and Jobs status */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Suspense fallback={<WidgetSkeleton />}>
-          <RevenueTrendChart dateRange={dateRange.preset} />
+          <RevenueTrendChart />
         </Suspense>
         <Suspense fallback={<WidgetSkeleton />}>
           <JobsStatusChart />
