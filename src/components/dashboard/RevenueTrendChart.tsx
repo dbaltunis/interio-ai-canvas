@@ -1,31 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart, Line } from "recharts";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, TrendingDown } from "lucide-react";
+import { useRevenueHistory } from "@/hooks/useRevenueHistory";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Sample data - in production, this would come from a hook
-const generateSampleData = () => {
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  return days.map((day, i) => ({
-    name: day,
-    current: Math.floor(Math.random() * 3000) + 1500,
-    previous: Math.floor(Math.random() * 2500) + 1200,
-  }));
-};
-
-interface RevenueTrendChartProps {
-  dateRange?: string;
-}
-
-export const RevenueTrendChart = ({ dateRange = "7days" }: RevenueTrendChartProps) => {
+export const RevenueTrendChart = () => {
   const { formatCurrency } = useFormattedCurrency();
-  const data = generateSampleData();
-
-  // Calculate total and comparison
-  const currentTotal = data.reduce((sum, d) => sum + d.current, 0);
-  const previousTotal = data.reduce((sum, d) => sum + d.previous, 0);
-  const changePercent = ((currentTotal - previousTotal) / previousTotal * 100).toFixed(1);
-  const isPositive = currentTotal >= previousTotal;
+  const { data: revenueData, isLoading } = useRevenueHistory();
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -44,6 +26,42 @@ export const RevenueTrendChart = ({ dateRange = "7days" }: RevenueTrendChartProp
     return null;
   };
 
+  if (isLoading) {
+    return (
+      <Card className="border-border/40">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <Skeleton className="h-[180px] w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const data = revenueData?.data || [];
+  const changePercent = revenueData?.changePercent || 0;
+  const isPositive = changePercent >= 0;
+
+  // Show empty state if no data
+  if (data.length === 0 || (revenueData?.currentTotal === 0 && revenueData?.previousTotal === 0)) {
+    return (
+      <Card className="border-border/40">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            Revenue Trend
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-[180px]">
+          <p className="text-xs text-muted-foreground">No revenue data for this period</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-border/40">
       <CardHeader className="pb-2">
@@ -52,9 +70,13 @@ export const RevenueTrendChart = ({ dateRange = "7days" }: RevenueTrendChartProp
             Revenue Trend
           </CardTitle>
           <div className="flex items-center gap-1.5 text-xs">
-            <TrendingUp className={`h-3.5 w-3.5 ${isPositive ? 'text-green-500' : 'text-red-500'}`} />
+            {isPositive ? (
+              <TrendingUp className="h-3.5 w-3.5 text-green-500" />
+            ) : (
+              <TrendingDown className="h-3.5 w-3.5 text-red-500" />
+            )}
             <span className={isPositive ? 'text-green-600' : 'text-red-500'}>
-              {isPositive ? '+' : ''}{changePercent}%
+              {isPositive ? '+' : ''}{changePercent.toFixed(1)}%
             </span>
             <span className="text-muted-foreground">vs prev period</span>
           </div>

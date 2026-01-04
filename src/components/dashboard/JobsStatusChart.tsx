@@ -1,49 +1,77 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useProjects } from "@/hooks/useProjects";
+import { useJobStatuses } from "@/hooks/useJobStatuses";
 import { useMemo } from "react";
 
-const STATUS_COLORS: Record<string, string> = {
+// Fallback colors only used if status color not found in database
+const FALLBACK_COLORS: Record<string, string> = {
   'in_progress': 'hsl(var(--primary))',
   'active': 'hsl(var(--primary))',
   'pending': 'hsl(38, 92%, 50%)',
-  'quote_sent': 'hsl(38, 92%, 50%)',
   'completed': 'hsl(142, 71%, 45%)',
   'on_hold': 'hsl(var(--muted-foreground))',
   'cancelled': 'hsl(0, 84%, 60%)',
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  'in_progress': 'In Progress',
-  'active': 'Active',
-  'pending': 'Pending',
-  'quote_sent': 'Quote Sent',
-  'completed': 'Completed',
-  'on_hold': 'On Hold',
-  'cancelled': 'Cancelled',
-};
-
 export const JobsStatusChart = () => {
-  const { data: projects, isLoading } = useProjects();
+  const { data: projects, isLoading: projectsLoading } = useProjects();
+  const { data: jobStatuses, isLoading: statusesLoading } = useJobStatuses();
+
+  const isLoading = projectsLoading || statusesLoading;
+
+  // Build a map of status_id -> { name, color } from job_statuses
+  const statusMap = useMemo(() => {
+    const map = new Map<string, { name: string; color: string }>();
+    jobStatuses?.forEach(status => {
+      map.set(status.id, { 
+        name: status.name, 
+        color: status.color || FALLBACK_COLORS[status.name.toLowerCase().replace(/\s+/g, '_')] || 'hsl(var(--muted-foreground))'
+      });
+    });
+    return map;
+  }, [jobStatuses]);
 
   const chartData = useMemo(() => {
     if (!projects?.length) return [];
     
-    const statusCounts: Record<string, number> = {};
+    const statusCounts: Record<string, { count: number; name: string; color: string }> = {};
+    
     projects.forEach(project => {
-      const status = project.status || 'pending';
-      statusCounts[status] = (statusCounts[status] || 0) + 1;
+      const statusId = project.status_id || project.status || 'pending';
+      
+      // Try to get from job_statuses first (by ID)
+      const statusInfo = statusMap.get(statusId);
+      
+      if (statusInfo) {
+        if (!statusCounts[statusId]) {
+          statusCounts[statusId] = { count: 0, name: statusInfo.name, color: statusInfo.color };
+        }
+        statusCounts[statusId].count++;
+      } else {
+        // Fallback to status string
+        const statusKey = String(statusId);
+        if (!statusCounts[statusKey]) {
+          const displayName = statusKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+          statusCounts[statusKey] = { 
+            count: 0, 
+            name: displayName,
+            color: FALLBACK_COLORS[statusKey] || 'hsl(var(--muted-foreground))'
+          };
+        }
+        statusCounts[statusKey].count++;
+      }
     });
 
     return Object.entries(statusCounts)
-      .map(([status, count]) => ({
-        name: STATUS_LABELS[status] || status,
-        value: count,
+      .map(([status, data]) => ({
+        name: data.name,
+        value: data.count,
         status,
-        color: STATUS_COLORS[status] || 'hsl(var(--muted-foreground))',
+        color: data.color,
       }))
       .sort((a, b) => b.value - a.value);
-  }, [projects]);
+  }, [projects, statusMap]);
 
   const total = chartData.reduce((sum, d) => sum + d.value, 0);
 

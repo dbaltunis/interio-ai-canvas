@@ -168,89 +168,71 @@ export const ShopifyProductsSyncWidget = () => {
 
   return (
     <Card variant="analytics" className="h-full flex flex-col">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Package className="h-4 w-4 text-primary shrink-0" />
-            Product Sync Status
+            Product Sync
           </CardTitle>
           {stats?.shopDomain && (
-            <Badge variant="secondary" className="text-xs shrink-0">
+            <Badge variant="secondary" className="text-[10px] px-1.5 shrink-0">
               {stats.shopDomain}
             </Badge>
           )}
         </div>
       </CardHeader>
       <CardContent className="pt-0 space-y-3">
-        {/* Sync Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
-            <div className="text-xs text-muted-foreground mb-1 truncate">Products in InterioApp</div>
-            <div className="text-2xl font-bold text-primary">{stats?.totalProducts || 0}</div>
-            <div className="text-[10px] text-muted-foreground mt-1 truncate">
-              {stats?.totalProducts === 0 ? 'No products yet' : 'Ready to sync'}
-            </div>
+        {/* Compact Stats Row */}
+        <div className="flex items-center justify-between p-2 rounded-lg border border-border/50 bg-muted/30">
+          <div>
+            <div className="text-lg font-bold text-primary">{stats?.totalProducts || 0}</div>
+            <div className="text-[10px] text-muted-foreground">Products ready</div>
           </div>
-          
-          <div className="bg-accent/5 rounded-lg p-3 border border-accent/10">
-            <div className="text-xs text-muted-foreground mb-1 truncate">Last Synced</div>
-            <div className="text-lg font-bold">
+          <div className="text-right">
+            <div className="text-sm font-medium">
               {timeSinceSync !== null ? (
                 timeSinceSync < 60 ? `${timeSinceSync}m ago` : `${Math.floor(timeSinceSync / 60)}h ago`
-              ) : (
-                'Never'
-              )}
+              ) : 'Never'}
             </div>
-            <div className="text-[10px] text-muted-foreground mt-1 truncate">
-              {timeSinceSync === null ? 'No sync yet' : 'Auto-sync enabled'}
-            </div>
+            <div className="text-[10px] text-muted-foreground">Last sync</div>
           </div>
         </div>
 
-        {/* Top Categories */}
+        {/* Top Categories - Compact */}
         {topCategories.length > 0 && (
-          <div>
-            <div className="text-xs font-medium mb-2">Top Product Categories</div>
-            <div className="space-y-1.5">
-              {topCategories.map(([category, count]) => (
-                <div key={category} className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground capitalize truncate">{category}</span>
-                  <Badge variant="secondary" className="text-xs shrink-0">{count}</Badge>
-                </div>
-              ))}
-            </div>
+          <div className="space-y-1">
+            {topCategories.slice(0, 3).map(([category, count]) => (
+              <div key={category} className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground capitalize truncate">{category}</span>
+                <Badge variant="outline" className="text-[10px] h-5 shrink-0">{count}</Badge>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Sync Actions */}
-        <div className="space-y-2 pt-3 border-t">
+        {/* Sync Actions - Compact */}
+        <div className="flex gap-2 pt-2 border-t border-border/50">
           <Button
             onClick={() => handleSync('pull')}
             disabled={isSyncingImport || isSyncingExport}
-            className="w-full h-9"
+            className="flex-1 h-8"
             variant="outline"
+            size="sm"
           >
-            <ArrowDownLeft className={`mr-1.5 h-3.5 w-3.5 ${isSyncingImport ? 'animate-spin' : ''}`} />
-            <span className="text-xs">Import from Shopify</span>
+            <ArrowDownLeft className={`mr-1 h-3 w-3 ${isSyncingImport ? 'animate-spin' : ''}`} />
+            <span className="text-xs">Import</span>
           </Button>
           <Button
             onClick={() => handleSync('push')}
             disabled={isSyncingImport || isSyncingExport || (stats?.totalProducts || 0) === 0}
-            className="w-full h-9"
+            className="flex-1 h-8"
             variant="outline"
+            size="sm"
           >
-            <ArrowUpRight className={`mr-1.5 h-3.5 w-3.5 ${isSyncingExport ? 'animate-spin' : ''}`} />
-            <span className="text-xs">Export to Shopify</span>
+            <ArrowUpRight className={`mr-1 h-3 w-3 ${isSyncingExport ? 'animate-spin' : ''}`} />
+            <span className="text-xs">Export</span>
           </Button>
         </div>
-
-        {stats?.totalProducts === 0 && (
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
-            <p className="text-xs text-muted-foreground">
-              No products found. Add products to your Shopify store or InterioApp inventory to start syncing.
-            </p>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
