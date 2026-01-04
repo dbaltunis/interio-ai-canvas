@@ -432,7 +432,8 @@ const LivePreviewBlock = ({
     // Use real project data or fallback to defaults
     const project = projectData?.project || {};
     const client = project.client || projectData?.client || {};
-    const businessSettings = projectData?.businessSettings || {};
+    // Use projectData businessSettings first, then userBusinessSettings as fallback
+    const businessSettings = projectData?.businessSettings || userBusinessSettings || {};
     
     console.log('🔍 Client Data Debug:', {
       token,
@@ -446,16 +447,16 @@ const LivePreviewBlock = ({
     });
     
     const tokens = {
-      // Company information from business settings
-      company_name: businessSettings.company_name || 'Your Company Name',
+      // Company information from business settings - no hardcoded fallbacks
+      company_name: businessSettings.company_name || '',
       company_address: businessSettings.address ? 
         `${businessSettings.address}${businessSettings.city ? ', ' + businessSettings.city : ''}${businessSettings.state ? ', ' + businessSettings.state : ''}${businessSettings.zip_code ? ' ' + businessSettings.zip_code : ''}` 
-        : '123 Business Ave, Suite 100',
-      company_phone: businessSettings.business_phone || '(555) 123-4567',
-      company_email: businessSettings.business_email || 'info@company.com',
-      company_website: businessSettings.website || 'www.company.com',
+        : '',
+      company_phone: businessSettings.business_phone || '',
+      company_email: businessSettings.business_email || '',
+      company_website: businessSettings.website || '',
       company_abn: businessSettings.abn || '',
-      company_country: businessSettings.country || 'Australia',
+      company_country: businessSettings.country || '',
       
       // Client information from project
       client_name: client.name || '',

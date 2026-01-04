@@ -42,6 +42,7 @@ import {
 import { SignatureCanvas } from './SignatureCanvas';
 import { cn } from "@/lib/utils";
 import { DocumentHeaderBlock } from './shared/BlockRenderer';
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 
 interface EditableTextProps {
   value: string;
@@ -340,6 +341,7 @@ interface EditableLivePreviewBlockProps {
 }
 
 const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRemove }: EditableLivePreviewBlockProps) => {
+  const { data: userBusinessSettings } = useBusinessSettings();
   const content = block.content || {};
   const style = content.style || {};
 
@@ -372,15 +374,18 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
   const renderTokenValue = (token: string) => {
     const project = projectData?.project || {};
     const client = project.client || {};
-    const businessSettings = projectData?.businessSettings || {};
+    // Use projectData businessSettings first, then userBusinessSettings as fallback
+    const businessSettings = projectData?.businessSettings || userBusinessSettings || {};
     
     const tokens = {
-      company_name: businessSettings.company_name || 'Your Company Name',
+      // Company information - no hardcoded fallbacks
+      company_name: businessSettings.company_name || '',
       company_address: businessSettings.address ? 
         `${businessSettings.address}${businessSettings.city ? ', ' + businessSettings.city : ''}${businessSettings.state ? ', ' + businessSettings.state : ''}${businessSettings.zip_code ? ' ' + businessSettings.zip_code : ''}` 
-        : '123 Business Ave, Suite 100',
-      company_phone: businessSettings.business_phone || '(555) 123-4567',
-      company_email: businessSettings.business_email || 'info@company.com',
+        : '',
+      company_phone: businessSettings.business_phone || '',
+      company_email: businessSettings.business_email || '',
+      // Client information - sample data for preview only
       client_name: client.name || 'John Smith',
       client_email: client.email || 'client@example.com', 
       client_phone: client.phone || '(555) 987-6543',
