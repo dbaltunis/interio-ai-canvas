@@ -24,8 +24,8 @@ const Settings = () => {
   // Show loading while permissions are being checked
   if (hasViewSettings === undefined || hasViewProfile === undefined) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center animate-fade-in">
-        <Card className="max-w-md border-border/50">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center animate-fade-in">
+        <Card className="max-w-md">
           <CardContent className="p-8 text-center">
             <div className="flex items-center justify-center gap-3 mb-4">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -40,11 +40,11 @@ const Settings = () => {
 
   if (!canAccessSettings) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center animate-fade-in">
-        <Card className="max-w-md border-border/50">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center animate-fade-in">
+        <Card className="max-w-md">
           <CardContent className="p-8 text-center">
-            <div className="p-4 bg-destructive/10 rounded-lg inline-block mb-4">
-              <SettingsIcon className="h-8 w-8 text-destructive" />
+            <div className="p-4 bg-red-500/10 rounded-lg inline-block mb-4">
+              <SettingsIcon className="h-8 w-8 text-red-600" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-2">Settings Access Required</h3>
             <p className="text-muted-foreground mb-6">You need profile or settings permissions to access this page.</p>
@@ -59,26 +59,28 @@ const Settings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* App-style Header - Like Jobs page */}
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      {/* Enhanced Settings Header - Hidden on mobile (using bottom nav) */}
       {!isMobile && (
-        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
+        <header className="modern-card-elevated sticky top-0 z-40 backdrop-blur-lg bg-background/95 border-b border-border/50">
           <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center gap-4">
-                {/* App Logo/Brand */}
-                <BrandHeader size="sm" />
-                
-                {/* Back to App link */}
+            <div className="flex items-center justify-between h-20">
+              <div className="flex items-center space-x-4">
                 <Button
                   variant="ghost"
-                  size="sm"
                   onClick={handleBackToApp}
-                  className="text-muted-foreground hover:text-foreground gap-2"
+                  className="flex items-center space-x-2 hover-lift interactive-bounce text-muted-foreground hover:text-foreground"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  <span className="hidden sm:inline">Back to App</span>
+                  <span>Back to App</span>
                 </Button>
+                <div className="h-6 w-px bg-border" />
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <SettingsIcon className="h-5 w-5 text-primary" />
+                  </div>
+                  <BrandHeader size="sm" />
+                </div>
               </div>
               
               <UserProfile />
@@ -87,14 +89,19 @@ const Settings = () => {
         </header>
       )}
 
-      {/* Settings Content */}
+      {/* Enhanced Settings Content */}
       <main className={cn(
         "animate-fade-in",
-        isMobile ? "p-4 pb-20" : "px-4 sm:px-6 lg:px-8 py-6"
+        isMobile ? "p-4 pb-20" : "px-4 sm:px-6 lg:px-8 py-8"
       )}>
-        <div className="max-w-6xl mx-auto">
-          <SettingsView />
-        </div>
+        <Card className={cn(
+          "hover:shadow-md transition-all duration-300",
+          isMobile ? "min-h-[calc(100vh-8rem)]" : "min-h-[calc(100vh-10rem)]"
+        )}>
+          <CardContent className={cn(isMobile ? "p-4" : "p-8")}>
+            <SettingsView />
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

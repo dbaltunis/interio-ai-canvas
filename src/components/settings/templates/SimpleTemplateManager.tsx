@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -10,11 +10,13 @@ import {
   FileText, 
   Edit3, 
   Trash2, 
+  Eye,
   Copy,
-  Star,
+  Download,
+  Sparkles,
+  Building2,
   ToggleLeft,
-  ToggleRight,
-  GripVertical
+  ToggleRight
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,10 +24,6 @@ import { LivePreview } from "./visual-editor/LivePreview";
 import { useTemplateData } from "@/hooks/useTemplateData";
 import { ProjectDataSelector } from "./ProjectDataSelector";
 import { useQueryClient } from "@tanstack/react-query";
-import { useBusinessSettings } from "@/hooks/useBusinessSettings";
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
 interface Template {
   id: string;
@@ -34,29 +32,9 @@ interface Template {
   blocks: any[];
   category: string;
   is_default?: boolean;
-  is_primary?: boolean;
-  display_order?: number;
   active?: boolean;
   created_at?: string;
 }
-
-// Sortable Template Card component for drag and drop
-const SortableTemplateCard = ({ id, children }: { id: string; children: React.ReactNode }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
-  
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    cursor: isDragging ? 'grabbing' : 'grab',
-  };
-  
-  return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {children}
-    </div>
-  );
-};
 
 // Default blank template blocks - use hyphenated types for consistency
 const getBlankTemplateBlocks = (category: string) => [
@@ -68,13 +46,12 @@ const getBlankTemplateBlocks = (category: string) => [
 
 export const SimpleTemplateManager: React.FC = () => {
   const queryClient = useQueryClient();
-  const { data: businessSettings } = useBusinessSettings();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('quote');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
@@ -83,11 +60,6 @@ export const SimpleTemplateManager: React.FC = () => {
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   
   const { data: templateData } = useTemplateData(selectedProjectId, useRealData);
-  
-  // Drag and drop sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
-  );
   
   // Create mock project data for template preview with comprehensive real data simulation
   const mockProjectData = {
@@ -111,19 +83,7 @@ export const SimpleTemplateManager: React.FC = () => {
         country: 'United States'
       }
     },
-    businessSettings: businessSettings ? {
-      company_name: businessSettings.company_name || 'Premium Window Treatments Co.',
-      address: businessSettings.address || '123 Business Ave, Suite 100',
-      city: businessSettings.city || 'Business City',
-      state: businessSettings.state || 'BC',
-      zip_code: businessSettings.zip_code || '54321',
-      business_phone: businessSettings.business_phone || '(555) 123-4567',
-      business_email: businessSettings.business_email || 'info@premiumwindowtreatments.com',
-      website: businessSettings.website || 'www.premiumwindowtreatments.com',
-      company_logo_url: businessSettings.company_logo_url || null,
-      abn: businessSettings.abn || 'ABN 12 345 678 901',
-      country: businessSettings.country || 'Australia'
-    } : {
+    businessSettings: {
       company_name: 'Premium Window Treatments Co.',
       address: '123 Business Ave, Suite 100',
       city: 'Business City',
@@ -132,7 +92,7 @@ export const SimpleTemplateManager: React.FC = () => {
       business_phone: '(555) 123-4567',
       business_email: 'info@premiumwindowtreatments.com',
       website: 'www.premiumwindowtreatments.com',
-      company_logo_url: null,
+      company_logo_url: null, // This will show the building icon placeholder
       abn: 'ABN 12 345 678 901',
       country: 'Australia'
     },
@@ -207,11 +167,10 @@ export const SimpleTemplateManager: React.FC = () => {
   const loadTemplates = async () => {
     setLoading(true);
     try {
-      // Load all templates from database, ordered by display_order then created_at
+      // Load all templates from database
       const { data, error } = await supabase
         .from('quote_templates')
         .select('*')
-        .order('display_order', { ascending: true })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -223,8 +182,6 @@ export const SimpleTemplateManager: React.FC = () => {
         blocks: t.blocks as any[],
         category: t.template_style || 'quote',
         is_default: false,
-        is_primary: (t as any).is_primary || false,
-        display_order: (t as any).display_order || 0,
         active: t.active || false,
         created_at: t.created_at
       }));
@@ -442,243 +399,197 @@ export const SimpleTemplateManager: React.FC = () => {
     return matchesSearch && matchesCategory;
   });
 
-  // Set template as primary
-  const setPrimaryTemplate = async (templateId: string) => {
-    try {
-      // First, unset any existing primary for same category
-      const template = templates.find(t => t.id === templateId);
-      if (!template) return;
-
-      await supabase
-        .from('quote_templates')
-        .update({ is_primary: false })
-        .eq('template_style', template.category);
-
-      // Then set this one as primary
-      const { error } = await supabase
-        .from('quote_templates')
-        .update({ is_primary: true })
-        .eq('id', templateId);
-
-      if (error) throw error;
-
-      queryClient.invalidateQueries({ queryKey: ['quote-templates'] });
-      
-      setTemplates(prev => prev.map(t => ({
-        ...t,
-        is_primary: t.id === templateId ? true : (t.category === template.category ? false : t.is_primary)
-      })));
-      toast.success('Template set as primary');
-    } catch (error) {
-      console.error('Error setting primary template:', error);
-      toast.error('Failed to set primary template');
-    }
-  };
-
-  // Handle drag end for reordering
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    const oldIndex = filteredTemplates.findIndex(t => t.id === active.id);
-    const newIndex = filteredTemplates.findIndex(t => t.id === over.id);
-    
-    if (oldIndex === -1 || newIndex === -1) return;
-
-    const reordered = arrayMove(filteredTemplates, oldIndex, newIndex);
-    
-    // Update local state immediately
-    setTemplates(prev => {
-      const newTemplates = [...prev];
-      reordered.forEach((t, index) => {
-        const existing = newTemplates.find(x => x.id === t.id);
-        if (existing) existing.display_order = index;
-      });
-      return newTemplates.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
-    });
-
-    // Persist to database
-    try {
-      for (let i = 0; i < reordered.length; i++) {
-        await supabase
-          .from('quote_templates')
-          .update({ display_order: i })
-          .eq('id', reordered[i].id);
-      }
-      toast.success('Template order updated');
-    } catch (error) {
-      console.error('Error updating template order:', error);
-      toast.error('Failed to update order');
-    }
-  };
-
   return (
-    <div className="space-y-4">
-      {/* Compact Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 flex-1">
-          <Input
-            placeholder="Search templates..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-[200px] h-9"
-          />
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-[130px] h-9">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="quote">Quotes</SelectItem>
-              <SelectItem value="invoice">Invoices</SelectItem>
-              <SelectItem value="estimate">Estimates</SelectItem>
-              <SelectItem value="proposal">Proposals</SelectItem>
-            </SelectContent>
-          </Select>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Document Templates</h2>
+          <p className="text-muted-foreground">Create and manage fully dynamic quote and invoice templates</p>
         </div>
         <div className="flex items-center gap-2">
-          <ProjectDataSelector
-            useRealData={useRealData}
-            onUseRealDataChange={setUseRealData}
-            selectedProjectId={selectedProjectId}
-            onProjectIdChange={setSelectedProjectId}
-          />
-          <Button onClick={() => setIsCreating(true)} size="sm" className="h-9">
-            <Plus className="h-4 w-4 mr-1" />
-            New
+          {/* Restore Defaults button removed */}
+          <Button onClick={() => setIsCreating(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            New Template
           </Button>
         </div>
       </div>
 
+      {/* Project Data Selector */}
+      <ProjectDataSelector
+        useRealData={useRealData}
+        onUseRealDataChange={setUseRealData}
+        selectedProjectId={selectedProjectId}
+        onProjectIdChange={setSelectedProjectId}
+      />
+
+      {/* Filters */}
+      <div className="flex items-center gap-4">
+        <Input
+          placeholder="Search templates..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-sm"
+        />
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="quote">Quotes</SelectItem>
+            <SelectItem value="invoice">Invoices</SelectItem>
+            <SelectItem value="estimate">Estimates</SelectItem>
+            <SelectItem value="proposal">Proposals</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Warning banner if no active templates */}
       {!loading && filteredTemplates.length > 0 && filteredTemplates.every(t => !t.active) && (
-        <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-          <p className="text-sm text-yellow-700 dark:text-yellow-300">
-            ⚠️ No active templates. Activate one below to generate quotes.
-          </p>
+        <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+          <div className="flex items-start gap-3">
+            <Sparkles className="h-5 w-5 text-yellow-600 dark:text-yellow-500 mt-0.5" />
+            <div>
+              <h4 className="font-medium text-yellow-900 dark:text-yellow-100">No Active Templates</h4>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                You need to activate at least one template to generate quotes. Click the <strong>"Click to Activate"</strong> button below to activate a template.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Templates Grid with Drag and Drop */}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={filteredTemplates.map(t => t.id)} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {loading ? (
-              <div className="col-span-full text-center py-8 text-muted-foreground">
-                Loading templates...
-              </div>
-            ) : filteredTemplates.length === 0 ? (
-              <div className="col-span-full text-center py-8">
-                <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-50" />
-                <p className="text-muted-foreground text-sm">
-                  {searchTerm || selectedCategory !== 'all' 
-                    ? 'No templates match your filters' 
-                    : 'Create your first template to get started'}
-                </p>
-              </div>
-            ) : (
-              filteredTemplates.map((template) => (
-                <SortableTemplateCard key={template.id} id={template.id}>
-                  <Card 
-                    variant="analytics"
-                    className={`hover:shadow-md transition-all ${
-                      template.is_primary ? 'ring-2 ring-primary/30' : ''
-                    }`}
-                  >
-                    <CardContent className="p-4">
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium text-sm truncate">{template.name}</h3>
-                            {template.is_primary && (
-                              <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500 shrink-0" />
-                            )}
-                          </div>
-                          <Badge variant="secondary" className="mt-1 text-xs">
-                            {template.category}
-                          </Badge>
-                        </div>
-                        <GripVertical className="h-4 w-4 text-muted-foreground/50 cursor-grab shrink-0 drag-handle" />
-                      </div>
-                      
-                      {/* Status Toggle */}
-                      <div className={`p-2.5 rounded-md border transition-all mb-3 ${
-                        template.active 
-                          ? 'bg-primary/5 border-primary/20' 
-                          : 'bg-muted/50 border-border'
-                      }`}>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">
-                            {template.active ? 'Active' : 'Inactive'}
-                          </span>
-                          <Button
-                            variant={template.active ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => toggleActive(template.id, template.active ?? false)}
-                            className="h-7 text-xs"
-                          >
-                            {template.active ? (
-                              <><ToggleRight className="h-3.5 w-3.5 mr-1" /> On</>
-                            ) : (
-                              <><ToggleLeft className="h-3.5 w-3.5 mr-1" /> Off</>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {/* Actions */}
-                      <div className="flex items-center gap-1.5">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditor(template)}
-                          className="flex-1 h-8 text-xs"
-                        >
-                          <Edit3 className="h-3.5 w-3.5 mr-1" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPrimaryTemplate(template.id)}
-                          className="h-8 px-2"
-                          disabled={template.is_primary}
-                          title="Set as primary"
-                        >
-                          <Star className={`h-3.5 w-3.5 ${template.is_primary ? 'text-yellow-500 fill-yellow-500' : ''}`} />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => duplicateTemplate(template)}
-                          className="h-8 px-2"
-                          title="Duplicate"
-                        >
-                          <Copy className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => deleteTemplate(template.id)}
-                          className="h-8 px-2 text-destructive hover:text-destructive"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </SortableTemplateCard>
-              ))
+      {/* Templates Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {loading ? (
+          <div className="col-span-full text-center py-8 text-muted-foreground">
+            Loading templates...
+          </div>
+        ) : filteredTemplates.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <h3 className="text-lg font-medium mb-2">No templates found</h3>
+            <p className="text-muted-foreground mb-4">
+              {searchTerm || selectedCategory !== 'all' 
+                ? 'Try adjusting your search or filters' 
+                : 'Get started by restoring default templates or creating a new one'}
+            </p>
+            {!searchTerm && selectedCategory === 'all' && (
+              <Button onClick={() => setIsCreating(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Template
+              </Button>
             )}
           </div>
-        </SortableContext>
-      </DndContext>
+        ) : (
+          filteredTemplates.map((template) => (
+            <Card key={template.id} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg">{template.name}</CardTitle>
+                    {template.description && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {template.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Badge variant={template.is_default ? "default" : "secondary"}>
+                      {template.category}
+                    </Badge>
+                    {template.id === 'modern-quote' && (
+                      <Badge variant="outline" className="ml-1">
+                        <Sparkles className="h-3 w-3 mr-1" />
+                        Dynamic
+                      </Badge>
+                    )}
+                    {template.is_default && (
+                      <Badge variant="outline" className="ml-1">
+                        <Building2 className="h-3 w-3 mr-1" />
+                        Default
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-3">
+                  {/* Active Status Toggle - PROMINENT */}
+                  <div className={`p-4 rounded-lg border-2 transition-all ${
+                    template.active 
+                      ? 'bg-primary/5 border-primary/20' 
+                      : 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-300 dark:border-yellow-700'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <span className="text-sm font-semibold block">Template Status</span>
+                        <span className="text-xs text-muted-foreground">
+                          {template.active ? 'This template is active and ready to use' : 'Click to activate this template'}
+                        </span>
+                      </div>
+                      <Button
+                        variant={template.active ? "default" : "destructive"}
+                        size="lg"
+                        onClick={() => toggleActive(template.id, template.active ?? false)}
+                        className={`h-11 px-6 gap-2 font-semibold ${
+                          !template.active ? 'animate-pulse' : ''
+                        }`}
+                      >
+                        {template.active ? (
+                          <>
+                            <ToggleRight className="h-5 w-5" />
+                            <span>Active</span>
+                          </>
+                        ) : (
+                          <>
+                            <ToggleLeft className="h-5 w-5" />
+                            <span>Click to Activate</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditor(template)}
+                      className="flex-1"
+                    >
+                      <Edit3 className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => duplicateTemplate(template)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteTemplate(template.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
 
       {/* Create Template Dialog */}
       <Dialog open={isCreating} onOpenChange={setIsCreating}>
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Create New Template</DialogTitle>
           </DialogHeader>
@@ -692,11 +603,8 @@ export const SimpleTemplateManager: React.FC = () => {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Type</label>
-              <Select 
-                value={selectedCategory === 'all' ? 'quote' : selectedCategory} 
-                onValueChange={setSelectedCategory}
-              >
+              <label className="text-sm font-medium">Category</label>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -716,19 +624,18 @@ export const SimpleTemplateManager: React.FC = () => {
             <Button 
               onClick={() => {
                 if (newTemplateName.trim()) {
-                  const category = selectedCategory === 'all' ? 'quote' : selectedCategory;
                   createFromTemplate({
                     id: 'blank',
                     name: 'Blank',
-                    category,
-                    blocks: getBlankTemplateBlocks(category)
+                    category: selectedCategory,
+                    blocks: getBlankTemplateBlocks(selectedCategory)
                   });
                 }
               }}
               disabled={!newTemplateName.trim()}
             >
-              <Plus className="h-4 w-4 mr-1" />
-              Create
+              <Plus className="h-4 w-4 mr-2" />
+              Create Template
             </Button>
           </DialogFooter>
         </DialogContent>

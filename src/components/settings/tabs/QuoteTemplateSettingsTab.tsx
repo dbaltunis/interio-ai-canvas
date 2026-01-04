@@ -869,20 +869,7 @@ export const QuoteTemplateSettingsTab = () => {
                 ]}
                 projectData={{
                   project: { name: 'Sample Project', job_number: 'QT-2024-001' },
-                  client: { name: 'John Smith', email: 'john@example.com', phone: '(555) 123-4567', address: '456 Residential Street', city: 'Anytown', state: 'ST', zip_code: '12345' },
-                  businessSettings: {
-                    company_name: businessSettings?.company_name || 'Your Company',
-                    address: businessSettings?.address || '',
-                    city: businessSettings?.city || '',
-                    state: businessSettings?.state || '',
-                    zip_code: businessSettings?.zip_code || '',
-                    business_phone: businessSettings?.business_phone || '',
-                    business_email: businessSettings?.business_email || '',
-                    website: businessSettings?.website || '',
-                    company_logo_url: businessSettings?.company_logo_url || '',
-                    abn: businessSettings?.abn || '',
-                    country: businessSettings?.country || ''
-                  },
+                  client: { name: 'John Smith', email: 'john@example.com', phone: '(555) 123-4567' },
                   items: [
                     {
                       id: '1',

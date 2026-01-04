@@ -365,10 +365,9 @@ export const QuotationTab = ({
     };
   }, [project, client, businessSettings, sourceTreatments, workshopItems, rooms, surfaces, subtotal, taxRate, taxAmount, total, markupPercentage, currentQuote]);
 
-  // Download PDF - uses hidden print preview with isPrintMode={true}
+  // Download PDF
   const handleDownloadPDF = async () => {
-    // Use the hidden print-specific container for clean PDF output
-    const element = document.getElementById('quote-print-preview') || document.getElementById('quote-live-preview');
+    const element = document.getElementById('quote-live-preview');
     if (!element) {
       toast({
         title: "Error",
@@ -399,9 +398,9 @@ export const QuotationTab = ({
     }
   };
 
-  // Print (open PDF in new tab) - uses hidden print preview with isPrintMode={true}
+  // Print (open PDF in new tab)
   const handlePrint = async () => {
-    const element = document.getElementById('quote-print-preview') || document.getElementById('quote-live-preview');
+    const element = document.getElementById('quote-live-preview');
     if (!element) {
       toast({
         title: "Error",
@@ -428,13 +427,13 @@ export const QuotationTab = ({
     }
   };
 
-  // Email quote - uses hidden print preview with isPrintMode={true}
+  // Email quote
   const handleSendEmail = async (emailData: {
     to: string;
     subject: string;
     message: string;
   }) => {
-    const element = document.getElementById('quote-print-preview') || document.getElementById('quote-live-preview');
+    const element = document.getElementById('quote-live-preview');
     if (!element) {
       toast({
         title: "Error",
@@ -792,71 +791,11 @@ export const QuotationTab = ({
             boxSizing: 'border-box',
             overflow: 'hidden'
           }}>
-                <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} blocks={templateBlocks} projectData={projectData} isEditable={!isReadOnly} isPrintMode={false} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} quoteId={quoteId || quoteVersions?.[0]?.id} />
+                <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} />
               </div>
             </div>
-          </div>
-          
-          {/* Hidden Print Preview Container - Used ONLY for PDF generation with isPrintMode={true} */}
-          <div 
-            id="quote-print-preview" 
-            className="absolute left-[-9999px] top-0 pointer-events-none"
-            aria-hidden="true"
-            style={{ 
-              width: '210mm', 
-              minHeight: '297mm',
-              fontFamily: 'Arial, Helvetica, sans-serif',
-              fontSize: '10pt',
-              padding: '8mm',
-              boxSizing: 'border-box',
-              overflow: 'hidden',
-              backgroundColor: '#ffffff'
-            }}
-          >
-            <LivePreview 
-              blocks={templateBlocks} 
-              projectData={projectData}
-              isEditable={false}
-              isPrintMode={true}
-              layout={templateSettings.layout}
-              showDetailedBreakdown={templateSettings.layout === 'detailed'}
-              showImages={templateSettings.showImages}
-              groupByRoom={templateSettings.groupByRoom}
-            />
           </div>
         </section>}
-
-      {/* Payment Configuration Section - OUTSIDE the quote document */}
-      {quoteId && !isReadOnly && (
-        <section className="mt-6 px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-4 p-4 bg-primary/5 border-l-4 border-primary rounded-r-lg">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary rounded-lg">
-                  <CreditCard className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Payment Configuration</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Configure how you want to receive payment for this quote
-                  </p>
-                </div>
-              </div>
-            </div>
-            <InlinePaymentConfig
-              quoteId={quoteId}
-              total={projectData?.total || 0}
-              currency={projectData?.currency || 'USD'}
-              currentPayment={projectData?.payment ? {
-                type: projectData.payment.type as 'full' | 'deposit',
-                percentage: projectData.payment.percentage,
-                amount: projectData.payment.amount,
-                status: projectData.payment.status as 'pending' | 'paid' | 'deposit_paid' | 'failed' | undefined
-              } : undefined}
-            />
-          </div>
-        </section>
-      )}
 
       {/* Email Modal */}
       <EmailQuoteModal isOpen={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} project={project} client={client} onSend={handleSendEmail} isSending={isSendingEmail} quotePreview={<LivePreview blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} showDetailedBreakdown={templateSettings.showDetailedBreakdown} showImages={templateSettings.showImages} />} />
