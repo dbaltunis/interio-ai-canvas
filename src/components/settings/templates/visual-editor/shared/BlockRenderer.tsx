@@ -44,13 +44,13 @@ export const resolveToken = (
   const getDefaultCurrency = () => businessSettings?.currency || projectData?.currency || 'USD';
   
   const tokens: Record<string, any> = {
-    // Company information
-    company_name: businessSettings?.company_name || 'Your Company Name',
+    // Company information - no hardcoded fallbacks, show empty if not configured
+    company_name: businessSettings?.company_name || '',
     company_address: businessSettings?.address ? 
       `${businessSettings.address}${businessSettings.city ? ', ' + businessSettings.city : ''}${businessSettings.state ? ', ' + businessSettings.state : ''}${businessSettings.zip_code ? ' ' + businessSettings.zip_code : ''}` 
-      : '123 Business Ave, Suite 100',
-    company_phone: businessSettings?.business_phone || '(555) 123-4567',
-    company_email: businessSettings?.business_email || 'info@company.com',
+      : '',
+    company_phone: businessSettings?.business_phone || '',
+    company_email: businessSettings?.business_email || '',
     company_website: businessSettings?.website || '',
     company_abn: businessSettings?.abn || '',
     

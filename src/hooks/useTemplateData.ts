@@ -150,17 +150,17 @@ export const useTemplateData = (projectId?: string, useRealData: boolean = false
           country: 'United States'
         },
         businessSettings: businessSettings || {
-          company_name: 'Premium Window Treatments Co.',
-          address: '123 Business Ave, Suite 100',
-          city: 'Business City',
-          state: 'BC',
-          zip_code: '54321',
-          business_phone: '(555) 123-4567',
-          business_email: 'info@premiumwindowtreatments.com',
-          website: 'www.premiumwindowtreatments.com',
+          company_name: '',
+          address: '',
+          city: '',
+          state: '',
+          zip_code: '',
+          business_phone: '',
+          business_email: '',
+          website: '',
           company_logo_url: null,
-          abn: 'ABN 12 345 678 901',
-          country: 'Australia'
+          abn: '',
+          country: ''
         },
         treatments: [
           {
