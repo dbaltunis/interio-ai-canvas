@@ -94,67 +94,67 @@ export const SettingsView = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList variant="segment" className="p-1 h-auto bg-muted/40 flex flex-wrap gap-0.5 justify-start rounded-xl">
-          <TabsTrigger value="personal" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+        <TabsList className="bg-transparent border-b border-border h-auto flex flex-wrap gap-1 justify-start pb-0 rounded-none">
+          <TabsTrigger value="personal" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
             <User className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Personal</span>
           </TabsTrigger>
           
           {/* HIDDEN: Billing tab - Not ready yet
-          <TabsTrigger value="billing" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          <TabsTrigger value="billing" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
             <CreditCard className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Billing</span>
           </TabsTrigger>
           */}
           
-          {canViewSettings && <TabsTrigger value="business" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          {canViewSettings && <TabsTrigger value="business" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
               <Building2 className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Business</span>
             </TabsTrigger>}
 
           
-          {canViewSettings && <TabsTrigger value="units" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          {canViewSettings && <TabsTrigger value="units" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
               <Ruler className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Units</span>
             </TabsTrigger>}
           
-          {canViewWindowTreatments && <TabsTrigger value="window-coverings" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          {canViewWindowTreatments && <TabsTrigger value="window-coverings" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
               <Package className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Products</span>
             </TabsTrigger>}
           
-          {canManageMarkup && <TabsTrigger value="pricing" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          {canManageMarkup && <TabsTrigger value="pricing" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
               <Calculator className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Markup & Tax</span>
             </TabsTrigger>}
           
-          {canManageUsers && <TabsTrigger value="users" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          {canManageUsers && <TabsTrigger value="users" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
               <Users className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Team</span>
             </TabsTrigger>}
           
-          {canViewSettings && <TabsTrigger value="documents" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          {canViewSettings && <TabsTrigger value="documents" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
               <FileText className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Documents</span>
             </TabsTrigger>}
           
           
-          {canViewSettings && <TabsTrigger value="system" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          {canViewSettings && <TabsTrigger value="system" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
               <Globe className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">System</span>
             </TabsTrigger>}
           
-          {canViewSettings && <TabsTrigger value="communications" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          {canViewSettings && <TabsTrigger value="communications" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
               <MessageCircle className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Communications</span>
             </TabsTrigger>}
           
-          <TabsTrigger value="notifications" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          <TabsTrigger value="notifications" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
             <Bell className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Notifications</span>
           </TabsTrigger>
           
-          {canViewSettings && <TabsTrigger value="integrations" className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg">
+          {canViewSettings && <TabsTrigger value="integrations" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
               <Zap className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Integrations</span>
             </TabsTrigger>}
