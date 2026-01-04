@@ -47,13 +47,13 @@ export const RecentlyCreatedJobsWidget = () => {
       </CardHeader>
       <CardContent className="pt-0">
         {recentJobs.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <Briefcase className="h-10 w-10 mx-auto mb-2 opacity-20" />
+          <div className="text-center py-4 text-muted-foreground">
+            <Briefcase className="h-8 w-8 mx-auto mb-1.5 opacity-20" />
             <p className="text-xs">No jobs created yet</p>
           </div>
         ) : (
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-2">
+          <ScrollArea className="h-[280px] pr-3">
+            <div className="space-y-1.5">
               {recentJobs.map((job) => (
                 <div
                   key={job.id}

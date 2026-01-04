@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Users, FileText, DollarSign, Mail, MousePointerClick, Clock, CalendarCheck } from "lucide-react";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { disableShopifyWidgets } from "@/utils/disableShopifyWidgets";
+import { DashboardDateProvider, useDashboardDate } from "@/contexts/DashboardDateContext";
 
 // Lazy load non-critical widgets for better initial load performance
 const UpcomingEventsWidget = lazy(() => import("./UpcomingEventsWidget").then(m => ({ default: m.UpcomingEventsWidget })));
@@ -45,10 +46,10 @@ const WidgetSkeleton = () => (
 );
 
 
-export const EnhancedHomeDashboard = () => {
+const DashboardContent = () => {
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
   const [showWidgetCustomizer, setShowWidgetCustomizer] = useState(false);
-  const [dateRange, setDateRange] = useState("30days");
+  const { dateRange } = useDashboardDate();
   const { kpiConfigs, toggleKPI, reorderKPIs, getEnabledKPIs } = useKPIConfig();
   const { widgets, toggleWidget, reorderWidgets, getEnabledWidgets, getAvailableWidgets, updateWidgetSize } = useDashboardWidgets();
   
@@ -254,11 +255,7 @@ export const EnhancedHomeDashboard = () => {
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Header Section */}
-      <WelcomeHeader 
-        onCustomizeClick={() => setShowWidgetCustomizer(true)}
-        dateRange={dateRange}
-        onDateRangeChange={setDateRange}
-      />
+      <WelcomeHeader onCustomizeClick={() => setShowWidgetCustomizer(true)} />
 
       {/* Compact KPI Row - Shopify-style top metrics */}
       <CompactKPIRow metrics={compactMetrics} loading={criticalStats.isLoading} />
@@ -266,7 +263,7 @@ export const EnhancedHomeDashboard = () => {
       {/* Charts Row - Revenue trend and Jobs status */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Suspense fallback={<WidgetSkeleton />}>
-          <RevenueTrendChart dateRange={dateRange} />
+          <RevenueTrendChart dateRange={dateRange.preset} />
         </Suspense>
         <Suspense fallback={<WidgetSkeleton />}>
           <JobsStatusChart />
@@ -383,3 +380,10 @@ export const EnhancedHomeDashboard = () => {
     </div>
   );
 };
+
+// Wrapper with date context provider
+export const EnhancedHomeDashboard = () => (
+  <DashboardDateProvider>
+    <DashboardContent />
+  </DashboardDateProvider>
+);
