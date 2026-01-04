@@ -20,6 +20,8 @@ const UpcomingEventsWidget = lazy(() => import("./UpcomingEventsWidget").then(m 
 const StatusOverviewWidget = lazy(() => import("./StatusOverviewWidget").then(m => ({ default: m.StatusOverviewWidget })));
 const RecentEmailsWidget = lazy(() => import("./RecentEmailsWidget").then(m => ({ default: m.RecentEmailsWidget })));
 const RevenuePieChart = lazy(() => import("./RevenuePieChart").then(m => ({ default: m.RevenuePieChart })));
+const RevenueTrendChart = lazy(() => import("./RevenueTrendChart").then(m => ({ default: m.RevenueTrendChart })));
+const JobsStatusChart = lazy(() => import("./JobsStatusChart").then(m => ({ default: m.JobsStatusChart })));
 const CalendarConnectionCard = lazy(() => import("./CalendarConnectionCard").then(m => ({ default: m.CalendarConnectionCard })));
 const OnlineStoreAnalyticsWidget = lazy(() => import("./OnlineStoreAnalyticsWidget").then(m => ({ default: m.OnlineStoreAnalyticsWidget })));
 const OnlineStoreOrdersWidget = lazy(() => import("./OnlineStoreOrdersWidget").then(m => ({ default: m.OnlineStoreOrdersWidget })));
@@ -46,6 +48,7 @@ const WidgetSkeleton = () => (
 export const EnhancedHomeDashboard = () => {
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
   const [showWidgetCustomizer, setShowWidgetCustomizer] = useState(false);
+  const [dateRange, setDateRange] = useState("30days");
   const { kpiConfigs, toggleKPI, reorderKPIs, getEnabledKPIs } = useKPIConfig();
   const { widgets, toggleWidget, reorderWidgets, getEnabledWidgets, getAvailableWidgets, updateWidgetSize } = useDashboardWidgets();
   
@@ -251,13 +254,27 @@ export const EnhancedHomeDashboard = () => {
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Header Section */}
-      <WelcomeHeader onCustomizeClick={() => setShowWidgetCustomizer(true)} />
+      <WelcomeHeader 
+        onCustomizeClick={() => setShowWidgetCustomizer(true)}
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
+      />
 
       {/* Compact KPI Row - Shopify-style top metrics */}
       <CompactKPIRow metrics={compactMetrics} loading={criticalStats.isLoading} />
 
+      {/* Charts Row - Revenue trend and Jobs status */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Suspense fallback={<WidgetSkeleton />}>
+          <RevenueTrendChart dateRange={dateRange} />
+        </Suspense>
+        <Suspense fallback={<WidgetSkeleton />}>
+          <JobsStatusChart />
+        </Suspense>
+      </div>
+
       {/* Dynamic Widgets Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
         {enabledWidgets.map((widget) => {
           const sizeClasses = {
             small: "col-span-1",
