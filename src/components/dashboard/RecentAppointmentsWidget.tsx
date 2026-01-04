@@ -60,16 +60,16 @@ export const RecentAppointmentsWidget = () => {
 
   if (isLoading || canViewCalendar === undefined) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
+      <Card variant="analytics">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Bell className="h-4 w-4" />
             Recent Appointments
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 sm:space-y-3">
+        <CardContent className="pt-0 space-y-2">
           {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-14 sm:h-16 w-full" />
+            <Skeleton key={i} className="h-14 w-full" />
           ))}
         </CardContent>
       </Card>
@@ -77,14 +77,14 @@ export const RecentAppointmentsWidget = () => {
   }
 
   return (
-    <Card className="border border-border/50 bg-card/50">
+    <Card variant="analytics" className="h-full">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Bell className="h-4 w-4 text-primary" />
             Recent Appointments
           </CardTitle>
-          <Badge variant="outline" className="text-xs h-5">
+          <Badge variant="secondary" className="text-xs h-5">
             {bookings?.length || 0} Total
           </Badge>
         </div>

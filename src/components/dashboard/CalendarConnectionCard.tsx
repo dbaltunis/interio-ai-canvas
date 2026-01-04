@@ -14,14 +14,14 @@ export const CalendarConnectionCard = () => {
 
   if (isConnected) {
     return (
-      <Card className="border border-border/50 bg-card/50">
+      <Card variant="analytics" className="h-full">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-2">
-            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
               Calendar
             </CardTitle>
-            <Badge variant="secondary" className="text-green-700 text-[10px] shrink-0">
+            <Badge variant="secondary" className="text-green-700 text-xs shrink-0">
               Connected
             </Badge>
           </div>
@@ -63,9 +63,9 @@ export const CalendarConnectionCard = () => {
   }
 
   return (
-    <Card className="border border-dashed border-border/50 bg-card/50">
+    <Card variant="analytics" className="h-full border-dashed">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base font-semibold">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <Calendar className="h-4 w-4" />
           Google Calendar
         </CardTitle>

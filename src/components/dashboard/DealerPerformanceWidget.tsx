@@ -32,16 +32,16 @@ export const DealerPerformanceWidget = () => {
 
   if (isLoading) {
     return (
-      <Card className="border border-border/50 bg-card/50">
+      <Card variant="analytics">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Trophy className="h-4 w-4" />
             Team Performance
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="pt-0 space-y-2">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-16 w-full" />
+            <Skeleton key={i} className="h-14 w-full" />
           ))}
         </CardContent>
       </Card>
@@ -52,16 +52,16 @@ export const DealerPerformanceWidget = () => {
 
   if (dealers.length === 0) {
     return (
-      <Card className="border border-border/50 bg-card/50">
+      <Card variant="analytics">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Trophy className="h-4 w-4" />
             Team Performance
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-center py-6 text-muted-foreground">
-            <Users className="h-10 w-10 mx-auto mb-2 opacity-20" />
+        <CardContent className="pt-0">
+          <div className="text-center py-4 text-muted-foreground">
+            <Users className="h-8 w-8 mx-auto mb-1.5 opacity-20" />
             <p className="text-xs">No team performance data yet</p>
           </div>
         </CardContent>
@@ -81,14 +81,14 @@ export const DealerPerformanceWidget = () => {
   };
 
   return (
-    <Card className="border border-border/50 bg-card/50">
+    <Card variant="analytics" className="h-full">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base font-semibold">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <Trophy className="h-4 w-4 text-amber-500" />
           Team Performance
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0 space-y-4">
+      <CardContent className="pt-0 space-y-3">
         {/* Summary Stats */}
         <div className="grid grid-cols-3 gap-2">
           <div className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 rounded-lg p-2.5 border border-amber-500/20">
