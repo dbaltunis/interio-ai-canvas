@@ -186,7 +186,6 @@ const DashboardContent = () => {
                 return <RecentEmailsWidget />;
               case "status":
                 return <StatusOverviewWidget />;
-              case "revenue":
               case "calendar-connection":
                 return <CalendarConnectionCard />;
               case "recent-jobs":

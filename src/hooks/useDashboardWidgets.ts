@@ -158,15 +158,7 @@ export const DEFAULT_WIDGETS: DashboardWidget[] = [
     category: "analytics",
     size: "small",
   },
-  {
-    id: "revenue",
-    name: "Revenue Chart",
-    description: "Revenue breakdown by project",
-    enabled: true,
-    order: 14,
-    category: "finance",
-    size: "medium",
-  },
+  // Revenue widget removed - RevenueTrendChart is shown in main charts row
   {
     id: "calendar-connection",
     name: "Calendar Connection",

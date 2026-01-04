@@ -110,7 +110,7 @@ export const ShopifyProductCategoriesWidget = () => {
               {categoryData.categories.map((category) => (
                 <div 
                   key={category.name}
-                  className="p-3 rounded-lg border border-border bg-background hover:bg-primary/5 transition-colors"
+                  className="p-2 rounded-lg border border-border/50 bg-background hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
