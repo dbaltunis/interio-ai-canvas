@@ -11,6 +11,15 @@ interface RevenueDataPoint {
   date: Date;
 }
 
+// Status names that count as revenue (order confirmed, approved, completed, in production)
+const REVENUE_STATUS_NAMES = [
+  'order confirmed',
+  'approved', 
+  'completed',
+  'in production',
+  'installed'
+];
+
 export const useRevenueHistory = () => {
   const { effectiveOwnerId } = useEffectiveAccountOwner();
   const { dateRange } = useDashboardDate();
@@ -28,21 +37,46 @@ export const useRevenueHistory = () => {
       const previousEnd = subDays(start, 1);
       const previousStart = subDays(previousEnd, periodLength - 1);
 
-      // Fetch current period quotes (accepted = revenue)
-      const { data: currentQuotes } = await supabase
-        .from("quotes")
-        .select("total_amount, created_at")
+      // First get revenue status IDs for this user
+      const { data: revenueStatuses } = await supabase
+        .from("job_statuses")
+        .select("id, name")
+        .eq("user_id", effectiveOwnerId);
+
+      const revenueStatusIds = revenueStatuses
+        ?.filter(s => REVENUE_STATUS_NAMES.includes(s.name.toLowerCase()))
+        .map(s => s.id) || [];
+
+      if (revenueStatusIds.length === 0) {
+        // No revenue statuses found, return empty data
+        return { data: [], currentTotal: 0, previousTotal: 0, changePercent: 0 };
+      }
+
+      // Fetch current period revenue from projects with revenue statuses
+      const { data: currentProjects } = await supabase
+        .from("projects")
+        .select(`
+          id,
+          created_at,
+          status_id,
+          quotes!inner(total_amount)
+        `)
         .eq("user_id", effectiveOwnerId)
-        .eq("status", "accepted")
+        .in("status_id", revenueStatusIds)
         .gte("created_at", start.toISOString())
         .lte("created_at", end.toISOString());
 
-      // Fetch previous period quotes
-      const { data: previousQuotes } = await supabase
-        .from("quotes")
-        .select("total_amount, created_at")
+      // Fetch previous period projects
+      const { data: previousProjects } = await supabase
+        .from("projects")
+        .select(`
+          id,
+          created_at,
+          status_id,
+          quotes!inner(total_amount)
+        `)
         .eq("user_id", effectiveOwnerId)
-        .eq("status", "accepted")
+        .in("status_id", revenueStatusIds)
         .gte("created_at", previousStart.toISOString())
         .lte("created_at", previousEnd.toISOString());
 
@@ -51,21 +85,17 @@ export const useRevenueHistory = () => {
       let formatStr: string;
       
       if (periodLength <= 7) {
-        // Daily for up to 7 days
         intervals = eachDayOfInterval({ start, end });
-        formatStr = "EEE"; // Mon, Tue, etc.
+        formatStr = "EEE";
       } else if (periodLength <= 31) {
-        // Daily for up to a month
         intervals = eachDayOfInterval({ start, end });
-        formatStr = "MMM d"; // Jan 1, Jan 2, etc.
+        formatStr = "MMM d";
       } else if (periodLength <= 90) {
-        // Weekly for up to 3 months
         intervals = eachWeekOfInterval({ start, end });
-        formatStr = "MMM d"; // Week starting
+        formatStr = "MMM d";
       } else {
-        // Monthly for longer periods
         intervals = eachMonthOfInterval({ start, end });
-        formatStr = "MMM"; // Jan, Feb, etc.
+        formatStr = "MMM";
       }
 
       // Group current revenue by interval
@@ -74,32 +104,34 @@ export const useRevenueHistory = () => {
         currentByInterval.set(format(date, "yyyy-MM-dd"), 0);
       });
 
-      currentQuotes?.forEach(quote => {
-        const quoteDate = startOfDay(new Date(quote.created_at));
-        // Find the matching interval
+      currentProjects?.forEach(project => {
+        const projectDate = startOfDay(new Date(project.created_at));
+        const projectRevenue = project.quotes?.reduce((sum: number, q: any) => sum + (q.total_amount || 0), 0) || 0;
+        
         for (let i = intervals.length - 1; i >= 0; i--) {
-          if (quoteDate >= intervals[i]) {
+          if (projectDate >= intervals[i]) {
             const key = format(intervals[i], "yyyy-MM-dd");
-            currentByInterval.set(key, (currentByInterval.get(key) || 0) + (quote.total_amount || 0));
+            currentByInterval.set(key, (currentByInterval.get(key) || 0) + projectRevenue);
             break;
           }
         }
       });
 
-      // Group previous revenue (aligned to current intervals)
+      // Group previous revenue
       const previousByInterval = new Map<string, number>();
-      intervals.forEach((date, index) => {
+      intervals.forEach(date => {
         previousByInterval.set(format(date, "yyyy-MM-dd"), 0);
       });
 
-      previousQuotes?.forEach(quote => {
-        const quoteDate = startOfDay(new Date(quote.created_at));
-        const dayOffset = differenceInDays(quoteDate, previousStart);
-        // Map to corresponding current interval index
+      previousProjects?.forEach(project => {
+        const projectDate = startOfDay(new Date(project.created_at));
+        const projectRevenue = project.quotes?.reduce((sum: number, q: any) => sum + (q.total_amount || 0), 0) || 0;
+        const dayOffset = differenceInDays(projectDate, previousStart);
         const intervalIndex = Math.min(Math.floor(dayOffset * intervals.length / periodLength), intervals.length - 1);
+        
         if (intervalIndex >= 0 && intervalIndex < intervals.length) {
           const key = format(intervals[intervalIndex], "yyyy-MM-dd");
-          previousByInterval.set(key, (previousByInterval.get(key) || 0) + (quote.total_amount || 0));
+          previousByInterval.set(key, (previousByInterval.get(key) || 0) + projectRevenue);
         }
       });
 
@@ -115,8 +147,14 @@ export const useRevenueHistory = () => {
       });
 
       // Calculate totals
-      const currentTotal = currentQuotes?.reduce((sum, q) => sum + (q.total_amount || 0), 0) || 0;
-      const previousTotal = previousQuotes?.reduce((sum, q) => sum + (q.total_amount || 0), 0) || 0;
+      const currentTotal = currentProjects?.reduce((sum, p) => {
+        return sum + (p.quotes?.reduce((qSum: number, q: any) => qSum + (q.total_amount || 0), 0) || 0);
+      }, 0) || 0;
+      
+      const previousTotal = previousProjects?.reduce((sum, p) => {
+        return sum + (p.quotes?.reduce((qSum: number, q: any) => qSum + (q.total_amount || 0), 0) || 0);
+      }, 0) || 0;
+      
       const changePercent = previousTotal > 0 
         ? ((currentTotal - previousTotal) / previousTotal * 100) 
         : currentTotal > 0 ? 100 : 0;
