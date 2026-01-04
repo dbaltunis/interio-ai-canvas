@@ -1562,20 +1562,28 @@ export type Database = {
           company_name: string | null
           country: string | null
           created_at: string
+          default_payment_terms_days: number | null
           default_profit_margin_percentage: number | null
           features_enabled: Json | null
+          financial_year_end_day: number | null
+          financial_year_end_month: number | null
           id: string
           inventory_config: Json | null
+          legal_name: string | null
           manual_quote_editing_enabled: boolean | null
           measurement_units: string | null
           minimum_profit_margin_percentage: number | null
+          organization_type: string | null
           pricing_settings: Json | null
+          registration_number: string | null
           show_profit_margins_to_staff: boolean | null
           show_vendor_costs_to_managers: boolean | null
           show_vendor_costs_to_staff: boolean | null
           state: string | null
+          tax_number: string | null
           tax_rate: number | null
           tax_type: string | null
+          trading_name: string | null
           updated_at: string
           user_id: string
           website: string | null
@@ -1592,20 +1600,28 @@ export type Database = {
           company_name?: string | null
           country?: string | null
           created_at?: string
+          default_payment_terms_days?: number | null
           default_profit_margin_percentage?: number | null
           features_enabled?: Json | null
+          financial_year_end_day?: number | null
+          financial_year_end_month?: number | null
           id?: string
           inventory_config?: Json | null
+          legal_name?: string | null
           manual_quote_editing_enabled?: boolean | null
           measurement_units?: string | null
           minimum_profit_margin_percentage?: number | null
+          organization_type?: string | null
           pricing_settings?: Json | null
+          registration_number?: string | null
           show_profit_margins_to_staff?: boolean | null
           show_vendor_costs_to_managers?: boolean | null
           show_vendor_costs_to_staff?: boolean | null
           state?: string | null
+          tax_number?: string | null
           tax_rate?: number | null
           tax_type?: string | null
+          trading_name?: string | null
           updated_at?: string
           user_id: string
           website?: string | null
@@ -1622,20 +1638,28 @@ export type Database = {
           company_name?: string | null
           country?: string | null
           created_at?: string
+          default_payment_terms_days?: number | null
           default_profit_margin_percentage?: number | null
           features_enabled?: Json | null
+          financial_year_end_day?: number | null
+          financial_year_end_month?: number | null
           id?: string
           inventory_config?: Json | null
+          legal_name?: string | null
           manual_quote_editing_enabled?: boolean | null
           measurement_units?: string | null
           minimum_profit_margin_percentage?: number | null
+          organization_type?: string | null
           pricing_settings?: Json | null
+          registration_number?: string | null
           show_profit_margins_to_staff?: boolean | null
           show_vendor_costs_to_managers?: boolean | null
           show_vendor_costs_to_staff?: boolean | null
           state?: string | null
+          tax_number?: string | null
           tax_rate?: number | null
           tax_type?: string | null
+          trading_name?: string | null
           updated_at?: string
           user_id?: string
           website?: string | null

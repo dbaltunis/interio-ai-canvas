@@ -449,6 +449,8 @@ const LivePreviewBlock = ({
     const tokens = {
       // Company information from business settings - no hardcoded fallbacks
       company_name: businessSettings.company_name || '',
+      company_legal_name: businessSettings.legal_name || '',
+      company_trading_name: businessSettings.trading_name || businessSettings.company_name || '',
       company_address: businessSettings.address ? 
         `${businessSettings.address}${businessSettings.city ? ', ' + businessSettings.city : ''}${businessSettings.state ? ', ' + businessSettings.state : ''}${businessSettings.zip_code ? ' ' + businessSettings.zip_code : ''}` 
         : '',
@@ -456,6 +458,9 @@ const LivePreviewBlock = ({
       company_email: businessSettings.business_email || '',
       company_website: businessSettings.website || '',
       company_abn: businessSettings.abn || '',
+      company_registration_number: businessSettings.registration_number || '',
+      company_tax_number: businessSettings.tax_number || '',
+      company_organization_type: businessSettings.organization_type || '',
       company_country: businessSettings.country || '',
       
       // Client information from project

@@ -1,18 +1,20 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Mail, Phone, MapPin, Globe, Upload, Image, Edit3, Shield } from "lucide-react";
+import { Building2, Mail, Phone, MapPin, Globe, Upload, Image, Edit3, Shield, FileText, CreditCard } from "lucide-react";
 import { LoadingFallback } from "@/components/ui/loading-fallback";
 import { FormSection } from "@/components/ui/form-section";
 import { FormFieldGroup } from "@/components/ui/form-field-group";
 import { SimpleLogoUpload } from "./SimpleLogoUpload";
 import { useUploadFile, useGetFileUrl } from "@/hooks/useFileStorage";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { getRegistrationLabels, ORGANIZATION_TYPES, PAYMENT_TERMS_OPTIONS, COUNTRIES } from "@/utils/businessRegistrationLabels";
 
 export const BusinessSettingsTab = () => {
   const { data: businessSettings, isLoading } = useBusinessSettings();
@@ -22,17 +24,21 @@ export const BusinessSettingsTab = () => {
   
   // Separate editing states for each section
   const [isEditingCompany, setIsEditingCompany] = useState(false);
+  const [isEditingRegistration, setIsEditingRegistration] = useState(false);
   const [isEditingContact, setIsEditingContact] = useState(false);
   const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [isEditingFinancial, setIsEditingFinancial] = useState(false);
   const [isEditingAdvanced, setIsEditingAdvanced] = useState(false);
   
   // Track which section is currently saving
-  const [savingSection, setSavingSection] = useState<'company' | 'contact' | 'address' | 'advanced' | null>(null);
+  const [savingSection, setSavingSection] = useState<'company' | 'registration' | 'contact' | 'address' | 'financial' | 'advanced' | null>(null);
   
   // Separate saved successfully states for each section
   const [companySavedSuccessfully, setCompanySavedSuccessfully] = useState(false);
+  const [registrationSavedSuccessfully, setRegistrationSavedSuccessfully] = useState(false);
   const [contactSavedSuccessfully, setContactSavedSuccessfully] = useState(false);
   const [addressSavedSuccessfully, setAddressSavedSuccessfully] = useState(false);
+  const [financialSavedSuccessfully, setFinancialSavedSuccessfully] = useState(false);
   const [advancedSavedSuccessfully, setAdvancedSavedSuccessfully] = useState(false);
   
   const [showSimpleLogoUpload, setShowSimpleLogoUpload] = useState(false);
@@ -44,7 +50,12 @@ export const BusinessSettingsTab = () => {
 
   const [formData, setFormData] = useState({
     company_name: "",
+    legal_name: "",
+    trading_name: "",
+    organization_type: "",
     abn: "",
+    registration_number: "",
+    tax_number: "",
     business_email: "",
     business_phone: "",
     address: "",
@@ -54,14 +65,28 @@ export const BusinessSettingsTab = () => {
     country: "Australia",
     website: "",
     company_logo_url: "",
+    default_payment_terms_days: 14,
+    financial_year_end_month: 6,
+    financial_year_end_day: 30,
     allow_in_app_template_editing: false
   });
+
+  // Get dynamic labels based on selected country
+  const registrationLabels = useMemo(() => 
+    getRegistrationLabels(formData.country), 
+    [formData.country]
+  );
 
   useEffect(() => {
     if (businessSettings) {
       setFormData({
         company_name: businessSettings.company_name || "",
+        legal_name: businessSettings.legal_name || "",
+        trading_name: businessSettings.trading_name || "",
+        organization_type: businessSettings.organization_type || "",
         abn: businessSettings.abn || "",
+        registration_number: businessSettings.registration_number || "",
+        tax_number: businessSettings.tax_number || "",
         business_email: businessSettings.business_email || "",
         business_phone: businessSettings.business_phone || "",
         address: businessSettings.address || "",
@@ -71,16 +96,21 @@ export const BusinessSettingsTab = () => {
         country: businessSettings.country || "Australia",
         website: businessSettings.website || "",
         company_logo_url: businessSettings.company_logo_url || "",
+        default_payment_terms_days: businessSettings.default_payment_terms_days ?? 14,
+        financial_year_end_month: businessSettings.financial_year_end_month ?? 6,
+        financial_year_end_day: businessSettings.financial_year_end_day ?? 30,
         allow_in_app_template_editing: businessSettings.allow_in_app_template_editing || false
       });
     }
   }, [businessSettings]);
 
-  const handleInputChange = (field: string, value: string | boolean) => {
+  const handleInputChange = (field: string, value: string | boolean | number) => {
     // Reset all saved states when making changes
     setCompanySavedSuccessfully(false);
+    setRegistrationSavedSuccessfully(false);
     setContactSavedSuccessfully(false);
     setAddressSavedSuccessfully(false);
+    setFinancialSavedSuccessfully(false);
     setAdvancedSavedSuccessfully(false);
     
     setFormData(prev => ({
@@ -132,7 +162,7 @@ export const BusinessSettingsTab = () => {
     }
   };
 
-  const handleSaveSection = async (sectionName: 'company' | 'contact' | 'address' | 'advanced') => {
+  const handleSaveSection = async (sectionName: 'company' | 'registration' | 'contact' | 'address' | 'financial' | 'advanced') => {
     setSavingSection(sectionName);
     try {
       let savedData;
@@ -149,7 +179,12 @@ export const BusinessSettingsTab = () => {
       if (savedData) {
         setFormData({
           company_name: savedData.company_name || "",
+          legal_name: savedData.legal_name || "",
+          trading_name: savedData.trading_name || "",
+          organization_type: savedData.organization_type || "",
           abn: savedData.abn || "",
+          registration_number: savedData.registration_number || "",
+          tax_number: savedData.tax_number || "",
           business_email: savedData.business_email || "",
           business_phone: savedData.business_phone || "",
           address: savedData.address || "",
@@ -159,6 +194,9 @@ export const BusinessSettingsTab = () => {
           country: savedData.country || "Australia",
           website: savedData.website || "",
           company_logo_url: savedData.company_logo_url || "",
+          default_payment_terms_days: savedData.default_payment_terms_days ?? 14,
+          financial_year_end_month: savedData.financial_year_end_month ?? 6,
+          financial_year_end_day: savedData.financial_year_end_day ?? 30,
           allow_in_app_template_editing: savedData.allow_in_app_template_editing || false
         });
       }
@@ -170,6 +208,11 @@ export const BusinessSettingsTab = () => {
           setIsEditingCompany(false);
           setTimeout(() => setCompanySavedSuccessfully(false), 3000);
           break;
+        case 'registration':
+          setRegistrationSavedSuccessfully(true);
+          setIsEditingRegistration(false);
+          setTimeout(() => setRegistrationSavedSuccessfully(false), 3000);
+          break;
         case 'contact':
           setContactSavedSuccessfully(true);
           setIsEditingContact(false);
@@ -179,6 +222,11 @@ export const BusinessSettingsTab = () => {
           setAddressSavedSuccessfully(true);
           setIsEditingAddress(false);
           setTimeout(() => setAddressSavedSuccessfully(false), 3000);
+          break;
+        case 'financial':
+          setFinancialSavedSuccessfully(true);
+          setIsEditingFinancial(false);
+          setTimeout(() => setFinancialSavedSuccessfully(false), 3000);
           break;
         case 'advanced':
           setAdvancedSavedSuccessfully(true);
@@ -202,12 +250,14 @@ export const BusinessSettingsTab = () => {
     }
   };
 
-  const handleEditSection = (sectionName: 'company' | 'contact' | 'address' | 'advanced') => {
+  const handleEditSection = (sectionName: 'company' | 'registration' | 'contact' | 'address' | 'financial' | 'advanced') => {
     console.log('🔥 handleEditSection called with:', sectionName);
     console.log('🔥 Current editing states BEFORE:', {
       isEditingCompany,
+      isEditingRegistration,
       isEditingContact,
       isEditingAddress,
+      isEditingFinancial,
       isEditingAdvanced
     });
     
@@ -216,6 +266,10 @@ export const BusinessSettingsTab = () => {
         setIsEditingCompany(true);
         setCompanySavedSuccessfully(false);
         break;
+      case 'registration':
+        setIsEditingRegistration(true);
+        setRegistrationSavedSuccessfully(false);
+        break;
       case 'contact':
         setIsEditingContact(true);
         setContactSavedSuccessfully(false);
@@ -223,6 +277,10 @@ export const BusinessSettingsTab = () => {
       case 'address':
         setIsEditingAddress(true);
         setAddressSavedSuccessfully(false);
+        break;
+      case 'financial':
+        setIsEditingFinancial(true);
+        setFinancialSavedSuccessfully(false);
         break;
       case 'advanced':
         setIsEditingAdvanced(true);
@@ -233,12 +291,17 @@ export const BusinessSettingsTab = () => {
     console.log('🔥 handleEditSection completed for:', sectionName);
   };
 
-  const handleCancelSection = (sectionName: 'company' | 'contact' | 'address' | 'advanced') => {
+  const handleCancelSection = (sectionName: 'company' | 'registration' | 'contact' | 'address' | 'financial' | 'advanced') => {
     // Reset form data to original values
     if (businessSettings) {
       setFormData({
         company_name: businessSettings.company_name || "",
+        legal_name: businessSettings.legal_name || "",
+        trading_name: businessSettings.trading_name || "",
+        organization_type: businessSettings.organization_type || "",
         abn: businessSettings.abn || "",
+        registration_number: businessSettings.registration_number || "",
+        tax_number: businessSettings.tax_number || "",
         business_email: businessSettings.business_email || "",
         business_phone: businessSettings.business_phone || "",
         address: businessSettings.address || "",
@@ -248,6 +311,9 @@ export const BusinessSettingsTab = () => {
         country: businessSettings.country || "Australia",
         website: businessSettings.website || "",
         company_logo_url: businessSettings.company_logo_url || "",
+        default_payment_terms_days: businessSettings.default_payment_terms_days ?? 14,
+        financial_year_end_month: businessSettings.financial_year_end_month ?? 6,
+        financial_year_end_day: businessSettings.financial_year_end_day ?? 30,
         allow_in_app_template_editing: businessSettings.allow_in_app_template_editing || false
       });
     }
@@ -257,11 +323,17 @@ export const BusinessSettingsTab = () => {
       case 'company':
         setIsEditingCompany(false);
         break;
+      case 'registration':
+        setIsEditingRegistration(false);
+        break;
       case 'contact':
         setIsEditingContact(false);
         break;
       case 'address':
         setIsEditingAddress(false);
+        break;
+      case 'financial':
+        setIsEditingFinancial(false);
         break;
       case 'advanced':
         setIsEditingAdvanced(false);
@@ -275,8 +347,10 @@ export const BusinessSettingsTab = () => {
 
   console.log('🔥 Rendering BusinessSettingsTab with editing states:', {
     isEditingCompany,
+    isEditingRegistration,
     isEditingContact,
     isEditingAddress,
+    isEditingFinancial,
     isEditingAdvanced
   });
 
@@ -296,39 +370,56 @@ export const BusinessSettingsTab = () => {
         savedSuccessfully={companySavedSuccessfully}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormFieldGroup label="Company Name" required>
+          <FormFieldGroup label="Company Name (Trading Name)" required>
             <Input
               value={formData.company_name}
               onChange={(e) => handleInputChange("company_name", e.target.value)}
-              placeholder="Enter company name"
+              placeholder="Enter trading/display name"
               disabled={!isEditingCompany}
             />
           </FormFieldGroup>
           
-          <FormFieldGroup label="ABN / Tax ID">
+          <FormFieldGroup label="Legal Name" description="Official registered entity name (if different)">
             <Input
-              value={formData.abn}
-              onChange={(e) => handleInputChange("abn", e.target.value)}
-              placeholder="Enter ABN or Tax ID"
+              value={formData.legal_name}
+              onChange={(e) => handleInputChange("legal_name", e.target.value)}
+              placeholder="Enter legal entity name"
               disabled={!isEditingCompany}
             />
           </FormFieldGroup>
         </div>
 
-        <FormFieldGroup 
-          label="Website"
-        >
-          <Input
-            value={formData.website}
-            onChange={(e) => handleInputChange("website", e.target.value)}
-            placeholder="https://www.example.com"
-            disabled={!isEditingCompany}
-          />
-        </FormFieldGroup>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormFieldGroup label="Organization Type">
+            <Select
+              value={formData.organization_type}
+              onValueChange={(value) => handleInputChange("organization_type", value)}
+              disabled={!isEditingCompany}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select organization type" />
+              </SelectTrigger>
+              <SelectContent>
+                {ORGANIZATION_TYPES.map(type => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormFieldGroup>
+          
+          <FormFieldGroup label="Website">
+            <Input
+              value={formData.website}
+              onChange={(e) => handleInputChange("website", e.target.value)}
+              placeholder="https://www.example.com"
+              disabled={!isEditingCompany}
+            />
+          </FormFieldGroup>
+        </div>
 
-        <FormFieldGroup 
-          label="Company Logo"
-        >
+        <FormFieldGroup label="Company Logo">
           <div className="space-y-3">
             {formData.company_logo_url ? (
               <div className="flex items-center gap-3 p-3 border border-border rounded-lg bg-muted/50">
@@ -382,6 +473,55 @@ export const BusinessSettingsTab = () => {
             </Button>
           </div>
         </FormFieldGroup>
+      </FormSection>
+
+      {/* Registration Numbers - Dynamic based on country */}
+      <FormSection
+        key="registration-section"
+        title="Registration Numbers"
+        description="Business registration and tax identification numbers for invoices"
+        icon={<FileText className="h-5 w-5" />}
+        isEditing={isEditingRegistration}
+        onEdit={() => handleEditSection('registration')}
+        onSave={() => handleSaveSection('registration')}
+        onCancel={() => handleCancelSection('registration')}
+        isSaving={savingSection === 'registration'}
+        savedSuccessfully={registrationSavedSuccessfully}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {registrationLabels.abn && (
+            <FormFieldGroup label={registrationLabels.abn}>
+              <Input
+                value={formData.abn}
+                onChange={(e) => handleInputChange("abn", e.target.value)}
+                placeholder={registrationLabels.abnPlaceholder || ''}
+                disabled={!isEditingRegistration}
+              />
+            </FormFieldGroup>
+          )}
+          
+          <FormFieldGroup label={registrationLabels.registration}>
+            <Input
+              value={formData.registration_number}
+              onChange={(e) => handleInputChange("registration_number", e.target.value)}
+              placeholder={registrationLabels.registrationPlaceholder}
+              disabled={!isEditingRegistration}
+            />
+          </FormFieldGroup>
+          
+          <FormFieldGroup label={registrationLabels.taxNumber}>
+            <Input
+              value={formData.tax_number}
+              onChange={(e) => handleInputChange("tax_number", e.target.value)}
+              placeholder={registrationLabels.taxNumberPlaceholder}
+              disabled={!isEditingRegistration}
+            />
+          </FormFieldGroup>
+        </div>
+        
+        <p className="text-xs text-muted-foreground mt-4">
+          These numbers will appear on your invoices and quotes. Labels update automatically based on your selected country.
+        </p>
       </FormSection>
 
       {/* Contact Information */}
@@ -472,13 +612,101 @@ export const BusinessSettingsTab = () => {
         </div>
 
         <FormFieldGroup label="Country">
-          <Input
+          <Select
             value={formData.country}
-            onChange={(e) => handleInputChange("country", e.target.value)}
-            placeholder="Enter country"
+            onValueChange={(value) => handleInputChange("country", value)}
             disabled={!isEditingAddress}
-          />
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select country" />
+            </SelectTrigger>
+            <SelectContent>
+              {COUNTRIES.map(country => (
+                <SelectItem key={country} value={country}>
+                  {country}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </FormFieldGroup>
+      </FormSection>
+
+      {/* Financial Settings */}
+      <FormSection
+        key="financial-section"
+        title="Financial Settings"
+        description="Default payment terms and financial year settings"
+        icon={<CreditCard className="h-5 w-5" />}
+        isEditing={isEditingFinancial}
+        onEdit={() => handleEditSection('financial')}
+        onSave={() => handleSaveSection('financial')}
+        onCancel={() => handleCancelSection('financial')}
+        isSaving={savingSection === 'financial'}
+        savedSuccessfully={financialSavedSuccessfully}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormFieldGroup label="Default Payment Terms">
+            <Select
+              value={String(formData.default_payment_terms_days)}
+              onValueChange={(value) => handleInputChange("default_payment_terms_days", parseInt(value))}
+              disabled={!isEditingFinancial}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select payment terms" />
+              </SelectTrigger>
+              <SelectContent>
+                {PAYMENT_TERMS_OPTIONS.map(option => (
+                  <SelectItem key={option.value} value={String(option.value)}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormFieldGroup>
+
+          <FormFieldGroup label="Financial Year End">
+            <div className="flex gap-2">
+              <Select
+                value={String(formData.financial_year_end_month)}
+                onValueChange={(value) => handleInputChange("financial_year_end_month", parseInt(value))}
+                disabled={!isEditingFinancial}
+              >
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[
+                    { value: 1, label: 'January' },
+                    { value: 2, label: 'February' },
+                    { value: 3, label: 'March' },
+                    { value: 4, label: 'April' },
+                    { value: 5, label: 'May' },
+                    { value: 6, label: 'June' },
+                    { value: 7, label: 'July' },
+                    { value: 8, label: 'August' },
+                    { value: 9, label: 'September' },
+                    { value: 10, label: 'October' },
+                    { value: 11, label: 'November' },
+                    { value: 12, label: 'December' }
+                  ].map(month => (
+                    <SelectItem key={month.value} value={String(month.value)}>
+                      {month.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                min={1}
+                max={31}
+                value={formData.financial_year_end_day}
+                onChange={(e) => handleInputChange("financial_year_end_day", parseInt(e.target.value) || 30)}
+                disabled={!isEditingFinancial}
+                className="w-20"
+              />
+            </div>
+          </FormFieldGroup>
+        </div>
       </FormSection>
 
       {/* Advanced Settings - Admin Only */}

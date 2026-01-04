@@ -380,11 +380,17 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
     const tokens = {
       // Company information - no hardcoded fallbacks
       company_name: businessSettings.company_name || '',
+      company_legal_name: businessSettings.legal_name || '',
+      company_trading_name: businessSettings.trading_name || businessSettings.company_name || '',
       company_address: businessSettings.address ? 
         `${businessSettings.address}${businessSettings.city ? ', ' + businessSettings.city : ''}${businessSettings.state ? ', ' + businessSettings.state : ''}${businessSettings.zip_code ? ' ' + businessSettings.zip_code : ''}` 
         : '',
       company_phone: businessSettings.business_phone || '',
       company_email: businessSettings.business_email || '',
+      company_abn: businessSettings.abn || '',
+      company_registration_number: businessSettings.registration_number || '',
+      company_tax_number: businessSettings.tax_number || '',
+      company_organization_type: businessSettings.organization_type || '',
       // Client information - sample data for preview only
       client_name: client.name || 'John Smith',
       client_email: client.email || 'client@example.com', 
