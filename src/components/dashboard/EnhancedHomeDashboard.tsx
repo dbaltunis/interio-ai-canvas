@@ -5,6 +5,7 @@ import { WelcomeHeader } from "./WelcomeHeader";
 import { DashboardWidgetCustomizer } from "./DashboardWidgetCustomizer";
 import { ECommerceGatewayWidget } from "./ECommerceGatewayWidget";
 import { DraggableKPISection } from "./DraggableKPISection";
+import { CompactKPIRow } from "./CompactKPIRow";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { useBatchedDashboardQueries } from "@/hooks/useBatchedDashboardQueries";
 import { useEmailKPIs } from "@/hooks/useEmails";
@@ -239,13 +240,21 @@ export const EnhancedHomeDashboard = () => {
     enabledEmailKPIs.some(config => config.id === kpi.id) && canViewEmailKPIs === true
   );
 
+  // Compact metrics for top row
+  const compactMetrics = [
+    { id: "revenue", label: "Revenue", value: stats?.totalRevenue || 0, icon: DollarSign, isCurrency: true, trend: { value: 12.5, isPositive: true } },
+    { id: "projects", label: "Active Projects", value: stats?.totalClients || 0, icon: FileText },
+    { id: "quotes", label: "Pending Quotes", value: stats?.pendingQuotes || 0, icon: FileText },
+    { id: "clients", label: "Clients", value: stats?.totalClients || 0, icon: Users, trend: { value: 8.2, isPositive: true } },
+  ];
+
   return (
-    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       {/* Header Section */}
       <WelcomeHeader onCustomizeClick={() => setShowWidgetCustomizer(true)} />
 
-      {/* E-Commerce Gateway Widget - HIDDEN FOR NOW, KEEPING CODE */}
-      {/* <ECommerceGatewayWidget /> */}
+      {/* Compact KPI Row - Shopify-style top metrics */}
+      <CompactKPIRow metrics={compactMetrics} loading={criticalStats.isLoading} />
 
       {/* Dynamic Widgets Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
