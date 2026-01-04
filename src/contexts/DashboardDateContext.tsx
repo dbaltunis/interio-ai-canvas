@@ -62,7 +62,7 @@ const PRESETS: Record<string, { label: string; getRange: () => { start: Date; en
 };
 
 export const DashboardDateProvider = ({ children }: { children: ReactNode }) => {
-  const [preset, setPresetState] = useState("30days");
+  const [preset, setPresetState] = useState("90days");
   const [customStart, setCustomStart] = useState<Date | null>(null);
   const [customEnd, setCustomEnd] = useState<Date | null>(null);
 
