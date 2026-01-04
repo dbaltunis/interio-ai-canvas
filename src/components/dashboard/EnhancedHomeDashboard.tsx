@@ -67,6 +67,7 @@ const DashboardContent = () => {
       totalClients: criticalStats.data.totalClients,
       pendingQuotes: criticalStats.data.pendingQuotes,
       totalRevenue: criticalStats.data.totalRevenue,
+      activeProjects: criticalStats.data.activeProjects,
       lowStockItems: secondaryStats.data?.lowStockItems || 0,
       totalAppointments: secondaryStats.data?.totalAppointments || 0,
       activeSchedulers: secondaryStats.data?.activeSchedulers || 0,
@@ -128,10 +129,10 @@ const DashboardContent = () => {
     filteredOutCount: getEnabledWidgets().length - enabledWidgets.length
   });
 
-  // Compact metrics for top row - use real data, trends will be calculated from batched query
+  // Compact metrics for top row - use real data from batched queries
   const compactMetrics = [
     { id: "revenue", label: "Revenue", value: stats?.totalRevenue || 0, icon: DollarSign, isCurrency: true },
-    { id: "projects", label: "Active Projects", value: stats?.totalClients || 0, icon: FileText },
+    { id: "projects", label: "Active Projects", value: stats?.activeProjects || 0, icon: FileText },
     { id: "quotes", label: "Pending Quotes", value: stats?.pendingQuotes || 0, icon: FileText },
     { id: "clients", label: "Clients", value: stats?.totalClients || 0, icon: Users },
   ];

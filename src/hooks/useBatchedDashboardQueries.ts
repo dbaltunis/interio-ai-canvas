@@ -2,6 +2,11 @@ import { useQueries } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
+// Status names that count as revenue (case-insensitive comparison)
+const REVENUE_STATUS_NAMES = ['order confirmed', 'approved', 'completed', 'in production', 'installed'];
+// Status names considered terminal/inactive (projects with these don't count as "active")
+const TERMINAL_STATUS_NAMES = ['completed', 'cancelled', 'closed', 'on hold'];
+
 /**
  * Batched dashboard queries for better performance
  * Fetches all critical dashboard data in parallel with optimized queries
@@ -18,23 +23,70 @@ export const useBatchedDashboardQueries = () => {
         queryFn: async () => {
           if (!effectiveOwnerId) throw new Error("No authenticated user");
 
-          const [clientsResult, quotesResult, revenueResult] = await Promise.allSettled([
+          // First, get status IDs for revenue-qualifying and terminal statuses
+          const { data: allStatuses } = await supabase
+            .from("job_statuses")
+            .select("id, name")
+            .eq("user_id", effectiveOwnerId);
+
+          const revenueStatusIds = allStatuses
+            ?.filter(s => REVENUE_STATUS_NAMES.includes(s.name.toLowerCase()))
+            .map(s => s.id) || [];
+          
+          const terminalStatusIds = allStatuses
+            ?.filter(s => TERMINAL_STATUS_NAMES.includes(s.name.toLowerCase()))
+            .map(s => s.id) || [];
+
+          const [clientsResult, quotesResult, revenueResult, activeProjectsResult] = await Promise.allSettled([
+            // Total clients
             supabase.from("clients").select("*", { count: "exact", head: true }).eq("user_id", effectiveOwnerId),
+            // Pending quotes (draft or sent)
             supabase.from("quotes").select("*", { count: "exact", head: true }).eq("user_id", effectiveOwnerId).in("status", ["draft", "sent"]),
-            supabase.from("quotes").select("total_amount").eq("user_id", effectiveOwnerId).eq("status", "accepted"),
+            // Revenue: sum total_amount from quotes linked to projects with revenue statuses
+            revenueStatusIds.length > 0 
+              ? supabase
+                  .from("projects")
+                  .select("quotes(total_amount)")
+                  .eq("user_id", effectiveOwnerId)
+                  .in("status_id", revenueStatusIds)
+              : Promise.resolve({ data: [] }),
+            // Active projects: projects NOT in terminal statuses
+            terminalStatusIds.length > 0
+              ? supabase
+                  .from("projects")
+                  .select("*", { count: "exact", head: true })
+                  .eq("user_id", effectiveOwnerId)
+                  .not("status_id", "in", `(${terminalStatusIds.join(",")})`)
+              : supabase
+                  .from("projects")
+                  .select("*", { count: "exact", head: true })
+                  .eq("user_id", effectiveOwnerId),
           ]);
 
           const totalClients = clientsResult.status === 'fulfilled' ? (clientsResult.value.count || 0) : 0;
           const pendingQuotes = quotesResult.status === 'fulfilled' ? (quotesResult.value.count || 0) : 0;
           
+          // Calculate total revenue from projects with revenue-qualifying statuses
           let totalRevenue = 0;
           if (revenueResult.status === 'fulfilled' && revenueResult.value.data) {
-            totalRevenue = revenueResult.value.data.reduce((sum, quote) => sum + (quote.total_amount || 0), 0);
+            revenueResult.value.data.forEach((project: any) => {
+              if (project.quotes) {
+                // quotes can be an object or array depending on the relationship
+                const quotes = Array.isArray(project.quotes) ? project.quotes : [project.quotes];
+                quotes.forEach((quote: any) => {
+                  if (quote?.total_amount) {
+                    totalRevenue += quote.total_amount;
+                  }
+                });
+              }
+            });
           }
 
-          return { totalClients, pendingQuotes, totalRevenue };
+          const activeProjects = activeProjectsResult.status === 'fulfilled' ? (activeProjectsResult.value.count || 0) : 0;
+
+          return { totalClients, pendingQuotes, totalRevenue, activeProjects };
         },
-        staleTime: 2 * 60 * 1000, // 2 minutes for critical stats
+        staleTime: 30 * 1000, // 30 seconds for more responsive updates
         gcTime: 5 * 60 * 1000,
         enabled: !!effectiveOwnerId,
       },
