@@ -365,9 +365,10 @@ export const QuotationTab = ({
     };
   }, [project, client, businessSettings, sourceTreatments, workshopItems, rooms, surfaces, subtotal, taxRate, taxAmount, total, markupPercentage, currentQuote]);
 
-  // Download PDF
+  // Download PDF - uses hidden print preview with isPrintMode={true}
   const handleDownloadPDF = async () => {
-    const element = document.getElementById('quote-live-preview');
+    // Use the hidden print-specific container for clean PDF output
+    const element = document.getElementById('quote-print-preview') || document.getElementById('quote-live-preview');
     if (!element) {
       toast({
         title: "Error",
@@ -398,9 +399,9 @@ export const QuotationTab = ({
     }
   };
 
-  // Print (open PDF in new tab)
+  // Print (open PDF in new tab) - uses hidden print preview with isPrintMode={true}
   const handlePrint = async () => {
-    const element = document.getElementById('quote-live-preview');
+    const element = document.getElementById('quote-print-preview') || document.getElementById('quote-live-preview');
     if (!element) {
       toast({
         title: "Error",
@@ -427,13 +428,13 @@ export const QuotationTab = ({
     }
   };
 
-  // Email quote
+  // Email quote - uses hidden print preview with isPrintMode={true}
   const handleSendEmail = async (emailData: {
     to: string;
     subject: string;
     message: string;
   }) => {
-    const element = document.getElementById('quote-live-preview');
+    const element = document.getElementById('quote-print-preview') || document.getElementById('quote-live-preview');
     if (!element) {
       toast({
         title: "Error",
@@ -794,6 +795,34 @@ export const QuotationTab = ({
                 <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} blocks={templateBlocks} projectData={projectData} isEditable={!isReadOnly} isPrintMode={false} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} quoteId={quoteId || quoteVersions?.[0]?.id} />
               </div>
             </div>
+          </div>
+          
+          {/* Hidden Print Preview Container - Used ONLY for PDF generation with isPrintMode={true} */}
+          <div 
+            id="quote-print-preview" 
+            className="absolute left-[-9999px] top-0 pointer-events-none"
+            aria-hidden="true"
+            style={{ 
+              width: '210mm', 
+              minHeight: '297mm',
+              fontFamily: 'Arial, Helvetica, sans-serif',
+              fontSize: '10pt',
+              padding: '8mm',
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+              backgroundColor: '#ffffff'
+            }}
+          >
+            <LivePreview 
+              blocks={templateBlocks} 
+              projectData={projectData}
+              isEditable={false}
+              isPrintMode={true}
+              layout={templateSettings.layout}
+              showDetailedBreakdown={templateSettings.layout === 'detailed'}
+              showImages={templateSettings.showImages}
+              groupByRoom={templateSettings.groupByRoom}
+            />
           </div>
         </section>}
 

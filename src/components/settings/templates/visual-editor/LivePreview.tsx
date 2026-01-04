@@ -133,6 +133,11 @@ const ImageGalleryBlock = ({ content, style, isEditable, isPrintMode, quoteId, b
     }
   }, [quoteId, blockId, onDataChange?.customData]);
   
+  // In print mode with no images, don't render anything
+  if (isPrintMode && galleryImages.length === 0) {
+    return null;
+  }
+
   return (
     <div style={{ marginTop: '24px', marginBottom: '24px', backgroundColor: '#ffffff !important', padding: '16px' }}>
       {content.title && (
@@ -172,6 +177,7 @@ const ImageGalleryBlock = ({ content, style, isEditable, isPrintMode, quoteId, b
       )}
       
       {galleryImages.length === 0 ? (
+        // This should only render in non-print mode due to early return above
         <div style={{ 
           border: '2px dashed #d1d5db', 
           borderRadius: '8px', 
@@ -2100,15 +2106,15 @@ export const LivePreview = ({
               />
             ))}
             
-            {/* Payment Configuration Section - shown after all blocks */}
-            {projectData?.quoteId && (
+            {/* Payment Configuration Section - shown after all blocks, ONLY in editor mode (not print) */}
+            {projectData?.quoteId && !isPrintMode && (
               <>
                 {/* Separator between quote and payment section */}
-                <div className="my-8 border-t-2 border-dashed border-border"></div>
+                <div className="my-8 border-t-2 border-dashed border-border no-print"></div>
                 
                 <div 
                   id="payment-section" 
-                  className="mt-0 mb-8 transition-all duration-300 animate-in fade-in-50 slide-in-from-bottom-4"
+                  className="mt-0 mb-8 transition-all duration-300 animate-in fade-in-50 slide-in-from-bottom-4 no-print"
                   style={{
                     scrollMarginTop: '100px'
                   }}
