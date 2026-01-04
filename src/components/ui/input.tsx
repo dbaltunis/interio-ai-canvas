@@ -3,14 +3,13 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const inputVariants = cva(
-  "flex w-full rounded-lg border bg-background text-foreground transition-all duration-150 file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-0 focus-visible:border-primary/50 disabled:cursor-not-allowed disabled:opacity-70 disabled:bg-muted disabled:border-border disabled:text-foreground",
+  "flex w-full rounded-md border text-foreground transition-all duration-150 file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0 focus-visible:border-primary disabled:cursor-not-allowed",
   {
     variants: {
       variant: {
-        default: "border-input shadow-sm hover:border-muted-foreground/30",
+        default: "border-border/80 bg-background shadow-sm hover:border-foreground/30 disabled:opacity-100 disabled:bg-muted disabled:border-muted-foreground/40 disabled:text-foreground",
         ghost: "border-transparent bg-muted/50 hover:bg-muted focus-visible:bg-background focus-visible:border-input",
         underline: "border-0 border-b border-input rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary",
-        settings: "border-border bg-background shadow-sm disabled:bg-muted/80 disabled:border-muted-foreground/30 disabled:text-foreground",
       },
       inputSize: {
         default: "h-10 px-3 py-2 text-sm",
