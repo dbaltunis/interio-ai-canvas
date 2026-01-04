@@ -22,6 +22,10 @@ import { LivePreview } from "./visual-editor/LivePreview";
 import { useTemplateData } from "@/hooks/useTemplateData";
 import { ProjectDataSelector } from "./ProjectDataSelector";
 import { useQueryClient } from "@tanstack/react-query";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Template {
   id: string;
@@ -36,6 +40,24 @@ interface Template {
   created_at?: string;
 }
 
+// Sortable Template Card component for drag and drop
+const SortableTemplateCard = ({ id, children }: { id: string; children: React.ReactNode }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    cursor: isDragging ? 'grabbing' : 'grab',
+  };
+  
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {children}
+    </div>
+  );
+};
+
 // Default blank template blocks - use hyphenated types for consistency
 const getBlankTemplateBlocks = (category: string) => [
   { id: 'header', type: 'header', content: { title: category.charAt(0).toUpperCase() + category.slice(1), showLogo: true } },
@@ -46,6 +68,7 @@ const getBlankTemplateBlocks = (category: string) => [
 
 export const SimpleTemplateManager: React.FC = () => {
   const queryClient = useQueryClient();
+  const { data: businessSettings } = useBusinessSettings();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -60,6 +83,11 @@ export const SimpleTemplateManager: React.FC = () => {
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   
   const { data: templateData } = useTemplateData(selectedProjectId, useRealData);
+  
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
   
   // Create mock project data for template preview with comprehensive real data simulation
   const mockProjectData = {
@@ -83,7 +111,19 @@ export const SimpleTemplateManager: React.FC = () => {
         country: 'United States'
       }
     },
-    businessSettings: {
+    businessSettings: businessSettings ? {
+      company_name: businessSettings.company_name || 'Premium Window Treatments Co.',
+      address: businessSettings.address || '123 Business Ave, Suite 100',
+      city: businessSettings.city || 'Business City',
+      state: businessSettings.state || 'BC',
+      zip_code: businessSettings.zip_code || '54321',
+      business_phone: businessSettings.business_phone || '(555) 123-4567',
+      business_email: businessSettings.business_email || 'info@premiumwindowtreatments.com',
+      website: businessSettings.website || 'www.premiumwindowtreatments.com',
+      company_logo_url: businessSettings.company_logo_url || null,
+      abn: businessSettings.abn || 'ABN 12 345 678 901',
+      country: businessSettings.country || 'Australia'
+    } : {
       company_name: 'Premium Window Treatments Co.',
       address: '123 Business Ave, Suite 100',
       city: 'Business City',
@@ -92,7 +132,7 @@ export const SimpleTemplateManager: React.FC = () => {
       business_phone: '(555) 123-4567',
       business_email: 'info@premiumwindowtreatments.com',
       website: 'www.premiumwindowtreatments.com',
-      company_logo_url: null, // This will show the building icon placeholder
+      company_logo_url: null,
       abn: 'ABN 12 345 678 901',
       country: 'Australia'
     },
@@ -435,6 +475,43 @@ export const SimpleTemplateManager: React.FC = () => {
     }
   };
 
+  // Handle drag end for reordering
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = filteredTemplates.findIndex(t => t.id === active.id);
+    const newIndex = filteredTemplates.findIndex(t => t.id === over.id);
+    
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(filteredTemplates, oldIndex, newIndex);
+    
+    // Update local state immediately
+    setTemplates(prev => {
+      const newTemplates = [...prev];
+      reordered.forEach((t, index) => {
+        const existing = newTemplates.find(x => x.id === t.id);
+        if (existing) existing.display_order = index;
+      });
+      return newTemplates.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+    });
+
+    // Persist to database
+    try {
+      for (let i = 0; i < reordered.length; i++) {
+        await supabase
+          .from('quote_templates')
+          .update({ display_order: i })
+          .eq('id', reordered[i].id);
+      }
+      toast.success('Template order updated');
+    } catch (error) {
+      console.error('Error updating template order:', error);
+      toast.error('Failed to update order');
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Compact Header */}
@@ -482,117 +559,122 @@ export const SimpleTemplateManager: React.FC = () => {
         </div>
       )}
 
-      {/* Templates Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {loading ? (
-          <div className="col-span-full text-center py-8 text-muted-foreground">
-            Loading templates...
+      {/* Templates Grid with Drag and Drop */}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={filteredTemplates.map(t => t.id)} strategy={rectSortingStrategy}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {loading ? (
+              <div className="col-span-full text-center py-8 text-muted-foreground">
+                Loading templates...
+              </div>
+            ) : filteredTemplates.length === 0 ? (
+              <div className="col-span-full text-center py-8">
+                <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-50" />
+                <p className="text-muted-foreground text-sm">
+                  {searchTerm || selectedCategory !== 'all' 
+                    ? 'No templates match your filters' 
+                    : 'Create your first template to get started'}
+                </p>
+              </div>
+            ) : (
+              filteredTemplates.map((template) => (
+                <SortableTemplateCard key={template.id} id={template.id}>
+                  <Card 
+                    variant="analytics"
+                    className={`hover:shadow-md transition-all ${
+                      template.is_primary ? 'ring-2 ring-primary/30' : ''
+                    }`}
+                  >
+                    <CardContent className="p-4">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium text-sm truncate">{template.name}</h3>
+                            {template.is_primary && (
+                              <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500 shrink-0" />
+                            )}
+                          </div>
+                          <Badge variant="secondary" className="mt-1 text-xs">
+                            {template.category}
+                          </Badge>
+                        </div>
+                        <GripVertical className="h-4 w-4 text-muted-foreground/50 cursor-grab shrink-0 drag-handle" />
+                      </div>
+                      
+                      {/* Status Toggle */}
+                      <div className={`p-2.5 rounded-md border transition-all mb-3 ${
+                        template.active 
+                          ? 'bg-primary/5 border-primary/20' 
+                          : 'bg-muted/50 border-border'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">
+                            {template.active ? 'Active' : 'Inactive'}
+                          </span>
+                          <Button
+                            variant={template.active ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => toggleActive(template.id, template.active ?? false)}
+                            className="h-7 text-xs"
+                          >
+                            {template.active ? (
+                              <><ToggleRight className="h-3.5 w-3.5 mr-1" /> On</>
+                            ) : (
+                              <><ToggleLeft className="h-3.5 w-3.5 mr-1" /> Off</>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {/* Actions */}
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditor(template)}
+                          className="flex-1 h-8 text-xs"
+                        >
+                          <Edit3 className="h-3.5 w-3.5 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPrimaryTemplate(template.id)}
+                          className="h-8 px-2"
+                          disabled={template.is_primary}
+                          title="Set as primary"
+                        >
+                          <Star className={`h-3.5 w-3.5 ${template.is_primary ? 'text-yellow-500 fill-yellow-500' : ''}`} />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => duplicateTemplate(template)}
+                          className="h-8 px-2"
+                          title="Duplicate"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteTemplate(template.id)}
+                          className="h-8 px-2 text-destructive hover:text-destructive"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </SortableTemplateCard>
+              ))
+            )}
           </div>
-        ) : filteredTemplates.length === 0 ? (
-          <div className="col-span-full text-center py-8">
-            <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-50" />
-            <p className="text-muted-foreground text-sm">
-              {searchTerm || selectedCategory !== 'all' 
-                ? 'No templates match your filters' 
-                : 'Create your first template to get started'}
-            </p>
-          </div>
-        ) : (
-          filteredTemplates.map((template) => (
-            <Card 
-              key={template.id} 
-              variant="analytics"
-              className={`hover:shadow-md transition-all ${
-                template.is_primary ? 'ring-2 ring-primary/30' : ''
-              }`}
-            >
-              <CardContent className="p-4">
-                {/* Header */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-sm truncate">{template.name}</h3>
-                      {template.is_primary && (
-                        <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500 shrink-0" />
-                      )}
-                    </div>
-                    <Badge variant="secondary" className="mt-1 text-xs">
-                      {template.category}
-                    </Badge>
-                  </div>
-                  <GripVertical className="h-4 w-4 text-muted-foreground/50 cursor-grab shrink-0" />
-                </div>
-                
-                {/* Status Toggle */}
-                <div className={`p-2.5 rounded-md border transition-all mb-3 ${
-                  template.active 
-                    ? 'bg-primary/5 border-primary/20' 
-                    : 'bg-muted/50 border-border'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">
-                      {template.active ? 'Active' : 'Inactive'}
-                    </span>
-                    <Button
-                      variant={template.active ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => toggleActive(template.id, template.active ?? false)}
-                      className="h-7 text-xs"
-                    >
-                      {template.active ? (
-                        <><ToggleRight className="h-3.5 w-3.5 mr-1" /> On</>
-                      ) : (
-                        <><ToggleLeft className="h-3.5 w-3.5 mr-1" /> Off</>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-                
-                {/* Actions */}
-                <div className="flex items-center gap-1.5">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openEditor(template)}
-                    className="flex-1 h-8 text-xs"
-                  >
-                    <Edit3 className="h-3.5 w-3.5 mr-1" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPrimaryTemplate(template.id)}
-                    className="h-8 px-2"
-                    disabled={template.is_primary}
-                    title="Set as primary"
-                  >
-                    <Star className={`h-3.5 w-3.5 ${template.is_primary ? 'text-yellow-500 fill-yellow-500' : ''}`} />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => duplicateTemplate(template)}
-                    className="h-8 px-2"
-                    title="Duplicate"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => deleteTemplate(template.id)}
-                    className="h-8 px-2 text-destructive hover:text-destructive"
-                    title="Delete"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+        </SortableContext>
+      </DndContext>
 
       {/* Create Template Dialog */}
       <Dialog open={isCreating} onOpenChange={setIsCreating}>
