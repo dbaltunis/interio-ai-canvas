@@ -173,12 +173,12 @@ export const TeamMembersWidget = () => {
       </CardHeader>
       <CardContent className="pt-0">
         {sortedTeamMembers.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <Users className="h-10 w-10 mx-auto mb-2 opacity-20" />
+        <div className="text-center py-6 text-muted-foreground">
+            <Users className="h-8 w-8 mx-auto mb-2 opacity-20" />
             <p className="text-xs">No team members yet</p>
           </div>
         ) : (
-          <ScrollArea className="h-[400px] pr-4">
+          <ScrollArea className="h-[280px] pr-4">
             <div className="space-y-2">
               {sortedTeamMembers.map((member) => {
                 const status = getPresenceStatus(member.id);

@@ -14,46 +14,45 @@ export const CalendarConnectionCard = () => {
 
   if (isConnected) {
     return (
-      <Card className="border-green-200 bg-green-50/50">
-        <CardHeader className="pb-2 sm:pb-3">
+      <Card className="border border-border/50 bg-card/50">
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-2">
-            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 shrink-0" />
-              <span className="truncate">Calendar Connected</span>
+            <CardTitle className="flex items-center gap-2 text-base font-semibold">
+              <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+              Calendar
             </CardTitle>
-            <Badge variant="outline" className="text-green-700 border-green-300 text-xs shrink-0">
-              Active
+            <Badge variant="secondary" className="text-green-700 text-[10px] shrink-0">
+              Connected
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-2 sm:space-y-3">
-          <p className="text-xs sm:text-sm text-muted-foreground">
+        <CardContent className="pt-0 space-y-3">
+          <p className="text-xs text-muted-foreground">
             Syncing appointments automatically
           </p>
           
           {integration.last_sync && (
-            <p className="text-[10px] sm:text-xs text-muted-foreground">
+            <p className="text-[10px] text-muted-foreground">
               Last synced: {formatDistanceToNow(new Date(integration.last_sync), { addSuffix: true })}
             </p>
           )}
           
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2">
             <Button
               size="sm"
               variant="outline"
               onClick={() => syncFromGoogle()}
               disabled={isSyncingFromGoogle}
-              className="flex items-center gap-2 text-xs"
+              className="h-7 gap-1.5 text-xs"
             >
-              <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 ${isSyncingFromGoogle ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Sync Now</span>
-              <span className="sm:hidden">Sync</span>
+              <RefreshCw className={`h-3 w-3 ${isSyncingFromGoogle ? 'animate-spin' : ''}`} />
+              Sync
             </Button>
             <Button
               size="sm"
               variant="ghost"
               onClick={() => disconnect()}
-              className="text-destructive hover:text-destructive text-xs"
+              className="h-7 text-xs text-destructive hover:text-destructive"
             >
               Disconnect
             </Button>
@@ -64,30 +63,29 @@ export const CalendarConnectionCard = () => {
   }
 
   return (
-    <Card className="border-dashed">
-      <CardHeader className="pb-2 sm:pb-3">
-        <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-          <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-          <span className="truncate">Connect Google Calendar</span>
+    <Card className="border border-dashed border-border/50 bg-card/50">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base font-semibold">
+          <Calendar className="h-4 w-4" />
+          Google Calendar
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2 sm:space-y-3">
-        <p className="text-xs sm:text-sm text-muted-foreground">
-          Sync appointments across all your devices
+      <CardContent className="pt-0 space-y-3">
+        <p className="text-xs text-muted-foreground">
+          Sync appointments across devices
         </p>
         
-        <ul className="text-[10px] sm:text-xs text-muted-foreground space-y-1 list-disc list-inside">
+        <ul className="text-[10px] text-muted-foreground space-y-1 list-disc list-inside">
           <li>Two-way sync</li>
-          <li className="hidden sm:list-item">View in your calendar app</li>
           <li>Get notifications</li>
         </ul>
         
         <Button
           onClick={() => connect({ useRedirect: false })}
-          className="w-full flex items-center gap-2 text-xs sm:text-sm"
+          className="w-full h-8 text-xs"
           size="sm"
         >
-          <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+          <Calendar className="h-3 w-3 mr-1.5" />
           Connect Calendar
         </Button>
       </CardContent>
