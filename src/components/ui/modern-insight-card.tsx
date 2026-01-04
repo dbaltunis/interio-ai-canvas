@@ -45,43 +45,39 @@ export const ModernInsightCard = ({
 
   return (
     <Card 
+      variant="analytics"
       className={cn(
-        "modern-card group transition-all duration-300",
-        isHighlight && "modern-card-elevated company-gradient-soft text-white",
-        isCompact && "p-4",
-        action && "cursor-pointer hover-lift interactive-bounce",
+        "group transition-all duration-200",
+        isHighlight && "bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20",
+        action && "cursor-pointer hover:border-primary/30",
         className
       )}
       onClick={action?.onClick}
     >
       <CardHeader className={cn(
         "flex flex-row items-center justify-between space-y-0",
-        isCompact ? "pb-2" : "pb-3"
+        isCompact ? "pb-1 p-3" : "pb-2 p-4"
       )}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {Icon && (
             <div className={cn(
-              "p-2 rounded-lg",
+              "p-1.5 rounded-lg transition-colors",
               isHighlight 
-                ? "bg-white/20" 
-                : "bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors"
+                ? "bg-primary/20" 
+                : "bg-primary/10 text-primary group-hover:bg-primary/15"
             )}>
-              <Icon className="h-4 w-4" />
+              <Icon className="h-3.5 w-3.5" />
             </div>
           )}
           <div>
             <CardTitle className={cn(
-              "font-medium",
-              isCompact ? "text-sm" : "text-base",
-              isHighlight ? "text-white" : "text-foreground"
+              "text-sm font-medium text-muted-foreground",
+              isHighlight && "text-foreground"
             )}>
               {title}
             </CardTitle>
             {description && !isCompact && (
-              <p className={cn(
-                "text-sm mt-1",
-                isHighlight ? "text-white/80" : "text-muted-foreground"
-              )}>
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {description}
               </p>
             )}
@@ -98,31 +94,30 @@ export const ModernInsightCard = ({
         )}
       </CardHeader>
 
-      <CardContent className={cn("space-y-3", isCompact && "space-y-2")}>
+      <CardContent className={cn(
+        "space-y-2",
+        isCompact ? "p-3 pt-0" : "p-4 pt-0"
+      )}>
         {/* Main Value */}
         <div className="flex items-end justify-between">
-          <div className="flex items-baseline gap-2">
-            <span className={cn(
-              "font-bold",
-              isCompact ? "text-xl" : "text-2xl",
-              isHighlight ? "text-white" : "text-foreground"
-            )}>
-              {value}
-            </span>
-          </div>
+          <span className={cn(
+            "font-bold",
+            isCompact ? "text-xl" : "text-2xl",
+            isHighlight ? "text-foreground" : "text-foreground"
+          )}>
+            {value}
+          </span>
           
           {/* Trend */}
           {trend && (
             <div className={cn(
-              "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
+              "flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium",
               trend.isPositive 
                 ? "bg-green-100 text-green-700" 
-                : "bg-red-100 text-red-700",
-              isHighlight && "bg-white/20 text-white"
+                : "bg-red-100 text-red-700"
             )}>
               <TrendIcon className="h-3 w-3" />
               <span>{Math.abs(trend.value)}%</span>
-              {trend.label && <span className="hidden sm:inline">· {trend.label}</span>}
             </div>
           )}
         </div>
@@ -133,17 +128,16 @@ export const ModernInsightCard = ({
             value={progress} 
             size="sm" 
             variant={status === 'success' ? 'success' : 'default'}
-            className={isHighlight ? "opacity-80" : ""}
           />
         )}
 
         {/* Additional Details for Detailed Variant */}
         {isDetailed && (
-          <div className="space-y-2 pt-2 border-t border-border/50">
-            <div className="flex items-center gap-2">
+          <div className="pt-1.5 border-t border-border/50">
+            <div className="flex items-center gap-1.5">
               <Sparkles className="h-3 w-3 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">
-                Updated 2 minutes ago
+                Updated 2 min ago
               </span>
             </div>
           </div>

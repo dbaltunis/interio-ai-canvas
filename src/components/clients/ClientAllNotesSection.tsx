@@ -75,10 +75,10 @@ export const ClientAllNotesSection = ({ clientId, canEditClient = true }: Client
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="py-8">
+      <Card variant="analytics">
+        <CardContent className="py-6">
           <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
           </div>
         </CardContent>
       </Card>
@@ -86,38 +86,38 @@ export const ClientAllNotesSection = ({ clientId, canEditClient = true }: Client
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
+    <Card variant="analytics">
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-primary" />
-            Notes & Activity
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Notes
             {notes.length > 0 && (
-              <Badge variant="secondary" className="ml-1 text-xs">{notes.length}</Badge>
+              <Badge variant="secondary" className="text-xs">{notes.length}</Badge>
             )}
           </CardTitle>
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => setIsAddingNote(!isAddingNote)}
-            className="gap-2"
+            className="h-7 text-xs"
             disabled={!canEditClient}
           >
             {isAddingNote ? (
               <>
-                <X className="h-4 w-4" />
+                <X className="h-3 w-3 mr-1" />
                 Cancel
               </>
             ) : (
               <>
-                <Plus className="h-4 w-4" />
-                Add Note
+                <Plus className="h-3 w-3 mr-1" />
+                Add
               </>
             )}
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="p-3 space-y-3">
         {/* Add Note Form */}
         {isAddingNote && (
           <div className="p-4 border rounded-lg bg-muted/30 space-y-3">
@@ -162,13 +162,12 @@ export const ClientAllNotesSection = ({ clientId, canEditClient = true }: Client
 
         {/* Unified Notes List */}
         {notes.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No notes yet</p>
-            <p className="text-xs mt-1">Add notes to track client interactions and project updates</p>
+          <div className="empty-state">
+            <MessageSquare className="empty-state-icon" />
+            <p className="empty-state-text">No notes yet</p>
           </div>
         ) : (
-          <ScrollArea className="max-h-[400px]">
+          <ScrollArea className="widget-scroll">
             <div className="space-y-3 pr-4">
               {notes.map((note) => (
                 <div 

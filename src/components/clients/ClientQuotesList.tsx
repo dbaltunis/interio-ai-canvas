@@ -1,8 +1,8 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, FileText, Calendar, DollarSign, Eye } from "lucide-react";
 import { useQuotes } from "@/hooks/useQuotes";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
@@ -35,102 +35,81 @@ export const ClientQuotesList = ({ clientId }: ClientQuotesListProps) => {
   };
 
   if (isLoading) {
-    return <div className="text-center py-4">Loading quotes...</div>;
+    return <div className="text-center py-4 text-sm text-muted-foreground">Loading quotes...</div>;
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card variant="analytics">
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Client Quotes
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <FileText className="h-4 w-4" />
+            Quotes
           </CardTitle>
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-2" />
+          <Button size="sm" className="h-7 text-xs">
+            <Plus className="h-3 w-3 mr-1" />
             New Quote
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3">
         {quotes.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
-            <p>No quotes found for this client</p>
-            <Button className="mt-2" variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              Create First Quote
+          <div className="empty-state">
+            <FileText className="empty-state-icon" />
+            <p className="empty-state-text">No quotes found</p>
+            <Button size="sm" variant="outline" className="h-7 text-xs mt-2">
+              <Plus className="h-3 w-3 mr-1" />
+              Create Quote
             </Button>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Quote Number</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Valid Until</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {quotes.map((quote) => (
-                <TableRow key={quote.id} className="hover:bg-muted/50">
-                  <TableCell>
-                    <div className="font-medium">
-                      {quote.quote_number || `Quote #${quote.id.slice(0, 8)}`}
-                    </div>
-                    {quote.notes && (
-                      <div className="text-sm text-muted-foreground truncate max-w-xs mt-1">
-                        {quote.notes}
+          <ScrollArea className="widget-scroll">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Quote</TableHead>
+                  <TableHead className="text-xs">Status</TableHead>
+                  <TableHead className="text-xs">Amount</TableHead>
+                  <TableHead className="text-xs">Created</TableHead>
+                  <TableHead className="text-xs"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {quotes.map((quote) => (
+                  <TableRow key={quote.id} className="hover:bg-muted/50">
+                    <TableCell className="py-2">
+                      <div className="text-sm font-medium">
+                        {quote.quote_number || `#${quote.id.slice(0, 6)}`}
                       </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={`${getStatusColor(quote.status || 'draft')} border`} variant="secondary">
-                      {quote.status || 'draft'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center font-medium text-green-600">
-                      <DollarSign className="h-3 w-3 mr-1" />
-                      {quote.total_amount?.toLocaleString('en-US', { 
-                        style: 'currency', 
-                        currency: currency 
-                      }) || '$0.00'}
-                    </div>
-                    {quote.subtotal !== quote.total_amount && (
-                      <div className="text-sm text-muted-foreground">
-                        Subtotal: {quote.subtotal?.toLocaleString('en-US', { 
+                    </TableCell>
+                    <TableCell className="py-2">
+                      <Badge className={`${getStatusColor(quote.status || 'draft')} border text-xs`} variant="secondary">
+                        {quote.status || 'draft'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="py-2">
+                      <span className="text-sm font-medium text-green-600">
+                        {quote.total_amount?.toLocaleString('en-US', { 
                           style: 'currency', 
                           currency: currency 
                         }) || '$0.00'}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {quote.valid_until ? new Date(quote.valid_until).toLocaleDateString() : 'No expiry'}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {new Date(quote.created_at).toLocaleDateString()}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm">
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-2">
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(quote.created_at).toLocaleDateString()}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-2">
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
         )}
       </CardContent>
     </Card>

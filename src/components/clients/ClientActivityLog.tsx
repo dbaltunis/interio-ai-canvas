@@ -47,9 +47,9 @@ export const ClientActivityLog = ({ clientId, canEditClient = true }: ClientActi
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-12 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+      <Card variant="analytics">
+        <CardContent className="p-6 text-center">
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary mx-auto"></div>
         </CardContent>
       </Card>
     );
@@ -57,34 +57,34 @@ export const ClientActivityLog = ({ clientId, canEditClient = true }: ClientActi
 
   return (
     <>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Activity Timeline</CardTitle>
-          <Button onClick={() => setShowAddDialog(true)} size="sm" disabled={!canEditClient}>
-            <StickyNote className="h-4 w-4 mr-2" />
-            Add Note
+      <Card variant="analytics">
+        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Activity</CardTitle>
+          <Button onClick={() => setShowAddDialog(true)} size="sm" disabled={!canEditClient} className="h-7 text-xs">
+            <StickyNote className="h-3 w-3 mr-1" />
+            Add
           </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3">
           {!activities || activities.length === 0 ? (
-            <div className="text-center py-12">
-              <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground mb-4">No activities recorded yet</p>
-              <Button onClick={() => setShowAddDialog(true)} variant="outline" disabled={!canEditClient}>
-                <StickyNote className="h-4 w-4 mr-2" />
-                Add First Note
+            <div className="empty-state">
+              <MessageSquare className="empty-state-icon" />
+              <p className="empty-state-text">No activities yet</p>
+              <Button onClick={() => setShowAddDialog(true)} variant="outline" disabled={!canEditClient} className="h-7 text-xs mt-2">
+                <StickyNote className="h-3 w-3 mr-1" />
+                Add First
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {activities.map((activity) => {
                 const Icon = activityIcons[activity.activity_type] || MessageSquare;
                 const colorClass = activityColors[activity.activity_type] || "bg-gray-100 text-gray-700";
 
                 return (
-                  <div key={activity.id} className="flex gap-4 pb-4 border-b last:border-0 last:pb-0">
-                    <div className={`flex-shrink-0 w-10 h-10 rounded-full ${colorClass} flex items-center justify-center`}>
-                      <Icon className="h-5 w-5" />
+                  <div key={activity.id} className="flex gap-3 pb-3 border-b last:border-0 last:pb-0">
+                    <div className={`flex-shrink-0 w-8 h-8 rounded-full ${colorClass} flex items-center justify-center`}>
+                      <Icon className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">

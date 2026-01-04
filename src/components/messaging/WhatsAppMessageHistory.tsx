@@ -150,27 +150,29 @@ export const WhatsAppMessageHistory = () => {
   const hasActiveFilters = statusFilter !== "all";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 rounded-lg">
             <MessageSquare className="h-5 w-5 text-green-600" />
-            WhatsApp Message History
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            View all WhatsApp messages sent from this account
-          </p>
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">WhatsApp Messages</h2>
+            <p className="text-xs text-muted-foreground">
+              Recent messages from your account
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {/* Always-visible Search Input */}
           <div className="relative w-48">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-muted-foreground h-3.5 w-3.5" />
             <Input
-              placeholder="Search messages..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-9"
+              className="pl-8 h-8 text-sm"
             />
           </div>
           
@@ -179,10 +181,10 @@ export const WhatsAppMessageHistory = () => {
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                size="sm"
-                className={`h-9 relative ${hasActiveFilters ? 'border-primary bg-primary/5' : ''}`}
+                size="icon"
+                className={`h-8 w-8 relative ${hasActiveFilters ? 'border-primary bg-primary/5' : ''}`}
               >
-                <Filter className="h-4 w-4" />
+                <Filter className="h-3.5 w-3.5" />
                 {hasActiveFilters && (
                   <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
                 )}
@@ -221,19 +223,19 @@ export const WhatsAppMessageHistory = () => {
           <Button
             size="sm"
             onClick={handleNewMessage}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 hover:bg-green-700 h-8 text-xs"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            New Message
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            New
           </Button>
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
             onClick={() => refetch()}
             disabled={isRefetching}
+            className="h-8 w-8"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefetching ? 'animate-spin' : ''}`} />
-            Refresh
+            <RefreshCw className={`h-3.5 w-3.5 ${isRefetching ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </div>
@@ -289,14 +291,11 @@ export const WhatsAppMessageHistory = () => {
       )}
 
       {/* Messages List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Recent Messages</CardTitle>
-          <CardDescription>
-            Last 50 WhatsApp messages sent from your account
-          </CardDescription>
+      <Card variant="analytics">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Recent Messages</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3">
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3, 4, 5].map((i) => (

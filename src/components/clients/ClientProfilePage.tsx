@@ -218,7 +218,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         {/* Left Column - Client Details & Files (Collapsible) */}
         <div className="lg:col-span-3 space-y-3">
           <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
-            <Card>
+            <Card variant="analytics">
               <CollapsibleTrigger asChild>
                 <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-2.5 px-3">
                   <div className="flex items-center justify-between">
@@ -349,7 +349,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
 
           {/* Files Compact */}
           {user && (
-            <Card>
+            <Card variant="analytics">
               <CardHeader className="py-2.5 px-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xs font-medium flex items-center gap-1.5">
@@ -368,7 +368,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
 
         {/* Middle Column - Projects (Elevated) */}
         <div className="lg:col-span-4">
-          <Card>
+          <Card variant="analytics">
             <CardHeader className="py-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
