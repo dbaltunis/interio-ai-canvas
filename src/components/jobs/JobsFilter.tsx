@@ -57,19 +57,6 @@ export const JobsFilter = ({
           
           <div className="space-y-3">
             <div>
-              <label className="text-sm font-medium mb-2 block">Search</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search jobs, clients, or job numbers..."
-                  value={searchTerm}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div>
               <label className="text-sm font-medium mb-2 block">Status</label>
               <Select value={statusFilter} onValueChange={onStatusChange}>
                 <SelectTrigger>

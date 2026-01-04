@@ -59,8 +59,7 @@ export const CalendarFilters = ({ onFiltersChange }: CalendarFiltersProps) => {
     onFiltersChange(clearedFilters);
   };
 
-  const hasActiveFilters = filters.searchTerm || 
-    filters.userIds.length > 0 || 
+  const hasActiveFilters = filters.userIds.length > 0 || 
     filters.eventTypes.length > 0 || 
     filters.statuses.length > 0;
 
@@ -116,20 +115,6 @@ export const CalendarFilters = ({ onFiltersChange }: CalendarFiltersProps) => {
                 Clear All
               </Button>
             )}
-          </div>
-
-          {/* Search */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Search</label>
-            <div className="relative">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search by event name, client..."
-                value={filters.searchTerm}
-                onChange={(e) => updateFilters({ searchTerm: e.target.value })}
-                className="pl-10"
-              />
-            </div>
           </div>
 
           {/* Team Members Filter */}

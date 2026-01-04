@@ -2,7 +2,10 @@ import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, CheckCircle, CheckCheck, Clock, AlertCircle, RefreshCw, User, Phone, Users, Briefcase, ArrowRight, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { MessageSquare, CheckCircle, CheckCheck, Clock, AlertCircle, RefreshCw, User, Phone, Users, Briefcase, ArrowRight, Plus, Search, Filter } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -127,6 +130,25 @@ export const WhatsAppMessageHistory = () => {
     return format(date, 'MMM d');
   };
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // Filter messages by search and status
+  const filteredMessages = React.useMemo(() => {
+    if (!messages) return [];
+    return messages.filter(msg => {
+      const matchesSearch = searchQuery === "" ||
+        msg.client_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        msg.message_body?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        msg.to_number?.includes(searchQuery);
+      const matchesStatus = statusFilter === "all" || msg.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [messages, searchQuery, statusFilter]);
+
+  const hasActiveFilters = statusFilter !== "all";
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -141,6 +163,61 @@ export const WhatsAppMessageHistory = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Always-visible Search Input */}
+          <div className="relative w-48">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search messages..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </div>
+          
+          {/* Filter Button */}
+          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={`h-9 relative ${hasActiveFilters ? 'border-primary bg-primary/5' : ''}`}
+              >
+                <Filter className="h-4 w-4" />
+                {hasActiveFilters && (
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-3" align="end">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm">Filter Messages</h4>
+                  {hasActiveFilters && (
+                    <Button variant="ghost" size="sm" onClick={() => setStatusFilter("all")} className="text-xs h-6 px-2">
+                      Clear
+                    </Button>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Status</label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="h-8">
+                      <SelectValue placeholder="All statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="delivered">Delivered</SelectItem>
+                      <SelectItem value="sent">Sent</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="failed">Failed</SelectItem>
+                      <SelectItem value="read">Read</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          
           <Button
             size="sm"
             onClick={handleNewMessage}
@@ -226,9 +303,9 @@ export const WhatsAppMessageHistory = () => {
                 <Skeleton key={i} className="h-20 w-full" />
               ))}
             </div>
-          ) : messages && messages.length > 0 ? (
+          ) : filteredMessages && filteredMessages.length > 0 ? (
             <div className="space-y-2">
-              {messages.map((message) => (
+              {filteredMessages.map((message) => (
                 <div
                   key={message.id}
                   className="group flex gap-3 p-3 rounded-lg hover:bg-muted/30 transition-colors"
