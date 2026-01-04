@@ -139,7 +139,7 @@ export const QuotationTab = ({
     staleTime: 5 * 60 * 1000
   });
 
-  // Fetch active quote templates - check if any valid templates exist
+  // Fetch active quote templates - ordered by primary first, then display_order
   const {
     data: activeTemplates,
     isLoading: templatesLoading,
@@ -147,12 +147,14 @@ export const QuotationTab = ({
   } = useQuery({
     queryKey: ["quote-templates"],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.from("quote_templates").select("*").eq("active", true).order("updated_at", {
-        ascending: false
-      });
+      const { data, error } = await supabase
+        .from("quote_templates")
+        .select("*")
+        .eq("active", true)
+        .order("is_primary", { ascending: false, nullsFirst: false })
+        .order("display_order", { ascending: true, nullsFirst: false })
+        .order("updated_at", { ascending: false });
+      
       if (error) throw error;
 
       // Filter out templates with invalid or missing blocks
