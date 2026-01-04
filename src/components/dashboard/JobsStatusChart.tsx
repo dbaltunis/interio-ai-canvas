@@ -108,7 +108,7 @@ export const JobsStatusChart = () => {
 
   if (isLoading) {
     return (
-      <Card className="border-border/40">
+      <Card variant="analytics">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">Jobs by Status</CardTitle>
         </CardHeader>
@@ -121,19 +121,19 @@ export const JobsStatusChart = () => {
 
   if (!chartData.length) {
     return (
-      <Card className="border-border/40">
+      <Card variant="analytics">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">Jobs by Status</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-[180px]">
-          <p className="text-xs text-muted-foreground">No jobs yet</p>
+          <p className="text-xs text-muted-foreground">No jobs for this period</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="border-border/40">
+    <Card variant="analytics">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium text-muted-foreground">Jobs by Status</CardTitle>

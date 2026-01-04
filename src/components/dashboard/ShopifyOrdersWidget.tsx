@@ -34,7 +34,7 @@ export const ShopifyOrdersWidget = () => {
   };
 
   return (
-    <Card className="border-border/40 h-full flex flex-col">
+    <Card variant="analytics" className="h-full flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -66,7 +66,7 @@ export const ShopifyOrdersWidget = () => {
         ) : (
           <div className="grid grid-cols-2 gap-2">
             {/* Revenue */}
-            <div className="p-2 rounded-md border bg-card/50">
+            <div className="p-2 rounded-md border border-border/50 bg-card">
               <div className="flex items-center gap-1.5 mb-1">
                 <DollarSign className="h-3 w-3 text-green-600" />
                 <span className="text-xs text-muted-foreground">Revenue</span>
@@ -77,7 +77,7 @@ export const ShopifyOrdersWidget = () => {
             </div>
 
             {/* Orders */}
-            <div className="p-2 rounded-md border bg-card/50">
+            <div className="p-2 rounded-md border border-border/50 bg-card">
               <div className="flex items-center gap-1.5 mb-1">
                 <ShoppingCart className="h-3 w-3 text-blue-600" />
                 <span className="text-xs text-muted-foreground">Orders</span>
@@ -86,7 +86,7 @@ export const ShopifyOrdersWidget = () => {
             </div>
 
             {/* Avg Order */}
-            <div className="p-2 rounded-md border bg-card/50">
+            <div className="p-2 rounded-md border border-border/50 bg-card">
               <div className="flex items-center gap-1.5 mb-1">
                 <TrendingUp className="h-3 w-3 text-purple-600" />
                 <span className="text-xs text-muted-foreground">Avg Order</span>
@@ -97,7 +97,7 @@ export const ShopifyOrdersWidget = () => {
             </div>
 
             {/* Customers */}
-            <div className="p-2 rounded-md border bg-card/50">
+            <div className="p-2 rounded-md border border-border/50 bg-card">
               <div className="flex items-center gap-1.5 mb-1">
                 <Users className="h-3 w-3 text-orange-600" />
                 <span className="text-xs text-muted-foreground">Customers</span>
@@ -109,7 +109,7 @@ export const ShopifyOrdersWidget = () => {
         
         {/* Footer with store link */}
         {integration?.shop_domain && (
-          <div className="mt-2 pt-2 border-t flex items-center justify-between">
+          <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-between">
             <span className="text-xs text-muted-foreground truncate">{integration.shop_domain}</span>
             <Button
               size="sm"
