@@ -233,29 +233,33 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
 
   // Full mode (for tabs/standalone)
   return (
-    <Card>
-      <CardHeader>
+    <Card variant="analytics">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Client Projects
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-primary/10 rounded-md">
+              <Calendar className="h-4 w-4 text-primary" />
+            </div>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Client Projects
+            </CardTitle>
+          </div>
           {hasCreateJobsPermission && (
-            <Button size="sm" onClick={handleCreateProject} disabled={isCreating}>
-              <Plus className="h-4 w-4 mr-2" />
-              {isCreating ? "Creating..." : "New Project"}
+            <Button size="sm" onClick={handleCreateProject} disabled={isCreating} className="h-7 text-xs">
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              {isCreating ? "Creating..." : "New"}
             </Button>
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         {!projects || projects.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Calendar className="mx-auto h-12 w-12 mb-4 opacity-50" />
-            <p>No projects found for this client</p>
+          <div className="empty-state">
+            <Calendar className="empty-state-icon" />
+            <p className="empty-state-title">No projects found</p>
             {hasCreateJobsPermission && (
-              <Button className="mt-2" variant="outline" onClick={handleCreateProject} disabled={isCreating}>
-                <Plus className="h-4 w-4 mr-2" />
+              <Button className="mt-3" variant="outline" size="sm" onClick={handleCreateProject} disabled={isCreating}>
+                <Plus className="h-3.5 w-3.5 mr-1" />
                 {isCreating ? "Creating..." : "Create First Project"}
               </Button>
             )}

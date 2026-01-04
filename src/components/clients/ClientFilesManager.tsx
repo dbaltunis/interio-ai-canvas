@@ -230,25 +230,28 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
 
   // Full mode (original)
   return (
-    <Card>
-      <CardHeader>
+    <Card variant="analytics">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <FolderOpen className="h-5 w-5" />
-            Client Files & Documents
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-primary/10 rounded-md">
+              <FolderOpen className="h-4 w-4 text-primary" />
+            </div>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Files & Documents
+            </CardTitle>
+          </div>
           
           {/* Filter */}
           {files && files.length > 0 && (
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
               <Select value={filterProjectId} onValueChange={setFilterProjectId}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-[160px] h-7 text-xs">
                   <SelectValue placeholder="Filter by project" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Files</SelectItem>
-                  <SelectItem value="none">General (No Project)</SelectItem>
+                  <SelectItem value="none">General</SelectItem>
                   {projects?.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.name}
@@ -260,7 +263,7 @@ export const ClientFilesManager = ({ clientId, userId, canEditClient = true, com
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-0">
         {/* Upload Section with Clear Steps */}
         <div className="space-y-4 p-5 border rounded-lg bg-card">
           <div className="flex items-start justify-between">
