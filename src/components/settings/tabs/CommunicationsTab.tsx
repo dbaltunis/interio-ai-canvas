@@ -19,9 +19,13 @@ export const CommunicationsTab = () => {
     integrations
   } = useIntegrations();
 
-  // Check Twilio integration
+  // Check Twilio integration - validate credentials exist and are not placeholders
   const twilioIntegration = integrations.find(i => i.integration_type === 'twilio');
-  const hasTwilioIntegration = twilioIntegration?.active === true;
+  const hasTwilioIntegration = twilioIntegration?.active === true && 
+    twilioIntegration?.api_credentials?.account_sid && 
+    twilioIntegration?.api_credentials?.account_sid !== '-' &&
+    twilioIntegration?.api_credentials?.auth_token &&
+    twilioIntegration?.api_credentials?.auth_token !== '-';
 
   // Check WhatsApp BYOA status
   const {
