@@ -2,7 +2,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useProjects } from "@/hooks/useProjects";
 import { useJobStatuses } from "@/hooks/useJobStatuses";
+import { useDashboardDate } from "@/contexts/DashboardDateContext";
 import { useMemo } from "react";
+import { isWithinInterval, parseISO } from "date-fns";
 
 // Fallback colors only used if status color not found in database
 const FALLBACK_COLORS: Record<string, string> = {
@@ -17,8 +19,22 @@ const FALLBACK_COLORS: Record<string, string> = {
 export const JobsStatusChart = () => {
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const { data: jobStatuses, isLoading: statusesLoading } = useJobStatuses();
+  const { dateRange } = useDashboardDate();
 
   const isLoading = projectsLoading || statusesLoading;
+
+  // Filter projects by date range
+  const filteredProjects = useMemo(() => {
+    if (!projects?.length || !dateRange.startDate) return projects || [];
+    
+    return projects.filter(project => {
+      const createdAt = parseISO(project.created_at);
+      return isWithinInterval(createdAt, { 
+        start: dateRange.startDate, 
+        end: dateRange.endDate || dateRange.startDate 
+      });
+    });
+  }, [projects, dateRange]);
 
   // Build a map of status_id -> { name, color } from job_statuses
   const statusMap = useMemo(() => {
@@ -33,11 +49,11 @@ export const JobsStatusChart = () => {
   }, [jobStatuses]);
 
   const chartData = useMemo(() => {
-    if (!projects?.length) return [];
+    if (!filteredProjects?.length) return [];
     
     const statusCounts: Record<string, { count: number; name: string; color: string }> = {};
     
-    projects.forEach(project => {
+    filteredProjects.forEach(project => {
       const statusId = project.status_id || project.status || 'pending';
       
       // Try to get from job_statuses first (by ID)
@@ -71,7 +87,7 @@ export const JobsStatusChart = () => {
         color: data.color,
       }))
       .sort((a, b) => b.value - a.value);
-  }, [projects, statusMap]);
+  }, [filteredProjects, statusMap]);
 
   const total = chartData.reduce((sum, d) => sum + d.value, 0);
 
