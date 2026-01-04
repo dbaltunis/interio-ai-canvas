@@ -83,13 +83,11 @@ export const EmailManagement = () => {
           <div className="p-2 bg-primary/10 rounded-lg">
             <MessageSquare className="h-5 w-5 text-primary" />
           </div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-foreground">Messages</h1>
-            <HelpIcon onClick={() => setShowHelp(true)} />
-            <Badge variant="secondary" className="text-xs">
-              {emails?.length || 0}
-            </Badge>
-          </div>
+          <h1 className="text-lg font-semibold text-foreground">Messages</h1>
+          <HelpIcon onClick={() => setShowHelp(true)} />
+          <Badge variant="secondary" className="text-xs">
+            {emails?.length || 0}
+          </Badge>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative group">

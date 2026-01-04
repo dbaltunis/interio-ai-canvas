@@ -127,14 +127,14 @@ export const CalendarSyncToolbar = ({
   const lastSyncTime = getLastSyncText();
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 bg-muted/20 border-b flex-wrap">
+    <div className="flex items-center gap-2 px-4 py-3 border-b flex-wrap">
       {/* Left section - Navigation controls */}
       {currentDate && view && onTodayClick && onPrevClick && onNextClick && (
-        <div className="flex items-center gap-1 md:gap-2">
-          <div className="p-1.5 bg-primary/10 rounded-lg mr-1">
-            <CalendarIcon className="h-4 w-4 text-primary" />
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <CalendarIcon className="h-5 w-5 text-primary" />
           </div>
-          <span className="text-sm font-semibold text-foreground hidden sm:inline">Calendar</span>
+          <span className="text-lg font-semibold text-foreground hidden sm:inline">Calendar</span>
           <Button
             variant="outline"
             size="sm"
