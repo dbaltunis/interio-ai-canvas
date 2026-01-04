@@ -46,14 +46,14 @@ export const ClientCommunicationsTab = ({
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader className="py-3">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
+      <Card variant="analytics">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
             <MessageCircle className="h-4 w-4" />
-            Communications
+            Messages
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="p-3 space-y-2">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
@@ -66,12 +66,12 @@ export const ClientCommunicationsTab = ({
 
   return (
     <>
-      <Card>
-        <CardHeader className="py-3 pb-2">
+      <Card variant="analytics">
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between gap-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <MessageCircle className="h-4 w-4" />
-              Communications
+              Messages
             </CardTitle>
             {totalMessages > 0 && (
               <Button
