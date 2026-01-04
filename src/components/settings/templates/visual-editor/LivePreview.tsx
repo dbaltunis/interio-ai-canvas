@@ -2105,44 +2105,6 @@ export const LivePreview = ({
                 onDataChange={quoteCustomData}
               />
             ))}
-            
-            {/* Payment Configuration Section - shown after all blocks, ONLY in editor mode (not print) */}
-            {projectData?.quoteId && !isPrintMode && (
-              <>
-                {/* Separator between quote and payment section */}
-                <div className="my-8 border-t-2 border-dashed border-border no-print"></div>
-                
-                <div 
-                  id="payment-section" 
-                  className="mt-0 mb-8 transition-all duration-300 animate-in fade-in-50 slide-in-from-bottom-4 no-print"
-                  style={{
-                    scrollMarginTop: '100px'
-                  }}
-                >
-                  {/* Payment Section Header */}
-                  <div className="mb-6 p-4 bg-primary/5 border-l-4 border-primary rounded-r-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-primary rounded-lg">
-                        <CreditCard className="h-5 w-5 text-primary-foreground" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg">Payment Configuration</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Configure how you want to receive payment for this quote
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <InlinePaymentConfig
-                    quoteId={projectData.quoteId}
-                    total={projectData.total || 0}
-                    currency={projectData.currency || 'USD'}
-                    currentPayment={projectData.payment}
-                  />
-                </div>
-              </>
-            )}
           </div>
           
           {/* Page break indicator every 297mm - subtle */}

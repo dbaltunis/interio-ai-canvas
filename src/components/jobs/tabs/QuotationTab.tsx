@@ -826,6 +826,38 @@ export const QuotationTab = ({
           </div>
         </section>}
 
+      {/* Payment Configuration Section - OUTSIDE the quote document */}
+      {quoteId && !isReadOnly && (
+        <section className="mt-6 px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-4 p-4 bg-primary/5 border-l-4 border-primary rounded-r-lg">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary rounded-lg">
+                  <CreditCard className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Payment Configuration</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Configure how you want to receive payment for this quote
+                  </p>
+                </div>
+              </div>
+            </div>
+            <InlinePaymentConfig
+              quoteId={quoteId}
+              total={projectData?.total || 0}
+              currency={projectData?.currency || 'USD'}
+              currentPayment={projectData?.payment ? {
+                type: projectData.payment.type as 'full' | 'deposit',
+                percentage: projectData.payment.percentage,
+                amount: projectData.payment.amount,
+                status: projectData.payment.status as 'pending' | 'paid' | 'deposit_paid' | 'failed' | undefined
+              } : undefined}
+            />
+          </div>
+        </section>
+      )}
+
       {/* Email Modal */}
       <EmailQuoteModal isOpen={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} project={project} client={client} onSend={handleSendEmail} isSending={isSendingEmail} quotePreview={<LivePreview blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} showDetailedBreakdown={templateSettings.showDetailedBreakdown} showImages={templateSettings.showImages} />} />
 
