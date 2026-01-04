@@ -443,11 +443,10 @@ const canViewJobsExplicit =
               <Button 
                 onClick={() => setShowColumnCustomization(true)}
                 variant="outline"
-                size="sm"
-                className="h-9"
+                size="icon"
+                className="h-9 w-9"
               >
-                <Columns3 className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Edit Columns</span>
+                <Columns3 className="h-4 w-4" />
               </Button>
             )}
             <JobsFilter
