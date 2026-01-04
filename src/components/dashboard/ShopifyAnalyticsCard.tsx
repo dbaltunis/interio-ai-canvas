@@ -123,15 +123,15 @@ export const ShopifyAnalyticsCard = () => {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
+      <Card variant="analytics">
+        <CardHeader className="pb-3">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-3 w-48 mt-2" />
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <CardContent className="pt-0">
+          <div className="grid grid-cols-2 gap-3">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-20" />
+              <Skeleton key={i} className="h-16" />
             ))}
           </div>
         </CardContent>
@@ -165,32 +165,33 @@ export const ShopifyAnalyticsCard = () => {
   const timeSinceSync = Math.floor((Date.now() - lastSyncedDate.getTime()) / 1000 / 60);
 
   return (
-    <Card className="h-full flex flex-col border-primary/20 bg-gradient-to-br from-card to-card/95">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5 text-primary" />
-              Shopify Store Analytics
+    <Card variant="analytics" className="h-full flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <ShoppingBag className="h-4 w-4 text-primary shrink-0" />
+              <span className="truncate">Shopify Store Analytics</span>
             </CardTitle>
-            <CardDescription>
+            <p className="text-xs text-muted-foreground mt-1 truncate">
               {analytics.shop_domain} • Last synced {timeSinceSync < 60 ? `${timeSinceSync}m` : `${Math.floor(timeSinceSync / 60)}h`} ago
-            </CardDescription>
+            </p>
           </div>
           {canManageShopify && (
             <Button
-              variant="outline"
-              size="sm"
+              variant="ghost"
+              size="icon"
               onClick={() => syncAnalytics.mutate()}
               disabled={syncAnalytics.isPending}
               title="Refresh analytics data"
+              className="h-7 w-7 shrink-0"
             >
-              <RefreshCw className={`h-4 w-4 ${syncAnalytics.isPending ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-3.5 w-3.5 ${syncAnalytics.isPending ? 'animate-spin' : ''}`} />
             </Button>
           )}
         </div>
       </CardHeader>
-      <CardContent className="flex-1 space-y-4">
+      <CardContent className="pt-0 space-y-3">
         {/* Product Sync Section */}
         <div className="p-3 rounded-lg border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
           <div className="flex items-center justify-between mb-2">

@@ -142,16 +142,16 @@ export const ShopifyProductsSyncWidget = () => {
 
   if (isLoading) {
     return (
-      <Card className="h-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
+      <Card variant="analytics" className="h-full">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Package className="h-4 w-4" />
             Product Sync Status
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-48">
-            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+        <CardContent className="pt-0">
+          <div className="flex items-center justify-center h-40">
+            <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         </CardContent>
       </Card>
@@ -167,21 +167,21 @@ export const ShopifyProductsSyncWidget = () => {
     .slice(0, 5);
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-primary" />
+    <Card variant="analytics" className="h-full flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Package className="h-4 w-4 text-primary shrink-0" />
             Product Sync Status
-          </div>
+          </CardTitle>
           {stats?.shopDomain && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="secondary" className="text-xs shrink-0">
               {stats.shopDomain}
             </Badge>
           )}
-        </CardTitle>
+        </div>
       </CardHeader>
-      <CardContent className="flex-1 space-y-4">
+      <CardContent className="pt-0 space-y-3">
         {/* Sync Stats */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
