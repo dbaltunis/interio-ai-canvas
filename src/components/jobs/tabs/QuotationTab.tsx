@@ -791,7 +791,7 @@ export const QuotationTab = ({
             boxSizing: 'border-box',
             overflow: 'hidden'
           }}>
-                <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} />
+                <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} blocks={templateBlocks} projectData={projectData} isEditable={!isReadOnly} isPrintMode={false} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} quoteId={quoteId || quoteVersions?.[0]?.id} />
               </div>
             </div>
           </div>
