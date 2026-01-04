@@ -30,18 +30,18 @@ export const FormSection = ({
   children,
   className
 }: FormSectionProps) => {
-  return <Card className={cn("relative overflow-hidden", className)}>
+  return <Card className={cn("relative overflow-hidden border-border bg-card", className)}>
       {savedSuccessfully && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-500 to-emerald-500" />}
       
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 bg-muted/30 border-b border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
               {icon}
             </div>
             <div>
-              <CardTitle className="text-lg font-semibold">{title}</CardTitle>
-              
+              <CardTitle className="text-base font-semibold">{title}</CardTitle>
+              {description && <CardDescription className="text-sm text-muted-foreground">{description}</CardDescription>}
             </div>
           </div>
           
