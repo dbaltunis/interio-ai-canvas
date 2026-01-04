@@ -12,7 +12,7 @@ const cardVariants = cva(
         interactive: "border-border shadow-card hover:shadow-card-hover hover:border-primary/20 cursor-pointer",
         outline: "border-border bg-transparent shadow-none",
         ghost: "border-transparent bg-transparent shadow-none",
-        analytics: "border-border/40 bg-card/50 backdrop-blur-sm shadow-none",
+        analytics: "border-border/40 bg-card shadow-card",
       },
       padding: {
         default: "",
