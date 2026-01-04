@@ -250,48 +250,44 @@ export const EventDetailsModal = ({ isOpen, onClose, appointment }: EventDetails
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
+      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto p-4">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="flex items-center gap-2 text-base">
             {isEditing ? (
               <Input
                 value={editedAppointment?.title || ""}
                 onChange={(e) => setEditedAppointment(prev => prev ? { ...prev, title: e.target.value } : null)}
-                className="text-lg font-semibold"
+                className="h-8 text-sm font-semibold"
               />
             ) : (
               <>
-                <div className={`w-3 h-3 rounded-full ${getEventTypeColor(appointment)}`} />
-                {appointment.title}
+                <div className={`w-2.5 h-2.5 rounded-full ${getEventTypeColor(appointment)}`} />
+                <span className="truncate">{appointment.title}</span>
               </>
             )}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Event Details */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Badge className={`${getStatusColor(appointment.status)} text-white`}>
+        <div className="space-y-3">
+          {/* Event Details - Compact */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge className={`${getStatusColor(appointment.status)} text-white text-[10px] h-5`}>
                 {appointment.status}
               </Badge>
-              <Badge variant="outline">
+              <Badge variant="outline" className="text-[10px] h-5">
                 {appointment.appointment_type}
               </Badge>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">
-                  {formattedDate || 'Loading...'}
-                </span>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <CalendarIcon className="h-3 w-3" />
+                <span>{formattedDate || 'Loading...'}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">
-                  {formattedStartTime || 'Loading...'} - {formattedEndTime || 'Loading...'}
-                </span>
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <span>{formattedStartTime || '...'} - {formattedEndTime || '...'}</span>
               </div>
             </div>
 

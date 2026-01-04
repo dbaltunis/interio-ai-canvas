@@ -107,112 +107,118 @@ export const BookingInterfaceDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl">Book Appointment</DialogTitle>
-          <DialogDescription>
-            Schedule with {schedulerName} on {format(date, 'EEEE, MMMM d, yyyy')}
+      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto p-4">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-base">Book Appointment</DialogTitle>
+          <DialogDescription className="text-xs">
+            {schedulerName} • {format(date, 'EEE, MMM d')}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Available Time Slots */}
-          <div className="space-y-3">
-            <Label className="text-base font-semibold flex items-center gap-2">
-              <Clock className="w-4 h-4" />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Available Time Slots - Compact */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium flex items-center gap-1.5">
+              <Clock className="w-3 h-3" />
               Select Time
             </Label>
-            <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-1.5">
               {availableSlots.map((slot) => (
                 <Button
                   key={slot.id}
                   type="button"
                   variant={selectedSlot === slot.id ? "default" : "outline"}
-                  className="h-auto py-3 flex flex-col items-center"
+                  className="h-auto py-2 flex flex-col items-center text-xs"
                   onClick={() => setSelectedSlot(slot.id)}
                 >
-                  <span className="font-semibold">{slot.startTime}</span>
-                  <span className="text-xs opacity-70">{slot.duration} min</span>
+                  <span className="font-medium">{slot.startTime}</span>
+                  <span className="text-[10px] opacity-70">{slot.duration}m</span>
                 </Button>
               ))}
             </div>
             {availableSlots.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No available time slots for this date
+              <p className="text-xs text-muted-foreground text-center py-3">
+                No slots available
               </p>
             )}
           </div>
 
-          {/* Customer Information */}
-          <div className="space-y-4 pt-4 border-t">
-            <Label className="text-base font-semibold flex items-center gap-2">
-              <User className="w-4 h-4" />
+          {/* Customer Information - Compact */}
+          <div className="space-y-3 pt-3 border-t border-border/50">
+            <Label className="text-xs font-medium flex items-center gap-1.5">
+              <User className="w-3 h-3" />
               Your Information
             </Label>
 
-            <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
-              <Input
-                id="name"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="John Doe"
-                required
-              />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label htmlFor="name" className="text-xs">Name *</Label>
+                <Input
+                  id="name"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="John Doe"
+                  required
+                  className="h-8 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="email" className="text-xs">Email *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="john@example.com"
+                  required
+                  className="h-8 text-sm"
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-                placeholder="john@example.com"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone (optional)</Label>
+            <div className="space-y-1">
+              <Label htmlFor="phone" className="text-xs">Phone (optional)</Label>
               <Input
                 id="phone"
                 type="tel"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
                 placeholder="+1 (555) 123-4567"
+                className="h-8 text-sm"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notes">Additional Notes (optional)</Label>
+            <div className="space-y-1">
+              <Label htmlFor="notes" className="text-xs">Notes (optional)</Label>
               <Textarea
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Any additional information..."
-                rows={3}
+                placeholder="Any additional info..."
+                rows={2}
+                className="text-sm resize-none"
               />
             </div>
           </div>
 
-          {/* Submit Button */}
-          <div className="flex gap-3 pt-4">
+          {/* Submit Button - Compact */}
+          <div className="flex gap-2 pt-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="flex-1"
+              className="flex-1 h-8"
               disabled={isSubmitting}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="flex-1"
+              className="flex-1 h-8"
               disabled={isSubmitting || !selectedSlot}
             >
-              {isSubmitting ? "Booking..." : "Confirm Booking"}
+              {isSubmitting ? "Booking..." : "Confirm"}
             </Button>
           </div>
         </form>
