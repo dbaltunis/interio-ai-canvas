@@ -501,7 +501,8 @@ export const SimpleTemplateManager: React.FC = () => {
           filteredTemplates.map((template) => (
             <Card 
               key={template.id} 
-              className={`hover:shadow-md transition-all border-border/40 ${
+              variant="analytics"
+              className={`hover:shadow-md transition-all ${
                 template.is_primary ? 'ring-2 ring-primary/30' : ''
               }`}
             >

@@ -1776,6 +1776,66 @@ const LivePreviewBlock = ({
     case 'signature':
     case 'sign':
     case 'approval':
+      // Interactive signature mode when editing a live quote
+      const savedSignature = onDataChange?.customData?.[block.id]?.signature;
+      
+      if (isEditable && !isPrintMode && quoteId) {
+        return (
+          <div style={{ marginTop: '32px', marginBottom: '24px', backgroundColor: '#ffffff', padding: '16px', color: '#000' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '24px', color: '#000' }}>
+              {content.title || 'Authorization'}
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', backgroundColor: '#ffffff' }}>
+              <div style={{ backgroundColor: '#ffffff' }}>
+                <p style={{ fontSize: '14px', marginBottom: '16px', color: '#000' }}>
+                  {content.authorizationText || "By signing below, you authorize us to proceed with this work as described:"}
+                </p>
+                {savedSignature ? (
+                  <div style={{ marginTop: '16px' }}>
+                    <img src={savedSignature} alt="Client Signature" style={{ maxHeight: '100px', marginBottom: '8px', border: '1px solid #e5e7eb', borderRadius: '4px' }} />
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => onDataChange?.saveBlockData?.({ blockId: block.id, data: { signature: null } })}
+                      >
+                        Clear Signature
+                      </Button>
+                    </div>
+                    <div style={{ fontSize: '14px', color: '#000', marginTop: '8px' }}>
+                      <div>{content.printNameLabel || "Print Name"}: {renderTokenValue('client_name')}</div>
+                      <div>{content.dateLabel || "Date"}: {format(new Date(), 'dd/MM/yyyy')}</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ marginTop: '16px' }}>
+                    <SignatureCanvas 
+                      onSignatureSave={(dataUrl) => onDataChange?.saveBlockData?.({ blockId: block.id, data: { signature: dataUrl } })}
+                      width={300}
+                      height={150}
+                    />
+                    <div style={{ fontSize: '14px', color: '#6b7280', marginTop: '8px' }}>
+                      <div>{content.printNameLabel || "Print Name"}: {renderTokenValue('client_name')}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div style={{ backgroundColor: '#ffffff' }}>
+                <p style={{ fontSize: '14px', marginBottom: '16px', color: '#000' }}>{content.thankYouText || "Thank you for choosing us for your project!"}</p>
+                <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '8px', marginTop: '48px', backgroundColor: '#ffffff' }}>
+                  <div style={{ fontSize: '14px', color: '#000', backgroundColor: '#ffffff' }}>
+                    <div style={{ fontWeight: '500', color: '#000' }}>{content.companySignatureLabel || "Company Representative"}</div>
+                    <div style={{ color: '#000' }}>{content.printNameLabel || "Print Name"}: _________________</div>
+                    <div style={{ color: '#000' }}>{content.dateLabel || "Date"}: _________________</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+      
+      // Static/print mode signature block
       return (
         <div style={{ marginTop: '32px', marginBottom: '24px', backgroundColor: '#ffffff !important', padding: '16px', color: '#000 !important' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '24px', color: '#000 !important', backgroundColor: 'transparent !important' }}>
@@ -1784,13 +1844,23 @@ const LivePreviewBlock = ({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', backgroundColor: '#ffffff !important' }}>
             <div style={{ backgroundColor: '#ffffff !important' }}>
               <p style={{ fontSize: '14px', marginBottom: '16px', color: '#000 !important' }}>{content.authorizationText || "By signing below, you authorize us to proceed with this work as described:"}</p>
-              <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '8px', marginTop: '48px', backgroundColor: '#ffffff !important' }}>
-                <div style={{ fontSize: '14px', color: '#000 !important', backgroundColor: '#ffffff !important' }}>
-                  <div style={{ fontWeight: '500', color: '#000 !important' }}>{content.clientSignatureLabel || "Client Signature"}</div>
-                  <div style={{ color: '#000 !important' }}>{content.printNameLabel || "Print Name"}: {renderTokenValue('client_name')}</div>
-                  <div style={{ color: '#000 !important' }}>{content.dateLabel || "Date"}: _________________</div>
+              {savedSignature ? (
+                <div style={{ marginTop: '16px' }}>
+                  <img src={savedSignature} alt="Client Signature" style={{ maxHeight: '100px', marginBottom: '8px' }} />
+                  <div style={{ fontSize: '14px', color: '#000 !important' }}>
+                    <div>{content.printNameLabel || "Print Name"}: {renderTokenValue('client_name')}</div>
+                    <div>{content.dateLabel || "Date"}: {format(new Date(), 'dd/MM/yyyy')}</div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '8px', marginTop: '48px', backgroundColor: '#ffffff !important' }}>
+                  <div style={{ fontSize: '14px', color: '#000 !important', backgroundColor: '#ffffff !important' }}>
+                    <div style={{ fontWeight: '500', color: '#000 !important' }}>{content.clientSignatureLabel || "Client Signature"}</div>
+                    <div style={{ color: '#000 !important' }}>{content.printNameLabel || "Print Name"}: {renderTokenValue('client_name')}</div>
+                    <div style={{ color: '#000 !important' }}>{content.dateLabel || "Date"}: _________________</div>
+                  </div>
+                </div>
+              )}
             </div>
             <div style={{ backgroundColor: '#ffffff !important' }}>
               <p style={{ fontSize: '14px', marginBottom: '16px', color: '#000 !important' }}>{content.thankYouText || "Thank you for choosing us for your project!"}</p>
