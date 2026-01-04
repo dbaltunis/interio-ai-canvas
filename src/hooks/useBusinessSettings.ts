@@ -50,6 +50,16 @@ export interface BusinessSettings {
   default_payment_terms_days?: number;
   financial_year_end_month?: number;
   financial_year_end_day?: number;
+  // Bank account details
+  bank_name?: string;
+  bank_account_name?: string;
+  bank_account_number?: string;
+  bank_bsb?: string;
+  bank_sort_code?: string;
+  bank_routing_number?: string;
+  bank_iban?: string;
+  bank_swift_bic?: string;
+  // Other settings
   pricing_settings?: any;
   allow_in_app_template_editing?: boolean;
   default_profit_margin_percentage?: number;

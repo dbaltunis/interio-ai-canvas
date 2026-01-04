@@ -1,13 +1,14 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useBusinessSettings, useCreateBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { useToast } from "@/hooks/use-toast";
-import { Building2, Mail, Phone, MapPin, Globe, Upload, Image, Edit3, Shield, FileText, CreditCard } from "lucide-react";
+import { Building2, Mail, Phone, MapPin, Globe, Upload, Image, Edit3, Shield, FileText, CreditCard, Landmark, Info, AlertCircle } from "lucide-react";
 import { LoadingFallback } from "@/components/ui/loading-fallback";
 import { FormSection } from "@/components/ui/form-section";
 import { FormFieldGroup } from "@/components/ui/form-field-group";
@@ -28,10 +29,11 @@ export const BusinessSettingsTab = () => {
   const [isEditingContact, setIsEditingContact] = useState(false);
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [isEditingFinancial, setIsEditingFinancial] = useState(false);
+  const [isEditingPayment, setIsEditingPayment] = useState(false);
   const [isEditingAdvanced, setIsEditingAdvanced] = useState(false);
   
   // Track which section is currently saving
-  const [savingSection, setSavingSection] = useState<'company' | 'registration' | 'contact' | 'address' | 'financial' | 'advanced' | null>(null);
+  const [savingSection, setSavingSection] = useState<'company' | 'registration' | 'contact' | 'address' | 'financial' | 'payment' | 'advanced' | null>(null);
   
   // Separate saved successfully states for each section
   const [companySavedSuccessfully, setCompanySavedSuccessfully] = useState(false);
@@ -39,6 +41,7 @@ export const BusinessSettingsTab = () => {
   const [contactSavedSuccessfully, setContactSavedSuccessfully] = useState(false);
   const [addressSavedSuccessfully, setAddressSavedSuccessfully] = useState(false);
   const [financialSavedSuccessfully, setFinancialSavedSuccessfully] = useState(false);
+  const [paymentSavedSuccessfully, setPaymentSavedSuccessfully] = useState(false);
   const [advancedSavedSuccessfully, setAdvancedSavedSuccessfully] = useState(false);
   
   const [showSimpleLogoUpload, setShowSimpleLogoUpload] = useState(false);
@@ -68,6 +71,15 @@ export const BusinessSettingsTab = () => {
     default_payment_terms_days: 14,
     financial_year_end_month: 6,
     financial_year_end_day: 30,
+    // Bank details
+    bank_name: "",
+    bank_account_name: "",
+    bank_account_number: "",
+    bank_bsb: "",
+    bank_sort_code: "",
+    bank_routing_number: "",
+    bank_iban: "",
+    bank_swift_bic: "",
     allow_in_app_template_editing: false
   });
 
@@ -99,6 +111,14 @@ export const BusinessSettingsTab = () => {
         default_payment_terms_days: businessSettings.default_payment_terms_days ?? 14,
         financial_year_end_month: businessSettings.financial_year_end_month ?? 6,
         financial_year_end_day: businessSettings.financial_year_end_day ?? 30,
+        bank_name: businessSettings.bank_name || "",
+        bank_account_name: businessSettings.bank_account_name || "",
+        bank_account_number: businessSettings.bank_account_number || "",
+        bank_bsb: businessSettings.bank_bsb || "",
+        bank_sort_code: businessSettings.bank_sort_code || "",
+        bank_routing_number: businessSettings.bank_routing_number || "",
+        bank_iban: businessSettings.bank_iban || "",
+        bank_swift_bic: businessSettings.bank_swift_bic || "",
         allow_in_app_template_editing: businessSettings.allow_in_app_template_editing || false
       });
     }
@@ -111,6 +131,7 @@ export const BusinessSettingsTab = () => {
     setContactSavedSuccessfully(false);
     setAddressSavedSuccessfully(false);
     setFinancialSavedSuccessfully(false);
+    setPaymentSavedSuccessfully(false);
     setAdvancedSavedSuccessfully(false);
     
     setFormData(prev => ({
@@ -162,7 +183,7 @@ export const BusinessSettingsTab = () => {
     }
   };
 
-  const handleSaveSection = async (sectionName: 'company' | 'registration' | 'contact' | 'address' | 'financial' | 'advanced') => {
+  const handleSaveSection = async (sectionName: 'company' | 'registration' | 'contact' | 'address' | 'financial' | 'payment' | 'advanced') => {
     setSavingSection(sectionName);
     try {
       let savedData;
@@ -197,6 +218,14 @@ export const BusinessSettingsTab = () => {
           default_payment_terms_days: savedData.default_payment_terms_days ?? 14,
           financial_year_end_month: savedData.financial_year_end_month ?? 6,
           financial_year_end_day: savedData.financial_year_end_day ?? 30,
+          bank_name: savedData.bank_name || "",
+          bank_account_name: savedData.bank_account_name || "",
+          bank_account_number: savedData.bank_account_number || "",
+          bank_bsb: savedData.bank_bsb || "",
+          bank_sort_code: savedData.bank_sort_code || "",
+          bank_routing_number: savedData.bank_routing_number || "",
+          bank_iban: savedData.bank_iban || "",
+          bank_swift_bic: savedData.bank_swift_bic || "",
           allow_in_app_template_editing: savedData.allow_in_app_template_editing || false
         });
       }
@@ -228,6 +257,11 @@ export const BusinessSettingsTab = () => {
           setIsEditingFinancial(false);
           setTimeout(() => setFinancialSavedSuccessfully(false), 3000);
           break;
+        case 'payment':
+          setPaymentSavedSuccessfully(true);
+          setIsEditingPayment(false);
+          setTimeout(() => setPaymentSavedSuccessfully(false), 3000);
+          break;
         case 'advanced':
           setAdvancedSavedSuccessfully(true);
           setIsEditingAdvanced(false);
@@ -250,7 +284,7 @@ export const BusinessSettingsTab = () => {
     }
   };
 
-  const handleEditSection = (sectionName: 'company' | 'registration' | 'contact' | 'address' | 'financial' | 'advanced') => {
+  const handleEditSection = (sectionName: 'company' | 'registration' | 'contact' | 'address' | 'financial' | 'payment' | 'advanced') => {
     console.log('🔥 handleEditSection called with:', sectionName);
     console.log('🔥 Current editing states BEFORE:', {
       isEditingCompany,
@@ -258,6 +292,7 @@ export const BusinessSettingsTab = () => {
       isEditingContact,
       isEditingAddress,
       isEditingFinancial,
+      isEditingPayment,
       isEditingAdvanced
     });
     
@@ -282,6 +317,10 @@ export const BusinessSettingsTab = () => {
         setIsEditingFinancial(true);
         setFinancialSavedSuccessfully(false);
         break;
+      case 'payment':
+        setIsEditingPayment(true);
+        setPaymentSavedSuccessfully(false);
+        break;
       case 'advanced':
         setIsEditingAdvanced(true);
         setAdvancedSavedSuccessfully(false);
@@ -291,7 +330,7 @@ export const BusinessSettingsTab = () => {
     console.log('🔥 handleEditSection completed for:', sectionName);
   };
 
-  const handleCancelSection = (sectionName: 'company' | 'registration' | 'contact' | 'address' | 'financial' | 'advanced') => {
+  const handleCancelSection = (sectionName: 'company' | 'registration' | 'contact' | 'address' | 'financial' | 'payment' | 'advanced') => {
     // Reset form data to original values
     if (businessSettings) {
       setFormData({
@@ -314,6 +353,14 @@ export const BusinessSettingsTab = () => {
         default_payment_terms_days: businessSettings.default_payment_terms_days ?? 14,
         financial_year_end_month: businessSettings.financial_year_end_month ?? 6,
         financial_year_end_day: businessSettings.financial_year_end_day ?? 30,
+        bank_name: businessSettings.bank_name || "",
+        bank_account_name: businessSettings.bank_account_name || "",
+        bank_account_number: businessSettings.bank_account_number || "",
+        bank_bsb: businessSettings.bank_bsb || "",
+        bank_sort_code: businessSettings.bank_sort_code || "",
+        bank_routing_number: businessSettings.bank_routing_number || "",
+        bank_iban: businessSettings.bank_iban || "",
+        bank_swift_bic: businessSettings.bank_swift_bic || "",
         allow_in_app_template_editing: businessSettings.allow_in_app_template_editing || false
       });
     }
@@ -334,6 +381,9 @@ export const BusinessSettingsTab = () => {
         break;
       case 'financial':
         setIsEditingFinancial(false);
+        break;
+      case 'payment':
+        setIsEditingPayment(false);
         break;
       case 'advanced':
         setIsEditingAdvanced(false);
@@ -488,39 +538,100 @@ export const BusinessSettingsTab = () => {
         isSaving={savingSection === 'registration'}
         savedSuccessfully={registrationSavedSuccessfully}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {registrationLabels.abn && (
-            <FormFieldGroup label={registrationLabels.abn}>
+        {/* Legal Requirements Alert */}
+        {registrationLabels.legalRequirements.length > 0 && (
+          <Alert className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="text-sm">
+                <strong>Invoice requirements for {formData.country}:</strong>
+                <ul className="list-disc list-inside mt-1 space-y-0.5">
+                  {registrationLabels.legalRequirements.slice(0, 4).map((req, idx) => (
+                    <li key={idx} className="text-muted-foreground">{req}</li>
+                  ))}
+                </ul>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <TooltipProvider>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {registrationLabels.abn && (
+              <FormFieldGroup 
+                label={
+                  <div className="flex items-center gap-1.5">
+                    {registrationLabels.abn}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>{registrationLabels.abnHelpText}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                }
+              >
+                <Input
+                  value={formData.abn}
+                  onChange={(e) => handleInputChange("abn", e.target.value)}
+                  placeholder={registrationLabels.abnPlaceholder || ''}
+                  disabled={!isEditingRegistration}
+                />
+              </FormFieldGroup>
+            )}
+            
+            <FormFieldGroup 
+              label={
+                <div className="flex items-center gap-1.5">
+                  {registrationLabels.registration}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>{registrationLabels.registrationHelpText}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              }
+            >
               <Input
-                value={formData.abn}
-                onChange={(e) => handleInputChange("abn", e.target.value)}
-                placeholder={registrationLabels.abnPlaceholder || ''}
+                value={formData.registration_number}
+                onChange={(e) => handleInputChange("registration_number", e.target.value)}
+                placeholder={registrationLabels.registrationPlaceholder}
                 disabled={!isEditingRegistration}
               />
             </FormFieldGroup>
-          )}
-          
-          <FormFieldGroup label={registrationLabels.registration}>
-            <Input
-              value={formData.registration_number}
-              onChange={(e) => handleInputChange("registration_number", e.target.value)}
-              placeholder={registrationLabels.registrationPlaceholder}
-              disabled={!isEditingRegistration}
-            />
-          </FormFieldGroup>
-          
-          <FormFieldGroup label={registrationLabels.taxNumber}>
-            <Input
-              value={formData.tax_number}
-              onChange={(e) => handleInputChange("tax_number", e.target.value)}
-              placeholder={registrationLabels.taxNumberPlaceholder}
-              disabled={!isEditingRegistration}
-            />
-          </FormFieldGroup>
-        </div>
+            
+            <FormFieldGroup 
+              label={
+                <div className="flex items-center gap-1.5">
+                  {registrationLabels.taxNumber}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>{registrationLabels.taxNumberHelpText}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              }
+            >
+              <Input
+                value={formData.tax_number}
+                onChange={(e) => handleInputChange("tax_number", e.target.value)}
+                placeholder={registrationLabels.taxNumberPlaceholder}
+                disabled={!isEditingRegistration}
+              />
+            </FormFieldGroup>
+          </div>
+        </TooltipProvider>
         
         <p className="text-xs text-muted-foreground mt-4">
-          These numbers will appear on your invoices and quotes. Labels update automatically based on your selected country.
+          These numbers will appear on your invoices and quotes. Labels and requirements update automatically based on your selected country.
         </p>
       </FormSection>
 
@@ -707,6 +818,104 @@ export const BusinessSettingsTab = () => {
             </div>
           </FormFieldGroup>
         </div>
+      </FormSection>
+
+      {/* Payment Details - Bank Account Information */}
+      <FormSection
+        key="payment-section"
+        title="Payment Details"
+        description="Bank account details for payment instructions on invoices"
+        icon={<Landmark className="h-5 w-5" />}
+        isEditing={isEditingPayment}
+        onEdit={() => handleEditSection('payment')}
+        onSave={() => handleSaveSection('payment')}
+        onCancel={() => handleCancelSection('payment')}
+        isSaving={savingSection === 'payment'}
+        savedSuccessfully={paymentSavedSuccessfully}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormFieldGroup label="Bank Name">
+            <Input
+              value={formData.bank_name}
+              onChange={(e) => handleInputChange("bank_name", e.target.value)}
+              placeholder="Enter bank name"
+              disabled={!isEditingPayment}
+            />
+          </FormFieldGroup>
+          
+          <FormFieldGroup label="Account Name">
+            <Input
+              value={formData.bank_account_name}
+              onChange={(e) => handleInputChange("bank_account_name", e.target.value)}
+              placeholder="Name on bank account"
+              disabled={!isEditingPayment}
+            />
+          </FormFieldGroup>
+        </div>
+
+        {/* Country-specific bank fields */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormFieldGroup label={registrationLabels.bankFields.primary}>
+            <Input
+              value={
+                formData.country === 'Australia' ? formData.bank_bsb :
+                formData.country === 'United Kingdom' ? formData.bank_sort_code :
+                formData.country === 'United States' || formData.country === 'Canada' ? formData.bank_routing_number :
+                formData.bank_iban
+              }
+              onChange={(e) => {
+                const field = 
+                  formData.country === 'Australia' ? 'bank_bsb' :
+                  formData.country === 'United Kingdom' ? 'bank_sort_code' :
+                  formData.country === 'United States' || formData.country === 'Canada' ? 'bank_routing_number' :
+                  'bank_iban';
+                handleInputChange(field, e.target.value);
+              }}
+              placeholder={registrationLabels.bankFields.primaryPlaceholder}
+              disabled={!isEditingPayment}
+            />
+          </FormFieldGroup>
+          
+          {registrationLabels.bankFields.secondary && (
+            <FormFieldGroup label={registrationLabels.bankFields.secondary}>
+              <Input
+                value={
+                  formData.country === 'Australia' || formData.country === 'United Kingdom' || 
+                  formData.country === 'United States' || formData.country === 'Canada' || 
+                  formData.country === 'South Africa' || formData.country === 'India' || 
+                  formData.country === 'Singapore' || formData.country === 'Hong Kong' || 
+                  formData.country === 'New Zealand'
+                    ? formData.bank_account_number 
+                    : formData.bank_swift_bic
+                }
+                onChange={(e) => {
+                  const field = 
+                    formData.country === 'Australia' || formData.country === 'United Kingdom' || 
+                    formData.country === 'United States' || formData.country === 'Canada' || 
+                    formData.country === 'South Africa' || formData.country === 'India' || 
+                    formData.country === 'Singapore' || formData.country === 'Hong Kong' || 
+                    formData.country === 'New Zealand'
+                      ? 'bank_account_number' 
+                      : 'bank_swift_bic';
+                  handleInputChange(field, e.target.value);
+                }}
+                placeholder={registrationLabels.bankFields.secondaryPlaceholder}
+                disabled={!isEditingPayment}
+              />
+            </FormFieldGroup>
+          )}
+        </div>
+
+        {/* SWIFT/BIC for international transfers (EU countries) */}
+        {['Germany', 'France', 'Italy', 'Spain', 'Netherlands'].includes(formData.country) && (
+          <p className="text-xs text-muted-foreground mt-2">
+            IBAN and BIC/SWIFT codes are used for SEPA and international transfers in the EU.
+          </p>
+        )}
+        
+        <p className="text-xs text-muted-foreground mt-4">
+          Bank details can be displayed on invoices for direct deposit payments. Fields adapt to your country's banking format.
+        </p>
       </FormSection>
 
       {/* Advanced Settings - Admin Only */}
