@@ -85,14 +85,6 @@ export const SettingsView = () => {
   const canManageMarkup = canManageSettingsRaw !== false; // Only owners/admins can manage pricing
 
   return <div className="space-y-6 animate-fade-in">
-      {/* Enhanced Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-primary/10 rounded-xl shrink-0">
-          <Settings className="h-5 w-5 text-primary" />
-        </div>
-        <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Settings</h2>
-      </div>
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-transparent border-b border-border h-auto flex flex-wrap gap-1 justify-start pb-0 rounded-none">
           <TabsTrigger value="personal" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
@@ -161,11 +153,7 @@ export const SettingsView = () => {
         </TabsList>
 
         <TabsContent value="personal" className="animate-fade-in">
-          <Card variant="elevated" className="transition-shadow">
-            <CardContent className="p-5 md:p-6">
-              <PersonalSettingsTab />
-            </CardContent>
-          </Card>
+          <PersonalSettingsTab />
         </TabsContent>
 
         {/* HIDDEN: Billing tab content - Not ready yet
@@ -179,98 +167,53 @@ export const SettingsView = () => {
         */}
 
         {canViewSettings && <TabsContent value="business" className="animate-fade-in">
-            <Card variant="elevated" className="transition-shadow">
-              <CardContent className="p-5 md:p-6">
-                <BusinessSettingsTab />
-              </CardContent>
-            </Card>
+            <BusinessSettingsTab />
           </TabsContent>}
 
 
         {canViewSettings && <TabsContent value="units" className="animate-fade-in">
-            <Card variant="elevated" className="transition-shadow">
-              <CardContent className="p-5 md:p-6">
-                <MeasurementUnitsTab />
-              </CardContent>
-            </Card>
+            <MeasurementUnitsTab />
           </TabsContent>}
 
         {canViewWindowTreatments && <TabsContent value="window-coverings" className="animate-fade-in">
-            <Card variant="elevated" className="transition-shadow">
-              <CardContent className="p-5 md:p-6">
-                <WindowCoveringsTab 
-                  createTemplateData={createTemplateData}
-                  onTemplateCreated={() => setCreateTemplateData(null)}
-                  editTemplateId={editTemplateId}
-                  onTemplateEdited={() => setEditTemplateId(null)}
-                />
-              </CardContent>
-            </Card>
+            <WindowCoveringsTab 
+              createTemplateData={createTemplateData}
+              onTemplateCreated={() => setCreateTemplateData(null)}
+              editTemplateId={editTemplateId}
+              onTemplateEdited={() => setEditTemplateId(null)}
+            />
           </TabsContent>}
 
         {canManageMarkup && <TabsContent value="pricing" className="animate-fade-in">
-            <Card variant="elevated" className="transition-shadow">
-              <CardContent className="p-5 md:p-6">
-                <PricingRulesTab />
-              </CardContent>
-            </Card>
+            <PricingRulesTab />
           </TabsContent>}
 
         {canManageUsers && <TabsContent value="users" className="animate-fade-in">
-            <Card variant="elevated" className="transition-shadow">
-              <CardContent className="p-5 md:p-6">
-                <UserManagementTab />
-              </CardContent>
-            </Card>
+            <UserManagementTab />
           </TabsContent>}
 
         {canViewSettings && <TabsContent value="documents" className="animate-fade-in">
-            <Card variant="elevated" className="transition-shadow">
-              <CardContent className="p-5 md:p-6">
-                <DocumentTemplatesTab />
-              </CardContent>
-            </Card>
+            <DocumentTemplatesTab />
           </TabsContent>}
 
-
         {canViewSettings && <TabsContent value="system" className="animate-fade-in">
-            <Card variant="elevated" className="transition-shadow">
-              <CardContent className="p-5 md:p-6">
-                <SystemSettingsTab />
-              </CardContent>
-            </Card>
+            <SystemSettingsTab />
           </TabsContent>}
 
         {canViewSettings && <TabsContent value="communications" className="animate-fade-in">
-            <Card variant="elevated" className="transition-shadow">
-              <CardContent className="p-5 md:p-6">
-                <CommunicationsTab />
-              </CardContent>
-            </Card>
+            <CommunicationsTab />
           </TabsContent>}
 
         <TabsContent value="notifications" className="animate-fade-in">
-          <Card variant="elevated" className="transition-shadow">
-            <CardContent className="p-5 md:p-6">
-              <NotificationManagementTab />
-            </CardContent>
-          </Card>
+          <NotificationManagementTab />
         </TabsContent>
 
         <TabsContent value="security" className="animate-fade-in">
-          <Card variant="elevated" className="transition-shadow">
-            <CardContent className="p-5 md:p-6">
-              <SecurityPrivacyTab />
-            </CardContent>
-          </Card>
+          <SecurityPrivacyTab />
         </TabsContent>
 
         {canViewSettings && <TabsContent value="integrations" className="animate-fade-in">
-            <Card variant="elevated" className="transition-shadow">
-              <CardContent className="p-5 md:p-6">
-                <IntegrationsTab />
-              </CardContent>
-            </Card>
+            <IntegrationsTab />
           </TabsContent>}
       </Tabs>
 
