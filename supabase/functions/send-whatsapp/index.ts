@@ -166,7 +166,36 @@ serve(async (req) => {
 
     if (!twilioResponse.ok) {
       console.error('Twilio error:', twilioResult);
-      throw new Error(twilioResult.message || 'Failed to send WhatsApp message');
+      
+      // Handle specific Twilio error codes with user-friendly messages
+      const errorCode = twilioResult.code;
+      const errorMessage = twilioResult.message || 'Failed to send WhatsApp message';
+      
+      // Error 63007/63031: Channel not found - WhatsApp number not registered
+      if (errorCode === 63007 || errorMessage.includes('Channel with the specified From address')) {
+        return new Response(
+          JSON.stringify({ 
+            error: `Your WhatsApp sender number is not registered with Twilio. Please verify your number in Twilio Console → Messaging → Senders → WhatsApp Senders, or use a Twilio Sandbox number for testing.`,
+            twilioError: errorMessage,
+            errorCode: errorCode
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Error 63032: User has not opted in to receive messages
+      if (errorCode === 63032 || errorMessage.includes('not opted in')) {
+        return new Response(
+          JSON.stringify({ 
+            error: `The recipient has not opted in to receive WhatsApp messages from your number. They need to send a message to your WhatsApp Business number first.`,
+            twilioError: errorMessage,
+            errorCode: errorCode
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      throw new Error(errorMessage);
     }
 
     console.log('WhatsApp message sent successfully:', twilioResult.sid);
