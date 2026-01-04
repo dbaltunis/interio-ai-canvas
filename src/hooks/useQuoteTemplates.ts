@@ -20,18 +20,18 @@ export const useQuoteTemplates = () => {
     queryKey: ["quote-templates"],
     queryFn: async () => {
       try {
-        // Fetch templates - RLS policy handles inheritance and access control
-        // Staff users will see both their own templates and their parent account's templates
+        // Fetch templates ordered by: primary first, then display_order, then created_at
         const { data: dbTemplates, error } = await supabase
           .from('quote_templates')
           .select('*')
+          .order('is_primary', { ascending: false, nullsFirst: false })
+          .order('display_order', { ascending: true, nullsFirst: false })
           .order('created_at', { ascending: false });
 
-        if (error && error.code !== 'PGRST116') { // PGRST116 is "table not found"
+        if (error && error.code !== 'PGRST116') {
           console.error('Error fetching quote templates:', error);
         }
 
-        // If we have database templates, return them
         if (dbTemplates && dbTemplates.length > 0) {
           return dbTemplates.map(template => ({
             id: template.id,
@@ -41,6 +41,8 @@ export const useQuoteTemplates = () => {
             blockSettings: (template as any).blockSettings,
             template_type: (template as any).template_type || template.template_style,
             styling: (template as any).styling,
+            is_primary: template.is_primary || false,
+            display_order: template.display_order || 0,
             created_at: template.created_at,
             updated_at: template.updated_at || template.created_at,
           }));
@@ -49,10 +51,9 @@ export const useQuoteTemplates = () => {
         console.error('Error fetching templates:', error);
       }
 
-      // Return empty array instead of mock data - user should create their own templates
       return [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 };
 
