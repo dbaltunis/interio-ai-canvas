@@ -91,7 +91,7 @@ export const DealerPerformanceWidget = () => {
       <CardContent className="pt-0 space-y-3">
         {/* Summary Stats */}
         <div className="grid grid-cols-3 gap-2">
-          <div className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 rounded-lg p-2.5 border border-amber-500/20">
+          <div className="rounded-lg p-2.5 border border-border/50 bg-card">
             <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 mb-1">
               <Trophy className="h-3.5 w-3.5" />
               <span className="text-[10px] font-medium uppercase tracking-wide">Top</span>
@@ -101,7 +101,7 @@ export const DealerPerformanceWidget = () => {
             </p>
           </div>
           
-          <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 rounded-lg p-2.5 border border-emerald-500/20">
+          <div className="rounded-lg p-2.5 border border-border/50 bg-card">
             <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 mb-1">
               <DollarSign className="h-3.5 w-3.5" />
               <span className="text-[10px] font-medium uppercase tracking-wide">Revenue</span>
@@ -111,7 +111,7 @@ export const DealerPerformanceWidget = () => {
             </p>
           </div>
           
-          <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-lg p-2.5 border border-blue-500/20">
+          <div className="rounded-lg p-2.5 border border-border/50 bg-card">
             <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 mb-1">
               <Target className="h-3.5 w-3.5" />
               <span className="text-[10px] font-medium uppercase tracking-wide">Conv.</span>

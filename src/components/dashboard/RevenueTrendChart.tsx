@@ -28,7 +28,7 @@ export const RevenueTrendChart = () => {
 
   if (isLoading) {
     return (
-      <Card className="border-border/40">
+      <Card variant="analytics">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <Skeleton className="h-4 w-24" />
@@ -49,7 +49,7 @@ export const RevenueTrendChart = () => {
   // Show empty state if no data
   if (data.length === 0 || (revenueData?.currentTotal === 0 && revenueData?.previousTotal === 0)) {
     return (
-      <Card className="border-border/40">
+      <Card variant="analytics">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Revenue Trend
@@ -63,7 +63,7 @@ export const RevenueTrendChart = () => {
   }
 
   return (
-    <Card className="border-border/40">
+    <Card variant="analytics">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium text-muted-foreground">

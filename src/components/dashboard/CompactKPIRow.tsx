@@ -26,7 +26,7 @@ export const CompactKPIRow = ({ metrics, loading }: CompactKPIRowProps) => {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-card border border-border/40 rounded-lg p-3 animate-pulse">
+          <div key={i} className="bg-card/50 border border-border/40 rounded-lg p-3 animate-pulse backdrop-blur-sm">
             <div className="h-3 w-16 bg-muted rounded mb-2" />
             <div className="h-5 w-20 bg-muted rounded" />
           </div>
@@ -46,7 +46,7 @@ export const CompactKPIRow = ({ metrics, loading }: CompactKPIRowProps) => {
         return (
           <div
             key={metric.id}
-            className="bg-card border border-border/40 rounded-lg p-3 hover:border-border/60 transition-colors"
+            className="bg-card/50 border border-border/40 rounded-lg p-3 hover:border-border/60 transition-colors backdrop-blur-sm"
           >
             <div className="flex items-center gap-1.5 mb-1">
               <Icon className="h-3.5 w-3.5 text-muted-foreground" />
