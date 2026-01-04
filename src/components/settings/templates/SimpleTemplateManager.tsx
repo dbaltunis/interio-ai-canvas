@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LivePreview } from "./visual-editor/LivePreview";
 import { useTemplateData } from "@/hooks/useTemplateData";
 import { useQueryClient } from "@tanstack/react-query";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import {
   DndContext,
   closestCenter,
@@ -213,6 +214,7 @@ const SortableTemplateRow = ({
 
 export const SimpleTemplateManager: React.FC = () => {
   const queryClient = useQueryClient();
+  const { data: businessSettings } = useBusinessSettings();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -229,7 +231,7 @@ export const SimpleTemplateManager: React.FC = () => {
   // For template preview - use mock data
   const { data: templateData } = useTemplateData('', false);
   
-  // Mock project data for template preview
+  // Project data for template preview - uses real business settings
   const mockProjectData = {
     project: {
       id: 'sample-project-id',
@@ -252,17 +254,17 @@ export const SimpleTemplateManager: React.FC = () => {
       }
     },
     businessSettings: {
-      company_name: 'Premium Window Treatments Co.',
-      address: '123 Business Ave, Suite 100',
-      city: 'Business City',
-      state: 'BC',
-      zip_code: '54321',
-      business_phone: '(555) 123-4567',
-      business_email: 'info@premiumwindowtreatments.com',
-      website: 'www.premiumwindowtreatments.com',
-      company_logo_url: null,
-      abn: 'ABN 12 345 678 901',
-      country: 'Australia'
+      company_name: businessSettings?.company_name || 'Your Company Name',
+      address: businessSettings?.address || '',
+      city: businessSettings?.city || '',
+      state: businessSettings?.state || '',
+      zip_code: businessSettings?.zip_code || '',
+      business_phone: businessSettings?.business_phone || '',
+      business_email: businessSettings?.business_email || '',
+      website: businessSettings?.website || '',
+      company_logo_url: businessSettings?.company_logo_url || null,
+      abn: businessSettings?.abn || '',
+      country: businessSettings?.country || ''
     },
     treatments: [
       {
