@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Link2, Calendar as CalendarIcon, UserPlus, Settings as SettingsIcon, BarChart3, HelpCircle, ListTodo } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Link2, Calendar as CalendarIcon, UserPlus, Settings as SettingsIcon, BarChart3, HelpCircle, ListTodo, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useGoogleCalendarIntegration, useGoogleCalendarSync } from "@/hooks/useGoogleCalendar";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -261,9 +262,18 @@ export const CalendarSyncToolbar = ({
           </DropdownMenu>
         )}
 
-        {/* Filters */}
+        {/* Search Input + Filters */}
         {onFiltersChange && (
           <>
+            {/* Always-visible Search Input */}
+            <div className="relative w-48">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search events..."
+                className="pl-9 h-7 text-xs"
+                onChange={(e) => onFiltersChange({ searchTerm: e.target.value, userIds: [], eventTypes: [], statuses: [] })}
+              />
+            </div>
             <CalendarVisibilityFilter />
             <CalendarFilters onFiltersChange={onFiltersChange} />
           </>

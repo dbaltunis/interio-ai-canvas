@@ -4,7 +4,8 @@ import { useSearchParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Shield, FolderOpen, Columns3 } from "lucide-react";
+import { Plus, Shield, FolderOpen, Columns3, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useCreateProject, useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
@@ -427,6 +428,17 @@ const canViewJobsExplicit =
         </div>
           
           <div className="flex items-center gap-3">
+            {/* Always-visible Search Input */}
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search jobs..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 h-9"
+              />
+            </div>
+            
             {!isMobile && (
               <Button 
                 onClick={() => setShowColumnCustomization(true)}
