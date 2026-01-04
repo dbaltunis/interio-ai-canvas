@@ -6448,8 +6448,10 @@ export type Database = {
           canvas_data: Json | null
           created_at: string
           description: string | null
+          display_order: number | null
           id: string
           is_default: boolean | null
+          is_primary: boolean | null
           name: string
           preview_image_url: string | null
           settings: Json | null
@@ -6463,8 +6465,10 @@ export type Database = {
           canvas_data?: Json | null
           created_at?: string
           description?: string | null
+          display_order?: number | null
           id?: string
           is_default?: boolean | null
+          is_primary?: boolean | null
           name: string
           preview_image_url?: string | null
           settings?: Json | null
@@ -6478,8 +6482,10 @@ export type Database = {
           canvas_data?: Json | null
           created_at?: string
           description?: string | null
+          display_order?: number | null
           id?: string
           is_default?: boolean | null
+          is_primary?: boolean | null
           name?: string
           preview_image_url?: string | null
           settings?: Json | null
