@@ -43,6 +43,47 @@ export const resolveToken = (
   
   const getDefaultCurrency = () => businessSettings?.currency || projectData?.currency || 'USD';
   
+  // Helper to format bank details based on country
+  const formatBankDetails = () => {
+    if (!businessSettings) return '';
+    const country = businessSettings.country || 'Australia';
+    const parts: string[] = [];
+    
+    if (businessSettings.bank_name) parts.push(`Bank: ${businessSettings.bank_name}`);
+    if (businessSettings.bank_account_name) parts.push(`Account Name: ${businessSettings.bank_account_name}`);
+    
+    // Country-specific formatting
+    if (country === 'Australia' && businessSettings.bank_bsb) {
+      parts.push(`BSB: ${businessSettings.bank_bsb}`);
+      if (businessSettings.bank_account_number) parts.push(`Account: ${businessSettings.bank_account_number}`);
+    } else if (country === 'United Kingdom' && businessSettings.bank_sort_code) {
+      parts.push(`Sort Code: ${businessSettings.bank_sort_code}`);
+      if (businessSettings.bank_account_number) parts.push(`Account: ${businessSettings.bank_account_number}`);
+    } else if ((country === 'United States' || country === 'Canada') && businessSettings.bank_routing_number) {
+      parts.push(`Routing: ${businessSettings.bank_routing_number}`);
+      if (businessSettings.bank_account_number) parts.push(`Account: ${businessSettings.bank_account_number}`);
+    } else if (businessSettings.bank_iban) {
+      parts.push(`IBAN: ${businessSettings.bank_iban}`);
+      if (businessSettings.bank_swift_bic) parts.push(`BIC/SWIFT: ${businessSettings.bank_swift_bic}`);
+    } else if (businessSettings.bank_account_number) {
+      parts.push(`Account: ${businessSettings.bank_account_number}`);
+    }
+    
+    return parts.join(' | ');
+  };
+
+  // Helper to format registration footer
+  const formatRegistrationFooter = () => {
+    if (!businessSettings) return '';
+    const parts: string[] = [];
+    
+    if (businessSettings.abn) parts.push(`ABN: ${businessSettings.abn}`);
+    if (businessSettings.registration_number) parts.push(`Reg: ${businessSettings.registration_number}`);
+    if (businessSettings.tax_number) parts.push(`Tax ID: ${businessSettings.tax_number}`);
+    
+    return parts.join(' | ');
+  };
+  
   const tokens: Record<string, any> = {
     // Company information - no hardcoded fallbacks, show empty if not configured
     company_name: businessSettings?.company_name || '',
@@ -58,6 +99,12 @@ export const resolveToken = (
     company_registration_number: businessSettings?.registration_number || '',
     company_tax_number: businessSettings?.tax_number || '',
     company_organization_type: businessSettings?.organization_type || '',
+    company_country: businessSettings?.country || '',
+    // Bank details tokens
+    company_bank_name: businessSettings?.bank_name || '',
+    company_bank_account_name: businessSettings?.bank_account_name || '',
+    company_bank_details: formatBankDetails(),
+    company_registration_footer: formatRegistrationFooter(),
     
     // Client information
     client_name: client.name || '',

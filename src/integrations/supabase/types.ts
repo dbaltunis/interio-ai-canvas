@@ -1555,6 +1555,14 @@ export type Database = {
           abn: string | null
           address: string | null
           allow_in_app_template_editing: boolean | null
+          bank_account_name: string | null
+          bank_account_number: string | null
+          bank_bsb: string | null
+          bank_iban: string | null
+          bank_name: string | null
+          bank_routing_number: string | null
+          bank_sort_code: string | null
+          bank_swift_bic: string | null
           business_email: string | null
           business_phone: string | null
           city: string | null
@@ -1593,6 +1601,14 @@ export type Database = {
           abn?: string | null
           address?: string | null
           allow_in_app_template_editing?: boolean | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_bsb?: string | null
+          bank_iban?: string | null
+          bank_name?: string | null
+          bank_routing_number?: string | null
+          bank_sort_code?: string | null
+          bank_swift_bic?: string | null
           business_email?: string | null
           business_phone?: string | null
           city?: string | null
@@ -1631,6 +1647,14 @@ export type Database = {
           abn?: string | null
           address?: string | null
           allow_in_app_template_editing?: boolean | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_bsb?: string | null
+          bank_iban?: string | null
+          bank_name?: string | null
+          bank_routing_number?: string | null
+          bank_sort_code?: string | null
+          bank_swift_bic?: string | null
           business_email?: string | null
           business_phone?: string | null
           city?: string | null
