@@ -4,39 +4,19 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Settings2, Moon, Sun, Users, Calendar, ChevronDown } from "lucide-react";
+import { Settings2, Moon, Sun, Users } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useUserPresence } from "@/hooks/useUserPresence";
 import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { Badge } from "@/components/ui/badge";
 import { TeamCollaborationCenter } from "../collaboration/TeamCollaborationCenter";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DashboardDateFilter } from "./DashboardDateFilter";
 
 interface WelcomeHeaderProps {
   onCustomizeClick: () => void;
-  dateRange?: string;
-  onDateRangeChange?: (range: string) => void;
 }
 
-const DATE_RANGES = [
-  { label: "Today", value: "today" },
-  { label: "Last 7 days", value: "7days" },
-  { label: "Last 30 days", value: "30days" },
-  { label: "This month", value: "month" },
-  { label: "This quarter", value: "quarter" },
-  { label: "This year", value: "year" },
-];
-
-export const WelcomeHeader = ({ 
-  onCustomizeClick, 
-  dateRange = "30days",
-  onDateRangeChange 
-}: WelcomeHeaderProps) => {
+export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
   const [teamHubOpen, setTeamHubOpen] = useState(false);
   const { displayName, initials, avatarUrl, isLoading: userLoading } = useUserDisplay();
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
@@ -47,7 +27,6 @@ export const WelcomeHeader = ({
   const otherActiveUsers = activeUsers.filter(u => u.user_id !== currentUser?.user_id && u.status === 'online');
   const unreadCount = conversations.reduce((total, conv) => total + conv.unread_count, 0);
   const hasActivity = otherActiveUsers.length > 0 || unreadCount > 0;
-  const currentRangeLabel = DATE_RANGES.find(r => r.value === dateRange)?.label || "Last 30 days";
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -94,32 +73,9 @@ export const WelcomeHeader = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-1 shrink-0">
-        {/* Date Range Selector */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2.5 rounded-lg hover:bg-muted text-xs font-medium gap-1"
-            >
-              <Calendar className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{currentRangeLabel}</span>
-              <ChevronDown className="h-3 w-3 opacity-50" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-36">
-            {DATE_RANGES.map((range) => (
-              <DropdownMenuItem
-                key={range.value}
-                onClick={() => onDateRangeChange?.(range.value)}
-                className={dateRange === range.value ? "bg-muted" : ""}
-              >
-                {range.label}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <div className="flex items-center gap-1.5 shrink-0">
+        {/* Shopify-style Date Filter */}
+        <DashboardDateFilter />
 
         <Button
           variant="ghost"

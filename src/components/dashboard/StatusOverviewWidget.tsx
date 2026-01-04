@@ -69,13 +69,13 @@ export const StatusOverviewWidget = () => {
       </CardHeader>
       <CardContent className="pt-0">
         {displayStatuses.length === 0 && totalProjects === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <BarChart3 className="h-10 w-10 mx-auto mb-2 opacity-20" />
+          <div className="text-center py-4 text-muted-foreground">
+            <BarChart3 className="h-8 w-8 mx-auto mb-1.5 opacity-20" />
             <p className="text-xs">No projects yet</p>
           </div>
         ) : (
-          <ScrollArea className="h-[350px] pr-4">
-            <div className="space-y-2.5">
+          <ScrollArea className="h-[280px] pr-3">
+            <div className="space-y-2">
               {displayStatuses.map((status) => {
             const count = statusCounts[status.name] || 0;
             const percentage = totalProjects > 0 ? (count / totalProjects) * 100 : 0;
