@@ -101,72 +101,75 @@ export const ClientEmailHistory = ({ clientId, clientEmail, onComposeEmail }: Cl
     <div className="space-y-4">
       {/* Email Stats Overview */}
       {emailStats && emailStats.total > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-blue-600">{emailStats.total}</div>
-              <div className="text-sm text-muted-foreground">Total Emails</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card variant="analytics">
+            <CardContent className="p-3 text-center">
+              <div className="text-xl font-bold text-foreground">{emailStats.total}</div>
+              <div className="text-xs text-muted-foreground">Total Emails</div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-600">{emailStats.sent}</div>
-              <div className="text-sm text-muted-foreground">Sent</div>
+          <Card variant="analytics">
+            <CardContent className="p-3 text-center">
+              <div className="text-xl font-bold text-emerald-600">{emailStats.sent}</div>
+              <div className="text-xs text-muted-foreground">Sent</div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
+          <Card variant="analytics">
+            <CardContent className="p-3 text-center">
               <div className="flex items-center justify-center gap-1">
-                <Eye className="h-4 w-4 text-primary" />
-                <div className="text-2xl font-bold text-primary">{emailStats.totalOpens}</div>
+                <Eye className="h-3.5 w-3.5 text-primary" />
+                <div className="text-xl font-bold text-primary">{emailStats.totalOpens}</div>
               </div>
-              <div className="text-sm text-muted-foreground">Total Opens</div>
+              <div className="text-xs text-muted-foreground">Total Opens</div>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
+          <Card variant="analytics">
+            <CardContent className="p-3 text-center">
               <div className="flex items-center justify-center gap-1">
-                <MousePointer className="h-4 w-4 text-orange-600" />
-                <div className="text-2xl font-bold text-orange-600">{emailStats.totalClicks}</div>
+                <MousePointer className="h-3.5 w-3.5 text-orange-600" />
+                <div className="text-xl font-bold text-orange-600">{emailStats.totalClicks}</div>
               </div>
-              <div className="text-sm text-muted-foreground">Total Clicks</div>
+              <div className="text-xs text-muted-foreground">Total Clicks</div>
             </CardContent>
           </Card>
         </div>
       )}
 
       {/* Email History */}
-      <Card>
-        <CardHeader>
+      <Card variant="analytics">
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              Email Communication History
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-primary/10 rounded-md">
+                <Mail className="h-4 w-4 text-primary" />
+              </div>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Email History
+              </CardTitle>
+            </div>
             <div className="flex items-center gap-2">
               {emails && emails.length > 10 && (
                 <Select value={pageSize.toString()} onValueChange={(val) => setPageSize(parseInt(val))}>
-                  <SelectTrigger className="w-[130px] h-9">
+                  <SelectTrigger className="w-[100px] h-7 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="10">10 per page</SelectItem>
                     <SelectItem value="20">20 per page</SelectItem>
                     <SelectItem value="50">50 per page</SelectItem>
-                    <SelectItem value="100">100 per page</SelectItem>
                   </SelectContent>
                 </Select>
               )}
               {clientEmail && onComposeEmail && (
-                <Button onClick={onComposeEmail} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Compose Email
+                <Button onClick={onComposeEmail} size="sm" className="h-7 text-xs">
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Compose
                 </Button>
               )}
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           {isLoading ? (
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => (
@@ -180,12 +183,12 @@ export const ClientEmailHistory = ({ clientId, clientEmail, onComposeEmail }: Cl
               ))}
             </div>
           ) : !emails || emails.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Mail className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p>No email communication yet</p>
+            <div className="empty-state">
+              <Mail className="empty-state-icon" />
+              <p className="empty-state-title">No email communication yet</p>
               {clientEmail && onComposeEmail && (
-                <Button onClick={onComposeEmail} className="mt-2" variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button onClick={onComposeEmail} className="mt-3" variant="outline" size="sm">
+                  <Plus className="h-3.5 w-3.5 mr-1" />
                   Send First Email
                 </Button>
               )}

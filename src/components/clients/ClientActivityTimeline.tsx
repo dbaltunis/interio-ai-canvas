@@ -60,18 +60,22 @@ export const ClientActivityTimeline = ({ clientId }: ClientActivityTimelineProps
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5" />
-          Activity Timeline
-        </CardTitle>
+    <Card variant="analytics">
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-primary/10 rounded-md">
+            <Clock className="h-4 w-4 text-primary" />
+          </div>
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            Activity Timeline
+          </CardTitle>
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         {activities.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Clock className="mx-auto h-12 w-12 mb-4 opacity-50" />
-            <p>No activity recorded yet</p>
+          <div className="empty-state">
+            <Clock className="empty-state-icon" />
+            <p className="empty-state-title">No activity recorded yet</p>
           </div>
         ) : (
           <div className="space-y-4">

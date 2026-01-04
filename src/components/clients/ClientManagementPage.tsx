@@ -273,16 +273,16 @@ export const ClientManagementPage = ({
     return <MobileClientView onClientClick={handleClientClick} />;
   }
   return <div className="bg-background min-h-screen animate-fade-in">
-      <div className="space-y-6 p-4 md:p-6 lg:p-8">
-        {/* Header - matching Projects page style */}
+      <div className="space-y-4 p-4 md:p-6 lg:p-6">
+        {/* Compact Header - Analytics Style */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-2.5 bg-primary/10 rounded-xl">
-              <Users className="h-6 w-6 text-primary" />
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Users className="h-5 w-5 text-primary" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Clients</h1>
+            <h1 className="text-lg font-semibold text-foreground">Clients</h1>
             <HelpIcon onClick={() => setShowHelp(true)} />
-            <Badge variant="muted" className="text-xs">
+            <Badge variant="secondary" className="text-xs">
               {totalItems} clients
             </Badge>
           </div>

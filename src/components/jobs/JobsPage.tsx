@@ -412,20 +412,18 @@ const canViewJobsExplicit =
       <JobsFocusHandler />
       <div className="bg-background/50 min-h-screen animate-fade-in">
       <div className="space-y-4 p-4 lg:p-6">
-        {/* Enhanced Header with Design System */}
+        {/* Compact Header - Analytics Style */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary/10 rounded-lg">
-            <FolderOpen className="h-6 w-6 text-primary" />
-          </div>
           <div className="flex items-center gap-3">
-            <h1 className="text-h1 text-foreground">Projects</h1>
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <FolderOpen className="h-5 w-5 text-primary" />
+            </div>
+            <h1 className="text-lg font-semibold text-foreground">Projects</h1>
             <HelpIcon onClick={() => setShowHelp(true)} />
+            <Badge variant="secondary" className="text-xs">
+              {quotes.length} projects
+            </Badge>
           </div>
-          <Badge className="bg-secondary/10 text-secondary border-secondary/20">
-            {quotes.length} projects
-          </Badge>
-        </div>
           
           <div className="flex items-center gap-3">
             {/* Always-visible Search Input */}
