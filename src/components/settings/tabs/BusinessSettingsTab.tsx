@@ -544,12 +544,22 @@ export const BusinessSettingsTab = () => {
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               <div className="text-sm">
-                <strong>Invoice requirements for {formData.country}:</strong>
+                <strong>Invoice Requirements:</strong>
                 <ul className="list-disc list-inside mt-1 space-y-0.5">
-                  {registrationLabels.legalRequirements.slice(0, 4).map((req, idx) => (
+                  {registrationLabels.legalRequirements.map((req, idx) => (
                     <li key={idx} className="text-muted-foreground">{req}</li>
                   ))}
                 </ul>
+                {registrationLabels.countrySpecificNotes && registrationLabels.countrySpecificNotes.length > 0 && (
+                  <div className="mt-3 pt-2 border-t border-border/50">
+                    <strong className="text-muted-foreground">Notes for {formData.country}:</strong>
+                    <ul className="list-disc list-inside mt-1 space-y-0.5">
+                      {registrationLabels.countrySpecificNotes.map((note, idx) => (
+                        <li key={idx} className="text-muted-foreground">{note}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </AlertDescription>
           </Alert>
