@@ -30,10 +30,11 @@ export const BusinessSettingsTab = () => {
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [isEditingFinancial, setIsEditingFinancial] = useState(false);
   const [isEditingPayment, setIsEditingPayment] = useState(false);
+  const [isEditingInvoice, setIsEditingInvoice] = useState(false);
   const [isEditingAdvanced, setIsEditingAdvanced] = useState(false);
   
   // Track which section is currently saving
-  const [savingSection, setSavingSection] = useState<'company' | 'registration' | 'contact' | 'address' | 'financial' | 'payment' | 'advanced' | null>(null);
+  const [savingSection, setSavingSection] = useState<'company' | 'registration' | 'contact' | 'address' | 'financial' | 'payment' | 'invoice' | 'advanced' | null>(null);
   
   // Separate saved successfully states for each section
   const [companySavedSuccessfully, setCompanySavedSuccessfully] = useState(false);
@@ -42,6 +43,7 @@ export const BusinessSettingsTab = () => {
   const [addressSavedSuccessfully, setAddressSavedSuccessfully] = useState(false);
   const [financialSavedSuccessfully, setFinancialSavedSuccessfully] = useState(false);
   const [paymentSavedSuccessfully, setPaymentSavedSuccessfully] = useState(false);
+  const [invoiceSavedSuccessfully, setInvoiceSavedSuccessfully] = useState(false);
   const [advancedSavedSuccessfully, setAdvancedSavedSuccessfully] = useState(false);
   
   const [showSimpleLogoUpload, setShowSimpleLogoUpload] = useState(false);
@@ -80,6 +82,11 @@ export const BusinessSettingsTab = () => {
     bank_routing_number: "",
     bank_iban: "",
     bank_swift_bic: "",
+    // Invoice settings
+    payment_reference_prefix: "INV",
+    late_payment_interest_rate: 0,
+    late_payment_fee_amount: 0,
+    late_payment_terms: "",
     allow_in_app_template_editing: false
   });
 
@@ -119,6 +126,10 @@ export const BusinessSettingsTab = () => {
         bank_routing_number: businessSettings.bank_routing_number || "",
         bank_iban: businessSettings.bank_iban || "",
         bank_swift_bic: businessSettings.bank_swift_bic || "",
+        payment_reference_prefix: (businessSettings as any).payment_reference_prefix || "INV",
+        late_payment_interest_rate: (businessSettings as any).late_payment_interest_rate ?? 0,
+        late_payment_fee_amount: (businessSettings as any).late_payment_fee_amount ?? 0,
+        late_payment_terms: (businessSettings as any).late_payment_terms || "",
         allow_in_app_template_editing: businessSettings.allow_in_app_template_editing || false
       });
     }
@@ -132,6 +143,7 @@ export const BusinessSettingsTab = () => {
     setAddressSavedSuccessfully(false);
     setFinancialSavedSuccessfully(false);
     setPaymentSavedSuccessfully(false);
+    setInvoiceSavedSuccessfully(false);
     setAdvancedSavedSuccessfully(false);
     
     setFormData(prev => ({
@@ -183,7 +195,7 @@ export const BusinessSettingsTab = () => {
     }
   };
 
-  const handleSaveSection = async (sectionName: 'company' | 'registration' | 'contact' | 'address' | 'financial' | 'payment' | 'advanced') => {
+  const handleSaveSection = async (sectionName: 'company' | 'registration' | 'contact' | 'address' | 'financial' | 'payment' | 'invoice' | 'advanced') => {
     setSavingSection(sectionName);
     try {
       let savedData;
@@ -226,6 +238,10 @@ export const BusinessSettingsTab = () => {
           bank_routing_number: savedData.bank_routing_number || "",
           bank_iban: savedData.bank_iban || "",
           bank_swift_bic: savedData.bank_swift_bic || "",
+          payment_reference_prefix: (savedData as any).payment_reference_prefix || "INV",
+          late_payment_interest_rate: (savedData as any).late_payment_interest_rate ?? 0,
+          late_payment_fee_amount: (savedData as any).late_payment_fee_amount ?? 0,
+          late_payment_terms: (savedData as any).late_payment_terms || "",
           allow_in_app_template_editing: savedData.allow_in_app_template_editing || false
         });
       }
@@ -262,6 +278,11 @@ export const BusinessSettingsTab = () => {
           setIsEditingPayment(false);
           setTimeout(() => setPaymentSavedSuccessfully(false), 3000);
           break;
+        case 'invoice':
+          setInvoiceSavedSuccessfully(true);
+          setIsEditingInvoice(false);
+          setTimeout(() => setInvoiceSavedSuccessfully(false), 3000);
+          break;
         case 'advanced':
           setAdvancedSavedSuccessfully(true);
           setIsEditingAdvanced(false);
@@ -284,7 +305,7 @@ export const BusinessSettingsTab = () => {
     }
   };
 
-  const handleEditSection = (sectionName: 'company' | 'registration' | 'contact' | 'address' | 'financial' | 'payment' | 'advanced') => {
+  const handleEditSection = (sectionName: 'company' | 'registration' | 'contact' | 'address' | 'financial' | 'payment' | 'invoice' | 'advanced') => {
     console.log('🔥 handleEditSection called with:', sectionName);
     console.log('🔥 Current editing states BEFORE:', {
       isEditingCompany,
@@ -321,6 +342,10 @@ export const BusinessSettingsTab = () => {
         setIsEditingPayment(true);
         setPaymentSavedSuccessfully(false);
         break;
+      case 'invoice':
+        setIsEditingInvoice(true);
+        setInvoiceSavedSuccessfully(false);
+        break;
       case 'advanced':
         setIsEditingAdvanced(true);
         setAdvancedSavedSuccessfully(false);
@@ -330,7 +355,7 @@ export const BusinessSettingsTab = () => {
     console.log('🔥 handleEditSection completed for:', sectionName);
   };
 
-  const handleCancelSection = (sectionName: 'company' | 'registration' | 'contact' | 'address' | 'financial' | 'payment' | 'advanced') => {
+  const handleCancelSection = (sectionName: 'company' | 'registration' | 'contact' | 'address' | 'financial' | 'payment' | 'invoice' | 'advanced') => {
     // Reset form data to original values
     if (businessSettings) {
       setFormData({
@@ -361,6 +386,10 @@ export const BusinessSettingsTab = () => {
         bank_routing_number: businessSettings.bank_routing_number || "",
         bank_iban: businessSettings.bank_iban || "",
         bank_swift_bic: businessSettings.bank_swift_bic || "",
+        payment_reference_prefix: (businessSettings as any).payment_reference_prefix || "INV",
+        late_payment_interest_rate: (businessSettings as any).late_payment_interest_rate ?? 0,
+        late_payment_fee_amount: (businessSettings as any).late_payment_fee_amount ?? 0,
+        late_payment_terms: (businessSettings as any).late_payment_terms || "",
         allow_in_app_template_editing: businessSettings.allow_in_app_template_editing || false
       });
     }
@@ -384,6 +413,9 @@ export const BusinessSettingsTab = () => {
         break;
       case 'payment':
         setIsEditingPayment(false);
+        break;
+      case 'invoice':
+        setIsEditingInvoice(false);
         break;
       case 'advanced':
         setIsEditingAdvanced(false);
@@ -925,6 +957,82 @@ export const BusinessSettingsTab = () => {
         
         <p className="text-xs text-muted-foreground mt-4">
           Bank details can be displayed on invoices for direct deposit payments. Fields adapt to your country's banking format.
+        </p>
+      </FormSection>
+
+      {/* Invoice Settings */}
+      <FormSection
+        key="invoice-section"
+        title="Invoice Settings"
+        description="Late payment policies and invoice preferences"
+        icon={<FileText className="h-5 w-5" />}
+        isEditing={isEditingInvoice}
+        onEdit={() => handleEditSection('invoice')}
+        onSave={() => handleSaveSection('invoice')}
+        onCancel={() => handleCancelSection('invoice')}
+        isSaving={savingSection === 'invoice'}
+        savedSuccessfully={invoiceSavedSuccessfully}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormFieldGroup 
+            label="Payment Reference Prefix" 
+            description="Prefix for auto-generated payment references (e.g., INV-001)"
+          >
+            <Input
+              value={formData.payment_reference_prefix}
+              onChange={(e) => handleInputChange("payment_reference_prefix", e.target.value)}
+              placeholder="INV"
+              disabled={!isEditingInvoice}
+            />
+          </FormFieldGroup>
+
+          <FormFieldGroup 
+            label="Late Payment Interest Rate (%)" 
+            description="Monthly interest rate charged on overdue invoices"
+          >
+            <Input
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              value={formData.late_payment_interest_rate}
+              onChange={(e) => handleInputChange("late_payment_interest_rate", parseFloat(e.target.value) || 0)}
+              placeholder="0"
+              disabled={!isEditingInvoice}
+            />
+          </FormFieldGroup>
+        </div>
+
+        <FormFieldGroup 
+          label="Late Payment Fee" 
+          description="Fixed fee charged for late payments (in your local currency)"
+        >
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            value={formData.late_payment_fee_amount}
+            onChange={(e) => handleInputChange("late_payment_fee_amount", parseFloat(e.target.value) || 0)}
+            placeholder="0.00"
+            disabled={!isEditingInvoice}
+          />
+        </FormFieldGroup>
+
+        <FormFieldGroup 
+          label="Late Payment Terms" 
+          description="Custom late payment policy text that appears on invoices"
+        >
+          <Textarea
+            value={formData.late_payment_terms}
+            onChange={(e) => handleInputChange("late_payment_terms", e.target.value)}
+            placeholder="E.g., Payment is due within 30 days. Overdue amounts may incur interest charges."
+            rows={3}
+            disabled={!isEditingInvoice}
+          />
+        </FormFieldGroup>
+
+        <p className="text-xs text-muted-foreground mt-2">
+          These settings control how late payment policies are displayed on your invoices, helping you maintain consistent billing practices.
         </p>
       </FormSection>
 

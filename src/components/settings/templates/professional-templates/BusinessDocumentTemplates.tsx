@@ -1,16 +1,16 @@
 export const standardInvoiceTemplate = {
   id: 'standard-invoice',
   name: 'Standard Invoice',
-  description: 'Clean, straightforward invoice layout',
+  description: 'Professional invoice layout with payment tracking',
   documentType: 'invoice',
   blocks: [
     {
       id: 'invoice-header',
-      type: 'header',
+      type: 'document-header',
       content: {
-        layout: 'invoice-professional',
+        layout: 'centered',
         showLogo: true,
-        logoPosition: 'left',
+        logoPosition: 'center',
         documentTitle: 'INVOICE',
         companyName: '{{company_name}}',
         companyAddress: '{{company_address}}',
@@ -27,36 +27,17 @@ export const standardInvoiceTemplate = {
       editable: true
     },
     {
-      id: 'invoice-details',
-      type: 'invoice-info',
-      content: {
-        invoiceNumber: '{{invoice_number}}',
-        invoiceDate: '{{invoice_date}}',
-        dueDate: '{{due_date}}',
-        poNumber: '{{po_number}}',
-        layout: 'professional-grid',
-        style: {
-          backgroundColor: '#fef2f2',
-          borderColor: '#dc2626',
-          padding: '20px'
-        }
-      },
-      editable: true
-    },
-    {
       id: 'billing-info',
-      type: 'billing-details',
+      type: 'client-info',
       content: {
         billToTitle: 'Bill To:',
-        shipToTitle: 'Ship To:',
         showBillTo: true,
-        showShipTo: false,
         clientName: '{{client_name}}',
         clientCompany: '{{client_company}}',
         clientAddress: '{{client_address}}',
         clientEmail: '{{client_email}}',
         style: {
-          layout: 'side-by-side',
+          layout: 'standard',
           backgroundColor: '#ffffff'
         }
       },
@@ -64,7 +45,7 @@ export const standardInvoiceTemplate = {
     },
     {
       id: 'invoice-items',
-      type: 'invoice-products',
+      type: 'products',
       content: {
         layout: 'standard-table',
         columns: ['Description', 'Quantity', 'Rate', 'Amount'],
@@ -80,13 +61,15 @@ export const standardInvoiceTemplate = {
     },
     {
       id: 'invoice-totals',
-      type: 'invoice-totals',
+      type: 'totals',
       content: {
         showSubtotal: true,
         showDiscount: false,
         showTax: true,
         showTotal: true,
-        currency: '£',
+        showAmountPaid: true,
+        showBalanceDue: true,
+        currency: '{{currency}}',
         style: {
           alignment: 'right',
           totalHighlight: '#dc2626',
@@ -96,21 +79,51 @@ export const standardInvoiceTemplate = {
       editable: true
     },
     {
-      id: 'payment-terms',
-      type: 'payment-info',
+      id: 'invoice-status',
+      type: 'invoice-status',
       content: {
-        title: 'Payment Information',
-        terms: 'Payment is due within 30 days of invoice date.',
-        methods: 'We accept bank transfer, cheque, or card payments.',
-        bankDetails: {
-          accountName: '{{company_name}}',
-          accountNumber: 'XXXXXXXXXX',
-          sortCode: 'XX-XX-XX',
-          reference: '{{invoice_number}}'
-        },
+        title: 'Payment Status',
         style: {
-          backgroundColor: '#f9fafb',
-          borderColor: '#e5e7eb'
+          backgroundColor: 'auto'
+        }
+      },
+      editable: true
+    },
+    {
+      id: 'payment-details',
+      type: 'payment-details',
+      content: {
+        title: 'Payment Details',
+        bankDetails: '{{company_bank_details}}',
+        paymentReference: '{{payment_reference}}',
+        paymentInstructions: 'Please use the payment reference when making your transfer.',
+        style: {
+          backgroundColor: '#eff6ff',
+          borderColor: '#dbeafe'
+        }
+      },
+      editable: true
+    },
+    {
+      id: 'late-payment',
+      type: 'late-payment-terms',
+      content: {
+        terms: '{{late_payment_terms}}',
+        style: {
+          backgroundColor: '#fffbeb',
+          borderColor: '#fef3c7'
+        }
+      },
+      editable: true
+    },
+    {
+      id: 'registration-footer',
+      type: 'registration-footer',
+      content: {
+        registrationDetails: '{{company_registration_footer}}',
+        style: {
+          textAlign: 'center',
+          fontSize: '12px'
         }
       },
       editable: true
