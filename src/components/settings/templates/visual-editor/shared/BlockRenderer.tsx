@@ -638,6 +638,78 @@ export const TotalsBlock: React.FC<BlockRendererProps> = ({
   );
 };
 
+// ============= CLIENT INFO BLOCK =============
+export const ClientInfoBlock: React.FC<BlockRendererProps> = ({
+  block,
+  projectData,
+  userTimezone = 'UTC',
+  userDateFormat = 'M/d/yyyy'
+}) => {
+  const content = block.content || {};
+  const businessSettings = projectData?.businessSettings || {};
+  
+  const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
+
+  return (
+    <div className="mb-6">
+      <div className="text-xs font-semibold uppercase text-gray-500 tracking-wider mb-2">
+        {content.label || 'Bill To'}
+      </div>
+      <div className="text-sm space-y-1">
+        <div className="font-bold text-gray-900">{getToken('client_name') || 'Client Name'}</div>
+        {content.showCompany !== false && getToken('client_company') && (
+          <div className="text-gray-700">{getToken('client_company')}</div>
+        )}
+        {content.showEmail !== false && getToken('client_email') && (
+          <div className="text-gray-700">{getToken('client_email')}</div>
+        )}
+        {content.showPhone !== false && getToken('client_phone') && (
+          <div className="text-gray-700">{getToken('client_phone')}</div>
+        )}
+        {content.showAddress !== false && getToken('client_address') && (
+          <div className="text-gray-700">{getToken('client_address')}</div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============= TERMS AND CONDITIONS BLOCK =============
+export const TermsConditionsBlock: React.FC<BlockRendererProps> = ({
+  block
+}) => {
+  const content = block.content || {};
+  const style = block.style || {};
+
+  return (
+    <div 
+      className="mb-6 rounded-lg"
+      style={{
+        padding: style.padding || '16px',
+        backgroundColor: style.backgroundColor || 'transparent'
+      }}
+    >
+      <h3 className="text-lg font-semibold mb-4 text-gray-900">
+        {content.title || 'Terms & Conditions'}
+      </h3>
+      <div className="text-sm text-gray-600 space-y-3">
+        {content.term1 && <p>{content.term1}</p>}
+        {content.term2 && <p>{content.term2}</p>}
+        {content.term3 && <p>{content.term3}</p>}
+        {content.term4 && <p>{content.term4}</p>}
+        {!content.term1 && !content.term2 && !content.term3 && !content.term4 && (
+          <>
+            <p>1. Payment Terms: 50% deposit required upon acceptance. Remaining balance due upon completion.</p>
+            <p>2. Timeline: Project completion estimated at 2-3 weeks from deposit receipt.</p>
+            <p>3. Warranty: All work comes with a 1-year warranty against defects in workmanship.</p>
+            <p>4. Cancellation: This quote is valid for 30 days.</p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // ============= PAYMENT DETAILS BLOCK (Invoice-specific) =============
 export const PaymentDetailsBlock: React.FC<BlockRendererProps> = ({
   block,
@@ -662,8 +734,16 @@ export const PaymentDetailsBlock: React.FC<BlockRendererProps> = ({
     );
   }
 
+  const style = block.style || {};
+  
   return (
-    <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+    <div 
+      className="mb-6 p-4 rounded-lg border"
+      style={{
+        backgroundColor: style.backgroundColor || '#eff6ff',
+        borderColor: style.borderColor || '#dbeafe'
+      }}
+    >
       <div className="flex items-center gap-2 mb-3">
         <Banknote className="h-5 w-5 text-blue-600" />
         <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1e40af' }}>
@@ -724,8 +804,16 @@ export const InstallationDetailsBlock: React.FC<BlockRendererProps> = ({
   
   const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
 
+  const style = block.style || {};
+  
   return (
-    <div className="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-100">
+    <div 
+      className="mb-6 p-4 rounded-lg border"
+      style={{
+        backgroundColor: style.backgroundColor || '#fffbeb',
+        borderColor: style.borderColor || '#fef3c7'
+      }}
+    >
       <div className="flex items-center gap-2 mb-3">
         <Clock className="h-5 w-5 text-amber-600" />
         <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#92400e' }}>
@@ -766,9 +854,16 @@ export const InstallerSignoffBlock: React.FC<BlockRendererProps> = ({
   isPrintMode = false
 }) => {
   const content = block.content || {};
+  const style = block.style || {};
 
   return (
-    <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-100">
+    <div 
+      className="mb-6 p-4 rounded-lg border"
+      style={{
+        backgroundColor: style.backgroundColor || '#f0fdf4',
+        borderColor: style.borderColor || '#dcfce7'
+      }}
+    >
       <div className="flex items-center gap-2 mb-3">
         <CheckCircle2 className="h-5 w-5 text-green-600" />
         <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#166534' }}>
@@ -848,6 +943,17 @@ export const renderSharedBlock = (props: BlockRendererProps): React.ReactNode =>
       
     case 'installer-signoff':
       return <InstallerSignoffBlock {...props} />;
+    
+    // Client info block (used by all document types)
+    case 'client-info':
+    case 'client':
+    case 'bill-to':
+      return <ClientInfoBlock {...props} />;
+    
+    // Terms and conditions block
+    case 'terms-conditions':
+    case 'terms':
+      return <TermsConditionsBlock {...props} />;
       
     default:
       return null; // Let parent handle unknown types
