@@ -1674,25 +1674,32 @@ export const EditableLivePreview = ({
   const allowedBlockTypes = getAvailableBlocks(documentType);
 
   const allBlocks = [
-    { type: 'document-header', name: 'Document Header', icon: ImageIcon, description: 'Customizable header with logo, title & metadata' },
-    { type: 'header', name: 'Company Header', icon: Building2, description: 'Company info & logo' },
-    { type: 'client-info', name: 'Client Details', icon: User, description: 'Client information' },
-    { type: 'text', name: 'Text Block', icon: Type, description: 'Add formatted text' },
-    { type: 'editable-text-field', name: 'Editable Text Field', icon: Edit3, description: 'User input with bold/regular options' },
-    { type: 'image-uploader', name: 'Image Uploader', icon: Upload, description: 'Upload images for proposals' },
-    { type: 'line-items', name: 'Line Items Table', icon: ShoppingCart, description: 'Professional itemized list' },
-    { type: 'products', name: 'Products Table', icon: ShoppingCart, description: 'Products and services table' },
-    { type: 'terms-conditions', name: 'Terms & Conditions', icon: FileText, description: 'Legal terms and policies' },
-    { type: 'payment-info', name: 'Payment Information', icon: DollarSign, description: 'Payment methods and schedule' },
-    { type: 'payment-details', name: 'Payment Details', icon: CreditCard, description: 'Bank account and payment info (Invoice)' },
-    { type: 'registration-footer', name: 'Registration Footer', icon: FileText, description: 'ABN/VAT registration info (Invoice)' },
-    { type: 'installation-details', name: 'Installation Details', icon: Calendar, description: 'Installation date & info (Work Order)' },
-    { type: 'installer-signoff', name: 'Installer Sign-off', icon: PenTool, description: 'Installer signature block (Work Order)' },
-    { type: 'project-scope', name: 'Project Scope', icon: Calculator, description: 'What\'s included and excluded' },
-    { type: 'signature', name: 'Signature Block', icon: PenTool, description: 'Authorization signatures' },
-    { type: 'spacer', name: 'Spacer', icon: Space, description: 'Add vertical space' },
-    { type: 'divider', name: 'Divider', icon: Minus, description: 'Section separator' },
-    { type: 'footer', name: 'Footer', icon: FileText, description: 'Document footer' },
+    // ===== UNIVERSAL BLOCKS =====
+    { type: 'document-header', name: 'Document Header', icon: ImageIcon, description: 'Logo, company details, document title', badge: null, badgeColor: null },
+    { type: 'header', name: 'Company Header', icon: Building2, description: 'Company info & logo', badge: null, badgeColor: null },
+    { type: 'client-info', name: 'Client Details', icon: User, description: '"Bill To" section with client info', badge: null, badgeColor: null },
+    { type: 'text', name: 'Text Block', icon: Type, description: 'Add formatted text', badge: null, badgeColor: null },
+    { type: 'line-items', name: 'Line Items Table', icon: ShoppingCart, description: 'Products and services table', badge: null, badgeColor: null },
+    { type: 'totals', name: 'Totals Section', icon: Calculator, description: 'Subtotal, tax, total', badge: null, badgeColor: null },
+    { type: 'spacer', name: 'Spacer', icon: Space, description: 'Add vertical space', badge: null, badgeColor: null },
+    { type: 'divider', name: 'Divider', icon: Minus, description: 'Section separator', badge: null, badgeColor: null },
+    { type: 'footer', name: 'Footer', icon: FileText, description: 'Document footer', badge: null, badgeColor: null },
+    
+    // ===== QUOTE/PROPOSAL BLOCKS =====
+    { type: 'terms-conditions', name: 'Terms & Conditions', icon: FileText, description: 'Legal terms and policies', badge: 'Quote', badgeColor: 'blue' },
+    { type: 'signature', name: 'Signature Block', icon: PenTool, description: 'Client acceptance signature', badge: 'Quote', badgeColor: 'blue' },
+    { type: 'project-scope', name: 'Project Scope', icon: Calculator, description: 'What\'s included and excluded', badge: 'Quote', badgeColor: 'blue' },
+    { type: 'payment-info', name: 'Payment Information', icon: DollarSign, description: 'Payment methods and schedule', badge: 'Quote', badgeColor: 'blue' },
+    { type: 'editable-text-field', name: 'Editable Text Field', icon: Edit3, description: 'User input with bold/regular options', badge: 'Quote', badgeColor: 'blue' },
+    { type: 'image-uploader', name: 'Image Uploader', icon: Upload, description: 'Upload images for proposals', badge: 'Quote', badgeColor: 'blue' },
+    
+    // ===== INVOICE BLOCKS =====
+    { type: 'payment-details', name: 'Bank/Payment Details', icon: CreditCard, description: 'Bank account and payment info', badge: 'Invoice', badgeColor: 'green' },
+    { type: 'registration-footer', name: 'Business Registration', icon: Building2, description: 'ABN/VAT/Tax registration', badge: 'Invoice', badgeColor: 'green' },
+    
+    // ===== WORK ORDER BLOCKS =====
+    { type: 'installation-details', name: 'Installation Details', icon: Calendar, description: 'Install date and team info', badge: 'Work Order', badgeColor: 'amber' },
+    { type: 'installer-signoff', name: 'Installer Sign-off', icon: PenTool, description: 'Completion confirmation', badge: 'Work Order', badgeColor: 'amber' },
   ];
 
   // Filter blocks based on document type
@@ -1972,11 +1979,23 @@ export const EditableLivePreview = ({
                   onClick={() => addBlock(blockType.type)}
                   className="w-full justify-start h-auto p-3 text-left"
                 >
-                  <div className="flex items-start gap-3">
-                    <blockType.icon className="h-5 w-5 text-gray-500 mt-0.5" />
-                    <div>
-                      <div className="font-medium">{blockType.name}</div>
-                      <div className="text-sm text-gray-500">{blockType.description}</div>
+                  <div className="flex items-start gap-3 w-full">
+                    <blockType.icon className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{blockType.name}</span>
+                        {blockType.badge && (
+                          <span className={cn(
+                            "text-xs px-1.5 py-0.5 rounded",
+                            blockType.badgeColor === 'blue' && "bg-blue-100 text-blue-700",
+                            blockType.badgeColor === 'green' && "bg-green-100 text-green-700",
+                            blockType.badgeColor === 'amber' && "bg-amber-100 text-amber-700"
+                          )}>
+                            {blockType.badge}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground">{blockType.description}</div>
                     </div>
                   </div>
                 </Button>
