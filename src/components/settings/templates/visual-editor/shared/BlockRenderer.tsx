@@ -72,14 +72,23 @@ export const resolveToken = (
     return parts.join(' | ');
   };
 
-  // Helper to format registration footer
+  // Helper to format registration footer with country-aware labels
   const formatRegistrationFooter = () => {
     if (!businessSettings) return '';
+    const country = businessSettings.country || 'Australia';
     const parts: string[] = [];
     
+    // Import country-specific labels dynamically
+    const { getRegistrationLabels } = require('@/utils/businessRegistrationLabels');
+    const labels = getRegistrationLabels(country);
+    
     if (businessSettings.abn) parts.push(`ABN: ${businessSettings.abn}`);
-    if (businessSettings.registration_number) parts.push(`Reg: ${businessSettings.registration_number}`);
-    if (businessSettings.tax_number) parts.push(`Tax ID: ${businessSettings.tax_number}`);
+    if (businessSettings.registration_number) {
+      parts.push(`${labels.registrationLabel}: ${businessSettings.registration_number}`);
+    }
+    if (businessSettings.tax_number) {
+      parts.push(`${labels.taxLabel}: ${businessSettings.tax_number}`);
+    }
     
     return parts.join(' | ');
   };

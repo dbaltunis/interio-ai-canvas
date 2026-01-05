@@ -10,14 +10,28 @@ export interface RegistrationLabels {
   taxNumber: string;
   taxNumberPlaceholder: string;
   taxNumberHelpText: string;
+  // Universal requirements that apply to all countries
   legalRequirements: string[];
+  // Country-specific notes (only when genuinely unique)
+  countrySpecificNotes?: string[];
   bankFields: {
     primary: string;
     primaryPlaceholder: string;
     secondary?: string;
     secondaryPlaceholder?: string;
   };
+  // Short labels for document footers
+  registrationLabel: string;
+  taxLabel: string;
 }
+
+// Universal legal requirements that apply to ALL countries
+const UNIVERSAL_REQUIREMENTS = [
+  'Business registration number required on invoices',
+  'Company name and registration for registered entities',
+  'Tax/VAT amount shown separately if tax-registered',
+  'Business name and address required'
+];
 
 export const getRegistrationLabels = (country: string): RegistrationLabels => {
   switch (country) {
@@ -29,15 +43,12 @@ export const getRegistrationLabels = (country: string): RegistrationLabels => {
         registration: 'ACN (Australian Company Number)',
         registrationPlaceholder: '123 456 789',
         registrationHelpText: 'Your 9-digit company number from ASIC. Required for companies (Pty Ltd, Ltd).',
+        registrationLabel: 'ACN',
         taxNumber: 'GST Registration Number',
         taxNumberPlaceholder: 'Enter GST registration number',
         taxNumberHelpText: 'Only required if registered for GST (turnover over $75,000 AUD).',
-        legalRequirements: [
-          'ABN must appear on all tax invoices',
-          'Company name and ACN for registered companies',
-          'GST amount must be shown separately if GST-registered',
-          'Business address required'
-        ],
+        taxLabel: 'GST',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
         bankFields: {
           primary: 'BSB',
           primaryPlaceholder: '123-456',
@@ -53,15 +64,12 @@ export const getRegistrationLabels = (country: string): RegistrationLabels => {
         registration: 'NZBN (NZ Business Number)',
         registrationPlaceholder: '9429000000000',
         registrationHelpText: 'Your 13-digit NZBN from the Companies Office. Unique identifier for your business.',
+        registrationLabel: 'NZBN',
         taxNumber: 'GST Number',
         taxNumberPlaceholder: '123-456-789',
         taxNumberHelpText: 'IRD GST number. Required if turnover exceeds $60,000 NZD.',
-        legalRequirements: [
-          'GST number on tax invoices if GST-registered',
-          'Business name and address',
-          'Date of invoice and description of goods/services',
-          'GST amount shown separately'
-        ],
+        taxLabel: 'GST',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
         bankFields: {
           primary: 'Bank Account Number',
           primaryPlaceholder: '12-3456-7890123-00'
@@ -75,21 +83,42 @@ export const getRegistrationLabels = (country: string): RegistrationLabels => {
         registration: 'Company Registration Number',
         registrationPlaceholder: '12345678',
         registrationHelpText: 'Your 8-digit Companies House registration number. Required on all business correspondence for limited companies.',
+        registrationLabel: 'Company Reg',
         taxNumber: 'VAT Number',
         taxNumberPlaceholder: 'GB123456789',
         taxNumberHelpText: 'VAT registration number (starts with GB). Required if VAT-registered (turnover over £90,000).',
-        legalRequirements: [
-          'Company name and registration number',
-          'Registered office address (if different from trading address)',
-          'VAT number (if VAT-registered)',
-          'Place of registration (England & Wales, Scotland, etc.)',
-          'Directors\' names for stationery (optional)'
+        taxLabel: 'VAT',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
+        countrySpecificNotes: [
+          'Place of registration required (England & Wales, Scotland, etc.)',
+          'Registered office address if different from trading address'
         ],
         bankFields: {
           primary: 'Sort Code',
           primaryPlaceholder: '12-34-56',
           secondary: 'Account Number',
           secondaryPlaceholder: '12345678'
+        }
+      };
+    case 'Ireland':
+      return {
+        abn: null,
+        abnPlaceholder: null,
+        abnHelpText: null,
+        registration: 'CRO Number',
+        registrationPlaceholder: '123456',
+        registrationHelpText: 'Your Companies Registration Office number. Required for all registered companies in Ireland.',
+        registrationLabel: 'CRO',
+        taxNumber: 'VAT Number',
+        taxNumberPlaceholder: 'IE1234567A',
+        taxNumberHelpText: 'Irish VAT number (starts with IE). Required if VAT-registered.',
+        taxLabel: 'VAT',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
+        bankFields: {
+          primary: 'IBAN',
+          primaryPlaceholder: 'IE64 IRCE 9205 0112 3456 78',
+          secondary: 'BIC/SWIFT',
+          secondaryPlaceholder: 'AABORIEL'
         }
       };
     case 'United States':
@@ -100,14 +129,14 @@ export const getRegistrationLabels = (country: string): RegistrationLabels => {
         registration: 'State Registration Number',
         registrationPlaceholder: 'Enter state registration',
         registrationHelpText: 'Your state business registration or Secretary of State filing number.',
+        registrationLabel: 'State Reg',
         taxNumber: 'EIN (Employer Identification Number)',
         taxNumberPlaceholder: '12-3456789',
         taxNumberHelpText: 'Federal tax ID from the IRS. Required for businesses with employees or filing certain tax returns.',
-        legalRequirements: [
-          'Business name and address',
-          'EIN or SSN for tax purposes',
-          'State sales tax ID (if collecting sales tax)',
-          'Invoice date and payment terms'
+        taxLabel: 'EIN',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
+        countrySpecificNotes: [
+          'State sales tax ID required if collecting sales tax'
         ],
         bankFields: {
           primary: 'Routing Number (ABA)',
@@ -124,14 +153,14 @@ export const getRegistrationLabels = (country: string): RegistrationLabels => {
         registration: 'Business Number (BN)',
         registrationPlaceholder: '123456789',
         registrationHelpText: 'Your 9-digit CRA Business Number. Used for all CRA program accounts.',
+        registrationLabel: 'BN',
         taxNumber: 'GST/HST Number',
         taxNumberPlaceholder: '123456789 RT0001',
         taxNumberHelpText: 'GST/HST registration number. Required if taxable supplies exceed $30,000 CAD.',
-        legalRequirements: [
-          'GST/HST registration number on invoices',
-          'Business legal name and address',
-          'Provincial tax registration if applicable',
-          'Date and payment terms'
+        taxLabel: 'GST/HST',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
+        countrySpecificNotes: [
+          'Provincial tax registration may be required (PST/QST)'
         ],
         bankFields: {
           primary: 'Institution/Transit Number',
@@ -148,15 +177,15 @@ export const getRegistrationLabels = (country: string): RegistrationLabels => {
         registration: 'Handelsregisternummer (HRB)',
         registrationPlaceholder: 'HRB 12345',
         registrationHelpText: 'Commercial register number from your local Amtsgericht.',
+        registrationLabel: 'HRB',
         taxNumber: 'Umsatzsteuer-ID (VAT ID)',
         taxNumberPlaceholder: 'DE123456789',
         taxNumberHelpText: 'Your EU VAT identification number (starts with DE). Required for B2B EU transactions.',
-        legalRequirements: [
-          'Full company name and legal form (GmbH, AG, etc.)',
-          'Registered office address',
-          'Commercial register number and court',
-          'VAT-ID for intra-community supplies',
-          'Managing directors\' names'
+        taxLabel: 'USt-ID',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
+        countrySpecificNotes: [
+          'Share capital must be stated for GmbH/AG',
+          'Managing directors\' names required on stationery'
         ],
         bankFields: {
           primary: 'IBAN',
@@ -173,21 +202,84 @@ export const getRegistrationLabels = (country: string): RegistrationLabels => {
         registration: 'SIRET Number',
         registrationPlaceholder: '123 456 789 00012',
         registrationHelpText: 'Your 14-digit SIRET from INSEE. Identifies your business establishment.',
+        registrationLabel: 'SIRET',
         taxNumber: 'TVA Intracommunautaire',
         taxNumberPlaceholder: 'FR12345678901',
         taxNumberHelpText: 'Intra-community VAT number (starts with FR). Required for EU B2B transactions.',
-        legalRequirements: [
-          'Company name and legal form (SARL, SAS, etc.)',
-          'SIRET number',
-          'RCS registration and city',
-          'Share capital amount',
-          'TVA number for VAT-registered businesses'
+        taxLabel: 'TVA',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
+        countrySpecificNotes: [
+          'RCS registration and city required',
+          'Share capital must be stated for SARL/SAS'
         ],
         bankFields: {
           primary: 'IBAN',
           primaryPlaceholder: 'FR76 3000 6000 0112 3456 7890 189',
           secondary: 'BIC/SWIFT',
           secondaryPlaceholder: 'BNPAFRPP'
+        }
+      };
+    case 'Netherlands':
+      return {
+        abn: null,
+        abnPlaceholder: null,
+        abnHelpText: null,
+        registration: 'KVK Number',
+        registrationPlaceholder: '12345678',
+        registrationHelpText: 'Your 8-digit Chamber of Commerce (KVK) registration number.',
+        registrationLabel: 'KVK',
+        taxNumber: 'BTW Number (VAT)',
+        taxNumberPlaceholder: 'NL123456789B01',
+        taxNumberHelpText: 'Dutch VAT number (starts with NL). Required for VAT-registered businesses.',
+        taxLabel: 'BTW',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
+        bankFields: {
+          primary: 'IBAN',
+          primaryPlaceholder: 'NL91 ABNA 0417 1643 00',
+          secondary: 'BIC/SWIFT',
+          secondaryPlaceholder: 'ABNANL2A'
+        }
+      };
+    case 'Lithuania':
+      return {
+        abn: null,
+        abnPlaceholder: null,
+        abnHelpText: null,
+        registration: 'Company Code (Įmonės kodas)',
+        registrationPlaceholder: '123456789',
+        registrationHelpText: 'Your 9-digit company code from the Register of Legal Entities.',
+        registrationLabel: 'Įmonės kodas',
+        taxNumber: 'PVM Number (VAT)',
+        taxNumberPlaceholder: 'LT123456789012',
+        taxNumberHelpText: 'Lithuanian VAT number (starts with LT). Required for VAT-registered businesses.',
+        taxLabel: 'PVM',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
+        bankFields: {
+          primary: 'IBAN',
+          primaryPlaceholder: 'LT12 1000 0111 0100 1000',
+          secondary: 'BIC/SWIFT',
+          secondaryPlaceholder: 'HABALT22'
+        }
+      };
+    case 'Poland':
+      return {
+        abn: null,
+        abnPlaceholder: null,
+        abnHelpText: null,
+        registration: 'KRS / REGON Number',
+        registrationPlaceholder: '0000123456',
+        registrationHelpText: 'KRS (National Court Register) for companies or REGON (statistical ID) for businesses.',
+        registrationLabel: 'KRS',
+        taxNumber: 'NIP (Tax ID)',
+        taxNumberPlaceholder: 'PL1234567890',
+        taxNumberHelpText: 'Polish tax identification number. VAT-EU number starts with PL.',
+        taxLabel: 'NIP',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
+        bankFields: {
+          primary: 'IBAN',
+          primaryPlaceholder: 'PL61 1090 1014 0000 0712 1981 2874',
+          secondary: 'BIC/SWIFT',
+          secondaryPlaceholder: 'WBKPPLPP'
         }
       };
     case 'Italy':
@@ -198,15 +290,15 @@ export const getRegistrationLabels = (country: string): RegistrationLabels => {
         registration: 'Codice Fiscale / Partita IVA',
         registrationPlaceholder: '12345678901',
         registrationHelpText: 'Your 11-digit fiscal code or VAT number from Agenzia delle Entrate.',
+        registrationLabel: 'Codice Fiscale',
         taxNumber: 'Partita IVA (VAT Number)',
         taxNumberPlaceholder: 'IT12345678901',
         taxNumberHelpText: 'Italian VAT number (starts with IT). Required for all businesses.',
-        legalRequirements: [
-          'Company name and legal form (S.r.l., S.p.A., etc.)',
-          'Registered office address',
-          'Partita IVA and Codice Fiscale',
-          'REA number and registration',
-          'Share capital for companies'
+        taxLabel: 'P.IVA',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
+        countrySpecificNotes: [
+          'REA number and registration required',
+          'Share capital for S.r.l./S.p.A.'
         ],
         bankFields: {
           primary: 'IBAN',
@@ -223,46 +315,17 @@ export const getRegistrationLabels = (country: string): RegistrationLabels => {
         registration: 'CIF (Tax ID)',
         registrationPlaceholder: 'B12345678',
         registrationHelpText: 'Tax identification code from Agencia Tributaria.',
+        registrationLabel: 'CIF',
         taxNumber: 'NIF-IVA (VAT Number)',
         taxNumberPlaceholder: 'ESB12345678',
         taxNumberHelpText: 'Spanish VAT number (starts with ES). Required for intra-EU transactions.',
-        legalRequirements: [
-          'Company name and legal form (S.L., S.A., etc.)',
-          'CIF/NIF number',
-          'Registered address',
-          'Commercial Registry data',
-          'VAT number for EU transactions'
-        ],
+        taxLabel: 'NIF-IVA',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
         bankFields: {
           primary: 'IBAN',
           primaryPlaceholder: 'ES91 2100 0418 4502 0005 1332',
           secondary: 'BIC/SWIFT',
           secondaryPlaceholder: 'CAIXESBBXXX'
-        }
-      };
-    case 'Netherlands':
-      return {
-        abn: null,
-        abnPlaceholder: null,
-        abnHelpText: null,
-        registration: 'KVK Number',
-        registrationPlaceholder: '12345678',
-        registrationHelpText: 'Your 8-digit Chamber of Commerce (KVK) registration number.',
-        taxNumber: 'BTW Number (VAT)',
-        taxNumberPlaceholder: 'NL123456789B01',
-        taxNumberHelpText: 'Dutch VAT number (starts with NL). Required for VAT-registered businesses.',
-        legalRequirements: [
-          'Trade name and legal form (B.V., N.V., etc.)',
-          'KVK number',
-          'Registered office',
-          'BTW number if VAT-registered',
-          'Managing directors for BV/NV'
-        ],
-        bankFields: {
-          primary: 'IBAN',
-          primaryPlaceholder: 'NL91 ABNA 0417 1643 00',
-          secondary: 'BIC/SWIFT',
-          secondaryPlaceholder: 'ABNANL2A'
         }
       };
     case 'South Africa':
@@ -273,15 +336,14 @@ export const getRegistrationLabels = (country: string): RegistrationLabels => {
         registration: 'Company Registration Number (CIPC)',
         registrationPlaceholder: '2020/123456/07',
         registrationHelpText: 'CIPC registration number. Format: YYYY/NNNNNN/NN for companies.',
+        registrationLabel: 'CIPC Reg',
         taxNumber: 'VAT Number',
         taxNumberPlaceholder: '4123456789',
         taxNumberHelpText: 'SARS VAT registration number. Required if turnover exceeds R1 million.',
-        legalRequirements: [
-          'Registered company name and number',
-          'Physical and postal address',
-          'VAT number if VAT-registered',
-          'B-BBEE status level (for government work)',
-          'Director details for Pty Ltd'
+        taxLabel: 'VAT',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
+        countrySpecificNotes: [
+          'B-BBEE status level required for government contracts'
         ],
         bankFields: {
           primary: 'Branch Code',
@@ -298,22 +360,42 @@ export const getRegistrationLabels = (country: string): RegistrationLabels => {
         registration: 'CIN (Corporate Identity Number)',
         registrationPlaceholder: 'U12345MH2020PTC123456',
         registrationHelpText: 'MCA Corporate Identity Number for registered companies.',
+        registrationLabel: 'CIN',
         taxNumber: 'GSTIN (GST Number)',
         taxNumberPlaceholder: '22AAAAA0000A1Z5',
         taxNumberHelpText: '15-digit GST Identification Number. Required if turnover exceeds ₹40 lakh (₹20 lakh for services).',
-        legalRequirements: [
-          'Legal name and trade name',
-          'GSTIN for GST-registered businesses',
-          'PAN of the business',
-          'Registered address with state code',
-          'HSN/SAC codes for goods/services',
-          'CIN for companies'
+        taxLabel: 'GSTIN',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
+        countrySpecificNotes: [
+          'PAN of the business required',
+          'HSN/SAC codes for goods/services on invoices'
         ],
         bankFields: {
           primary: 'IFSC Code',
           primaryPlaceholder: 'HDFC0001234',
           secondary: 'Account Number',
           secondaryPlaceholder: '12345678901234'
+        }
+      };
+    case 'Indonesia':
+      return {
+        abn: null,
+        abnPlaceholder: null,
+        abnHelpText: null,
+        registration: 'NIB (Nomor Induk Berusaha)',
+        registrationPlaceholder: '1234567890123',
+        registrationHelpText: 'Your Business Identification Number from OSS (Online Single Submission).',
+        registrationLabel: 'NIB',
+        taxNumber: 'NPWP (Tax ID)',
+        taxNumberPlaceholder: '12.345.678.9-012.345',
+        taxNumberHelpText: 'Taxpayer Identification Number from the Directorate General of Taxes.',
+        taxLabel: 'NPWP',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
+        bankFields: {
+          primary: 'Bank Code',
+          primaryPlaceholder: '014',
+          secondary: 'Account Number',
+          secondaryPlaceholder: '1234567890'
         }
       };
     case 'Singapore':
@@ -324,15 +406,12 @@ export const getRegistrationLabels = (country: string): RegistrationLabels => {
         registration: 'UEN (Unique Entity Number)',
         registrationPlaceholder: '202012345A',
         registrationHelpText: 'ACRA Unique Entity Number. Standard identifier for all Singapore entities.',
+        registrationLabel: 'UEN',
         taxNumber: 'GST Registration Number',
         taxNumberPlaceholder: 'M12345678A',
         taxNumberHelpText: 'GST number from IRAS. Required if turnover exceeds S$1 million.',
-        legalRequirements: [
-          'Registered company name',
-          'UEN number',
-          'GST number if registered',
-          'Registered address in Singapore'
-        ],
+        taxLabel: 'GST',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
         bankFields: {
           primary: 'Bank Code/Branch Code',
           primaryPlaceholder: '7171-001',
@@ -348,14 +427,14 @@ export const getRegistrationLabels = (country: string): RegistrationLabels => {
         registration: 'Company Registration Number',
         registrationPlaceholder: '1234567',
         registrationHelpText: 'CR number from Companies Registry. 7 or 8 digits.',
+        registrationLabel: 'CR No.',
         taxNumber: 'Business Registration Number',
         taxNumberPlaceholder: '12345678-000-00-00-0',
         taxNumberHelpText: 'IRD Business Registration Certificate number.',
-        legalRequirements: [
-          'Company name in English and Chinese',
-          'Business Registration Certificate number',
-          'Registered office address',
-          'CR number for limited companies'
+        taxLabel: 'BR No.',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
+        countrySpecificNotes: [
+          'Company name in both English and Chinese if registered bilingually'
         ],
         bankFields: {
           primary: 'Bank Code/Branch Code',
@@ -372,14 +451,12 @@ export const getRegistrationLabels = (country: string): RegistrationLabels => {
         registration: 'Company Registration Number',
         registrationPlaceholder: 'Enter company registration',
         registrationHelpText: 'Your official business registration number from the relevant authority.',
+        registrationLabel: 'Company Reg',
         taxNumber: 'Tax ID / VAT Number',
         taxNumberPlaceholder: 'Enter tax identification number',
         taxNumberHelpText: 'Your tax identification or VAT registration number.',
-        legalRequirements: [
-          'Business name and registration details',
-          'Business address',
-          'Tax registration if applicable'
-        ],
+        taxLabel: 'Tax ID',
+        legalRequirements: UNIVERSAL_REQUIREMENTS,
         bankFields: {
           primary: 'IBAN / Account Number',
           primaryPlaceholder: 'Enter account details',
@@ -414,15 +491,19 @@ export const COUNTRIES = [
   'Australia',
   'New Zealand',
   'United Kingdom',
+  'Ireland',
   'United States',
   'Canada',
   'Germany',
   'France',
+  'Netherlands',
+  'Lithuania',
+  'Poland',
   'Italy',
   'Spain',
-  'Netherlands',
   'South Africa',
   'India',
+  'Indonesia',
   'Singapore',
   'Hong Kong',
   'Other'
