@@ -1440,6 +1440,84 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
         </EditableContainer>
       );
 
+    case 'invoice-status':
+      const paymentStatus = projectData?.quote?.payment_status || 'unpaid';
+      const amountPaid = projectData?.quote?.amount_paid || 0;
+      const total = projectData?.quote?.total || projectData?.totals?.grandTotal || 0;
+      const balanceDue = total - amountPaid;
+      const dueDate = projectData?.quote?.due_date ? new Date(projectData.quote.due_date) : null;
+      const isOverdue = dueDate && new Date() > dueDate && paymentStatus !== 'paid';
+      const effectiveStatus = isOverdue ? 'overdue' : paymentStatus;
+      
+      const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
+        paid: { bg: 'bg-green-100', text: 'text-green-800', label: 'PAID' },
+        partial: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'PARTIAL PAYMENT' },
+        unpaid: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'UNPAID' },
+        overdue: { bg: 'bg-red-100', text: 'text-red-800', label: 'OVERDUE' }
+      };
+      const config = statusConfig[effectiveStatus] || statusConfig.unpaid;
+      
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '24px 0',
+            borderRadius: style.borderRadius || '8px'
+          }}
+          className="mb-6"
+        >
+          <div className="flex items-center justify-between p-4 rounded-lg border" style={{ backgroundColor: style.backgroundColor || '#f9fafb' }}>
+            <div className="flex items-center gap-3">
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${config.bg} ${config.text}`}>
+                {config.label}
+              </span>
+              {effectiveStatus === 'overdue' && dueDate && (
+                <span className="text-sm text-red-600">
+                  Due: {format(dueDate, 'dd MMM yyyy')}
+                </span>
+              )}
+            </div>
+            <div className="text-right">
+              {effectiveStatus === 'partial' && (
+                <div className="text-sm text-gray-600 mb-1">
+                  Paid: {renderTokenValue('currency_symbol')}{amountPaid.toFixed(2)}
+                </div>
+              )}
+              {effectiveStatus !== 'paid' && (
+                <div className="font-semibold">
+                  Balance Due: {renderTokenValue('currency_symbol')}{balanceDue.toFixed(2)}
+                </div>
+              )}
+            </div>
+          </div>
+        </EditableContainer>
+      );
+
+    case 'late-payment-terms':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '12px',
+            margin: style.margin || '16px 0',
+            backgroundColor: style.backgroundColor || '#fef3c7',
+            borderRadius: style.borderRadius || '6px'
+          }}
+          className="mb-6"
+        >
+          <div className="text-sm text-amber-800">
+            <EditableText
+              value={content.termsText || renderTokenValue('late_payment_terms') || 'Late payment may incur interest charges as per our payment terms.'}
+              onChange={(value) => updateBlockContent({ termsText: value })}
+              className="text-sm"
+              placeholder="Late payment terms..."
+              multiline
+            />
+          </div>
+        </EditableContainer>
+      );
+
     case 'totals':
       return (
         <EditableContainer 
@@ -1611,6 +1689,8 @@ export const EditableLivePreview = ({
     // ===== INVOICE BLOCKS =====
     { type: 'payment-details', name: 'Bank/Payment Details', icon: CreditCard, description: 'Bank account and payment info', badge: 'Invoice', badgeColor: 'green' },
     { type: 'registration-footer', name: 'Business Registration', icon: Building2, description: 'ABN/VAT/Tax registration', badge: 'Invoice', badgeColor: 'green' },
+    { type: 'invoice-status', name: 'Payment Status', icon: DollarSign, description: 'Paid/Unpaid/Overdue status', badge: 'Invoice', badgeColor: 'green' },
+    { type: 'late-payment-terms', name: 'Late Payment Terms', icon: FileText, description: 'Interest and fee policies', badge: 'Invoice', badgeColor: 'green' },
     
     // ===== WORK ORDER BLOCKS =====
     { type: 'installation-details', name: 'Installation Details', icon: Calendar, description: 'Install date and team info', badge: 'Work Order', badgeColor: 'amber' },
@@ -1786,6 +1866,23 @@ export const EditableLivePreview = ({
           style: {
             padding: '16px 0',
             textAlign: 'center'
+          }
+        };
+      case 'invoice-status':
+        return {
+          style: {
+            backgroundColor: '#f9fafb',
+            padding: '16px',
+            borderRadius: '8px'
+          }
+        };
+      case 'late-payment-terms':
+        return {
+          termsText: '',
+          style: {
+            backgroundColor: '#fef3c7',
+            padding: '12px',
+            borderRadius: '6px'
           }
         };
       case 'totals':
