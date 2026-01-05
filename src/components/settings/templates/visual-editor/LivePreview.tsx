@@ -2017,6 +2017,7 @@ export const LivePreview = ({
           onBlocksChange={onBlocksChange}
           containerStyles={containerStyles}
           onContainerStylesChange={onContainerStylesChange}
+          documentType={documentType}
         />
       </Suspense>
     );
@@ -2053,6 +2054,7 @@ export const LivePreview = ({
             projectData={projectData}
             isEditable={false}
             isPrintMode={true}
+            documentType={documentType}
             userBusinessSettings={businessSettings}
             userPreferences={userPreferences}
             showDetailedBreakdown={showDetailedBreakdown}
@@ -2125,6 +2127,7 @@ export const LivePreview = ({
                 projectData={projectData}
                 isEditable={isEditable}
                 isPrintMode={false}
+                documentType={documentType}
                 userBusinessSettings={businessSettings}
                 showDetailedBreakdown={showDetailedBreakdown}
                 showImages={showImages}
