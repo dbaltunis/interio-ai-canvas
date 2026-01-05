@@ -1418,6 +1418,166 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
           </div>
         </EditableContainer>
       );
+
+    // Invoice-specific blocks
+    case 'payment-details':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '24px 0',
+            backgroundColor: style.backgroundColor || '#eff6ff',
+            borderColor: style.borderColor || '#dbeafe',
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderRadius: style.borderRadius || '8px'
+          }}
+          className="mb-6"
+        >
+          <div className="space-y-3">
+            <EditableText
+              value={content.title || 'Payment Details'}
+              onChange={(value) => updateBlockContent({ title: value })}
+              className="text-lg font-semibold flex items-center gap-2"
+              placeholder="Section Title"
+            />
+            <div className="text-sm text-gray-600">
+              {renderTokenValue('company_bank_details') || 'Bank details not configured. Go to Settings → Business.'}
+            </div>
+            <EditableText
+              value={content.paymentInstructions || 'Please transfer the amount to the bank account above.'}
+              onChange={(value) => updateBlockContent({ paymentInstructions: value })}
+              className="text-sm text-gray-500"
+              placeholder="Add payment instructions..."
+              multiline
+            />
+          </div>
+        </EditableContainer>
+      );
+
+    case 'registration-footer':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px 0',
+            margin: style.margin || '0',
+            textAlign: 'center'
+          }}
+          className="mb-6"
+        >
+          <div className="text-center text-xs text-gray-500 py-4 border-t">
+            {renderTokenValue('company_registration_footer') || 'Registration details not configured. Go to Settings → Business.'}
+          </div>
+        </EditableContainer>
+      );
+
+    case 'totals':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '24px 0',
+            backgroundColor: style.backgroundColor || '#f9fafb',
+            borderRadius: style.borderRadius || '8px'
+          }}
+          className="mb-6"
+        >
+          <div className="flex justify-end">
+            <div className="w-64 space-y-2">
+              <div className="flex justify-between py-1">
+                <span>Subtotal:</span>
+                <span className="font-medium">{renderTokenValue('subtotal')}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span>Tax ({renderTokenValue('tax_rate')}):</span>
+                <span className="font-medium">{renderTokenValue('tax_amount')}</span>
+              </div>
+              <div className="flex justify-between py-2 border-t border-gray-300 font-bold text-lg">
+                <span>Total:</span>
+                <span>{renderTokenValue('total')}</span>
+              </div>
+            </div>
+          </div>
+        </EditableContainer>
+      );
+
+    // Work order-specific blocks
+    case 'installation-details':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '24px 0',
+            backgroundColor: style.backgroundColor || '#fffbeb',
+            borderColor: style.borderColor || '#fef3c7',
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderRadius: style.borderRadius || '8px'
+          }}
+          className="mb-6"
+        >
+          <EditableText
+            value={content.title || 'Installation Details'}
+            onChange={(value) => updateBlockContent({ title: value })}
+            className="text-lg font-semibold mb-3"
+            placeholder="Section Title"
+          />
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-500">Installation Date:</span>
+              <div className="font-medium">{renderTokenValue('due_date') || 'TBD'}</div>
+            </div>
+            <div>
+              <span className="text-gray-500">Installer:</span>
+              <EditableText
+                value={content.installerName || 'TBD'}
+                onChange={(value) => updateBlockContent({ installerName: value })}
+                className="font-medium"
+                placeholder="Installer name"
+              />
+            </div>
+          </div>
+        </EditableContainer>
+      );
+
+    case 'installer-signoff':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '24px 0',
+            borderRadius: style.borderRadius || '8px'
+          }}
+          className="mb-6"
+        >
+          <div className="border rounded-lg p-4">
+            <EditableText
+              value={content.title || 'Completion Sign-off'}
+              onChange={(value) => updateBlockContent({ title: value })}
+              className="text-lg font-semibold mb-4"
+              placeholder="Section Title"
+            />
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <div className="border-t border-gray-400 pt-2 mt-12">
+                  <span className="text-sm font-medium">Installer Signature</span>
+                </div>
+              </div>
+              <div>
+                <div className="border-t border-gray-400 pt-2 mt-12">
+                  <span className="text-sm font-medium">Client Confirmation</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </EditableContainer>
+      );
+
     default:
       return (
         <EditableContainer 
@@ -1633,6 +1793,53 @@ export const EditableLivePreview = ({
           style: {
             borderColor: '#e5e7eb',
             borderWidth: '1px'
+          }
+        };
+      // Invoice-specific blocks
+      case 'payment-details':
+        return {
+          title: 'Payment Details',
+          paymentInstructions: 'Please transfer the amount to the bank account above.',
+          style: {
+            backgroundColor: '#eff6ff',
+            borderColor: '#dbeafe',
+            padding: '16px',
+            borderRadius: '8px'
+          }
+        };
+      case 'registration-footer':
+        return {
+          style: {
+            padding: '16px 0',
+            textAlign: 'center'
+          }
+        };
+      case 'totals':
+        return {
+          style: {
+            backgroundColor: '#f9fafb',
+            padding: '16px',
+            borderRadius: '8px'
+          }
+        };
+      // Work order-specific blocks
+      case 'installation-details':
+        return {
+          title: 'Installation Details',
+          installerName: '',
+          style: {
+            backgroundColor: '#fffbeb',
+            borderColor: '#fef3c7',
+            padding: '16px',
+            borderRadius: '8px'
+          }
+        };
+      case 'installer-signoff':
+        return {
+          title: 'Completion Sign-off',
+          style: {
+            padding: '16px',
+            borderRadius: '8px'
           }
         };
       default:
