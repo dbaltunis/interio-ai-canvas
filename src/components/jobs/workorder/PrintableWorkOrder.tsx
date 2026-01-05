@@ -43,6 +43,7 @@ export const PrintableWorkOrder = React.forwardRef<HTMLDivElement, PrintableWork
           projectData={workOrderData}
           isEditable={false}
           isPrintMode={isPrintMode}
+          documentType="work-order"
           showDetailedBreakdown={showDetailedSpecs !== undefined ? showDetailedSpecs : true}
           showImages={showImages !== undefined ? showImages : true}
         />

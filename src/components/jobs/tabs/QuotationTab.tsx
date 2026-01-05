@@ -793,14 +793,14 @@ export const QuotationTab = ({
             boxSizing: 'border-box',
             overflow: 'hidden'
           }}>
-                <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} />
+                <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} documentType={selectedTemplate?.template_style || 'quote'} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} />
               </div>
             </div>
           </div>
         </section>}
 
       {/* Email Modal */}
-      <EmailQuoteModal isOpen={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} project={project} client={client} onSend={handleSendEmail} isSending={isSendingEmail} quotePreview={<LivePreview blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} showDetailedBreakdown={templateSettings.showDetailedBreakdown} showImages={templateSettings.showImages} />} />
+      <EmailQuoteModal isOpen={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} project={project} client={client} onSend={handleSendEmail} isSending={isSendingEmail} quotePreview={<LivePreview blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} documentType={selectedTemplate?.template_style || 'quote'} showDetailedBreakdown={templateSettings.showDetailedBreakdown} showImages={templateSettings.showImages} />} />
 
       {/* TWC Submit Dialog */}
       {hasTWCProducts && quoteId && (
