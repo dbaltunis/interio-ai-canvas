@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Type, Image, FileText, PenTool, CreditCard, Upload, Ruler, Wrench, Building2, Banknote, User, Calculator, Space } from "lucide-react";
+import { Plus, Type, Image, FileText, PenTool, CreditCard, Upload, Ruler, Wrench, Building2, Banknote, User, Calculator, Space, CheckCircle2, Clock, Receipt } from "lucide-react";
 import { getAvailableBlocks } from "@/utils/documentTypeConfig";
 import { cn } from "@/lib/utils";
 
@@ -106,10 +106,34 @@ const ALL_BLOCK_TYPES = [
   
   // ===== INVOICE BLOCKS =====
   {
+    type: 'invoice-status',
+    label: 'Payment Status',
+    icon: CheckCircle2,
+    description: 'Shows paid/unpaid status, amount paid, balance due',
+    badge: 'Invoice',
+    badgeColor: 'green'
+  },
+  {
+    type: 'tax-breakdown',
+    label: 'Tax Breakdown',
+    icon: Receipt,
+    description: 'Detailed tax/VAT summary per line and totals',
+    badge: 'Invoice',
+    badgeColor: 'green'
+  },
+  {
     type: 'payment-details',
     label: 'Bank/Payment Details',
     icon: Banknote,
     description: 'Bank account & payment instructions',
+    badge: 'Invoice',
+    badgeColor: 'green'
+  },
+  {
+    type: 'late-payment-terms',
+    label: 'Late Payment Terms',
+    icon: Clock,
+    description: 'Interest rates and late payment policy',
     badge: 'Invoice',
     badgeColor: 'green'
   },

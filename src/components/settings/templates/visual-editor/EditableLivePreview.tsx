@@ -1520,6 +1520,47 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
         </EditableContainer>
       );
 
+    case 'tax-breakdown': {
+      const businessSettings = projectData?.businessSettings || userBusinessSettings || {};
+      const taxType = (businessSettings.tax_type || 'GST').toUpperCase();
+      const taxRate = businessSettings.tax_rate || 10;
+      const subtotal = projectData?.subtotal || 1250;
+      const taxAmount = projectData?.taxAmount || (subtotal * taxRate / 100);
+      const total = subtotal + taxAmount;
+      const currency = projectData?.currency || businessSettings?.currency || 'AUD';
+      
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '16px 0',
+            backgroundColor: style.backgroundColor || '#f9fafb',
+            borderRadius: style.borderRadius || '8px'
+          }}
+          className="mb-6"
+        >
+          <div className="border rounded-lg p-4" style={{ borderColor: style.borderColor || '#e5e7eb' }}>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">{taxType} Summary</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Subtotal (excl. {taxType})</span>
+                <span className="font-medium text-gray-900">${subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">{taxType} @ {taxRate}%</span>
+                <span className="font-medium text-gray-900">${taxAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between font-semibold border-t border-gray-300 pt-2 mt-2">
+                <span className="text-gray-800">Total (incl. {taxType})</span>
+                <span className="text-gray-900">${total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </EditableContainer>
+      );
+    }
+
     case 'totals':
       return (
         <EditableContainer 
@@ -1689,10 +1730,11 @@ export const EditableLivePreview = ({
     { type: 'image-uploader', name: 'Image Uploader', icon: Upload, description: 'Upload images for proposals', badge: 'Quote', badgeColor: 'blue' },
     
     // ===== INVOICE BLOCKS =====
-    { type: 'payment-details', name: 'Bank/Payment Details', icon: CreditCard, description: 'Bank account and payment info', badge: 'Invoice', badgeColor: 'green' },
-    { type: 'registration-footer', name: 'Business Registration', icon: Building2, description: 'ABN/VAT/Tax registration', badge: 'Invoice', badgeColor: 'green' },
     { type: 'invoice-status', name: 'Payment Status', icon: DollarSign, description: 'Paid/Unpaid/Overdue status', badge: 'Invoice', badgeColor: 'green' },
+    { type: 'tax-breakdown', name: 'Tax Breakdown', icon: Calculator, description: 'Detailed tax/VAT summary', badge: 'Invoice', badgeColor: 'green' },
+    { type: 'payment-details', name: 'Bank/Payment Details', icon: CreditCard, description: 'Bank account and payment info', badge: 'Invoice', badgeColor: 'green' },
     { type: 'late-payment-terms', name: 'Late Payment Terms', icon: FileText, description: 'Interest and fee policies', badge: 'Invoice', badgeColor: 'green' },
+    { type: 'registration-footer', name: 'Business Registration', icon: Building2, description: 'ABN/VAT/Tax registration', badge: 'Invoice', badgeColor: 'green' },
     
     // ===== WORK ORDER BLOCKS =====
     { type: 'installation-details', name: 'Installation Details', icon: Calendar, description: 'Install date and team info', badge: 'Work Order', badgeColor: 'amber' },
@@ -1885,6 +1927,16 @@ export const EditableLivePreview = ({
             backgroundColor: '#fef3c7',
             padding: '12px',
             borderRadius: '6px'
+          }
+        };
+      case 'tax-breakdown':
+        return {
+          title: 'Tax Summary',
+          style: {
+            backgroundColor: '#f9fafb',
+            borderColor: '#e5e7eb',
+            padding: '16px',
+            borderRadius: '8px'
           }
         };
       case 'totals':

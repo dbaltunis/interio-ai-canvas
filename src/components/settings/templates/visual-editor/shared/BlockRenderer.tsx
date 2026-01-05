@@ -909,6 +909,49 @@ export const LatePaymentTermsBlock: React.FC<BlockRendererProps> = ({
   );
 };
 
+// ============= TAX BREAKDOWN BLOCK (Invoice-specific) =============
+export const TaxBreakdownBlock: React.FC<BlockRendererProps> = ({
+  block,
+  projectData
+}) => {
+  const businessSettings = projectData?.businessSettings || {};
+  const style = block.style || {};
+  
+  const taxType = (businessSettings.tax_type || 'GST').toUpperCase();
+  const taxRate = businessSettings.tax_rate || 10;
+  const currency = projectData?.currency || businessSettings?.currency || 'AUD';
+  
+  const subtotal = projectData?.subtotal || 0;
+  const taxAmount = projectData?.taxAmount || (subtotal * taxRate / 100);
+  const total = projectData?.total || (subtotal + taxAmount);
+  
+  return (
+    <div 
+      className="mb-6 p-4 rounded-lg border"
+      style={{
+        backgroundColor: style.backgroundColor || '#f9fafb',
+        borderColor: style.borderColor || '#e5e7eb'
+      }}
+    >
+      <h3 className="text-sm font-semibold text-gray-700 mb-3">{taxType} Summary</h3>
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between">
+          <span className="text-gray-600">Subtotal (excl. {taxType})</span>
+          <span className="font-medium text-gray-900">{formatCurrency(subtotal, currency)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-600">{taxType} @ {taxRate}%</span>
+          <span className="font-medium text-gray-900">{formatCurrency(taxAmount, currency)}</span>
+        </div>
+        <div className="flex justify-between font-semibold border-t border-gray-300 pt-2 mt-2">
+          <span className="text-gray-800">Total (incl. {taxType})</span>
+          <span className="text-gray-900">{formatCurrency(total, currency)}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ============= PAYMENT DETAILS BLOCK (Invoice-specific) =============
 export const PaymentDetailsBlock: React.FC<BlockRendererProps> = ({
   block,
@@ -1148,6 +1191,9 @@ export const renderSharedBlock = (props: BlockRendererProps): React.ReactNode =>
       
     case 'late-payment-terms':
       return <LatePaymentTermsBlock {...props} />;
+    
+    case 'tax-breakdown':
+      return <TaxBreakdownBlock {...props} />;
     
     // Work order-specific blocks
     case 'installation-details':
