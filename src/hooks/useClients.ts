@@ -55,6 +55,28 @@ export const useClient = (id: string) => {
   });
 };
 
+// Fetch client for display purposes only (no ownership filter)
+// Use when project ownership is already verified (e.g., job detail page)
+// This handles cases where client might have ownership mismatch with project
+export const useClientForJobDisplay = (clientId: string | null) => {
+  return useQuery({
+    queryKey: ["client-for-display", clientId],
+    queryFn: async () => {
+      if (!clientId) return null;
+      
+      const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("id", clientId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientId,
+  });
+};
+
 export const useCreateClient = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();

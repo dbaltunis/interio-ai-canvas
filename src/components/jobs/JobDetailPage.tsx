@@ -25,7 +25,7 @@ import {
 import { ThreeDotMenu } from "@/components/ui/three-dot-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useProjects, useProject, useUpdateProject, useCreateProject } from "@/hooks/useProjects";
-import { useClients, useClient } from "@/hooks/useClients";
+import { useClients, useClientForJobDisplay } from "@/hooks/useClients";
 import { useFormattedDate } from "@/hooks/useFormattedDate";
 import { ProjectDetailsTab } from "./tabs/ProjectDetailsTab";
 import { RoomsTab } from "./tabs/RoomsTab";
@@ -162,8 +162,9 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const { data: duplicates } = useJobDuplicates(jobId);
   const { data: currentQuotes } = useQuotes(jobId);
 
-  // Use direct client fetch instead of filtering from clients list for reliability
-  const { data: clientData } = useClient(project?.client_id || '');
+  // Use direct client fetch for display - no ownership filter since project already passed RLS
+  // This handles cases where client might have ownership mismatch with project
+  const { data: clientData } = useClientForJobDisplay(project?.client_id || null);
   const client = clientData || null;
   
   // Format dates using user preferences
