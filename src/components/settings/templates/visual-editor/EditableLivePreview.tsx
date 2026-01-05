@@ -547,6 +547,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
       );
 
     case 'header':
+      // Redirect legacy 'header' blocks to use DocumentHeaderBlock for document-type-aware rendering
       return (
         <EditableContainer 
           onStyleChange={updateBlockStyle}
@@ -559,101 +560,14 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
           }}
           className="mb-6"
         >
-          {/* Row 1: Logo alone on top */}
-          {content.showLogo && (
-            <div className={`mb-4 ${content.logoPosition === 'center' ? 'text-center' : ''}`}>
-              {projectData?.businessSettings?.company_logo_url ? (
-                <img 
-                  src={projectData.businessSettings.company_logo_url} 
-                  alt="Company Logo" 
-                  className="h-16 w-auto object-contain"
-                  style={{ maxWidth: '200px' }}
-                />
-              ) : (
-                <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Building2 className="h-8 w-8 text-white" />
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Row 2: Company info left, Document title right - aligned on same line */}
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <EditableText
-                value={content.companyName || renderTokenValue('company_name')}
-                onChange={(value) => updateBlockContent({ companyName: value })}
-                className="text-3xl font-bold mb-2"
-                placeholder="Company Name"
-              />
-              <div className="space-y-1 opacity-90 text-sm">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  <EditableText
-                    value={content.companyAddress || renderTokenValue('company_address')}
-                    onChange={(value) => updateBlockContent({ companyAddress: value })}
-                    placeholder="Company Address"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  <EditableText
-                    value={content.companyPhone || renderTokenValue('company_phone')}
-                    onChange={(value) => updateBlockContent({ companyPhone: value })}
-                    placeholder="Company Phone"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  <EditableText
-                    value={content.companyEmail || renderTokenValue('company_email')}
-                    onChange={(value) => updateBlockContent({ companyEmail: value })}
-                    placeholder="Company Email"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <EditableText
-                value={content.documentTitle || docConfig.documentTitle}
-                onChange={(value) => updateBlockContent({ documentTitle: value })}
-                className="text-2xl font-semibold mb-2"
-                placeholder="Document Title"
-              />
-              <div className="text-sm space-y-1">
-                <div className="flex items-center gap-2">
-                  <Hash className="h-3 w-3" />
-                  <EditableText
-                    value={content.quoteNumberLabel || docConfig.numberLabel}
-                    onChange={(value) => updateBlockContent({ quoteNumberLabel: value })}
-                    className="inline"
-                    placeholder="Document Number Label"
-                  />
-                  <span>: {renderTokenValue(documentType === 'invoice' ? 'invoice_number' : 'quote_number')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-3 w-3" />
-                  <EditableText
-                    value={content.dateLabel || "Date"}
-                    onChange={(value) => updateBlockContent({ dateLabel: value })}
-                    className="inline"
-                    placeholder="Date Label"
-                  />
-                  <span>: {renderTokenValue('date')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-3 w-3" />
-                  <EditableText
-                    value={content.validUntilLabel || docConfig.secondaryDateLabel}
-                    onChange={(value) => updateBlockContent({ validUntilLabel: value })}
-                    className="inline"
-                    placeholder={docConfig.secondaryDateLabel}
-                  />
-                  <span>: {renderTokenValue(docConfig.secondaryDateToken)}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <DocumentHeaderBlock
+            block={block}
+            projectData={projectData}
+            isEditable={true}
+            renderEditableText={renderEditableText}
+            onContentChange={updateBlockContent}
+            documentType={documentType}
+          />
         </EditableContainer>
       );
 
