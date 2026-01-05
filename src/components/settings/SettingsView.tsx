@@ -281,14 +281,6 @@ export const SettingsView = () => {
   }
 
   return <div className="space-y-6 animate-fade-in">
-      {/* Enhanced Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 bg-primary/10 rounded-xl shrink-0">
-          <Settings className="h-5 w-5 text-primary" />
-        </div>
-        <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Settings</h2>
-      </div>
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-transparent border-b border-border h-auto flex flex-wrap gap-1 justify-start pb-0 rounded-none">
           <TabsTrigger 

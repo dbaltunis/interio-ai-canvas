@@ -237,7 +237,6 @@ export const ClientQuickActionsBar = ({
         open={noteDialogOpen}
         onOpenChange={setNoteDialogOpen}
       />
-
       <MessagePreviewDrawer
         open={messageDrawerOpen}
         onOpenChange={setMessageDrawerOpen}
