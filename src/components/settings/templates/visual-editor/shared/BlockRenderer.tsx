@@ -7,11 +7,16 @@ import {
   Hash, 
   Calendar,
   User,
-  Info
+  Info,
+  Banknote,
+  CheckCircle2,
+  Clock,
+  AlertCircle
 } from 'lucide-react';
 import { formatInTimeZone } from 'date-fns-tz';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { getDocumentTypeConfig, type DocumentTypeConfig } from '@/utils/documentTypeConfig';
 
 interface BlockRendererProps {
   block: any;
@@ -20,6 +25,7 @@ interface BlockRendererProps {
   userDateFormat?: string;
   isPrintMode?: boolean;
   isEditable?: boolean;
+  documentType?: string;
   renderEditableText?: (props: {
     value: string;
     onChange: (value: string) => void;
@@ -168,12 +174,16 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
   userDateFormat = 'M/d/yyyy',
   isPrintMode = false,
   isEditable = false,
+  documentType = 'quote',
   renderEditableText,
   onContentChange
 }) => {
   const content = block.content || {};
   const businessSettings = projectData?.businessSettings || {};
   const headerLayout = content.layout || 'centered';
+  
+  // Get document type configuration
+  const docConfig = getDocumentTypeConfig(documentType);
   
   const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
   
@@ -246,14 +256,14 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
             <div>{getToken('company_email')}</div>
           </div>
 
-          {/* Document Title */}
+          {/* Document Title - Dynamic based on document type */}
           <h1 style={{ fontSize: '30px', fontWeight: 'bold', color: '#111827', letterSpacing: '-0.025em', marginTop: '16px' }}>
             {isEditable ? renderText(
-              content.documentTitle || 'Invoice',
+              content.documentTitle || docConfig.documentTitle,
               (v) => updateContent({ documentTitle: v }),
               'text-3xl font-bold',
               'Document Title'
-            ) : (content.documentTitle || 'Invoice')}
+            ) : (content.documentTitle || docConfig.documentTitle)}
           </h1>
 
           {/* Tagline */}
@@ -294,29 +304,56 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
               </div>
             </div>
 
-            {/* Quote Details - Right */}
+            {/* Document Details - Right (Dynamic labels based on document type) */}
             <div className="text-right">
               <div className="text-sm space-y-1">
+                {docConfig.numberLabel && (
+                  <div>
+                    <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>
+                      {content.quoteNumberLabel || docConfig.numberLabel}{' '}
+                    </span>
+                    <span style={{ fontWeight: 'bold', color: '#111827', fontSize: '14px' }}>
+                      {getToken('job_number')}
+                    </span>
+                  </div>
+                )}
                 <div>
                   <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>
-                    {content.quoteNumberLabel || 'Invoice no #:'}{' '}
-                  </span>
-                  <span style={{ fontWeight: 'bold', color: '#111827', fontSize: '14px' }}>
-                    {getToken('job_number')}
-                  </span>
-                </div>
-                <div>
-                  <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>Date: </span>
+                    {docConfig.primaryDateLabel}: </span>
                   <span style={{ color: '#111827', fontWeight: 'bold', fontSize: '14px' }}>
                     {getToken('date')}
                   </span>
                 </div>
-                <div>
-                  <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>Valid Until: </span>
-                  <span style={{ color: '#111827', fontWeight: 'bold', fontSize: '14px' }}>
-                    {getToken('valid_until')}
-                  </span>
-                </div>
+                {docConfig.secondaryDateLabel && (
+                  <div>
+                    <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>
+                      {docConfig.secondaryDateLabel}: </span>
+                    <span style={{ color: '#111827', fontWeight: 'bold', fontSize: '14px' }}>
+                      {getToken(docConfig.secondaryDateToken || 'valid_until')}
+                    </span>
+                  </div>
+                )}
+                {/* Payment Status Badge for Invoices */}
+                {docConfig.showPaymentStatus && (
+                  <div className="mt-2">
+                    <span 
+                      style={{ 
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        borderRadius: '9999px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        backgroundColor: projectData?.paymentStatus === 'paid' ? '#dcfce7' : 
+                                        projectData?.paymentStatus === 'overdue' ? '#fef2f2' : '#fef3c7',
+                        color: projectData?.paymentStatus === 'paid' ? '#166534' : 
+                               projectData?.paymentStatus === 'overdue' ? '#991b1b' : '#92400e'
+                      }}
+                    >
+                      {projectData?.paymentStatus === 'paid' ? 'PAID' : 
+                       projectData?.paymentStatus === 'overdue' ? 'OVERDUE' : 'UNPAID'}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -581,6 +618,183 @@ export const TotalsBlock: React.FC<BlockRendererProps> = ({
   );
 };
 
+// ============= PAYMENT DETAILS BLOCK (Invoice-specific) =============
+export const PaymentDetailsBlock: React.FC<BlockRendererProps> = ({
+  block,
+  projectData,
+  userTimezone = 'UTC',
+  userDateFormat = 'M/d/yyyy'
+}) => {
+  const content = block.content || {};
+  const businessSettings = projectData?.businessSettings || {};
+  
+  const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
+  
+  const bankDetails = getToken('company_bank_details');
+  
+  if (!bankDetails) {
+    return (
+      <div className="mb-6 p-4 border border-dashed border-gray-300 rounded-lg bg-gray-50">
+        <p className="text-sm text-gray-500 text-center">
+          Bank details not configured. Go to Settings → Business to add your payment details.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+      <div className="flex items-center gap-2 mb-3">
+        <Banknote className="h-5 w-5 text-blue-600" />
+        <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1e40af' }}>
+          {content.title || 'Payment Details'}
+        </h3>
+      </div>
+      <div className="text-sm text-gray-700 space-y-1">
+        <p style={{ whiteSpace: 'pre-wrap' }}>{bankDetails}</p>
+        {content.paymentInstructions && (
+          <p className="mt-2 text-gray-600">{content.paymentInstructions}</p>
+        )}
+        {businessSettings.default_payment_terms_days && (
+          <p className="mt-2 font-medium text-blue-700">
+            Payment Terms: Net {businessSettings.default_payment_terms_days} days
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============= REGISTRATION FOOTER BLOCK (Invoice-specific) =============
+export const RegistrationFooterBlock: React.FC<BlockRendererProps> = ({
+  block,
+  projectData,
+  userTimezone = 'UTC',
+  userDateFormat = 'M/d/yyyy'
+}) => {
+  const content = block.content || {};
+  const businessSettings = projectData?.businessSettings || {};
+  
+  const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
+  
+  const registrationFooter = getToken('company_registration_footer');
+  
+  if (!registrationFooter) {
+    return null;
+  }
+
+  return (
+    <div className="mt-6 pt-4 border-t border-gray-200">
+      <div className="text-center text-xs text-gray-500">
+        {registrationFooter}
+      </div>
+    </div>
+  );
+};
+
+// ============= INSTALLATION DETAILS BLOCK (Work Order-specific) =============
+export const InstallationDetailsBlock: React.FC<BlockRendererProps> = ({
+  block,
+  projectData,
+  userTimezone = 'UTC',
+  userDateFormat = 'M/d/yyyy'
+}) => {
+  const content = block.content || {};
+  const businessSettings = projectData?.businessSettings || {};
+  
+  const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
+
+  return (
+    <div className="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-100">
+      <div className="flex items-center gap-2 mb-3">
+        <Clock className="h-5 w-5 text-amber-600" />
+        <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#92400e' }}>
+          {content.title || 'Installation Details'}
+        </h3>
+      </div>
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <span className="text-gray-500">Installation Date:</span>
+          <div className="font-medium text-gray-900">{getToken('due_date') || 'TBD'}</div>
+        </div>
+        <div>
+          <span className="text-gray-500">Installer:</span>
+          <div className="font-medium text-gray-900">{content.installerName || projectData?.installer?.name || 'TBD'}</div>
+        </div>
+        <div>
+          <span className="text-gray-500">Site Contact:</span>
+          <div className="font-medium text-gray-900">{getToken('client_name')}</div>
+        </div>
+        <div>
+          <span className="text-gray-500">Contact Phone:</span>
+          <div className="font-medium text-gray-900">{getToken('client_phone') || 'N/A'}</div>
+        </div>
+      </div>
+      {content.accessInstructions && (
+        <div className="mt-3 pt-3 border-t border-amber-200">
+          <span className="text-gray-500 text-sm">Access Instructions:</span>
+          <p className="text-sm text-gray-900">{content.accessInstructions}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============= INSTALLER SIGNOFF BLOCK (Work Order-specific) =============
+export const InstallerSignoffBlock: React.FC<BlockRendererProps> = ({
+  block,
+  isPrintMode = false
+}) => {
+  const content = block.content || {};
+
+  return (
+    <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-100">
+      <div className="flex items-center gap-2 mb-3">
+        <CheckCircle2 className="h-5 w-5 text-green-600" />
+        <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#166534' }}>
+          {content.title || 'Installation Sign-off'}
+        </h3>
+      </div>
+      <div className="grid grid-cols-2 gap-6">
+        <div>
+          <p className="text-sm text-gray-500 mb-2">Installer Signature</p>
+          <div 
+            style={{ 
+              height: '60px', 
+              borderBottom: '2px solid #374151',
+              backgroundColor: isPrintMode ? 'transparent' : '#f9fafb'
+            }} 
+          />
+          <p className="text-xs text-gray-400 mt-1">Name: ________________________</p>
+        </div>
+        <div>
+          <p className="text-sm text-gray-500 mb-2">Client Confirmation</p>
+          <div 
+            style={{ 
+              height: '60px', 
+              borderBottom: '2px solid #374151',
+              backgroundColor: isPrintMode ? 'transparent' : '#f9fafb'
+            }} 
+          />
+          <p className="text-xs text-gray-400 mt-1">Date: ________________________</p>
+        </div>
+      </div>
+      {content.completionNotes && (
+        <div className="mt-4">
+          <p className="text-sm text-gray-500">Notes:</p>
+          <div 
+            style={{ 
+              minHeight: '40px', 
+              borderBottom: '1px solid #d1d5db',
+              backgroundColor: isPrintMode ? 'transparent' : '#f9fafb'
+            }} 
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ============= MAIN BLOCK RENDERER =============
 export const renderSharedBlock = (props: BlockRendererProps): React.ReactNode => {
   const { block } = props;
@@ -600,6 +814,20 @@ export const renderSharedBlock = (props: BlockRendererProps): React.ReactNode =>
     case 'summary':
     case 'total':
       return <TotalsBlock {...props} />;
+    
+    // Invoice-specific blocks
+    case 'payment-details':
+      return <PaymentDetailsBlock {...props} />;
+      
+    case 'registration-footer':
+      return <RegistrationFooterBlock {...props} />;
+    
+    // Work order-specific blocks
+    case 'installation-details':
+      return <InstallationDetailsBlock {...props} />;
+      
+    case 'installer-signoff':
+      return <InstallerSignoffBlock {...props} />;
       
     default:
       return null; // Let parent handle unknown types
