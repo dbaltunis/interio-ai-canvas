@@ -45,7 +45,7 @@ import { SignatureCanvas } from './SignatureCanvas';
 import { cn } from "@/lib/utils";
 import { DocumentHeaderBlock } from './shared/BlockRenderer';
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
-import { getAvailableBlocks } from '@/utils/documentTypeConfig';
+import { getAvailableBlocks, getDocumentTypeConfig } from '@/utils/documentTypeConfig';
 
 interface EditableTextProps {
   value: string;
@@ -486,6 +486,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
 
   switch (block.type) {
     case 'document-header':
+      const docConfig = getDocumentTypeConfig(documentType);
       const headerLayout = content.layout || 'centered';
       
       // Custom EditableText renderer for editable mode
@@ -613,7 +614,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
             </div>
             <div className="text-right">
               <EditableText
-                value={content.documentTitle || "Quote"}
+                value={content.documentTitle || docConfig.documentTitle}
                 onChange={(value) => updateBlockContent({ documentTitle: value })}
                 className="text-2xl font-semibold mb-2"
                 placeholder="Document Title"
@@ -622,10 +623,10 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                 <div className="flex items-center gap-2">
                   <Hash className="h-3 w-3" />
                   <EditableText
-                    value={content.quoteNumberLabel || "Quote #"}
+                    value={content.quoteNumberLabel || docConfig.numberLabel}
                     onChange={(value) => updateBlockContent({ quoteNumberLabel: value })}
                     className="inline"
-                    placeholder="Quote Number Label"
+                    placeholder="Document Number Label"
                   />
                   <span>: {renderTokenValue('quote_number')}</span>
                 </div>
@@ -642,12 +643,12 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                 <div className="flex items-center gap-2">
                   <CalendarIcon className="h-3 w-3" />
                   <EditableText
-                    value={content.validUntilLabel || "Valid Until"}
+                    value={content.validUntilLabel || docConfig.secondaryDateLabel}
                     onChange={(value) => updateBlockContent({ validUntilLabel: value })}
                     className="inline"
-                    placeholder="Valid Until Label"
+                    placeholder={docConfig.secondaryDateLabel}
                   />
-                  <span>: {renderTokenValue('valid_until')}</span>
+                  <span>: {renderTokenValue(docConfig.secondaryDateToken)}</span>
                 </div>
               </div>
             </div>
@@ -874,24 +875,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                 </tr>
               </tbody>
             </table>
-          </div>
-          <div className="mt-4 bg-gray-50 p-4 rounded-lg">
-            <div className="flex justify-end space-y-2">
-              <div className="w-64">
-                <div className="flex justify-between py-1">
-                  <span>Subtotal:</span>
-                  <span className="font-medium">{renderTokenValue('subtotal')}</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span>Tax ({renderTokenValue('tax_rate')}):</span>
-                  <span className="font-medium">{renderTokenValue('tax_amount')}</span>
-                </div>
-                <div className="flex justify-between py-2 border-t border-gray-300 font-bold text-lg">
-                  <span>Total:</span>
-                  <span>{renderTokenValue('total')}</span>
-                </div>
-              </div>
-            </div>
           </div>
         </EditableContainer>
       );
