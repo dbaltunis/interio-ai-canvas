@@ -472,6 +472,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
         : '456 Residential Street, Anytown, ST 12345',
       client_company: client.company_name || '',
       quote_number: project.quote_number || project.job_number || 'QT-2024-001',
+      invoice_number: project.invoice_number || `INV-${project.job_number || '001'}`,
       project_name: project.name || 'Project',
       date: project.created_at ? new Date(project.created_at).toLocaleDateString() : new Date().toLocaleDateString(),
       valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
@@ -628,7 +629,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                     className="inline"
                     placeholder="Document Number Label"
                   />
-                  <span>: {renderTokenValue('quote_number')}</span>
+                  <span>: {renderTokenValue(documentType === 'invoice' ? 'invoice_number' : 'quote_number')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CalendarIcon className="h-3 w-3" />
