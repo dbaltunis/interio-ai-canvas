@@ -270,26 +270,23 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
               exit={{ x: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className={cn(
-                "!fixed inset-y-0 right-0 z-[101] liquid-glass shadow-2xl overflow-hidden border-l border-border", 
-                isMobile ? "w-full" : "w-96",
+                "!fixed inset-y-0 right-0 z-[101] bg-card shadow-xl overflow-hidden border-l border-border/50", 
+                isMobile ? "w-full" : "w-80",
                 messageDialogOpen ? "pointer-events-none" : "pointer-events-auto"
               )}
             >
               {/* Content */}
               <div className="relative z-10 h-full flex flex-col">
-                {/* Header */}
-                <div className={cn("glass-morphism border-b", isMobile ? "p-4" : "p-6")}>
+                {/* Header - Compact */}
+                <div className="bg-background/50 border-b border-border/50 p-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className={cn(
-                        "font-bold text-foreground mb-1 flex items-center gap-2",
-                        isMobile ? "text-lg" : "text-2xl"
-                      )}>
-                        <Zap className={cn(isMobile ? "h-5 w-5" : "h-6 w-6", "text-yellow-400")} />
+                      <h2 className="font-semibold text-foreground text-sm flex items-center gap-1.5">
+                        <Zap className="h-4 w-4 text-yellow-500" />
                         Team Hub
                       </h2>
-                      <p className="text-muted-foreground text-sm">
-                        {onlineUsers.length} of {totalUsers} {totalUsers === 1 ? 'teammate' : 'teammates'} online
+                      <p className="text-muted-foreground text-xs mt-0.5">
+                        {onlineUsers.length} of {totalUsers} online
                       </p>
                     </div>
                     {!messageDialogOpen && (
@@ -304,30 +301,24 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                     )}
                   </div>
 
-                  {/* Current User Section with Compact Controls */}
+                  {/* Current User Section - Compact */}
                   {currentUserProfile && (
-                    <div className="mt-4">
-                      <div className="flex items-center gap-3">
+                    <div className="mt-3 pt-3 border-t border-border/50">
+                      <div className="flex items-center gap-2">
                         <div className="relative">
-                          <Avatar className="h-12 w-12 ring-2 ring-white/30">
+                          <Avatar className="h-8 w-8">
                             <AvatarImage src={currentUserProfile.avatar_url} />
-                            <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
                               {getInitials(currentUserProfile.display_name || '')}
                             </AvatarFallback>
                           </Avatar>
                           
-                          {/* Online indicator with pulse animation */}
-                          <motion.div
-                            animate={{ scale: [1, 1.2, 1] }}
-                            transition={{ duration: 2, repeat: Infinity }}
-                            className="absolute -bottom-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-background shadow-lg"
-                          >
-                            <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75" />
-                          </motion.div>
+                          {/* Online indicator */}
+                          <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 bg-green-500 rounded-full border border-background" />
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">
+                          <p className="text-xs font-medium text-foreground truncate">
                             {currentUserProfile.display_name}
                           </p>
                           
@@ -397,7 +388,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                       </div>
                       
                       {/* Compact Control Row */}
-                      <div className="mt-3 flex items-center justify-center gap-1">
+                      <div className="mt-2 flex items-center justify-center gap-0.5">
                         <TooltipProvider>
                           {/* Theme Controls */}
                           <Tooltip>

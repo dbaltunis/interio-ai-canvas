@@ -142,7 +142,7 @@ export const QuotationTab = ({
     staleTime: 5 * 60 * 1000
   });
 
-  // Fetch active quote templates - check if any valid templates exist
+  // Fetch active quote templates - ordered by primary first, then display_order
   const {
     data: activeTemplates,
     isLoading: templatesLoading,
@@ -150,12 +150,14 @@ export const QuotationTab = ({
   } = useQuery({
     queryKey: ["quote-templates"],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.from("quote_templates").select("*").eq("active", true).order("updated_at", {
-        ascending: false
-      });
+      const { data, error } = await supabase
+        .from("quote_templates")
+        .select("*")
+        .eq("active", true)
+        .order("is_primary", { ascending: false, nullsFirst: false })
+        .order("display_order", { ascending: true, nullsFirst: false })
+        .order("updated_at", { ascending: false });
+      
       if (error) throw error;
 
       // Filter out templates with invalid or missing blocks
@@ -679,6 +681,7 @@ export const QuotationTab = ({
               <Mail className="h-4 w-4 mr-2" />
               Email
             </Button>
+            {/* Email action is available via Contact button in JobDetailPage header */}
 
             {/* Discount Button */}
             <Button variant="outline" size="sm" onClick={handleAddDiscount} disabled={createQuote.isPending || isReadOnly} className="h-9 px-4">
@@ -823,14 +826,14 @@ export const QuotationTab = ({
             boxSizing: 'border-box',
             overflow: 'hidden'
           }}>
-                <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} />
+                <LivePreview key={`live-preview-${templateSettings.layout}-${templateSettings.showImages}-${templateSettings.groupByRoom}`} blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} documentType={selectedTemplate?.template_style || 'quote'} layout={templateSettings.layout} showDetailedBreakdown={templateSettings.layout === 'detailed'} showImages={templateSettings.showImages} groupByRoom={templateSettings.groupByRoom} />
               </div>
             </div>
           </div>
         </section>}
 
       {/* Email Modal */}
-      <EmailQuoteModal isOpen={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} project={project} client={client} onSend={handleSendEmail} isSending={isSendingEmail} quotePreview={<LivePreview blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} showDetailedBreakdown={templateSettings.showDetailedBreakdown} showImages={templateSettings.showImages} />} />
+      <EmailQuoteModal isOpen={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} project={project} client={client} onSend={handleSendEmail} isSending={isSendingEmail} quotePreview={<LivePreview blocks={templateBlocks} projectData={projectData} isEditable={false} isPrintMode={true} documentType={selectedTemplate?.template_style || 'quote'} showDetailedBreakdown={templateSettings.showDetailedBreakdown} showImages={templateSettings.showImages} />} />
 
       {/* TWC Submit Dialog */}
       {hasTWCProducts && quoteId && (

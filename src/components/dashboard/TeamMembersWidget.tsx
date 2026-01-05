@@ -207,16 +207,16 @@ export const TeamMembersWidget = () => {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Users className="h-4 w-4 sm:h-5 sm:w-5" />
-            Team Members
+      <Card variant="analytics">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Users className="h-4 w-4" />
+            Team
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 sm:space-y-3">
+        <CardContent className="pt-0 space-y-2">
           {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-14 sm:h-16 w-full" />
+            <Skeleton key={i} className="h-14 w-full" />
           ))}
         </CardContent>
       </Card>
@@ -224,10 +224,10 @@ export const TeamMembersWidget = () => {
   }
 
   return (
-    <Card className="border border-border/50 bg-card/50">
+    <Card variant="analytics" className="h-full">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Users className="h-4 w-4" />
             Team
           </CardTitle>
@@ -246,12 +246,12 @@ export const TeamMembersWidget = () => {
       </CardHeader>
       <CardContent className="pt-0">
         {sortedTeamMembers.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <Users className="h-10 w-10 mx-auto mb-2 opacity-20" />
+        <div className="text-center py-6 text-muted-foreground">
+            <Users className="h-8 w-8 mx-auto mb-2 opacity-20" />
             <p className="text-xs">No team members yet</p>
           </div>
         ) : (
-          <ScrollArea className="h-[400px] pr-4">
+          <ScrollArea className="h-[280px] pr-4">
             <div className="space-y-2">
               {sortedTeamMembers.map((member) => {
                 const status = getPresenceStatus(member.id);

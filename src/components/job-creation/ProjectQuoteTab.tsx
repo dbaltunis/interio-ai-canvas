@@ -3,7 +3,7 @@ import { useState, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Mail, Printer, DollarSign, MapPin, Edit3, Download, MoreVertical } from "lucide-react";
+import { FileText, Mail, Printer, DollarSign, MapPin, Edit3, Download, MoreVertical, MessageSquare } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useClients } from "@/hooks/useClients";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +24,8 @@ import { useReactToPrint } from "react-to-print";
 import { PrintableQuote } from "@/components/jobs/quotation/PrintableQuote";
 import { EmailQuoteModal } from "@/components/jobs/quotation/EmailQuoteModal";
 import { useQuoteTemplates } from "@/hooks/useQuoteTemplates";
+import { MessagePreviewDrawer } from "@/components/messaging/MessagePreviewDrawer";
+
 interface ProjectQuoteTabProps {
   project: any;
   shouldHighlightNewQuote?: boolean;
@@ -93,6 +95,7 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   
   const [isTemplateEditorOpen, setIsTemplateEditorOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isWhatsAppDialogOpen, setIsWhatsAppDialogOpen] = useState(false);
   const [showAllOptions, setShowAllOptions] = useState(true);
   const printRef = useRef<HTMLDivElement>(null);
   
@@ -201,6 +204,16 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
             >
               <Mail className="h-4 w-4 mr-2" />
               Email
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => setIsWhatsAppDialogOpen(true)}
+              disabled={!client || !client.phone || isReadOnly}
+              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              WhatsApp
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -321,6 +334,18 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
           setIsEmailModalOpen(false);
         }}
       />
+
+      {/* WhatsApp Conversation Drawer */}
+      {client && (
+        <MessagePreviewDrawer
+          open={isWhatsAppDialogOpen}
+          onOpenChange={setIsWhatsAppDialogOpen}
+          clientId={client.id}
+          clientName={client.name}
+          clientPhone={client.phone || undefined}
+          channelFilter="whatsapp"
+        />
+      )}
 
       {/* Hidden printable component */}
       <div className="hidden">

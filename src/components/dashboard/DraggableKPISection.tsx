@@ -46,15 +46,15 @@ export const DraggableKPISection = ({ title, kpis, kpiConfigs, onReorder }: Drag
   if (kpis.length === 0 || !kpiConfigs || kpiConfigs.length === 0) return null;
 
   return (
-    <div className="space-y-3 sm:space-y-4">
-      <h2 className="text-base sm:text-lg font-semibold text-foreground px-1">{title}</h2>
+    <div className="space-y-2">
+      <h3 className="text-sm font-medium text-muted-foreground px-1">{title}</h3>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={kpis.map(kpi => kpi.id)} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {kpis.map((kpi) => {
               const config = kpiConfigs?.find(c => c.id === kpi.id);
               return config ? (

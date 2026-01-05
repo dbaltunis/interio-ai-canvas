@@ -1,9 +1,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Mail, Calendar, FileText, User, Building } from "lucide-react";
+import { Clock, Mail, Calendar, FileText, User, Building, MessageSquare } from "lucide-react";
 import { useClientEmails } from "@/hooks/useClientEmails";
 import { useClientJobs } from "@/hooks/useClientJobs";
+import { useClientWhatsAppMessages } from "@/hooks/useClientWhatsAppMessages";
 
 interface ClientActivityTimelineProps {
   clientId: string;
@@ -12,6 +13,7 @@ interface ClientActivityTimelineProps {
 export const ClientActivityTimeline = ({ clientId }: ClientActivityTimelineProps) => {
   const { data: emails } = useClientEmails(clientId);
   const { data: projects } = useClientJobs(clientId);
+  const { data: whatsappMessages } = useClientWhatsAppMessages(clientId);
 
   // Combine and sort activities
   const activities = [
@@ -31,6 +33,16 @@ export const ClientActivityTimeline = ({ clientId }: ClientActivityTimelineProps
       description: `Project ${project.status}`,
       date: project.created_at,
       icon: FileText
+    })) || []),
+    ...(whatsappMessages?.map(msg => ({
+      id: msg.id,
+      type: 'whatsapp',
+      title: 'WhatsApp Message',
+      description: msg.message_body?.substring(0, 80) + (msg.message_body?.length > 80 ? '...' : '') || 'Message sent',
+      date: msg.created_at,
+      icon: MessageSquare,
+      recipient: msg.to_number,
+      status: msg.status
     })) || [])
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -39,6 +51,8 @@ export const ClientActivityTimeline = ({ clientId }: ClientActivityTimelineProps
       case 'email':
         return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'project':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'whatsapp':
         return 'bg-green-100 text-green-800 border-green-200';
       default:
         return 'bg-muted text-muted-foreground border-border';
@@ -46,18 +60,22 @@ export const ClientActivityTimeline = ({ clientId }: ClientActivityTimelineProps
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5" />
-          Activity Timeline
-        </CardTitle>
+    <Card variant="analytics">
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-primary/10 rounded-md">
+            <Clock className="h-4 w-4 text-primary" />
+          </div>
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            Activity Timeline
+          </CardTitle>
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         {activities.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Clock className="mx-auto h-12 w-12 mb-4 opacity-50" />
-            <p>No activity recorded yet</p>
+          <div className="empty-state">
+            <Clock className="empty-state-icon" />
+            <p className="empty-state-title">No activity recorded yet</p>
           </div>
         ) : (
           <div className="space-y-4">

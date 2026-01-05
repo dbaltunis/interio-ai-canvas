@@ -1,29 +1,47 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
   Plus, 
   FileText, 
   Edit3, 
   Trash2, 
-  Eye,
   Copy,
-  Download,
-  Sparkles,
-  Building2,
-  ToggleLeft,
-  ToggleRight
+  Star,
+  GripVertical,
+  MoreHorizontal,
+  Search
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { LivePreview } from "./visual-editor/LivePreview";
 import { useTemplateData } from "@/hooks/useTemplateData";
-import { ProjectDataSelector } from "./ProjectDataSelector";
 import { useQueryClient } from "@tanstack/react-query";
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { cn } from '@/lib/utils';
 
 interface Template {
   id: string;
@@ -32,36 +50,209 @@ interface Template {
   blocks: any[];
   category: string;
   is_default?: boolean;
+  is_primary?: boolean;
   active?: boolean;
+  display_order?: number;
   created_at?: string;
+  updated_at?: string;
 }
 
-// Default blank template blocks - use hyphenated types for consistency
-const getBlankTemplateBlocks = (category: string) => [
-  { id: 'header', type: 'header', content: { title: category.charAt(0).toUpperCase() + category.slice(1), showLogo: true } },
-  { id: 'client', type: 'client-info', content: {} },
-  { id: 'items', type: 'line-items', content: {} },
-  { id: 'totals', type: 'totals', content: {} }
-];
+// Default blank template blocks - document type specific
+const getBlankTemplateBlocks = (category: string) => {
+  const baseBlocks = [
+    { id: 'header', type: 'document-header', content: { title: category.charAt(0).toUpperCase() + category.slice(1), showLogo: true } },
+    { id: 'client', type: 'client-info', content: {} },
+    { id: 'items', type: 'line-items', content: {} },
+    { id: 'totals', type: 'totals', content: {} }
+  ];
+  
+  // Add invoice-specific blocks
+  if (category === 'invoice') {
+    baseBlocks.push({ id: 'payment-details', type: 'payment-details', content: {} });
+    baseBlocks.push({ id: 'registration', type: 'registration-footer', content: {} });
+  }
+  
+  // Add work-order-specific blocks
+  if (category === 'work-order') {
+    baseBlocks.push({ id: 'installation', type: 'installation-details', content: {} });
+    baseBlocks.push({ id: 'signoff', type: 'installer-signoff', content: {} });
+  }
+  
+  // Add signature block for quotes/proposals/estimates
+  if (['quote', 'proposal', 'estimate'].includes(category)) {
+    baseBlocks.push({ id: 'signature', type: 'signature', content: {} });
+  }
+  
+  return baseBlocks;
+};
+
+// Sortable template row component
+const SortableTemplateRow = ({ 
+  template, 
+  onEdit, 
+  onDuplicate, 
+  onDelete, 
+  onToggleActive, 
+  onSetPrimary,
+  isPrimaryLoading
+}: { 
+  template: Template;
+  onEdit: (template: Template) => void;
+  onDuplicate: (template: Template) => void;
+  onDelete: (templateId: string) => void;
+  onToggleActive: (templateId: string, currentActive: boolean) => void;
+  onSetPrimary: (templateId: string, category: string) => void;
+  isPrimaryLoading: boolean;
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: template.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case 'quote': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+      case 'invoice': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+      case 'estimate': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
+      case 'proposal': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
+      default: return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center gap-3 p-3 bg-card border border-border rounded-lg transition-all",
+        isDragging && "opacity-50 shadow-lg",
+        !template.active && "opacity-60"
+      )}
+    >
+      {/* Drag Handle */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded text-muted-foreground"
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+
+      {/* Primary Star */}
+      <button
+        onClick={() => onSetPrimary(template.id, template.category)}
+        disabled={isPrimaryLoading}
+        className={cn(
+          "p-1 rounded transition-colors",
+          template.is_primary 
+            ? "text-yellow-500 hover:text-yellow-600" 
+            : "text-muted-foreground/40 hover:text-yellow-500"
+        )}
+        title={template.is_primary ? "Primary template" : "Set as primary"}
+      >
+        <Star className={cn("h-4 w-4", template.is_primary && "fill-current")} />
+      </button>
+
+      {/* Template Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="font-medium truncate">{template.name}</span>
+          {template.is_primary && (
+            <span className="text-xs text-yellow-600 dark:text-yellow-500 font-medium">Primary</span>
+          )}
+        </div>
+        {template.updated_at && (
+          <span className="text-xs text-muted-foreground">
+            Updated {new Date(template.updated_at).toLocaleDateString()}
+          </span>
+        )}
+      </div>
+
+      {/* Category Badge */}
+      <Badge variant="secondary" className={cn("text-xs", getCategoryColor(template.category))}>
+        {template.category}
+      </Badge>
+
+      {/* Active Switch */}
+      <div className="flex items-center gap-2">
+        <span className={cn(
+          "text-xs font-medium",
+          template.active ? "text-green-600 dark:text-green-500" : "text-muted-foreground"
+        )}>
+          {template.active ? 'Active' : 'Inactive'}
+        </span>
+        <Switch
+          checked={template.active ?? false}
+          onCheckedChange={() => onToggleActive(template.id, template.active ?? false)}
+          className="data-[state=checked]:bg-green-600"
+        />
+      </div>
+
+      {/* Edit Button */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onEdit(template)}
+        className="h-8"
+      >
+        <Edit3 className="h-3.5 w-3.5 mr-1" />
+        Edit
+      </Button>
+
+      {/* More Actions */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => onDuplicate(template)}>
+            <Copy className="h-4 w-4 mr-2" />
+            Duplicate
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onClick={() => onDelete(template.id)}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+};
 
 export const SimpleTemplateManager: React.FC = () => {
   const queryClient = useQueryClient();
+  const { data: businessSettings } = useBusinessSettings();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('quote');
+  const [newTemplateCategory, setNewTemplateCategory] = useState<string>('quote');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
-  const [useRealData, setUseRealData] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+  const [isPrimaryLoading, setIsPrimaryLoading] = useState(false);
   
-  const { data: templateData } = useTemplateData(selectedProjectId, useRealData);
+  // For template preview - use mock data
+  const { data: templateData } = useTemplateData('', false);
   
-  // Create mock project data for template preview with comprehensive real data simulation
+  // Project data for template preview - uses real business settings
   const mockProjectData = {
     project: {
       id: 'sample-project-id',
@@ -84,18 +275,32 @@ export const SimpleTemplateManager: React.FC = () => {
       }
     },
     businessSettings: {
-      company_name: 'Premium Window Treatments Co.',
-      address: '123 Business Ave, Suite 100',
-      city: 'Business City',
-      state: 'BC',
-      zip_code: '54321',
-      business_phone: '(555) 123-4567',
-      business_email: 'info@premiumwindowtreatments.com',
-      website: 'www.premiumwindowtreatments.com',
-      company_logo_url: null, // This will show the building icon placeholder
-      abn: 'ABN 12 345 678 901',
-      country: 'Australia'
+      company_name: businessSettings?.company_name || 'Your Company Name',
+      address: businessSettings?.address || '123 Business Street',
+      city: businessSettings?.city || 'Business City',
+      state: businessSettings?.state || 'ST',
+      zip_code: businessSettings?.zip_code || '12345',
+      business_phone: businessSettings?.business_phone || '(555) 123-4567',
+      business_email: businessSettings?.business_email || 'hello@yourcompany.com',
+      website: businessSettings?.website || 'www.yourcompany.com',
+      company_logo_url: businessSettings?.company_logo_url || null,
+      abn: businessSettings?.abn || '',
+      country: businessSettings?.country || 'Australia',
+      // Bank details for invoice preview
+      bank_name: businessSettings?.bank_name || 'Sample Bank',
+      bank_account_name: businessSettings?.bank_account_name || 'Your Company Name',
+      bank_bsb: businessSettings?.bank_bsb || '123-456',
+      bank_account_number: businessSettings?.bank_account_number || '12345678',
+      bank_iban: businessSettings?.bank_iban || '',
+      bank_swift_bic: businessSettings?.bank_swift_bic || '',
+      // Registration details for invoice footer
+      registration_number: businessSettings?.registration_number || 'REG-12345',
+      tax_number: businessSettings?.tax_number || 'TAX-67890',
+      default_payment_terms_days: businessSettings?.default_payment_terms_days || 30
     },
+    // Invoice-specific preview data
+    paymentStatus: 'unpaid',
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     treatments: [
       {
         id: 'treatment-1',
@@ -104,11 +309,7 @@ export const SimpleTemplateManager: React.FC = () => {
         description: 'Premium blackout fabric with Somfy motor',
         quantity: 3,
         unit_price: 450.00,
-        total: 1350.00,
-        fabric_type: 'Blackout',
-        color: 'Charcoal Grey',
-        width: '1200mm',
-        drop: '1800mm'
+        total: 1350.00
       },
       {
         id: 'treatment-2', 
@@ -117,60 +318,44 @@ export const SimpleTemplateManager: React.FC = () => {
         description: 'Custom linen blend with chain operation',
         quantity: 2,
         unit_price: 320.00,
-        total: 640.00,
-        fabric_type: 'Linen Blend',
-        color: 'Natural Beige',
-        width: '900mm',
-        drop: '1600mm'
-      },
-      {
-        id: 'treatment-3',
-        room_name: 'Kitchen',
-        treatment_name: 'Venetian Blinds',
-        description: '25mm aluminum slats with cord control',
-        quantity: 2,
-        unit_price: 180.00,
-        total: 360.00,
-        fabric_type: 'Aluminum',
-        color: 'White',
-        width: '600mm',
-        drop: '1200mm'
+        total: 640.00
       }
     ],
     items: [
       { id: 'item-1', description: 'Living Room - Motorized Roller Blinds (3 units)', quantity: 3, unit_price: 450.00, total: 1350.00, room: 'Living Room' },
-      { id: 'item-2', description: 'Master Bedroom - Roman Shades (2 units)', quantity: 2, unit_price: 320.00, total: 640.00, room: 'Master Bedroom' },
-      { id: 'item-3', description: 'Kitchen - Venetian Blinds (2 units)', quantity: 2, unit_price: 180.00, total: 360.00, room: 'Kitchen' }
+      { id: 'item-2', description: 'Master Bedroom - Roman Shades (2 units)', quantity: 2, unit_price: 320.00, total: 640.00, room: 'Master Bedroom' }
     ],
-    subtotal: 2350.00,
+    subtotal: 1990.00,
     taxRate: 0.10,
-    taxAmount: 235.00,
-    total: 2585.00,
+    taxAmount: 199.00,
+    total: 2189.00,
     currency: 'AUD',
-    terms: 'Payment due within 30 days. 50% deposit required upon acceptance.',
+    terms: 'Payment due within 30 days.',
     validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    notes: 'Installation scheduled within 2-3 weeks of order confirmation. Includes 5-year warranty on all motorized components.'
+    notes: 'Installation scheduled within 2-3 weeks of order confirmation.'
   };
   
-  // Use template data for consistent preview experience
   const displayProjectData = templateData || mockProjectData;
+
+  // Sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     loadTemplates();
   }, []);
 
-  // Function removed - no automatic template restoration
-  const restoreDefaultTemplates = async () => {
-    toast.info('This feature has been disabled. Please create templates manually.');
-  };
-
   const loadTemplates = async () => {
     setLoading(true);
     try {
-      // Load all templates from database
       const { data, error } = await supabase
         .from('quote_templates')
         .select('*')
+        .order('display_order', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -182,8 +367,11 @@ export const SimpleTemplateManager: React.FC = () => {
         blocks: t.blocks as any[],
         category: t.template_style || 'quote',
         is_default: false,
+        is_primary: t.is_primary || false,
         active: t.active || false,
-        created_at: t.created_at
+        display_order: t.display_order || 0,
+        created_at: t.created_at,
+        updated_at: t.updated_at || t.created_at
       }));
 
       setTemplates(userTemplates);
@@ -196,34 +384,101 @@ export const SimpleTemplateManager: React.FC = () => {
     }
   };
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = templates.findIndex(t => t.id === active.id);
+      const newIndex = templates.findIndex(t => t.id === over.id);
+
+      const reordered = arrayMove(templates, oldIndex, newIndex);
+      setTemplates(reordered);
+
+      // Update display_order in database
+      try {
+        const updates = reordered.map((template, index) => 
+          supabase
+            .from('quote_templates')
+            .update({ display_order: index })
+            .eq('id', template.id)
+        );
+
+        await Promise.all(updates);
+        queryClient.invalidateQueries({ queryKey: ['quote-templates'] });
+        toast.success('Template order updated');
+      } catch (error) {
+        console.error('Error updating template order:', error);
+        toast.error('Failed to update template order');
+        loadTemplates(); // Reload on error
+      }
+    }
+  };
+
+  const setAsPrimary = async (templateId: string, category: string) => {
+    setIsPrimaryLoading(true);
+    try {
+      // First, unset primary for all templates of the same category
+      const { error: unsetError } = await supabase
+        .from('quote_templates')
+        .update({ is_primary: false })
+        .eq('template_style', category);
+
+      if (unsetError) throw unsetError;
+
+      // Then set the selected template as primary
+      const { error: setError } = await supabase
+        .from('quote_templates')
+        .update({ is_primary: true })
+        .eq('id', templateId);
+
+      if (setError) throw setError;
+
+      // Update local state
+      setTemplates(prev => prev.map(t => ({
+        ...t,
+        is_primary: t.id === templateId ? true : (t.category === category ? false : t.is_primary)
+      })));
+
+      queryClient.invalidateQueries({ queryKey: ['quote-templates'] });
+      toast.success('Primary template updated');
+    } catch (error) {
+      console.error('Error setting primary template:', error);
+      toast.error('Failed to set primary template');
+    } finally {
+      setIsPrimaryLoading(false);
+    }
+  };
+
   const createFromTemplate = async (baseTemplate: Template) => {
     if (!newTemplateName.trim()) {
       toast.error('Please enter a template name');
       return;
     }
 
-    // Prevent double-click submissions
     if (isSubmitting) return;
 
-    // Check for duplicate template name
     const duplicateName = templates.some(t => 
       t.name.toLowerCase() === newTemplateName.trim().toLowerCase()
     );
     
     if (duplicateName) {
-      toast.error('A template with this name already exists. Please choose a different name.');
+      toast.error('A template with this name already exists.');
       return;
     }
 
     setIsSubmitting(true);
     try {
+      const maxOrder = Math.max(...templates.map(t => t.display_order || 0), -1);
+      
       const { data, error } = await supabase
         .from('quote_templates')
         .insert({
           name: newTemplateName.trim(),
           description: `Based on ${baseTemplate.name}`,
           blocks: baseTemplate.blocks,
-          template_style: selectedCategory,
+          template_style: newTemplateCategory,
+          display_order: maxOrder + 1,
+          active: true,
           user_id: (await supabase.auth.getUser()).data.user?.id
         })
         .select()
@@ -237,16 +492,20 @@ export const SimpleTemplateManager: React.FC = () => {
         description: data.description,
         blocks: Array.isArray(data.blocks) ? data.blocks : [],
         category: data.template_style,
-        created_at: data.created_at
+        is_primary: data.is_primary || false,
+        active: data.active || false,
+        display_order: data.display_order || 0,
+        created_at: data.created_at,
+        updated_at: data.updated_at
       };
 
-      setTemplates(prev => [newTemplate, ...prev]);
+      setTemplates(prev => [...prev, newTemplate]);
       setNewTemplateName('');
       setIsCreating(false);
+      queryClient.invalidateQueries({ queryKey: ['quote-templates'] });
       toast.success('Template created successfully!');
     } catch (error: any) {
       console.error('Error creating template:', error);
-      // Handle unique constraint violation
       if (error?.code === '23505') {
         toast.error('A template with this name already exists.');
       } else {
@@ -266,9 +525,7 @@ export const SimpleTemplateManager: React.FC = () => {
 
       if (error) throw error;
 
-      // Invalidate React Query cache to update QuotationTab immediately
       queryClient.invalidateQueries({ queryKey: ['quote-templates'] });
-      
       setTemplates(prev => prev.filter(t => t.id !== templateId));
       toast.success('Template deleted');
     } catch (error) {
@@ -286,9 +543,7 @@ export const SimpleTemplateManager: React.FC = () => {
 
       if (error) throw error;
 
-      // Invalidate React Query cache to update QuotationTab immediately
       queryClient.invalidateQueries({ queryKey: ['quote-templates'] });
-      
       setTemplates(prev => prev.map(t => 
         t.id === templateId ? { ...t, active: !currentActive } : t
       ));
@@ -299,20 +554,19 @@ export const SimpleTemplateManager: React.FC = () => {
     }
   };
 
-
   const duplicateTemplate = async (template: Template) => {
-    // Prevent double-click
     if (isDuplicating === template.id) return;
     
     setIsDuplicating(template.id);
     try {
-      // Generate unique name by checking existing copies
       let copyName = `${template.name} (Copy)`;
       let copyNum = 1;
       while (templates.some(t => t.name.toLowerCase() === copyName.toLowerCase())) {
         copyNum++;
         copyName = `${template.name} (Copy ${copyNum})`;
       }
+
+      const maxOrder = Math.max(...templates.map(t => t.display_order || 0), -1);
 
       const { data, error } = await supabase
         .from('quote_templates')
@@ -321,6 +575,8 @@ export const SimpleTemplateManager: React.FC = () => {
           description: template.description,
           blocks: template.blocks,
           template_style: template.category,
+          display_order: maxOrder + 1,
+          active: false,
           user_id: (await supabase.auth.getUser()).data.user?.id
         })
         .select()
@@ -334,18 +590,19 @@ export const SimpleTemplateManager: React.FC = () => {
         description: data.description,
         blocks: Array.isArray(data.blocks) ? data.blocks : [],
         category: data.template_style,
-        created_at: data.created_at
+        is_primary: false,
+        active: false,
+        display_order: data.display_order || 0,
+        created_at: data.created_at,
+        updated_at: data.updated_at
       };
 
-      setTemplates(prev => [duplicatedTemplate, ...prev]);
+      setTemplates(prev => [...prev, duplicatedTemplate]);
+      queryClient.invalidateQueries({ queryKey: ['quote-templates'] });
       toast.success('Template duplicated successfully!');
     } catch (error: any) {
       console.error('Error duplicating template:', error);
-      if (error?.code === '23505') {
-        toast.error('A template with this name already exists.');
-      } else {
-        toast.error('Failed to duplicate template');
-      }
+      toast.error('Failed to duplicate template');
     } finally {
       setIsDuplicating(null);
     }
@@ -359,18 +616,12 @@ export const SimpleTemplateManager: React.FC = () => {
   const saveTemplateChanges = useCallback(async (updatedBlocks: any[]) => {
     if (!selectedTemplate) return;
 
-    console.log('saveTemplateChanges called with blocks:', updatedBlocks);
-
-    // Update local state immediately for responsive UI (without scroll disruption)
     setSelectedTemplate(prev => prev ? { ...prev, blocks: updatedBlocks } : null);
 
     try {
-      // Update database record
       const { error } = await supabase
         .from('quote_templates')
-        .update({
-          blocks: updatedBlocks
-        })
+        .update({ blocks: updatedBlocks })
         .eq('id', selectedTemplate.id);
 
       if (error) throw error;
@@ -382,20 +633,15 @@ export const SimpleTemplateManager: React.FC = () => {
             : t
         )
       );
-
-      console.log('Template saved successfully');
-      // Only show toast for manual saves, not auto-saves
-      // toast.success('Template saved!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving template:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
       toast.error(`Failed to save template: ${error.message}`);
     }
   }, [selectedTemplate]);
 
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory;
+    const matchesCategory = filterCategory === 'all' || template.category === filterCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -404,36 +650,30 @@ export const SimpleTemplateManager: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Document Templates</h2>
-          <p className="text-muted-foreground">Create and manage fully dynamic quote and invoice templates</p>
+          <h2 className="text-lg font-semibold">Document Templates</h2>
+          <p className="text-sm text-muted-foreground">
+            Drag to reorder • Star to set primary • All document types share the same features
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Restore Defaults button removed */}
-          <Button onClick={() => setIsCreating(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            New Template
-          </Button>
-        </div>
+        <Button onClick={() => setIsCreating(true)} size="sm">
+          <Plus className="h-4 w-4 mr-1" />
+          New Template
+        </Button>
       </div>
 
-      {/* Project Data Selector */}
-      <ProjectDataSelector
-        useRealData={useRealData}
-        onUseRealDataChange={setUseRealData}
-        selectedProjectId={selectedProjectId}
-        onProjectIdChange={setSelectedProjectId}
-      />
-
       {/* Filters */}
-      <div className="flex items-center gap-4">
-        <Input
-          placeholder="Search templates..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-        />
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-40">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search templates..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <SelectTrigger className="w-36">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -446,150 +686,62 @@ export const SimpleTemplateManager: React.FC = () => {
         </Select>
       </div>
 
-      {/* Warning banner if no active templates */}
-      {!loading && filteredTemplates.length > 0 && filteredTemplates.every(t => !t.active) && (
-        <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-          <div className="flex items-start gap-3">
-            <Sparkles className="h-5 w-5 text-yellow-600 dark:text-yellow-500 mt-0.5" />
-            <div>
-              <h4 className="font-medium text-yellow-900 dark:text-yellow-100">No Active Templates</h4>
-              <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                You need to activate at least one template to generate quotes. Click the <strong>"Click to Activate"</strong> button below to activate a template.
-              </p>
+      {/* Templates List */}
+      <Card className="border-border">
+        <CardContent className="p-4">
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Loading templates...
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Templates Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {loading ? (
-          <div className="col-span-full text-center py-8 text-muted-foreground">
-            Loading templates...
-          </div>
-        ) : filteredTemplates.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="text-lg font-medium mb-2">No templates found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchTerm || selectedCategory !== 'all' 
-                ? 'Try adjusting your search or filters' 
-                : 'Get started by restoring default templates or creating a new one'}
-            </p>
-            {!searchTerm && selectedCategory === 'all' && (
-              <Button onClick={() => setIsCreating(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Template
-              </Button>
-            )}
-          </div>
-        ) : (
-          filteredTemplates.map((template) => (
-            <Card key={template.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{template.name}</CardTitle>
-                    {template.description && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {template.description}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Badge variant={template.is_default ? "default" : "secondary"}>
-                      {template.category}
-                    </Badge>
-                    {template.id === 'modern-quote' && (
-                      <Badge variant="outline" className="ml-1">
-                        <Sparkles className="h-3 w-3 mr-1" />
-                        Dynamic
-                      </Badge>
-                    )}
-                    {template.is_default && (
-                      <Badge variant="outline" className="ml-1">
-                        <Building2 className="h-3 w-3 mr-1" />
-                        Default
-                      </Badge>
-                    )}
-                  </div>
+          ) : filteredTemplates.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+              <h3 className="font-medium mb-1">No templates found</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {searchTerm || filterCategory !== 'all' 
+                  ? 'Try adjusting your search or filters' 
+                  : 'Create your first template to get started'}
+              </p>
+              {!searchTerm && filterCategory === 'all' && (
+                <Button onClick={() => setIsCreating(true)} size="sm">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Create Template
+                </Button>
+              )}
+            </div>
+          ) : (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={filteredTemplates.map(t => t.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2">
+                  {filteredTemplates.map((template) => (
+                    <SortableTemplateRow
+                      key={template.id}
+                      template={template}
+                      onEdit={openEditor}
+                      onDuplicate={duplicateTemplate}
+                      onDelete={deleteTemplate}
+                      onToggleActive={toggleActive}
+                      onSetPrimary={setAsPrimary}
+                      isPrimaryLoading={isPrimaryLoading}
+                    />
+                  ))}
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col gap-3">
-                  {/* Active Status Toggle - PROMINENT */}
-                  <div className={`p-4 rounded-lg border-2 transition-all ${
-                    template.active 
-                      ? 'bg-primary/5 border-primary/20' 
-                      : 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-300 dark:border-yellow-700'
-                  }`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <span className="text-sm font-semibold block">Template Status</span>
-                        <span className="text-xs text-muted-foreground">
-                          {template.active ? 'This template is active and ready to use' : 'Click to activate this template'}
-                        </span>
-                      </div>
-                      <Button
-                        variant={template.active ? "default" : "destructive"}
-                        size="lg"
-                        onClick={() => toggleActive(template.id, template.active ?? false)}
-                        className={`h-11 px-6 gap-2 font-semibold ${
-                          !template.active ? 'animate-pulse' : ''
-                        }`}
-                      >
-                        {template.active ? (
-                          <>
-                            <ToggleRight className="h-5 w-5" />
-                            <span>Active</span>
-                          </>
-                        ) : (
-                          <>
-                            <ToggleLeft className="h-5 w-5" />
-                            <span>Click to Activate</span>
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {/* Action Buttons */}
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openEditor(template)}
-                      className="flex-1"
-                    >
-                      <Edit3 className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => duplicateTemplate(template)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => deleteTemplate(template.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+              </SortableContext>
+            </DndContext>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Create Template Dialog */}
       <Dialog open={isCreating} onOpenChange={setIsCreating}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Create New Template</DialogTitle>
           </DialogHeader>
@@ -600,12 +752,13 @@ export const SimpleTemplateManager: React.FC = () => {
                 value={newTemplateName}
                 onChange={(e) => setNewTemplateName(e.target.value)}
                 placeholder="My Custom Template"
+                className="mt-1.5"
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Category</label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger>
+              <label className="text-sm font-medium">Document Type</label>
+              <Select value={newTemplateCategory} onValueChange={setNewTemplateCategory}>
+                <SelectTrigger className="mt-1.5">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -615,6 +768,9 @@ export const SimpleTemplateManager: React.FC = () => {
                   <SelectItem value="proposal">Proposal</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Each type has specific labels and features optimized for that document type.
+              </p>
             </div>
           </div>
           <DialogFooter>
@@ -627,14 +783,13 @@ export const SimpleTemplateManager: React.FC = () => {
                   createFromTemplate({
                     id: 'blank',
                     name: 'Blank',
-                    category: selectedCategory,
-                    blocks: getBlankTemplateBlocks(selectedCategory)
+                    category: newTemplateCategory,
+                    blocks: getBlankTemplateBlocks(newTemplateCategory)
                   });
                 }
               }}
-              disabled={!newTemplateName.trim()}
+              disabled={!newTemplateName.trim() || isSubmitting}
             >
-              <Plus className="h-4 w-4 mr-2" />
               Create Template
             </Button>
           </DialogFooter>
@@ -657,6 +812,7 @@ export const SimpleTemplateManager: React.FC = () => {
                 projectData={displayProjectData}
                 isEditable={true}
                 onBlocksChange={saveTemplateChanges}
+                documentType={selectedTemplate.category}
               />
             )}
           </div>

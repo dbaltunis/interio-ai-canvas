@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Calendar, DollarSign, AlertCircle, CheckCircle, Clock, ExternalLink } from "lucide-react";
+import { Plus, Calendar, DollarSign, AlertCircle, CheckCircle, Clock, ExternalLink, MessageSquare } from "lucide-react";
 import { useClientJobs } from "@/hooks/useClientJobs";
 import { useNavigate } from "react-router-dom";
 import { formatJobNumber } from "@/lib/format-job-number";
@@ -15,15 +14,18 @@ import { useUserPermissions } from "@/hooks/usePermissions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useUnifiedClientNotes } from "@/hooks/useUnifiedClientNotes";
 
 interface ClientProjectsListProps {
   clientId: string;
   onTabChange?: (tab: string) => void;
+  compact?: boolean;
 }
 
-export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsListProps) => {
+export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: ClientProjectsListProps) => {
   const { user } = useAuth();
   const { data: projects, isLoading } = useClientJobs(clientId);
+  const { notesByProject } = useUnifiedClientNotes(clientId);
   const navigate = useNavigate();
   const createProject = useCreateProject();
   const createQuote = useCreateQuote();
@@ -165,33 +167,99 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
   };
 
   if (isLoading) {
-    return <div className="text-center py-4">Loading projects...</div>;
+    return <div className="text-center py-4 text-xs text-muted-foreground">Loading projects...</div>;
   }
 
+  // Compact mode for sidebar
+  if (compact) {
+    return (
+      <div className="space-y-1.5">
+        {!projects || projects.length === 0 ? (
+          <div className="text-center py-4">
+            <p className="text-xs text-muted-foreground mb-2">No projects yet</p>
+            {hasCreateJobsPermission && (
+              <Button size="sm" variant="outline" onClick={handleCreateProject} disabled={isCreating} className="h-6 text-[10px] px-2">
+                <Plus className="h-2.5 w-2.5 mr-1" />
+                {isCreating ? "..." : "New"}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <>
+            {projects.slice(0, 5).map((project) => {
+              const notesCount = notesByProject[project.id] || 0;
+              return (
+                <div
+                  key={project.id}
+                  className="flex items-center justify-between gap-2 p-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer group"
+                  onClick={() => handleViewProject(project.id)}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium truncate flex items-center gap-1">
+                      {project.name}
+                      {notesCount > 0 && (
+                        <span className="inline-flex items-center gap-0.5 text-[9px] text-muted-foreground">
+                          <MessageSquare className="h-2.5 w-2.5" />
+                          {notesCount}
+                        </span>
+                      )}
+                    </div>
+                    {project.job_number && (
+                      <div className="text-[10px] text-muted-foreground">#{formatJobNumber(project.job_number)}</div>
+                    )}
+                  </div>
+                  <Badge className={`${getStatusColor(project.status || 'planning')} text-[9px] px-1 py-0 h-4 shrink-0`} variant="secondary">
+                    {(project.status || 'planning').replace('_', ' ')}
+                  </Badge>
+                </div>
+              );
+            })}
+            {projects.length > 5 && (
+              <Button variant="ghost" size="sm" className="w-full h-6 text-[10px]" onClick={() => onTabChange?.('projects')}>
+                +{projects.length - 5} more projects
+              </Button>
+            )}
+            {hasCreateJobsPermission && (
+              <Button size="sm" variant="outline" onClick={handleCreateProject} disabled={isCreating} className="w-full h-6 text-[10px] mt-1">
+                <Plus className="h-2.5 w-2.5 mr-1" />
+                {isCreating ? "Creating..." : "New Project"}
+              </Button>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // Full mode (for tabs/standalone)
   return (
-    <Card>
-      <CardHeader>
+    <Card variant="analytics">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Client Projects
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-primary/10 rounded-md">
+              <Calendar className="h-4 w-4 text-primary" />
+            </div>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Client Projects
+            </CardTitle>
+          </div>
           {hasCreateJobsPermission && (
-            <Button size="sm" onClick={handleCreateProject} disabled={isCreating}>
-              <Plus className="h-4 w-4 mr-2" />
-              {isCreating ? "Creating..." : "New Project"}
+            <Button size="sm" onClick={handleCreateProject} disabled={isCreating} className="h-7 text-xs">
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              {isCreating ? "Creating..." : "New"}
             </Button>
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         {!projects || projects.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Calendar className="mx-auto h-12 w-12 mb-4 opacity-50" />
-            <p>No projects found for this client</p>
+          <div className="empty-state">
+            <Calendar className="empty-state-icon" />
+            <p className="empty-state-title">No projects found</p>
             {hasCreateJobsPermission && (
-              <Button className="mt-2" variant="outline" onClick={handleCreateProject} disabled={isCreating}>
-                <Plus className="h-4 w-4 mr-2" />
+              <Button className="mt-3" variant="outline" size="sm" onClick={handleCreateProject} disabled={isCreating}>
+                <Plus className="h-3.5 w-3.5 mr-1" />
                 {isCreating ? "Creating..." : "Create First Project"}
               </Button>
             )}
@@ -209,11 +277,21 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
               </TableRow>
             </TableHeader>
             <TableBody>
-              {projects.map((project) => (
+              {projects.map((project) => {
+                const notesCount = notesByProject[project.id] || 0;
+                return (
                 <TableRow key={project.id} className="hover:bg-muted/50">
                   <TableCell>
                     <div>
-                      <div className="font-medium">{project.name}</div>
+                      <div className="font-medium flex items-center gap-2">
+                        {project.name}
+                        {notesCount > 0 && (
+                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            <MessageSquare className="h-3 w-3" />
+                            {notesCount}
+                          </span>
+                        )}
+                      </div>
                       {project.job_number && (
                         <div className="text-sm text-muted-foreground">
                           Job #{formatJobNumber(project.job_number)}
@@ -261,7 +339,8 @@ export const ClientProjectsList = ({ clientId, onTabChange }: ClientProjectsList
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         )}

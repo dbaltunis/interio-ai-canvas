@@ -7,11 +7,17 @@ import {
   Hash, 
   Calendar,
   User,
-  Info
+  Info,
+  Banknote,
+  CheckCircle2,
+  Clock,
+  AlertCircle
 } from 'lucide-react';
 import { formatInTimeZone } from 'date-fns-tz';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { getDocumentTypeConfig, type DocumentTypeConfig } from '@/utils/documentTypeConfig';
+import { getRegistrationLabels } from '@/utils/businessRegistrationLabels';
 
 interface BlockRendererProps {
   block: any;
@@ -20,6 +26,7 @@ interface BlockRendererProps {
   userDateFormat?: string;
   isPrintMode?: boolean;
   isEditable?: boolean;
+  documentType?: string;
   renderEditableText?: (props: {
     value: string;
     onChange: (value: string) => void;
@@ -43,16 +50,129 @@ export const resolveToken = (
   
   const getDefaultCurrency = () => businessSettings?.currency || projectData?.currency || 'USD';
   
+  // Helper to format bank details based on country
+  const formatBankDetails = () => {
+    if (!businessSettings) return '';
+    const country = businessSettings.country || 'Australia';
+    const parts: string[] = [];
+    
+    if (businessSettings.bank_name) parts.push(`Bank: ${businessSettings.bank_name}`);
+    if (businessSettings.bank_account_name) parts.push(`Account Name: ${businessSettings.bank_account_name}`);
+    
+    // Country-specific formatting
+    if (country === 'Australia' && businessSettings.bank_bsb) {
+      parts.push(`BSB: ${businessSettings.bank_bsb}`);
+      if (businessSettings.bank_account_number) parts.push(`Account: ${businessSettings.bank_account_number}`);
+    } else if (country === 'United Kingdom' && businessSettings.bank_sort_code) {
+      parts.push(`Sort Code: ${businessSettings.bank_sort_code}`);
+      if (businessSettings.bank_account_number) parts.push(`Account: ${businessSettings.bank_account_number}`);
+    } else if ((country === 'United States' || country === 'Canada') && businessSettings.bank_routing_number) {
+      parts.push(`Routing: ${businessSettings.bank_routing_number}`);
+      if (businessSettings.bank_account_number) parts.push(`Account: ${businessSettings.bank_account_number}`);
+    } else if (businessSettings.bank_iban) {
+      parts.push(`IBAN: ${businessSettings.bank_iban}`);
+      if (businessSettings.bank_swift_bic) parts.push(`BIC/SWIFT: ${businessSettings.bank_swift_bic}`);
+    } else if (businessSettings.bank_account_number) {
+      parts.push(`Account: ${businessSettings.bank_account_number}`);
+    }
+    
+    return parts.join(' | ');
+  };
+
+  // Helper to format registration footer with country-aware labels
+  const formatRegistrationFooter = () => {
+    if (!businessSettings) return '';
+    const country = businessSettings.country || 'Australia';
+    const parts: string[] = [];
+    
+    // Get country-specific labels
+    const labels = getRegistrationLabels(country);
+    
+    // Only show ABN for Australia (the only country that uses ABN)
+    if (country === 'Australia' && businessSettings.abn) {
+      parts.push(`ABN: ${businessSettings.abn}`);
+    }
+    
+    // Registration number with country-specific label
+    if (businessSettings.registration_number) {
+      parts.push(`${labels.registrationLabel}: ${businessSettings.registration_number}`);
+    }
+    
+    // Tax number with country-specific label
+    if (businessSettings.tax_number) {
+      parts.push(`${labels.taxLabel}: ${businessSettings.tax_number}`);
+    }
+    
+    return parts.join(' | ');
+  };
+  
+  // Helper to format late payment terms
+  const formatLatePaymentTerms = () => {
+    if (!businessSettings) return '';
+    const parts: string[] = [];
+    
+    if (businessSettings.late_payment_interest_rate && businessSettings.late_payment_interest_rate > 0) {
+      parts.push(`Interest of ${businessSettings.late_payment_interest_rate}% per month will be charged on overdue amounts.`);
+    }
+    
+    if (businessSettings.late_payment_fee_amount && businessSettings.late_payment_fee_amount > 0) {
+      const currency = businessSettings.currency || projectData?.currency || 'AUD';
+      parts.push(`A late payment fee of ${formatCurrency(businessSettings.late_payment_fee_amount, currency)} may apply.`);
+    }
+    
+    if (businessSettings.late_payment_terms) {
+      parts.push(businessSettings.late_payment_terms);
+    }
+    
+    return parts.join(' ');
+  };
+
+  // Helper to calculate balance due
+  const calculateBalanceDue = () => {
+    const total = projectData?.total || 0;
+    const amountPaid = project.amount_paid || projectData?.amountPaid || 0;
+    return total - amountPaid;
+  };
+
+  // Helper to determine if invoice is overdue
+  const isInvoiceOverdue = () => {
+    if (!project.due_date) return false;
+    const dueDate = new Date(project.due_date);
+    const today = new Date();
+    const paymentStatus = project.payment_status || 'unpaid';
+    return today > dueDate && paymentStatus !== 'paid';
+  };
+
+  // Helper to get effective payment status
+  const getEffectivePaymentStatus = () => {
+    const status = project.payment_status || 'unpaid';
+    if (status === 'unpaid' && isInvoiceOverdue()) return 'overdue';
+    return status;
+  };
+
   const tokens: Record<string, any> = {
-    // Company information
-    company_name: businessSettings?.company_name || 'Your Company Name',
+    // Company information - no hardcoded fallbacks, show empty if not configured
+    company_name: businessSettings?.company_name || '',
+    company_legal_name: businessSettings?.legal_name || '',
+    company_trading_name: businessSettings?.trading_name || businessSettings?.company_name || '',
     company_address: businessSettings?.address ? 
       `${businessSettings.address}${businessSettings.city ? ', ' + businessSettings.city : ''}${businessSettings.state ? ', ' + businessSettings.state : ''}${businessSettings.zip_code ? ' ' + businessSettings.zip_code : ''}` 
-      : '123 Business Ave, Suite 100',
-    company_phone: businessSettings?.business_phone || '(555) 123-4567',
-    company_email: businessSettings?.business_email || 'info@company.com',
+      : '',
+    company_phone: businessSettings?.business_phone || '',
+    company_email: businessSettings?.business_email || '',
     company_website: businessSettings?.website || '',
     company_abn: businessSettings?.abn || '',
+    company_registration_number: businessSettings?.registration_number || '',
+    company_tax_number: businessSettings?.tax_number || '',
+    company_organization_type: businessSettings?.organization_type || '',
+    company_country: businessSettings?.country || '',
+    // Bank details tokens
+    company_bank_name: businessSettings?.bank_name || '',
+    company_bank_account_name: businessSettings?.bank_account_name || '',
+    company_bank_details: formatBankDetails(),
+    company_registration_footer: formatRegistrationFooter(),
+    // Late payment terms
+    late_payment_terms: formatLatePaymentTerms(),
     
     // Client information
     client_name: client.name || '',
@@ -71,6 +191,17 @@ export const resolveToken = (
     quote_number: project.job_number || project.quote_number || 'QT-2024-001',
     job_number: project.job_number || project.quote_number || 'JOB-2024-001',
     project_name: project.name || 'Project',
+    
+    // Invoice-specific fields
+    supply_date: project.supply_date 
+      ? formatInTimeZone(new Date(project.supply_date), userTimezone, userDateFormat)
+      : '',
+    po_number: project.po_number || '',
+    payment_reference: project.payment_reference || 
+      `${businessSettings?.payment_reference_prefix || 'INV'}-${project.job_number || project.quote_number || 'REF'}`,
+    payment_status: getEffectivePaymentStatus(),
+    amount_paid: formatCurrency(project.amount_paid || projectData?.amountPaid || 0, getDefaultCurrency()),
+    balance_due: formatCurrency(calculateBalanceDue(), getDefaultCurrency()),
     
     // Dates
     date: project.start_date 
@@ -107,12 +238,16 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
   userDateFormat = 'M/d/yyyy',
   isPrintMode = false,
   isEditable = false,
+  documentType = 'quote',
   renderEditableText,
   onContentChange
 }) => {
   const content = block.content || {};
   const businessSettings = projectData?.businessSettings || {};
   const headerLayout = content.layout || 'centered';
+  
+  // Get document type configuration
+  const docConfig = getDocumentTypeConfig(documentType);
   
   const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
   
@@ -185,14 +320,27 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
             <div>{getToken('company_email')}</div>
           </div>
 
-          {/* Document Title */}
+          {/* Document Title - Dynamic based on document type */}
           <h1 style={{ fontSize: '30px', fontWeight: 'bold', color: '#111827', letterSpacing: '-0.025em', marginTop: '16px' }}>
             {isEditable ? renderText(
-              content.documentTitle || 'Invoice',
+              // Use doc type title if saved title is from a different type (legacy fix)
+              (() => {
+                const savedTitle = content.documentTitle;
+                const docTypeTitle = docConfig.documentTitle;
+                const legacyTitles = ['Quote', 'Invoice', 'Proposal', 'Estimate', 'Work Order', 'Measurement', 'Brochure', 'Portfolio'];
+                const isLegacyMismatch = savedTitle && legacyTitles.includes(savedTitle) && savedTitle !== docTypeTitle;
+                return isLegacyMismatch ? docTypeTitle : (savedTitle || docTypeTitle);
+              })(),
               (v) => updateContent({ documentTitle: v }),
               'text-3xl font-bold',
               'Document Title'
-            ) : (content.documentTitle || 'Invoice')}
+            ) : (() => {
+              const savedTitle = content.documentTitle;
+              const docTypeTitle = docConfig.documentTitle;
+              const legacyTitles = ['Quote', 'Invoice', 'Proposal', 'Estimate', 'Work Order', 'Measurement', 'Brochure', 'Portfolio'];
+              const isLegacyMismatch = savedTitle && legacyTitles.includes(savedTitle) && savedTitle !== docTypeTitle;
+              return isLegacyMismatch ? docTypeTitle : (savedTitle || docTypeTitle);
+            })()}
           </h1>
 
           {/* Tagline */}
@@ -233,29 +381,56 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
               </div>
             </div>
 
-            {/* Quote Details - Right */}
+            {/* Document Details - Right (Dynamic labels based on document type) */}
             <div className="text-right">
               <div className="text-sm space-y-1">
+                {docConfig.numberLabel && (
+                  <div>
+                    <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>
+                      {content.quoteNumberLabel || docConfig.numberLabel}{' '}
+                    </span>
+                    <span style={{ fontWeight: 'bold', color: '#111827', fontSize: '14px' }}>
+                      {getToken('job_number')}
+                    </span>
+                  </div>
+                )}
                 <div>
                   <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>
-                    {content.quoteNumberLabel || 'Invoice no #:'}{' '}
-                  </span>
-                  <span style={{ fontWeight: 'bold', color: '#111827', fontSize: '14px' }}>
-                    {getToken('job_number')}
-                  </span>
-                </div>
-                <div>
-                  <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>Date: </span>
+                    {docConfig.primaryDateLabel}: </span>
                   <span style={{ color: '#111827', fontWeight: 'bold', fontSize: '14px' }}>
                     {getToken('date')}
                   </span>
                 </div>
-                <div>
-                  <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>Valid Until: </span>
-                  <span style={{ color: '#111827', fontWeight: 'bold', fontSize: '14px' }}>
-                    {getToken('valid_until')}
-                  </span>
-                </div>
+                {docConfig.secondaryDateLabel && (
+                  <div>
+                    <span style={{ color: '#374151', fontWeight: '600', fontSize: '14px' }}>
+                      {docConfig.secondaryDateLabel}: </span>
+                    <span style={{ color: '#111827', fontWeight: 'bold', fontSize: '14px' }}>
+                      {getToken(docConfig.secondaryDateToken || 'valid_until')}
+                    </span>
+                  </div>
+                )}
+                {/* Payment Status Badge for Invoices */}
+                {docConfig.showPaymentStatus && (
+                  <div className="mt-2">
+                    <span 
+                      style={{ 
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        borderRadius: '9999px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        backgroundColor: projectData?.paymentStatus === 'paid' ? '#dcfce7' : 
+                                        projectData?.paymentStatus === 'overdue' ? '#fef2f2' : '#fef3c7',
+                        color: projectData?.paymentStatus === 'paid' ? '#166534' : 
+                               projectData?.paymentStatus === 'overdue' ? '#991b1b' : '#92400e'
+                      }}
+                    >
+                      {projectData?.paymentStatus === 'paid' ? 'PAID' : 
+                       projectData?.paymentStatus === 'overdue' ? 'OVERDUE' : 'UNPAID'}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -305,21 +480,29 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
           {/* Right: Document Info */}
           <div className="text-right">
             <h1 className="text-2xl font-semibold mb-4">
-              {content.documentTitle || 'Quote'}
+              {(() => {
+                const savedTitle = content.documentTitle;
+                const docTypeTitle = docConfig.documentTitle;
+                const legacyTitles = ['Quote', 'Invoice', 'Proposal', 'Estimate', 'Work Order'];
+                const isLegacyMismatch = savedTitle && legacyTitles.includes(savedTitle) && savedTitle !== docTypeTitle;
+                return isLegacyMismatch ? docTypeTitle : (savedTitle || docTypeTitle);
+              })()}
             </h1>
             <div className="text-sm space-y-1">
               <div className="flex items-center gap-2 justify-end">
                 <Hash className="h-3 w-3" />
-                <span>{content.quoteNumberLabel || 'Quote #'}: {getToken('quote_number')}</span>
+                <span>{content.quoteNumberLabel || docConfig.numberLabel}: {getToken('job_number')}</span>
               </div>
               <div className="flex items-center gap-2 justify-end">
                 <Calendar className="h-3 w-3" />
-                <span>Date: {getToken('date')}</span>
+                <span>{docConfig.primaryDateLabel}: {getToken('date')}</span>
               </div>
-              <div className="flex items-center gap-2 justify-end">
-                <Calendar className="h-3 w-3" />
-                <span>Valid Until: {getToken('valid_until')}</span>
-              </div>
+              {docConfig.secondaryDateLabel && (
+                <div className="flex items-center gap-2 justify-end">
+                  <Calendar className="h-3 w-3" />
+                  <span>{docConfig.secondaryDateLabel}: {getToken(docConfig.secondaryDateToken || 'valid_until')}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -354,7 +537,15 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
                 )}
               </div>
             )}
-            <h1 className="text-3xl font-bold">{content.documentTitle || 'Quote'}</h1>
+            <h1 className="text-3xl font-bold">
+              {(() => {
+                const savedTitle = content.documentTitle;
+                const docTypeTitle = docConfig.documentTitle;
+                const legacyTitles = ['Quote', 'Invoice', 'Proposal', 'Estimate', 'Work Order'];
+                const isLegacyMismatch = savedTitle && legacyTitles.includes(savedTitle) && savedTitle !== docTypeTitle;
+                return isLegacyMismatch ? docTypeTitle : (savedTitle || docTypeTitle);
+              })()}
+            </h1>
           </div>
           
           <div className="grid grid-cols-2 gap-8 pt-4 border-t">
@@ -377,9 +568,11 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
                 {getToken('client_phone') && <div>{getToken('client_phone')}</div>}
               </div>
               <div className="mt-3 pt-3 border-t text-sm">
-                <div><strong>Quote #:</strong> {getToken('job_number')}</div>
-                <div><strong>Date:</strong> {getToken('date')}</div>
-                <div><strong>Valid Until:</strong> {getToken('valid_until')}</div>
+                <div><strong>{docConfig.numberLabel}:</strong> {getToken('job_number')}</div>
+                <div><strong>{docConfig.primaryDateLabel}:</strong> {getToken('date')}</div>
+                {docConfig.secondaryDateLabel && (
+                  <div><strong>{docConfig.secondaryDateLabel}:</strong> {getToken(docConfig.secondaryDateToken || 'valid_until')}</div>
+                )}
               </div>
             </div>
           </div>
@@ -520,6 +713,452 @@ export const TotalsBlock: React.FC<BlockRendererProps> = ({
   );
 };
 
+// ============= CLIENT INFO BLOCK =============
+export const ClientInfoBlock: React.FC<BlockRendererProps> = ({
+  block,
+  projectData,
+  userTimezone = 'UTC',
+  userDateFormat = 'M/d/yyyy'
+}) => {
+  const content = block.content || {};
+  const businessSettings = projectData?.businessSettings || {};
+  
+  const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
+
+  return (
+    <div className="mb-6">
+      <div className="text-xs font-semibold uppercase text-gray-500 tracking-wider mb-2">
+        {content.label || 'Bill To'}
+      </div>
+      <div className="text-sm space-y-1">
+        <div className="font-bold text-gray-900">{getToken('client_name') || 'Client Name'}</div>
+        {content.showCompany !== false && getToken('client_company') && (
+          <div className="text-gray-700">{getToken('client_company')}</div>
+        )}
+        {content.showEmail !== false && getToken('client_email') && (
+          <div className="text-gray-700">{getToken('client_email')}</div>
+        )}
+        {content.showPhone !== false && getToken('client_phone') && (
+          <div className="text-gray-700">{getToken('client_phone')}</div>
+        )}
+        {content.showAddress !== false && getToken('client_address') && (
+          <div className="text-gray-700">{getToken('client_address')}</div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============= TERMS AND CONDITIONS BLOCK =============
+export const TermsConditionsBlock: React.FC<BlockRendererProps> = ({
+  block
+}) => {
+  const content = block.content || {};
+  const style = block.style || {};
+
+  return (
+    <div 
+      className="mb-6 rounded-lg"
+      style={{
+        padding: style.padding || '16px',
+        backgroundColor: style.backgroundColor || 'transparent'
+      }}
+    >
+      <h3 className="text-lg font-semibold mb-4 text-gray-900">
+        {content.title || 'Terms & Conditions'}
+      </h3>
+      <div className="text-sm text-gray-600 space-y-3">
+        {content.term1 && <p>{content.term1}</p>}
+        {content.term2 && <p>{content.term2}</p>}
+        {content.term3 && <p>{content.term3}</p>}
+        {content.term4 && <p>{content.term4}</p>}
+        {!content.term1 && !content.term2 && !content.term3 && !content.term4 && (
+          <>
+            <p>1. Payment Terms: 50% deposit required upon acceptance. Remaining balance due upon completion.</p>
+            <p>2. Timeline: Project completion estimated at 2-3 weeks from deposit receipt.</p>
+            <p>3. Warranty: All work comes with a 1-year warranty against defects in workmanship.</p>
+            <p>4. Cancellation: This quote is valid for 30 days.</p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============= INVOICE STATUS BLOCK (Shows payment status, amount paid, balance due) =============
+export const InvoiceStatusBlock: React.FC<BlockRendererProps> = ({
+  block,
+  projectData,
+  userTimezone = 'UTC',
+  userDateFormat = 'M/d/yyyy'
+}) => {
+  const content = block.content || {};
+  const businessSettings = projectData?.businessSettings || {};
+  const style = block.style || {};
+  
+  const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
+  
+  const paymentStatus = getToken('payment_status');
+  const amountPaid = getToken('amount_paid');
+  const balanceDue = getToken('balance_due');
+  const total = getToken('total');
+  
+  // Determine status colors
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid': return { bg: '#dcfce7', text: '#166534', border: '#86efac' };
+      case 'partial': return { bg: '#fef3c7', text: '#92400e', border: '#fde68a' };
+      case 'overdue': return { bg: '#fef2f2', text: '#991b1b', border: '#fecaca' };
+      default: return { bg: '#fef3c7', text: '#92400e', border: '#fde68a' };
+    }
+  };
+  
+  const statusColors = getStatusColor(paymentStatus);
+  
+  return (
+    <div 
+      className="mb-6 p-4 rounded-lg border"
+      style={{
+        backgroundColor: style.backgroundColor || statusColors.bg,
+        borderColor: style.borderColor || statusColors.border
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {paymentStatus === 'paid' ? (
+            <CheckCircle2 className="h-6 w-6" style={{ color: statusColors.text }} />
+          ) : paymentStatus === 'overdue' ? (
+            <AlertCircle className="h-6 w-6" style={{ color: statusColors.text }} />
+          ) : (
+            <Clock className="h-6 w-6" style={{ color: statusColors.text }} />
+          )}
+          <div>
+            <span 
+              className="px-3 py-1 rounded-full text-sm font-semibold"
+              style={{ 
+                backgroundColor: statusColors.border,
+                color: statusColors.text
+              }}
+            >
+              {paymentStatus === 'paid' ? 'PAID' : 
+               paymentStatus === 'partial' ? 'PARTIALLY PAID' :
+               paymentStatus === 'overdue' ? 'OVERDUE' : 'UNPAID'}
+            </span>
+          </div>
+        </div>
+        
+        <div className="text-right">
+          <div className="text-sm text-gray-600">
+            <span>Total: </span>
+            <span className="font-medium">{total}</span>
+          </div>
+          {paymentStatus !== 'unpaid' && (
+            <div className="text-sm text-gray-600">
+              <span>Amount Paid: </span>
+              <span className="font-medium text-green-700">{amountPaid}</span>
+            </div>
+          )}
+          {paymentStatus !== 'paid' && (
+            <div className="text-base font-bold mt-1" style={{ color: statusColors.text }}>
+              <span>Balance Due: </span>
+              <span>{balanceDue}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============= LATE PAYMENT TERMS BLOCK (Invoice-specific) =============
+export const LatePaymentTermsBlock: React.FC<BlockRendererProps> = ({
+  block,
+  projectData,
+  userTimezone = 'UTC',
+  userDateFormat = 'M/d/yyyy'
+}) => {
+  const content = block.content || {};
+  const businessSettings = projectData?.businessSettings || {};
+  
+  const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
+  
+  const latePaymentTerms = getToken('late_payment_terms');
+  
+  if (!latePaymentTerms) {
+    return null;
+  }
+
+  const style = block.style || {};
+  
+  return (
+    <div 
+      className="mb-6 p-3 rounded border"
+      style={{
+        backgroundColor: style.backgroundColor || '#fffbeb',
+        borderColor: style.borderColor || '#fef3c7'
+      }}
+    >
+      <div className="flex items-start gap-2">
+        <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+        <div className="text-xs text-amber-800">
+          <span className="font-medium">Late Payment Policy: </span>
+          <span>{latePaymentTerms}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============= TAX BREAKDOWN BLOCK (Invoice-specific) =============
+export const TaxBreakdownBlock: React.FC<BlockRendererProps> = ({
+  block,
+  projectData
+}) => {
+  const businessSettings = projectData?.businessSettings || {};
+  const style = block.style || {};
+  
+  const taxType = (businessSettings.tax_type || 'GST').toUpperCase();
+  const taxRate = businessSettings.tax_rate || 10;
+  const currency = projectData?.currency || businessSettings?.currency || 'AUD';
+  
+  const subtotal = projectData?.subtotal || 0;
+  const taxAmount = projectData?.taxAmount || (subtotal * taxRate / 100);
+  const total = projectData?.total || (subtotal + taxAmount);
+  
+  return (
+    <div 
+      className="mb-6 p-4 rounded-lg border"
+      style={{
+        backgroundColor: style.backgroundColor || '#f9fafb',
+        borderColor: style.borderColor || '#e5e7eb'
+      }}
+    >
+      <h3 className="text-sm font-semibold text-gray-700 mb-3">{taxType} Summary</h3>
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between">
+          <span className="text-gray-600">Subtotal (excl. {taxType})</span>
+          <span className="font-medium text-gray-900">{formatCurrency(subtotal, currency)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-600">{taxType} @ {taxRate}%</span>
+          <span className="font-medium text-gray-900">{formatCurrency(taxAmount, currency)}</span>
+        </div>
+        <div className="flex justify-between font-semibold border-t border-gray-300 pt-2 mt-2">
+          <span className="text-gray-800">Total (incl. {taxType})</span>
+          <span className="text-gray-900">{formatCurrency(total, currency)}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============= PAYMENT DETAILS BLOCK (Invoice-specific) =============
+export const PaymentDetailsBlock: React.FC<BlockRendererProps> = ({
+  block,
+  projectData,
+  userTimezone = 'UTC',
+  userDateFormat = 'M/d/yyyy'
+}) => {
+  const content = block.content || {};
+  const businessSettings = projectData?.businessSettings || {};
+  
+  const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
+  
+  const bankDetails = getToken('company_bank_details');
+  const paymentReference = getToken('payment_reference');
+  
+  if (!bankDetails) {
+    return (
+      <div className="mb-6 p-4 border border-dashed border-gray-300 rounded-lg bg-gray-50">
+        <p className="text-sm text-gray-500 text-center">
+          Bank details not configured. Go to Settings → Business to add your payment details.
+        </p>
+      </div>
+    );
+  }
+
+  const style = block.style || {};
+  
+  return (
+    <div 
+      className="mb-6 p-4 rounded-lg border"
+      style={{
+        backgroundColor: style.backgroundColor || '#eff6ff',
+        borderColor: style.borderColor || '#dbeafe'
+      }}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <Banknote className="h-5 w-5 text-blue-600" />
+        <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1e40af' }}>
+          {content.title || 'Payment Details'}
+        </h3>
+      </div>
+      <div className="text-sm text-gray-700 space-y-2">
+        <p style={{ whiteSpace: 'pre-wrap' }}>{bankDetails}</p>
+        {paymentReference && (
+          <div className="mt-3 p-2 bg-blue-100 rounded border border-blue-200">
+            <span className="text-xs text-blue-600 font-medium">Payment Reference: </span>
+            <span className="text-sm font-bold text-blue-800">{paymentReference}</span>
+          </div>
+        )}
+        {content.paymentInstructions && (
+          <p className="mt-2 text-gray-600">{content.paymentInstructions}</p>
+        )}
+        {businessSettings.default_payment_terms_days && (
+          <p className="mt-2 font-medium text-blue-700">
+            Payment Terms: Net {businessSettings.default_payment_terms_days} days
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============= REGISTRATION FOOTER BLOCK (Invoice-specific) =============
+export const RegistrationFooterBlock: React.FC<BlockRendererProps> = ({
+  block,
+  projectData,
+  userTimezone = 'UTC',
+  userDateFormat = 'M/d/yyyy'
+}) => {
+  const content = block.content || {};
+  const businessSettings = projectData?.businessSettings || {};
+  
+  const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
+  
+  const registrationFooter = getToken('company_registration_footer');
+  
+  if (!registrationFooter) {
+    return null;
+  }
+
+  return (
+    <div className="mt-6 pt-4 border-t border-gray-200">
+      <div className="text-center text-xs text-gray-500">
+        {registrationFooter}
+      </div>
+    </div>
+  );
+};
+
+// ============= INSTALLATION DETAILS BLOCK (Work Order-specific) =============
+export const InstallationDetailsBlock: React.FC<BlockRendererProps> = ({
+  block,
+  projectData,
+  userTimezone = 'UTC',
+  userDateFormat = 'M/d/yyyy'
+}) => {
+  const content = block.content || {};
+  const businessSettings = projectData?.businessSettings || {};
+  
+  const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
+
+  const style = block.style || {};
+  
+  return (
+    <div 
+      className="mb-6 p-4 rounded-lg border"
+      style={{
+        backgroundColor: style.backgroundColor || '#fffbeb',
+        borderColor: style.borderColor || '#fef3c7'
+      }}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <Clock className="h-5 w-5 text-amber-600" />
+        <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#92400e' }}>
+          {content.title || 'Installation Details'}
+        </h3>
+      </div>
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <span className="text-gray-500">Installation Date:</span>
+          <div className="font-medium text-gray-900">{getToken('due_date') || 'TBD'}</div>
+        </div>
+        <div>
+          <span className="text-gray-500">Installer:</span>
+          <div className="font-medium text-gray-900">{content.installerName || projectData?.installer?.name || 'TBD'}</div>
+        </div>
+        <div>
+          <span className="text-gray-500">Site Contact:</span>
+          <div className="font-medium text-gray-900">{getToken('client_name')}</div>
+        </div>
+        <div>
+          <span className="text-gray-500">Contact Phone:</span>
+          <div className="font-medium text-gray-900">{getToken('client_phone') || 'N/A'}</div>
+        </div>
+      </div>
+      {content.accessInstructions && (
+        <div className="mt-3 pt-3 border-t border-amber-200">
+          <span className="text-gray-500 text-sm">Access Instructions:</span>
+          <p className="text-sm text-gray-900">{content.accessInstructions}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============= INSTALLER SIGNOFF BLOCK (Work Order-specific) =============
+export const InstallerSignoffBlock: React.FC<BlockRendererProps> = ({
+  block,
+  isPrintMode = false
+}) => {
+  const content = block.content || {};
+  const style = block.style || {};
+
+  return (
+    <div 
+      className="mb-6 p-4 rounded-lg border"
+      style={{
+        backgroundColor: style.backgroundColor || '#f0fdf4',
+        borderColor: style.borderColor || '#dcfce7'
+      }}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <CheckCircle2 className="h-5 w-5 text-green-600" />
+        <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#166534' }}>
+          {content.title || 'Installation Sign-off'}
+        </h3>
+      </div>
+      <div className="grid grid-cols-2 gap-6">
+        <div>
+          <p className="text-sm text-gray-500 mb-2">Installer Signature</p>
+          <div 
+            style={{ 
+              height: '60px', 
+              borderBottom: '2px solid #374151',
+              backgroundColor: isPrintMode ? 'transparent' : '#f9fafb'
+            }} 
+          />
+          <p className="text-xs text-gray-400 mt-1">Name: ________________________</p>
+        </div>
+        <div>
+          <p className="text-sm text-gray-500 mb-2">Client Confirmation</p>
+          <div 
+            style={{ 
+              height: '60px', 
+              borderBottom: '2px solid #374151',
+              backgroundColor: isPrintMode ? 'transparent' : '#f9fafb'
+            }} 
+          />
+          <p className="text-xs text-gray-400 mt-1">Date: ________________________</p>
+        </div>
+      </div>
+      {content.completionNotes && (
+        <div className="mt-4">
+          <p className="text-sm text-gray-500">Notes:</p>
+          <div 
+            style={{ 
+              minHeight: '40px', 
+              borderBottom: '1px solid #d1d5db',
+              backgroundColor: isPrintMode ? 'transparent' : '#f9fafb'
+            }} 
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ============= MAIN BLOCK RENDERER =============
 export const renderSharedBlock = (props: BlockRendererProps): React.ReactNode => {
   const { block } = props;
@@ -539,6 +1178,40 @@ export const renderSharedBlock = (props: BlockRendererProps): React.ReactNode =>
     case 'summary':
     case 'total':
       return <TotalsBlock {...props} />;
+    
+    // Invoice-specific blocks
+    case 'payment-details':
+      return <PaymentDetailsBlock {...props} />;
+      
+    case 'registration-footer':
+      return <RegistrationFooterBlock {...props} />;
+    
+    case 'invoice-status':
+      return <InvoiceStatusBlock {...props} />;
+      
+    case 'late-payment-terms':
+      return <LatePaymentTermsBlock {...props} />;
+    
+    case 'tax-breakdown':
+      return <TaxBreakdownBlock {...props} />;
+    
+    // Work order-specific blocks
+    case 'installation-details':
+      return <InstallationDetailsBlock {...props} />;
+      
+    case 'installer-signoff':
+      return <InstallerSignoffBlock {...props} />;
+    
+    // Client info block (used by all document types)
+    case 'client-info':
+    case 'client':
+    case 'bill-to':
+      return <ClientInfoBlock {...props} />;
+    
+    // Terms and conditions block
+    case 'terms-conditions':
+    case 'terms':
+      return <TermsConditionsBlock {...props} />;
       
     default:
       return null; // Let parent handle unknown types

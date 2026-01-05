@@ -1555,6 +1555,14 @@ export type Database = {
           abn: string | null
           address: string | null
           allow_in_app_template_editing: boolean | null
+          bank_account_name: string | null
+          bank_account_number: string | null
+          bank_bsb: string | null
+          bank_iban: string | null
+          bank_name: string | null
+          bank_routing_number: string | null
+          bank_sort_code: string | null
+          bank_swift_bic: string | null
           business_email: string | null
           business_phone: string | null
           city: string | null
@@ -1562,20 +1570,32 @@ export type Database = {
           company_name: string | null
           country: string | null
           created_at: string
+          default_payment_terms_days: number | null
           default_profit_margin_percentage: number | null
           features_enabled: Json | null
+          financial_year_end_day: number | null
+          financial_year_end_month: number | null
           id: string
           inventory_config: Json | null
+          late_payment_fee_amount: number | null
+          late_payment_interest_rate: number | null
+          late_payment_terms: string | null
+          legal_name: string | null
           manual_quote_editing_enabled: boolean | null
           measurement_units: string | null
           minimum_profit_margin_percentage: number | null
+          organization_type: string | null
+          payment_reference_prefix: string | null
           pricing_settings: Json | null
+          registration_number: string | null
           show_profit_margins_to_staff: boolean | null
           show_vendor_costs_to_managers: boolean | null
           show_vendor_costs_to_staff: boolean | null
           state: string | null
+          tax_number: string | null
           tax_rate: number | null
           tax_type: string | null
+          trading_name: string | null
           updated_at: string
           user_id: string
           website: string | null
@@ -1585,6 +1605,14 @@ export type Database = {
           abn?: string | null
           address?: string | null
           allow_in_app_template_editing?: boolean | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_bsb?: string | null
+          bank_iban?: string | null
+          bank_name?: string | null
+          bank_routing_number?: string | null
+          bank_sort_code?: string | null
+          bank_swift_bic?: string | null
           business_email?: string | null
           business_phone?: string | null
           city?: string | null
@@ -1592,20 +1620,32 @@ export type Database = {
           company_name?: string | null
           country?: string | null
           created_at?: string
+          default_payment_terms_days?: number | null
           default_profit_margin_percentage?: number | null
           features_enabled?: Json | null
+          financial_year_end_day?: number | null
+          financial_year_end_month?: number | null
           id?: string
           inventory_config?: Json | null
+          late_payment_fee_amount?: number | null
+          late_payment_interest_rate?: number | null
+          late_payment_terms?: string | null
+          legal_name?: string | null
           manual_quote_editing_enabled?: boolean | null
           measurement_units?: string | null
           minimum_profit_margin_percentage?: number | null
+          organization_type?: string | null
+          payment_reference_prefix?: string | null
           pricing_settings?: Json | null
+          registration_number?: string | null
           show_profit_margins_to_staff?: boolean | null
           show_vendor_costs_to_managers?: boolean | null
           show_vendor_costs_to_staff?: boolean | null
           state?: string | null
+          tax_number?: string | null
           tax_rate?: number | null
           tax_type?: string | null
+          trading_name?: string | null
           updated_at?: string
           user_id: string
           website?: string | null
@@ -1615,6 +1655,14 @@ export type Database = {
           abn?: string | null
           address?: string | null
           allow_in_app_template_editing?: boolean | null
+          bank_account_name?: string | null
+          bank_account_number?: string | null
+          bank_bsb?: string | null
+          bank_iban?: string | null
+          bank_name?: string | null
+          bank_routing_number?: string | null
+          bank_sort_code?: string | null
+          bank_swift_bic?: string | null
           business_email?: string | null
           business_phone?: string | null
           city?: string | null
@@ -1622,20 +1670,32 @@ export type Database = {
           company_name?: string | null
           country?: string | null
           created_at?: string
+          default_payment_terms_days?: number | null
           default_profit_margin_percentage?: number | null
           features_enabled?: Json | null
+          financial_year_end_day?: number | null
+          financial_year_end_month?: number | null
           id?: string
           inventory_config?: Json | null
+          late_payment_fee_amount?: number | null
+          late_payment_interest_rate?: number | null
+          late_payment_terms?: string | null
+          legal_name?: string | null
           manual_quote_editing_enabled?: boolean | null
           measurement_units?: string | null
           minimum_profit_margin_percentage?: number | null
+          organization_type?: string | null
+          payment_reference_prefix?: string | null
           pricing_settings?: Json | null
+          registration_number?: string | null
           show_profit_margins_to_staff?: boolean | null
           show_vendor_costs_to_managers?: boolean | null
           show_vendor_costs_to_staff?: boolean | null
           state?: string | null
+          tax_number?: string | null
           tax_rate?: number | null
           tax_type?: string | null
+          trading_name?: string | null
           updated_at?: string
           user_id?: string
           website?: string | null
@@ -6448,8 +6508,10 @@ export type Database = {
           canvas_data: Json | null
           created_at: string
           description: string | null
+          display_order: number | null
           id: string
           is_default: boolean | null
+          is_primary: boolean | null
           name: string
           preview_image_url: string | null
           settings: Json | null
@@ -6463,8 +6525,10 @@ export type Database = {
           canvas_data?: Json | null
           created_at?: string
           description?: string | null
+          display_order?: number | null
           id?: string
           is_default?: boolean | null
+          is_primary?: boolean | null
           name: string
           preview_image_url?: string | null
           settings?: Json | null
@@ -6478,8 +6542,10 @@ export type Database = {
           canvas_data?: Json | null
           created_at?: string
           description?: string | null
+          display_order?: number | null
           id?: string
           is_default?: boolean | null
+          is_primary?: boolean | null
           name?: string
           preview_image_url?: string | null
           settings?: Json | null
@@ -6491,8 +6557,10 @@ export type Database = {
       }
       quotes: {
         Row: {
+          amount_paid: number | null
           client_id: string | null
           created_at: string
+          currency: string | null
           discount_amount: number | null
           discount_scope: string | null
           discount_type: string | null
@@ -6505,8 +6573,10 @@ export type Database = {
           order_number: string | null
           payment_amount: number | null
           payment_percentage: number | null
+          payment_reference: string | null
           payment_status: string | null
           payment_type: string | null
+          po_number: string | null
           project_id: string | null
           quote_number: string | null
           selected_discount_items: Json | null
@@ -6514,6 +6584,7 @@ export type Database = {
           status_id: string | null
           stripe_payment_intent_id: string | null
           subtotal: number | null
+          supply_date: string | null
           tax_amount: number | null
           tax_rate: number | null
           template_custom_data: Json | null
@@ -6528,8 +6599,10 @@ export type Database = {
           version: number
         }
         Insert: {
+          amount_paid?: number | null
           client_id?: string | null
           created_at?: string
+          currency?: string | null
           discount_amount?: number | null
           discount_scope?: string | null
           discount_type?: string | null
@@ -6542,8 +6615,10 @@ export type Database = {
           order_number?: string | null
           payment_amount?: number | null
           payment_percentage?: number | null
+          payment_reference?: string | null
           payment_status?: string | null
           payment_type?: string | null
+          po_number?: string | null
           project_id?: string | null
           quote_number?: string | null
           selected_discount_items?: Json | null
@@ -6551,6 +6626,7 @@ export type Database = {
           status_id?: string | null
           stripe_payment_intent_id?: string | null
           subtotal?: number | null
+          supply_date?: string | null
           tax_amount?: number | null
           tax_rate?: number | null
           template_custom_data?: Json | null
@@ -6565,8 +6641,10 @@ export type Database = {
           version?: number
         }
         Update: {
+          amount_paid?: number | null
           client_id?: string | null
           created_at?: string
+          currency?: string | null
           discount_amount?: number | null
           discount_scope?: string | null
           discount_type?: string | null
@@ -6579,8 +6657,10 @@ export type Database = {
           order_number?: string | null
           payment_amount?: number | null
           payment_percentage?: number | null
+          payment_reference?: string | null
           payment_status?: string | null
           payment_type?: string | null
+          po_number?: string | null
           project_id?: string | null
           quote_number?: string | null
           selected_discount_items?: Json | null
@@ -6588,6 +6668,7 @@ export type Database = {
           status_id?: string | null
           stripe_payment_intent_id?: string | null
           subtotal?: number | null
+          supply_date?: string | null
           tax_amount?: number | null
           tax_rate?: number | null
           template_custom_data?: Json | null
@@ -9368,6 +9449,224 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_incoming_messages: {
+        Row: {
+          account_owner_id: string
+          client_id: string | null
+          created_at: string | null
+          from_number: string
+          id: string
+          media_url: string | null
+          message_body: string | null
+          read: boolean | null
+          received_at: string | null
+          replied: boolean | null
+          twilio_message_sid: string | null
+        }
+        Insert: {
+          account_owner_id: string
+          client_id?: string | null
+          created_at?: string | null
+          from_number: string
+          id?: string
+          media_url?: string | null
+          message_body?: string | null
+          read?: boolean | null
+          received_at?: string | null
+          replied?: boolean | null
+          twilio_message_sid?: string | null
+        }
+        Update: {
+          account_owner_id?: string
+          client_id?: string | null
+          created_at?: string | null
+          from_number?: string
+          id?: string
+          media_url?: string | null
+          message_body?: string | null
+          read?: boolean | null
+          received_at?: string | null
+          replied?: boolean | null
+          twilio_message_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_incoming_messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_incoming_messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_message_logs: {
+        Row: {
+          account_owner_id: string
+          client_id: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          media_url: string | null
+          message_body: string | null
+          project_id: string | null
+          status: string | null
+          status_updated_at: string | null
+          template_id: string | null
+          to_number: string
+          twilio_message_sid: string | null
+          user_id: string
+        }
+        Insert: {
+          account_owner_id: string
+          client_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          media_url?: string | null
+          message_body?: string | null
+          project_id?: string | null
+          status?: string | null
+          status_updated_at?: string | null
+          template_id?: string | null
+          to_number: string
+          twilio_message_sid?: string | null
+          user_id: string
+        }
+        Update: {
+          account_owner_id?: string
+          client_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          media_url?: string | null
+          message_body?: string | null
+          project_id?: string | null
+          status?: string | null
+          status_updated_at?: string | null
+          template_id?: string | null
+          to_number?: string
+          twilio_message_sid?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_message_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_stats_mv"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_message_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_message_logs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_message_logs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_templates: {
+        Row: {
+          account_owner_id: string
+          content: string
+          created_at: string | null
+          id: string
+          is_shared_template: boolean | null
+          name: string
+          status: string | null
+          template_type: string
+          twilio_template_sid: string | null
+          updated_at: string | null
+          variables: Json | null
+        }
+        Insert: {
+          account_owner_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+          is_shared_template?: boolean | null
+          name: string
+          status?: string | null
+          template_type: string
+          twilio_template_sid?: string | null
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Update: {
+          account_owner_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_shared_template?: boolean | null
+          name?: string
+          status?: string | null
+          template_type?: string
+          twilio_template_sid?: string | null
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Relationships: []
+      }
+      whatsapp_user_settings: {
+        Row: {
+          account_sid: string | null
+          auth_token: string | null
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          use_own_account: boolean | null
+          user_id: string
+          verified: boolean | null
+          verified_at: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          account_sid?: string | null
+          auth_token?: string | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          use_own_account?: boolean | null
+          user_id: string
+          verified?: boolean | null
+          verified_at?: string | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          account_sid?: string | null
+          auth_token?: string | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          use_own_account?: boolean | null
+          user_id?: string
+          verified?: boolean | null
+          verified_at?: string | null
+          whatsapp_number?: string | null
+        }
+        Relationships: []
       }
       window_coverings: {
         Row: {

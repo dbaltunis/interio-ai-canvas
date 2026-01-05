@@ -1,8 +1,17 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mail, Phone, StickyNote, Briefcase, Loader2 } from 'lucide-react';
+import {
+  Mail,
+  Phone,
+  StickyNote,
+  Briefcase,
+  Loader2,
+  MessageSquare,
+  Edit,
+} from 'lucide-react';
 import { QuickEmailDialog } from './QuickEmailDialog';
 import { AddActivityDialog } from './AddActivityDialog';
+import { MessagePreviewDrawer } from '@/components/messaging/MessagePreviewDrawer';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,129 +28,109 @@ interface Client {
 
 interface ClientQuickActionsBarProps {
   client: Client;
+  onEdit?: () => void;
   canEditClient?: boolean;
 }
 
-export const ClientQuickActionsBar = ({ client, canEditClient = true }: ClientQuickActionsBarProps) => {
+export const ClientQuickActionsBar = ({
+  client,
+  onEdit,
+  canEditClient,
+}: ClientQuickActionsBarProps) => {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
+  const [messageDrawerOpen, setMessageDrawerOpen] = useState(false);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const displayName = client.client_type === 'B2B' ? client.company_name : client.name;
+  const displayName =
+    client.client_type === 'B2B' ? client.company_name : client.name;
 
   const handleCall = () => {
-    if (client.phone) {
-      window.open(`tel:${client.phone}`);
-      toast.success(`Calling ${displayName}...`);
-    } else {
-      toast.error("No phone number available");
+    if (!client.phone) {
+      toast.error('No phone number available');
+      return;
     }
+
+    window.open(`tel:${client.phone}`);
+    toast.success(`Calling ${displayName}...`);
   };
 
   const handleCreateProject = async () => {
     setIsCreatingProject(true);
     try {
-      console.log('[QuickActions] Creating new project for client:', client.id);
-      
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("You must be logged in to create a project");
+        toast.error('You must be logged in to create a project');
         return;
       }
 
-      // Get account owner for team members
       const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("parent_account_id")
-        .eq("user_id", user.id)
+        .from('user_profiles')
+        .select('parent_account_id')
+        .eq('user_id', user.id)
         .single();
-      
+
       const accountOwnerId = profile?.parent_account_id || user.id;
 
-      // Generate job number
-      let jobNumber: string;
-      const { data: generatedNumber, error: seqError } = await supabase.rpc("get_next_sequence_number", {
-        p_user_id: accountOwnerId,
-        p_entity_type: "job",
-      });
-      
-      if (seqError) {
-        console.error("Error generating job number:", seqError);
-        jobNumber = `JOB-${Date.now()}`;
-      } else {
-        jobNumber = generatedNumber || `JOB-${Date.now()}`;
-      }
+      const { data: generatedNumber } = await supabase.rpc(
+        'get_next_sequence_number',
+        {
+          p_user_id: accountOwnerId,
+          p_entity_type: 'job',
+        }
+      );
 
-      // Get first Project status using accountOwnerId
+      const jobNumber = generatedNumber || `JOB-${Date.now()}`;
+
       const { data: firstStatus } = await supabase
-        .from("job_statuses")
-        .select("id")
-        .eq("user_id", accountOwnerId)
-        .eq("category", "Project")
-        .eq("is_active", true)
-        .order("slot_number", { ascending: true })
+        .from('job_statuses')
+        .select('id')
+        .eq('user_id', accountOwnerId)
+        .eq('category', 'Project')
+        .eq('is_active', true)
+        .order('slot_number', { ascending: true })
         .limit(1)
         .maybeSingle();
 
-      // Create the project
-      const { data: newProject, error: projectError } = await supabase
-        .from("projects")
+      const { data: newProject, error } = await supabase
+        .from('projects')
         .insert({
           name: `New Job ${new Date().toLocaleDateString()}`,
-          description: "",
-          status: "planning",
+          description: '',
+          status: 'planning',
           client_id: client.id,
           user_id: user.id,
           job_number: jobNumber,
-          status_id: firstStatus?.id || null,
+          status_id: firstStatus?.id ?? null,
         })
         .select()
         .single();
 
-      if (projectError) {
-        console.error('[QuickActions] Failed to create project:', projectError);
-        throw projectError;
-      }
+      if (error) throw error;
 
-      console.log('[QuickActions] Project created:', newProject.id);
+      await supabase.from('quotes').insert({
+        project_id: newProject.id,
+        client_id: client.id,
+        user_id: user.id,
+        status: 'draft',
+        subtotal: 0,
+        tax_rate: 0,
+        tax_amount: 0,
+        total_amount: 0,
+        notes: 'New job created',
+        quote_number: `QT-${Date.now()}`,
+      });
 
-      // Create a quote for this project
-      const { error: quoteError } = await supabase
-        .from("quotes")
-        .insert({
-          project_id: newProject.id,
-          client_id: client.id,
-          user_id: user.id,
-          status: "draft",
-          subtotal: 0,
-          tax_rate: 0,
-          tax_amount: 0,
-          total_amount: 0,
-          notes: "New job created",
-          quote_number: `QT-${Date.now()}`,
-        });
+      await queryClient.invalidateQueries({ queryKey: ['projects'] });
+      await queryClient.invalidateQueries({ queryKey: ['quotes'] });
 
-      if (quoteError) {
-        console.error('[QuickActions] Failed to create quote:', quoteError);
-        // Don't throw - project was created, just log the quote error
-      }
-
-      console.log('[QuickActions] Quote created, invalidating queries and navigating');
-
-      // Invalidate queries to refresh data
-      await queryClient.invalidateQueries({ queryKey: ["projects"] });
-      await queryClient.invalidateQueries({ queryKey: ["quotes"] });
-
-      // Navigate to the projects tab with the new job opened
       navigate(`/?tab=projects&jobId=${newProject.id}`);
-
-      toast.success("Project created successfully");
-    } catch (error: any) {
-      console.error('[QuickActions] Failed to create project:', error);
-      toast.error(error.message || "Failed to create project. Please try again.");
+      toast.success('Project created successfully');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to create project');
     } finally {
       setIsCreatingProject(false);
     }
@@ -150,7 +139,7 @@ export const ClientQuickActionsBar = ({ client, canEditClient = true }: ClientQu
   return (
     <>
       <div className="flex flex-wrap gap-2">
-        {/* Email Action */}
+        {/* Email */}
         <Button
           variant="outline"
           size="sm"
@@ -162,7 +151,7 @@ export const ClientQuickActionsBar = ({ client, canEditClient = true }: ClientQu
           <span className="hidden sm:inline">Email</span>
         </Button>
 
-        {/* Call Action */}
+        {/* Call */}
         <Button
           variant="outline"
           size="sm"
@@ -174,7 +163,19 @@ export const ClientQuickActionsBar = ({ client, canEditClient = true }: ClientQu
           <span className="hidden sm:inline">Call</span>
         </Button>
 
-        {/* Add Note - Only show if user can edit this client */}
+        {/* WhatsApp */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setMessageDrawerOpen(true)}
+          disabled={!client.phone}
+          className="gap-1.5 text-green-600 hover:text-green-700 hover:bg-green-50"
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span className="hidden sm:inline">WhatsApp</span>
+        </Button>
+
+        {/* Log Activity */}
         {canEditClient && (
           <Button
             variant="outline"
@@ -187,7 +188,7 @@ export const ClientQuickActionsBar = ({ client, canEditClient = true }: ClientQu
           </Button>
         )}
 
-        {/* Create Project - Only show if user can edit this client */}
+        {/* New Project */}
         {canEditClient && (
           <Button
             variant="outline"
@@ -202,8 +203,21 @@ export const ClientQuickActionsBar = ({ client, canEditClient = true }: ClientQu
               <Briefcase className="h-4 w-4" />
             )}
             <span className="hidden sm:inline">
-              {isCreatingProject ? "Creating..." : "New Project"}
+              {isCreatingProject ? 'Creating...' : 'New Project'}
             </span>
+          </Button>
+        )}
+
+        {/* Edit */}
+        {onEdit && canEditClient && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onEdit}
+            className="gap-1.5"
+          >
+            <Edit className="h-4 w-4" />
+            <span className="hidden sm:inline">Edit</span>
           </Button>
         )}
       </div>
@@ -214,14 +228,23 @@ export const ClientQuickActionsBar = ({ client, canEditClient = true }: ClientQu
         client={{
           id: client.id,
           name: displayName || client.name,
-          email: client.email
+          email: client.email,
         }}
       />
-      
+
       <AddActivityDialog
         clientId={client.id}
         open={noteDialogOpen}
         onOpenChange={setNoteDialogOpen}
+      />
+
+      <MessagePreviewDrawer
+        open={messageDrawerOpen}
+        onOpenChange={setMessageDrawerOpen}
+        clientId={client.id}
+        clientName={displayName || client.name}
+        clientPhone={client.phone}
+        channelFilter="whatsapp"
       />
     </>
   );

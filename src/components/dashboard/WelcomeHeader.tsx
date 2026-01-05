@@ -10,6 +10,7 @@ import { useUserPresence } from "@/hooks/useUserPresence";
 import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { Badge } from "@/components/ui/badge";
 import { TeamCollaborationCenter } from "../collaboration/TeamCollaborationCenter";
+import { DashboardDateFilter } from "./DashboardDateFilter";
 
 interface WelcomeHeaderProps {
   onCustomizeClick: () => void;
@@ -72,7 +73,10 @@ export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
         </div>
       </div>
 
-      <div className="flex items-center gap-0.5 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0">
+        {/* Shopify-style Date Filter */}
+        <DashboardDateFilter />
+
         <Button
           variant="ghost"
           size="icon-sm"

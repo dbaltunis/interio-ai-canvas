@@ -89,64 +89,86 @@ serve(async (req) => {
 
     console.log('User created:', newUser.user.id);
 
-    // Step 2: Wait briefly for trigger to create profile, then update it
-    // The handle_new_user trigger fires on auth.users insert and creates profile
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Step 2: Create user profile with robust retry logic
+    // The handle_new_user trigger may or may not fire - we ensure profile exists
+    let profileCreated = false;
+    let profileRetries = 0;
+    const maxProfileRetries = 3;
 
-    // Check if profile was created by trigger
-    const { data: existingProfile, error: checkError } = await supabaseAdmin
-      .from('user_profiles')
-      .select('user_id, role')
-      .eq('user_id', newUser.user.id)
-      .maybeSingle();
+    while (!profileCreated && profileRetries < maxProfileRetries) {
+      profileRetries++;
+      // Wait with increasing delay between retries
+      await new Promise(resolve => setTimeout(resolve, 500 * profileRetries));
+      
+      console.log(`Profile creation attempt ${profileRetries}/${maxProfileRetries}`);
+      
+      // Check if profile exists (may have been created by trigger)
+      const { data: existingProfile, error: checkError } = await supabaseAdmin
+        .from('user_profiles')
+        .select('user_id')
+        .eq('user_id', newUser.user.id)
+        .maybeSingle();
 
-    if (checkError) {
-      console.error('Error checking profile:', checkError);
+      if (checkError) {
+        console.error(`Error checking profile (attempt ${profileRetries}):`, checkError);
+      }
+
+      if (existingProfile) {
+        // Profile exists - update with admin values
+        console.log('Profile exists, updating...');
+        const { error: updateError } = await supabaseAdmin
+          .from('user_profiles')
+          .update({
+            display_name: displayName,
+            first_name: displayName.split(' ')[0] || displayName,
+            last_name: displayName.split(' ').slice(1).join(' ') || null,
+            role: 'Owner',
+            account_type: accountType,
+            parent_account_id: null,
+            is_active: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', newUser.user.id);
+
+        if (!updateError) {
+          profileCreated = true;
+          console.log('Profile updated successfully');
+        } else {
+          console.error(`Profile update failed (attempt ${profileRetries}):`, updateError);
+        }
+      } else {
+        // Profile doesn't exist - insert new one
+        console.log('Profile not found, inserting...');
+        const { error: insertError } = await supabaseAdmin
+          .from('user_profiles')
+          .insert({
+            user_id: newUser.user.id,
+            display_name: displayName,
+            first_name: displayName.split(' ')[0] || displayName,
+            last_name: displayName.split(' ').slice(1).join(' ') || null,
+            role: 'Owner',
+            account_type: accountType,
+            parent_account_id: null,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (!insertError) {
+          profileCreated = true;
+          console.log('Profile inserted successfully');
+        } else {
+          console.error(`Profile insert failed (attempt ${profileRetries}):`, insertError);
+        }
+      }
     }
 
-    if (existingProfile) {
-      // Profile exists (created by trigger) - just update with admin values
-      console.log('Profile already exists (created by trigger), updating...');
-      const { error: profileUpdateError } = await supabaseAdmin
-        .from('user_profiles')
-        .update({
-          display_name: displayName,
-          first_name: displayName.split(' ')[0] || displayName,
-          last_name: displayName.split(' ').slice(1).join(' ') || null,
-          role: 'Owner',
-          account_type: accountType,
-          parent_account_id: null,
-          is_active: true,
-        })
-        .eq('user_id', newUser.user.id);
-
-      if (profileUpdateError) {
-        console.error('Error updating profile:', profileUpdateError);
-      }
-    } else {
-      // Profile doesn't exist - create it directly (no ON CONFLICT)
-      console.log('Profile not found, inserting new profile...');
-      const { error: profileInsertError } = await supabaseAdmin
-        .from('user_profiles')
-        .insert({
-          user_id: newUser.user.id,
-          display_name: displayName,
-          first_name: displayName.split(' ')[0] || displayName,
-          last_name: displayName.split(' ').slice(1).join(' ') || null,
-          role: 'Owner',
-          account_type: accountType,
-          parent_account_id: null,
-          is_active: true,
-        });
-
-      if (profileInsertError) {
-        console.error('Error inserting profile:', profileInsertError);
-        // Don't rollback - trigger may have created it in parallel
-        // Just log and continue
-      }
+    if (!profileCreated) {
+      console.error('CRITICAL: Failed to create user profile after all retries');
+      // Continue anyway - don't block account creation entirely
     }
 
-    console.log('Profile created/updated for user:', newUser.user.id);
+    console.log('Profile creation complete for user:', newUser.user.id);
 
     // Step 3: Create user role
     const { error: roleInsertError } = await supabaseAdmin

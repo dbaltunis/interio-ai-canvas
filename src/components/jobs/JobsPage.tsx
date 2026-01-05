@@ -4,7 +4,8 @@ import { useSearchParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Shield, FolderOpen, Columns3 } from "lucide-react";
+import { Plus, Shield, FolderOpen, Columns3, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useCreateProject, useProjects } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
@@ -411,31 +412,39 @@ const canViewJobsExplicit =
       <JobsFocusHandler />
       <div className="bg-background/50 min-h-screen animate-fade-in">
       <div className="space-y-4 p-4 lg:p-6">
-        {/* Enhanced Header with Design System */}
+        {/* Compact Header - Analytics Style */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary/10 rounded-lg">
-            <FolderOpen className="h-6 w-6 text-primary" />
-          </div>
           <div className="flex items-center gap-3">
-            <h1 className="text-h1 text-foreground">Projects</h1>
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <FolderOpen className="h-5 w-5 text-primary" />
+            </div>
+            <h1 className="text-lg font-semibold text-foreground">Projects</h1>
             <HelpIcon onClick={() => setShowHelp(true)} />
+            <Badge variant="secondary" className="text-xs">
+              {quotes.length} projects
+            </Badge>
           </div>
-          <Badge className="bg-secondary/10 text-secondary border-secondary/20">
-            {quotes.length} projects
-          </Badge>
-        </div>
           
           <div className="flex items-center gap-3">
+            {/* Always-visible Search Input */}
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search jobs..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 h-9"
+              />
+            </div>
+            
             {!isMobile && (
               <Button 
                 onClick={() => setShowColumnCustomization(true)}
                 variant="outline"
-                size="sm"
-                className="h-9"
+                size="icon"
+                className="h-9 w-9"
               >
-                <Columns3 className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Edit Columns</span>
+                <Columns3 className="h-4 w-4" />
               </Button>
             )}
             <JobsFilter

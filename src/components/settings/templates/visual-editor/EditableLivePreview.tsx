@@ -14,6 +14,7 @@ import {
   Phone,
   Mail,
   Calendar as CalendarIcon,
+  Calendar,
   DollarSign,
   Hash,
   FileText,
@@ -37,11 +38,14 @@ import {
   X,
   ChevronUp,
   ChevronDown,
-  Loader2
+  Loader2,
+  CreditCard
 } from "lucide-react";
 import { SignatureCanvas } from './SignatureCanvas';
 import { cn } from "@/lib/utils";
 import { DocumentHeaderBlock } from './shared/BlockRenderer';
+import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { getAvailableBlocks, getDocumentTypeConfig } from '@/utils/documentTypeConfig';
 
 interface EditableTextProps {
   value: string;
@@ -337,9 +341,11 @@ interface EditableLivePreviewBlockProps {
   projectData?: any;
   onBlockUpdate: (blockId: string, updates: any) => void;
   onBlockRemove: (blockId: string) => void;
+  documentType?: string;
 }
 
-const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRemove }: EditableLivePreviewBlockProps) => {
+const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRemove, documentType = 'quote' }: EditableLivePreviewBlockProps) => {
+  const { data: userBusinessSettings } = useBusinessSettings();
   const content = block.content || {};
   const style = content.style || {};
 
@@ -372,15 +378,92 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
   const renderTokenValue = (token: string) => {
     const project = projectData?.project || {};
     const client = project.client || {};
-    const businessSettings = projectData?.businessSettings || {};
+    // Use projectData businessSettings first, then userBusinessSettings as fallback
+    const businessSettings = projectData?.businessSettings || userBusinessSettings || {};
+    const country = businessSettings?.country || 'Australia';
     
-    const tokens = {
-      company_name: businessSettings.company_name || 'Your Company Name',
+    // Helper to format bank details based on country
+    const formatBankDetails = () => {
+      if (!businessSettings) return 'Bank details not configured';
+      const parts: string[] = [];
+      
+      if (businessSettings.bank_name) parts.push(`Bank: ${businessSettings.bank_name}`);
+      if (businessSettings.bank_account_name) parts.push(`Account Name: ${businessSettings.bank_account_name}`);
+      
+      // Country-specific formatting
+      if (country === 'Australia' && businessSettings.bank_bsb) {
+        parts.push(`BSB: ${businessSettings.bank_bsb}`);
+        if (businessSettings.bank_account_number) parts.push(`Account: ${businessSettings.bank_account_number}`);
+      } else if (country === 'United Kingdom' && businessSettings.bank_sort_code) {
+        parts.push(`Sort Code: ${businessSettings.bank_sort_code}`);
+        if (businessSettings.bank_account_number) parts.push(`Account: ${businessSettings.bank_account_number}`);
+      } else if ((country === 'United States' || country === 'Canada') && businessSettings.bank_routing_number) {
+        parts.push(`Routing: ${businessSettings.bank_routing_number}`);
+        if (businessSettings.bank_account_number) parts.push(`Account: ${businessSettings.bank_account_number}`);
+      } else if (businessSettings.bank_iban) {
+        parts.push(`IBAN: ${businessSettings.bank_iban}`);
+        if (businessSettings.bank_swift_bic) parts.push(`BIC/SWIFT: ${businessSettings.bank_swift_bic}`);
+      } else if (businessSettings.bank_account_number) {
+        parts.push(`Account: ${businessSettings.bank_account_number}`);
+      }
+      
+      return parts.length > 0 ? parts.join(' | ') : 'Bank details not configured';
+    };
+
+    // Helper to format registration footer based on country
+    const formatRegistrationFooter = () => {
+      if (!businessSettings) return '';
+      const parts: string[] = [];
+      
+      // Country-specific registration labels
+      if (country === 'Australia' && businessSettings.abn) {
+        parts.push(`ABN: ${businessSettings.abn}`);
+      }
+      if (businessSettings.registration_number) {
+        const regLabel = country === 'Lithuania' ? 'Įmonės kodas' : 
+                        country === 'United Kingdom' ? 'Company Reg' :
+                        country === 'France' ? 'SIRET' :
+                        country === 'Germany' ? 'HRB' :
+                        country === 'Poland' ? 'KRS' :
+                        country === 'Ireland' ? 'CRO' :
+                        country === 'New Zealand' ? 'NZBN' :
+                        'Reg';
+        parts.push(`${regLabel}: ${businessSettings.registration_number}`);
+      }
+      if (businessSettings.tax_number) {
+        const taxLabel = country === 'Australia' ? 'GST' :
+                        country === 'Lithuania' ? 'PVM' :
+                        country === 'United Kingdom' || country === 'Ireland' ? 'VAT' :
+                        country === 'France' ? 'TVA' :
+                        country === 'Germany' ? 'USt-ID' :
+                        country === 'Poland' ? 'NIP' :
+                        country === 'United States' ? 'EIN' :
+                        country === 'Canada' ? 'GST/HST' :
+                        'Tax';
+        parts.push(`${taxLabel}: ${businessSettings.tax_number}`);
+      }
+      
+      return parts.length > 0 ? parts.join(' | ') : '';
+    };
+    
+    const tokens: Record<string, string> = {
+      // Company information - no hardcoded fallbacks
+      company_name: businessSettings.company_name || '',
+      company_legal_name: businessSettings.legal_name || '',
+      company_trading_name: businessSettings.trading_name || businessSettings.company_name || '',
       company_address: businessSettings.address ? 
         `${businessSettings.address}${businessSettings.city ? ', ' + businessSettings.city : ''}${businessSettings.state ? ', ' + businessSettings.state : ''}${businessSettings.zip_code ? ' ' + businessSettings.zip_code : ''}` 
-        : '123 Business Ave, Suite 100',
-      company_phone: businessSettings.business_phone || '(555) 123-4567',
-      company_email: businessSettings.business_email || 'info@company.com',
+        : '',
+      company_phone: businessSettings.business_phone || '',
+      company_email: businessSettings.business_email || '',
+      company_abn: businessSettings.abn || '',
+      company_registration_number: businessSettings.registration_number || '',
+      company_tax_number: businessSettings.tax_number || '',
+      company_organization_type: businessSettings.organization_type || '',
+      // NEW: Bank and registration tokens
+      company_bank_details: formatBankDetails(),
+      company_registration_footer: formatRegistrationFooter(),
+      // Client information - sample data for preview only
       client_name: client.name || 'John Smith',
       client_email: client.email || 'client@example.com', 
       client_phone: client.phone || '(555) 987-6543',
@@ -389,19 +472,22 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
         : '456 Residential Street, Anytown, ST 12345',
       client_company: client.company_name || '',
       quote_number: project.quote_number || project.job_number || 'QT-2024-001',
+      invoice_number: project.invoice_number || `INV-${project.job_number || '001'}`,
       project_name: project.name || 'Project',
       date: project.created_at ? new Date(project.created_at).toLocaleDateString() : new Date().toLocaleDateString(),
       valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+      due_date: project.due_date ? new Date(project.due_date).toLocaleDateString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
       subtotal: projectData?.subtotal ? `$${projectData.subtotal.toFixed(2)}` : '$0.00',
       tax_amount: projectData?.taxAmount ? `$${projectData.taxAmount.toFixed(2)}` : '$0.00',
       tax_rate: projectData?.taxRate ? `${(projectData.taxRate * 100).toFixed(1)}%` : '8.5%',
       total: projectData?.total ? `$${projectData.total.toFixed(2)}` : '$0.00',
     };
-    return tokens[token as keyof typeof tokens] || token;
+    return tokens[token] || token;
   };
 
   switch (block.type) {
     case 'document-header':
+      const docConfig = getDocumentTypeConfig(documentType);
       const headerLayout = content.layout || 'centered';
       
       // Custom EditableText renderer for editable mode
@@ -455,11 +541,13 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
             isEditable={true}
             renderEditableText={renderEditableText}
             onContentChange={updateBlockContent}
+            documentType={documentType}
           />
         </EditableContainer>
       );
 
     case 'header':
+      // Redirect legacy 'header' blocks to use DocumentHeaderBlock for document-type-aware rendering
       return (
         <EditableContainer 
           onStyleChange={updateBlockStyle}
@@ -472,101 +560,14 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
           }}
           className="mb-6"
         >
-          {/* Row 1: Logo alone on top */}
-          {content.showLogo && (
-            <div className={`mb-4 ${content.logoPosition === 'center' ? 'text-center' : ''}`}>
-              {projectData?.businessSettings?.company_logo_url ? (
-                <img 
-                  src={projectData.businessSettings.company_logo_url} 
-                  alt="Company Logo" 
-                  className="h-16 w-auto object-contain"
-                  style={{ maxWidth: '200px' }}
-                />
-              ) : (
-                <div className="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Building2 className="h-8 w-8 text-white" />
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Row 2: Company info left, Document title right - aligned on same line */}
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <EditableText
-                value={content.companyName || renderTokenValue('company_name')}
-                onChange={(value) => updateBlockContent({ companyName: value })}
-                className="text-3xl font-bold mb-2"
-                placeholder="Company Name"
-              />
-              <div className="space-y-1 opacity-90 text-sm">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  <EditableText
-                    value={content.companyAddress || renderTokenValue('company_address')}
-                    onChange={(value) => updateBlockContent({ companyAddress: value })}
-                    placeholder="Company Address"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  <EditableText
-                    value={content.companyPhone || renderTokenValue('company_phone')}
-                    onChange={(value) => updateBlockContent({ companyPhone: value })}
-                    placeholder="Company Phone"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  <EditableText
-                    value={content.companyEmail || renderTokenValue('company_email')}
-                    onChange={(value) => updateBlockContent({ companyEmail: value })}
-                    placeholder="Company Email"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <EditableText
-                value={content.documentTitle || "Quote"}
-                onChange={(value) => updateBlockContent({ documentTitle: value })}
-                className="text-2xl font-semibold mb-2"
-                placeholder="Document Title"
-              />
-              <div className="text-sm space-y-1">
-                <div className="flex items-center gap-2">
-                  <Hash className="h-3 w-3" />
-                  <EditableText
-                    value={content.quoteNumberLabel || "Quote #"}
-                    onChange={(value) => updateBlockContent({ quoteNumberLabel: value })}
-                    className="inline"
-                    placeholder="Quote Number Label"
-                  />
-                  <span>: {renderTokenValue('quote_number')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-3 w-3" />
-                  <EditableText
-                    value={content.dateLabel || "Date"}
-                    onChange={(value) => updateBlockContent({ dateLabel: value })}
-                    className="inline"
-                    placeholder="Date Label"
-                  />
-                  <span>: {renderTokenValue('date')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-3 w-3" />
-                  <EditableText
-                    value={content.validUntilLabel || "Valid Until"}
-                    onChange={(value) => updateBlockContent({ validUntilLabel: value })}
-                    className="inline"
-                    placeholder="Valid Until Label"
-                  />
-                  <span>: {renderTokenValue('valid_until')}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <DocumentHeaderBlock
+            block={block}
+            projectData={projectData}
+            isEditable={true}
+            renderEditableText={renderEditableText}
+            onContentChange={updateBlockContent}
+            documentType={documentType}
+          />
         </EditableContainer>
       );
 
@@ -789,24 +790,6 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
                 </tr>
               </tbody>
             </table>
-          </div>
-          <div className="mt-4 bg-gray-50 p-4 rounded-lg">
-            <div className="flex justify-end space-y-2">
-              <div className="w-64">
-                <div className="flex justify-between py-1">
-                  <span>Subtotal:</span>
-                  <span className="font-medium">{renderTokenValue('subtotal')}</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span>Tax ({renderTokenValue('tax_rate')}):</span>
-                  <span className="font-medium">{renderTokenValue('tax_amount')}</span>
-                </div>
-                <div className="flex justify-between py-2 border-t border-gray-300 font-bold text-lg">
-                  <span>Total:</span>
-                  <span>{renderTokenValue('total')}</span>
-                </div>
-              </div>
-            </div>
           </div>
         </EditableContainer>
       );
@@ -1343,7 +1326,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
         </EditableContainer>
       );
 
-    case 'footer':
+    case 'footer': {
       const footerBusinessSettings = projectData?.businessSettings || {};
       return (
         <EditableContainer 
@@ -1402,6 +1385,287 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
           </div>
         </EditableContainer>
       );
+    }
+
+    // Invoice-specific blocks
+    case 'payment-details':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '24px 0',
+            backgroundColor: style.backgroundColor || '#eff6ff',
+            borderColor: style.borderColor || '#dbeafe',
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderRadius: style.borderRadius || '8px'
+          }}
+          className="mb-6"
+        >
+          <div className="space-y-3">
+            <EditableText
+              value={content.title || 'Payment Details'}
+              onChange={(value) => updateBlockContent({ title: value })}
+              className="text-lg font-semibold flex items-center gap-2"
+              placeholder="Section Title"
+            />
+            <div className="text-sm text-gray-600">
+              {renderTokenValue('company_bank_details') || 'Bank details not configured. Go to Settings → Business.'}
+            </div>
+            <EditableText
+              value={content.paymentInstructions || 'Please transfer the amount to the bank account above.'}
+              onChange={(value) => updateBlockContent({ paymentInstructions: value })}
+              className="text-sm text-gray-500"
+              placeholder="Add payment instructions..."
+              multiline
+            />
+          </div>
+        </EditableContainer>
+      );
+
+    case 'registration-footer':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px 0',
+            margin: style.margin || '0',
+            textAlign: 'center'
+          }}
+          className="mb-6"
+        >
+          <div className="text-center text-xs text-gray-500 py-4 border-t">
+            {renderTokenValue('company_registration_footer') || 'Registration details not configured. Go to Settings → Business.'}
+          </div>
+        </EditableContainer>
+      );
+
+    case 'invoice-status': {
+      const paymentStatus = projectData?.quote?.payment_status || 'unpaid';
+      const amountPaid = projectData?.quote?.amount_paid || 0;
+      const total = projectData?.quote?.total || projectData?.totals?.grandTotal || 0;
+      const balanceDue = total - amountPaid;
+      const dueDate = projectData?.quote?.due_date ? new Date(projectData.quote.due_date) : null;
+      const isOverdue = dueDate && new Date() > dueDate && paymentStatus !== 'paid';
+      const effectiveStatus = isOverdue ? 'overdue' : paymentStatus;
+      
+      const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
+        paid: { bg: 'bg-green-100', text: 'text-green-800', label: 'PAID' },
+        partial: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'PARTIAL PAYMENT' },
+        unpaid: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'UNPAID' },
+        overdue: { bg: 'bg-red-100', text: 'text-red-800', label: 'OVERDUE' }
+      };
+      const config = statusConfig[effectiveStatus] || statusConfig.unpaid;
+      
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '24px 0',
+            borderRadius: style.borderRadius || '8px'
+          }}
+          className="mb-6"
+        >
+          <div className="flex items-center justify-between p-4 rounded-lg border" style={{ backgroundColor: style.backgroundColor || '#f9fafb' }}>
+            <div className="flex items-center gap-3">
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${config.bg} ${config.text}`}>
+                {config.label}
+              </span>
+              {effectiveStatus === 'overdue' && dueDate && (
+                <span className="text-sm text-red-600">
+                  Due: {format(dueDate, 'dd MMM yyyy')}
+                </span>
+              )}
+            </div>
+            <div className="text-right">
+              {effectiveStatus === 'partial' && (
+                <div className="text-sm text-gray-600 mb-1">
+                  Paid: {renderTokenValue('currency_symbol')}{amountPaid.toFixed(2)}
+                </div>
+              )}
+              {effectiveStatus !== 'paid' && (
+                <div className="font-semibold">
+                  Balance Due: {renderTokenValue('currency_symbol')}{balanceDue.toFixed(2)}
+                </div>
+              )}
+            </div>
+          </div>
+        </EditableContainer>
+      );
+    }
+
+    case 'late-payment-terms':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '12px',
+            margin: style.margin || '16px 0',
+            backgroundColor: style.backgroundColor || '#fef3c7',
+            borderRadius: style.borderRadius || '6px'
+          }}
+          className="mb-6"
+        >
+          <div className="text-sm text-amber-800">
+            <EditableText
+              value={content.termsText || renderTokenValue('late_payment_terms') || 'Late payment may incur interest charges as per our payment terms.'}
+              onChange={(value) => updateBlockContent({ termsText: value })}
+              className="text-sm"
+              placeholder="Late payment terms..."
+              multiline
+            />
+          </div>
+        </EditableContainer>
+      );
+
+    case 'tax-breakdown': {
+      const businessSettings = projectData?.businessSettings || userBusinessSettings || {};
+      const taxType = (businessSettings.tax_type || 'GST').toUpperCase();
+      const taxRate = businessSettings.tax_rate || 10;
+      const subtotal = projectData?.subtotal || 1250;
+      const taxAmount = projectData?.taxAmount || (subtotal * taxRate / 100);
+      const total = subtotal + taxAmount;
+      const currency = projectData?.currency || businessSettings?.currency || 'AUD';
+      
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '16px 0',
+            backgroundColor: style.backgroundColor || '#f9fafb',
+            borderRadius: style.borderRadius || '8px'
+          }}
+          className="mb-6"
+        >
+          <div className="border rounded-lg p-4" style={{ borderColor: style.borderColor || '#e5e7eb' }}>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">{taxType} Summary</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Subtotal (excl. {taxType})</span>
+                <span className="font-medium text-gray-900">${subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">{taxType} @ {taxRate}%</span>
+                <span className="font-medium text-gray-900">${taxAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between font-semibold border-t border-gray-300 pt-2 mt-2">
+                <span className="text-gray-800">Total (incl. {taxType})</span>
+                <span className="text-gray-900">${total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </EditableContainer>
+      );
+    }
+
+    case 'totals':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '24px 0',
+            backgroundColor: style.backgroundColor || '#f9fafb',
+            borderRadius: style.borderRadius || '8px'
+          }}
+          className="mb-6"
+        >
+          <div className="flex justify-end">
+            <div className="w-64 space-y-2">
+              <div className="flex justify-between py-1">
+                <span>Subtotal:</span>
+                <span className="font-medium">{renderTokenValue('subtotal')}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span>Tax ({renderTokenValue('tax_rate')}):</span>
+                <span className="font-medium">{renderTokenValue('tax_amount')}</span>
+              </div>
+              <div className="flex justify-between py-2 border-t border-gray-300 font-bold text-lg">
+                <span>Total:</span>
+                <span>{renderTokenValue('total')}</span>
+              </div>
+            </div>
+          </div>
+        </EditableContainer>
+      );
+
+    // Work order-specific blocks
+    case 'installation-details':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '24px 0',
+            backgroundColor: style.backgroundColor || '#fffbeb',
+            borderColor: style.borderColor || '#fef3c7',
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderRadius: style.borderRadius || '8px'
+          }}
+          className="mb-6"
+        >
+          <EditableText
+            value={content.title || 'Installation Details'}
+            onChange={(value) => updateBlockContent({ title: value })}
+            className="text-lg font-semibold mb-3"
+            placeholder="Section Title"
+          />
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-500">Installation Date:</span>
+              <div className="font-medium">{renderTokenValue('due_date') || 'TBD'}</div>
+            </div>
+            <div>
+              <span className="text-gray-500">Installer:</span>
+              <EditableText
+                value={content.installerName || 'TBD'}
+                onChange={(value) => updateBlockContent({ installerName: value })}
+                className="font-medium"
+                placeholder="Installer name"
+              />
+            </div>
+          </div>
+        </EditableContainer>
+      );
+
+    case 'installer-signoff':
+      return (
+        <EditableContainer 
+          onStyleChange={updateBlockStyle}
+          currentStyles={{
+            padding: style.padding || '16px',
+            margin: style.margin || '24px 0',
+            borderRadius: style.borderRadius || '8px'
+          }}
+          className="mb-6"
+        >
+          <div className="border rounded-lg p-4">
+            <EditableText
+              value={content.title || 'Completion Sign-off'}
+              onChange={(value) => updateBlockContent({ title: value })}
+              className="text-lg font-semibold mb-4"
+              placeholder="Section Title"
+            />
+            <div className="grid grid-cols-2 gap-8">
+              <div>
+                <div className="border-t border-gray-400 pt-2 mt-12">
+                  <span className="text-sm font-medium">Installer Signature</span>
+                </div>
+              </div>
+              <div>
+                <div className="border-t border-gray-400 pt-2 mt-12">
+                  <span className="text-sm font-medium">Client Confirmation</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </EditableContainer>
+      );
+
     default:
       return (
         <EditableContainer 
@@ -1428,6 +1692,7 @@ interface EditableLivePreviewProps {
   onBlocksChange: (blocks: any[]) => void;
   containerStyles?: any;
   onContainerStylesChange?: (styles: any) => void;
+  documentType?: string;
 }
 
 export const EditableLivePreview = ({ 
@@ -1435,26 +1700,52 @@ export const EditableLivePreview = ({
   projectData, 
   onBlocksChange,
   containerStyles = {},
-  onContainerStylesChange 
+  onContainerStylesChange,
+  documentType = 'quote'
 }: EditableLivePreviewProps) => {
   const [showPageControls, setShowPageControls] = useState(false);
   const [showComponentLibrary, setShowComponentLibrary] = useState(false);
 
-  const availableBlocks = [
-    { type: 'document-header', name: 'Document Header', icon: ImageIcon, description: 'Customizable header with logo, title & metadata' },
-    { type: 'header', name: 'Company Header', icon: Building2, description: 'Company info & logo' },
-    { type: 'client-info', name: 'Client Details', icon: User, description: 'Client information' },
-    { type: 'text', name: 'Text Block', icon: Type, description: 'Add formatted text' },
-    { type: 'editable-text-field', name: 'Editable Text Field', icon: Edit3, description: 'User input with bold/regular options' },
-    { type: 'image-uploader', name: 'Image Uploader', icon: Upload, description: 'Upload images for proposals' },
-    { type: 'line-items', name: 'Line Items Table', icon: ShoppingCart, description: 'Professional itemized list' },
-    { type: 'terms-conditions', name: 'Terms & Conditions', icon: FileText, description: 'Legal terms and policies' },
-    { type: 'payment-info', name: 'Payment Information', icon: DollarSign, description: 'Payment methods and schedule' },
-    { type: 'project-scope', name: 'Project Scope', icon: Calculator, description: 'What\'s included and excluded' },
-    { type: 'signature', name: 'Signature Block', icon: PenTool, description: 'Authorization signatures' },
-    { type: 'spacer', name: 'Spacer', icon: Space, description: 'Add vertical space' },
-    { type: 'divider', name: 'Divider', icon: Minus, description: 'Section separator' },
+  // Get available blocks from document type config
+  const allowedBlockTypes = getAvailableBlocks(documentType);
+
+  const allBlocks = [
+    // ===== UNIVERSAL BLOCKS =====
+    { type: 'document-header', name: 'Document Header', icon: ImageIcon, description: 'Logo, company details, document title', badge: null, badgeColor: null },
+    { type: 'header', name: 'Company Header', icon: Building2, description: 'Company info & logo', badge: null, badgeColor: null },
+    { type: 'client-info', name: 'Client Details', icon: User, description: '"Bill To" section with client info', badge: null, badgeColor: null },
+    { type: 'text', name: 'Text Block', icon: Type, description: 'Add formatted text', badge: null, badgeColor: null },
+    { type: 'line-items', name: 'Line Items Table', icon: ShoppingCart, description: 'Products and services table', badge: null, badgeColor: null },
+    { type: 'totals', name: 'Totals Section', icon: Calculator, description: 'Subtotal, tax, total', badge: null, badgeColor: null },
+    { type: 'spacer', name: 'Spacer', icon: Space, description: 'Add vertical space', badge: null, badgeColor: null },
+    { type: 'divider', name: 'Divider', icon: Minus, description: 'Section separator', badge: null, badgeColor: null },
+    { type: 'footer', name: 'Footer', icon: FileText, description: 'Document footer', badge: null, badgeColor: null },
+    
+    // ===== QUOTE/PROPOSAL BLOCKS =====
+    { type: 'terms-conditions', name: 'Terms & Conditions', icon: FileText, description: 'Legal terms and policies', badge: 'Quote', badgeColor: 'blue' },
+    { type: 'signature', name: 'Signature Block', icon: PenTool, description: 'Client acceptance signature', badge: 'Quote', badgeColor: 'blue' },
+    { type: 'project-scope', name: 'Project Scope', icon: Calculator, description: 'What\'s included and excluded', badge: 'Quote', badgeColor: 'blue' },
+    { type: 'payment-info', name: 'Payment Information', icon: DollarSign, description: 'Payment methods and schedule', badge: 'Quote', badgeColor: 'blue' },
+    { type: 'editable-text-field', name: 'Editable Text Field', icon: Edit3, description: 'User input with bold/regular options', badge: 'Quote', badgeColor: 'blue' },
+    { type: 'image-uploader', name: 'Image Uploader', icon: Upload, description: 'Upload images for proposals', badge: 'Quote', badgeColor: 'blue' },
+    
+    // ===== INVOICE BLOCKS =====
+    { type: 'invoice-status', name: 'Payment Status', icon: DollarSign, description: 'Paid/Unpaid/Overdue status', badge: 'Invoice', badgeColor: 'green' },
+    { type: 'tax-breakdown', name: 'Tax Breakdown', icon: Calculator, description: 'Detailed tax/VAT summary', badge: 'Invoice', badgeColor: 'green' },
+    { type: 'payment-details', name: 'Bank/Payment Details', icon: CreditCard, description: 'Bank account and payment info', badge: 'Invoice', badgeColor: 'green' },
+    { type: 'late-payment-terms', name: 'Late Payment Terms', icon: FileText, description: 'Interest and fee policies', badge: 'Invoice', badgeColor: 'green' },
+    { type: 'registration-footer', name: 'Business Registration', icon: Building2, description: 'ABN/VAT/Tax registration', badge: 'Invoice', badgeColor: 'green' },
+    
+    // ===== WORK ORDER BLOCKS =====
+    { type: 'installation-details', name: 'Installation Details', icon: Calendar, description: 'Install date and team info', badge: 'Work Order', badgeColor: 'amber' },
+    { type: 'installer-signoff', name: 'Installer Sign-off', icon: PenTool, description: 'Completion confirmation', badge: 'Work Order', badgeColor: 'amber' },
   ];
+
+  // Filter blocks based on document type
+  const availableBlocks = allBlocks.filter(block => 
+    allowedBlockTypes.includes(block.type) || 
+    ['text', 'spacer', 'divider', 'header', 'client-info', 'editable-text-field'].includes(block.type)
+  );
 
   const addBlock = (type: string) => {
     // Preserve scroll position
@@ -1602,6 +1893,80 @@ export const EditableLivePreview = ({
             borderWidth: '1px'
           }
         };
+      // Invoice-specific blocks
+      case 'payment-details':
+        return {
+          title: 'Payment Details',
+          paymentInstructions: 'Please transfer the amount to the bank account above.',
+          style: {
+            backgroundColor: '#eff6ff',
+            borderColor: '#dbeafe',
+            padding: '16px',
+            borderRadius: '8px'
+          }
+        };
+      case 'registration-footer':
+        return {
+          style: {
+            padding: '16px 0',
+            textAlign: 'center'
+          }
+        };
+      case 'invoice-status':
+        return {
+          style: {
+            backgroundColor: '#f9fafb',
+            padding: '16px',
+            borderRadius: '8px'
+          }
+        };
+      case 'late-payment-terms':
+        return {
+          termsText: '',
+          style: {
+            backgroundColor: '#fef3c7',
+            padding: '12px',
+            borderRadius: '6px'
+          }
+        };
+      case 'tax-breakdown':
+        return {
+          title: 'Tax Summary',
+          style: {
+            backgroundColor: '#f9fafb',
+            borderColor: '#e5e7eb',
+            padding: '16px',
+            borderRadius: '8px'
+          }
+        };
+      case 'totals':
+        return {
+          style: {
+            backgroundColor: '#f9fafb',
+            padding: '16px',
+            borderRadius: '8px'
+          }
+        };
+      // Work order-specific blocks
+      case 'installation-details':
+        return {
+          title: 'Installation Details',
+          installerName: '',
+          style: {
+            backgroundColor: '#fffbeb',
+            borderColor: '#fef3c7',
+            padding: '16px',
+            borderRadius: '8px'
+          }
+        };
+      case 'installer-signoff':
+        return {
+          title: 'Completion Sign-off',
+          style: {
+            padding: '16px',
+            borderRadius: '8px'
+          }
+        };
       default:
         return {};
     }
@@ -1680,11 +2045,23 @@ export const EditableLivePreview = ({
                   onClick={() => addBlock(blockType.type)}
                   className="w-full justify-start h-auto p-3 text-left"
                 >
-                  <div className="flex items-start gap-3">
-                    <blockType.icon className="h-5 w-5 text-gray-500 mt-0.5" />
-                    <div>
-                      <div className="font-medium">{blockType.name}</div>
-                      <div className="text-sm text-gray-500">{blockType.description}</div>
+                  <div className="flex items-start gap-3 w-full">
+                    <blockType.icon className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{blockType.name}</span>
+                        {blockType.badge && (
+                          <span className={cn(
+                            "text-xs px-1.5 py-0.5 rounded",
+                            blockType.badgeColor === 'blue' && "bg-blue-100 text-blue-700",
+                            blockType.badgeColor === 'green' && "bg-green-100 text-green-700",
+                            blockType.badgeColor === 'amber' && "bg-amber-100 text-amber-700"
+                          )}>
+                            {blockType.badge}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground">{blockType.description}</div>
                     </div>
                   </div>
                 </Button>
@@ -1830,6 +2207,7 @@ export const EditableLivePreview = ({
                 projectData={projectData}
                 onBlockUpdate={handleBlockUpdate}
                 onBlockRemove={removeBlock}
+                documentType={documentType}
               />
             </div>
           ))}

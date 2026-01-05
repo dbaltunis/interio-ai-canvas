@@ -21,16 +21,16 @@ export const RecentlyCreatedJobsWidget = () => {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Briefcase className="h-4 w-4 sm:h-5 sm:w-5" />
+      <Card variant="analytics">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Briefcase className="h-4 w-4" />
             Recently Created Jobs
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 sm:space-y-3">
+        <CardContent className="pt-0 space-y-2">
           {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-16 sm:h-20 w-full" />
+            <Skeleton key={i} className="h-14 w-full" />
           ))}
         </CardContent>
       </Card>
@@ -38,59 +38,60 @@ export const RecentlyCreatedJobsWidget = () => {
   }
 
   return (
-    <Card className="border border-border/50 bg-card/50">
+    <Card variant="analytics" className="h-full">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base font-semibold">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <Briefcase className="h-4 w-4" />
           Recently Created Jobs
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
         {recentJobs.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <Briefcase className="h-10 w-10 mx-auto mb-2 opacity-20" />
+          <div className="text-center py-4 text-muted-foreground">
+            <Briefcase className="h-8 w-8 mx-auto mb-1.5 opacity-20" />
             <p className="text-xs">No jobs created yet</p>
           </div>
         ) : (
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-2">
+          <ScrollArea className="h-[280px] pr-3">
+            <div className="space-y-1.5">
               {recentJobs.map((job) => (
                 <div
                   key={job.id}
-                  className="flex items-start gap-2 sm:gap-2.5 p-2 sm:p-3 rounded-lg bg-background border border-border hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
+                  className="flex items-center gap-2 p-2 rounded-md bg-background border border-border/50 hover:bg-muted/50 transition-all cursor-pointer"
                   onClick={() => navigate(`/?tab=projects&projectId=${job.id}`)}
                 >
-                  <div className="mt-0.5 shrink-0 p-1 sm:p-1.5 rounded-md bg-muted/50">
-                    <Briefcase className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+                  <div className="shrink-0 p-1.5 rounded-md bg-muted/50">
+                    <Briefcase className="h-3 w-3 text-muted-foreground" />
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <h4 className="font-semibold text-xs sm:text-sm text-foreground truncate">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="font-medium text-xs text-foreground truncate">
                         {job.name || "Untitled Project"}
                       </h4>
                       <Badge 
                         variant="secondary" 
-                        className="text-[10px] sm:text-xs shrink-0 h-4 sm:h-5 px-1.5 sm:px-2 font-medium"
+                        className="text-[10px] shrink-0 h-4 px-1.5 font-medium"
                       >
                         {job.status || "Draft"}
                       </Badge>
                     </div>
                     
-                    {job.clients?.name && (
-                      <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 mb-1 truncate">
-                        <User className="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0" />
-                        <span className="truncate">{job.clients.name}</span>
-                      </p>
-                    )}
-                    
-                    <div className="flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground">
-                      <Calendar className="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0" />
-                      <span className="truncate">
-                        {job.created_at 
-                          ? formatDistanceToNow(new Date(job.created_at), { addSuffix: true })
-                          : "Date unknown"
-                        }
+                    <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                      {job.clients?.name && (
+                        <span className="flex items-center gap-1 truncate">
+                          <User className="h-2.5 w-2.5 shrink-0" />
+                          <span className="truncate">{job.clients.name}</span>
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-2.5 w-2.5 shrink-0" />
+                        <span>
+                          {job.created_at 
+                            ? formatDistanceToNow(new Date(job.created_at), { addSuffix: true })
+                            : "Unknown"
+                          }
+                        </span>
                       </span>
                     </div>
                   </div>

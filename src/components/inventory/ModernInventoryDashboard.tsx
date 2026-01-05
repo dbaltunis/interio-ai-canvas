@@ -240,8 +240,8 @@ export const ModernInventoryDashboard = () => {
   }
 
   return (
-    <div className={cn("flex-1 space-y-4", isMobile ? "p-3 pb-20" : "p-6")}>
-      {/* Header - Minimal */}
+    <div className={cn("flex-1 space-y-4", isMobile ? "p-3 pb-20" : "p-4 lg:p-6")}>
+      {/* Compact Header - Analytics Style */}
       <div className={cn(
         "flex items-center",
         isMobile ? "flex-col gap-3" : "justify-between"
@@ -251,32 +251,25 @@ export const ModernInventoryDashboard = () => {
           isMobile && "w-full"
         )}>
           <div className={cn("p-2 bg-primary/10 rounded-lg", isMobile && "p-1.5")}>
-            <Package className={cn(isMobile ? "h-5 w-5" : "h-6 w-6", "text-primary")} />
+            <Package className={cn(isMobile ? "h-4 w-4" : "h-5 w-5", "text-primary")} />
           </div>
-          <div className="flex items-center gap-2 flex-1">
-            <h1 className={cn(
-              "font-bold text-foreground",
-              isMobile ? "text-lg" : "text-2xl"
-            )}>
-              Library
-            </h1>
-            {!isMobile && <HelpIcon onClick={() => setShowHelp(true)} />}
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge className={cn(
-              "bg-accent/10 text-accent border-accent/20",
-              isMobile && "text-xs"
-            )}>
-              {inventoryLoading ? (
-                <span className="animate-pulse">Loading...</span>
-              ) : (
-                `${inventory?.length || 0} items`
-              )}
-            </Badge>
-            {inventoryFetching && !inventoryLoading && (
-              <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+          <h1 className={cn(
+            "font-semibold text-foreground",
+            isMobile ? "text-base" : "text-lg"
+          )}>
+            Library
+          </h1>
+          {!isMobile && <HelpIcon onClick={() => setShowHelp(true)} />}
+          <Badge variant="secondary" className="text-xs">
+            {inventoryLoading ? (
+              <span className="animate-pulse">Loading...</span>
+            ) : (
+              `${inventory?.length || 0} items`
             )}
-          </div>
+          </Badge>
+          {inventoryFetching && !inventoryLoading && (
+            <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+          )}
         </div>
         <div className={cn(
           "flex items-center gap-2",

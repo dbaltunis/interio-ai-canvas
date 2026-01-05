@@ -60,16 +60,49 @@ const documentTypes: DocumentType[] = [
     ]
   },
   {
+    id: 'proposal',
+    name: 'Proposal',
+    description: 'Detailed project proposals with scope',
+    icon: FileText,
+    category: 'business',
+    templates: [
+      {
+        id: 'standard-proposal',
+        name: 'Standard Proposal',
+        description: 'Professional proposal with project scope'
+      },
+      {
+        id: 'detailed-proposal',
+        name: 'Detailed Proposal',
+        description: 'Comprehensive proposal with timeline'
+      }
+    ]
+  },
+  {
+    id: 'estimate',
+    name: 'Estimate',
+    description: 'Preliminary cost estimates',
+    icon: FileText,
+    category: 'business',
+    templates: [
+      {
+        id: 'quick-estimate',
+        name: 'Quick Estimate',
+        description: 'Simple preliminary estimate'
+      }
+    ]
+  },
+  {
     id: 'invoice',
     name: 'Invoice',
-    description: 'Professional invoices and billing documents',
+    description: 'Professional invoices with payment details',
     icon: Receipt,
     category: 'business',
     templates: [
       {
         id: 'standard-invoice',
         name: 'Standard Invoice',
-        description: 'Clean, straightforward invoice layout'
+        description: 'Clean invoice with bank details & registration'
       },
       {
         id: 'branded-invoice',

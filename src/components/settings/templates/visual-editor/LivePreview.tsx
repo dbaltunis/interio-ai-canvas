@@ -40,7 +40,8 @@ import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { useQuoteCustomData } from "@/hooks/useQuoteCustomData";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
-import { DocumentHeaderBlock, LineItemsBlock, TotalsBlock } from './shared/BlockRenderer';
+import { getRegistrationLabels } from '@/utils/businessRegistrationLabels';
+import { DocumentHeaderBlock, LineItemsBlock, TotalsBlock, PaymentDetailsBlock, RegistrationFooterBlock, InstallationDetailsBlock, InstallerSignoffBlock, InvoiceStatusBlock, LatePaymentTermsBlock, TaxBreakdownBlock } from './shared/BlockRenderer';
 
 // Lazy load the editable version to avoid circular dependencies and reduce bundle size
 const EditableLivePreview = React.lazy(() => import('./EditableLivePreview'));
@@ -335,6 +336,7 @@ interface LivePreviewBlockProps {
   projectData?: any;
   isEditable?: boolean;
   isPrintMode?: boolean;
+  documentType?: string;
   userBusinessSettings?: any;
   userPreferences?: any;
   showDetailedBreakdown?: boolean;
@@ -351,6 +353,7 @@ const LivePreviewBlock = ({
   projectData, 
   isEditable, 
   isPrintMode = false, 
+  documentType = 'quote',
   userBusinessSettings,
   userPreferences,
   showDetailedBreakdown: propsShowDetailed,
@@ -432,7 +435,8 @@ const LivePreviewBlock = ({
     // Use real project data or fallback to defaults
     const project = projectData?.project || {};
     const client = project.client || projectData?.client || {};
-    const businessSettings = projectData?.businessSettings || {};
+    // Use projectData businessSettings first, then userBusinessSettings as fallback
+    const businessSettings = projectData?.businessSettings || userBusinessSettings || {};
     
     console.log('🔍 Client Data Debug:', {
       token,
@@ -445,17 +449,79 @@ const LivePreviewBlock = ({
       projectClientId: project?.client_id
     });
     
+    // Helper to format bank details based on country
+    const formatBankDetails = () => {
+      const country = businessSettings.country || 'Australia';
+      const parts: string[] = [];
+      
+      if (businessSettings.bank_name) parts.push(`Bank: ${businessSettings.bank_name}`);
+      if (businessSettings.bank_account_name) parts.push(`Account Name: ${businessSettings.bank_account_name}`);
+      
+      if (country === 'Australia' && businessSettings.bank_bsb) {
+        parts.push(`BSB: ${businessSettings.bank_bsb}`);
+        if (businessSettings.bank_account_number) parts.push(`Account: ${businessSettings.bank_account_number}`);
+      } else if (country === 'United Kingdom' && businessSettings.bank_sort_code) {
+        parts.push(`Sort Code: ${businessSettings.bank_sort_code}`);
+        if (businessSettings.bank_account_number) parts.push(`Account: ${businessSettings.bank_account_number}`);
+      } else if ((country === 'United States' || country === 'Canada') && businessSettings.bank_routing_number) {
+        parts.push(`Routing: ${businessSettings.bank_routing_number}`);
+        if (businessSettings.bank_account_number) parts.push(`Account: ${businessSettings.bank_account_number}`);
+      } else if (businessSettings.bank_iban) {
+        parts.push(`IBAN: ${businessSettings.bank_iban}`);
+        if (businessSettings.bank_swift_bic) parts.push(`BIC/SWIFT: ${businessSettings.bank_swift_bic}`);
+      } else if (businessSettings.bank_account_number) {
+        parts.push(`Account: ${businessSettings.bank_account_number}`);
+      }
+      
+      return parts.join(' | ');
+    };
+
+    // Helper to format registration footer with country-aware labels
+    const formatRegistrationFooter = () => {
+      const country = businessSettings.country || 'Australia';
+      const parts: string[] = [];
+      
+      // Get country-specific labels
+      const labels = getRegistrationLabels(country);
+      
+      // Only show ABN for Australia (the only country that uses ABN)
+      if (country === 'Australia' && businessSettings.abn) {
+        parts.push(`ABN: ${businessSettings.abn}`);
+      }
+      
+      // Registration number with country-specific label
+      if (businessSettings.registration_number) {
+        parts.push(`${labels.registrationLabel}: ${businessSettings.registration_number}`);
+      }
+      
+      // Tax number with country-specific label
+      if (businessSettings.tax_number) {
+        parts.push(`${labels.taxLabel}: ${businessSettings.tax_number}`);
+      }
+      return parts.join(' | ');
+    };
+
     const tokens = {
-      // Company information from business settings
-      company_name: businessSettings.company_name || 'Your Company Name',
+      // Company information from business settings - no hardcoded fallbacks
+      company_name: businessSettings.company_name || '',
+      company_legal_name: businessSettings.legal_name || '',
+      company_trading_name: businessSettings.trading_name || businessSettings.company_name || '',
       company_address: businessSettings.address ? 
         `${businessSettings.address}${businessSettings.city ? ', ' + businessSettings.city : ''}${businessSettings.state ? ', ' + businessSettings.state : ''}${businessSettings.zip_code ? ' ' + businessSettings.zip_code : ''}` 
-        : '123 Business Ave, Suite 100',
-      company_phone: businessSettings.business_phone || '(555) 123-4567',
-      company_email: businessSettings.business_email || 'info@company.com',
-      company_website: businessSettings.website || 'www.company.com',
+        : '',
+      company_phone: businessSettings.business_phone || '',
+      company_email: businessSettings.business_email || '',
+      company_website: businessSettings.website || '',
       company_abn: businessSettings.abn || '',
-      company_country: businessSettings.country || 'Australia',
+      company_registration_number: businessSettings.registration_number || '',
+      company_tax_number: businessSettings.tax_number || '',
+      company_organization_type: businessSettings.organization_type || '',
+      company_country: businessSettings.country || '',
+      // Bank details tokens
+      company_bank_name: businessSettings.bank_name || '',
+      company_bank_account_name: businessSettings.bank_account_name || '',
+      company_bank_details: formatBankDetails(),
+      company_registration_footer: formatRegistrationFooter(),
       
       // Client information from project
       client_name: client.name || '',
@@ -571,76 +637,22 @@ const LivePreviewBlock = ({
           userDateFormat={userDateFormat}
           isPrintMode={isPrintMode}
           isEditable={false}
+          documentType={documentType}
         />
       );
 
     case 'header':
+      // Redirect legacy 'header' blocks to use DocumentHeaderBlock for document-type-aware rendering
       return (
-        <div 
-          className="p-6 rounded-lg mb-6" 
-          style={{ 
-            backgroundColor: style.backgroundColor || '#f8fafc',
-            color: style.textColor || '#1e293b'
-          }}
-        >
-          {/* Row 1: Logo alone on top */}
-          {content.showLogo && (
-            <div className={`mb-4 ${content.logoPosition === 'center' ? 'text-center' : ''}`}>
-              {projectData?.businessSettings?.company_logo_url ? (
-                <img 
-                  src={projectData.businessSettings.company_logo_url} 
-                  alt="Company Logo" 
-                  className="h-16 w-auto object-contain"
-                  style={{ maxWidth: '200px' }}
-                />
-              ) : (
-                <div style={{ width: '64px', height: '64px', backgroundColor: '#2563eb', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Building2 className="h-8 w-8 text-white" />
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Row 2: Company info left, Document title right - aligned on same line */}
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold mb-2">
-                {renderTokenValue('company_name')}
-              </h1>
-              <div className="space-y-1 opacity-90 text-sm">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  <span>{renderTokenValue('company_address')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  <span>{renderTokenValue('company_phone')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  <span>{renderTokenValue('company_email')}</span>
-                </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <h2 className="text-2xl font-semibold mb-2">{content.documentTitle || 'Quote'}</h2>
-              <div className="text-sm space-y-1">
-                <div className="flex items-center gap-2 justify-end">
-                  <Hash className="h-3 w-3" />
-                  <span>{content.quoteNumberLabel || "Quote #"}: {renderTokenValue('quote_number')}</span>
-                </div>
-                <div className="flex items-center gap-2 justify-end">
-                  <Calendar className="h-3 w-3" />
-                  <span>{content.dateLabel || "Date"}: {renderTokenValue('date')}</span>
-                </div>
-                <div className="flex items-center gap-2 justify-end">
-                  <Calendar className="h-3 w-3" />
-                  <span>{content.validUntilLabel || "Valid Until"}: {renderTokenValue('valid_until')}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DocumentHeaderBlock
+          block={block}
+          projectData={projectData}
+          userTimezone={userTimezone}
+          userDateFormat={userDateFormat}
+          isPrintMode={isPrintMode}
+          isEditable={false}
+          documentType={documentType}
+        />
       );
 
     case 'client-info':
@@ -1844,12 +1856,89 @@ const LivePreviewBlock = ({
         </div>
       );
 
+    // Invoice-specific blocks
+    case 'payment-details':
+      return (
+        <PaymentDetailsBlock
+          block={block}
+          projectData={projectData}
+          userTimezone={userTimezone}
+          userDateFormat={userDateFormat}
+          isPrintMode={isPrintMode}
+        />
+      );
+      
+    case 'registration-footer':
+      return (
+        <RegistrationFooterBlock
+          block={block}
+          projectData={projectData}
+          userTimezone={userTimezone}
+          userDateFormat={userDateFormat}
+          isPrintMode={isPrintMode}
+        />
+      );
+    
+    // Work order-specific blocks
+    case 'installation-details':
+      return (
+        <InstallationDetailsBlock
+          block={block}
+          projectData={projectData}
+          userTimezone={userTimezone}
+          userDateFormat={userDateFormat}
+          isPrintMode={isPrintMode}
+        />
+      );
+      
+    case 'installer-signoff':
+      return (
+        <InstallerSignoffBlock
+          block={block}
+          projectData={projectData}
+          isPrintMode={isPrintMode}
+        />
+      );
+
+    case 'invoice-status':
+      return (
+        <InvoiceStatusBlock
+          block={block}
+          projectData={projectData}
+          userTimezone={userTimezone}
+          userDateFormat={userDateFormat}
+          isPrintMode={isPrintMode}
+        />
+      );
+
+    case 'late-payment-terms':
+      return (
+        <LatePaymentTermsBlock
+          block={block}
+          projectData={projectData}
+          userTimezone={userTimezone}
+          userDateFormat={userDateFormat}
+          isPrintMode={isPrintMode}
+        />
+      );
+
+    case 'tax-breakdown':
+      return (
+        <TaxBreakdownBlock
+          block={block}
+          projectData={projectData}
+          userTimezone={userTimezone}
+          userDateFormat={userDateFormat}
+          isPrintMode={isPrintMode}
+        />
+      );
+
     default:
       console.error('❌ [LivePreview] UNKNOWN BLOCK TYPE:', {
         originalType: block.type,
         originalTypeString: String(block.type),
         normalizedType: blockType,
-        allAvailableCases: ['document-header', 'client-info', 'products', 'totals', 'terms', 'signature', 'payment', 'footer'],
+        allAvailableCases: ['document-header', 'client-info', 'products', 'totals', 'terms', 'signature', 'payment', 'footer', 'payment-details', 'registration-footer', 'installation-details', 'installer-signoff', 'invoice-status', 'late-payment-terms', 'tax-breakdown'],
         blockData: block
       });
       return (
@@ -1870,6 +1959,7 @@ interface LivePreviewProps {
   projectData?: any;
   isEditable?: boolean;
   isPrintMode?: boolean;
+  documentType?: string;
   onBlocksChange?: (blocks: any[]) => void;
   containerStyles?: any;
   onContainerStylesChange?: (styles: any) => void;
@@ -1886,6 +1976,7 @@ export const LivePreview = ({
   projectData, 
   isEditable = false,
   isPrintMode = false,
+  documentType = 'quote',
   onBlocksChange,
   containerStyles,
   onContainerStylesChange,
@@ -1911,6 +2002,7 @@ export const LivePreview = ({
           onBlocksChange={onBlocksChange}
           containerStyles={containerStyles}
           onContainerStylesChange={onContainerStylesChange}
+          documentType={documentType}
         />
       </Suspense>
     );
@@ -1947,6 +2039,7 @@ export const LivePreview = ({
             projectData={projectData}
             isEditable={false}
             isPrintMode={true}
+            documentType={documentType}
             userBusinessSettings={businessSettings}
             userPreferences={userPreferences}
             showDetailedBreakdown={showDetailedBreakdown}
@@ -2019,6 +2112,7 @@ export const LivePreview = ({
                 projectData={projectData}
                 isEditable={isEditable}
                 isPrintMode={false}
+                documentType={documentType}
                 userBusinessSettings={businessSettings}
                 showDetailedBreakdown={showDetailedBreakdown}
                 showImages={showImages}

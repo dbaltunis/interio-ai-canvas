@@ -60,16 +60,16 @@ export const RecentAppointmentsWidget = () => {
 
   if (isLoading || canViewCalendar === undefined) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
+      <Card variant="analytics">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Bell className="h-4 w-4" />
             Recent Appointments
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 sm:space-y-3">
+        <CardContent className="pt-0 space-y-2">
           {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-14 sm:h-16 w-full" />
+            <Skeleton key={i} className="h-14 w-full" />
           ))}
         </CardContent>
       </Card>
@@ -77,78 +77,63 @@ export const RecentAppointmentsWidget = () => {
   }
 
   return (
-    <Card className="border border-border/50 bg-card/50">
+    <Card variant="analytics" className="h-full">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Bell className="h-4 w-4 text-primary" />
             Recent Appointments
           </CardTitle>
-          <Badge variant="outline" className="text-xs h-5">
+          <Badge variant="secondary" className="text-xs h-5">
             {bookings?.length || 0} Total
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
         {!bookings || bookings.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <Bell className="h-10 w-10 mx-auto mb-2 opacity-20" />
+          <div className="text-center py-4 text-muted-foreground">
+            <Bell className="h-8 w-8 mx-auto mb-1.5 opacity-20" />
             <p className="text-xs">No appointments booked yet</p>
           </div>
         ) : (
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-2">
+          <ScrollArea className="h-[280px] pr-3">
+            <div className="space-y-1.5">
               {bookings.map((booking) => {
                 const appointmentDate = parseISO(booking.appointment_date);
-                const statusColors = {
-                  confirmed: { bg: 'hsl(var(--primary) / 0.15)', text: 'hsl(var(--primary))', border: 'hsl(var(--primary) / 0.3)' },
-                  pending: { bg: 'hsl(var(--warning) / 0.15)', text: 'hsl(var(--warning))', border: 'hsl(var(--warning) / 0.3)' },
-                  cancelled: { bg: 'hsl(var(--destructive) / 0.15)', text: 'hsl(var(--destructive))', border: 'hsl(var(--destructive) / 0.3)' },
-                };
-                const statusColor = statusColors[booking.status as keyof typeof statusColors] || statusColors.pending;
                 
                 return (
                 <div
                   key={booking.id}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-background border border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
+                  className="flex items-center gap-2 p-2 rounded-md bg-background border border-border/50 hover:bg-muted/50 transition-all cursor-pointer"
                   onClick={() => navigate(`/?tab=calendar`)}
                 >
-                  <div className="flex flex-col items-center justify-center min-w-[50px] w-[50px] h-[50px] rounded-lg bg-primary/5 border border-primary/20 shadow-sm shrink-0">
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                  <div className="flex flex-col items-center justify-center min-w-[36px] h-[36px] rounded-md bg-muted/50 border border-border/50 shrink-0">
+                    <span className="text-[8px] font-medium text-muted-foreground uppercase">
                       {format(appointmentDate, "MMM")}
                     </span>
-                    <span className="text-2xl font-bold text-foreground leading-none">
+                    <span className="text-sm font-semibold text-foreground leading-none">
                       {format(appointmentDate, "d")}
                     </span>
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <Bell className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <h4 className="font-semibold text-sm text-foreground line-clamp-1">
-                        {booking.customer_name}
-                      </h4>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-0.5">
-                      <Clock className="h-3 w-3 shrink-0" />
+                    <h4 className="font-medium text-xs text-foreground line-clamp-1">
+                      {booking.customer_name}
+                    </h4>
+                    <div className="flex items-center gap-1 mt-0.5 text-[10px] text-muted-foreground">
+                      <Clock className="h-2.5 w-2.5 shrink-0" />
                       <span className="line-clamp-1">
                         {booking.appointment_time} • {booking.scheduler?.name || 'Appointment'}
                       </span>
                     </div>
-                    <div className="mt-2">
-                      <Badge 
-                        variant="secondary"
-                        className="text-[10px] h-5 px-2.5 font-medium capitalize"
-                        style={{
-                          backgroundColor: statusColor.bg,
-                          color: statusColor.text,
-                          borderColor: statusColor.border
-                        }}
-                      >
-                        {booking.status}
-                      </Badge>
-                    </div>
                   </div>
+                  
+                  <Badge 
+                    variant="secondary"
+                    className="text-[10px] h-5 px-1.5 font-medium capitalize shrink-0"
+                  >
+                    {booking.status}
+                  </Badge>
                 </div>
                 );
               })}

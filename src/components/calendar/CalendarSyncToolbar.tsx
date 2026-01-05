@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Link2, Calendar as CalendarIcon, UserPlus, Settings as SettingsIcon, BarChart3, HelpCircle, ListTodo } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Link2, Calendar as CalendarIcon, UserPlus, Settings as SettingsIcon, BarChart3, HelpCircle, ListTodo, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useGoogleCalendarIntegration, useGoogleCalendarSync } from "@/hooks/useGoogleCalendar";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -194,15 +195,19 @@ export const CalendarSyncToolbar = ({
   const lastSyncTime = getLastSyncText();
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 flex-wrap">
+    <div className="flex items-center gap-2 px-4 py-3 border-b flex-wrap">
       {/* Left section - Navigation controls */}
       {currentDate && view && onTodayClick && onPrevClick && onNextClick && (
-        <div className="flex items-center gap-1 md:gap-2">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <CalendarIcon className="h-5 w-5 text-primary" />
+          </div>
+          <span className="text-lg font-semibold text-foreground hidden sm:inline">Calendar</span>
           <Button
             variant="outline"
             size="sm"
             onClick={onTodayClick}
-            className="h-7 text-xs"
+            className="h-7 text-xs ml-2"
           >
             Today
           </Button>
@@ -224,7 +229,7 @@ export const CalendarSyncToolbar = ({
           </Button>
           {!isMobile && (
             <>
-              <h2 className="text-sm md:text-base font-semibold ml-1">
+              <h2 className="text-sm font-medium ml-1 text-muted-foreground">
                 {format(currentDate, 'MMMM yyyy')}
               </h2>
               <TooltipProvider>
@@ -330,9 +335,18 @@ export const CalendarSyncToolbar = ({
           </DropdownMenu>
         )}
 
-        {/* Filters */}
+        {/* Search Input + Filters */}
         {onFiltersChange && (
           <>
+            {/* Always-visible Search Input */}
+            <div className="relative w-48">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search events..."
+                className="pl-9 h-7 text-xs"
+                onChange={(e) => onFiltersChange({ searchTerm: e.target.value, userIds: [], eventTypes: [], statuses: [] })}
+              />
+            </div>
             <CalendarVisibilityFilter />
             <CalendarFilters onFiltersChange={onFiltersChange} />
           </>

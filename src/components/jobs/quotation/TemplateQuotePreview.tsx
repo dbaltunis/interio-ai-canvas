@@ -92,6 +92,7 @@ export const TemplateQuotePreview = ({
               blocks={selectedTemplate.blocks} 
               projectData={projectData}
               isEditable={true}
+              documentType={selectedTemplate?.template_type || 'quote'}
               quoteId={project?.id}
             />
           </div>
@@ -116,6 +117,7 @@ export const TemplateQuotePreview = ({
             blocks={selectedTemplate.blocks} 
             projectData={projectData}
             isEditable={true}
+            documentType={selectedTemplate?.template_type || 'quote'}
             quoteId={project?.id}
           />
         </div>

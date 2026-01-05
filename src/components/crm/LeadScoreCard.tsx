@@ -18,10 +18,10 @@ export const LeadScoreCard = ({ score, previousScore, priority, className }: Lea
   };
 
   const getScoreLabel = (score: number) => {
-    if (score >= 80) return "Hot Lead";
-    if (score >= 60) return "Warm Lead";
-    if (score >= 40) return "Cool Lead";
-    return "Cold Lead";
+    if (score >= 80) return "Hot";
+    if (score >= 60) return "Warm";
+    if (score >= 40) return "Cool";
+    return "Cold";
   };
 
   const getPriorityColor = (priority: string) => {
@@ -42,17 +42,17 @@ export const LeadScoreCard = ({ score, previousScore, priority, className }: Lea
   };
 
   return (
-    <Card className={`border ${getScoreColor(score)} ${className}`}>
-      <CardContent className="p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="text-2xl font-bold">{score}</div>
+    <Card className={`border ${getScoreColor(score)} ${className}`} variant="analytics">
+      <CardContent className="p-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xl font-bold">{score}</span>
             {getTrend()}
           </div>
           <div className="text-right">
-            <div className="text-xs font-medium">{getScoreLabel(score)}</div>
+            <span className="text-xs font-medium">{getScoreLabel(score)}</span>
             {priority && (
-              <Badge className={`text-xs mt-1 ${getPriorityColor(priority)}`}>
+              <Badge className={`text-[10px] ml-1 px-1.5 py-0 ${getPriorityColor(priority)}`}>
                 {priority.charAt(0).toUpperCase() + priority.slice(1)}
               </Badge>
             )}

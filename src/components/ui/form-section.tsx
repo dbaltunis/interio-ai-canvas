@@ -30,18 +30,18 @@ export const FormSection = ({
   children,
   className
 }: FormSectionProps) => {
-  return <Card className={cn("relative overflow-hidden", className)}>
+  return <Card className={cn("relative overflow-hidden border border-border bg-card shadow-md", className)}>
       {savedSuccessfully && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-500 to-emerald-500" />}
       
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 bg-muted border-b-2 border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary shadow-sm">
               {icon}
             </div>
             <div>
-              <CardTitle className="text-lg font-semibold">{title}</CardTitle>
-              
+              <CardTitle className="text-base font-semibold text-foreground">{title}</CardTitle>
+              {description && <CardDescription className="text-sm text-muted-foreground">{description}</CardDescription>}
             </div>
           </div>
           
@@ -76,7 +76,7 @@ export const FormSection = ({
           </>}
       </CardHeader>
 
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 p-6 bg-card">
         {children}
         
         {/* Additional sticky action bar at bottom for longer forms */}

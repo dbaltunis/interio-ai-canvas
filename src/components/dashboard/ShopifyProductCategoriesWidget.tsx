@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Package, Grid3x3, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 
 export const ShopifyProductCategoriesWidget = () => {
@@ -65,14 +66,14 @@ export const ShopifyProductCategoriesWidget = () => {
 
   if (isLoading) {
     return (
-      <Card className="h-full">
-        <CardHeader>
-          <Skeleton className="h-6 w-48" />
+      <Card variant="analytics" className="h-full">
+        <CardHeader className="pb-3">
+          <Skeleton className="h-4 w-36" />
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+        <CardContent className="pt-0">
+          <div className="space-y-3">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
+              <Skeleton key={i} className="h-14 w-full" />
             ))}
           </div>
         </CardContent>
@@ -90,58 +91,48 @@ export const ShopifyProductCategoriesWidget = () => {
   };
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Grid3x3 className="h-5 w-5 text-primary" />
+    <Card variant="analytics" className="h-full flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Grid3x3 className="h-4 w-4 text-primary shrink-0" />
             Product Categories
-          </div>
-          <Badge variant="secondary">
+          </CardTitle>
+          <Badge variant="secondary" className="text-xs shrink-0">
             {categoryData?.totalCategories || 0} categories
           </Badge>
-        </CardTitle>
+        </div>
       </CardHeader>
-      <CardContent className="flex-1">
+      <CardContent className="pt-0">
         {categoryData?.categories && categoryData.categories.length > 0 ? (
-          <div className="space-y-3">
-            {categoryData.categories.map((category) => (
-              <div 
-                key={category.name}
-                className="p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h4 className="font-semibold capitalize">{category.name}</h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
-                        <Package className="h-3 w-3 mr-1" />
-                        {category.count} products
-                      </Badge>
+          <ScrollArea className="h-[280px] pr-3">
+            <div className="space-y-2">
+              {categoryData.categories.map((category) => (
+                <div 
+                  key={category.name}
+                  className="p-2 rounded-lg border border-border/50 bg-background hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-medium text-sm capitalize truncate">{category.name}</h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-muted-foreground">
+                          {category.count} products
+                        </span>
+                        <span className="text-xs text-muted-foreground">•</span>
+                        <span className="text-xs text-muted-foreground">
+                          {category.totalQty} units
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-primary">
+                    <Badge variant="secondary" className="text-xs shrink-0">
                       {formatCurrency(category.totalValue)}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {category.totalQty} units
-                    </div>
+                    </Badge>
                   </div>
                 </div>
-                
-                {/* Progress bar */}
-                <div className="w-full bg-secondary h-1.5 rounded-full mt-3">
-                  <div 
-                    className="bg-primary h-1.5 rounded-full transition-all"
-                    style={{ 
-                      width: `${(category.count / (categoryData?.totalProducts || 1)) * 100}%` 
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </ScrollArea>
         ) : (
           <div className="flex flex-col items-center justify-center h-48 text-center">
             <Grid3x3 className="h-12 w-12 text-muted-foreground/30 mb-3" />

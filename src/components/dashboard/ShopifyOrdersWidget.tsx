@@ -34,151 +34,92 @@ export const ShopifyOrdersWidget = () => {
   };
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-card to-card/95 h-full flex flex-col">
-      <CardHeader className="pb-3">
+    <Card variant="analytics" className="h-full flex flex-col">
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <Store className="h-5 w-5 text-primary shrink-0" />
-              <span className="truncate">Shopify Store Performance</span>
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1 truncate">
-              {integration?.shop_domain}
-              {analytics?.last_synced_at && ` • Last synced ${formatDate(analytics.last_synced_at)}`}
-            </p>
-          </div>
-          <div className="flex items-center gap-1 ml-2 shrink-0">
-            <Badge variant={showSyncing ? "secondary" : "success"} className="text-xs">
-              {showSyncing ? "Syncing..." : "Connected"}
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <Store className="h-4 w-4" />
+            Shopify Performance
+          </CardTitle>
+          <div className="flex items-center gap-1">
+            <Badge variant={showSyncing ? "secondary" : "success"} className="text-xs h-5">
+              {showSyncing ? "Syncing" : "Live"}
             </Badge>
             <Button
-              size="sm"
-              variant="outline"
+              size="icon"
+              variant="ghost"
               onClick={() => syncAnalytics()}
               disabled={isSyncing}
-              className="gap-1 px-2"
+              className="h-6 w-6"
             >
               <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span className="hidden lg:inline text-xs">Sync</span>
             </Button>
-            {integration?.shop_domain && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  const url = `https://${integration.shop_domain}/admin`;
-                  window.open(url, '_blank', 'noopener,noreferrer');
-                }}
-                className="gap-1 px-2"
-              >
-                <ExternalLink className="h-3 w-3" />
-                <span className="hidden lg:inline text-xs">Shopify Admin</span>
-              </Button>
-            )}
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-1">
+      <CardContent className="flex-1 pt-0">
         {showEmptyState ? (
-          <div className="text-center py-8">
-            <div className="mb-4">
-              <Package className="h-16 w-16 mx-auto text-muted-foreground/20" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">No Orders Yet</h3>
-            <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-              Your Shopify store is connected! When customers place orders, they'll appear here automatically.
-            </p>
+          <div className="text-center py-6">
+            <Package className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
+            <p className="text-xs text-muted-foreground">No orders yet</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {/* Orders Grid - Fully responsive */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Total Revenue */}
-              <div className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-1.5 rounded-full bg-green-500/10">
-                    <DollarSign className="h-3.5 w-3.5 text-green-600" />
-                  </div>
-                </div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">Total Revenue</p>
-                <p className="text-xl font-bold">
-                  {formatCurrency(analytics?.total_revenue || 0)}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1 truncate">
-                  {analytics?.orders_this_month || 0} orders this month
-                </p>
+          <div className="grid grid-cols-2 gap-2">
+            {/* Revenue */}
+            <div className="p-2 rounded-md border border-border/50 bg-card">
+              <div className="flex items-center gap-1.5 mb-1">
+                <DollarSign className="h-3 w-3 text-green-600" />
+                <span className="text-xs text-muted-foreground">Revenue</span>
               </div>
-
-              {/* Total Orders */}
-              <div className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-1.5 rounded-full bg-blue-500/10">
-                    <ShoppingCart className="h-3.5 w-3.5 text-blue-600" />
-                  </div>
-                </div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">Total Orders</p>
-                <p className="text-xl font-bold">
-                  {analytics?.total_orders || 0}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1 truncate">
-                  All time orders
-                </p>
-              </div>
-
-              {/* Average Order Value */}
-              <div className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-1.5 rounded-full bg-purple-500/10">
-                    <TrendingUp className="h-3.5 w-3.5 text-purple-600" />
-                  </div>
-                </div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">Avg Order Value</p>
-                <p className="text-xl font-bold">
-                  {formatCurrency(analytics?.avg_order_value || 0)}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1 truncate">
-                  Average value
-                </p>
-              </div>
-
-              {/* Total Customers */}
-              <div className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="p-1.5 rounded-full bg-orange-500/10">
-                    <Users className="h-3.5 w-3.5 text-orange-600" />
-                  </div>
-                </div>
-                <p className="text-xs font-medium text-muted-foreground mb-1">Total Customers</p>
-                <p className="text-xl font-bold">
-                  {analytics?.total_customers || 0}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1 truncate">
-                  Unique customers
-                </p>
-              </div>
+              <p className="text-sm font-semibold truncate">
+                {formatCurrency(analytics?.total_revenue || 0)}
+              </p>
             </div>
 
-            {/* This Month Revenue */}
-            <div className="p-3 rounded-lg border bg-gradient-to-br from-primary/5 to-primary/10">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-3.5 w-3.5 text-primary" />
-                <p className="text-sm font-semibold">This Month</p>
+            {/* Orders */}
+            <div className="p-2 rounded-md border border-border/50 bg-card">
+              <div className="flex items-center gap-1.5 mb-1">
+                <ShoppingCart className="h-3 w-3 text-blue-600" />
+                <span className="text-xs text-muted-foreground">Orders</span>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs text-muted-foreground">Revenue</p>
-                  <p className="text-lg font-bold truncate">
-                    {formatCurrency(analytics?.revenue_this_month || 0)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Orders</p>
-                  <p className="text-lg font-bold">
-                    {analytics?.orders_this_month || 0}
-                  </p>
-                </div>
-              </div>
+              <p className="text-sm font-semibold">{analytics?.total_orders || 0}</p>
             </div>
+
+            {/* Avg Order */}
+            <div className="p-2 rounded-md border border-border/50 bg-card">
+              <div className="flex items-center gap-1.5 mb-1">
+                <TrendingUp className="h-3 w-3 text-purple-600" />
+                <span className="text-xs text-muted-foreground">Avg Order</span>
+              </div>
+              <p className="text-sm font-semibold truncate">
+                {formatCurrency(analytics?.avg_order_value || 0)}
+              </p>
+            </div>
+
+            {/* Customers */}
+            <div className="p-2 rounded-md border border-border/50 bg-card">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Users className="h-3 w-3 text-orange-600" />
+                <span className="text-xs text-muted-foreground">Customers</span>
+              </div>
+              <p className="text-sm font-semibold">{analytics?.total_customers || 0}</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Footer with store link */}
+        {integration?.shop_domain && (
+          <div className="mt-2 pt-2 border-t border-border/50 flex items-center justify-between">
+            <span className="text-xs text-muted-foreground truncate">{integration.shop_domain}</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => window.open(`https://${integration.shop_domain}/admin`, '_blank')}
+              className="h-6 px-2 text-xs gap-1"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Admin
+            </Button>
           </div>
         )}
       </CardContent>

@@ -63,16 +63,16 @@ export const UpcomingEventsWidget = () => {
 
   if (isLoading || canViewCalendar === undefined) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+      <Card variant="analytics">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Calendar className="h-4 w-4" />
             Upcoming Events
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 sm:space-y-3">
+        <CardContent className="pt-0 space-y-2">
           {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-14 sm:h-16 w-full" />
+            <Skeleton key={i} className="h-14 w-full" />
           ))}
         </CardContent>
       </Card>
@@ -80,30 +80,30 @@ export const UpcomingEventsWidget = () => {
   }
 
   return (
-    <Card className="border border-border/50 bg-card/50">
+    <Card variant="analytics" className="h-full">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Calendar className="h-4 w-4" />
             Upcoming Events
           </CardTitle>
           {calendarIntegration?.active && (
-            <Badge variant="outline" className="text-xs h-5">
+            <Badge variant="secondary" className="text-xs h-5">
               <CheckCircle2 className="h-3 w-3 mr-1" />
               Synced
             </Badge>
           )}
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+        <CardContent className="pt-0">
         {upcomingAppointments.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <Calendar className="h-10 w-10 mx-auto mb-2 opacity-20" />
+          <div className="text-center py-4 text-muted-foreground">
+            <Calendar className="h-8 w-8 mx-auto mb-1.5 opacity-20" />
             <p className="text-xs">No upcoming appointments</p>
           </div>
         ) : (
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-2">
+          <ScrollArea className="h-[280px] pr-3">
+            <div className="space-y-1.5">
               {upcomingAppointments.map((apt) => {
             // Convert UTC time to user's timezone for display
             const startTime = toZonedTime(new Date(apt.start_time), userTimezone);
@@ -112,36 +112,31 @@ export const UpcomingEventsWidget = () => {
             return (
               <div
                 key={apt.id}
-                className="flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-lg bg-background border border-border hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
+                className="flex items-center gap-2 p-2 rounded-md bg-background border border-border/50 hover:bg-muted/50 transition-all cursor-pointer"
                 onClick={() => navigate(`/?tab=calendar&eventId=${apt.id}`)}
               >
-                <div className="flex flex-col items-center justify-center min-w-[40px] sm:min-w-[50px] h-[40px] sm:h-[50px] rounded-lg bg-background border border-border shadow-sm">
-                  <span className="text-[9px] sm:text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                <div className="flex flex-col items-center justify-center min-w-[36px] h-[36px] rounded-md bg-muted/50 border border-border/50">
+                  <span className="text-[8px] font-medium text-muted-foreground uppercase">
                     {formatInTimeZone(new Date(apt.start_time), userTimezone, "MMM")}
                   </span>
-                  <span className="text-xl sm:text-2xl font-bold text-foreground leading-none">
+                  <span className="text-sm font-semibold text-foreground leading-none">
                     {formatInTimeZone(new Date(apt.start_time), userTimezone, "d")}
                   </span>
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-xs sm:text-sm text-foreground break-words line-clamp-1 sm:line-clamp-2">
+                  <h4 className="font-medium text-xs text-foreground line-clamp-1">
                     {apt.title}
                   </h4>
-                  <div className="flex items-center gap-1 sm:gap-1.5 mt-0.5 text-[10px] sm:text-xs text-muted-foreground flex-wrap">
-                    <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0" />
-                    <span className="whitespace-nowrap">{formatInTimeZone(new Date(apt.start_time), userTimezone, timeFnsFormat)}</span>
+                  <div className="flex items-center gap-1 mt-0.5 text-[10px] text-muted-foreground">
+                    <Clock className="h-2.5 w-2.5 shrink-0" />
+                    <span>{formatInTimeZone(new Date(apt.start_time), userTimezone, timeFnsFormat)}</span>
                   </div>
                 </div>
                 
                 <Badge 
-                  variant={isToday(startTime) ? "default" : "secondary"} 
-                  className="text-[10px] sm:text-xs shrink-0 h-5 sm:h-6 px-1.5 sm:px-2.5 flex items-center justify-center font-medium"
-                  style={isToday(startTime) ? {} : isTomorrow(startTime) ? { 
-                    backgroundColor: 'hsl(var(--primary) / 0.15)',
-                    color: 'hsl(var(--primary))',
-                    borderColor: 'hsl(var(--primary) / 0.3)'
-                  } : {}}
+                  variant="secondary" 
+                  className="text-[10px] shrink-0 h-5 px-1.5 font-medium"
                 >
                   {dateLabel}
                 </Badge>

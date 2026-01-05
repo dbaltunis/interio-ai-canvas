@@ -43,16 +43,16 @@ export const RecentEmailsWidget = () => {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Mail className="h-4 w-4 sm:h-5 sm:w-5" />
-            Recent Emails
+      <Card variant="analytics">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Mail className="h-4 w-4" />
+            Recent Messages
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 sm:space-y-3">
+        <CardContent className="pt-0 space-y-2">
           {[1, 2, 3].map(i => (
-            <Skeleton key={i} className="h-16 sm:h-20 w-full" />
+            <Skeleton key={i} className="h-14 w-full" />
           ))}
         </CardContent>
       </Card>
@@ -60,12 +60,12 @@ export const RecentEmailsWidget = () => {
   }
 
   return (
-    <Card className="border border-border/50 bg-card/50">
+    <Card variant="analytics" className="h-full">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Mail className="h-4 w-4" />
-            Recent Emails
+            Recent Messages
           </CardTitle>
           {emailKPIs && (
             <span className="text-xs text-muted-foreground">
@@ -76,48 +76,46 @@ export const RecentEmailsWidget = () => {
       </CardHeader>
       <CardContent className="pt-0">
         {recentEmails.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <Mail className="h-10 w-10 mx-auto mb-2 opacity-20" />
+        <div className="text-center py-6 text-muted-foreground">
+            <Mail className="h-8 w-8 mx-auto mb-2 opacity-20" />
             <p className="text-xs">No emails sent yet</p>
           </div>
         ) : (
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-2">
+          <ScrollArea className="h-[280px] pr-3">
+            <div className="space-y-1.5">
               {recentEmails.map((email) => (
             <div
               key={email.id}
-              className="flex items-start gap-2.5 p-3 rounded-lg bg-background border border-border hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
+              className="flex items-center gap-2 p-2 rounded-md bg-background border border-border/50 hover:bg-muted/50 transition-all cursor-pointer"
               onClick={() => navigate('/?tab=quotes')}
             >
-              <div className="mt-0.5 shrink-0 p-1.5 rounded-md bg-muted/50">
+              <div className="shrink-0 p-1.5 rounded-md bg-muted/50">
                 {getStatusIcon(email.status)}
               </div>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-start gap-2 mb-1.5">
-                  <h4 className="font-semibold text-sm text-foreground line-clamp-1 flex-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-medium text-xs text-foreground line-clamp-1 flex-1">
                     {email.subject || "No subject"}
                   </h4>
                   <Badge 
                     variant={getStatusVariant(email.status)} 
-                    className="text-[10px] shrink-0 h-5 px-2 font-medium"
+                    className="text-[10px] shrink-0 h-4 px-1.5 font-medium"
                   >
                     {email.status || "pending"}
                   </Badge>
                 </div>
                 
-                <p className="text-xs text-muted-foreground line-clamp-1 mb-1.5">
-                  To: {email.recipient_email}
-                </p>
-                
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="line-clamp-1">
+                <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                  <span className="truncate">{email.recipient_email}</span>
+                  <span>•</span>
+                  <span className="shrink-0">
                     {email.created_at ? formatDistanceToNow(new Date(email.created_at), { addSuffix: true }) : ""}
                   </span>
                   {email.open_count > 0 && (
                     <span className="flex items-center gap-1 shrink-0 text-green-600 font-medium">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Opened {email.open_count}x
+                      <CheckCircle2 className="h-2.5 w-2.5" />
+                      {email.open_count}x
                     </span>
                   )}
                 </div>

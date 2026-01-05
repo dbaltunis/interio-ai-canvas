@@ -602,7 +602,7 @@ html {
 }
 
 /* ============================================================================
-   2026 Modern Design Utilities
+   2026 Modern Design Utilities - Shopify Analytics Style
    ============================================================================ */
 
 /* Page layout utilities */
@@ -615,7 +615,7 @@ html {
 }
 
 .page-title {
-  @apply text-2xl font-semibold tracking-tight text-foreground;
+  @apply text-lg font-semibold tracking-tight text-foreground;
 }
 
 .page-description {
@@ -657,6 +657,133 @@ html {
 
 .text-pretty {
   text-wrap: pretty;
+}
+
+/* ============================================================================
+   Shopify Analytics Style System
+   ============================================================================ */
+
+/* Analytics-style widget card */
+.widget-card {
+  @apply rounded-xl border border-border/40 bg-card/50 backdrop-blur-sm;
+}
+
+.widget-card-hover {
+  @apply transition-all duration-200 hover:border-primary/20 hover:bg-card/80;
+}
+
+/* Analytics section title */
+.section-title {
+  @apply text-sm font-medium text-muted-foreground;
+}
+
+/* Analytics value display */
+.value-display {
+  @apply text-2xl font-bold text-foreground tracking-tight;
+}
+
+.value-display-sm {
+  @apply text-xl font-bold text-foreground tracking-tight;
+}
+
+/* Trend indicators */
+.trend-positive {
+  @apply text-emerald-600 dark:text-emerald-400;
+}
+
+.trend-negative {
+  @apply text-red-500 dark:text-red-400;
+}
+
+.trend-neutral {
+  @apply text-muted-foreground;
+}
+
+/* Icon container - compact style */
+.icon-container {
+  @apply p-2 bg-primary/10 rounded-lg;
+}
+
+.icon-container-sm {
+  @apply p-1.5 bg-primary/10 rounded-md;
+}
+
+/* Analytics badge */
+.analytics-badge {
+  @apply bg-secondary/10 text-secondary-foreground border-secondary/20 text-xs;
+}
+
+/* Compact header pattern */
+.compact-header {
+  @apply flex items-center justify-between gap-4;
+}
+
+/* Widget scroll area */
+.widget-scroll {
+  @apply h-[280px];
+}
+
+/* Empty state styling */
+.empty-state {
+  @apply flex flex-col items-center justify-center h-full text-center py-8;
+}
+
+.empty-state-icon {
+  @apply h-8 w-8 text-muted-foreground/50 mb-3;
+}
+
+.empty-state-title {
+  @apply text-sm font-medium text-muted-foreground;
+}
+
+.empty-state-description {
+  @apply text-xs text-muted-foreground/70 mt-1;
+}
+
+/* Stat card pattern */
+.stat-card {
+  @apply flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border/30;
+}
+
+.stat-icon {
+  @apply p-2 rounded-lg bg-primary/10;
+}
+
+.stat-value {
+  @apply text-lg font-bold text-foreground;
+}
+
+.stat-label {
+  @apply text-xs text-muted-foreground;
+}
+
+/* List item pattern */
+.list-item {
+  @apply flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer;
+}
+
+.list-item-title {
+  @apply text-sm font-medium text-foreground truncate;
+}
+
+.list-item-subtitle {
+  @apply text-xs text-muted-foreground;
+}
+
+/* Compact animation */
+.animate-in-subtle {
+  animation: fadeInSubtle 0.2s ease-out;
+}
+
+@keyframes fadeInSubtle {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Scrollbar utilities */

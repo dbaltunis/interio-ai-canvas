@@ -29,7 +29,12 @@ export interface BusinessSettings {
   id: string;
   user_id: string;
   company_name?: string;
+  legal_name?: string;
+  trading_name?: string;
   abn?: string;
+  registration_number?: string;
+  tax_number?: string;
+  organization_type?: string;
   business_email?: string;
   business_phone?: string;
   address?: string;
@@ -42,6 +47,19 @@ export interface BusinessSettings {
   measurement_units?: string;
   tax_rate?: number;
   tax_type?: 'none' | 'vat' | 'gst' | 'sales_tax';
+  default_payment_terms_days?: number;
+  financial_year_end_month?: number;
+  financial_year_end_day?: number;
+  // Bank account details
+  bank_name?: string;
+  bank_account_name?: string;
+  bank_account_number?: string;
+  bank_bsb?: string;
+  bank_sort_code?: string;
+  bank_routing_number?: string;
+  bank_iban?: string;
+  bank_swift_bic?: string;
+  // Other settings
   pricing_settings?: any;
   allow_in_app_template_editing?: boolean;
   default_profit_margin_percentage?: number;

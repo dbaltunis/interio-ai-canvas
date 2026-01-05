@@ -49,9 +49,9 @@ export const EnhancedKPICard = ({
 
   const getCardSize = () => {
     switch (config.size) {
-      case 'small': return 'h-24';
-      case 'large': return 'h-40';
-      default: return 'h-32';
+      case 'small': return 'h-20';
+      case 'large': return 'h-32';
+      default: return 'h-24';
     }
   };
 
@@ -185,19 +185,18 @@ export const EnhancedKPICard = ({
     );
   }
 
-  // Default card format
+  // Default card format - cleaner, more compact
   return (
     <Card 
-      className={cn("group", getCardSize())}
-      style={config.color ? { borderLeftColor: config.color, borderLeftWidth: '3px' } : {}}
+      className={cn("group border-border/40", getCardSize())}
     >
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+      <CardContent className="p-3 h-full flex flex-col justify-between">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <Icon 
-            className="h-4 w-4" 
+            className="h-3.5 w-3.5" 
             style={{ color: config.color || 'hsl(var(--primary))' }}
           />
-          {displayTitle}
+          <span className="text-xs font-medium">{displayTitle}</span>
           {alertStatus && (
             <StatusIndicator 
               status={alertStatus === 'critical' ? 'error' : 'warning'}
@@ -208,22 +207,21 @@ export const EnhancedKPICard = ({
               {alertStatus}
             </StatusIndicator>
           )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
+        </div>
+        
         <div className="flex items-baseline justify-between">
           <div 
-            className="text-2xl font-bold"
-            style={{ color: config.color || 'hsl(var(--primary))' }}
+            className="text-xl font-bold"
+            style={{ color: config.color || 'hsl(var(--foreground))' }}
           >
             {getDisplayValue()}
           </div>
           {config.showTrend && trend && (
-            <div className="flex items-center gap-1 text-sm">
+            <div className="flex items-center gap-1 text-xs">
               {trend.isPositive ? (
-                <TrendingUp className="h-4 w-4 text-green-500" />
+                <TrendingUp className="h-3 w-3 text-green-500" />
               ) : (
-                <TrendingDown className="h-4 w-4 text-red-500" />
+                <TrendingDown className="h-3 w-3 text-red-500" />
               )}
               <span className={trend.isPositive ? "text-green-600" : "text-red-600"}>
                 {trend.isPositive ? "+" : ""}{trend.value}%
@@ -233,20 +231,8 @@ export const EnhancedKPICard = ({
         </div>
         
         {subtitle && (
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
+          <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
         )}
-        
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Updated: {lastRefresh.toLocaleTimeString()}</span>
-          {typeof value === 'number' && value <= 100 && (
-            <ModernProgress 
-              value={value} 
-              size="sm" 
-              className="w-16"
-              variant={alertStatus === 'critical' ? 'error' : alertStatus === 'warning' ? 'warning' : 'default'}
-            />
-          )}
-        </div>
       </CardContent>
     </Card>
   );

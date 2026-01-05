@@ -8,11 +8,11 @@ export const CRMSummaryCards = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
         {[...Array(7)].map((_, i) => (
-          <Card key={i}>
-            <CardContent className="p-6">
-              <Skeleton className="h-20 w-full" />
+          <Card key={i} variant="analytics">
+            <CardContent className="p-3">
+              <Skeleton className="h-12 w-full" />
             </CardContent>
           </Card>
         ))}
@@ -28,7 +28,7 @@ export const CRMSummaryCards = () => {
       color: "text-primary",
     },
     {
-      label: "Active Leads",
+      label: "Active",
       value: stats?.activeLeads || 0,
       icon: TrendingUp,
       color: "text-blue-600",
@@ -40,25 +40,25 @@ export const CRMSummaryCards = () => {
       color: "text-green-600",
     },
     {
-      label: "Lost Deals",
+      label: "Lost",
       value: stats?.lostDeals || 0,
       icon: XCircle,
       color: "text-red-600",
     },
     {
-      label: "Revenue (Month)",
+      label: "Revenue",
       value: `$${(stats?.totalRevenueThisMonth || 0).toLocaleString()}`,
       icon: DollarSign,
       color: "text-green-600",
     },
     {
-      label: "Avg Deal Size",
+      label: "Avg Deal",
       value: `$${(stats?.avgDealSize || 0).toLocaleString()}`,
       icon: Target,
       color: "text-purple-600",
     },
     {
-      label: "Conversion Rate",
+      label: "Conv. Rate",
       value: `${(stats?.conversionRate || 0).toFixed(1)}%`,
       icon: Percent,
       color: "text-orange-600",
@@ -66,16 +66,18 @@ export const CRMSummaryCards = () => {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
       {cards.map((card, index) => (
-        <Card key={index} className="hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">{card.label}</p>
-                <p className="text-2xl font-bold">{card.value}</p>
+        <Card key={index} variant="analytics" className="transition-all duration-200 hover:border-primary/20">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-primary/10 rounded-lg shrink-0">
+                <card.icon className={`h-3.5 w-3.5 ${card.color}`} />
               </div>
-              <card.icon className={`h-8 w-8 ${card.color}`} />
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground truncate">{card.label}</p>
+                <p className="text-lg font-bold leading-tight">{card.value}</p>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Filter, Download, Users } from "lucide-react";
+import { Plus, Filter, Download, Users, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useClients } from "@/hooks/useClients";
 import { useClientStats } from "@/hooks/useClientJobs";
 import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
@@ -343,21 +344,32 @@ export const ClientManagementPage = ({
     return <MobileClientView onClientClick={handleClientClick} />;
   }
   return <div className="bg-background min-h-screen animate-fade-in">
-      <div className="space-y-6 p-4 md:p-6 lg:p-8">
-        {/* Header - matching Projects page style */}
+      <div className="space-y-4 p-4 md:p-6 lg:p-6">
+        {/* Compact Header - Analytics Style */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-2.5 bg-primary/10 rounded-xl">
-              <Users className="h-6 w-6 text-primary" />
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Users className="h-5 w-5 text-primary" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Clients</h1>
+            <h1 className="text-lg font-semibold text-foreground">Clients</h1>
             <HelpIcon onClick={() => setShowHelp(true)} />
-            <Badge variant="muted" className="text-xs">
+            <Badge variant="secondary" className="text-xs">
               {totalItems} clients
             </Badge>
           </div>
         
           <div className="flex items-center gap-2">
+            {/* Always-visible Search Input */}
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search clients..."
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-9 h-9"
+              />
+            </div>
+            
             <Button variant="outline" onClick={() => setShowFilters(!showFilters)} size="icon-sm" className="rounded-lg" title="Filter">
               <Filter className="h-4 w-4" />
             </Button>

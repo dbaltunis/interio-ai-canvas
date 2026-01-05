@@ -1,24 +1,23 @@
 import { useState, useMemo, lazy, Suspense, useEffect } from "react";
-import { useKPIConfig } from "@/hooks/useKPIConfig";
 import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
 import { WelcomeHeader } from "./WelcomeHeader";
 import { DashboardWidgetCustomizer } from "./DashboardWidgetCustomizer";
-import { ECommerceGatewayWidget } from "./ECommerceGatewayWidget";
-import { DraggableKPISection } from "./DraggableKPISection";
+import { CompactKPIRow } from "./CompactKPIRow";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { useBatchedDashboardQueries } from "@/hooks/useBatchedDashboardQueries";
-import { useEmailKPIs } from "@/hooks/useEmails";
 import { ShopifyIntegrationDialog } from "@/components/library/ShopifyIntegrationDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, FileText, DollarSign, Mail, MousePointerClick, Clock, CalendarCheck } from "lucide-react";
+import { Users, FileText, DollarSign } from "lucide-react";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { disableShopifyWidgets } from "@/utils/disableShopifyWidgets";
+import { DashboardDateProvider, useDashboardDate } from "@/contexts/DashboardDateContext";
 
 // Lazy load non-critical widgets for better initial load performance
 const UpcomingEventsWidget = lazy(() => import("./UpcomingEventsWidget").then(m => ({ default: m.UpcomingEventsWidget })));
 const StatusOverviewWidget = lazy(() => import("./StatusOverviewWidget").then(m => ({ default: m.StatusOverviewWidget })));
 const RecentEmailsWidget = lazy(() => import("./RecentEmailsWidget").then(m => ({ default: m.RecentEmailsWidget })));
-const RevenuePieChart = lazy(() => import("./RevenuePieChart").then(m => ({ default: m.RevenuePieChart })));
+const RevenueTrendChart = lazy(() => import("./RevenueTrendChart").then(m => ({ default: m.RevenueTrendChart })));
+const JobsStatusChart = lazy(() => import("./JobsStatusChart").then(m => ({ default: m.JobsStatusChart })));
 const CalendarConnectionCard = lazy(() => import("./CalendarConnectionCard").then(m => ({ default: m.CalendarConnectionCard })));
 const OnlineStoreAnalyticsWidget = lazy(() => import("./OnlineStoreAnalyticsWidget").then(m => ({ default: m.OnlineStoreAnalyticsWidget })));
 const OnlineStoreOrdersWidget = lazy(() => import("./OnlineStoreOrdersWidget").then(m => ({ default: m.OnlineStoreOrdersWidget })));
@@ -42,16 +41,15 @@ const WidgetSkeleton = () => (
 );
 
 
-export const EnhancedHomeDashboard = () => {
+const DashboardContent = () => {
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
   const [showWidgetCustomizer, setShowWidgetCustomizer] = useState(false);
-  const { kpiConfigs, toggleKPI, reorderKPIs, getEnabledKPIs } = useKPIConfig();
+  const { dateRange } = useDashboardDate();
   const { widgets, toggleWidget, reorderWidgets, getEnabledWidgets, getAvailableWidgets, updateWidgetSize } = useDashboardWidgets();
   
   // Use batched queries for better performance
   const { criticalStats, secondaryStats, hasOnlineStore } = useBatchedDashboardQueries();
   
-  const { data: emailKPIs } = useEmailKPIs();
   const { integration: shopifyIntegration } = useShopifyIntegrationReal();
   const isShopifyConnected = !!shopifyIntegration?.is_connected;
 
@@ -69,13 +67,14 @@ export const EnhancedHomeDashboard = () => {
       totalClients: criticalStats.data.totalClients,
       pendingQuotes: criticalStats.data.pendingQuotes,
       totalRevenue: criticalStats.data.totalRevenue,
+      activeProjects: criticalStats.data.activeProjects,
       lowStockItems: secondaryStats.data?.lowStockItems || 0,
       totalAppointments: secondaryStats.data?.totalAppointments || 0,
       activeSchedulers: secondaryStats.data?.activeSchedulers || 0,
     };
   }, [criticalStats.data, secondaryStats.data]);
   
-  // Permission checks for widgets and KPIs
+  // Permission checks for widgets
   const canViewCalendar = useHasPermission('view_calendar');
   const canViewShopify = useHasPermission('view_shopify');
   const canViewEmails = useHasPermission('view_emails');
@@ -135,122 +134,34 @@ export const EnhancedHomeDashboard = () => {
     filteredOutCount: getEnabledWidgets().length - enabledWidgets.length
   });
 
-  // Prepare KPI data for primary metrics
-  const primaryKPIs = [
-    {
-      id: "total-revenue",
-      title: "Total Revenue",
-      value: stats?.totalRevenue || 0,
-      subtitle: "from accepted quotes",
-      icon: DollarSign,
-      trend: { value: 12.5, isPositive: true },
-      category: "primary" as const,
-      requiresPermission: "view_revenue_kpis",
-    },
-    {
-      id: "active-projects",
-      title: "Active Projects",
-      value: stats?.totalClients || 0,
-      subtitle: "in progress",
-      icon: FileText,
-      trend: { value: 8.2, isPositive: true },
-      category: "primary" as const,
-    },
-    {
-      id: "pending-quotes",
-      title: "Pending Quotes",
-      value: stats?.pendingQuotes || 0,
-      subtitle: "awaiting response",
-      icon: FileText,
-      category: "primary" as const,
-    },
-    {
-      id: "total-clients",
-      title: "Total Clients",
-      value: stats?.totalClients || 0,
-      subtitle: "active relationships",
-      icon: Users,
-      trend: { value: 15.3, isPositive: true },
-      category: "primary" as const,
-    },
-    {
-      id: "appointments-booked",
-      title: "Appointments Booked",
-      value: stats?.totalAppointments || 0,
-      subtitle: `${stats?.activeSchedulers || 0} active scheduler${(stats?.activeSchedulers || 0) !== 1 ? 's' : ''}`,
-      icon: CalendarCheck,
-      trend: { value: 18.7, isPositive: true },
-      category: "primary" as const,
-    },
+  // Compact metrics for top row - use real data from batched queries
+  const compactMetrics = [
+    { id: "revenue", label: "Revenue", value: stats?.totalRevenue || 0, icon: DollarSign, isCurrency: true },
+    { id: "projects", label: "Active Projects", value: stats?.activeProjects || 0, icon: FileText },
+    { id: "quotes", label: "Pending Quotes", value: stats?.pendingQuotes || 0, icon: FileText },
+    { id: "clients", label: "Clients", value: stats?.totalClients || 0, icon: Users },
   ];
-
-  // Email performance KPIs
-  const emailKPIsData = [
-    {
-      id: "emails-sent",
-      title: "Emails Sent",
-      value: emailKPIs?.totalSent || 0,
-      subtitle: "total campaigns",
-      icon: Mail,
-      category: "email" as const,
-    },
-    {
-      id: "open-rate",
-      title: "Open Rate",
-      value: emailKPIs?.openRate || 0,
-      subtitle: "average engagement",
-      icon: MousePointerClick,
-      trend: { value: 5.2, isPositive: true },
-      category: "email" as const,
-    },
-    {
-      id: "click-rate",
-      title: "Click Rate",
-      value: emailKPIs?.clickRate || 0,
-      subtitle: "link engagement",
-      icon: MousePointerClick,
-      trend: { value: 3.1, isPositive: true },
-      category: "email" as const,
-    },
-    {
-      id: "avg-time-spent",
-      title: "Avg Time Spent",
-      value: emailKPIs?.avgTimeSpent || 0,
-      subtitle: "reading emails",
-      icon: Clock,
-      category: "email" as const,
-    },
-  ];
-
-  const enabledPrimaryKPIs = getEnabledKPIs("primary");
-  const enabledEmailKPIs = getEnabledKPIs("email");
-  const enabledBusinessKPIs = getEnabledKPIs("business");
-
-  // Filter KPIs by both customization AND permissions
-  const filteredPrimaryKPIs = primaryKPIs.filter(kpi => {
-    // Check if KPI is enabled in customizer
-    const isEnabled = enabledPrimaryKPIs.some(config => config.id === kpi.id);
-    if (!isEnabled) return false;
-    
-    // Check permissions
-    if (kpi.id === 'total-revenue') return canViewRevenueKPIs === true;
-    return canViewPrimaryKPIs === true;
-  });
-
-  const filteredEmailKPIs = emailKPIsData.filter(kpi => 
-    enabledEmailKPIs.some(config => config.id === kpi.id) && canViewEmailKPIs === true
-  );
 
   return (
-    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       {/* Header Section */}
       <WelcomeHeader onCustomizeClick={() => setShowWidgetCustomizer(true)} />
 
-      {/* E-Commerce Gateway Widget - HIDDEN FOR NOW, KEEPING CODE */}
-      {/* <ECommerceGatewayWidget /> */}
+      {/* Compact KPI Row - Shopify-style top metrics */}
+      <CompactKPIRow metrics={compactMetrics} loading={criticalStats.isLoading} />
+
+      {/* Charts Row - Revenue trend and Jobs status */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Suspense fallback={<WidgetSkeleton />}>
+          <RevenueTrendChart />
+        </Suspense>
+        <Suspense fallback={<WidgetSkeleton />}>
+          <JobsStatusChart />
+        </Suspense>
+      </div>
 
       {/* Dynamic Widgets Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
         {enabledWidgets.map((widget) => {
           const sizeClasses = {
             small: "col-span-1",
@@ -280,8 +191,6 @@ export const EnhancedHomeDashboard = () => {
                 return <RecentEmailsWidget />;
               case "status":
                 return <StatusOverviewWidget />;
-              case "revenue":
-                return <RevenuePieChart />;
               case "calendar-connection":
                 return <CalendarConnectionCard />;
               case "recent-jobs":
@@ -312,35 +221,6 @@ export const EnhancedHomeDashboard = () => {
         })}
       </div>
 
-      {/* Primary KPIs Section */}
-      {filteredPrimaryKPIs.length > 0 && (
-        <DraggableKPISection
-          title="Primary Metrics"
-          kpis={filteredPrimaryKPIs}
-          kpiConfigs={enabledPrimaryKPIs}
-          onReorder={(activeId, overId) => reorderKPIs("primary", activeId, overId)}
-        />
-      )}
-
-      {/* Email Performance KPIs */}
-      {filteredEmailKPIs.length > 0 && (
-        <DraggableKPISection
-          title="Email Performance"
-          kpis={filteredEmailKPIs}
-          kpiConfigs={enabledEmailKPIs}
-          onReorder={(activeId, overId) => reorderKPIs("email", activeId, overId)}
-        />
-      )}
-
-      {/* Business Metrics KPIs */}
-      {enabledBusinessKPIs.length > 0 && (
-        <DraggableKPISection
-          title="Business Metrics"
-          kpis={[]} // Add business metrics data when available
-          kpiConfigs={enabledBusinessKPIs}
-          onReorder={(activeId, overId) => reorderKPIs("business", activeId, overId)}
-        />
-      )}
       
       {/* Dialogs */}
       <ShopifyIntegrationDialog 
@@ -359,3 +239,10 @@ export const EnhancedHomeDashboard = () => {
     </div>
   );
 };
+
+// Wrapper with date context provider
+export const EnhancedHomeDashboard = () => (
+  <DashboardDateProvider>
+    <DashboardContent />
+  </DashboardDateProvider>
+);

@@ -14,7 +14,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'total', label: 'Total', visible: true, order: 2 },
   { id: 'status', label: 'Status', visible: true, order: 3 },
   { id: 'created', label: 'Created', visible: true, order: 4 },
-  { id: 'emails', label: 'Emails', visible: true, order: 5 },
+  { id: 'emails', label: 'Messages', visible: true, order: 5 },
   { id: 'team', label: 'Team', visible: true, order: 6 },
   { id: 'actions', label: 'Actions', visible: true, order: 7, locked: true },
 ];

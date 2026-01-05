@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 
-import { Mail, Phone, User, Building2, MoreHorizontal, Star, Clock, FileText, Trash2, Calendar, FolderKanban } from "lucide-react";
+import { Mail, Phone, User, Building2, MoreHorizontal, Star, Clock, FileText, Trash2, Calendar, FolderKanban, MessageSquare } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow } from "date-fns";
@@ -16,12 +16,14 @@ import { useDeleteClient } from "@/hooks/useClients";
 import { toast } from "sonner";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useClientFilesCount } from "@/hooks/useClientFilesCount";
+import { useClientCommunicationStats } from "@/hooks/useClientCommunicationStats";
 import { BulkActionsBar } from "./BulkActionsBar";
 import { CampaignWizard } from "@/components/campaigns/CampaignWizard";
 import { useClientSelection, SelectedClient } from "@/hooks/useClientSelection";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCanSendEmails } from "@/hooks/useCanSendEmails";
 import { useToast } from "@/hooks/use-toast";
+import { WhatsAppMessageDialog } from "@/components/messaging/WhatsAppMessageDialog";
 
 interface Client {
   id: string;
@@ -65,6 +67,8 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [showCampaignWizard, setShowCampaignWizard] = useState(false);
+  const [whatsAppClient, setWhatsAppClient] = useState<Client | null>(null);
+  const [whatsAppDialogOpen, setWhatsAppDialogOpen] = useState(false);
   const deleteClient = useDeleteClient();
   const { formatCurrency } = useFormattedCurrency();
   const { user } = useAuth();
@@ -82,9 +86,10 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
     isSelected,
   } = useClientSelection();
   
-  // Get client IDs for files count query
+  // Get client IDs for files count and communication stats queries
   const clientIds = useMemo(() => clients?.map(c => c.id) || [], [clients]);
   const { data: filesCount } = useClientFilesCount(clientIds);
+  const { data: communicationStats } = useClientCommunicationStats(clientIds);
 
   // Convert clients for selection
   const selectableClients: SelectedClient[] = useMemo(() => 
@@ -264,7 +269,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                   <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Stage</TableHead>
                   {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Projects</TableHead>}
                   {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Total Value</TableHead>}
-                  {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Last Activity</TableHead>}
+                  {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Communications</TableHead>}
                   {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Documents</TableHead>}
                   <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold text-right">Actions</TableHead>
                 </TableRow>
@@ -357,14 +362,16 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                     
                     {!isTablet && (
                       <TableCell>
-                        {client.last_contact_date ? (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Clock className="h-3.5 w-3.5" />
-                            {formatDistanceToNow(new Date(client.last_contact_date), { addSuffix: true })}
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <Mail className="h-3.5 w-3.5 text-blue-500" />
+                            <span className="text-xs">{communicationStats?.[client.id]?.emailCount || 0}</span>
                           </div>
-                        ) : (
-                          <div className="text-muted-foreground/60 text-sm">No activity</div>
-                        )}
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <MessageSquare className="h-3.5 w-3.5 text-green-500" />
+                            <span className="text-xs">{communicationStats?.[client.id]?.whatsappCount || 0}</span>
+                          </div>
+                        </div>
                       </TableCell>
                     )}
                     
@@ -414,6 +421,17 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                           <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
                             <Phone className="mr-2 h-4 w-4" />
                             Call Client
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setWhatsAppClient(client);
+                              setWhatsAppDialogOpen(true);
+                            }}
+                            disabled={!client.phone}
+                          >
+                            <MessageSquare className="mr-2 h-4 w-4 text-green-600" />
+                            WhatsApp
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
                             <Calendar className="mr-2 h-4 w-4" />
@@ -499,6 +517,19 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
         selectedClients={selectedClients}
         onComplete={clearSelection}
       />
+
+      {/* WhatsApp Dialog */}
+      {whatsAppClient && (
+        <WhatsAppMessageDialog
+          open={whatsAppDialogOpen}
+          onOpenChange={setWhatsAppDialogOpen}
+          client={{
+            id: whatsAppClient.id,
+            name: whatsAppClient.client_type === 'B2B' ? whatsAppClient.company_name || whatsAppClient.name : whatsAppClient.name,
+            phone: whatsAppClient.phone
+          }}
+        />
+      )}
     </Card>
   );
 };

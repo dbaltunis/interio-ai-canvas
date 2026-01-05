@@ -447,10 +447,10 @@ export const UnifiedAppointmentDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-full sm:max-w-[95vw] md:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-            <CalendarDays className="w-5 h-5" />
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto p-4">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-base font-semibold flex items-center gap-1.5">
+            <CalendarDays className="w-4 h-4" />
             {isEditing ? 'Edit Event' : 'New Event'}
           </DialogTitle>
         </DialogHeader>
@@ -473,22 +473,22 @@ export const UnifiedAppointmentDialog = ({
         
         <div className="space-y-5">
           {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="title" className="text-sm font-medium">Event Title *</Label>
+          <div className="space-y-1">
+            <Label htmlFor="title" className="text-xs font-medium">Event Title *</Label>
             <Input
               id="title"
               placeholder="What's this event about?"
               value={event.title}
               onChange={useCallback((e) => setEvent(prev => ({ ...prev, title: e.target.value })), [])}
-              className="h-10"
+              className="h-8 text-sm"
             />
           </div>
 
-          {/* Date and Time Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Date and Time Grid - Compact */}
+          <div className="grid grid-cols-3 gap-2">
             <div>
-              <Label htmlFor="date" className="text-sm font-medium flex items-center gap-1.5 mb-2">
-                <CalendarDays className="w-3.5 h-3.5" />
+              <Label htmlFor="date" className="text-xs font-medium flex items-center gap-1 mb-1">
+                <CalendarDays className="w-3 h-3" />
                 Date *
               </Label>
               <Input
@@ -496,56 +496,56 @@ export const UnifiedAppointmentDialog = ({
                 type="date"
                 value={event.date}
                 onChange={useCallback((e) => setEvent(prev => ({ ...prev, date: e.target.value })), [])}
-                className="h-10"
+                className="h-8 text-sm"
               />
             </div>
             <div>
-              <Label htmlFor="startTime" className="text-sm font-medium flex items-center gap-1.5 mb-2">
-                <Clock className="w-3.5 h-3.5" />
-                Start Time *
+              <Label htmlFor="startTime" className="text-xs font-medium flex items-center gap-1 mb-1">
+                <Clock className="w-3 h-3" />
+                Start *
               </Label>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="h-10 w-10"
+                  className="h-8 w-8"
                   onClick={() => adjustTime('startTime', -15)}
                 >
-                  <Minus className="w-4 h-4" />
+                  <Minus className="w-3 h-3" />
                 </Button>
                 <Input
                   id="startTime"
                   type="time"
                   value={event.startTime}
                   onChange={useCallback((e) => setEvent(prev => ({ ...prev, startTime: e.target.value })), [])}
-                  className="h-10 text-center"
+                  className="h-8 text-sm text-center"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="h-10 w-10"
+                  className="h-8 w-8"
                   onClick={() => adjustTime('startTime', 15)}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3 h-3" />
                 </Button>
               </div>
             </div>
             <div>
-              <Label htmlFor="endTime" className="text-sm font-medium flex items-center gap-1.5 mb-2">
-                <Clock className="w-3.5 h-3.5" />
-                End Time *
+              <Label htmlFor="endTime" className="text-xs font-medium flex items-center gap-1 mb-1">
+                <Clock className="w-3 h-3" />
+                End *
               </Label>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="h-10 w-10"
+                  className="h-8 w-8"
                   onClick={() => adjustTime('endTime', -15)}
                 >
-                  <Minus className="w-4 h-4" />
+                  <Minus className="w-3 h-3" />
                 </Button>
                 <Input
                   id="endTime"
@@ -553,16 +553,16 @@ export const UnifiedAppointmentDialog = ({
                   min={event.startTime}
                   value={event.endTime}
                   onChange={useCallback((e) => setEvent(prev => ({ ...prev, endTime: e.target.value })), [])}
-                  className="h-10 text-center"
+                  className="h-8 text-sm text-center"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="h-10 w-10"
+                  className="h-8 w-8"
                   onClick={() => adjustTime('endTime', 15)}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3 h-3" />
                 </Button>
               </div>
             </div>
@@ -576,18 +576,18 @@ export const UnifiedAppointmentDialog = ({
             </Alert>
           )}
 
-          {/* Quick Duration */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Quick Duration</Label>
-            <div className="flex flex-wrap gap-2">
-              {[15, 30, 60, 90, 120].map((minutes) => (
+          {/* Quick Duration - Compact */}
+          <div className="flex items-center gap-1.5">
+            <Label className="text-xs font-medium text-muted-foreground shrink-0">Duration:</Label>
+            <div className="flex flex-wrap gap-1">
+              {[15, 30, 60, 90].map((minutes) => (
                 <Button
                   key={minutes}
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setQuickDuration(minutes)}
-                  className="h-8"
+                  className="h-6 px-2 text-xs"
                 >
                   {minutes}m
                 </Button>
