@@ -1,8 +1,9 @@
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Type, Image, FileText, PenTool, CreditCard, Upload, Ruler, Wrench, Building2, Banknote } from "lucide-react";
+import { Plus, Type, Image, FileText, PenTool, CreditCard, Upload, Ruler, Wrench, Building2, Banknote, User, Calculator, Space } from "lucide-react";
 import { getAvailableBlocks } from "@/utils/documentTypeConfig";
+import { cn } from "@/lib/utils";
 
 interface BlockToolbarProps {
   onAddBlock: (type: string) => void;
@@ -11,79 +12,140 @@ interface BlockToolbarProps {
 
 // All possible block types with their metadata
 const ALL_BLOCK_TYPES = [
+  // ===== UNIVERSAL BLOCKS =====
   {
     type: 'document-header',
     label: 'Document Header',
     icon: Image,
-    description: 'Customizable header with logo, title & metadata'
+    description: 'Logo, company details, document title & metadata',
+    badge: null,
+    badgeColor: null
+  },
+  {
+    type: 'client-info',
+    label: 'Client Details',
+    icon: User,
+    description: '"Bill To" section with client name, address, email',
+    badge: null,
+    badgeColor: null
   },
   {
     type: 'text',
     label: 'Text Block',
     icon: Type,
-    description: 'Add custom text, paragraphs, or terms'
+    description: 'Custom text, paragraphs, or notes',
+    badge: null,
+    badgeColor: null
   },
   {
     type: 'image',
     label: 'Image Upload',
     icon: Upload,
-    description: 'Upload and position images'
+    description: 'Upload and position images',
+    badge: null,
+    badgeColor: null
   },
   {
     type: 'products',
-    label: 'Product Table',
+    label: 'Line Items Table',
     icon: FileText,
-    description: 'Display quote items in a table'
+    description: 'Products, services, and pricing table',
+    badge: null,
+    badgeColor: null
+  },
+  {
+    type: 'totals',
+    label: 'Totals Section',
+    icon: Calculator,
+    description: 'Subtotal, tax, and total amount',
+    badge: null,
+    badgeColor: null
+  },
+  {
+    type: 'spacer',
+    label: 'Spacer',
+    icon: Space,
+    description: 'Add vertical spacing between sections',
+    badge: null,
+    badgeColor: null
+  },
+  {
+    type: 'footer',
+    label: 'Document Footer',
+    icon: FileText,
+    description: 'Footer with T&C and contact info',
+    badge: null,
+    badgeColor: null
+  },
+  
+  // ===== QUOTE/PROPOSAL BLOCKS =====
+  {
+    type: 'terms-conditions',
+    label: 'Terms & Conditions',
+    icon: FileText,
+    description: 'Legal terms and acceptance conditions',
+    badge: 'Quote',
+    badgeColor: 'blue'
   },
   {
     type: 'signature',
     label: 'Client Signature',
     icon: PenTool,
-    description: 'Add client signature and date fields'
+    description: 'Acceptance signature and date',
+    badge: 'Quote',
+    badgeColor: 'blue'
   },
   {
     type: 'payment',
     label: 'Pay Now Button',
     icon: CreditCard,
-    description: 'Add payment button with options'
+    description: 'Online payment link/button',
+    badge: 'Quote',
+    badgeColor: 'blue'
   },
-  {
-    type: 'footer',
-    label: 'Footer',
-    icon: FileText,
-    description: 'Add footer with T&C from settings'
-  },
-  // Invoice-specific blocks
+  
+  // ===== INVOICE BLOCKS =====
   {
     type: 'payment-details',
-    label: 'Payment Details',
+    label: 'Bank/Payment Details',
     icon: Banknote,
-    description: 'Bank account details and payment instructions'
+    description: 'Bank account & payment instructions',
+    badge: 'Invoice',
+    badgeColor: 'green'
   },
   {
     type: 'registration-footer',
-    label: 'Registration Footer',
+    label: 'Business Registration',
     icon: Building2,
-    description: 'Company registration and tax numbers'
+    description: 'ABN/VAT/Tax registration (country-specific)',
+    badge: 'Invoice',
+    badgeColor: 'green'
   },
-  // Work order-specific blocks
+  
+  // ===== WORK ORDER BLOCKS =====
   {
     type: 'installation-details',
     label: 'Installation Details',
     icon: Wrench,
-    description: 'Installation date, time, and team info'
+    description: 'Install date, time, and team info',
+    badge: 'Work Order',
+    badgeColor: 'amber'
   },
   {
     type: 'measurements',
-    label: 'Measurements',
+    label: 'Measurements Table',
     icon: Ruler,
-    description: 'Detailed measurements table'
+    description: 'Detailed measurements for installers',
+    badge: 'Work Order',
+    badgeColor: 'amber'
   },
   {
     type: 'installer-signoff',
     label: 'Installer Sign-off',
     icon: PenTool,
-    description: 'Installer completion signature'
+    description: 'Completion confirmation signature',
+    badge: 'Work Order',
+    badgeColor: 'amber'
   }
 ];
 
@@ -113,11 +175,23 @@ export const BlockToolbar = ({ onAddBlock, documentType = 'quote' }: BlockToolba
                 key={blockType.type}
                 variant="ghost"
                 onClick={() => onAddBlock(blockType.type)}
-                className="flex items-start gap-3 h-auto p-3 text-left"
+                className="flex items-start gap-3 h-auto p-3 text-left w-full"
               >
                 <blockType.icon className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                <div>
-                  <div className="font-medium">{blockType.label}</div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{blockType.label}</span>
+                    {blockType.badge && (
+                      <span className={cn(
+                        "text-xs px-1.5 py-0.5 rounded",
+                        blockType.badgeColor === 'blue' && "bg-blue-100 text-blue-700",
+                        blockType.badgeColor === 'green' && "bg-green-100 text-green-700",
+                        blockType.badgeColor === 'amber' && "bg-amber-100 text-amber-700"
+                      )}>
+                        {blockType.badge}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     {blockType.description}
                   </div>

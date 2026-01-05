@@ -182,6 +182,7 @@ export const DOCUMENT_TYPE_BLOCKS: Record<string, string[]> = {
     'terms-conditions',
     'signature',
     'payment',
+    'spacer',
     'footer',
   ],
   proposal: [
@@ -194,6 +195,7 @@ export const DOCUMENT_TYPE_BLOCKS: Record<string, string[]> = {
     'terms-conditions',
     'signature',
     'payment',
+    'spacer',
     'footer',
   ],
   estimate: [
@@ -205,6 +207,7 @@ export const DOCUMENT_TYPE_BLOCKS: Record<string, string[]> = {
     'totals',
     'terms-conditions',
     'signature',
+    'spacer',
     'footer',
   ],
   invoice: [
@@ -215,6 +218,7 @@ export const DOCUMENT_TYPE_BLOCKS: Record<string, string[]> = {
     'totals',
     'payment-details',
     'registration-footer',
+    'spacer',
     'footer',
   ],
   'work-order': [
@@ -223,9 +227,11 @@ export const DOCUMENT_TYPE_BLOCKS: Record<string, string[]> = {
     'text',
     'image',
     'products',
+    'totals',
     'installation-details',
     'measurements',
     'installer-signoff',
+    'spacer',
     'footer',
   ],
   measurement: [
@@ -234,6 +240,7 @@ export const DOCUMENT_TYPE_BLOCKS: Record<string, string[]> = {
     'text',
     'measurements',
     'image',
+    'spacer',
     'footer',
   ],
   brochure: [
@@ -241,12 +248,14 @@ export const DOCUMENT_TYPE_BLOCKS: Record<string, string[]> = {
     'text',
     'image',
     'products',
+    'spacer',
     'footer',
   ],
   portfolio: [
     'document-header',
     'text',
     'image',
+    'spacer',
     'footer',
   ],
 };
