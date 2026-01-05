@@ -423,21 +423,29 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
           {/* Right: Document Info */}
           <div className="text-right">
             <h1 className="text-2xl font-semibold mb-4">
-              {content.documentTitle || 'Quote'}
+              {(() => {
+                const savedTitle = content.documentTitle;
+                const docTypeTitle = docConfig.documentTitle;
+                const legacyTitles = ['Quote', 'Invoice', 'Proposal', 'Estimate', 'Work Order'];
+                const isLegacyMismatch = savedTitle && legacyTitles.includes(savedTitle) && savedTitle !== docTypeTitle;
+                return isLegacyMismatch ? docTypeTitle : (savedTitle || docTypeTitle);
+              })()}
             </h1>
             <div className="text-sm space-y-1">
               <div className="flex items-center gap-2 justify-end">
                 <Hash className="h-3 w-3" />
-                <span>{content.quoteNumberLabel || 'Quote #'}: {getToken('quote_number')}</span>
+                <span>{content.quoteNumberLabel || docConfig.numberLabel}: {getToken('job_number')}</span>
               </div>
               <div className="flex items-center gap-2 justify-end">
                 <Calendar className="h-3 w-3" />
-                <span>Date: {getToken('date')}</span>
+                <span>{docConfig.primaryDateLabel}: {getToken('date')}</span>
               </div>
-              <div className="flex items-center gap-2 justify-end">
-                <Calendar className="h-3 w-3" />
-                <span>Valid Until: {getToken('valid_until')}</span>
-              </div>
+              {docConfig.secondaryDateLabel && (
+                <div className="flex items-center gap-2 justify-end">
+                  <Calendar className="h-3 w-3" />
+                  <span>{docConfig.secondaryDateLabel}: {getToken(docConfig.secondaryDateToken || 'valid_until')}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -472,7 +480,15 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
                 )}
               </div>
             )}
-            <h1 className="text-3xl font-bold">{content.documentTitle || 'Quote'}</h1>
+            <h1 className="text-3xl font-bold">
+              {(() => {
+                const savedTitle = content.documentTitle;
+                const docTypeTitle = docConfig.documentTitle;
+                const legacyTitles = ['Quote', 'Invoice', 'Proposal', 'Estimate', 'Work Order'];
+                const isLegacyMismatch = savedTitle && legacyTitles.includes(savedTitle) && savedTitle !== docTypeTitle;
+                return isLegacyMismatch ? docTypeTitle : (savedTitle || docTypeTitle);
+              })()}
+            </h1>
           </div>
           
           <div className="grid grid-cols-2 gap-8 pt-4 border-t">
@@ -495,9 +511,11 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
                 {getToken('client_phone') && <div>{getToken('client_phone')}</div>}
               </div>
               <div className="mt-3 pt-3 border-t text-sm">
-                <div><strong>Quote #:</strong> {getToken('job_number')}</div>
-                <div><strong>Date:</strong> {getToken('date')}</div>
-                <div><strong>Valid Until:</strong> {getToken('valid_until')}</div>
+                <div><strong>{docConfig.numberLabel}:</strong> {getToken('job_number')}</div>
+                <div><strong>{docConfig.primaryDateLabel}:</strong> {getToken('date')}</div>
+                {docConfig.secondaryDateLabel && (
+                  <div><strong>{docConfig.secondaryDateLabel}:</strong> {getToken(docConfig.secondaryDateToken || 'valid_until')}</div>
+                )}
               </div>
             </div>
           </div>
