@@ -484,10 +484,17 @@ const LivePreviewBlock = ({
       // Get country-specific labels
       const labels = getRegistrationLabels(country);
       
-      if (businessSettings.abn) parts.push(`ABN: ${businessSettings.abn}`);
+      // Only show ABN for Australia (the only country that uses ABN)
+      if (country === 'Australia' && businessSettings.abn) {
+        parts.push(`ABN: ${businessSettings.abn}`);
+      }
+      
+      // Registration number with country-specific label
       if (businessSettings.registration_number) {
         parts.push(`${labels.registrationLabel}: ${businessSettings.registration_number}`);
       }
+      
+      // Tax number with country-specific label
       if (businessSettings.tax_number) {
         parts.push(`${labels.taxLabel}: ${businessSettings.tax_number}`);
       }

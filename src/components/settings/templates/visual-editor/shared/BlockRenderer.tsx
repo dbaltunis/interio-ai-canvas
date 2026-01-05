@@ -88,10 +88,17 @@ export const resolveToken = (
     // Get country-specific labels
     const labels = getRegistrationLabels(country);
     
-    if (businessSettings.abn) parts.push(`ABN: ${businessSettings.abn}`);
+    // Only show ABN for Australia (the only country that uses ABN)
+    if (country === 'Australia' && businessSettings.abn) {
+      parts.push(`ABN: ${businessSettings.abn}`);
+    }
+    
+    // Registration number with country-specific label
     if (businessSettings.registration_number) {
       parts.push(`${labels.registrationLabel}: ${businessSettings.registration_number}`);
     }
+    
+    // Tax number with country-specific label
     if (businessSettings.tax_number) {
       parts.push(`${labels.taxLabel}: ${businessSettings.tax_number}`);
     }
@@ -259,11 +266,24 @@ export const DocumentHeaderBlock: React.FC<BlockRendererProps> = ({
           {/* Document Title - Dynamic based on document type */}
           <h1 style={{ fontSize: '30px', fontWeight: 'bold', color: '#111827', letterSpacing: '-0.025em', marginTop: '16px' }}>
             {isEditable ? renderText(
-              content.documentTitle || docConfig.documentTitle,
+              // Use doc type title if saved title is from a different type (legacy fix)
+              (() => {
+                const savedTitle = content.documentTitle;
+                const docTypeTitle = docConfig.documentTitle;
+                const legacyTitles = ['Quote', 'Invoice', 'Proposal', 'Estimate', 'Work Order', 'Measurement', 'Brochure', 'Portfolio'];
+                const isLegacyMismatch = savedTitle && legacyTitles.includes(savedTitle) && savedTitle !== docTypeTitle;
+                return isLegacyMismatch ? docTypeTitle : (savedTitle || docTypeTitle);
+              })(),
               (v) => updateContent({ documentTitle: v }),
               'text-3xl font-bold',
               'Document Title'
-            ) : (content.documentTitle || docConfig.documentTitle)}
+            ) : (() => {
+              const savedTitle = content.documentTitle;
+              const docTypeTitle = docConfig.documentTitle;
+              const legacyTitles = ['Quote', 'Invoice', 'Proposal', 'Estimate', 'Work Order', 'Measurement', 'Brochure', 'Portfolio'];
+              const isLegacyMismatch = savedTitle && legacyTitles.includes(savedTitle) && savedTitle !== docTypeTitle;
+              return isLegacyMismatch ? docTypeTitle : (savedTitle || docTypeTitle);
+            })()}
           </h1>
 
           {/* Tagline */}
