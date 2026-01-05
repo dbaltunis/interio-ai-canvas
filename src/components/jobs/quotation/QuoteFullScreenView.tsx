@@ -160,6 +160,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
               projectData={projectData}
               isEditable={false}
               isPrintMode={false}
+              documentType={selectedTemplate?.template_style || 'quote'}
               showDetailedBreakdown={showDetailedBreakdown}
               showImages={showImages}
               onSettingsChange={(settings) => {
@@ -181,6 +182,7 @@ export const QuoteFullScreenView: React.FC<QuoteFullScreenViewProps> = ({
             projectData={projectData}
             isEditable={false}
             isPrintMode={true}
+            documentType={selectedTemplate?.template_style || 'quote'}
             showDetailedBreakdown={showDetailedBreakdown}
             showImages={showImages}
           />
