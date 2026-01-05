@@ -40,6 +40,7 @@ import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { useQuoteCustomData } from "@/hooks/useQuoteCustomData";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { getRegistrationLabels } from '@/utils/businessRegistrationLabels';
 import { DocumentHeaderBlock, LineItemsBlock, TotalsBlock, PaymentDetailsBlock, RegistrationFooterBlock, InstallationDetailsBlock, InstallerSignoffBlock } from './shared/BlockRenderer';
 
 // Lazy load the editable version to avoid circular dependencies and reduce bundle size
@@ -481,7 +482,6 @@ const LivePreviewBlock = ({
       const parts: string[] = [];
       
       // Get country-specific labels
-      const { getRegistrationLabels } = require('@/utils/businessRegistrationLabels');
       const labels = getRegistrationLabels(country);
       
       if (businessSettings.abn) parts.push(`ABN: ${businessSettings.abn}`);

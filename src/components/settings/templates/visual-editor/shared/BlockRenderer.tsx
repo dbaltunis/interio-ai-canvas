@@ -17,6 +17,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { getDocumentTypeConfig, type DocumentTypeConfig } from '@/utils/documentTypeConfig';
+import { getRegistrationLabels } from '@/utils/businessRegistrationLabels';
 
 interface BlockRendererProps {
   block: any;
@@ -84,8 +85,7 @@ export const resolveToken = (
     const country = businessSettings.country || 'Australia';
     const parts: string[] = [];
     
-    // Import country-specific labels dynamically
-    const { getRegistrationLabels } = require('@/utils/businessRegistrationLabels');
+    // Get country-specific labels
     const labels = getRegistrationLabels(country);
     
     if (businessSettings.abn) parts.push(`ABN: ${businessSettings.abn}`);
