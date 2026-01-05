@@ -41,7 +41,7 @@ import { formatJobNumber } from "@/lib/format-job-number";
 import { useQuoteCustomData } from "@/hooks/useQuoteCustomData";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { getRegistrationLabels } from '@/utils/businessRegistrationLabels';
-import { DocumentHeaderBlock, LineItemsBlock, TotalsBlock, PaymentDetailsBlock, RegistrationFooterBlock, InstallationDetailsBlock, InstallerSignoffBlock } from './shared/BlockRenderer';
+import { DocumentHeaderBlock, LineItemsBlock, TotalsBlock, PaymentDetailsBlock, RegistrationFooterBlock, InstallationDetailsBlock, InstallerSignoffBlock, InvoiceStatusBlock, LatePaymentTermsBlock } from './shared/BlockRenderer';
 
 // Lazy load the editable version to avoid circular dependencies and reduce bundle size
 const EditableLivePreview = React.lazy(() => import('./EditableLivePreview'));
@@ -1900,12 +1900,34 @@ const LivePreviewBlock = ({
         />
       );
 
+    case 'invoice-status':
+      return (
+        <InvoiceStatusBlock
+          block={block}
+          projectData={projectData}
+          userTimezone={userTimezone}
+          userDateFormat={userDateFormat}
+          isPrintMode={isPrintMode}
+        />
+      );
+
+    case 'late-payment-terms':
+      return (
+        <LatePaymentTermsBlock
+          block={block}
+          projectData={projectData}
+          userTimezone={userTimezone}
+          userDateFormat={userDateFormat}
+          isPrintMode={isPrintMode}
+        />
+      );
+
     default:
       console.error('❌ [LivePreview] UNKNOWN BLOCK TYPE:', {
         originalType: block.type,
         originalTypeString: String(block.type),
         normalizedType: blockType,
-        allAvailableCases: ['document-header', 'client-info', 'products', 'totals', 'terms', 'signature', 'payment', 'footer', 'payment-details', 'registration-footer', 'installation-details', 'installer-signoff'],
+        allAvailableCases: ['document-header', 'client-info', 'products', 'totals', 'terms', 'signature', 'payment', 'footer', 'payment-details', 'registration-footer', 'installation-details', 'installer-signoff', 'invoice-status', 'late-payment-terms'],
         blockData: block
       });
       return (
