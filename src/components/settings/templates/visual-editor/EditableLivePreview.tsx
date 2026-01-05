@@ -380,8 +380,73 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
     const client = project.client || {};
     // Use projectData businessSettings first, then userBusinessSettings as fallback
     const businessSettings = projectData?.businessSettings || userBusinessSettings || {};
+    const country = businessSettings?.country || 'Australia';
     
-    const tokens = {
+    // Helper to format bank details based on country
+    const formatBankDetails = () => {
+      if (!businessSettings) return 'Bank details not configured';
+      const parts: string[] = [];
+      
+      if (businessSettings.bank_name) parts.push(`Bank: ${businessSettings.bank_name}`);
+      if (businessSettings.bank_account_name) parts.push(`Account Name: ${businessSettings.bank_account_name}`);
+      
+      // Country-specific formatting
+      if (country === 'Australia' && businessSettings.bank_bsb) {
+        parts.push(`BSB: ${businessSettings.bank_bsb}`);
+        if (businessSettings.bank_account_number) parts.push(`Account: ${businessSettings.bank_account_number}`);
+      } else if (country === 'United Kingdom' && businessSettings.bank_sort_code) {
+        parts.push(`Sort Code: ${businessSettings.bank_sort_code}`);
+        if (businessSettings.bank_account_number) parts.push(`Account: ${businessSettings.bank_account_number}`);
+      } else if ((country === 'United States' || country === 'Canada') && businessSettings.bank_routing_number) {
+        parts.push(`Routing: ${businessSettings.bank_routing_number}`);
+        if (businessSettings.bank_account_number) parts.push(`Account: ${businessSettings.bank_account_number}`);
+      } else if (businessSettings.bank_iban) {
+        parts.push(`IBAN: ${businessSettings.bank_iban}`);
+        if (businessSettings.bank_swift_bic) parts.push(`BIC/SWIFT: ${businessSettings.bank_swift_bic}`);
+      } else if (businessSettings.bank_account_number) {
+        parts.push(`Account: ${businessSettings.bank_account_number}`);
+      }
+      
+      return parts.length > 0 ? parts.join(' | ') : 'Bank details not configured';
+    };
+
+    // Helper to format registration footer based on country
+    const formatRegistrationFooter = () => {
+      if (!businessSettings) return '';
+      const parts: string[] = [];
+      
+      // Country-specific registration labels
+      if (country === 'Australia' && businessSettings.abn) {
+        parts.push(`ABN: ${businessSettings.abn}`);
+      }
+      if (businessSettings.registration_number) {
+        const regLabel = country === 'Lithuania' ? 'Įmonės kodas' : 
+                        country === 'United Kingdom' ? 'Company Reg' :
+                        country === 'France' ? 'SIRET' :
+                        country === 'Germany' ? 'HRB' :
+                        country === 'Poland' ? 'KRS' :
+                        country === 'Ireland' ? 'CRO' :
+                        country === 'New Zealand' ? 'NZBN' :
+                        'Reg';
+        parts.push(`${regLabel}: ${businessSettings.registration_number}`);
+      }
+      if (businessSettings.tax_number) {
+        const taxLabel = country === 'Australia' ? 'GST' :
+                        country === 'Lithuania' ? 'PVM' :
+                        country === 'United Kingdom' || country === 'Ireland' ? 'VAT' :
+                        country === 'France' ? 'TVA' :
+                        country === 'Germany' ? 'USt-ID' :
+                        country === 'Poland' ? 'NIP' :
+                        country === 'United States' ? 'EIN' :
+                        country === 'Canada' ? 'GST/HST' :
+                        'Tax';
+        parts.push(`${taxLabel}: ${businessSettings.tax_number}`);
+      }
+      
+      return parts.length > 0 ? parts.join(' | ') : '';
+    };
+    
+    const tokens: Record<string, string> = {
       // Company information - no hardcoded fallbacks
       company_name: businessSettings.company_name || '',
       company_legal_name: businessSettings.legal_name || '',
@@ -395,6 +460,9 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
       company_registration_number: businessSettings.registration_number || '',
       company_tax_number: businessSettings.tax_number || '',
       company_organization_type: businessSettings.organization_type || '',
+      // NEW: Bank and registration tokens
+      company_bank_details: formatBankDetails(),
+      company_registration_footer: formatRegistrationFooter(),
       // Client information - sample data for preview only
       client_name: client.name || 'John Smith',
       client_email: client.email || 'client@example.com', 
@@ -407,12 +475,13 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
       project_name: project.name || 'Project',
       date: project.created_at ? new Date(project.created_at).toLocaleDateString() : new Date().toLocaleDateString(),
       valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+      due_date: project.due_date ? new Date(project.due_date).toLocaleDateString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
       subtotal: projectData?.subtotal ? `$${projectData.subtotal.toFixed(2)}` : '$0.00',
       tax_amount: projectData?.taxAmount ? `$${projectData.taxAmount.toFixed(2)}` : '$0.00',
       tax_rate: projectData?.taxRate ? `${(projectData.taxRate * 100).toFixed(1)}%` : '8.5%',
       total: projectData?.total ? `$${projectData.total.toFixed(2)}` : '$0.00',
     };
-    return tokens[token as keyof typeof tokens] || token;
+    return tokens[token] || token;
   };
 
   switch (block.type) {
