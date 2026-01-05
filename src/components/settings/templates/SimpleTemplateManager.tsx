@@ -276,17 +276,31 @@ export const SimpleTemplateManager: React.FC = () => {
     },
     businessSettings: {
       company_name: businessSettings?.company_name || 'Your Company Name',
-      address: businessSettings?.address || '',
-      city: businessSettings?.city || '',
-      state: businessSettings?.state || '',
-      zip_code: businessSettings?.zip_code || '',
-      business_phone: businessSettings?.business_phone || '',
-      business_email: businessSettings?.business_email || '',
-      website: businessSettings?.website || '',
+      address: businessSettings?.address || '123 Business Street',
+      city: businessSettings?.city || 'Business City',
+      state: businessSettings?.state || 'ST',
+      zip_code: businessSettings?.zip_code || '12345',
+      business_phone: businessSettings?.business_phone || '(555) 123-4567',
+      business_email: businessSettings?.business_email || 'hello@yourcompany.com',
+      website: businessSettings?.website || 'www.yourcompany.com',
       company_logo_url: businessSettings?.company_logo_url || null,
       abn: businessSettings?.abn || '',
-      country: businessSettings?.country || ''
+      country: businessSettings?.country || 'Australia',
+      // Bank details for invoice preview
+      bank_name: businessSettings?.bank_name || 'Sample Bank',
+      bank_account_name: businessSettings?.bank_account_name || 'Your Company Name',
+      bank_bsb: businessSettings?.bank_bsb || '123-456',
+      bank_account_number: businessSettings?.bank_account_number || '12345678',
+      bank_iban: businessSettings?.bank_iban || '',
+      bank_swift_bic: businessSettings?.bank_swift_bic || '',
+      // Registration details for invoice footer
+      registration_number: businessSettings?.registration_number || 'REG-12345',
+      tax_number: businessSettings?.tax_number || 'TAX-67890',
+      default_payment_terms_days: businessSettings?.default_payment_terms_days || 30
     },
+    // Invoice-specific preview data
+    paymentStatus: 'unpaid',
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     treatments: [
       {
         id: 'treatment-1',
