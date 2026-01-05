@@ -57,13 +57,34 @@ interface Template {
   updated_at?: string;
 }
 
-// Default blank template blocks
-const getBlankTemplateBlocks = (category: string) => [
-  { id: 'header', type: 'header', content: { title: category.charAt(0).toUpperCase() + category.slice(1), showLogo: true } },
-  { id: 'client', type: 'client-info', content: {} },
-  { id: 'items', type: 'line-items', content: {} },
-  { id: 'totals', type: 'totals', content: {} }
-];
+// Default blank template blocks - document type specific
+const getBlankTemplateBlocks = (category: string) => {
+  const baseBlocks = [
+    { id: 'header', type: 'document-header', content: { title: category.charAt(0).toUpperCase() + category.slice(1), showLogo: true } },
+    { id: 'client', type: 'client-info', content: {} },
+    { id: 'items', type: 'line-items', content: {} },
+    { id: 'totals', type: 'totals', content: {} }
+  ];
+  
+  // Add invoice-specific blocks
+  if (category === 'invoice') {
+    baseBlocks.push({ id: 'payment-details', type: 'payment-details', content: {} });
+    baseBlocks.push({ id: 'registration', type: 'registration-footer', content: {} });
+  }
+  
+  // Add work-order-specific blocks
+  if (category === 'work-order') {
+    baseBlocks.push({ id: 'installation', type: 'installation-details', content: {} });
+    baseBlocks.push({ id: 'signoff', type: 'installer-signoff', content: {} });
+  }
+  
+  // Add signature block for quotes/proposals/estimates
+  if (['quote', 'proposal', 'estimate'].includes(category)) {
+    baseBlocks.push({ id: 'signature', type: 'signature', content: {} });
+  }
+  
+  return baseBlocks;
+};
 
 // Sortable template row component
 const SortableTemplateRow = ({ 
@@ -734,7 +755,7 @@ export const SimpleTemplateManager: React.FC = () => {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1.5">
-                All types have the same features - choose based on how you want to label the document.
+                Each type has specific labels and features optimized for that document type.
               </p>
             </div>
           </div>
@@ -777,6 +798,7 @@ export const SimpleTemplateManager: React.FC = () => {
                 projectData={displayProjectData}
                 isEditable={true}
                 onBlocksChange={saveTemplateChanges}
+                documentType={selectedTemplate.category}
               />
             )}
           </div>

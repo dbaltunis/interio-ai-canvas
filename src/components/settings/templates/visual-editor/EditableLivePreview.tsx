@@ -14,6 +14,7 @@ import {
   Phone,
   Mail,
   Calendar as CalendarIcon,
+  Calendar,
   DollarSign,
   Hash,
   FileText,
@@ -37,7 +38,8 @@ import {
   X,
   ChevronUp,
   ChevronDown,
-  Loader2
+  Loader2,
+  CreditCard
 } from "lucide-react";
 import { SignatureCanvas } from './SignatureCanvas';
 import { cn } from "@/lib/utils";
@@ -338,9 +340,10 @@ interface EditableLivePreviewBlockProps {
   projectData?: any;
   onBlockUpdate: (blockId: string, updates: any) => void;
   onBlockRemove: (blockId: string) => void;
+  documentType?: string;
 }
 
-const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRemove }: EditableLivePreviewBlockProps) => {
+const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRemove, documentType = 'quote' }: EditableLivePreviewBlockProps) => {
   const { data: userBusinessSettings } = useBusinessSettings();
   const content = block.content || {};
   const style = content.style || {};
@@ -466,6 +469,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
             isEditable={true}
             renderEditableText={renderEditableText}
             onContentChange={updateBlockContent}
+            documentType={documentType}
           />
         </EditableContainer>
       );
@@ -1439,6 +1443,7 @@ interface EditableLivePreviewProps {
   onBlocksChange: (blocks: any[]) => void;
   containerStyles?: any;
   onContainerStylesChange?: (styles: any) => void;
+  documentType?: string;
 }
 
 export const EditableLivePreview = ({ 
@@ -1446,12 +1451,17 @@ export const EditableLivePreview = ({
   projectData, 
   onBlocksChange,
   containerStyles = {},
-  onContainerStylesChange 
+  onContainerStylesChange,
+  documentType = 'quote'
 }: EditableLivePreviewProps) => {
   const [showPageControls, setShowPageControls] = useState(false);
   const [showComponentLibrary, setShowComponentLibrary] = useState(false);
 
-  const availableBlocks = [
+  // Import available blocks from document type config
+  const { getAvailableBlocks } = require('@/utils/documentTypeConfig');
+  const allowedBlockTypes = getAvailableBlocks(documentType);
+
+  const allBlocks = [
     { type: 'document-header', name: 'Document Header', icon: ImageIcon, description: 'Customizable header with logo, title & metadata' },
     { type: 'header', name: 'Company Header', icon: Building2, description: 'Company info & logo' },
     { type: 'client-info', name: 'Client Details', icon: User, description: 'Client information' },
@@ -1459,13 +1469,25 @@ export const EditableLivePreview = ({
     { type: 'editable-text-field', name: 'Editable Text Field', icon: Edit3, description: 'User input with bold/regular options' },
     { type: 'image-uploader', name: 'Image Uploader', icon: Upload, description: 'Upload images for proposals' },
     { type: 'line-items', name: 'Line Items Table', icon: ShoppingCart, description: 'Professional itemized list' },
+    { type: 'products', name: 'Products Table', icon: ShoppingCart, description: 'Products and services table' },
     { type: 'terms-conditions', name: 'Terms & Conditions', icon: FileText, description: 'Legal terms and policies' },
     { type: 'payment-info', name: 'Payment Information', icon: DollarSign, description: 'Payment methods and schedule' },
+    { type: 'payment-details', name: 'Payment Details', icon: CreditCard, description: 'Bank account and payment info (Invoice)' },
+    { type: 'registration-footer', name: 'Registration Footer', icon: FileText, description: 'ABN/VAT registration info (Invoice)' },
+    { type: 'installation-details', name: 'Installation Details', icon: Calendar, description: 'Installation date & info (Work Order)' },
+    { type: 'installer-signoff', name: 'Installer Sign-off', icon: PenTool, description: 'Installer signature block (Work Order)' },
     { type: 'project-scope', name: 'Project Scope', icon: Calculator, description: 'What\'s included and excluded' },
     { type: 'signature', name: 'Signature Block', icon: PenTool, description: 'Authorization signatures' },
     { type: 'spacer', name: 'Spacer', icon: Space, description: 'Add vertical space' },
     { type: 'divider', name: 'Divider', icon: Minus, description: 'Section separator' },
+    { type: 'footer', name: 'Footer', icon: FileText, description: 'Document footer' },
   ];
+
+  // Filter blocks based on document type
+  const availableBlocks = allBlocks.filter(block => 
+    allowedBlockTypes.includes(block.type) || 
+    ['text', 'spacer', 'divider', 'header', 'client-info', 'editable-text-field'].includes(block.type)
+  );
 
   const addBlock = (type: string) => {
     // Preserve scroll position
@@ -1841,6 +1863,7 @@ export const EditableLivePreview = ({
                 projectData={projectData}
                 onBlockUpdate={handleBlockUpdate}
                 onBlockRemove={removeBlock}
+                documentType={documentType}
               />
             </div>
           ))}
