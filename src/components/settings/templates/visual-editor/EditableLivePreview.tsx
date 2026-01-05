@@ -1326,7 +1326,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
         </EditableContainer>
       );
 
-    case 'footer':
+    case 'footer': {
       const footerBusinessSettings = projectData?.businessSettings || {};
       return (
         <EditableContainer 
@@ -1385,6 +1385,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
           </div>
         </EditableContainer>
       );
+    }
 
     // Invoice-specific blocks
     case 'payment-details':
@@ -1440,7 +1441,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
         </EditableContainer>
       );
 
-    case 'invoice-status':
+    case 'invoice-status': {
       const paymentStatus = projectData?.quote?.payment_status || 'unpaid';
       const amountPaid = projectData?.quote?.amount_paid || 0;
       const total = projectData?.quote?.total || projectData?.totals?.grandTotal || 0;
@@ -1493,6 +1494,7 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
           </div>
         </EditableContainer>
       );
+    }
 
     case 'late-payment-terms':
       return (
