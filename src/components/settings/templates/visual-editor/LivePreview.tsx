@@ -40,7 +40,7 @@ import { buildClientBreakdown } from "@/utils/quotes/buildClientBreakdown";
 import { formatJobNumber } from "@/lib/format-job-number";
 import { useQuoteCustomData } from "@/hooks/useQuoteCustomData";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
-import { DocumentHeaderBlock, LineItemsBlock, TotalsBlock } from './shared/BlockRenderer';
+import { DocumentHeaderBlock, LineItemsBlock, TotalsBlock, PaymentDetailsBlock, RegistrationFooterBlock, InstallationDetailsBlock, InstallerSignoffBlock } from './shared/BlockRenderer';
 
 // Lazy load the editable version to avoid circular dependencies and reduce bundle size
 const EditableLivePreview = React.lazy(() => import('./EditableLivePreview'));
@@ -335,6 +335,7 @@ interface LivePreviewBlockProps {
   projectData?: any;
   isEditable?: boolean;
   isPrintMode?: boolean;
+  documentType?: string;
   userBusinessSettings?: any;
   userPreferences?: any;
   showDetailedBreakdown?: boolean;
@@ -351,6 +352,7 @@ const LivePreviewBlock = ({
   projectData, 
   isEditable, 
   isPrintMode = false, 
+  documentType = 'quote',
   userBusinessSettings,
   userPreferences,
   showDetailedBreakdown: propsShowDetailed,
@@ -628,6 +630,7 @@ const LivePreviewBlock = ({
           userDateFormat={userDateFormat}
           isPrintMode={isPrintMode}
           isEditable={false}
+          documentType={documentType}
         />
       );
 
@@ -1901,12 +1904,56 @@ const LivePreviewBlock = ({
         </div>
       );
 
+    // Invoice-specific blocks
+    case 'payment-details':
+      return (
+        <PaymentDetailsBlock
+          block={block}
+          projectData={projectData}
+          userTimezone={userTimezone}
+          userDateFormat={userDateFormat}
+          isPrintMode={isPrintMode}
+        />
+      );
+      
+    case 'registration-footer':
+      return (
+        <RegistrationFooterBlock
+          block={block}
+          projectData={projectData}
+          userTimezone={userTimezone}
+          userDateFormat={userDateFormat}
+          isPrintMode={isPrintMode}
+        />
+      );
+    
+    // Work order-specific blocks
+    case 'installation-details':
+      return (
+        <InstallationDetailsBlock
+          block={block}
+          projectData={projectData}
+          userTimezone={userTimezone}
+          userDateFormat={userDateFormat}
+          isPrintMode={isPrintMode}
+        />
+      );
+      
+    case 'installer-signoff':
+      return (
+        <InstallerSignoffBlock
+          block={block}
+          projectData={projectData}
+          isPrintMode={isPrintMode}
+        />
+      );
+
     default:
       console.error('❌ [LivePreview] UNKNOWN BLOCK TYPE:', {
         originalType: block.type,
         originalTypeString: String(block.type),
         normalizedType: blockType,
-        allAvailableCases: ['document-header', 'client-info', 'products', 'totals', 'terms', 'signature', 'payment', 'footer'],
+        allAvailableCases: ['document-header', 'client-info', 'products', 'totals', 'terms', 'signature', 'payment', 'footer', 'payment-details', 'registration-footer', 'installation-details', 'installer-signoff'],
         blockData: block
       });
       return (
@@ -1927,6 +1974,7 @@ interface LivePreviewProps {
   projectData?: any;
   isEditable?: boolean;
   isPrintMode?: boolean;
+  documentType?: string;
   onBlocksChange?: (blocks: any[]) => void;
   containerStyles?: any;
   onContainerStylesChange?: (styles: any) => void;
@@ -1943,6 +1991,7 @@ export const LivePreview = ({
   projectData, 
   isEditable = false,
   isPrintMode = false,
+  documentType = 'quote',
   onBlocksChange,
   containerStyles,
   onContainerStylesChange,
