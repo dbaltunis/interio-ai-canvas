@@ -19,6 +19,13 @@ export interface DocumentTypeConfig {
   showInstallerInfo: boolean;
   showMeasurements: boolean;
   documentTitle: string;
+  // Invoice-specific fields
+  requiresSupplyDate?: boolean;
+  requiresPONumber?: boolean;
+  showsPaymentReference?: boolean;
+  showsTaxBreakdown?: boolean;
+  showsAmountPaid?: boolean;
+  showsLatePaymentTerms?: boolean;
 }
 
 export const DOCUMENT_TYPE_CONFIG: Record<string, DocumentTypeConfig> = {
@@ -89,6 +96,13 @@ export const DOCUMENT_TYPE_CONFIG: Record<string, DocumentTypeConfig> = {
     showInstallerInfo: false,
     showMeasurements: false,
     documentTitle: 'Invoice',
+    // Invoice-specific enhancements
+    requiresSupplyDate: true,
+    requiresPONumber: true,
+    showsPaymentReference: true,
+    showsTaxBreakdown: true,
+    showsAmountPaid: true,
+    showsLatePaymentTerms: true,
   },
   'work-order': {
     numberLabel: 'Work Order #',
@@ -215,8 +229,11 @@ export const DOCUMENT_TYPE_BLOCKS: Record<string, string[]> = {
     'client-info',
     'text',
     'products',
+    'tax-breakdown',
     'totals',
+    'invoice-status',
     'payment-details',
+    'late-payment-terms',
     'registration-footer',
     'spacer',
     'footer',

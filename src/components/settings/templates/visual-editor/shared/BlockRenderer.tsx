@@ -106,6 +106,50 @@ export const resolveToken = (
     return parts.join(' | ');
   };
   
+  // Helper to format late payment terms
+  const formatLatePaymentTerms = () => {
+    if (!businessSettings) return '';
+    const parts: string[] = [];
+    
+    if (businessSettings.late_payment_interest_rate && businessSettings.late_payment_interest_rate > 0) {
+      parts.push(`Interest of ${businessSettings.late_payment_interest_rate}% per month will be charged on overdue amounts.`);
+    }
+    
+    if (businessSettings.late_payment_fee_amount && businessSettings.late_payment_fee_amount > 0) {
+      const currency = businessSettings.currency || projectData?.currency || 'AUD';
+      parts.push(`A late payment fee of ${formatCurrency(businessSettings.late_payment_fee_amount, currency)} may apply.`);
+    }
+    
+    if (businessSettings.late_payment_terms) {
+      parts.push(businessSettings.late_payment_terms);
+    }
+    
+    return parts.join(' ');
+  };
+
+  // Helper to calculate balance due
+  const calculateBalanceDue = () => {
+    const total = projectData?.total || 0;
+    const amountPaid = project.amount_paid || projectData?.amountPaid || 0;
+    return total - amountPaid;
+  };
+
+  // Helper to determine if invoice is overdue
+  const isInvoiceOverdue = () => {
+    if (!project.due_date) return false;
+    const dueDate = new Date(project.due_date);
+    const today = new Date();
+    const paymentStatus = project.payment_status || 'unpaid';
+    return today > dueDate && paymentStatus !== 'paid';
+  };
+
+  // Helper to get effective payment status
+  const getEffectivePaymentStatus = () => {
+    const status = project.payment_status || 'unpaid';
+    if (status === 'unpaid' && isInvoiceOverdue()) return 'overdue';
+    return status;
+  };
+
   const tokens: Record<string, any> = {
     // Company information - no hardcoded fallbacks, show empty if not configured
     company_name: businessSettings?.company_name || '',
@@ -127,6 +171,8 @@ export const resolveToken = (
     company_bank_account_name: businessSettings?.bank_account_name || '',
     company_bank_details: formatBankDetails(),
     company_registration_footer: formatRegistrationFooter(),
+    // Late payment terms
+    late_payment_terms: formatLatePaymentTerms(),
     
     // Client information
     client_name: client.name || '',
@@ -145,6 +191,17 @@ export const resolveToken = (
     quote_number: project.job_number || project.quote_number || 'QT-2024-001',
     job_number: project.job_number || project.quote_number || 'JOB-2024-001',
     project_name: project.name || 'Project',
+    
+    // Invoice-specific fields
+    supply_date: project.supply_date 
+      ? formatInTimeZone(new Date(project.supply_date), userTimezone, userDateFormat)
+      : '',
+    po_number: project.po_number || '',
+    payment_reference: project.payment_reference || 
+      `${businessSettings?.payment_reference_prefix || 'INV'}-${project.job_number || project.quote_number || 'REF'}`,
+    payment_status: getEffectivePaymentStatus(),
+    amount_paid: formatCurrency(project.amount_paid || projectData?.amountPaid || 0, getDefaultCurrency()),
+    balance_due: formatCurrency(calculateBalanceDue(), getDefaultCurrency()),
     
     // Dates
     date: project.start_date 
@@ -728,6 +785,130 @@ export const TermsConditionsBlock: React.FC<BlockRendererProps> = ({
   );
 };
 
+// ============= INVOICE STATUS BLOCK (Shows payment status, amount paid, balance due) =============
+export const InvoiceStatusBlock: React.FC<BlockRendererProps> = ({
+  block,
+  projectData,
+  userTimezone = 'UTC',
+  userDateFormat = 'M/d/yyyy'
+}) => {
+  const content = block.content || {};
+  const businessSettings = projectData?.businessSettings || {};
+  const style = block.style || {};
+  
+  const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
+  
+  const paymentStatus = getToken('payment_status');
+  const amountPaid = getToken('amount_paid');
+  const balanceDue = getToken('balance_due');
+  const total = getToken('total');
+  
+  // Determine status colors
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid': return { bg: '#dcfce7', text: '#166534', border: '#86efac' };
+      case 'partial': return { bg: '#fef3c7', text: '#92400e', border: '#fde68a' };
+      case 'overdue': return { bg: '#fef2f2', text: '#991b1b', border: '#fecaca' };
+      default: return { bg: '#fef3c7', text: '#92400e', border: '#fde68a' };
+    }
+  };
+  
+  const statusColors = getStatusColor(paymentStatus);
+  
+  return (
+    <div 
+      className="mb-6 p-4 rounded-lg border"
+      style={{
+        backgroundColor: style.backgroundColor || statusColors.bg,
+        borderColor: style.borderColor || statusColors.border
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {paymentStatus === 'paid' ? (
+            <CheckCircle2 className="h-6 w-6" style={{ color: statusColors.text }} />
+          ) : paymentStatus === 'overdue' ? (
+            <AlertCircle className="h-6 w-6" style={{ color: statusColors.text }} />
+          ) : (
+            <Clock className="h-6 w-6" style={{ color: statusColors.text }} />
+          )}
+          <div>
+            <span 
+              className="px-3 py-1 rounded-full text-sm font-semibold"
+              style={{ 
+                backgroundColor: statusColors.border,
+                color: statusColors.text
+              }}
+            >
+              {paymentStatus === 'paid' ? 'PAID' : 
+               paymentStatus === 'partial' ? 'PARTIALLY PAID' :
+               paymentStatus === 'overdue' ? 'OVERDUE' : 'UNPAID'}
+            </span>
+          </div>
+        </div>
+        
+        <div className="text-right">
+          <div className="text-sm text-gray-600">
+            <span>Total: </span>
+            <span className="font-medium">{total}</span>
+          </div>
+          {paymentStatus !== 'unpaid' && (
+            <div className="text-sm text-gray-600">
+              <span>Amount Paid: </span>
+              <span className="font-medium text-green-700">{amountPaid}</span>
+            </div>
+          )}
+          {paymentStatus !== 'paid' && (
+            <div className="text-base font-bold mt-1" style={{ color: statusColors.text }}>
+              <span>Balance Due: </span>
+              <span>{balanceDue}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============= LATE PAYMENT TERMS BLOCK (Invoice-specific) =============
+export const LatePaymentTermsBlock: React.FC<BlockRendererProps> = ({
+  block,
+  projectData,
+  userTimezone = 'UTC',
+  userDateFormat = 'M/d/yyyy'
+}) => {
+  const content = block.content || {};
+  const businessSettings = projectData?.businessSettings || {};
+  
+  const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
+  
+  const latePaymentTerms = getToken('late_payment_terms');
+  
+  if (!latePaymentTerms) {
+    return null;
+  }
+
+  const style = block.style || {};
+  
+  return (
+    <div 
+      className="mb-6 p-3 rounded border"
+      style={{
+        backgroundColor: style.backgroundColor || '#fffbeb',
+        borderColor: style.borderColor || '#fef3c7'
+      }}
+    >
+      <div className="flex items-start gap-2">
+        <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+        <div className="text-xs text-amber-800">
+          <span className="font-medium">Late Payment Policy: </span>
+          <span>{latePaymentTerms}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ============= PAYMENT DETAILS BLOCK (Invoice-specific) =============
 export const PaymentDetailsBlock: React.FC<BlockRendererProps> = ({
   block,
@@ -741,6 +922,7 @@ export const PaymentDetailsBlock: React.FC<BlockRendererProps> = ({
   const getToken = (token: string) => resolveToken(token, projectData, businessSettings, userTimezone, userDateFormat);
   
   const bankDetails = getToken('company_bank_details');
+  const paymentReference = getToken('payment_reference');
   
   if (!bankDetails) {
     return (
@@ -768,8 +950,14 @@ export const PaymentDetailsBlock: React.FC<BlockRendererProps> = ({
           {content.title || 'Payment Details'}
         </h3>
       </div>
-      <div className="text-sm text-gray-700 space-y-1">
+      <div className="text-sm text-gray-700 space-y-2">
         <p style={{ whiteSpace: 'pre-wrap' }}>{bankDetails}</p>
+        {paymentReference && (
+          <div className="mt-3 p-2 bg-blue-100 rounded border border-blue-200">
+            <span className="text-xs text-blue-600 font-medium">Payment Reference: </span>
+            <span className="text-sm font-bold text-blue-800">{paymentReference}</span>
+          </div>
+        )}
         {content.paymentInstructions && (
           <p className="mt-2 text-gray-600">{content.paymentInstructions}</p>
         )}
@@ -954,6 +1142,12 @@ export const renderSharedBlock = (props: BlockRendererProps): React.ReactNode =>
       
     case 'registration-footer':
       return <RegistrationFooterBlock {...props} />;
+    
+    case 'invoice-status':
+      return <InvoiceStatusBlock {...props} />;
+      
+    case 'late-payment-terms':
+      return <LatePaymentTermsBlock {...props} />;
     
     // Work order-specific blocks
     case 'installation-details':

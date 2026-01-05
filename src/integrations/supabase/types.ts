@@ -1577,11 +1577,15 @@ export type Database = {
           financial_year_end_month: number | null
           id: string
           inventory_config: Json | null
+          late_payment_fee_amount: number | null
+          late_payment_interest_rate: number | null
+          late_payment_terms: string | null
           legal_name: string | null
           manual_quote_editing_enabled: boolean | null
           measurement_units: string | null
           minimum_profit_margin_percentage: number | null
           organization_type: string | null
+          payment_reference_prefix: string | null
           pricing_settings: Json | null
           registration_number: string | null
           show_profit_margins_to_staff: boolean | null
@@ -1623,11 +1627,15 @@ export type Database = {
           financial_year_end_month?: number | null
           id?: string
           inventory_config?: Json | null
+          late_payment_fee_amount?: number | null
+          late_payment_interest_rate?: number | null
+          late_payment_terms?: string | null
           legal_name?: string | null
           manual_quote_editing_enabled?: boolean | null
           measurement_units?: string | null
           minimum_profit_margin_percentage?: number | null
           organization_type?: string | null
+          payment_reference_prefix?: string | null
           pricing_settings?: Json | null
           registration_number?: string | null
           show_profit_margins_to_staff?: boolean | null
@@ -1669,11 +1677,15 @@ export type Database = {
           financial_year_end_month?: number | null
           id?: string
           inventory_config?: Json | null
+          late_payment_fee_amount?: number | null
+          late_payment_interest_rate?: number | null
+          late_payment_terms?: string | null
           legal_name?: string | null
           manual_quote_editing_enabled?: boolean | null
           measurement_units?: string | null
           minimum_profit_margin_percentage?: number | null
           organization_type?: string | null
+          payment_reference_prefix?: string | null
           pricing_settings?: Json | null
           registration_number?: string | null
           show_profit_margins_to_staff?: boolean | null
@@ -6545,8 +6557,10 @@ export type Database = {
       }
       quotes: {
         Row: {
+          amount_paid: number | null
           client_id: string | null
           created_at: string
+          currency: string | null
           discount_amount: number | null
           discount_scope: string | null
           discount_type: string | null
@@ -6559,8 +6573,10 @@ export type Database = {
           order_number: string | null
           payment_amount: number | null
           payment_percentage: number | null
+          payment_reference: string | null
           payment_status: string | null
           payment_type: string | null
+          po_number: string | null
           project_id: string | null
           quote_number: string | null
           selected_discount_items: Json | null
@@ -6568,6 +6584,7 @@ export type Database = {
           status_id: string | null
           stripe_payment_intent_id: string | null
           subtotal: number | null
+          supply_date: string | null
           tax_amount: number | null
           tax_rate: number | null
           template_custom_data: Json | null
@@ -6582,8 +6599,10 @@ export type Database = {
           version: number
         }
         Insert: {
+          amount_paid?: number | null
           client_id?: string | null
           created_at?: string
+          currency?: string | null
           discount_amount?: number | null
           discount_scope?: string | null
           discount_type?: string | null
@@ -6596,8 +6615,10 @@ export type Database = {
           order_number?: string | null
           payment_amount?: number | null
           payment_percentage?: number | null
+          payment_reference?: string | null
           payment_status?: string | null
           payment_type?: string | null
+          po_number?: string | null
           project_id?: string | null
           quote_number?: string | null
           selected_discount_items?: Json | null
@@ -6605,6 +6626,7 @@ export type Database = {
           status_id?: string | null
           stripe_payment_intent_id?: string | null
           subtotal?: number | null
+          supply_date?: string | null
           tax_amount?: number | null
           tax_rate?: number | null
           template_custom_data?: Json | null
@@ -6619,8 +6641,10 @@ export type Database = {
           version?: number
         }
         Update: {
+          amount_paid?: number | null
           client_id?: string | null
           created_at?: string
+          currency?: string | null
           discount_amount?: number | null
           discount_scope?: string | null
           discount_type?: string | null
@@ -6633,8 +6657,10 @@ export type Database = {
           order_number?: string | null
           payment_amount?: number | null
           payment_percentage?: number | null
+          payment_reference?: string | null
           payment_status?: string | null
           payment_type?: string | null
+          po_number?: string | null
           project_id?: string | null
           quote_number?: string | null
           selected_discount_items?: Json | null
@@ -6642,6 +6668,7 @@ export type Database = {
           status_id?: string | null
           stripe_payment_intent_id?: string | null
           subtotal?: number | null
+          supply_date?: string | null
           tax_amount?: number | null
           tax_rate?: number | null
           template_custom_data?: Json | null
