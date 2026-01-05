@@ -45,6 +45,7 @@ import { SignatureCanvas } from './SignatureCanvas';
 import { cn } from "@/lib/utils";
 import { DocumentHeaderBlock } from './shared/BlockRenderer';
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { getAvailableBlocks } from '@/utils/documentTypeConfig';
 
 interface EditableTextProps {
   value: string;
@@ -1457,8 +1458,7 @@ export const EditableLivePreview = ({
   const [showPageControls, setShowPageControls] = useState(false);
   const [showComponentLibrary, setShowComponentLibrary] = useState(false);
 
-  // Import available blocks from document type config
-  const { getAvailableBlocks } = require('@/utils/documentTypeConfig');
+  // Get available blocks from document type config
   const allowedBlockTypes = getAvailableBlocks(documentType);
 
   const allBlocks = [
