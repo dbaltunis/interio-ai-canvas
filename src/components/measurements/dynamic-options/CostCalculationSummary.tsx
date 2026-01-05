@@ -676,7 +676,7 @@ export const CostCalculationSummary = ({
   
   if (hasCurtainPricingGrid) {
     // For curtains, we need effective width (with fullness) and drop
-    const fullnessRatio = fabricCalculation?.fullnessRatio || measurements?.fullness_ratio || 2;
+    const fullnessRatio = fabricCalculation?.fullnessRatio || measurements?.fullness_ratio || 1;
     const effectiveWidthCm = width * fullnessRatio; // Apply fullness to width
     const effectiveDropCm = height;
     
