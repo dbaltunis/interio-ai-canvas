@@ -411,15 +411,30 @@ export function prepareInvoiceExportData(
     });
   }
   
-  // Determine invoice/quote number - prefer invoice_number, fallback to quote_number
-  const invoiceNumber = quote?.invoice_number || quote?.quote_number || 'INV-001';
+  // Smart detection - if job_number is actually an invoice number format, use it correctly
+  const jobNumber = project?.job_number || '';
+  const isJobNumberActuallyInvoice = jobNumber.startsWith('INV-') || 
+                                      jobNumber.startsWith('Invoice-') ||
+                                      /^INV-\d+/.test(jobNumber);
+
+  // Invoice number priority: explicit invoice fields first, then detect from job_number
+  const invoiceNumber = quote?.invoice_number || 
+                        (isJobNumberActuallyInvoice ? jobNumber : null) ||
+                        quote?.quote_number || 
+                        'INV-001';
+
+  // Reference: PO number first, then job_number only if it's actually a job format
+  const reference = quote?.po_number || 
+                    (!isJobNumberActuallyInvoice ? jobNumber : '') || 
+                    '';
   
-  // Reference - use PO number if available, fallback to job number
-  const reference = quote?.po_number || project?.job_number || '';
-  
-  console.log('[Invoice Export] Prepared data:', {
-    invoiceNumber,
-    reference,
+  console.log('[Invoice Export] Field resolution:', {
+    'quote.invoice_number': quote?.invoice_number,
+    'quote.quote_number': quote?.quote_number,
+    'project.job_number': project?.job_number,
+    'isJobNumberActuallyInvoice': isJobNumberActuallyInvoice,
+    'resolved_invoiceNumber': invoiceNumber,
+    'resolved_reference': reference,
     customerName: client?.name,
     itemCount: lineItems.length,
     subtotal,
