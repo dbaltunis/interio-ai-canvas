@@ -269,7 +269,7 @@ export function prepareInvoiceExportData(
   return {
     invoice_number: quote?.quote_number || 'INV-001',
     invoice_date: quote?.created_at || new Date().toISOString(),
-    due_date: quote?.due_date || null,
+    due_date: quote?.valid_until || null,
     customer_name: client?.name || 'Unknown Customer',
     customer_email: client?.email || null,
     customer_address: client?.address || null,
