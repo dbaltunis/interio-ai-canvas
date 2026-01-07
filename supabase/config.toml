@@ -1,3 +1,4 @@
+# Supabase Edge Functions Configuration
 project_id = "ldgrcodffsalkevafbkb"
 
 [functions.send-whatsapp]
