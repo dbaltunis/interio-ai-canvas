@@ -14,7 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Eye, MoreHorizontal, Trash2, StickyNote, User, Calendar, Columns3, Archive, Copy } from "lucide-react";
+import { Eye, MoreHorizontal, Trash2, StickyNote, User, Copy, Calendar, Columns3, Archive } from "lucide-react";
 import { useQuotes, useDeleteQuote, useUpdateQuote } from "@/hooks/useQuotes";
 import { useProjects, useUpdateProject, useCreateProject } from "@/hooks/useProjects";
 import { useClients } from "@/hooks/useClients";
@@ -573,6 +573,61 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     setNotesDialogOpen(true);
   };
 
+  const handleDuplicateJob = async (project: any) => {
+    try {
+      toast({ title: "Duplicating job...", description: "This may take a moment" });
+      
+      // Duplicate the project
+      const { data: newProject, error: projectError } = await supabase
+        .from('projects')
+        .insert([{
+          ...project,
+          id: undefined,
+          created_at: undefined,
+          updated_at: undefined,
+          job_number: `${project.job_number}-COPY`,
+          name: `${project.name} (Copy)`
+        }])
+        .select()
+        .single();
+      
+      if (projectError) throw projectError;
+      
+      // Copy rooms, surfaces, treatments, quotes etc
+      const { data: rooms } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('project_id', project.id);
+      
+      if (rooms && rooms.length > 0) {
+        const roomsCopy = rooms.map(r => ({
+          ...r,
+          id: undefined,
+          project_id: newProject.id
+        }));
+        await supabase.from('rooms').insert(roomsCopy);
+      }
+      
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      await queryClient.invalidateQueries({ queryKey: ["quotes"] });
+      
+      toast({
+        title: "✓ Job Duplicated Successfully",
+        description: `Created copy of job. Opening new job...`
+      });
+      
+      window.location.href = `/?tab=projects&jobId=${newProject.id}`;
+    } catch (error) {
+      console.error('Error duplicating job:', error);
+      toast({
+        title: "Error",
+        description: "Failed to duplicate job. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+
   const handleArchiveJob = async () => {
     if (!projectToArchive) return;
     
@@ -836,6 +891,11 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleDuplicateJob(project)}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Duplicate Job
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   onClick={() => {
                     setProjectToArchive(project);
@@ -876,7 +936,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
               {displayColumns.map((column) => (
                 <TableHead 
                   key={column.id}
-                  className={`text-xs uppercase tracking-wide text-muted-foreground font-semibold cursor-pointer hover:bg-muted/50 transition-colors ${column.id === 'actions' ? 'w-[70px]' : ''}`}
+                  className={`cursor-pointer hover:bg-muted/50 transition-colors font-normal ${column.id === 'actions' ? 'w-[70px]' : ''}`}
                 >
                   {column.label}
                 </TableHead>

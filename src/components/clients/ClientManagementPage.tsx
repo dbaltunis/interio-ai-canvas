@@ -1,5 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Filter, Download, Users, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -33,7 +32,6 @@ export const ClientManagementPage = ({
 }: ClientManagementPageProps = {}) => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
-  const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showClientProfile, setShowClientProfile] = useState(false);
@@ -43,15 +41,6 @@ export const ClientManagementPage = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [showHelp, setShowHelp] = useState(false);
   const itemsPerPage = 20;
-
-  // Reset client profile state when navigating to clients tab (no clientId in URL)
-  useEffect(() => {
-    const clientId = searchParams.get('clientId');
-    if (!clientId && showClientProfile) {
-      setShowClientProfile(false);
-      setSelectedClient(null);
-    }
-  }, [searchParams, showClientProfile]);
 
   // CRM Filters
   const [filters, setFilters] = useState({
