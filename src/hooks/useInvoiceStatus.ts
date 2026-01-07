@@ -38,8 +38,11 @@ export const useInvoiceStatus = () => {
       return data;
     },
     onSuccess: () => {
+      // Invalidate ALL quote-versions queries (partial key match)
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      queryClient.invalidateQueries({ queryKey: ['quote-versions'] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => query.queryKey[0] === 'quote-versions' 
+      });
       queryClient.invalidateQueries({ queryKey: ['project'] });
       toast({
         title: 'Payment Updated',
@@ -96,8 +99,11 @@ export const useInvoiceStatus = () => {
       return data;
     },
     onSuccess: () => {
+      // Invalidate ALL quote-versions queries (partial key match)
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      queryClient.invalidateQueries({ queryKey: ['quote-versions'] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => query.queryKey[0] === 'quote-versions' 
+      });
       queryClient.invalidateQueries({ queryKey: ['project'] });
       toast({
         title: 'Payment Recorded',
@@ -132,8 +138,11 @@ export const useInvoiceStatus = () => {
       return data;
     },
     onSuccess: () => {
+      // Invalidate ALL quote-versions queries (partial key match)
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      queryClient.invalidateQueries({ queryKey: ['quote-versions'] });
+      queryClient.invalidateQueries({ 
+        predicate: (query) => query.queryKey[0] === 'quote-versions' 
+      });
       queryClient.invalidateQueries({ queryKey: ['project'] });
       toast({
         title: 'Invoice Paid',
