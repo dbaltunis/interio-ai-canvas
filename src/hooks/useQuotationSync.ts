@@ -814,6 +814,7 @@ export const useQuotationSync = ({
       // Update existing quote - PROTECT user-edited fields
       await updateQuote.mutateAsync({
         id: existingQuote.id,
+        client_id: clientId, // Sync client from project - fixes missing client on exports
         subtotal: quotationData.subtotal,
         tax_rate: taxRate, // CRITICAL: Also update tax_rate so tax line displays
         tax_amount: quotationData.taxAmount,
