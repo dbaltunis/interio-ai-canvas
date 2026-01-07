@@ -747,7 +747,8 @@ export const QuotationTab = ({
                       currentQuote,
                       client,
                       items,
-                      businessSettings
+                      businessSettings,
+                      project
                     );
                     console.log('[Export] CSV data:', exportData);
                     exportInvoiceToCSV(exportData);
@@ -765,7 +766,8 @@ export const QuotationTab = ({
                       currentQuote,
                       client,
                       quotationData.items || [],
-                      businessSettings
+                      businessSettings,
+                      project
                     );
                     exportInvoiceForXero(exportData);
                     toast({ title: "Exported", description: "Xero-compatible CSV downloaded" });
@@ -781,7 +783,8 @@ export const QuotationTab = ({
                       currentQuote,
                       client,
                       quotationData.items || [],
-                      businessSettings
+                      businessSettings,
+                      project
                     );
                     exportInvoiceForQuickBooks(exportData);
                     toast({ title: "Exported", description: "QuickBooks-compatible CSV downloaded" });
