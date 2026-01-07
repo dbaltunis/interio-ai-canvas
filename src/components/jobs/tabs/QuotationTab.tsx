@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { useProjects } from "@/hooks/useProjects";
 import { useTreatments } from "@/hooks/useTreatments";
 import { useRooms } from "@/hooks/useRooms";
@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard, Sparkles, Package } from "lucide-react";
+import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard, Sparkles, Package, FileSpreadsheet, Banknote } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
@@ -28,12 +28,14 @@ import { useQuoteVersions } from "@/hooks/useQuoteVersions";
 import { generateQuotePDF, generateQuotePDFBlob } from '@/utils/generateQuotePDF';
 import { InlineDiscountPanel } from "@/components/jobs/quotation/InlineDiscountPanel";
 import { InlinePaymentConfig } from "@/components/jobs/quotation/InlinePaymentConfig";
+import { RecordPaymentDialog } from "@/components/jobs/quotation/RecordPaymentDialog";
 import { useQuoteDiscount } from "@/hooks/useQuoteDiscount";
 import { TWCSubmitDialog } from "@/components/integrations/TWCSubmitDialog";
 import { QuoteProfitSummary } from "@/components/pricing/QuoteProfitSummary";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { exportInvoiceToCSV, exportInvoiceForXero, exportInvoiceForQuickBooks, prepareInvoiceExportData } from "@/utils/invoiceExport";
 interface QuotationTabProps {
   projectId: string;
   quoteId?: string;
@@ -64,6 +66,7 @@ export const QuotationTab = ({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
   const [isPaymentConfigOpen, setIsPaymentConfigOpen] = useState(false);
+  const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
   const [isTWCSubmitDialogOpen, setIsTWCSubmitDialogOpen] = useState(false);
   const {
     data: projects
@@ -177,6 +180,9 @@ export const QuotationTab = ({
     }
   }, [activeTemplates, selectedTemplateId]);
   const selectedTemplate = activeTemplates?.find(t => t.id.toString() === selectedTemplateId);
+  
+  // Check if current template is an invoice type
+  const isInvoice = selectedTemplate?.template_style === 'invoice';
   const {
     buildQuotationItems
   } = useQuotationSync({
@@ -662,6 +668,71 @@ export const QuotationTab = ({
               Payment
             </Button>
 
+            {/* Record Payment - Invoice only */}
+            {isInvoice && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsRecordPaymentOpen(true)}
+                disabled={isReadOnly}
+                className="h-9 px-4"
+              >
+                <Banknote className="h-4 w-4 mr-2" />
+                Record Payment
+              </Button>
+            )}
+
+            {/* Export CSV - Invoice only */}
+            {isInvoice && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 px-4">
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => {
+                    const exportData = prepareInvoiceExportData(
+                      currentQuote,
+                      project?.client_id ? { id: project.client_id } : null,
+                      quotationData.items || [],
+                      businessSettings
+                    );
+                    exportInvoiceToCSV(exportData);
+                    toast({ title: "Exported", description: "CSV file downloaded" });
+                  }}>
+                    Export CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => {
+                    const exportData = prepareInvoiceExportData(
+                      currentQuote,
+                      project?.client_id ? { id: project.client_id } : null,
+                      quotationData.items || [],
+                      businessSettings
+                    );
+                    exportInvoiceForXero(exportData);
+                    toast({ title: "Exported", description: "Xero-compatible CSV downloaded" });
+                  }}>
+                    Export for Xero
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    const exportData = prepareInvoiceExportData(
+                      currentQuote,
+                      project?.client_id ? { id: project.client_id } : null,
+                      quotationData.items || [],
+                      businessSettings
+                    );
+                    exportInvoiceForQuickBooks(exportData);
+                    toast({ title: "Exported", description: "QuickBooks-compatible CSV downloaded" });
+                  }}>
+                    Export for QuickBooks
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
             {/* TWC Submit Button - Only show if quote has TWC products */}
             {hasTWCProducts && (
               <Button 
@@ -811,6 +882,20 @@ export const QuotationTab = ({
           quotationData={quotationData}
           projectData={project}
           clientData={client}
+        />
+      )}
+
+      {/* Record Payment Dialog - Invoice only */}
+      {isInvoice && currentQuote && (
+        <RecordPaymentDialog
+          open={isRecordPaymentOpen}
+          onOpenChange={setIsRecordPaymentOpen}
+          quoteId={currentQuote.id}
+          total={total}
+          amountPaid={currentQuote.amount_paid || 0}
+          currency={projectData.currency}
+          paymentStatus={currentQuote.payment_status}
+          dueDate={(currentQuote as any).due_date || null}
         />
       )}
 
