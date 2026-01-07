@@ -704,11 +704,11 @@ export const QuotationTab = ({
               variant="outline" 
               onClick={handleDownloadPDF} 
               disabled={isGeneratingPDF || !selectedTemplate || isReadOnly} 
-              className="h-9 px-2 sm:px-4"
+              className="h-9 px-2 lg:px-4"
               title={isGeneratingPDF ? 'Generating...' : 'Download PDF'}
             >
               <Download className="h-4 w-4" />
-              <span className="hidden md:inline ml-2">
+              <span className="hidden lg:inline ml-2">
                 {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
               </span>
             </Button>
@@ -719,11 +719,11 @@ export const QuotationTab = ({
               size="sm" 
               onClick={handleAddDiscount} 
               disabled={createQuote.isPending || isReadOnly} 
-              className="h-9 px-2 sm:px-4"
+              className="h-9 px-2 lg:px-4"
               title="Discount"
             >
               <Percent className="h-4 w-4" />
-              <span className="hidden md:inline ml-2">Discount</span>
+              <span className="hidden lg:inline ml-2">Discount</span>
             </Button>
 
             {/* Payment Dropdown */}
@@ -733,11 +733,11 @@ export const QuotationTab = ({
                   variant="outline" 
                   size="sm" 
                   disabled={createQuote.isPending || isReadOnly} 
-                  className="h-9 px-2 sm:px-4"
+                  className="h-9 px-2 lg:px-4"
                   title="Payment"
                 >
                   <CreditCard className="h-4 w-4" />
-                  <span className="hidden md:inline ml-2">Payment</span>
+                  <span className="hidden lg:inline ml-2">Payment</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -764,11 +764,11 @@ export const QuotationTab = ({
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="h-9 px-2 sm:px-3 bg-muted/50 hover:bg-muted border-border"
+                    className="h-9 px-2 lg:px-3 bg-muted/50 hover:bg-muted border-border"
                     title="Export"
                   >
                     <FileSpreadsheet className="h-4 w-4" />
-                    <span className="hidden md:inline ml-2">Export</span>
+                    <span className="hidden lg:inline ml-2">Export</span>
                     <ChevronDown className="h-3 w-3 ml-1 opacity-60" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -843,11 +843,11 @@ export const QuotationTab = ({
                 size="sm" 
                 onClick={() => setIsTWCSubmitDialogOpen(true)}
                 disabled={isReadOnly}
-                className="h-9 px-2 sm:px-4 border-blue-500 text-blue-600 hover:bg-blue-50"
+                className="h-9 px-2 lg:px-4 border-blue-500 text-blue-600 hover:bg-blue-50"
                 title="Submit to TWC"
               >
                 <Package className="h-4 w-4" />
-                <span className="hidden md:inline ml-2">Submit to TWC</span>
+                <span className="hidden lg:inline ml-2">Submit to TWC</span>
               </Button>
             )}
 
