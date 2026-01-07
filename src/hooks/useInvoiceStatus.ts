@@ -39,6 +39,7 @@ export const useInvoiceStatus = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quote-versions'] });
       queryClient.invalidateQueries({ queryKey: ['project'] });
       toast({
         title: 'Payment Updated',
@@ -96,6 +97,7 @@ export const useInvoiceStatus = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quote-versions'] });
       queryClient.invalidateQueries({ queryKey: ['project'] });
       toast({
         title: 'Payment Recorded',
@@ -131,6 +133,7 @@ export const useInvoiceStatus = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['quote-versions'] });
       queryClient.invalidateQueries({ queryKey: ['project'] });
       toast({
         title: 'Invoice Paid',

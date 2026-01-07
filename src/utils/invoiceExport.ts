@@ -287,7 +287,9 @@ export function prepareInvoiceExportData(
     payment_status: quote?.payment_status || 'unpaid',
     amount_paid: amountPaid,
     balance_due: Math.max(0, total - amountPaid),
-    currency: businessSettings?.currency || 'GBP',
+    currency: (typeof businessSettings?.measurement_units === 'string' 
+      ? JSON.parse(businessSettings.measurement_units)?.currency 
+      : businessSettings?.measurement_units?.currency) || 'GBP',
     notes: quote?.notes || ''
   };
 }
