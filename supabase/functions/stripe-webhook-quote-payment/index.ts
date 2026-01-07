@@ -1,46 +1,57 @@
-import Stripe from "npm:stripe@18.5.0";
-import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[STRIPE-WEBHOOK-QUOTE-PAYMENT] ${step}`, details ? JSON.stringify(details) : "");
 };
 
+function verifyStripeSignature(payload: string, signature: string, secret: string): boolean {
+  const parts = signature.split(",").reduce((acc, part) => {
+    const [key, value] = part.split("=");
+    acc[key] = value;
+    return acc;
+  }, {} as Record<string, string>);
+
+  const timestamp = parts["t"];
+  const expectedSig = parts["v1"];
+
+  if (!timestamp || !expectedSig) return false;
+
+  const signedPayload = `${timestamp}.${payload}`;
+  const computedSig = createHmac("sha256", secret).update(signedPayload).digest("hex");
+
+  try {
+    return timingSafeEqual(Buffer.from(expectedSig), Buffer.from(computedSig));
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     logStep("Webhook received");
 
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
-    
-    if (!stripeKey) {
-      throw new Error("STRIPE_SECRET_KEY is not set");
-    }
-
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    
     const body = await req.text();
     const signature = req.headers.get("stripe-signature");
 
-    let event: Stripe.Event;
+    let event;
 
     if (webhookSecret && signature) {
-      try {
-        event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-        logStep("Webhook signature verified");
-      } catch (err) {
-        logStep("Signature verification failed", { error: String(err) });
+      if (!verifyStripeSignature(body, signature, webhookSecret)) {
+        logStep("Signature verification failed");
         return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 400 });
       }
-    } else {
-      event = JSON.parse(body);
-      logStep("Parsed without signature (dev mode)");
+      logStep("Signature verified");
     }
+
+    event = JSON.parse(body);
 
     if (event.type !== "checkout.session.completed") {
       return new Response(JSON.stringify({ received: true }), { status: 200 });
     }
 
-    const session = event.data.object as Stripe.Checkout.Session;
+    const session = event.data.object;
     const quoteId = session.metadata?.quote_id;
     const paymentType = session.metadata?.payment_type || "full";
 
@@ -82,7 +93,7 @@ Deno.serve(async (req) => {
       .update({
         payment_status: paymentStatus,
         amount_paid: newAmountPaid,
-        stripe_payment_intent_id: (session.payment_intent as string) || session.id,
+        stripe_payment_intent_id: session.payment_intent || session.id,
         updated_at: new Date().toISOString(),
       })
       .eq("id", quoteId);
