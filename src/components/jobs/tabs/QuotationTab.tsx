@@ -695,7 +695,7 @@ export const QuotationTab = ({
                   <DropdownMenuItem onClick={() => {
                     const exportData = prepareInvoiceExportData(
                       currentQuote,
-                      project?.client_id ? { id: project.client_id } : null,
+                      client,
                       quotationData.items || [],
                       businessSettings
                     );
@@ -708,7 +708,7 @@ export const QuotationTab = ({
                   <DropdownMenuItem onClick={() => {
                     const exportData = prepareInvoiceExportData(
                       currentQuote,
-                      project?.client_id ? { id: project.client_id } : null,
+                      client,
                       quotationData.items || [],
                       businessSettings
                     );
@@ -720,7 +720,7 @@ export const QuotationTab = ({
                   <DropdownMenuItem onClick={() => {
                     const exportData = prepareInvoiceExportData(
                       currentQuote,
-                      project?.client_id ? { id: project.client_id } : null,
+                      client,
                       quotationData.items || [],
                       businessSettings
                     );
@@ -895,7 +895,7 @@ export const QuotationTab = ({
           amountPaid={currentQuote.amount_paid || 0}
           currency={projectData.currency}
           paymentStatus={currentQuote.payment_status}
-          dueDate={(currentQuote as any).due_date || null}
+          dueDate={currentQuote.valid_until || null}
         />
       )}
 
