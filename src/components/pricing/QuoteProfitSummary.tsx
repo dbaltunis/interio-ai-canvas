@@ -153,21 +153,24 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
       <div className={cn("border border-dashed rounded-lg", className)}>
-        {/* Compact Header - Always Visible */}
+        {/* Compact Header - Always Visible - Responsive layout */}
         <CollapsibleTrigger asChild>
-          <button className="w-full flex items-center justify-between p-3 hover:bg-muted/30 transition-colors rounded-lg">
+          <button className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 hover:bg-muted/30 transition-colors rounded-lg">
+            {/* Left: Title + Discount Badge */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Eye className="h-4 w-4" />
+              <Eye className="h-4 w-4 shrink-0" />
               <span className="font-medium">Profit Summary</span>
               {hasDiscount && (
                 <Badge variant="secondary" className="text-xs bg-amber-500/20 text-amber-700 dark:text-amber-400">
                   <AlertTriangle className="h-3 w-3 mr-1" />
-                  Discount Applied
+                  <span className="hidden xs:inline">Discount Applied</span>
+                  <span className="xs:hidden">Disc.</span>
                 </Badge>
               )}
             </div>
             
-            <div className="flex items-center gap-3">
+            {/* Right: Stats - wrap on small screens */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
               {/* Markup % */}
               <span className="text-xs text-muted-foreground font-mono">
                 ↗{markupPercentage.toFixed(0)}% MU
@@ -176,7 +179,7 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
               {/* GP Badge */}
               <Badge 
                 variant="secondary" 
-                className={cn("font-mono", profitStatus.color)}
+                className={cn("font-mono text-xs", profitStatus.color)}
               >
                 {marginPercentage >= 0 ? (
                   <TrendingUp className="h-3 w-3 mr-1" />
@@ -192,9 +195,9 @@ export const QuoteProfitSummary: React.FC<QuoteProfitSummaryProps> = ({
               </span>
               
               {isExpanded ? (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
               )}
             </div>
           </button>
