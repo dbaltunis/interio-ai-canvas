@@ -342,7 +342,10 @@ export const QuotationTab = ({
       quoteId: currentQuote?.id,
       project: {
         ...project,
-        client
+        client,
+        // Add payment fields directly to project for token resolution
+        payment_status: currentQuote?.payment_status || 'unpaid',
+        amount_paid: currentQuote?.amount_paid || 0,
       },
       client,
       businessSettings,
@@ -357,6 +360,7 @@ export const QuotationTab = ({
       total: hasDiscount ? totalAfterDiscount : total,
       currency,
       markupPercentage,
+      amountPaid: currentQuote?.amount_paid || 0,
       validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       discount: hasDiscount ? {
         type: currentQuote.discount_type,
