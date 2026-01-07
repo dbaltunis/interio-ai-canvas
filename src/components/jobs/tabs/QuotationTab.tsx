@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { useCanEditJob } from "@/hooks/useJobEditPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { exportInvoiceToCSV, exportInvoiceForXero, exportInvoiceForQuickBooks, prepareInvoiceExportData } from "@/utils/invoiceExport";
+import { useQuotePayment } from "@/hooks/useQuotePayment";
 interface QuotationTabProps {
   projectId: string;
   quoteId?: string;
@@ -59,6 +61,8 @@ export const QuotationTab = ({
     toast
   } = useToast();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { verifyPayment } = useQuotePayment();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -101,6 +105,34 @@ export const QuotationTab = ({
   // Use explicit permissions hook for edit checks
   const { canEditJob, isLoading: editPermissionsLoading } = useCanEditJob(project);
   const isReadOnly = !canEditJob || editPermissionsLoading;
+
+  // Auto-verify payment on return from Stripe checkout
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    const sessionId = searchParams.get('session_id');
+    
+    if (paymentStatus === 'success' && sessionId && quoteId) {
+      verifyPayment.mutateAsync({ quoteId, sessionId })
+        .then((data) => {
+          toast({
+            title: "Payment Confirmed!",
+            description: `Payment has been verified and quote updated.`,
+          });
+          // Clean up URL params
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete('payment');
+          newParams.delete('session_id');
+          setSearchParams(newParams);
+        })
+        .catch((error) => {
+          toast({
+            title: "Payment Verification",
+            description: "Could not auto-verify payment. Please check payment status manually.",
+            variant: "destructive",
+          });
+        });
+    }
+  }, [quoteId, searchParams, setSearchParams, verifyPayment, toast]);
 
   // Fetch client data
   const {
