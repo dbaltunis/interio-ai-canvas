@@ -20,9 +20,25 @@ export const useUserInvitations = () => {
   return useQuery({
     queryKey: ["user-invitations"],
     queryFn: async (): Promise<UserInvitation[]> => {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      
+      // Get current user's profile to determine account owner
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("parent_account_id")
+        .eq("user_id", user.id)
+        .single();
+      
+      // Determine effective account owner ID (parent if team member, else self)
+      const accountOwnerId = profile?.parent_account_id || user.id;
+      
+      // Only fetch invitations created by this account owner
       const { data, error } = await supabase
         .from("user_invitations")
         .select("*")
+        .eq("user_id", accountOwnerId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
