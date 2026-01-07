@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard, Sparkles, Package, FileSpreadsheet, Banknote } from "lucide-react";
+import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard, Sparkles, Package, FileSpreadsheet, Banknote, ChevronDown } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
@@ -67,7 +67,17 @@ export const QuotationTab = ({
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [showQuotationItems, setShowQuotationItems] = useState(false);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  // Persist template selection in URL params
+  const urlTemplateId = searchParams.get('templateId');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(urlTemplateId || '');
+  
+  // Handle template change with URL persistence
+  const handleTemplateChange = (newTemplateId: string) => {
+    setSelectedTemplateId(newTemplateId);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('templateId', newTemplateId);
+    setSearchParams(newParams, { replace: true });
+  };
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
   const [isPaymentConfigOpen, setIsPaymentConfigOpen] = useState(false);
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
@@ -205,12 +215,16 @@ export const QuotationTab = ({
     staleTime: 5 * 60 * 1000
   });
 
-  // Set default template
+  // Set default template - prioritize URL param, then first template
   useEffect(() => {
     if (activeTemplates && activeTemplates.length > 0 && !selectedTemplateId) {
-      setSelectedTemplateId(activeTemplates[0].id.toString());
+      // Check if URL has a valid template ID
+      const urlId = urlTemplateId;
+      const validUrlTemplate = urlId && activeTemplates.some(t => t.id.toString() === urlId);
+      const defaultId = validUrlTemplate ? urlId : activeTemplates[0].id.toString();
+      setSelectedTemplateId(defaultId);
     }
-  }, [activeTemplates, selectedTemplateId]);
+  }, [activeTemplates, selectedTemplateId, urlTemplateId]);
   const selectedTemplate = activeTemplates?.find(t => t.id.toString() === selectedTemplateId);
   
   // Check if current template is an invoice type
@@ -666,7 +680,7 @@ export const QuotationTab = ({
               <h2 className="text-base sm:text-lg font-semibold">Quotation</h2>
               
               {/* Template Selector */}
-              {activeTemplates && activeTemplates.length > 1 && <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+              {activeTemplates && activeTemplates.length > 1 && <Select value={selectedTemplateId} onValueChange={handleTemplateChange}>
                   <SelectTrigger className="w-[200px] h-8">
                     <FileCheck className="h-4 w-4 mr-2" />
                     <SelectValue placeholder="Select template" />
@@ -681,29 +695,49 @@ export const QuotationTab = ({
             
           </div>
 
-          {/* Action Buttons - Better organized */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Action Buttons - Icon-only on mobile/tablet */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
 
-            {/* Primary Action */}
-            <Button size="sm" variant="outline" onClick={handleDownloadPDF} disabled={isGeneratingPDF || !selectedTemplate || isReadOnly} className="h-9 px-4">
-              <Download className="h-4 w-4 mr-2" />
-              {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
+            {/* Primary Action - Download PDF */}
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleDownloadPDF} 
+              disabled={isGeneratingPDF || !selectedTemplate || isReadOnly} 
+              className="h-9 px-2 sm:px-4"
+              title={isGeneratingPDF ? 'Generating...' : 'Download PDF'}
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden md:inline ml-2">
+                {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
+              </span>
             </Button>
-
-            {/* Email action is available via Contact button in JobDetailPage header */}
 
             {/* Discount Button */}
-            <Button variant="outline" size="sm" onClick={handleAddDiscount} disabled={createQuote.isPending || isReadOnly} className="h-9 px-4">
-              <Percent className="h-4 w-4 mr-2" />
-              Discount
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleAddDiscount} 
+              disabled={createQuote.isPending || isReadOnly} 
+              className="h-9 px-2 sm:px-4"
+              title="Discount"
+            >
+              <Percent className="h-4 w-4" />
+              <span className="hidden md:inline ml-2">Discount</span>
             </Button>
 
-            {/* Payment Dropdown - combines Payment Config + Record Payment */}
+            {/* Payment Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" disabled={createQuote.isPending || isReadOnly} className="h-9 px-4">
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Payment
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={createQuote.isPending || isReadOnly} 
+                  className="h-9 px-2 sm:px-4"
+                  title="Payment"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  <span className="hidden md:inline ml-2">Payment</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -723,13 +757,19 @@ export const QuotationTab = ({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Export CSV - Invoice only */}
+            {/* Export - Invoice only - Enhanced styling */}
             {isInvoice && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-9 px-4">
-                    <FileSpreadsheet className="h-4 w-4 mr-2" />
-                    Export
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-9 px-2 sm:px-3 bg-muted/50 hover:bg-muted border-border"
+                    title="Export"
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                    <span className="hidden md:inline ml-2">Export</span>
+                    <ChevronDown className="h-3 w-3 ml-1 opacity-60" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -754,6 +794,7 @@ export const QuotationTab = ({
                     exportInvoiceToCSV(exportData);
                     toast({ title: "Exported", description: "CSV file downloaded" });
                   }}>
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
                     Export CSV
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -795,17 +836,18 @@ export const QuotationTab = ({
               </DropdownMenu>
             )}
 
-            {/* TWC Submit Button - Only show if quote has TWC products */}
+            {/* TWC Submit Button */}
             {hasTWCProducts && (
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={() => setIsTWCSubmitDialogOpen(true)}
                 disabled={isReadOnly}
-                className="h-9 px-4 border-blue-500 text-blue-600 hover:bg-blue-50"
+                className="h-9 px-2 sm:px-4 border-blue-500 text-blue-600 hover:bg-blue-50"
+                title="Submit to TWC"
               >
-                <Package className="h-4 w-4 mr-2" />
-                Submit to TWC
+                <Package className="h-4 w-4" />
+                <span className="hidden md:inline ml-2">Submit to TWC</span>
               </Button>
             )}
 

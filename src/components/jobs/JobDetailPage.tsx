@@ -867,20 +867,20 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
               </div>
             </div>
 
-            {/* Right Side: Contact + Status + Actions */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              {/* Contact Button - show if client exists */}
+            {/* Right Side: Contact + Status + Actions - Responsive wrap */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 flex-wrap justify-end">
+              {/* Contact Button - icon only on small screens */}
               {client && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setShowContactDialog(true)}
-                  className="border-green-200 text-green-700 hover:bg-green-50"
+                  className="border-green-200 text-green-700 hover:bg-green-50 h-8 px-2 sm:px-3"
                   disabled={!client.email && !client.phone}
                   title={!client.email && !client.phone ? 'No contact info available' : 'Contact client'}
                 >
-                  <MessageCircle className="h-4 w-4 mr-1" />
-                  <span className="hidden sm:inline">Contact</span>
+                  <MessageCircle className="h-4 w-4" />
+                  <span className="hidden sm:inline ml-1">Contact</span>
                 </Button>
               )}
               
