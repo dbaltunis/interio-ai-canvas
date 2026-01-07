@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
 export interface UserInvitation {
   id: string;
@@ -17,33 +18,24 @@ export interface UserInvitation {
 }
 
 export const useUserInvitations = () => {
+  const { effectiveOwnerId, isLoading: ownerLoading } = useEffectiveAccountOwner();
+
   return useQuery({
-    queryKey: ["user-invitations"],
+    queryKey: ["user-invitations", effectiveOwnerId],
     queryFn: async (): Promise<UserInvitation[]> => {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-      
-      // Get current user's profile to determine account owner
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("parent_account_id")
-        .eq("user_id", user.id)
-        .single();
-      
-      // Determine effective account owner ID (parent if team member, else self)
-      const accountOwnerId = profile?.parent_account_id || user.id;
+      if (!effectiveOwnerId) return [];
       
       // Only fetch invitations created by this account owner
       const { data, error } = await supabase
         .from("user_invitations")
         .select("*")
-        .eq("user_id", accountOwnerId)
+        .eq("user_id", effectiveOwnerId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!effectiveOwnerId && !ownerLoading,
   });
 };
 
