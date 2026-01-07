@@ -24,7 +24,18 @@ export const useUsers = () => {
         return [];
       }
       
-      // Get user profiles - query based on parent_account_id relationship
+      // Get current user's profile to determine account owner
+      const { data: currentProfile } = await supabase
+        .from('user_profiles')
+        .select('parent_account_id')
+        .eq('user_id', currentUser.id)
+        .single();
+      
+      // Determine effective account owner ID (parent if team member, else self)
+      const accountOwnerId = currentProfile?.parent_account_id || currentUser.id;
+      console.log('[useUsers] Account owner ID:', accountOwnerId);
+      
+      // Get user profiles - only from this account (owner + their team members)
       const { data: profiles, error } = await supabase
         .from('user_profiles')
         .select(`
@@ -37,7 +48,8 @@ export const useUsers = () => {
           created_at,
           parent_account_id
         `)
-        .order('created_at', { ascending: false});
+        .or(`user_id.eq.${accountOwnerId},parent_account_id.eq.${accountOwnerId}`)
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching user profiles:', error);
