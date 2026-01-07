@@ -149,6 +149,3 @@ verify_jwt = false
 
 [functions.shopify-test-connection]
 verify_jwt = false
-
-[functions.stripe-webhook-quote-payment]
-verify_jwt = false

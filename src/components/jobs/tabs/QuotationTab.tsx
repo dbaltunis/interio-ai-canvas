@@ -702,12 +702,22 @@ export const QuotationTab = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => {
+                    if (!client) {
+                      toast({ title: "Export Error", description: "Client information missing", variant: "destructive" });
+                      return;
+                    }
+                    const items = quotationData.items || [];
+                    if (items.length === 0) {
+                      toast({ title: "Export Error", description: "No items to export", variant: "destructive" });
+                      return;
+                    }
                     const exportData = prepareInvoiceExportData(
                       currentQuote,
                       client,
-                      quotationData.items || [],
+                      items,
                       businessSettings
                     );
+                    console.log('[Export] CSV data:', exportData);
                     exportInvoiceToCSV(exportData);
                     toast({ title: "Exported", description: "CSV file downloaded" });
                   }}>
@@ -715,6 +725,10 @@ export const QuotationTab = ({
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => {
+                    if (!client) {
+                      toast({ title: "Export Error", description: "Client information missing", variant: "destructive" });
+                      return;
+                    }
                     const exportData = prepareInvoiceExportData(
                       currentQuote,
                       client,
@@ -727,6 +741,10 @@ export const QuotationTab = ({
                     Export for Xero
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => {
+                    if (!client) {
+                      toast({ title: "Export Error", description: "Client information missing", variant: "destructive" });
+                      return;
+                    }
                     const exportData = prepareInvoiceExportData(
                       currentQuote,
                       client,
