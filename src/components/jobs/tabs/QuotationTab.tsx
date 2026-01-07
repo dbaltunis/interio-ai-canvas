@@ -662,25 +662,30 @@ export const QuotationTab = ({
               Discount
             </Button>
 
-            {/* Payment Button */}
-            <Button variant="outline" size="sm" onClick={handlePayment} disabled={createQuote.isPending || isReadOnly} className="h-9 px-4">
-              <CreditCard className="h-4 w-4 mr-2" />
-              Payment
-            </Button>
-
-            {/* Record Payment - Invoice only */}
-            {isInvoice && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setIsRecordPaymentOpen(true)}
-                disabled={isReadOnly}
-                className="h-9 px-4"
-              >
-                <Banknote className="h-4 w-4 mr-2" />
-                Record Payment
-              </Button>
-            )}
+            {/* Payment Dropdown - combines Payment Config + Record Payment */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" disabled={createQuote.isPending || isReadOnly} className="h-9 px-4">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Payment
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handlePayment}>
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Configure Payment Terms
+                </DropdownMenuItem>
+                {isInvoice && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setIsRecordPaymentOpen(true)}>
+                      <Banknote className="h-4 w-4 mr-2" />
+                      Record Payment Received
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Export CSV - Invoice only */}
             {isInvoice && (
