@@ -6,12 +6,15 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCreateInvitation } from "@/hooks/useUserInvitations";
-import { Mail, User, Shield, AlertCircle, CreditCard } from "lucide-react";
+import { Mail, User, Shield, CreditCard, Calendar, Info } from "lucide-react";
 import { ROLE_PERMISSIONS, PERMISSION_LABELS } from "@/constants/permissions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useSubscriptionDetails } from "@/hooks/useSubscriptionDetails";
+import { format } from "date-fns";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface InviteUserDialogProps {
   open: boolean;
@@ -52,6 +55,9 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
 
   const isAdmin = userProfile?.role === 'admin' || userProfile?.role === 'super_admin';
   const requiresBilling = !isAdmin;
+
+  // Get subscription details for proration preview
+  const { data: subscription, isLoading: subscriptionLoading } = useSubscriptionDetails();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,15 +127,64 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Billing warning for non-admin users */}
+        {/* Billing information with proration preview for non-admin users */}
           {requiresBilling && (
-            <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/30">
-              <CreditCard className="h-4 w-4 text-amber-600" />
-              <AlertDescription className="text-amber-800 dark:text-amber-200">
-                <strong>Additional seat charge:</strong> Adding a team member will add <strong>£99/month</strong> to your subscription. 
-                This will be prorated for the current billing period.
-              </AlertDescription>
-            </Alert>
+            <div className="rounded-lg border border-amber-500/50 bg-amber-50 dark:bg-amber-950/30 p-4 space-y-3">
+              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+                <CreditCard className="h-4 w-4" />
+                <span className="font-semibold">Billing Information</span>
+              </div>
+              
+              {subscriptionLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              ) : subscription?.hasSubscription ? (
+                <div className="space-y-2 text-sm text-amber-800 dark:text-amber-200">
+                  <div className="flex justify-between">
+                    <span>Additional seat cost:</span>
+                    <span className="font-medium">£{subscription.pricePerSeat}/month</span>
+                  </div>
+                  
+                  {subscription.prorationForNewSeat !== undefined && subscription.daysRemaining !== undefined && (
+                    <div className="flex justify-between">
+                      <span className="flex items-center gap-1">
+                        Today's prorated charge
+                        <Info className="h-3 w-3" />
+                      </span>
+                      <span className="font-medium">~£{subscription.prorationForNewSeat.toFixed(2)}</span>
+                    </div>
+                  )}
+                  
+                  {subscription.daysRemaining !== undefined && (
+                    <p className="text-xs text-amber-700 dark:text-amber-300">
+                      ({subscription.daysRemaining} days remaining in billing period)
+                    </p>
+                  )}
+                  
+                  <div className="pt-2 border-t border-amber-300/50">
+                    <div className="flex justify-between">
+                      <span>New monthly total:</span>
+                      <span className="font-semibold">
+                        £{subscription.newMonthlyTotalAfterAddingSeat}/month ({subscription.currentSeats + 1} seats)
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {subscription.nextBillingDate && (
+                    <div className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-300">
+                      <Calendar className="h-3 w-3" />
+                      Next full billing: {format(new Date(subscription.nextBillingDate), 'MMM d, yyyy')}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  Adding a team member will add <strong>£99/month</strong> to your subscription.
+                </p>
+              )}
+            </div>
           )}
 
           <div className="space-y-2">

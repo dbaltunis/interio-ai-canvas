@@ -3,6 +3,7 @@ import { useState } from "react";
 import { InviteUserDialog } from "../InviteUserDialog";
 import { useUsers } from "@/hooks/useUsers";
 import { UserList } from "../user-management/UserList";
+import { SubscriptionSummary } from "../user-management/SubscriptionSummary";
 
 export const UserManagementTab = () => {
   const { data: users = [], isLoading: usersLoading } = useUsers();
@@ -10,6 +11,8 @@ export const UserManagementTab = () => {
 
   return (
     <div className="space-y-6">
+      <SubscriptionSummary />
+      
       <UserList 
         users={users} 
         onInviteUser={() => setIsInviteDialogOpen(true)} 
