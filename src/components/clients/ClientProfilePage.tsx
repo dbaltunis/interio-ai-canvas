@@ -210,7 +210,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
       {/* Main Content Area - Three Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left Column - Client Details & Files (Collapsible) */}
-        <div className="lg:col-span-3 space-y-3">
+        <div className="lg:col-span-5 space-y-3">
           <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
             <Card variant="analytics">
               <CollapsibleTrigger asChild>
@@ -425,7 +425,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </div>
 
         {/* Right Column - Communications */}
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-3">
           <ClientCommunicationsTab 
             clientId={clientId} 
             clientEmail={client.email}
