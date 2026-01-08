@@ -9,10 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Send, Loader2, AlertCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/components/auth/AuthProvider';
-import { useCanSendEmails } from '@/hooks/useCanSendEmails';
 import {
   Select,
   SelectContent,
@@ -20,11 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Eye, Edit } from 'lucide-react';
+import { Send, Loader2, AlertCircle, Eye, Edit } from 'lucide-react';
 import { RichTextEditor } from '@/components/jobs/email-components/RichTextEditor';
 import { EmailTemplateWithBusiness } from '@/components/email/EmailTemplateWithBusiness';
 import { EmailSpamScore } from '@/components/email/EmailSpamScore';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { useCanSendEmails } from '@/hooks/useCanSendEmails';
 import { useGeneralEmailTemplates } from '@/hooks/useGeneralEmailTemplates';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 import { processTemplateVariables, getTemplateTypeLabel } from '@/utils/emailTemplateVariables';
@@ -132,10 +131,10 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
       return;
     }
 
-    if (!subject.trim() || !message.trim()) {
+    if (!toEmail.trim() || !subject.trim() || !message.trim()) {
       toast({
         title: "Error",
-        description: "Please fill in both subject and message",
+        description: "Please fill in recipient email, subject, and message",
         variant: "destructive",
       });
       return;
@@ -337,7 +336,14 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
             </Button>
             <Button
               onClick={handleSend}
-              disabled={sending || !subject.trim() || !message.trim() || !isPermissionLoaded || !canSendEmails}
+              disabled={
+                sending || 
+                !toEmail.trim() || 
+                !subject.trim() || 
+                !message.trim() || 
+                !isPermissionLoaded || 
+                !canSendEmails
+              }
             >
               {sending ? (
                 <>

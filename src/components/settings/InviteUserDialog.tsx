@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useCreateInvitation } from "@/hooks/useUserInvitations";
 import { Mail, User, Shield, CreditCard, Calendar, Info } from "lucide-react";
 import { ROLE_PERMISSIONS, PERMISSION_LABELS } from "@/constants/permissions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUserPermissions } from "@/hooks/usePermissions";
@@ -17,7 +18,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useSubscriptionDetails } from "@/hooks/useSubscriptionDetails";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface InviteUserDialogProps {
   open: boolean;
