@@ -91,7 +91,14 @@ export const useClientJobs = (clientId: string) => {
 
       const { data: projects, error } = await supabase
         .from("projects")
-        .select("*")
+        .select(`
+          *,
+          quotes (
+            id,
+            total_amount,
+            status
+          )
+        `)
         .eq("user_id", effectiveOwnerId)
         .eq("client_id", clientId)
         .order("created_at", { ascending: false });

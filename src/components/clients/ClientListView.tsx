@@ -336,6 +336,11 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                           <div className="font-semibold text-foreground">
                             {formatCurrency(client.deal_value)}
                           </div>
+                        ) : (client.totalValue && client.totalValue > 0) ? (
+                          <div className="text-muted-foreground text-sm">
+                            {formatCurrency(client.totalValue)}
+                            <span className="text-xs block text-muted-foreground/70">(from projects)</span>
+                          </div>
                         ) : (
                           <div className="text-muted-foreground/60 text-sm">—</div>
                         )}
