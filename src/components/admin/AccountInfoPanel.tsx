@@ -227,6 +227,31 @@ export function AccountInfoPanel({ account, onAccountDeleted }: AccountInfoPanel
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Current Status Display */}
+          <div className="p-3 rounded-lg bg-muted/50 border">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Current Status</p>
+            {(account as any).account_status === 'active' || !(account as any).account_status ? (
+              <Badge className="bg-green-100 text-green-800 border-green-300">
+                <ShieldCheck className="h-3 w-3 mr-1" /> Active
+              </Badge>
+            ) : (account as any).account_status === 'trial_ended' ? (
+              <Badge className="bg-amber-100 text-amber-800 border-amber-300">
+                <Clock className="h-3 w-3 mr-1" /> Trial Ended
+              </Badge>
+            ) : (account as any).account_status === 'suspended' ? (
+              <Badge className="bg-orange-100 text-orange-800 border-orange-300">
+                <AlertCircle className="h-3 w-3 mr-1" /> Suspended
+              </Badge>
+            ) : (
+              <Badge className="bg-red-100 text-red-800 border-red-300">
+                <XCircle className="h-3 w-3 mr-1" /> Blocked
+              </Badge>
+            )}
+            {(account as any).blocked_reason && (
+              <p className="text-xs text-muted-foreground mt-1">Reason: {(account as any).blocked_reason}</p>
+            )}
+          </div>
+
           <div>
             <p className="text-sm mb-2">Block or restrict access to this account</p>
             <p className="text-xs text-muted-foreground mb-4">

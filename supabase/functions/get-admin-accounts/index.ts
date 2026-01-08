@@ -55,7 +55,7 @@ serve(async (req) => {
     // Get all parent accounts (account owners)
     let query = supabaseAdmin
       .from('user_profiles')
-      .select('user_id, display_name, account_type, parent_account_id, created_at')
+      .select('user_id, display_name, account_type, parent_account_id, created_at, account_status, blocked_reason, blocked_at')
       .is('parent_account_id', null)
       .order('created_at', { ascending: false });
 
@@ -109,6 +109,9 @@ serve(async (req) => {
             created_at: profile.created_at,
             subscription: subscription || null,
             team_members_count: teamMembersCount || 0,
+            account_status: profile.account_status || 'active',
+            blocked_reason: profile.blocked_reason,
+            blocked_at: profile.blocked_at,
           };
         } catch (error) {
           console.error(`Error processing account ${profile.user_id}:`, error);
