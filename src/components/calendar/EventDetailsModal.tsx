@@ -32,6 +32,8 @@ interface Appointment {
   client_id?: string;
   project_id?: string;
   color?: string;
+  team_member_ids?: string[];
+  invited_client_emails?: string[];
 }
 
 interface EventDetailsModalProps {
@@ -181,7 +183,7 @@ export const EventDetailsModal = ({ isOpen, onClose, appointment }: EventDetails
     );
   };
 
-  const handleInviteTeamMembers = () => {
+  const handleInviteTeamMembers = async () => {
     if (selectedTeamMembers.length === 0) {
       toast({
         title: "Error",
@@ -191,16 +193,29 @@ export const EventDetailsModal = ({ isOpen, onClose, appointment }: EventDetails
       return;
     }
     
-    // TODO: Implement actual team member invitation logic
-    toast({
-      title: "Success",
-      description: `Invited ${selectedTeamMembers.length} team member(s) to the event`,
-    });
-    setSelectedTeamMembers([]);
-    setShowInviteTeam(false);
+    try {
+      // Update appointment with team member IDs
+      await updateAppointment.mutateAsync({
+        ...appointment,
+        team_member_ids: selectedTeamMembers,
+      });
+      
+      toast({
+        title: "Success",
+        description: `Invited ${selectedTeamMembers.length} team member(s) to the event`,
+      });
+      setSelectedTeamMembers([]);
+      setShowInviteTeam(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to invite team members",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleInviteClient = () => {
+  const handleInviteClient = async () => {
     if (!clientEmail.trim()) {
       toast({
         title: "Error",
@@ -210,16 +225,30 @@ export const EventDetailsModal = ({ isOpen, onClose, appointment }: EventDetails
       return;
     }
     
-    // TODO: Implement actual client invitation logic
-    toast({
-      title: "Success",
-      description: `Invited ${clientEmail} to the event`,
-    });
-    setClientEmail("");
-    setShowInviteClient(false);
+    try {
+      // Update appointment with invited client email
+      const currentEmails = appointment.invited_client_emails || [];
+      await updateAppointment.mutateAsync({
+        ...appointment,
+        invited_client_emails: [...currentEmails, clientEmail.trim()],
+      });
+      
+      toast({
+        title: "Success",
+        description: `Invited ${clientEmail} to the event`,
+      });
+      setClientEmail("");
+      setShowInviteClient(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to invite client",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleApplyToJobClient = () => {
+  const handleApplyToJobClient = async () => {
     if (!selectedJobClient) {
       toast({
         title: "Error",
@@ -229,13 +258,28 @@ export const EventDetailsModal = ({ isOpen, onClose, appointment }: EventDetails
       return;
     }
     
-    // TODO: Implement actual job/client assignment logic
-    toast({
-      title: "Success",
-      description: "Event applied to selected job/client",
-    });
-    setSelectedJobClient("");
-    setShowApplyToJob(false);
+    try {
+      // Parse the selection to get type and ID
+      const [type, id] = selectedJobClient.split('-');
+      const updateData = type === 'project' 
+        ? { ...appointment, project_id: id }
+        : { ...appointment, client_id: id };
+      
+      await updateAppointment.mutateAsync(updateData);
+      
+      toast({
+        title: "Success",
+        description: "Event applied to selected job/client",
+      });
+      setSelectedJobClient("");
+      setShowApplyToJob(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to apply to job/client",
+        variant: "destructive",
+      });
+    }
   };
 
   const getStatusColor = (status: string) => {
