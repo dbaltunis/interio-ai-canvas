@@ -15,13 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Eye, Edit } from 'lucide-react';
 import { RichTextEditor } from '@/components/jobs/email-components/RichTextEditor';
+import { EmailTemplateWithBusiness } from '@/components/email/EmailTemplateWithBusiness';
+import { EmailSpamScore } from '@/components/email/EmailSpamScore';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useGeneralEmailTemplates } from '@/hooks/useGeneralEmailTemplates';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 import { processTemplateVariables, getTemplateTypeLabel } from '@/utils/emailTemplateVariables';
+import { useCampaignAssistant } from '@/hooks/useCampaignAssistant';
 
 interface QuickEmailDialogProps {
   open: boolean;
@@ -40,7 +43,11 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
   const [sending, setSending] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [editorKey, setEditorKey] = useState(0);
+  const [showPreview, setShowPreview] = useState(false);
+  const [spamResult, setSpamResult] = useState<{ score: number; issues: string[]; suggestions: string[] } | null>(null);
+  const [isCheckingSpam, setIsCheckingSpam] = useState(false);
   const { toast } = useToast();
+  const { checkSpamRisk } = useCampaignAssistant();
   
   const { data: templates, isLoading: templatesLoading } = useGeneralEmailTemplates();
   const { data: businessSettings } = useBusinessSettings();
@@ -66,6 +73,8 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
       setMessage('');
       setSelectedTemplateId('');
       setEditorKey(prev => prev + 1);
+      setShowPreview(false);
+      setSpamResult(null);
     } else {
       setToEmail(client.email || '');
     }
@@ -165,6 +174,22 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
     }
   };
 
+  const handleCheckSpam = async () => {
+    if (!subject && !message) return;
+    
+    setIsCheckingSpam(true);
+    try {
+      const result = await checkSpamRisk(subject, message);
+      if (result) {
+        setSpamResult(result);
+      }
+    } catch (error) {
+      console.error('Error checking spam:', error);
+    } finally {
+      setIsCheckingSpam(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[650px]">
@@ -219,14 +244,63 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="message">Message</Label>
-            <RichTextEditor
-              key={editorKey}
-              value={message}
-              onChange={setMessage}
-              placeholder="Enter your message..."
-              className="max-h-[280px]"
-            />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <Label htmlFor="message">Message</Label>
+                <div className="flex ml-3 bg-muted rounded-md p-0.5">
+                  <Button
+                    type="button"
+                    variant={!showPreview ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setShowPreview(false)}
+                    className="h-6 px-2 text-xs gap-1"
+                  >
+                    <Edit className="h-3 w-3" />
+                    Edit
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={showPreview ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setShowPreview(true)}
+                    className="h-6 px-2 text-xs gap-1"
+                  >
+                    <Eye className="h-3 w-3" />
+                    Preview
+                  </Button>
+                </div>
+              </div>
+              <EmailSpamScore
+                result={spamResult}
+                isLoading={isCheckingSpam}
+                onCheck={handleCheckSpam}
+              />
+            </div>
+            
+            {showPreview ? (
+              <div className="border rounded-md max-h-[280px] overflow-y-auto">
+                <EmailTemplateWithBusiness
+                  subject={subject}
+                  content={message}
+                  clientData={{
+                    name: client.name,
+                    email: client.email || '',
+                    company_name: ''
+                  }}
+                />
+              </div>
+            ) : (
+              <RichTextEditor
+                key={editorKey}
+                value={message}
+                onChange={(val) => {
+                  setMessage(val);
+                  setSpamResult(null); // Clear spam result when content changes
+                }}
+                placeholder="Enter your message..."
+                className="max-h-[280px]"
+              />
+            )}
           </div>
           
           <div className="flex justify-end gap-2 pt-4">
