@@ -13,6 +13,9 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[PROVISION-SUBSCRIPTION-ACCOUNT] ${step}${detailsStr}`);
 };
 
+// Default Starter plan ID - used for paid subscriptions
+const STARTER_PLAN_ID = "bbebd0c6-88a5-4c37-8a10-ab51b5d9b94c";
+
 // Generate a secure temporary password
 function generateSecurePassword(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%&*';
@@ -123,8 +126,9 @@ serve(async (req) => {
 
       if (!existingSub && subscriptionData) {
         // Create subscription record for existing user
-        await supabaseAdmin.from('user_subscriptions').insert({
+        const { error: subError } = await supabaseAdmin.from('user_subscriptions').insert({
           user_id: existingUser.id,
+          plan_id: STARTER_PLAN_ID,
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionData?.id,
           status: 'active',
@@ -135,6 +139,11 @@ serve(async (req) => {
             ? new Date(subscriptionData.current_period_end * 1000).toISOString()
             : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         });
+
+        if (subError) {
+          logStep("ERROR creating subscription for existing user", { error: subError.message });
+          throw new Error(`Failed to create subscription: ${subError.message}`);
+        }
 
         logStep("Subscription record created for existing user");
       }
@@ -225,6 +234,7 @@ serve(async (req) => {
     if (subscriptionData || customerId) {
       await supabaseAdmin.from('user_subscriptions').insert({
         user_id: newUser.user.id,
+        plan_id: STARTER_PLAN_ID,
         stripe_customer_id: customerId,
         stripe_subscription_id: subscriptionData?.id,
         status: 'active',
