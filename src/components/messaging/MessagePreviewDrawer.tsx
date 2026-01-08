@@ -199,12 +199,17 @@ export const MessagePreviewDrawer = ({
   });
 
   const channelLabel = channelFilter === 'email' ? 'Email' : channelFilter === 'whatsapp' ? 'WhatsApp' : 'Messages';
+  
+  // Channel-specific header colors
+  const headerBgClass = channelFilter === 'email' 
+    ? 'bg-blue-600 dark:bg-blue-800' 
+    : 'bg-[#075E54] dark:bg-[#1F2C34]';
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md p-0 flex flex-col">
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 bg-[#075E54] dark:bg-[#1F2C34] text-white">
+        <div className={cn("flex items-center gap-3 px-4 py-3 text-white", headerBgClass)}>
           <Avatar className="h-10 w-10 border-2 border-white/20">
             <AvatarFallback className="bg-white/20 text-white font-medium">
               {getInitials(displayName)}
