@@ -26,6 +26,7 @@ const activityIcons: Record<ActivityType, any> = {
   reminder_snoozed: Clock,
   stage_changed: TrendingUp,
   task_completed: CheckCircle,
+  whatsapp_sent: MessageSquare,
 };
 
 const activityColors: Record<ActivityType, string> = {
@@ -39,6 +40,7 @@ const activityColors: Record<ActivityType, string> = {
   reminder_snoozed: "bg-gray-100 text-gray-700 border-gray-300",
   stage_changed: "bg-pink-100 text-pink-700 border-pink-300",
   task_completed: "bg-green-100 text-green-700 border-green-300",
+  whatsapp_sent: "bg-green-100 text-green-700 border-green-300",
 };
 
 export const ClientActivityLog = ({ clientId, canEditClient = true }: ClientActivityLogProps) => {

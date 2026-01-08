@@ -12,7 +12,8 @@ export type ActivityType =
   | "note_added"
   | "reminder_snoozed"
   | "stage_changed"
-  | "task_completed";
+  | "task_completed"
+  | "whatsapp_sent";
 
 export interface ClientActivity {
   id: string;

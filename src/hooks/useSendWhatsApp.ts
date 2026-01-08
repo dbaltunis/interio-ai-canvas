@@ -3,6 +3,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSubscriptionFeatures } from './useSubscriptionFeatures';
 import { toast } from 'sonner';
 
+// Helper function to log activity for WhatsApp sent
+const logWhatsAppActivity = async (clientId: string, message: string, userId: string) => {
+  try {
+    const truncatedMessage = message && message.length > 50 ? message.substring(0, 50) + '...' : message;
+    await supabase.from("client_activity_log").insert({
+      client_id: clientId,
+      user_id: userId,
+      activity_type: "whatsapp_sent",
+      title: `WhatsApp sent`,
+      description: truncatedMessage || 'WhatsApp message sent',
+    });
+  } catch (error) {
+    console.warn("Failed to log WhatsApp activity:", error);
+  }
+};
+
 interface SendWhatsAppParams {
   to: string;
   message?: string;
@@ -25,7 +41,7 @@ export const useSendWhatsApp = () => {
   const { hasFeature } = useSubscriptionFeatures();
 
   return useMutation({
-    mutationFn: async (params: SendWhatsAppParams): Promise<WhatsAppResponse> => {
+    mutationFn: async (params: SendWhatsAppParams): Promise<WhatsAppResponse & { clientId?: string; message?: string }> => {
       // Validate phone number
       if (!params.to) {
         throw new Error('Phone number is required');
@@ -49,11 +65,21 @@ export const useSendWhatsApp = () => {
         throw new Error(data.error);
       }
 
-      return data as WhatsAppResponse;
+      // Return data with clientId and message for activity logging
+      return { ...data, clientId: params.clientId, message: params.message } as WhatsAppResponse & { clientId?: string; message?: string };
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       toast.success('WhatsApp message sent successfully');
       queryClient.invalidateQueries({ queryKey: ['whatsapp-messages'] });
+      
+      // Log activity if linked to a client
+      if (data.clientId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await logWhatsAppActivity(data.clientId, data.message || '', user.id);
+          queryClient.invalidateQueries({ queryKey: ['client-activities'] });
+        }
+      }
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to send WhatsApp message');
