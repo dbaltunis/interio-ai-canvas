@@ -201,6 +201,7 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
           <>
             {projects.slice(0, 5).map((project) => {
               const notesCount = notesByProject[project.id] || 0;
+              const projectValue = getProjectValue(project);
               return (
                 <div
                   key={project.id}
@@ -217,9 +218,14 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
                         </span>
                       )}
                     </div>
-                    {project.job_number && (
-                      <div className="text-[10px] text-muted-foreground">#{formatJobNumber(project.job_number)}</div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {project.job_number && (
+                        <span className="text-[10px] text-muted-foreground">#{formatJobNumber(project.job_number)}</span>
+                      )}
+                      {projectValue > 0 && (
+                        <span className="text-[10px] font-medium text-green-600">{formatCurrency(projectValue)}</span>
+                      )}
+                    </div>
                   </div>
                   <Badge className={`${getStatusColor(project.status || 'planning')} text-[9px] px-1 py-0 h-4 shrink-0`} variant="secondary">
                     {(project.status || 'planning').replace('_', ' ')}
@@ -227,6 +233,13 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
                 </div>
               );
             })}
+            {/* Total Projects Value */}
+            {totalProjectsValue > 0 && (
+              <div className="flex items-center justify-between pt-2 mt-1 border-t border-border/50">
+                <span className="text-[10px] text-muted-foreground">Total Value:</span>
+                <span className="text-xs font-bold text-green-600">{formatCurrency(totalProjectsValue)}</span>
+              </div>
+            )}
             {projects.length > 5 && (
               <Button variant="ghost" size="sm" className="w-full h-6 text-[10px]" onClick={() => onTabChange?.('projects')}>
                 +{projects.length - 5} more projects
