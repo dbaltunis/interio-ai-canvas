@@ -37,6 +37,7 @@ interface QuickEmailDialogProps {
 export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialogProps) => {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [toEmail, setToEmail] = useState(client.email || '');
   const [sending, setSending] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [showPreview, setShowPreview] = useState(false);
@@ -59,14 +60,16 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
     }
   }, [open, templates]);
 
-  // Reset form when dialog closes
+  // Reset form when dialog closes, reset toEmail when it opens
   useEffect(() => {
     if (!open) {
       setSubject('');
       setMessage('');
       setSelectedTemplateId('');
+    } else {
+      setToEmail(client.email || '');
     }
-  }, [open]);
+  }, [open, client.email]);
 
   const applyTemplate = (template: { subject: string; content: string }) => {
     const templateData = {
@@ -118,7 +121,7 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
     try {
       const { error } = await supabase.functions.invoke('send-client-email', {
         body: {
-          to: client.email,
+          to: toEmail,
           clientName: client.name,
           subject: subject,
           message: message,
@@ -133,7 +136,7 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
         await supabase.from('emails').insert({
           user_id: user.id,
           client_id: client.id,
-          recipient_email: client.email!,
+          recipient_email: toEmail,
           subject: subject,
           content: message,
           status: 'sent',
@@ -198,9 +201,10 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
             <Label htmlFor="to">To</Label>
             <Input
               id="to"
-              value={client.email || ''}
-              disabled
-              className="bg-muted"
+              type="email"
+              placeholder="Enter recipient email..."
+              value={toEmail}
+              onChange={(e) => setToEmail(e.target.value)}
             />
           </div>
           
@@ -271,7 +275,7 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
             </Button>
             <Button
               onClick={handleSend}
-              disabled={sending || !subject.trim() || !message.trim()}
+              disabled={sending || !toEmail.trim() || !subject.trim() || !message.trim()}
             >
               {sending ? (
                 <>
