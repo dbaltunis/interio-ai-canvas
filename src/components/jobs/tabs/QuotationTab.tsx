@@ -242,7 +242,7 @@ export const QuotationTab = ({
     buildQuotationItems
   } = useQuotationSync({
     projectId: projectId,
-    clientId: project?.client_id || "",
+    clientId: project?.client_id || undefined,
     autoCreateQuote: false
   });
 
