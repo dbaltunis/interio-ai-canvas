@@ -98,6 +98,9 @@ export const getAvailableVariables = (templateType: string): string[] => {
       ...commonVariables,
       'project.name',
     ],
+    lead_initial_contact: [
+      ...commonVariables,
+    ],
   };
 
   return typeSpecificVariables[templateType] || commonVariables;
@@ -112,6 +115,7 @@ export const getTemplateTypeLabel = (templateType: string): string => {
     booking_confirmation: 'Booking Confirmation',
     reminder: 'Appointment Reminder',
     thank_you: 'Thank You Email',
+    lead_initial_contact: 'Lead Initial Contact',
   };
 
   return labels[templateType] || templateType;
