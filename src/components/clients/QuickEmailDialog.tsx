@@ -16,7 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Eye, Edit } from 'lucide-react';
+import { EmailTemplateWithBusiness } from '@/components/email/EmailTemplateWithBusiness';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useGeneralEmailTemplates } from '@/hooks/useGeneralEmailTemplates';
@@ -38,6 +39,7 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
   
   const { data: templates, isLoading: templatesLoading } = useGeneralEmailTemplates();
@@ -213,14 +215,50 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="message">Message</Label>
-            <Textarea
-              id="message"
-              placeholder="Enter your message..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={8}
-            />
+            <div className="flex items-center justify-between">
+              <Label htmlFor="message">Message</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPreview(!showPreview)}
+                className="h-7 gap-1.5 text-xs"
+              >
+                {showPreview ? (
+                  <>
+                    <Edit className="h-3.5 w-3.5" />
+                    Edit
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-3.5 w-3.5" />
+                    Preview
+                  </>
+                )}
+              </Button>
+            </div>
+            
+            {showPreview ? (
+              <div className="border rounded-md max-h-[300px] overflow-y-auto">
+                <EmailTemplateWithBusiness
+                  subject={subject}
+                  content={message}
+                  clientData={{
+                    name: client.name,
+                    email: client.email || '',
+                    company_name: ''
+                  }}
+                />
+              </div>
+            ) : (
+              <Textarea
+                id="message"
+                placeholder="Enter your message..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={8}
+              />
+            )}
           </div>
           
           <div className="flex justify-end gap-2 pt-4">
