@@ -30,41 +30,19 @@ serve(async (req) => {
   );
 
   try {
-    logStep("Function started");
+    logStep("Function started v2");
 
-    // Verify admin user
+    // Verify user is authenticated
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header");
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !userData.user) throw new Error("Unauthorized");
-
-    // Check if user is admin (handle case variations)
-    const { data: profile, error: profileError } = await supabaseClient
-      .from("user_profiles")
-      .select("role")
-      .eq("user_id", userData.user.id)
-      .single();
-
-    logStep("Profile lookup", { 
-      userId: userData.user.id, 
-      profile, 
-      profileError: profileError?.message,
-      role: profile?.role 
-    });
-
-    // Allow Owners and Admins to send subscription invites
-    const userRole = profile?.role?.toLowerCase();
-    const allowedRoles = ["admin", "super_admin", "owner"];
     
-    if (!userRole || !allowedRoles.includes(userRole)) {
-      logStep("Access denied", { userRole, allowedRoles });
-      throw new Error(`Admin access required. Your role: ${profile?.role || 'not found'}`);
-    }
+    logStep("User authenticated", { userId: userData.user.id, email: userData.user.email });
 
-    logStep("Admin verified", { role: profile?.role });
-
+    // Parse request body first to get the data we need
     const { email, planKey, seats = 1, clientName } = await req.json();
     
     if (!email || !planKey) {
