@@ -46,20 +46,19 @@ export const EmailSpamScore = ({ result, isLoading, onCheck }: EmailSpamScorePro
     );
   }
 
-  const { score, issues, suggestions } = result;
+  const score = result.score ?? 0;
+  const issues = result.issues ?? [];
+  const suggestions = result.suggestions ?? [];
   
-  let variant: 'default' | 'secondary' | 'destructive' | 'outline' = 'secondary';
   let Icon = CheckCircle;
   let label = 'Low Risk';
   let colorClass = 'bg-green-100 text-green-700 border-green-200 hover:bg-green-100';
   
   if (score > 60) {
-    variant = 'destructive';
     Icon = XCircle;
     label = 'High Risk';
     colorClass = 'bg-red-100 text-red-700 border-red-200 hover:bg-red-100';
   } else if (score > 30) {
-    variant = 'outline';
     Icon = AlertTriangle;
     label = 'Medium Risk';
     colorClass = 'bg-yellow-100 text-yellow-700 border-yellow-200 hover:bg-yellow-100';
