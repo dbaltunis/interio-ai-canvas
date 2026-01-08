@@ -137,7 +137,11 @@ export const RichTextEditor = ({
           .rich-text-editor [contenteditable] ul,
           .rich-text-editor [contenteditable] ol {
             padding-left: 20px;
-            margin: 8px 0;
+            margin: 4px 0;
+          }
+          
+          .rich-text-editor [contenteditable] p {
+            margin: 0 0 4px 0;
           }
           
           .rich-text-editor [contenteditable] li {
@@ -313,11 +317,11 @@ export const RichTextEditor = ({
         <div 
           ref={editorRef}
           contentEditable
-          className={`min-h-[300px] p-4 focus:outline-none bg-white ${
+          className={`min-h-[180px] p-3 focus:outline-none bg-white overflow-y-auto ${
             isEditorFocused ? 'ring-2 ring-blue-500 ring-opacity-20' : ''
           }`}
           style={{
-            lineHeight: '1.6',
+            lineHeight: '1.5',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             fontSize: '14px'
           }}
