@@ -219,6 +219,33 @@ export const DynamicCurtainOptions = ({
       totalHeadingOptions: headingOptions.length
     });
     
+    // CRITICAL: Handle "Standard / No Heading" case - use template's default fullness
+    if (headingId === 'none') {
+      onChange('selected_heading', 'none');
+      if (onHeadingChange) {
+        onHeadingChange('none');
+      }
+      
+      // Use template's fullness_ratio when no heading selected
+      const templateFullness = template?.fullness_ratio;
+      if (typeof templateFullness === 'number' && templateFullness > 0) {
+        console.log('✅ Setting heading_fullness from template:', templateFullness);
+        onChange('heading_fullness', templateFullness);
+        onChange('fullness_ratio', templateFullness);
+      } else {
+        // Fallback to 1 only if template has no default
+        console.log('No template fullness, using 1x');
+        onChange('heading_fullness', 1);
+        onChange('fullness_ratio', 1);
+      }
+      
+      // Clear heading price
+      if (onOptionPriceChange) {
+        onOptionPriceChange('heading', 0, 'Standard / No Heading', 'fixed');
+      }
+      return;
+    }
+    
     const heading = headingOptions.find(h => h.id === headingId);
     console.log('🔥🔥🔥 Found heading:', heading);
     
@@ -603,12 +630,12 @@ export const DynamicCurtainOptions = ({
                   sideOffset={5}
                   align="end"
                 >
-                  {/* FIX: Add explicit "No Heading" option so users can select it */}
+                  {/* FIX: Add explicit "No Heading" option - use template's default fullness */}
                   <SelectItem key="no-heading" value="none">
                     <div className="flex items-center justify-between w-full gap-4">
                       <span className="text-muted-foreground">Standard / No Heading</span>
                       <Badge variant="outline" className="text-xs">
-                        1x fullness
+                        {template?.fullness_ratio ? `${template.fullness_ratio}x fullness` : '1x fullness'}
                       </Badge>
                     </div>
                   </SelectItem>
