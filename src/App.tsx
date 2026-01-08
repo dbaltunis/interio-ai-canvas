@@ -49,6 +49,8 @@ const OnlineStore = lazy(() => import("./pages/OnlineStore"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
 const AdminAccountManagement = lazy(() => import("./pages/AdminAccountManagement"));
 const OnboardingSubmissions = lazy(() => import("./pages/OnboardingSubmissions"));
+const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
+const SubscriptionCanceled = lazy(() => import("./pages/SubscriptionCanceled"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -199,6 +201,20 @@ const App = () => {
                 <Route path="/reset-password" element={
                   <ErrorBoundary>
                     <ResetPassword />
+                  </ErrorBoundary>
+                } />
+
+                {/* Subscription success route - public */}
+                <Route path="/subscription-success" element={
+                  <ErrorBoundary>
+                    <SubscriptionSuccess />
+                  </ErrorBoundary>
+                } />
+
+                {/* Subscription canceled route - public */}
+                <Route path="/subscription-canceled" element={
+                  <ErrorBoundary>
+                    <SubscriptionCanceled />
                   </ErrorBoundary>
                 } />
                 
