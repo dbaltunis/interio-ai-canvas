@@ -266,9 +266,20 @@ export const QuoteVersionManager = ({
           
           <Button 
             onClick={() => {
-              // TODO: Implement quote version creation
-              console.log('Creating quote version:', quoteConfig);
-              onSave(quoteConfig);
+              // Create a new quote version using the duplicateQuote mutation
+              if (quoteData) {
+                duplicateQuote.mutate({
+                  currentQuote: quoteData,
+                  duplicateContent: true
+                }, {
+                  onSuccess: (newQuote) => {
+                    onSave({ ...quoteConfig, newQuoteId: newQuote.id });
+                  }
+                });
+              } else {
+                // If no existing quote, just save the config
+                onSave(quoteConfig);
+              }
             }}
             disabled={duplicateQuote.isPending}
           >
