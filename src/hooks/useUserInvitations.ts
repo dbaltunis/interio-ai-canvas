@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
 export interface UserInvitation {
   id: string;
@@ -17,17 +18,24 @@ export interface UserInvitation {
 }
 
 export const useUserInvitations = () => {
+  const { effectiveOwnerId, isLoading: ownerLoading } = useEffectiveAccountOwner();
+
   return useQuery({
-    queryKey: ["user-invitations"],
+    queryKey: ["user-invitations", effectiveOwnerId],
     queryFn: async (): Promise<UserInvitation[]> => {
+      if (!effectiveOwnerId) return [];
+      
+      // Only fetch invitations created by this account owner
       const { data, error } = await supabase
         .from("user_invitations")
         .select("*")
+        .eq("user_id", effectiveOwnerId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!effectiveOwnerId && !ownerLoading,
   });
 };
 
@@ -41,6 +49,7 @@ export const useCreateInvitation = () => {
       invited_name?: string;
       role: string;
       permissions?: any;
+      skipBilling?: boolean; // For admin-created invitations that don't need billing
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -68,6 +77,25 @@ export const useCreateInvitation = () => {
 
       if (existingInvite) {
         throw new Error(`An invitation has already been sent to ${invitation.invited_email}. Please cancel the existing invitation first.`);
+      }
+
+      // For non-admin users (account owners), add subscription seat before inviting
+      // Skip billing for admins/super_admins or if explicitly requested
+      const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
+      if (!isAdmin && !invitation.skipBilling) {
+        // Add a seat to the subscription
+        const { data: seatResult, error: seatError } = await supabase.functions.invoke("add-subscription-seat");
+        
+        if (seatError) {
+          console.error("Failed to add subscription seat:", seatError);
+          throw new Error("Failed to add subscription seat. Please ensure you have an active subscription or contact support.");
+        }
+        
+        if (seatResult?.error) {
+          throw new Error(seatResult.error);
+        }
+        
+        console.log("Subscription seat added:", seatResult);
       }
 
       const invitationData = {
@@ -111,13 +139,13 @@ export const useCreateInvitation = () => {
           ...data, 
           emailSent: false, 
           emailError: emailError.message,
-          invitationLink: `${window.location.origin}/auth?invitation=${data.invitation_token}`
+          invitationLink: `https://appinterio.app/auth?invitation=${data.invitation_token}`
         };
       }
 
       // Check if email was actually sent (edge function returns success even if email failed)
       const emailSent = emailResult?.emailSent !== false;
-      const invitationLink = emailResult?.invitationLink || `${window.location.origin}/auth?invitation=${data.invitation_token}`;
+      const invitationLink = emailResult?.invitationLink || `https://appinterio.app/auth?invitation=${data.invitation_token}`;
 
       return { 
         ...data, 

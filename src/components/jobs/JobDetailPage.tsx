@@ -832,26 +832,26 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
     <div className="h-screen bg-background w-full flex flex-col overflow-hidden">
       {/* Enhanced Header Section - Scrolls away */}
       <div className="bg-gradient-to-r from-card/95 to-card border-b border-border/50 shadow-sm backdrop-blur-sm">
-        <div className="px-3 sm:px-6 py-4">
-          {/* Single Row Layout */}
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            {/* Left Side: Navigation + Client + Date */}
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="px-3 sm:px-6 py-3 sm:py-4">
+          {/* Two-row layout on mobile, single row on larger screens */}
+          <div className="flex flex-col gap-2 sm:gap-0 sm:flex-row sm:items-center sm:justify-between">
+            {/* Top Row: Navigation + Client + Date */}
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onBack}
-                className="shrink-0"
+                className="shrink-0 h-8 px-2 sm:px-3"
               >
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                <span>Jobs</span>
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1">Jobs</span>
               </Button>
               
-              <Separator orientation="vertical" className="h-6 bg-border/60" />
+              <Separator orientation="vertical" className="h-5 sm:h-6 bg-border/60" />
               
-              <div className="flex flex-col gap-0.5 min-w-0">
+              <div className="flex flex-col gap-0 min-w-0">
                 {client && (
-                  <h1 className="text-lg sm:text-xl font-bold text-foreground truncate flex items-center gap-2">
+                  <h1 className="text-base sm:text-lg lg:text-xl font-bold text-foreground truncate flex items-center gap-1.5 sm:gap-2">
                     {client.name}
                     {duplicates && (
                       <DuplicateJobIndicator 
@@ -861,26 +861,26 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
                     )}
                   </h1>
                 )}
-                <span className="text-sm text-muted-foreground">
+                <span className="text-xs sm:text-sm text-muted-foreground">
                   {formattedCreatedDate || new Date(project.created_at).toLocaleDateString()}
                 </span>
               </div>
             </div>
 
-            {/* Right Side: Contact + Status + Actions */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              {/* Contact Button - show if client exists */}
+            {/* Bottom Row on mobile: Contact + Status + Actions */}
+            <div className="flex items-center gap-1.5 shrink-0 justify-start sm:justify-end">
+              {/* Contact Button - icon only on mobile */}
               {client && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setShowContactDialog(true)}
-                  className="border-green-200 text-green-700 hover:bg-green-50"
+                  className="border-green-200 text-green-700 hover:bg-green-50 h-8 px-2 lg:px-3"
                   disabled={!client.email && !client.phone}
                   title={!client.email && !client.phone ? 'No contact info available' : 'Contact client'}
                 >
-                  <MessageCircle className="h-4 w-4 mr-1" />
-                  <span className="hidden sm:inline">Contact</span>
+                  <MessageCircle className="h-4 w-4" />
+                  <span className="hidden lg:inline ml-1">Contact</span>
                 </Button>
               )}
               

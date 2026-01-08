@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 
 export interface User {
   id: string;
@@ -12,19 +13,15 @@ export interface User {
 }
 
 export const useUsers = () => {
+  const { effectiveOwnerId, currentUserId, isLoading: ownerLoading } = useEffectiveAccountOwner();
+
   return useQuery({
-    queryKey: ["users"],
+    queryKey: ["users", effectiveOwnerId],
     queryFn: async (): Promise<User[]> => {
-      console.log('Fetching users...');
+      if (!effectiveOwnerId || !currentUserId) return [];
+      console.log('[useUsers] Fetching users for account:', effectiveOwnerId);
       
-      // Get the current user
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (!currentUser) {
-        console.log('No authenticated user found');
-        return [];
-      }
-      
-      // Get user profiles - query based on parent_account_id relationship
+      // Get user profiles - only from this account (owner + their team members)
       const { data: profiles, error } = await supabase
         .from('user_profiles')
         .select(`
@@ -37,7 +34,8 @@ export const useUsers = () => {
           created_at,
           parent_account_id
         `)
-        .order('created_at', { ascending: false});
+        .or(`user_id.eq.${effectiveOwnerId},parent_account_id.eq.${effectiveOwnerId}`)
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching user profiles:', error);
@@ -64,8 +62,11 @@ export const useUsers = () => {
         let email = 'Protected Email';
         
         // Show actual email for current user, otherwise mask it
-        if (profile.user_id === currentUser.id) {
-          email = currentUser.email || 'Unknown Email';
+        if (profile.user_id === currentUserId) {
+          // We don't have direct access to email here, use display_name if it looks like email
+          if (profile.display_name && profile.display_name.includes('@')) {
+            email = profile.display_name;
+          }
         } else if (profile.display_name && profile.display_name.includes('@')) {
           email = profile.display_name;
         }
@@ -81,8 +82,9 @@ export const useUsers = () => {
         };
       });
 
-      console.log('Transformed users:', users);
+      console.log('[useUsers] Transformed users:', users);
       return users;
     },
+    enabled: !!effectiveOwnerId && !ownerLoading,
   });
 };

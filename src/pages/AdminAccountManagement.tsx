@@ -6,12 +6,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useAdminAccounts } from "@/hooks/useAdminAccounts";
 import { AccountType } from "@/types/subscriptions";
-import { Search, UserPlus } from "lucide-react";
+import { Search, UserPlus, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { AccountDetailsDialog } from "@/components/admin/AccountDetailsDialog";
 import { CreateAccountDialog } from "@/components/admin/CreateAccountDialog";
+import { SendSubscriptionInviteDialog } from "@/components/admin/SendSubscriptionInviteDialog";
+import { PendingInvitesSection } from "@/components/admin/PendingInvitesSection";
+import { ManualAccountProvision } from "@/components/admin/ManualAccountProvision";
 import { AccountWithDetails } from "@/types/subscriptions";
-import { SystemOwnerRoute } from "@/components/auth/SystemOwnerRoute";
 
 export default function AdminAccountManagement() {
   const [search, setSearch] = useState("");
@@ -19,6 +21,7 @@ export default function AdminAccountManagement() {
   const [subscriptionStatusFilter, setSubscriptionStatusFilter] = useState<string | "all">("all");
   const [selectedAccount, setSelectedAccount] = useState<AccountWithDetails | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
   const { data: accounts, isLoading } = useAdminAccounts({
     accountType: accountTypeFilter === "all" ? undefined : accountTypeFilter,
@@ -54,6 +57,24 @@ export default function AdminAccountManagement() {
     );
   };
 
+  const getAccountStatusBadge = (status: string | undefined) => {
+    if (!status || status === 'active') return null;
+    
+    const statusConfig: Record<string, { label: string; className: string }> = {
+      blocked: { label: "Blocked", className: "bg-red-100 text-red-800 border-red-300" },
+      trial_ended: { label: "Trial Ended", className: "bg-amber-100 text-amber-800 border-amber-300" },
+      suspended: { label: "Suspended", className: "bg-orange-100 text-orange-800 border-orange-300" },
+    };
+    
+    const config = statusConfig[status] || { label: status, className: "bg-gray-100 text-gray-800" };
+    
+    return (
+      <Badge className={config.className} variant="outline">
+        {config.label}
+      </Badge>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -66,11 +87,23 @@ export default function AdminAccountManagement() {
     <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Account Management</h1>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Create New Account
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsInviteDialogOpen(true)}>
+              <Mail className="mr-2 h-4 w-4" />
+              Send Subscription Invite
+            </Button>
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Create New Account
+            </Button>
+          </div>
         </div>
+
+      {/* Manual Account Provisioning */}
+      <ManualAccountProvision />
+
+      {/* Pending Invites Section */}
+      <PendingInvitesSection />
 
       {/* Filters */}
       <Card>
@@ -132,6 +165,7 @@ export default function AdminAccountManagement() {
                   <div className="flex items-center gap-2">
                     <p className="font-medium">{account.display_name || "No Name"}</p>
                     {getAccountTypeBadge(account.account_type)}
+                    {getAccountStatusBadge((account as any).account_status)}
                   </div>
                   <p className="text-sm text-muted-foreground">{account.email}</p>
                 </div>
@@ -179,6 +213,12 @@ export default function AdminAccountManagement() {
         onSuccess={() => {
           // Accounts will auto-refresh via React Query
         }}
+      />
+
+      {/* Send Subscription Invite Dialog */}
+      <SendSubscriptionInviteDialog
+        open={isInviteDialogOpen}
+        onOpenChange={setIsInviteDialogOpen}
       />
     </div>
   );

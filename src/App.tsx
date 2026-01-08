@@ -11,6 +11,7 @@ import { AuthProvider } from "./components/auth/AuthProvider";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AdminRoute } from "./components/auth/AdminRoute";
 import { SystemOwnerRoute } from "./components/auth/SystemOwnerRoute";
+import { AccountStatusGuard } from "./components/auth/AccountStatusGuard";
 import { AuthPage } from "./components/auth/AuthPage";
 import { ErrorBoundary } from "./components/performance/ErrorBoundary";
 import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
@@ -48,6 +49,8 @@ const OnlineStore = lazy(() => import("./pages/OnlineStore"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
 const AdminAccountManagement = lazy(() => import("./pages/AdminAccountManagement"));
 const OnboardingSubmissions = lazy(() => import("./pages/OnboardingSubmissions"));
+const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
+const SubscriptionCanceled = lazy(() => import("./pages/SubscriptionCanceled"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -149,6 +152,7 @@ const App = () => {
               <BrowserRouter>
                 <NavObserver />
                 <AuthProvider>
+                  <AccountStatusGuard>
                   <TeachingProvider>
                   <PresenceProvider>
                     <EmailRealtimeProvider>
@@ -197,6 +201,20 @@ const App = () => {
                 <Route path="/reset-password" element={
                   <ErrorBoundary>
                     <ResetPassword />
+                  </ErrorBoundary>
+                } />
+
+                {/* Subscription success route - public */}
+                <Route path="/subscription-success" element={
+                  <ErrorBoundary>
+                    <SubscriptionSuccess />
+                  </ErrorBoundary>
+                } />
+
+                {/* Subscription canceled route - public */}
+                <Route path="/subscription-canceled" element={
+                  <ErrorBoundary>
+                    <SubscriptionCanceled />
                   </ErrorBoundary>
                 } />
                 
@@ -314,6 +332,7 @@ const App = () => {
                     </EmailRealtimeProvider>
                   </PresenceProvider>
                   </TeachingProvider>
+                  </AccountStatusGuard>
                   <ProjectInventoryTrackingHandler />
                 </AuthProvider>
                  </BrowserRouter>

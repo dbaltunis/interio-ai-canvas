@@ -162,8 +162,8 @@ export const NotificationSettingsCard = () => {
                   Your SendGrid integration is configured in the Integrations tab. 
                   Email notifications will be sent using your SendGrid setup.
                   <br />
-                  <a href="/settings?tab=sendgrid" className="text-primary hover:underline inline-flex items-center gap-1 mt-2">
-                    View SendGrid Settings <ExternalLink className="h-3 w-3" />
+                  <a href="/settings?tab=integrations" className="text-primary hover:underline inline-flex items-center gap-1 mt-2">
+                    View Integration Settings <ExternalLink className="h-3 w-3" />
                   </a>
                 </AlertDescription>
               </Alert>

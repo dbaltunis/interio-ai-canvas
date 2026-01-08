@@ -1033,8 +1033,9 @@ const LivePreviewBlock = ({
       return (
         <div className="mb-4 products-section" style={{ backgroundColor: '#ffffff', padding: '8px 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', backgroundColor: '#ffffff' }}>
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#000', backgroundColor: '#ffffff', padding: '4px 0' }}>
-              {content.title || 'Quote Items'}
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#000', backgroundColor: '#ffffff', padding: '4px 0' }}>
+              {content.title || (documentType === 'invoice' ? 'Invoice Items' : 
+                documentType === 'work-order' ? 'Work Order Items' : 'Quote Items')}
             </h3>
           </div>
 

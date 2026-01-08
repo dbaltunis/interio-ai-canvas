@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { AccountWithDetails, AccountType } from "@/types/subscriptions";
 import { useUpdateAccountType, useInvitationEmailStatus, useResendInvitation } from "@/hooks/useAdminAccounts";
 import { useDeleteAccount } from "@/hooks/useDeleteAccount";
+import { useBlockAccount, AccountStatus } from "@/hooks/useBlockAccount";
 import { format } from "date-fns";
-import { User, Mail, Calendar, Users, Trash2, RefreshCw, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
+import { User, Mail, Calendar, Users, Trash2, RefreshCw, CheckCircle, XCircle, Clock, AlertCircle, Ban, ShieldCheck } from "lucide-react";
 
 interface AccountInfoPanelProps {
   account: AccountWithDetails;
@@ -16,8 +20,11 @@ interface AccountInfoPanelProps {
 export function AccountInfoPanel({ account, onAccountDeleted }: AccountInfoPanelProps) {
   const updateAccountType = useUpdateAccountType();
   const deleteAccount = useDeleteAccount();
+  const blockAccount = useBlockAccount();
   const { data: emailStatus, isLoading: emailStatusLoading } = useInvitationEmailStatus(account.user_id);
   const resendInvitation = useResendInvitation();
+  const [blockReason, setBlockReason] = useState("");
+  const [selectedBlockStatus, setSelectedBlockStatus] = useState<AccountStatus>("trial_ended");
 
   const handleAccountTypeChange = (newType: AccountType) => {
     if (window.confirm(`Are you sure you want to change the account type to "${newType}"?`)) {
@@ -36,6 +43,27 @@ export function AccountInfoPanel({ account, onAccountDeleted }: AccountInfoPanel
         onSuccess: () => {
           onAccountDeleted?.();
         }
+      });
+    }
+  };
+
+  const handleBlockAccount = () => {
+    if (window.confirm(
+      `Are you sure you want to ${selectedBlockStatus === 'trial_ended' ? 'end the trial for' : 'block'} this account?\n\nThe user will see a popup message and won't be able to use the app.`
+    )) {
+      blockAccount.mutate({
+        userId: account.user_id,
+        status: selectedBlockStatus,
+        reason: blockReason || undefined,
+      });
+    }
+  };
+
+  const handleUnblockAccount = () => {
+    if (window.confirm(`Are you sure you want to unblock this account? The user will be able to access the app again.`)) {
+      blockAccount.mutate({
+        userId: account.user_id,
+        status: 'active',
       });
     }
   };
@@ -186,6 +214,115 @@ export function AccountInfoPanel({ account, onAccountDeleted }: AccountInfoPanel
             <p className="text-xs text-muted-foreground mt-2">
               This determines how the account is classified in the system.
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Account Access Control Card */}
+      <Card className="border-amber-500">
+        <CardHeader>
+          <CardTitle className="text-amber-600 flex items-center gap-2">
+            <Ban className="h-4 w-4" />
+            Access Control
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Current Status Display */}
+          <div className="p-3 rounded-lg bg-muted/50 border">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Current Status</p>
+            {(account as any).account_status === 'active' || !(account as any).account_status ? (
+              <Badge className="bg-green-100 text-green-800 border-green-300">
+                <ShieldCheck className="h-3 w-3 mr-1" /> Active
+              </Badge>
+            ) : (account as any).account_status === 'trial_ended' ? (
+              <Badge className="bg-amber-100 text-amber-800 border-amber-300">
+                <Clock className="h-3 w-3 mr-1" /> Trial Ended
+              </Badge>
+            ) : (account as any).account_status === 'suspended' ? (
+              <Badge className="bg-orange-100 text-orange-800 border-orange-300">
+                <AlertCircle className="h-3 w-3 mr-1" /> Suspended
+              </Badge>
+            ) : (
+              <Badge className="bg-red-100 text-red-800 border-red-300">
+                <XCircle className="h-3 w-3 mr-1" /> Blocked
+              </Badge>
+            )}
+            {(account as any).blocked_reason && (
+              <p className="text-xs text-muted-foreground mt-1">Reason: {(account as any).blocked_reason}</p>
+            )}
+          </div>
+
+          <div>
+            <p className="text-sm mb-2">Block or restrict access to this account</p>
+            <p className="text-xs text-muted-foreground mb-4">
+              Blocked users will see a popup message and cannot use the app until unblocked.
+            </p>
+            
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">Block Type</Label>
+                <Select
+                  value={selectedBlockStatus}
+                  onValueChange={(value: AccountStatus) => setSelectedBlockStatus(value)}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="trial_ended">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-3 w-3 text-amber-500" />
+                        Trial Ended
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="suspended">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-3 w-3 text-orange-500" />
+                        Suspended
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="blocked">
+                      <div className="flex items-center gap-2">
+                        <XCircle className="h-3 w-3 text-red-500" />
+                        Blocked
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-xs">Reason (optional)</Label>
+                <Input 
+                  placeholder="e.g., Trial expired, payment required..."
+                  value={blockReason}
+                  onChange={(e) => setBlockReason(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline"
+                  className="flex-1 border-amber-500 text-amber-600 hover:bg-amber-50"
+                  onClick={handleBlockAccount}
+                  disabled={blockAccount.isPending}
+                >
+                  <Ban className="h-4 w-4 mr-2" />
+                  {blockAccount.isPending ? "Processing..." : "Block Account"}
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  className="flex-1 border-green-500 text-green-600 hover:bg-green-50"
+                  onClick={handleUnblockAccount}
+                  disabled={blockAccount.isPending}
+                >
+                  <ShieldCheck className="h-4 w-4 mr-2" />
+                  Unblock
+                </Button>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
