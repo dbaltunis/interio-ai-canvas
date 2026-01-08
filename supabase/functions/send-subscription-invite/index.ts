@@ -40,16 +40,19 @@ serve(async (req) => {
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !userData.user) throw new Error("Unauthorized");
 
-    // Check if user is admin
+    // Check if user is admin (handle case variations)
     const { data: profile } = await supabaseClient
       .from("user_profiles")
       .select("role")
       .eq("user_id", userData.user.id)
       .single();
 
-    if (profile?.role !== "admin" && profile?.role !== "super_admin") {
+    const userRole = profile?.role?.toLowerCase();
+    if (userRole !== "admin" && userRole !== "super_admin" && userRole !== "owner") {
       throw new Error("Admin access required");
     }
+
+    logStep("Admin verified", { role: profile?.role });
 
     const { email, planKey, seats = 1, clientName } = await req.json();
     
