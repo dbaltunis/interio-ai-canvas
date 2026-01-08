@@ -238,7 +238,7 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
           <div className="overflow-x-auto">
              <Table>
               <TableHeader>
-                <TableRow className="hover:bg-transparent border-border/40 bg-muted/30">
+                <TableRow className="bg-muted/30 hover:bg-muted/30">
                   <TableHead className="w-12">
                     <Checkbox 
                       checked={allSelected}
@@ -246,14 +246,14 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                       aria-label="Select all"
                     />
                   </TableHead>
-                  <TableHead className="text-xs tracking-wide text-muted-foreground font-semibold w-12">#</TableHead>
-                  <TableHead className="text-xs tracking-wide text-muted-foreground font-semibold">Client</TableHead>
-                  <TableHead className="text-xs tracking-wide text-muted-foreground font-semibold">Stage</TableHead>
-                  {!isTablet && <TableHead className="text-xs tracking-wide text-muted-foreground font-semibold">Projects</TableHead>}
-                  {!isTablet && <TableHead className="text-xs tracking-wide text-muted-foreground font-semibold">Deal Value</TableHead>}
-                  {!isTablet && <TableHead className="text-xs tracking-wide text-muted-foreground font-semibold">Communications</TableHead>}
-                  {!isTablet && <TableHead className="text-xs tracking-wide text-muted-foreground font-semibold">Documents</TableHead>}
-                  <TableHead className="text-xs tracking-wide text-muted-foreground font-semibold text-right">Actions</TableHead>
+                  <TableHead className="font-normal w-12">#</TableHead>
+                  <TableHead className="font-normal">Client</TableHead>
+                  <TableHead className="font-normal">Stage</TableHead>
+                  {!isTablet && <TableHead className="font-normal">Projects</TableHead>}
+                  {!isTablet && <TableHead className="font-normal">Deal Value</TableHead>}
+                  {!isTablet && <TableHead className="font-normal">Communications</TableHead>}
+                  {!isTablet && <TableHead className="font-normal">Documents</TableHead>}
+                  <TableHead className="font-normal w-[70px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

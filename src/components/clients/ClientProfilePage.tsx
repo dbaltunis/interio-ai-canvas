@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { ClientQuickActionsBar } from "./ClientQuickActionsBar";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
-import { useClient, useUpdateClient } from "@/hooks/useClients";
+import { useClient, useUpdateClient, useUpdateClientStage } from "@/hooks/useClients";
 import { useClientJobs } from "@/hooks/useClientJobs";
 import { useClientFiles } from "@/hooks/useClientFiles";
 import { useCanEditClient } from "@/hooks/useClientEditPermissions";
@@ -41,6 +41,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const { data: client, isLoading: clientLoading } = useClient(clientId);
   const { data: projects } = useClientJobs(clientId);
   const updateClient = useUpdateClient();
+  const updateClientStage = useUpdateClientStage();
   const { toast } = useToast();
   const { user } = useAuth();
   const { data: clientFiles } = useClientFiles(clientId, user?.id || '');
@@ -142,7 +143,8 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                     return;
                   }
                   try {
-                    await updateClient.mutateAsync({ id: client.id, funnel_stage: value });
+                    const previousStage = currentClient.funnel_stage;
+                    await updateClientStage.mutateAsync({ clientId: client.id, stage: value, previousStage });
                   } catch (error) {
                     toast({ title: "Failed to update", variant: "destructive" });
                   }
