@@ -2,9 +2,11 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, CreditCard, Package, TrendingUp } from "lucide-react";
+import { Shield, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { SubscriptionCard } from "@/components/billing/SubscriptionCard";
+import { InvoicesTable } from "@/components/billing/InvoicesTable";
 
 export const Billing = () => {
   const { data: userRole, isLoading: roleLoading } = useUserRole();
@@ -50,65 +52,34 @@ export const Billing = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Billing & Subscriptions</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage your subscription, payment methods, and billing history
-        </p>
+    <div className="container mx-auto p-6 space-y-6 max-w-5xl">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">Billing & Subscriptions</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your subscription, view invoices, and download receipts
+          </p>
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <Package className="h-8 w-8 text-blue-600 mb-2" />
-            <CardTitle>Current Plan</CardTitle>
-            <CardDescription>Professional</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold mb-2">$99/mo</div>
-            <p className="text-sm text-muted-foreground">
-              Unlimited team members and features
-            </p>
-          </CardContent>
-        </Card>
+      <SubscriptionCard />
 
-        <Card>
-          <CardHeader>
-            <CreditCard className="h-8 w-8 text-green-600 mb-2" />
-            <CardTitle>Payment Method</CardTitle>
-            <CardDescription>Primary card</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-lg font-semibold mb-2">•••• 4242</div>
-            <p className="text-sm text-muted-foreground">Expires 12/2025</p>
-          </CardContent>
-        </Card>
+      <InvoicesTable />
 
-        <Card>
-          <CardHeader>
-            <TrendingUp className="h-8 w-8 text-purple-600 mb-2" />
-            <CardTitle>Next Billing</CardTitle>
-            <CardDescription>Upcoming charge</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-lg font-semibold mb-2">Dec 1, 2024</div>
-            <p className="text-sm text-muted-foreground">$99.00 USD</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Billing History</CardTitle>
-          <CardDescription>Your recent invoices and payments</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800">
-            <AlertDescription className="text-blue-800 dark:text-blue-200">
-              Billing integration coming soon. For now, contact support@curtainscalculator.com for billing inquiries.
-            </AlertDescription>
-          </Alert>
+      <Card className="bg-muted/30">
+        <CardContent className="pt-6">
+          <p className="text-sm text-muted-foreground text-center">
+            Need help with billing? Contact us at{" "}
+            <a 
+              href="mailto:support@interioapp.com" 
+              className="text-primary hover:underline font-medium"
+            >
+              support@interioapp.com
+            </a>
+          </p>
         </CardContent>
       </Card>
     </div>
