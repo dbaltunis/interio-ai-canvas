@@ -181,7 +181,7 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
                 </div>
               ) : (
                 <p className="text-sm text-amber-800 dark:text-amber-200">
-                  Adding a team member will add <strong>£99/month</strong> to your subscription.
+                  Adding a team member will add to your subscription based on your current plan pricing.
                 </p>
               )}
             </div>
@@ -262,7 +262,7 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
                 onCheckedChange={(checked) => setConfirmBilling(checked as boolean)}
               />
               <Label htmlFor="confirm-billing" className="text-sm leading-relaxed cursor-pointer">
-                I understand that adding this team member will add <strong>£99/month</strong> to my subscription, 
+                I understand that adding this team member will add <strong>£{subscription?.pricePerSeat || 99}/month</strong> to my subscription, 
                 prorated for the current billing period.
               </Label>
             </div>

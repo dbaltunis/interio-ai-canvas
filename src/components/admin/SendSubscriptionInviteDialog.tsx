@@ -7,17 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Mail, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 interface SendSubscriptionInviteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const PLANS = [
-  { key: "starter", name: "Starter", price: "£99/month" },
-  { key: "business", name: "Business", price: "£199/month" },
-  { key: "enterprise", name: "Enterprise", price: "£399/month" },
-];
 
 export function SendSubscriptionInviteDialog({ open, onOpenChange }: SendSubscriptionInviteDialogProps) {
   const [email, setEmail] = useState("");
@@ -27,6 +22,30 @@ export function SendSubscriptionInviteDialog({ open, onOpenChange }: SendSubscri
   const [isLoading, setIsLoading] = useState(false);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Fetch subscription plans from database
+  const { data: plans = [] } = useQuery({
+    queryKey: ['subscription-plans-for-invite'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('subscription_plans')
+        .select('id, name, price_monthly')
+        .eq('is_active', true)
+        .order('price_monthly', { ascending: true });
+      
+      if (error) throw error;
+      return data.map(plan => ({
+        key: plan.name.toLowerCase().replace(/\s+/g, '_'),
+        name: plan.name,
+        price: `£${plan.price_monthly}/month`,
+        pricePerSeat: plan.price_monthly
+      }));
+    },
+  });
+
+  // Get current plan's price per seat for display
+  const currentPlan = plans.find(p => p.key === planKey);
+  const pricePerSeat = currentPlan?.pricePerSeat || 99;
 
   const handleSendInvite = async () => {
     if (!email) {
@@ -160,11 +179,15 @@ export function SendSubscriptionInviteDialog({ open, onOpenChange }: SendSubscri
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PLANS.map((plan) => (
-                    <SelectItem key={plan.key} value={plan.key}>
-                      {plan.name} - {plan.price}
-                    </SelectItem>
-                  ))}
+                  {plans.length > 0 ? (
+                    plans.map((plan) => (
+                      <SelectItem key={plan.key} value={plan.key}>
+                        {plan.name} - {plan.price}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="starter">Starter - £99/month</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -180,7 +203,7 @@ export function SendSubscriptionInviteDialog({ open, onOpenChange }: SendSubscri
                 onChange={(e) => setSeats(parseInt(e.target.value) || 1)}
               />
               <p className="text-xs text-muted-foreground">
-                Each additional user costs £99/month
+                Each additional user costs £{pricePerSeat}/month
               </p>
             </div>
 

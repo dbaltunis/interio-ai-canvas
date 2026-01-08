@@ -31,7 +31,7 @@ export const MissingGridWarning = ({
           size="sm" 
           variant="outline" 
           className="h-6 text-xs ml-2"
-          onClick={() => navigate('/settings?tab=pricing-grids')}
+          onClick={() => navigate('/settings?tab=pricing')}
         >
           Upload Grid
         </Button>
