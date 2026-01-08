@@ -33,15 +33,18 @@ export const useBlockAccount = () => {
       return { userId, status };
     },
     onSuccess: (data) => {
+      // Force refetch all admin account data
       queryClient.invalidateQueries({ queryKey: ["adminAccounts"] });
       queryClient.invalidateQueries({ queryKey: ["account-status", data.userId] });
+      // Also invalidate any cached account data
+      queryClient.refetchQueries({ queryKey: ["adminAccounts"] });
       
       const message = data.status === 'active' 
         ? "Account has been unblocked and is now active."
-        : `Account has been ${data.status === 'trial_ended' ? 'marked as trial ended' : data.status}.`;
+        : `Account has been ${data.status === 'trial_ended' ? 'marked as trial ended' : data.status}. Please close this dialog and reopen to see updated status.`;
       
       toast({
-        title: data.status === 'active' ? "Account Unblocked" : "Account Status Updated",
+        title: data.status === 'active' ? "Account Unblocked" : "✅ Account Blocked Successfully",
         description: message,
       });
     },
