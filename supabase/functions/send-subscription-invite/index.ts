@@ -12,11 +12,11 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[SEND-SUBSCRIPTION-INVITE] ${step}${detailsStr}`);
 };
 
-// Stripe Price IDs for each plan
+// Stripe Price IDs for each plan (£99/month per seat)
 const PLAN_PRICES: Record<string, string> = {
-  starter: "price_STARTER_PLACEHOLDER", // Replace with actual Stripe price ID
-  business: "price_BUSINESS_PLACEHOLDER",
-  enterprise: "price_ENTERPRISE_PLACEHOLDER",
+  starter: "price_1SnDgLBgcx5218GhIHSLl1Rr", // £99/month per user
+  business: "", // To be configured
+  enterprise: "", // To be configured
 };
 
 serve(async (req) => {
