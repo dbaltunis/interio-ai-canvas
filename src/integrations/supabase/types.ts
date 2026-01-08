@@ -8988,8 +8988,11 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          account_status: string | null
           account_type: string | null
           avatar_url: string | null
+          blocked_at: string | null
+          blocked_reason: string | null
           created_at: string | null
           default_notification_minutes: number | null
           display_name: string | null
@@ -9013,8 +9016,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_status?: string | null
           account_type?: string | null
           avatar_url?: string | null
+          blocked_at?: string | null
+          blocked_reason?: string | null
           created_at?: string | null
           default_notification_minutes?: number | null
           display_name?: string | null
@@ -9038,8 +9044,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_status?: string | null
           account_type?: string | null
           avatar_url?: string | null
+          blocked_at?: string | null
+          blocked_reason?: string | null
           created_at?: string | null
           default_notification_minutes?: number | null
           display_name?: string | null
