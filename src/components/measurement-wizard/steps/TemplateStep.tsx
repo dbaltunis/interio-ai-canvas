@@ -1,35 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMeasurementWizardStore } from '@/stores/measurementWizardStore';
+import { useEffectiveAccountOwner } from '@/hooks/useEffectiveAccountOwner';
 
 export const TemplateStep: React.FC = () => {
   const { selectedTemplate, selectedWindowType, setTemplate, setWindowType } = useMeasurementWizardStore();
+  const { effectiveOwnerId, isLoading: ownerLoading } = useEffectiveAccountOwner();
   const [templates, setTemplates] = useState<any[]>([]);
   const [windowTypes, setWindowTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!effectiveOwnerId) {
+        setLoading(false);
+        return;
+      }
+      
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const orgId = session?.user?.user_metadata?.org_id;
-        
-        if (!orgId) return;
-
         const [templatesRes, windowTypesRes] = await Promise.all([
           supabase
             .from('product_templates')
             .select('*')
-            .eq('org_id', orgId)
+            .eq('org_id', effectiveOwnerId)
             .eq('is_active', true),
           supabase
             .from('window_types')
             .select('*')
-            .eq('org_id', orgId)
+            .eq('org_id', effectiveOwnerId)
         ]);
 
         if (templatesRes.data) setTemplates(templatesRes.data);
@@ -41,10 +42,12 @@ export const TemplateStep: React.FC = () => {
       }
     };
 
-    fetchData();
-  }, []);
+    if (!ownerLoading) {
+      fetchData();
+    }
+  }, [effectiveOwnerId, ownerLoading]);
 
-  if (loading) {
+  if (loading || ownerLoading) {
     return (
       <div className="space-y-6">
         <div className="animate-pulse space-y-4">
