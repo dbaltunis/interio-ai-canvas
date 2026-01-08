@@ -90,9 +90,9 @@ export const BillingTab = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <a href="mailto:support@interioapp.com" className="text-primary hover:underline flex items-center gap-2">
+          <a href="mailto:darius@interioapp.co.uk" className="text-primary hover:underline flex items-center gap-2">
             <Mail className="h-4 w-4" />
-            support@interioapp.com
+            darius@interioapp.co.uk
           </a>
         </CardContent>
       </Card>
@@ -189,8 +189,8 @@ export const BillingTab = () => {
         <CardContent className="pt-6">
           <p className="text-sm text-muted-foreground">
             Need help with billing?{' '}
-            <a href="mailto:support@interioapp.com" className="text-primary hover:underline">
-              Contact support
+            <a href="mailto:darius@interioapp.co.uk" className="text-primary hover:underline">
+              Contact us
             </a>
           </p>
         </CardContent>
