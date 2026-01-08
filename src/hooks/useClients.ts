@@ -255,7 +255,7 @@ export const useUpdateClientStage = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ clientId, stage }: { clientId: string; stage: string }) => {
+    mutationFn: async ({ clientId, stage, previousStage }: { clientId: string; stage: string; previousStage?: string }) => {
       const { data, error } = await supabase
         .from("clients")
         .update({ 
@@ -267,11 +267,30 @@ export const useUpdateClientStage = () => {
         .single();
 
       if (error) throw error;
+      
+      // Log stage change activity
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        try {
+          const stageLabel = stage.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+          const prevLabel = previousStage ? previousStage.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown';
+          await supabase.from("client_activity_log").insert({
+            client_id: clientId,
+            user_id: user.id,
+            activity_type: "stage_changed",
+            title: `Stage changed to ${stageLabel}`,
+            description: previousStage ? `Changed from ${prevLabel} to ${stageLabel}` : `Stage set to ${stageLabel}`,
+          });
+        } catch (err) {
+          console.warn("Failed to log stage change:", err);
+        }
+      }
+      
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
-      // Removed unnecessary success toast
+      queryClient.invalidateQueries({ queryKey: ["client-activities"] });
     },
     onError: (error: any) => {
       console.error("Failed to update client stage:", error);

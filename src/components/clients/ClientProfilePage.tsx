@@ -15,7 +15,7 @@ import {
 import { ClientQuickActionsBar } from "./ClientQuickActionsBar";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { useClient, useUpdateClient } from "@/hooks/useClients";
-import { useClientJobs, useClientQuotes } from "@/hooks/useClientJobs";
+import { useClientJobs } from "@/hooks/useClientJobs";
 import { useClientFiles } from "@/hooks/useClientFiles";
 import { useCanEditClient } from "@/hooks/useClientEditPermissions";
 import { ClientCommunicationsTab } from "./ClientCommunicationsTab";
@@ -40,7 +40,6 @@ interface ClientProfilePageProps {
 export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfilePageProps) => {
   const { data: client, isLoading: clientLoading } = useClient(clientId);
   const { data: projects } = useClientJobs(clientId);
-  const { data: quotes } = useClientQuotes(clientId);
   const updateClient = useUpdateClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -52,20 +51,6 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const [editedClient, setEditedClient] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("notes");
   const [detailsOpen, setDetailsOpen] = useState(true);
-  
-  // Calculate portfolio value from closed/completed projects only
-  const closedProjects = (projects || []).filter(p => 
-    ['closed', 'completed'].includes(p.status?.toLowerCase() || '')
-  );
-  
-  const portfolioValue = closedProjects.reduce((sum, project) => {
-    const projectQuotes = (quotes || []).filter(q => q.project_id === project.id);
-    if (projectQuotes.length > 0) {
-      const latestQuote = projectQuotes[0];
-      return sum + parseFloat(latestQuote.total_amount?.toString() || '0');
-    }
-    return sum;
-  }, 0);
 
   if (clientLoading || editPermissionLoading) {
     return (
@@ -186,10 +171,17 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         
         {/* Compact Stats Badges */}
         <div className="flex items-center gap-2 flex-wrap ml-[52px] sm:ml-0">
-          <Badge variant="outline" className="gap-1 text-xs font-medium">
-            <DollarSign className="h-3 w-3 text-green-600" />
-            {formatCurrency(portfolioValue)}
-          </Badge>
+          {currentClient.deal_value && currentClient.deal_value > 0 ? (
+            <Badge variant="outline" className="gap-1 text-xs font-medium bg-green-50 border-green-200">
+              <DollarSign className="h-3 w-3 text-green-600" />
+              {formatCurrency(currentClient.deal_value)} deal
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="gap-1 text-xs font-medium">
+              <DollarSign className="h-3 w-3 text-muted-foreground" />
+              No deal value
+            </Badge>
+          )}
           <Badge variant="outline" className="gap-1 text-xs font-medium">
             <Briefcase className="h-3 w-3 text-blue-600" />
             {projects?.length || 0} projects
@@ -301,6 +293,16 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                         <LeadSourceSelect
                           value={editedClient.lead_source || 'other'}
                           onValueChange={(value) => setEditedClient({ ...editedClient, lead_source: value })}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px]">Deal Value</Label>
+                        <Input
+                          type="number"
+                          value={editedClient.deal_value || ''}
+                          onChange={(e) => setEditedClient({ ...editedClient, deal_value: e.target.value ? parseFloat(e.target.value) : null })}
+                          className="h-7 text-xs"
+                          placeholder="Expected deal value"
                         />
                       </div>
                       <div className="flex gap-2 pt-1">

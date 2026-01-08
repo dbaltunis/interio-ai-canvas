@@ -246,14 +246,14 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                       aria-label="Select all"
                     />
                   </TableHead>
-                  <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold w-12">#</TableHead>
-                  <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Client</TableHead>
-                  <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Stage</TableHead>
-                  {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Projects</TableHead>}
-                  {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Total Value</TableHead>}
-                  {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Communications</TableHead>}
-                  {!isTablet && <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Documents</TableHead>}
-                  <TableHead className="text-xs uppercase tracking-wide text-muted-foreground font-semibold text-right">Actions</TableHead>
+                  <TableHead className="text-xs tracking-wide text-muted-foreground font-semibold w-12">#</TableHead>
+                  <TableHead className="text-xs tracking-wide text-muted-foreground font-semibold">Client</TableHead>
+                  <TableHead className="text-xs tracking-wide text-muted-foreground font-semibold">Stage</TableHead>
+                  {!isTablet && <TableHead className="text-xs tracking-wide text-muted-foreground font-semibold">Projects</TableHead>}
+                  {!isTablet && <TableHead className="text-xs tracking-wide text-muted-foreground font-semibold">Deal Value</TableHead>}
+                  {!isTablet && <TableHead className="text-xs tracking-wide text-muted-foreground font-semibold">Communications</TableHead>}
+                  {!isTablet && <TableHead className="text-xs tracking-wide text-muted-foreground font-semibold">Documents</TableHead>}
+                  <TableHead className="text-xs tracking-wide text-muted-foreground font-semibold text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -332,9 +332,9 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                     
                     {!isTablet && (
                       <TableCell>
-                        {client.totalValue && client.totalValue > 0 ? (
+                        {(client.deal_value && client.deal_value > 0) ? (
                           <div className="font-semibold text-foreground">
-                            {formatCurrency(client.totalValue)}
+                            {formatCurrency(client.deal_value)}
                           </div>
                         ) : (
                           <div className="text-muted-foreground/60 text-sm">—</div>
