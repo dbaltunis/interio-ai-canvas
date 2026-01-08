@@ -82,6 +82,7 @@ export const QuotationTab = ({
   const [isPaymentConfigOpen, setIsPaymentConfigOpen] = useState(false);
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
   const [isTWCSubmitDialogOpen, setIsTWCSubmitDialogOpen] = useState(false);
+  const [activeQuoteId, setActiveQuoteId] = useState<string | null>(quoteId || null);
   const {
     data: projects
   } = useProjects();
@@ -116,7 +117,15 @@ export const QuotationTab = ({
   const { canEditJob, isLoading: editPermissionsLoading } = useCanEditJob(project);
   const isReadOnly = !canEditJob || editPermissionsLoading;
 
-  // Auto-verify payment on return from Stripe checkout
+  // Sync activeQuoteId when prop or quoteVersions change
+  useEffect(() => {
+    if (quoteId && !activeQuoteId) {
+      setActiveQuoteId(quoteId);
+    } else if (!activeQuoteId && quoteVersions && quoteVersions.length > 0) {
+      setActiveQuoteId(quoteVersions[0].id);
+    }
+  }, [quoteId, quoteVersions, activeQuoteId]);
+
   useEffect(() => {
     const paymentStatus = searchParams.get('payment');
     const sessionId = searchParams.get('session_id');
@@ -580,11 +589,18 @@ export const QuotationTab = ({
   }, [quotationData.items]);
 
   const getOrCreateQuoteId = async (): Promise<string | null> => {
-    // If we already have a quoteId, use it
-    if (quoteId) return quoteId;
+    // If we already have an activeQuoteId, use it
+    if (activeQuoteId) return activeQuoteId;
+    
+    // If we have a quoteId prop, use it
+    if (quoteId) {
+      setActiveQuoteId(quoteId);
+      return quoteId;
+    }
 
     // If there's an existing quote for this project, use the first one
     if (quoteVersions && quoteVersions.length > 0) {
+      setActiveQuoteId(quoteVersions[0].id);
       return quoteVersions[0].id;
     }
 
@@ -596,6 +612,8 @@ export const QuotationTab = ({
         status: 'draft',
         version: 1
       });
+      // Store the new quote ID so subsequent renders can use it
+      setActiveQuoteId(newQuote.id);
       return newQuote.id;
     } catch (error) {
       console.error('Failed to create quote:', error);
@@ -882,7 +900,7 @@ export const QuotationTab = ({
       </Card>
 
       {/* Inline Discount Panel - Pass sellingTotal (retail price with markup) for discount calculations */}
-      <InlineDiscountPanel isOpen={isDiscountDialogOpen} onClose={() => setIsDiscountDialogOpen(false)} quoteId={quoteId || quoteVersions?.[0]?.id || ''} projectId={projectId} items={quotationData.items || []} subtotal={quotationData.sellingTotal || subtotal} taxRate={taxRate * 100} currency={projectData.currency} currentDiscount={currentQuote?.discount_type ? {
+      <InlineDiscountPanel isOpen={isDiscountDialogOpen} onClose={() => setIsDiscountDialogOpen(false)} quoteId={activeQuoteId || quoteId || quoteVersions?.[0]?.id || ''} projectId={projectId} items={quotationData.items || []} subtotal={quotationData.sellingTotal || subtotal} taxRate={taxRate * 100} currency={projectData.currency} currentDiscount={currentQuote?.discount_type ? {
       type: currentQuote.discount_type as 'percentage' | 'fixed',
       value: currentQuote.discount_value || 0,
       scope: currentQuote.discount_scope as 'all' | 'fabrics_only' | 'selected_items',
@@ -893,7 +911,7 @@ export const QuotationTab = ({
       {/* Inline Payment Config Panel */}
       {isPaymentConfigOpen && (
         <InlinePaymentConfig
-          quoteId={quoteId || quoteVersions?.[0]?.id || ''}
+          quoteId={activeQuoteId || quoteId || quoteVersions?.[0]?.id || ''}
           total={total}
           currency={projectData.currency}
           currentPayment={currentQuote ? {

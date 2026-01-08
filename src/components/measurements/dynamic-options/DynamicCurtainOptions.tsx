@@ -219,33 +219,6 @@ export const DynamicCurtainOptions = ({
       totalHeadingOptions: headingOptions.length
     });
     
-    // CRITICAL: Handle "Standard / No Heading" case - use template's default fullness
-    if (headingId === 'none') {
-      onChange('selected_heading', 'none');
-      if (onHeadingChange) {
-        onHeadingChange('none');
-      }
-      
-      // Use template's fullness_ratio when no heading selected
-      const templateFullness = template?.fullness_ratio;
-      if (typeof templateFullness === 'number' && templateFullness > 0) {
-        console.log('✅ Setting heading_fullness from template:', templateFullness);
-        onChange('heading_fullness', templateFullness);
-        onChange('fullness_ratio', templateFullness);
-      } else {
-        // Fallback to 1 only if template has no default
-        console.log('No template fullness, using 1x');
-        onChange('heading_fullness', 1);
-        onChange('fullness_ratio', 1);
-      }
-      
-      // Clear heading price
-      if (onOptionPriceChange) {
-        onOptionPriceChange('heading', 0, 'Standard / No Heading', 'fixed');
-      }
-      return;
-    }
-    
     const heading = headingOptions.find(h => h.id === headingId);
     console.log('🔥🔥🔥 Found heading:', heading);
     
@@ -612,17 +585,12 @@ export const DynamicCurtainOptions = ({
             <span className="text-sm text-muted-foreground">Select Type</span>
             <div className="w-64">
               <Select
-                value={(() => {
-                  // Normalize heading value - treat 'standard', 'no-heading', empty as 'none'
-                  const val = selectedHeading || measurements.selected_heading;
-                  if (!val || val === 'standard' || val === 'no-heading') return 'none';
-                  return val;
-                })()}
+                value={selectedHeading || measurements.selected_heading || ''}
                 onValueChange={handleHeadingChange}
                 disabled={readOnly}
               >
-                <SelectTrigger className={`bg-background border-input ${!(selectedHeading || measurements.selected_heading) && availableHeadings.length > 1 ? 'border-destructive ring-1 ring-destructive/30' : ''}`}>
-                  <SelectValue placeholder={!(selectedHeading || measurements.selected_heading) && availableHeadings.length > 1 ? "⚠️ Select..." : "Select..."} />
+                <SelectTrigger className={`bg-background border-input ${!(selectedHeading || measurements.selected_heading) && availableHeadings.length > 0 ? 'border-destructive ring-1 ring-destructive/30' : ''}`}>
+                  <SelectValue placeholder={!(selectedHeading || measurements.selected_heading) && availableHeadings.length > 0 ? "⚠️ Select heading..." : "Select heading..."} />
                 </SelectTrigger>
                 <SelectContent 
                   className="z-[9999] bg-popover border-border shadow-lg max-h-[300px]"
@@ -630,23 +598,15 @@ export const DynamicCurtainOptions = ({
                   sideOffset={5}
                   align="end"
                 >
-                  {/* FIX: Add explicit "No Heading" option - use template's default fullness */}
-                  <SelectItem key="no-heading" value="none">
-                    <div className="flex items-center justify-between w-full gap-4">
-                      <span className="text-muted-foreground">Standard / No Heading</span>
-                      <Badge variant="outline" className="text-xs">
-                        {template?.fullness_ratio ? `${template.fullness_ratio}x fullness` : '1x fullness'}
-                      </Badge>
-                    </div>
-                  </SelectItem>
                   {availableHeadings.map(heading => {
-                    console.log('🎯 Rendering heading option:', { id: heading.id, name: heading.name });
+                    const metadata = heading.metadata as any;
+                    const fullness = (heading as any).fullness_ratio || metadata?.fullness_ratio;
                     return (
                       <SelectItem key={heading.id} value={heading.id}>
                         <div className="flex items-center justify-between w-full gap-4">
                           <span>{heading.name}</span>
                           <Badge variant="outline" className="text-xs">
-                            {formatCurrency(heading.price_per_meter || heading.selling_price || 0)}
+                            {fullness ? `${fullness}x` : formatCurrency(heading.price_per_meter || heading.selling_price || 0)}
                           </Badge>
                         </div>
                       </SelectItem>
