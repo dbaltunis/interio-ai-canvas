@@ -150,3 +150,6 @@ verify_jwt = false
 
 [functions.shopify-test-connection]
 verify_jwt = false
+
+[functions.get-pending-invites]
+verify_jwt = true
