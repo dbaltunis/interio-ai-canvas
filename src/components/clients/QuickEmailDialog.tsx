@@ -7,7 +7,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -16,8 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Send, Loader2, Eye, Edit } from 'lucide-react';
-import { EmailTemplateWithBusiness } from '@/components/email/EmailTemplateWithBusiness';
+import { Send, Loader2 } from 'lucide-react';
+import { RichTextEditor } from '@/components/jobs/email-components/RichTextEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useGeneralEmailTemplates } from '@/hooks/useGeneralEmailTemplates';
@@ -40,7 +39,7 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
   const [toEmail, setToEmail] = useState(client.email || '');
   const [sending, setSending] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
-  const [showPreview, setShowPreview] = useState(false);
+  const [editorKey, setEditorKey] = useState(0);
   const { toast } = useToast();
   
   const { data: templates, isLoading: templatesLoading } = useGeneralEmailTemplates();
@@ -66,6 +65,7 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
       setSubject('');
       setMessage('');
       setSelectedTemplateId('');
+      setEditorKey(prev => prev + 1);
     } else {
       setToEmail(client.email || '');
     }
@@ -167,7 +167,7 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[650px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Send className="h-5 w-5" />
@@ -219,50 +219,14 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
           </div>
           
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="message">Message</Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowPreview(!showPreview)}
-                className="h-7 gap-1.5 text-xs"
-              >
-                {showPreview ? (
-                  <>
-                    <Edit className="h-3.5 w-3.5" />
-                    Edit
-                  </>
-                ) : (
-                  <>
-                    <Eye className="h-3.5 w-3.5" />
-                    Preview
-                  </>
-                )}
-              </Button>
-            </div>
-            
-            {showPreview ? (
-              <div className="border rounded-md max-h-[300px] overflow-y-auto">
-                <EmailTemplateWithBusiness
-                  subject={subject}
-                  content={message}
-                  clientData={{
-                    name: client.name,
-                    email: client.email || '',
-                    company_name: ''
-                  }}
-                />
-              </div>
-            ) : (
-              <Textarea
-                id="message"
-                placeholder="Enter your message..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                rows={8}
-              />
-            )}
+            <Label htmlFor="message">Message</Label>
+            <RichTextEditor
+              key={editorKey}
+              value={message}
+              onChange={setMessage}
+              placeholder="Enter your message..."
+              className="max-h-[280px]"
+            />
           </div>
           
           <div className="flex justify-end gap-2 pt-4">
