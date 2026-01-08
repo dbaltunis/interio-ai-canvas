@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -86,54 +87,47 @@ serve(async (req) => {
 
     logStep("Checkout session created", { sessionId: session.id });
 
-    // Send invite email via SendGrid
-    const sendgridApiKey = Deno.env.get("SENDGRID_API_KEY");
-    if (sendgridApiKey) {
-      const emailResponse = await fetch("https://api.sendgrid.com/v3/mail/send", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${sendgridApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          personalizations: [{ to: [{ email }] }],
-          from: { email: "noreply@interioapp.com", name: "InterioApp" },
-          subject: `You're invited to subscribe to InterioApp - ${planKey} plan`,
-          content: [
-            {
-              type: "text/html",
-              value: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                  <h2 style="color: #415e6b;">Welcome${clientName ? `, ${clientName}` : ''} to InterioApp!</h2>
-                  <p>You've been invited to subscribe to our <strong>${planKey}</strong> plan.</p>
-                  <p>InterioApp is the complete business management solution for interior designers and window treatment professionals.</p>
-                  <p>Click the button below to complete your subscription and get started:</p>
-                  <a href="${session.url}" style="display:inline-block;padding:14px 28px;background-color:#733341;color:white;text-decoration:none;border-radius:8px;margin:20px 0;font-weight:600;">
-                    Subscribe Now
-                  </a>
-                  <p style="color: #666; font-size: 14px;">This link will expire in 24 hours.</p>
-                  <p style="margin-top: 30px; color: #666; font-size: 12px;">If you have any questions, please contact our support team.</p>
-                </div>
-              `,
-            },
-          ],
-        }),
+    // Send invite email via Resend (no tracking URL rewrites!)
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    let emailSent = false;
+    
+    if (resendApiKey) {
+      const resend = new Resend(resendApiKey);
+      
+      const { data: emailData, error: emailError } = await resend.emails.send({
+        from: "InterioApp <noreply@interioapp.com>",
+        to: [email],
+        subject: `You're invited to subscribe to InterioApp - ${planKey} plan`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #415e6b;">Welcome${clientName ? `, ${clientName}` : ''} to InterioApp!</h2>
+            <p>You've been invited to subscribe to our <strong>${planKey}</strong> plan.</p>
+            <p>InterioApp is the complete business management solution for interior designers and window treatment professionals.</p>
+            <p>Click the button below to complete your subscription and get started:</p>
+            <a href="${session.url}" style="display:inline-block;padding:14px 28px;background-color:#733341;color:white;text-decoration:none;border-radius:8px;margin:20px 0;font-weight:600;">
+              Subscribe Now
+            </a>
+            <p style="color: #666; font-size: 14px;">This link will expire in 24 hours.</p>
+            <p style="margin-top: 30px; color: #666; font-size: 12px;">If you have any questions, please contact our support team.</p>
+          </div>
+        `,
       });
 
-      if (emailResponse.ok) {
-        logStep("Invite email sent", { email });
+      if (emailError) {
+        logStep("Email send failed via Resend", { error: emailError.message });
       } else {
-        logStep("Email send failed, but checkout URL created", { status: emailResponse.status });
+        emailSent = true;
+        logStep("Invite email sent via Resend", { email, id: emailData?.id });
       }
     } else {
-      logStep("SendGrid not configured, returning checkout URL only");
+      logStep("Resend not configured, returning checkout URL only");
     }
 
     return new Response(JSON.stringify({ 
       success: true, 
       checkoutUrl: session.url,
       sessionId: session.id,
-      message: sendgridApiKey ? "Invite email sent" : "Checkout URL generated (email not sent - SendGrid not configured)"
+      message: emailSent ? "Invite email sent" : "Checkout URL generated (email not sent)"
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
