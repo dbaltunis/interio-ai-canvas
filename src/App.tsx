@@ -11,6 +11,7 @@ import { AuthProvider } from "./components/auth/AuthProvider";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AdminRoute } from "./components/auth/AdminRoute";
 import { SystemOwnerRoute } from "./components/auth/SystemOwnerRoute";
+import { AccountStatusGuard } from "./components/auth/AccountStatusGuard";
 import { AuthPage } from "./components/auth/AuthPage";
 import { ErrorBoundary } from "./components/performance/ErrorBoundary";
 import { EmailRealtimeProvider } from "./contexts/EmailRealtimeContext";
@@ -149,6 +150,7 @@ const App = () => {
               <BrowserRouter>
                 <NavObserver />
                 <AuthProvider>
+                  <AccountStatusGuard>
                   <TeachingProvider>
                   <PresenceProvider>
                     <EmailRealtimeProvider>
@@ -314,6 +316,7 @@ const App = () => {
                     </EmailRealtimeProvider>
                   </PresenceProvider>
                   </TeachingProvider>
+                  </AccountStatusGuard>
                   <ProjectInventoryTrackingHandler />
                 </AuthProvider>
                  </BrowserRouter>
