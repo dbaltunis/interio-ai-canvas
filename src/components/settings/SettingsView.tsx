@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Package, Ruler, Zap, Users, FileText, Globe, Bell, User, Building2, Calculator, MessageCircle } from "lucide-react";
+import { Settings, Package, Ruler, Zap, Users, FileText, Globe, Bell, User, Building2, Calculator, MessageCircle, CreditCard } from "lucide-react";
 import { PersonalSettingsTab } from "./tabs/PersonalSettingsTab";
 import { BusinessSettingsTab } from "./tabs/BusinessSettingsTab";
 import { BillingTab } from "./tabs/BillingTab";
@@ -92,12 +92,10 @@ export const SettingsView = () => {
             <span className="hidden sm:inline">Personal</span>
           </TabsTrigger>
           
-          {/* HIDDEN: Billing tab - Not ready yet
           <TabsTrigger value="billing" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
             <CreditCard className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Billing</span>
           </TabsTrigger>
-          */}
           
           {canViewSettings && <TabsTrigger value="business" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
               <Building2 className="h-3.5 w-3.5" />
@@ -156,7 +154,6 @@ export const SettingsView = () => {
           <PersonalSettingsTab />
         </TabsContent>
 
-        {/* HIDDEN: Billing tab content - Not ready yet
         <TabsContent value="billing" className="animate-fade-in">
           <Card variant="elevated" className="transition-shadow">
             <CardContent className="p-5 md:p-6">
@@ -164,7 +161,6 @@ export const SettingsView = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        */}
 
         {canViewSettings && <TabsContent value="business" className="animate-fade-in">
             <BusinessSettingsTab />
