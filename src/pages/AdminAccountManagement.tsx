@@ -6,12 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useAdminAccounts } from "@/hooks/useAdminAccounts";
 import { AccountType } from "@/types/subscriptions";
-import { Search, UserPlus } from "lucide-react";
+import { Search, UserPlus, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { AccountDetailsDialog } from "@/components/admin/AccountDetailsDialog";
 import { CreateAccountDialog } from "@/components/admin/CreateAccountDialog";
+import { SendSubscriptionInviteDialog } from "@/components/admin/SendSubscriptionInviteDialog";
 import { AccountWithDetails } from "@/types/subscriptions";
-import { SystemOwnerRoute } from "@/components/auth/SystemOwnerRoute";
 
 export default function AdminAccountManagement() {
   const [search, setSearch] = useState("");
@@ -19,6 +19,7 @@ export default function AdminAccountManagement() {
   const [subscriptionStatusFilter, setSubscriptionStatusFilter] = useState<string | "all">("all");
   const [selectedAccount, setSelectedAccount] = useState<AccountWithDetails | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
   const { data: accounts, isLoading } = useAdminAccounts({
     accountType: accountTypeFilter === "all" ? undefined : accountTypeFilter,
@@ -84,10 +85,16 @@ export default function AdminAccountManagement() {
     <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Account Management</h1>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Create New Account
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsInviteDialogOpen(true)}>
+              <Mail className="mr-2 h-4 w-4" />
+              Send Subscription Invite
+            </Button>
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Create New Account
+            </Button>
+          </div>
         </div>
 
       {/* Filters */}
@@ -198,6 +205,12 @@ export default function AdminAccountManagement() {
         onSuccess={() => {
           // Accounts will auto-refresh via React Query
         }}
+      />
+
+      {/* Send Subscription Invite Dialog */}
+      <SendSubscriptionInviteDialog
+        open={isInviteDialogOpen}
+        onOpenChange={setIsInviteDialogOpen}
       />
     </div>
   );
