@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   ArrowLeft, Mail, Phone, MapPin, Building2, User, Edit, Calendar, 
-  FileText, DollarSign, Clock, Save, X, Briefcase, Package, ChevronDown, ChevronUp, MessageCircle
+  FileText, DollarSign, Clock, Save, X, Briefcase, Package, ChevronDown, ChevronUp, MessageCircle, Globe, Link, Tag
 } from "lucide-react";
 import { ClientQuickActionsBar } from "./ClientQuickActionsBar";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
@@ -51,7 +51,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const [isEditing, setIsEditing] = useState(false);
   const [editedClient, setEditedClient] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("notes");
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(true);
   
   // Calculate portfolio value from closed/completed projects only
   const closedProjects = (projects || []).filter(p => 
@@ -326,6 +326,32 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                         <MapPin className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
                         <span className="truncate">{currentClient.address || 'No address'}</span>
                       </div>
+                      {currentClient.company_name && (
+                        <div className="flex items-center gap-1.5">
+                          <Building2 className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                          <span className="truncate">{currentClient.company_name}</span>
+                        </div>
+                      )}
+                      {currentClient.country && (
+                        <div className="flex items-center gap-1.5">
+                          <Globe className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                          <span>{currentClient.country}</span>
+                        </div>
+                      )}
+                      {(currentClient.source || currentClient.lead_source) && (
+                        <div className="flex items-center gap-1 flex-wrap pt-1">
+                          {currentClient.source && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                              {currentClient.source}
+                            </Badge>
+                          )}
+                          {currentClient.lead_source && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                              {currentClient.lead_source}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
                       <div className="flex items-center gap-1.5 pt-0.5">
                         <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 h-4 ${
                           currentClient.priority_level === 'high' ? 'bg-red-100 text-red-700' :
@@ -335,6 +361,16 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                           {(currentClient.priority_level || 'medium').toUpperCase()}
                         </Badge>
                       </div>
+                      {currentClient.notes && (
+                        <div className="mt-2 pt-2 border-t border-border/50">
+                          <div className="flex items-start gap-1.5">
+                            <FileText className="h-2.5 w-2.5 text-muted-foreground shrink-0 mt-0.5" />
+                            <span className="text-muted-foreground text-[10px] whitespace-pre-wrap line-clamp-4">
+                              {currentClient.notes}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                       {canEditClient && (
                         <Button variant="outline" size="sm" onClick={handleEdit} className="w-full mt-1 h-6 text-[10px]">
                           <Edit className="h-2.5 w-2.5 mr-1" /> Edit
