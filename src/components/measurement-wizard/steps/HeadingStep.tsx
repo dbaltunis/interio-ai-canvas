@@ -11,25 +11,21 @@ export const HeadingStep: React.FC = () => {
   const { selectedHeading, selectedFinish, setHeading, setFinish } = useMeasurementWizardStore();
   const { data: headingItems, isLoading } = useHeadingInventory();
 
-  // Build heading options from database
+  // Build heading options from database only - no hardcoded options
   const headingOptions = React.useMemo(() => {
-    const options = [
-      { value: 'none', label: 'Standard / No Heading', fullness: 1 }
-    ];
-    
-    if (headingItems && headingItems.length > 0) {
-      headingItems.forEach(item => {
-        const metadata = item.metadata as any;
-        const fullness = (item as any).fullness_ratio || metadata?.fullness_ratio || 2;
-        options.push({
-          value: item.id,
-          label: item.name,
-          fullness
-        });
-      });
+    if (!headingItems || headingItems.length === 0) {
+      return [];
     }
     
-    return options;
+    return headingItems.map(item => {
+      const metadata = item.metadata as any;
+      const fullness = (item as any).fullness_ratio || metadata?.fullness_ratio || 2;
+      return {
+        value: item.id,
+        label: item.name,
+        fullness
+      };
+    });
   }, [headingItems]);
 
   const finishOptions = [
@@ -72,19 +68,25 @@ export const HeadingStep: React.FC = () => {
           <CardTitle>Heading Type</CardTitle>
         </CardHeader>
         <CardContent>
-          <RadioGroup value={selectedHeading} onValueChange={setHeading}>
-            {headingOptions.map((option) => (
-              <div key={option.value} className="flex items-center justify-between space-x-2 py-2">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value={option.value} id={option.value} />
-                  <Label htmlFor={option.value}>{option.label}</Label>
+          {headingOptions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No heading types configured. Add headings in Settings → Inventory → Headings.
+            </p>
+          ) : (
+            <RadioGroup value={selectedHeading} onValueChange={setHeading}>
+              {headingOptions.map((option) => (
+                <div key={option.value} className="flex items-center justify-between space-x-2 py-2">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value={option.value} id={option.value} />
+                    <Label htmlFor={option.value}>{option.label}</Label>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    {option.fullness}x fullness
+                  </Badge>
                 </div>
-                <Badge variant="outline" className="text-xs">
-                  {option.fullness}x fullness
-                </Badge>
-              </div>
-            ))}
-          </RadioGroup>
+              ))}
+            </RadioGroup>
+          )}
         </CardContent>
       </Card>
 
