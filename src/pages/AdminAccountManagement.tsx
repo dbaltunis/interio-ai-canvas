@@ -12,6 +12,7 @@ import { AccountDetailsDialog } from "@/components/admin/AccountDetailsDialog";
 import { CreateAccountDialog } from "@/components/admin/CreateAccountDialog";
 import { SendSubscriptionInviteDialog } from "@/components/admin/SendSubscriptionInviteDialog";
 import { PendingInvitesSection } from "@/components/admin/PendingInvitesSection";
+import { ManualAccountProvision } from "@/components/admin/ManualAccountProvision";
 import { AccountWithDetails } from "@/types/subscriptions";
 
 export default function AdminAccountManagement() {
@@ -97,6 +98,9 @@ export default function AdminAccountManagement() {
             </Button>
           </div>
         </div>
+
+      {/* Manual Account Provisioning */}
+      <ManualAccountProvision />
 
       {/* Pending Invites Section */}
       <PendingInvitesSection />

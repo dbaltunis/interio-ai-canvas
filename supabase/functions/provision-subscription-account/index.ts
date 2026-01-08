@@ -36,36 +36,75 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const { sessionId } = await req.json();
+    const { sessionId, subscriptionId, email: manualEmail, clientName: manualClientName } = await req.json();
     
-    if (!sessionId) {
-      throw new Error("Session ID is required");
-    }
-
-    logStep("Verifying checkout session", { sessionId });
-
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Retrieve the checkout session
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ['subscription', 'customer'],
-    });
+    let customerEmail: string | null = null;
+    let subscriptionData: Stripe.Subscription | null = null;
+    let customerId: string | null = null;
+    let seats = 1;
+    let clientName = "";
 
-    if (session.payment_status !== 'paid') {
-      throw new Error("Payment not completed");
+    // Mode 1: Provision via checkout session ID (normal flow)
+    if (sessionId) {
+      logStep("Verifying checkout session", { sessionId });
+
+      const session = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ['subscription', 'customer'],
+      });
+
+      if (session.payment_status !== 'paid') {
+        throw new Error("Payment not completed");
+      }
+
+      logStep("Payment verified", { 
+        customerEmail: session.customer_email,
+        paymentStatus: session.payment_status 
+      });
+
+      customerEmail = session.customer_email;
+      subscriptionData = session.subscription as Stripe.Subscription;
+      customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id || null;
+      clientName = session.metadata?.client_name || customerEmail?.split('@')[0] || "User";
+      seats = parseInt(session.metadata?.seats || '1', 10);
+    }
+    // Mode 2: Provision via subscription ID (manual recovery)
+    else if (subscriptionId) {
+      logStep("Manual recovery via subscription ID", { subscriptionId });
+
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+        expand: ['customer'],
+      });
+
+      if (subscription.status !== 'active' && subscription.status !== 'trialing') {
+        throw new Error(`Subscription is not active (status: ${subscription.status})`);
+      }
+
+      subscriptionData = subscription;
+      const customer = subscription.customer as Stripe.Customer;
+      customerEmail = customer.email;
+      customerId = customer.id;
+      clientName = customer.name || customer.email?.split('@')[0] || "User";
+      seats = subscription.items.data[0]?.quantity || 1;
+
+      logStep("Subscription verified", { customerEmail, status: subscription.status });
+    }
+    // Mode 3: Manual provision with email (admin override)
+    else if (manualEmail) {
+      logStep("Manual admin provision", { email: manualEmail });
+      customerEmail = manualEmail;
+      clientName = manualClientName || manualEmail.split('@')[0];
+    }
+    else {
+      throw new Error("Session ID, Subscription ID, or email is required");
     }
 
-    logStep("Payment verified", { 
-      customerEmail: session.customer_email,
-      paymentStatus: session.payment_status 
-    });
-
-    const customerEmail = session.customer_email;
     if (!customerEmail) {
-      throw new Error("Customer email not found in session");
+      throw new Error("Customer email not found");
     }
 
     // Check if user already exists
@@ -82,13 +121,11 @@ serve(async (req) => {
         .eq('user_id', existingUser.id)
         .single();
 
-      if (!existingSub) {
+      if (!existingSub && subscriptionData) {
         // Create subscription record for existing user
-        const subscriptionData = session.subscription as Stripe.Subscription;
-        
         await supabaseAdmin.from('user_subscriptions').insert({
           user_id: existingUser.id,
-          stripe_customer_id: typeof session.customer === 'string' ? session.customer : session.customer?.id,
+          stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionData?.id,
           status: 'active',
           current_period_start: subscriptionData?.current_period_start 
@@ -115,8 +152,6 @@ serve(async (req) => {
 
     // Create new user account
     const temporaryPassword = generateSecurePassword();
-    const clientName = session.metadata?.client_name || customerEmail.split('@')[0];
-    const seats = parseInt(session.metadata?.seats || '1', 10);
 
     logStep("Creating new user account", { email: customerEmail, clientName, seats });
 
@@ -186,23 +221,23 @@ serve(async (req) => {
       }
     }
 
-    // Step 3: Create subscription record
-    const subscriptionData = session.subscription as Stripe.Subscription;
-    
-    await supabaseAdmin.from('user_subscriptions').insert({
-      user_id: newUser.user.id,
-      stripe_customer_id: typeof session.customer === 'string' ? session.customer : session.customer?.id,
-      stripe_subscription_id: subscriptionData?.id,
-      status: 'active',
-      current_period_start: subscriptionData?.current_period_start 
-        ? new Date(subscriptionData.current_period_start * 1000).toISOString()
-        : new Date().toISOString(),
-      current_period_end: subscriptionData?.current_period_end
-        ? new Date(subscriptionData.current_period_end * 1000).toISOString()
-        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    });
+    // Step 3: Create subscription record (if we have subscription data)
+    if (subscriptionData || customerId) {
+      await supabaseAdmin.from('user_subscriptions').insert({
+        user_id: newUser.user.id,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscriptionData?.id,
+        status: 'active',
+        current_period_start: subscriptionData?.current_period_start 
+          ? new Date(subscriptionData.current_period_start * 1000).toISOString()
+          : new Date().toISOString(),
+        current_period_end: subscriptionData?.current_period_end
+          ? new Date(subscriptionData.current_period_end * 1000).toISOString()
+          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      });
 
-    logStep("Subscription record created");
+      logStep("Subscription record created");
+    }
 
     // Step 4: Create business_settings
     await supabaseAdmin.from('business_settings').insert({
