@@ -41,15 +41,26 @@ serve(async (req) => {
     if (userError || !userData.user) throw new Error("Unauthorized");
 
     // Check if user is admin (handle case variations)
-    const { data: profile } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseClient
       .from("user_profiles")
       .select("role")
       .eq("user_id", userData.user.id)
       .single();
 
+    logStep("Profile lookup", { 
+      userId: userData.user.id, 
+      profile, 
+      profileError: profileError?.message,
+      role: profile?.role 
+    });
+
+    // Allow Owners and Admins to send subscription invites
     const userRole = profile?.role?.toLowerCase();
-    if (userRole !== "admin" && userRole !== "super_admin" && userRole !== "owner") {
-      throw new Error("Admin access required");
+    const allowedRoles = ["admin", "super_admin", "owner"];
+    
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      logStep("Access denied", { userRole, allowedRoles });
+      throw new Error(`Admin access required. Your role: ${profile?.role || 'not found'}`);
     }
 
     logStep("Admin verified", { role: profile?.role });
