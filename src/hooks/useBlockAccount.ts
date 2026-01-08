@@ -16,25 +16,19 @@ export const useBlockAccount = () => {
 
   return useMutation({
     mutationFn: async ({ userId, status, reason }: BlockAccountParams) => {
-      const updateData: Record<string, any> = {
-        account_status: status,
-        blocked_reason: reason || null,
-      };
+      // Use edge function with service role to bypass RLS
+      const { data, error } = await supabase.functions.invoke('admin-block-account', {
+        body: { userId, status, reason }
+      });
 
-      // Set blocked_at timestamp when blocking, clear when unblocking
-      if (status !== 'active') {
-        updateData.blocked_at = new Date().toISOString();
-      } else {
-        updateData.blocked_at = null;
-        updateData.blocked_reason = null;
+      if (error) {
+        console.error('Block account error:', error);
+        throw new Error(error.message || 'Failed to block account');
       }
-
-      const { error } = await supabase
-        .from('user_profiles')
-        .update(updateData)
-        .eq('user_id', userId);
-
-      if (error) throw error;
+      
+      if (data?.error) {
+        throw new Error(data.error);
+      }
       
       return { userId, status };
     },
