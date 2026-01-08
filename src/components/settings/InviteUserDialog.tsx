@@ -6,8 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCreateInvitation } from "@/hooks/useUserInvitations";
-import { Mail, User, Shield } from "lucide-react";
+import { Mail, User, Shield, AlertCircle, CreditCard } from "lucide-react";
 import { ROLE_PERMISSIONS, PERMISSION_LABELS } from "@/constants/permissions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface InviteUserDialogProps {
   open: boolean;
@@ -15,6 +19,7 @@ interface InviteUserDialogProps {
 }
 
 export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<{
     invited_email: string;
     invited_name: string;
@@ -24,13 +29,37 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
     invited_email: "",
     invited_name: "",
     role: "Staff",
-    customPermissions: [...(ROLE_PERMISSIONS.Staff || [])], // Initialize with Staff permissions
+    customPermissions: [...(ROLE_PERMISSIONS.Staff || [])],
   });
+  const [confirmBilling, setConfirmBilling] = useState(false);
 
   const createInvitation = useCreateInvitation();
 
+  // Check if current user is admin (admins don't need to pay for seats)
+  const { data: userProfile } = useQuery({
+    queryKey: ['user-profile-role', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const isAdmin = userProfile?.role === 'admin' || userProfile?.role === 'super_admin';
+  const requiresBilling = !isAdmin;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Require billing confirmation for non-admins
+    if (requiresBilling && !confirmBilling) {
+      return;
+    }
     
     // Convert permissions array to object format expected by backend
     const permissionsObj = formData.customPermissions.reduce((acc, permission) => {
@@ -43,6 +72,7 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
       invited_name: formData.invited_name,
       role: formData.role,
       permissions: permissionsObj,
+      skipBilling: isAdmin, // Admins don't need to add seats
     }, {
       onSuccess: () => {
         onOpenChange(false);
@@ -50,8 +80,9 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
           invited_email: "",
           invited_name: "",
           role: "Staff",
-          customPermissions: [...(ROLE_PERMISSIONS.Staff || [])], // Reset to Staff permissions
+          customPermissions: [...(ROLE_PERMISSIONS.Staff || [])],
         });
+        setConfirmBilling(false);
       },
     });
   };
@@ -61,7 +92,7 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
     setFormData(prev => ({
       ...prev,
       role,
-      customPermissions: [...rolePermissions], // Always copy array to ensure state update
+      customPermissions: [...rolePermissions],
     }));
   };
 
@@ -82,7 +113,7 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            Invite User
+            Invite Team Member
           </DialogTitle>
           <DialogDescription>
             Send an invitation to join your team with specific permissions
@@ -90,6 +121,17 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Billing warning for non-admin users */}
+          {requiresBilling && (
+            <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/30">
+              <CreditCard className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800 dark:text-amber-200">
+                <strong>Additional seat charge:</strong> Adding a team member will add <strong>£99/month</strong> to your subscription. 
+                This will be prorated for the current billing period.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="email">Email Address</Label>
             <div className="relative">
@@ -156,11 +198,29 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
             </div>
           </div>
 
+          {/* Billing confirmation checkbox for non-admins */}
+          {requiresBilling && (
+            <div className="flex items-start space-x-3 p-3 bg-muted/50 rounded-lg">
+              <Checkbox
+                id="confirm-billing"
+                checked={confirmBilling}
+                onCheckedChange={(checked) => setConfirmBilling(checked as boolean)}
+              />
+              <Label htmlFor="confirm-billing" className="text-sm leading-relaxed cursor-pointer">
+                I understand that adding this team member will add <strong>£99/month</strong> to my subscription, 
+                prorated for the current billing period.
+              </Label>
+            </div>
+          )}
+
           <div className="flex justify-end space-x-2 pt-4">
             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={createInvitation.isPending}>
+            <Button 
+              type="submit" 
+              disabled={createInvitation.isPending || (requiresBilling && !confirmBilling)}
+            >
               {createInvitation.isPending ? "Sending..." : "Send Invitation"}
             </Button>
           </div>

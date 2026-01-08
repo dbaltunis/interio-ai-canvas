@@ -9004,6 +9004,7 @@ export type Database = {
           is_online: boolean | null
           last_name: string | null
           last_seen: string | null
+          onboarding_completed: boolean | null
           parent_account_id: string | null
           permissions: Json | null
           phone_number: string | null
@@ -9032,6 +9033,7 @@ export type Database = {
           is_online?: boolean | null
           last_name?: string | null
           last_seen?: string | null
+          onboarding_completed?: boolean | null
           parent_account_id?: string | null
           permissions?: Json | null
           phone_number?: string | null
@@ -9060,6 +9062,7 @@ export type Database = {
           is_online?: boolean | null
           last_name?: string | null
           last_seen?: string | null
+          onboarding_completed?: boolean | null
           parent_account_id?: string | null
           permissions?: Json | null
           phone_number?: string | null

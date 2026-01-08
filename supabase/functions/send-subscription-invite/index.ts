@@ -69,7 +69,7 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    const origin = req.headers.get("origin") || "https://ldgrcodffsalkevafbkb.lovableproject.com";
+    const origin = "https://appinterio.app";
 
     // Create checkout session for the invited client
     const session = await stripe.checkout.sessions.create({
@@ -105,19 +105,23 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           personalizations: [{ to: [{ email }] }],
-          from: { email: "noreply@yourapp.com", name: "Your App" },
-          subject: `You're invited to subscribe to the ${planKey} plan`,
+          from: { email: "noreply@interioapp.com", name: "InterioApp" },
+          subject: `You're invited to subscribe to InterioApp - ${planKey} plan`,
           content: [
             {
               type: "text/html",
               value: `
-                <h2>Welcome${clientName ? `, ${clientName}` : ''}!</h2>
-                <p>You've been invited to subscribe to our <strong>${planKey}</strong> plan.</p>
-                <p>Click the button below to complete your subscription:</p>
-                <a href="${session.url}" style="display:inline-block;padding:12px 24px;background-color:#4F46E5;color:white;text-decoration:none;border-radius:6px;margin:16px 0;">
-                  Subscribe Now
-                </a>
-                <p>This link will expire in 24 hours.</p>
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: #415e6b;">Welcome${clientName ? `, ${clientName}` : ''} to InterioApp!</h2>
+                  <p>You've been invited to subscribe to our <strong>${planKey}</strong> plan.</p>
+                  <p>InterioApp is the complete business management solution for interior designers and window treatment professionals.</p>
+                  <p>Click the button below to complete your subscription and get started:</p>
+                  <a href="${session.url}" style="display:inline-block;padding:14px 28px;background-color:#733341;color:white;text-decoration:none;border-radius:8px;margin:20px 0;font-weight:600;">
+                    Subscribe Now
+                  </a>
+                  <p style="color: #666; font-size: 14px;">This link will expire in 24 hours.</p>
+                  <p style="margin-top: 30px; color: #666; font-size: 12px;">If you have any questions, please contact our support team.</p>
+                </div>
               `,
             },
           ],

@@ -51,7 +51,7 @@ serve(async (req) => {
     const useCustomSendGrid = !!integrationSettings?.api_credentials?.api_key;
     console.log('Email provider:', useCustomSendGrid ? 'Custom SendGrid' : 'Shared Resend');
 
-    const siteUrl = Deno.env.get('SITE_URL') || 'https://ldgrcodffsalkevafbkb.supabase.co'
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://appinterio.app'
     const invitationLink = `${siteUrl}/auth?invitation=${invitationToken}`
 
     const brandName = Deno.env.get('BRAND_NAME') || 'InterioApp';
