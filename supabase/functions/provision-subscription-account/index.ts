@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -269,60 +270,55 @@ serve(async (req) => {
 
     logStep("Default job statuses created");
 
-    // Step 9: Send welcome email with login credentials
-    const sendgridApiKey = Deno.env.get("SENDGRID_API_KEY");
-    if (sendgridApiKey) {
+    // Step 9: Send welcome email with login credentials via Resend
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (resendApiKey) {
+      const resend = new Resend(resendApiKey);
       const origin = "https://appinterio.app";
       
-      await fetch("https://api.sendgrid.com/v3/mail/send", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${sendgridApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          personalizations: [{ to: [{ email: customerEmail }] }],
-          from: { email: "noreply@interioapp.com", name: "InterioApp" },
-          subject: "Welcome to InterioApp - Your account is ready!",
-          content: [
-            {
-              type: "text/html",
-              value: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                  <div style="background: linear-gradient(135deg, #415e6b, #9bb6bc); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
-                    <h1 style="color: white; margin: 0;">Welcome to InterioApp!</h1>
-                  </div>
-                  <div style="padding: 30px; background: #fff;">
-                    <p style="font-size: 16px;">Hi ${clientName},</p>
-                    <p>Your subscription is now active and your account is ready to use.</p>
-                    
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 24px 0;">
-                      <h3 style="margin-top: 0; color: #415e6b;">Your Login Credentials:</h3>
-                      <p style="margin: 8px 0;"><strong>Email:</strong> ${customerEmail}</p>
-                      <p style="margin: 8px 0;"><strong>Temporary Password:</strong> <code style="background: #e9ecef; padding: 4px 8px; border-radius: 4px;">${temporaryPassword}</code></p>
-                    </div>
-                    
-                    <p style="color: #dc3545; font-weight: 600;">⚠️ Important: Please change your password after your first login.</p>
-                    
-                    <div style="text-align: center; margin: 30px 0;">
-                      <a href="${origin}/auth" style="display:inline-block;padding:16px 32px;background-color:#733341;color:white;text-decoration:none;border-radius:8px;font-weight:600;">
-                        Login to InterioApp
-                      </a>
-                    </div>
-                    
-                    <p style="color: #666; font-size: 14px;">If you have any questions, our support team is here to help.</p>
-                  </div>
-                  <div style="padding: 20px; background: #f8f9fa; text-align: center; border-radius: 0 0 8px 8px;">
-                    <p style="margin: 0; color: #666; font-size: 12px;">© InterioApp - Business Management for Interior Designers</p>
-                  </div>
-                </div>
-              `,
-            },
-          ],
-        }),
+      const { error: emailError } = await resend.emails.send({
+        from: "InterioApp <noreply@interioapp.com>",
+        to: [customerEmail],
+        subject: "Welcome to InterioApp - Your account is ready!",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: linear-gradient(135deg, #415e6b, #9bb6bc); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+              <h1 style="color: white; margin: 0;">Welcome to InterioApp!</h1>
+            </div>
+            <div style="padding: 30px; background: #fff;">
+              <p style="font-size: 16px;">Hi ${clientName},</p>
+              <p>Your subscription is now active and your account is ready to use.</p>
+              
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 24px 0;">
+                <h3 style="margin-top: 0; color: #415e6b;">Your Login Credentials:</h3>
+                <p style="margin: 8px 0;"><strong>Email:</strong> ${customerEmail}</p>
+                <p style="margin: 8px 0;"><strong>Temporary Password:</strong> <code style="background: #e9ecef; padding: 4px 8px; border-radius: 4px;">${temporaryPassword}</code></p>
+              </div>
+              
+              <p style="color: #dc3545; font-weight: 600;">⚠️ Important: Please change your password after your first login.</p>
+              
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${origin}/auth" style="display:inline-block;padding:16px 32px;background-color:#733341;color:white;text-decoration:none;border-radius:8px;font-weight:600;">
+                  Login to InterioApp
+                </a>
+              </div>
+              
+              <p style="color: #666; font-size: 14px;">If you have any questions, our support team is here to help.</p>
+            </div>
+            <div style="padding: 20px; background: #f8f9fa; text-align: center; border-radius: 0 0 8px 8px;">
+              <p style="margin: 0; color: #666; font-size: 12px;">© InterioApp - Business Management for Interior Designers</p>
+            </div>
+          </div>
+        `,
       });
 
-      logStep("Welcome email sent with credentials");
+      if (emailError) {
+        logStep("Welcome email failed via Resend", { error: emailError.message });
+      } else {
+        logStep("Welcome email sent with credentials via Resend");
+      }
+    } else {
+      logStep("Resend not configured, credentials shown on success page only");
     }
 
     logStep("Account provisioning complete", { userId: newUser.user.id, email: customerEmail });
