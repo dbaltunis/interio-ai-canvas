@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,9 +9,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Send, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useGeneralEmailTemplates } from '@/hooks/useGeneralEmailTemplates';
+import { useBusinessSettings } from '@/hooks/useBusinessSettings';
+import { processTemplateVariables, getTemplateTypeLabel } from '@/utils/emailTemplateVariables';
 
 interface QuickEmailDialogProps {
   open: boolean;
@@ -27,7 +37,70 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const { toast } = useToast();
+  
+  const { data: templates, isLoading: templatesLoading } = useGeneralEmailTemplates();
+  const { data: businessSettings } = useBusinessSettings();
+
+  // Pre-fill with lead_initial_contact template when dialog opens
+  useEffect(() => {
+    if (open && templates && templates.length > 0) {
+      // Find lead_initial_contact template, or use first available
+      const leadTemplate = templates.find(t => t.template_type === 'lead_initial_contact');
+      const defaultTemplate = leadTemplate || templates[0];
+      
+      if (defaultTemplate && !selectedTemplateId) {
+        setSelectedTemplateId(defaultTemplate.id);
+        applyTemplate(defaultTemplate);
+      }
+    }
+  }, [open, templates]);
+
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setSubject('');
+      setMessage('');
+      setSelectedTemplateId('');
+    }
+  }, [open]);
+
+  const applyTemplate = (template: { subject: string; content: string }) => {
+    const templateData = {
+      client: {
+        name: client.name,
+        email: client.email,
+      },
+      company: {
+        name: businessSettings?.company_name || 'Our Company',
+        phone: businessSettings?.business_phone || '',
+        email: businessSettings?.business_email || '',
+      },
+      sender: {
+        name: businessSettings?.company_name || 'Your Team',
+        signature: `Best regards,\n${businessSettings?.company_name || 'Your Team'}`,
+      },
+    };
+
+    setSubject(processTemplateVariables(template.subject, templateData));
+    setMessage(processTemplateVariables(template.content, templateData));
+  };
+
+  const handleTemplateChange = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    
+    if (templateId === 'blank') {
+      setSubject('');
+      setMessage('');
+      return;
+    }
+    
+    const template = templates?.find(t => t.id === templateId);
+    if (template) {
+      applyTemplate(template);
+    }
+  };
 
   const handleSend = async () => {
     if (!subject.trim() || !message.trim()) {
@@ -99,6 +172,27 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
         
         <div className="space-y-4 pt-4">
           <div className="space-y-2">
+            <Label htmlFor="template">Email Template</Label>
+            <Select 
+              value={selectedTemplateId} 
+              onValueChange={handleTemplateChange}
+              disabled={templatesLoading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={templatesLoading ? "Loading templates..." : "Select a template"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="blank">Blank Email</SelectItem>
+                {templates?.filter(t => t.active).map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {getTemplateTypeLabel(template.template_type)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="to">To</Label>
             <Input
               id="to"
@@ -125,7 +219,7 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
               placeholder="Enter your message..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              rows={6}
+              rows={8}
             />
           </div>
           
