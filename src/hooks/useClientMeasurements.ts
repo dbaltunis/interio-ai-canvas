@@ -125,3 +125,34 @@ export const useUpdateClientMeasurement = () => {
     },
   });
 };
+
+export const useDeleteClientMeasurement = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (measurementId: string) => {
+      const { error } = await supabase
+        .from("client_measurements")
+        .delete()
+        .eq("id", measurementId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["client-measurements"] });
+      toast({
+        title: "Success",
+        description: "Measurement deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Failed to delete measurement:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete measurement. Please try again.",
+        variant: "destructive"
+      });
+    },
+  });
+};

@@ -21,7 +21,7 @@ import { useCanEditClient } from "@/hooks/useClientEditPermissions";
 import { ClientCommunicationsTab } from "./ClientCommunicationsTab";
 import { LeadSourceSelect } from "@/components/crm/LeadSourceSelect";
 import { ClientProjectsList } from "./ClientProjectsList";
-import { MeasurementsList } from "../measurements/MeasurementsList";
+import { ClientMeasurementsTab } from "./ClientMeasurementsTab";
 import { ClientActivityLog } from "./ClientActivityLog";
 import { ClientAllNotesSection } from "./ClientAllNotesSection";
 import { useToast } from "@/hooks/use-toast";
@@ -459,10 +459,8 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </TabsContent>
 
         <TabsContent value="measurements" className="mt-3">
-          <MeasurementsList 
+          <ClientMeasurementsTab 
             clientId={clientId}
-            onViewMeasurement={() => {}}
-            onEditMeasurement={() => {}}
             canEditClient={canEditClient}
           />
         </TabsContent>
