@@ -127,31 +127,38 @@ serve(async (req) => {
       quantity: stripeSubscription.items.data[0]?.quantity 
     });
 
-    // Get the subscription item
+    // Get the subscription item and period dates from it
     const subscriptionItem = stripeSubscription.items.data[0];
     const currentQuantity = subscriptionItem?.quantity || 1;
     const pricePerSeat = 99; // £99 per seat
 
-    // Calculate billing period details
-    const currentPeriodStart = new Date(stripeSubscription.current_period_start * 1000);
-    const currentPeriodEnd = new Date(stripeSubscription.current_period_end * 1000);
+    // Calculate billing period details - period dates are on the subscription item
+    const currentPeriodStart = new Date((subscriptionItem?.current_period_start || stripeSubscription.created) * 1000);
+    const currentPeriodEnd = new Date((subscriptionItem?.current_period_end || stripeSubscription.created) * 1000);
     const now = new Date();
+    
+    logStep("Period dates", { 
+      currentPeriodStart: currentPeriodStart.toISOString(), 
+      currentPeriodEnd: currentPeriodEnd.toISOString() 
+    });
     
     const totalDaysInPeriod = Math.ceil(
       (currentPeriodEnd.getTime() - currentPeriodStart.getTime()) / (1000 * 60 * 60 * 24)
     );
-    const daysRemaining = Math.ceil(
+    const daysRemaining = Math.max(0, Math.ceil(
       (currentPeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-    );
+    ));
     const daysUsed = totalDaysInPeriod - daysRemaining;
 
     // Calculate proration for adding 1 seat
-    const proratedAmount = Math.round((pricePerSeat * daysRemaining) / totalDaysInPeriod * 100) / 100;
+    const proratedAmount = totalDaysInPeriod > 0 
+      ? Math.round((pricePerSeat * daysRemaining) / totalDaysInPeriod * 100) / 100
+      : 0;
 
     // Get upcoming invoice preview if possible
     let upcomingInvoiceTotal = null;
     try {
-      const upcomingInvoice = await stripe.invoices.retrieveUpcoming({
+      const upcomingInvoice = await stripe.invoices.upcoming({
         customer: subscription.stripe_customer_id!,
         subscription: subscription.stripe_subscription_id,
       });
