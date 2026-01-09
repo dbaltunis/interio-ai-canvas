@@ -270,26 +270,62 @@ serve(async (req) => {
 
     logStep("Account settings created");
 
-    // Step 6: Create user_permissions with Owner permissions
+    // Step 6: Create user_permissions with ALL Owner permissions (77 total)
     const ownerPermissions = [
-      'view_dashboard', 'manage_settings', 'view_all_jobs', 'create_jobs', 'edit_jobs', 
-      'delete_jobs', 'view_all_clients', 'create_clients', 'edit_clients', 'delete_clients',
-      'view_quotes', 'create_quotes', 'edit_quotes', 'delete_quotes', 'view_invoices',
-      'create_invoices', 'edit_invoices', 'delete_invoices', 'manage_inventory',
-      'view_all_calendar', 'manage_calendar', 'manage_team', 'view_reports',
-      'export_data', 'import_data', 'manage_templates', 'manage_integrations',
-      'view_markups', 'view_team_performance', 'manage_billing',
+      'create_appointments', 'create_clients', 'create_jobs', 'create_projects',
+      'delete_appointments', 'delete_clients', 'delete_jobs', 'delete_projects', 'delete_users',
+      'edit_all_clients', 'edit_all_jobs', 'edit_all_projects', 'edit_assigned_clients', 'edit_assigned_jobs',
+      'edit_clients', 'edit_jobs', 'edit_projects',
+      'export_clients', 'export_data', 'export_inventory', 'export_jobs',
+      'import_clients', 'import_inventory', 'import_jobs',
+      'manage_business_settings', 'manage_calendar', 'manage_integrations', 'manage_inventory',
+      'manage_inventory_admin', 'manage_pricing', 'manage_purchasing', 'manage_quotes', 'manage_settings',
+      'manage_shopify', 'manage_team', 'manage_templates', 'manage_users',
+      'manage_vendors', 'manage_window_treatments',
+      'send_emails', 'send_team_messages',
+      'view_all_calendar', 'view_all_clients', 'view_all_jobs', 'view_all_projects', 'view_analytics',
+      'view_assigned_clients', 'view_assigned_jobs', 'view_billing', 'view_calendar', 'view_clients',
+      'view_cost_prices', 'view_documents', 'view_email_kpis', 'view_emails',
+      'view_inventory', 'view_jobs', 'view_materials', 'view_own_calendar', 'view_own_jobs',
+      'view_primary_kpis', 'view_profile', 'view_profit_margins', 'view_projects',
+      'view_purchasing', 'view_quotes', 'view_revenue_kpis', 'view_selling_prices',
+      'view_settings', 'view_shopify', 'view_team', 'view_team_members',
+      'view_team_performance', 'view_templates', 'view_vendors',
+      'view_window_treatments', 'view_workroom'
     ];
 
     const permissionInserts = ownerPermissions.map(permission => ({
       user_id: newUser.user.id,
       permission_name: permission,
-      granted: true,
     }));
 
-    await supabaseAdmin.from('user_permissions').insert(permissionInserts);
+    const { error: permError, data: permData } = await supabaseAdmin
+      .from('user_permissions')
+      .insert(permissionInserts)
+      .select('id');
 
-    logStep("User permissions created", { count: permissionInserts.length });
+    if (permError) {
+      logStep("ERROR creating permissions", { error: permError.message });
+      // Don't throw - continue with account creation but log the issue
+    } else {
+      logStep("User permissions created", { count: permData?.length || 0 });
+    }
+
+    // Verify permissions were actually created
+    const { data: verifyPerms, error: verifyError } = await supabaseAdmin
+      .from('user_permissions')
+      .select('id')
+      .eq('user_id', newUser.user.id);
+
+    if (verifyError || !verifyPerms || verifyPerms.length < 50) {
+      logStep("WARNING: Permissions verification failed", { 
+        expected: 77, 
+        actual: verifyPerms?.length || 0,
+        error: verifyError?.message 
+      });
+    } else {
+      logStep("Permissions verified", { count: verifyPerms.length });
+    }
 
     // Step 7: Create default number sequences
     const sequences = [

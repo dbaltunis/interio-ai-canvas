@@ -54,10 +54,16 @@ serve(async (req) => {
       `)
       .eq("user_id", userData.user.id)
       .in("status", ["active", "trial"])
-      .single();
+      .order("created_at", { ascending: false })
+      .maybeSingle();
 
-    if (subError || !subscription) {
-      logStep("No subscription found", { error: subError?.message });
+    if (subError) {
+      logStep("Error fetching subscription", { error: subError.message });
+      throw new Error(`Failed to fetch subscription: ${subError.message}`);
+    }
+
+    if (!subscription) {
+      logStep("No subscription found");
       return new Response(JSON.stringify({ 
         hasSubscription: false,
         message: "No active subscription found"
