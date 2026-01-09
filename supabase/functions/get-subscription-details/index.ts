@@ -35,7 +35,23 @@ serve(async (req) => {
 
     logStep("User authenticated", { userId: userData.user.id });
 
-    // Get user's subscription from database
+    // Get effectiveOwnerId (parent_account_id for team members, else user.id)
+    const { data: profile } = await supabaseClient
+      .from("user_profiles")
+      .select("parent_account_id")
+      .eq("user_id", userData.user.id)
+      .maybeSingle();
+
+    const effectiveOwnerId = profile?.parent_account_id || userData.user.id;
+    const isTeamMember = !!profile?.parent_account_id;
+    
+    logStep("Resolved effective owner", { 
+      userId: userData.user.id, 
+      effectiveOwnerId, 
+      isTeamMember 
+    });
+
+    // Get user's subscription from database using effectiveOwnerId
     const { data: subscription, error: subError } = await supabaseClient
       .from("user_subscriptions")
       .select(`
@@ -52,7 +68,7 @@ serve(async (req) => {
           price_yearly
         )
       `)
-      .eq("user_id", userData.user.id)
+      .eq("user_id", effectiveOwnerId)
       .in("status", ["active", "trial"])
       .order("created_at", { ascending: false })
       .maybeSingle();
