@@ -329,10 +329,11 @@ serve(async (req) => {
 
     // Step 7: Create default number sequences
     const sequences = [
-      { user_id: newUser.user.id, sequence_type: 'job', prefix: 'JOB-', current_number: 1000 },
-      { user_id: newUser.user.id, sequence_type: 'quote', prefix: 'QT-', current_number: 1000 },
-      { user_id: newUser.user.id, sequence_type: 'invoice', prefix: 'INV-', current_number: 1000 },
-      { user_id: newUser.user.id, sequence_type: 'order', prefix: 'PO-', current_number: 1000 },
+      { user_id: newUser.user.id, entity_type: 'job', prefix: 'JOB-', next_number: 1000 },
+      { user_id: newUser.user.id, entity_type: 'quote', prefix: 'QT-', next_number: 1000 },
+      { user_id: newUser.user.id, entity_type: 'invoice', prefix: 'INV-', next_number: 1000 },
+      { user_id: newUser.user.id, entity_type: 'order', prefix: 'PO-', next_number: 1000 },
+      { user_id: newUser.user.id, entity_type: 'draft', prefix: 'DRAFT-', next_number: 1000 },
     ];
 
     await supabaseAdmin.from('number_sequences').insert(sequences);
