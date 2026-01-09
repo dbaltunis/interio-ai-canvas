@@ -140,11 +140,9 @@ Deno.serve(async (req) => {
 
       // Check subscription
       const { data: subscription } = await supabaseAdmin
-        .from('subscriptions')
-        .select('status, stripe_subscription_id, trial_end')
+        .from('user_subscriptions')
+        .select('status, stripe_subscription_id, trial_ends_at')
         .eq('user_id', account.user_id)
-        .order('created_at', { ascending: false })
-        .limit(1)
         .maybeSingle();
 
       // Calculate issues and health status
@@ -205,7 +203,7 @@ Deno.serve(async (req) => {
           job_status_count: actualJobStatuses,
           subscription_status: subscription?.status || null,
           stripe_subscription_id: subscription?.stripe_subscription_id || null,
-          trial_ends_at: subscription?.trial_end || null,
+          trial_ends_at: subscription?.trial_ends_at || null,
         },
         issues,
       });
