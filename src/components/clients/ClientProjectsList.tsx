@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Plus, Calendar, DollarSign, AlertCircle, CheckCircle, Clock, ExternalLink, MessageSquare } from "lucide-react";
 import { useClientJobs } from "@/hooks/useClientJobs";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useUnifiedClientNotes } from "@/hooks/useUnifiedClientNotes";
+import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 
 interface ClientProjectsListProps {
   clientId: string;
@@ -32,6 +33,18 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
   const { isLoading: permissionsLoading } = useUserPermissions();
+  const { formatCurrency } = useFormattedCurrency();
+
+  // Calculate project value from quotes
+  const getProjectValue = (project: any): number => {
+    if (!project.quotes || project.quotes.length === 0) return 0;
+    // Get the latest quote's total_amount
+    const latestQuote = project.quotes[0];
+    return parseFloat(latestQuote.total_amount?.toString() || '0');
+  };
+
+  // Calculate total value of all projects
+  const totalProjectsValue = projects?.reduce((sum, project) => sum + getProjectValue(project), 0) || 0;
   const { data: explicitPermissions } = useQuery({
     queryKey: ['explicit-user-permissions', user?.id],
     queryFn: async () => {
@@ -188,6 +201,7 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
           <>
             {projects.slice(0, 5).map((project) => {
               const notesCount = notesByProject[project.id] || 0;
+              const projectValue = getProjectValue(project);
               return (
                 <div
                   key={project.id}
@@ -204,9 +218,14 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
                         </span>
                       )}
                     </div>
-                    {project.job_number && (
-                      <div className="text-[10px] text-muted-foreground">#{formatJobNumber(project.job_number)}</div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {project.job_number && (
+                        <span className="text-[10px] text-muted-foreground">#{formatJobNumber(project.job_number)}</span>
+                      )}
+                      {projectValue > 0 && (
+                        <span className="text-[10px] font-medium text-green-600">{formatCurrency(projectValue)}</span>
+                      )}
+                    </div>
                   </div>
                   <Badge className={`${getStatusColor(project.status || 'planning')} text-[9px] px-1 py-0 h-4 shrink-0`} variant="secondary">
                     {(project.status || 'planning').replace('_', ' ')}
@@ -214,6 +233,13 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
                 </div>
               );
             })}
+            {/* Total Projects Value */}
+            {totalProjectsValue > 0 && (
+              <div className="flex items-center justify-between pt-2 mt-1 border-t border-border/50">
+                <span className="text-[10px] text-muted-foreground">Total Value:</span>
+                <span className="text-xs font-bold text-green-600">{formatCurrency(totalProjectsValue)}</span>
+              </div>
+            )}
             {projects.length > 5 && (
               <Button variant="ghost" size="sm" className="w-full h-6 text-[10px]" onClick={() => onTabChange?.('projects')}>
                 +{projects.length - 5} more projects
@@ -271,7 +297,7 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
                 <TableHead>Project Name</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Priority</TableHead>
-                <TableHead>Start Date</TableHead>
+                <TableHead>Value</TableHead>
                 <TableHead>Due Date</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -316,10 +342,13 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {project.start_date ? new Date(project.start_date).toLocaleDateString() : 'Not set'}
-                    </div>
+                    {getProjectValue(project) > 0 ? (
+                      <span className="font-medium text-green-600">
+                        {formatCurrency(getProjectValue(project))}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center text-sm text-muted-foreground">
@@ -342,6 +371,19 @@ export const ClientProjectsList = ({ clientId, onTabChange, compact = false }: C
                 );
               })}
             </TableBody>
+            {projects.length > 0 && totalProjectsValue > 0 && (
+              <TableFooter>
+                <TableRow className="bg-muted/50">
+                  <TableCell colSpan={3} className="font-medium text-right">
+                    Total Projects Value:
+                  </TableCell>
+                  <TableCell className="font-bold text-green-600">
+                    {formatCurrency(totalProjectsValue)}
+                  </TableCell>
+                  <TableCell colSpan={2}></TableCell>
+                </TableRow>
+              </TableFooter>
+            )}
           </Table>
         )}
       </CardContent>

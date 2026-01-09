@@ -3,6 +3,21 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+// Helper function to log activity for email sent
+const logEmailActivity = async (clientId: string, subject: string, userId: string) => {
+  try {
+    await supabase.from("client_activity_log").insert({
+      client_id: clientId,
+      user_id: userId,
+      activity_type: "email_sent",
+      title: `Email sent: ${subject}`,
+      description: `Email with subject "${subject}" was sent`,
+    });
+  } catch (error) {
+    console.warn("Failed to log email activity:", error);
+  }
+};
+
 interface SendEmailRequest {
   to: string;
   subject: string;
@@ -128,6 +143,11 @@ export const useSendEmail = () => {
 
         console.log("Email sent successfully:", sendResponse);
 
+        // Log activity if this email is linked to a client
+        if (emailData.client_id && user) {
+          await logEmailActivity(emailData.client_id, emailData.subject, user.id);
+        }
+
         // Schedule a status check to ensure the webhook doesn't miss updates
         setTimeout(async () => {
           try {
@@ -160,6 +180,7 @@ export const useSendEmail = () => {
         // Final refresh to show updated status
         await queryClient.invalidateQueries({ queryKey: ['emails'] });
         await queryClient.invalidateQueries({ queryKey: ['email-kpis'] });
+        await queryClient.invalidateQueries({ queryKey: ['client-activities'] });
 
         return { ...emailRecord, ...sendResponse };
 

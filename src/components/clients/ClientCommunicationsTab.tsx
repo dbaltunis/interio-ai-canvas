@@ -188,6 +188,7 @@ export const ClientCommunicationsTab = ({
       </Card>
 
       <MessagePreviewDrawer
+        key={`drawer-${drawerFilter}`}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         message={null}

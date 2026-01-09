@@ -14,14 +14,14 @@ import {
 } from "lucide-react";
 import { ClientQuickActionsBar } from "./ClientQuickActionsBar";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
-import { useClient, useUpdateClient } from "@/hooks/useClients";
-import { useClientJobs, useClientQuotes } from "@/hooks/useClientJobs";
+import { useClient, useUpdateClient, useUpdateClientStage } from "@/hooks/useClients";
+import { useClientJobs } from "@/hooks/useClientJobs";
 import { useClientFiles } from "@/hooks/useClientFiles";
 import { useCanEditClient } from "@/hooks/useClientEditPermissions";
 import { ClientCommunicationsTab } from "./ClientCommunicationsTab";
 import { LeadSourceSelect } from "@/components/crm/LeadSourceSelect";
 import { ClientProjectsList } from "./ClientProjectsList";
-import { MeasurementsList } from "../measurements/MeasurementsList";
+import { ClientMeasurementsTab } from "./ClientMeasurementsTab";
 import { ClientActivityLog } from "./ClientActivityLog";
 import { ClientAllNotesSection } from "./ClientAllNotesSection";
 import { useToast } from "@/hooks/use-toast";
@@ -40,8 +40,8 @@ interface ClientProfilePageProps {
 export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfilePageProps) => {
   const { data: client, isLoading: clientLoading } = useClient(clientId);
   const { data: projects } = useClientJobs(clientId);
-  const { data: quotes } = useClientQuotes(clientId);
   const updateClient = useUpdateClient();
+  const updateClientStage = useUpdateClientStage();
   const { toast } = useToast();
   const { user } = useAuth();
   const { data: clientFiles } = useClientFiles(clientId, user?.id || '');
@@ -52,20 +52,6 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const [editedClient, setEditedClient] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("notes");
   const [detailsOpen, setDetailsOpen] = useState(true);
-  
-  // Calculate portfolio value from closed/completed projects only
-  const closedProjects = (projects || []).filter(p => 
-    ['closed', 'completed'].includes(p.status?.toLowerCase() || '')
-  );
-  
-  const portfolioValue = closedProjects.reduce((sum, project) => {
-    const projectQuotes = (quotes || []).filter(q => q.project_id === project.id);
-    if (projectQuotes.length > 0) {
-      const latestQuote = projectQuotes[0];
-      return sum + parseFloat(latestQuote.total_amount?.toString() || '0');
-    }
-    return sum;
-  }, 0);
 
   if (clientLoading || editPermissionLoading) {
     return (
@@ -157,7 +143,8 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                     return;
                   }
                   try {
-                    await updateClient.mutateAsync({ id: client.id, funnel_stage: value });
+                    const previousStage = currentClient.funnel_stage;
+                    await updateClientStage.mutateAsync({ clientId: client.id, stage: value, previousStage });
                   } catch (error) {
                     toast({ title: "Failed to update", variant: "destructive" });
                   }
@@ -186,10 +173,17 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         
         {/* Compact Stats Badges */}
         <div className="flex items-center gap-2 flex-wrap ml-[52px] sm:ml-0">
-          <Badge variant="outline" className="gap-1 text-xs font-medium">
-            <DollarSign className="h-3 w-3 text-green-600" />
-            {formatCurrency(portfolioValue)}
-          </Badge>
+          {currentClient.deal_value && currentClient.deal_value > 0 ? (
+            <Badge variant="outline" className="gap-1 text-xs font-medium bg-green-50 border-green-200">
+              <DollarSign className="h-3 w-3 text-green-600" />
+              {formatCurrency(currentClient.deal_value)} deal
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="gap-1 text-xs font-medium">
+              <DollarSign className="h-3 w-3 text-muted-foreground" />
+              No deal value
+            </Badge>
+          )}
           <Badge variant="outline" className="gap-1 text-xs font-medium">
             <Briefcase className="h-3 w-3 text-blue-600" />
             {projects?.length || 0} projects
@@ -216,7 +210,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
       {/* Main Content Area - Three Columns */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left Column - Client Details & Files (Collapsible) */}
-        <div className="lg:col-span-3 space-y-3">
+        <div className="lg:col-span-5 space-y-3">
           <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
             <Card variant="analytics">
               <CollapsibleTrigger asChild>
@@ -303,6 +297,16 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                           onValueChange={(value) => setEditedClient({ ...editedClient, lead_source: value })}
                         />
                       </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px]">Deal Value</Label>
+                        <Input
+                          type="number"
+                          value={editedClient.deal_value || ''}
+                          onChange={(e) => setEditedClient({ ...editedClient, deal_value: e.target.value ? parseFloat(e.target.value) : null })}
+                          className="h-7 text-xs"
+                          placeholder="Expected deal value"
+                        />
+                      </div>
                       <div className="flex gap-2 pt-1">
                         <Button size="sm" variant="outline" onClick={handleCancel} disabled={updateClient.isPending} className="flex-1 h-6 text-[10px]">
                           <X className="h-2.5 w-2.5 mr-0.5" /> Cancel
@@ -313,47 +317,47 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-1.5 text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <Mail className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         <span className="truncate">{currentClient.email || 'No email'}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <Phone className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         <span>{currentClient.phone || 'No phone'}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         <span className="truncate">{currentClient.address || 'No address'}</span>
                       </div>
                       {currentClient.company_name && (
-                        <div className="flex items-center gap-1.5">
-                          <Building2 className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <span className="truncate">{currentClient.company_name}</span>
                         </div>
                       )}
                       {currentClient.country && (
-                        <div className="flex items-center gap-1.5">
-                          <Globe className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                        <div className="flex items-center gap-2">
+                          <Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <span>{currentClient.country}</span>
                         </div>
                       )}
                       {(currentClient.source || currentClient.lead_source) && (
-                        <div className="flex items-center gap-1 flex-wrap pt-1">
+                        <div className="flex items-center gap-1.5 flex-wrap pt-1">
                           {currentClient.source && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                            <Badge variant="outline" className="text-xs px-2 py-0.5">
                               {currentClient.source}
                             </Badge>
                           )}
                           {currentClient.lead_source && (
-                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                            <Badge variant="secondary" className="text-xs px-2 py-0.5">
                               {currentClient.lead_source}
                             </Badge>
                           )}
                         </div>
                       )}
-                      <div className="flex items-center gap-1.5 pt-0.5">
-                        <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 h-4 ${
+                      <div className="flex items-center gap-2 pt-0.5">
+                        <Badge variant="secondary" className={`text-xs px-2 py-0.5 ${
                           currentClient.priority_level === 'high' ? 'bg-red-100 text-red-700' :
                           currentClient.priority_level === 'low' ? 'bg-gray-100 text-gray-700' :
                           'bg-yellow-100 text-yellow-700'
@@ -363,17 +367,17 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
                       </div>
                       {currentClient.notes && (
                         <div className="mt-2 pt-2 border-t border-border/50">
-                          <div className="flex items-start gap-1.5">
-                            <FileText className="h-2.5 w-2.5 text-muted-foreground shrink-0 mt-0.5" />
-                            <span className="text-muted-foreground text-[10px] whitespace-pre-wrap line-clamp-4">
+                          <div className="flex items-start gap-2">
+                            <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                            <span className="text-muted-foreground text-xs whitespace-pre-wrap line-clamp-4">
                               {currentClient.notes}
                             </span>
                           </div>
                         </div>
                       )}
                       {canEditClient && (
-                        <Button variant="outline" size="sm" onClick={handleEdit} className="w-full mt-1 h-6 text-[10px]">
-                          <Edit className="h-2.5 w-2.5 mr-1" /> Edit
+                        <Button variant="outline" size="sm" onClick={handleEdit} className="w-full mt-2 h-7 text-xs">
+                          <Edit className="h-3 w-3 mr-1" /> Edit
                         </Button>
                       )}
                     </div>
@@ -421,7 +425,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </div>
 
         {/* Right Column - Communications */}
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-3">
           <ClientCommunicationsTab 
             clientId={clientId} 
             clientEmail={client.email}
@@ -459,10 +463,8 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </TabsContent>
 
         <TabsContent value="measurements" className="mt-3">
-          <MeasurementsList 
+          <ClientMeasurementsTab 
             clientId={clientId}
-            onViewMeasurement={() => {}}
-            onEditMeasurement={() => {}}
             canEditClient={canEditClient}
           />
         </TabsContent>

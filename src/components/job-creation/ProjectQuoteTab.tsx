@@ -59,7 +59,7 @@ export const ProjectQuoteTab = ({ project, shouldHighlightNewQuote = false }: Pr
   const isReadOnly = !canEditJob;
   const { buildQuotationItems } = useQuotationSync({
     projectId: project?.id || "",
-    clientId: project?.client_id || "",
+    clientId: project?.client_id || undefined,
     autoCreateQuote: false
   });
 

@@ -79,7 +79,7 @@ export const useUnifiedCommunications = (clientId?: string) => {
         projectName: null,
         subject: email.subject,
         preview: email.subject || 'No subject',
-        fullContent: email.html_body || email.text_body || '',
+        fullContent: email.content || '',
         recipientEmail: email.recipient_email,
         status: email.status || 'sent',
         sentAt: email.created_at,

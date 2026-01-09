@@ -577,7 +577,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
     try {
       toast({ title: "Duplicating job...", description: "This may take a moment" });
       
-      // Duplicate the project
+      // Duplicate the project with parent_job_id reference
       const { data: newProject, error: projectError } = await supabase
         .from('projects')
         .insert([{
@@ -586,26 +586,105 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
           created_at: undefined,
           updated_at: undefined,
           job_number: `${project.job_number}-COPY`,
-          name: `${project.name} (Copy)`
+          name: `${project.name} (Copy)`,
+          parent_job_id: project.id // Track original job
         }])
         .select()
         .single();
       
       if (projectError) throw projectError;
       
-      // Copy rooms, surfaces, treatments, quotes etc
+      // Copy rooms and build ID mapping
       const { data: rooms } = await supabase
         .from('rooms')
         .select('*')
         .eq('project_id', project.id);
       
+      const roomIdMap: Record<string, string> = {};
+      
       if (rooms && rooms.length > 0) {
-        const roomsCopy = rooms.map(r => ({
-          ...r,
-          id: undefined,
-          project_id: newProject.id
-        }));
-        await supabase.from('rooms').insert(roomsCopy);
+        for (const room of rooms) {
+          const oldRoomId = room.id;
+          const { data: newRoom, error: roomError } = await supabase
+            .from('rooms')
+            .insert([{
+              ...room,
+              id: undefined,
+              project_id: newProject.id,
+              created_at: undefined,
+              updated_at: undefined
+            }])
+            .select()
+            .single();
+          
+          if (roomError) throw roomError;
+          roomIdMap[oldRoomId] = newRoom.id;
+        }
+      }
+      
+      // Copy surfaces and build ID mapping
+      const surfaceIdMap: Record<string, string> = {};
+      
+      if (Object.keys(roomIdMap).length > 0) {
+        const { data: surfaces } = await supabase
+          .from('surfaces')
+          .select('*')
+          .in('room_id', Object.keys(roomIdMap));
+        
+        if (surfaces && surfaces.length > 0) {
+          for (const surface of surfaces) {
+            const oldSurfaceId = surface.id;
+            const { data: newSurface, error: surfaceError } = await supabase
+              .from('surfaces')
+              .insert([{
+                ...surface,
+                id: undefined,
+                room_id: roomIdMap[surface.room_id],
+                project_id: newProject.id,
+                created_at: undefined,
+                updated_at: undefined
+              }])
+              .select()
+              .single();
+            
+            if (surfaceError) throw surfaceError;
+            surfaceIdMap[oldSurfaceId] = newSurface.id;
+          }
+        }
+      }
+      
+      // Copy windows_summary (uses window_id which maps to surface.id)
+      if (Object.keys(surfaceIdMap).length > 0) {
+        const { data: windowsSummary } = await supabase
+          .from('windows_summary')
+          .select('*')
+          .in('window_id', Object.keys(surfaceIdMap));
+        
+        if (windowsSummary && windowsSummary.length > 0) {
+          const windowsCopy = windowsSummary.map(ws => ({
+            ...ws,
+            window_id: surfaceIdMap[ws.window_id],
+            project_id: newProject.id
+          }));
+          await supabase.from('windows_summary').insert(windowsCopy);
+        }
+        
+        // Copy treatments
+        const { data: treatments } = await supabase
+          .from('treatments')
+          .select('*')
+          .in('window_id', Object.keys(surfaceIdMap));
+        
+        if (treatments && treatments.length > 0) {
+          const treatmentsCopy = treatments.map(t => ({
+            ...t,
+            id: undefined,
+            window_id: surfaceIdMap[t.window_id],
+            created_at: undefined,
+            updated_at: undefined
+          }));
+          await supabase.from('treatments').insert(treatmentsCopy);
+        }
       }
       
       await queryClient.invalidateQueries({ queryKey: ["projects"] });
@@ -613,7 +692,7 @@ export const JobsTableView = ({ onJobSelect, searchTerm, statusFilter, visibleCo
       
       toast({
         title: "✓ Job Duplicated Successfully",
-        description: `Created copy of job. Opening new job...`
+        description: `Created copy of job with all rooms, windows, and treatments.`
       });
       
       window.location.href = `/?tab=projects&jobId=${newProject.id}`;

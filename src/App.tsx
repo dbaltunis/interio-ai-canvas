@@ -48,6 +48,7 @@ const Documentation = lazy(() => import("./pages/Documentation"));
 const OnlineStore = lazy(() => import("./pages/OnlineStore"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
 const AdminAccountManagement = lazy(() => import("./pages/AdminAccountManagement"));
+const AdminAccountHealth = lazy(() => import("./pages/AdminAccountHealth"));
 const OnboardingSubmissions = lazy(() => import("./pages/OnboardingSubmissions"));
 const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 const SubscriptionCanceled = lazy(() => import("./pages/SubscriptionCanceled"));
@@ -268,6 +269,15 @@ const App = () => {
                   <SystemOwnerRoute>
                     <ErrorBoundary>
                       <AdminAccountManagement />
+                    </ErrorBoundary>
+                  </SystemOwnerRoute>
+                } />
+
+                {/* Admin Account Health Dashboard */}
+                <Route path="/admin/health" element={
+                  <SystemOwnerRoute>
+                    <ErrorBoundary>
+                      <AdminAccountHealth />
                     </ErrorBoundary>
                   </SystemOwnerRoute>
                 } />
