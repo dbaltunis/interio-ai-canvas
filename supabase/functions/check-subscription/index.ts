@@ -19,7 +19,7 @@ serve(async (req) => {
 
   const supabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
 
   try {
@@ -42,8 +42,32 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // Get effectiveOwnerId (parent_account_id for team members, else user.id)
+    const { data: profile } = await supabaseClient
+      .from("user_profiles")
+      .select("parent_account_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const effectiveOwnerId = profile?.parent_account_id || user.id;
+    const isTeamMember = !!profile?.parent_account_id;
+    
+    logStep("Resolved effective owner", { 
+      userId: user.id, 
+      effectiveOwnerId, 
+      isTeamMember 
+    });
+
+    // Get the effective owner's email for Stripe lookup
+    let effectiveEmail = user.email;
+    if (isTeamMember) {
+      const { data: ownerAuth } = await supabaseClient.auth.admin.getUserById(effectiveOwnerId);
+      effectiveEmail = ownerAuth?.user?.email || user.email;
+      logStep("Using owner email for Stripe lookup", { effectiveEmail });
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    const customers = await stripe.customers.list({ email: effectiveEmail, limit: 1 });
     
     if (customers.data.length === 0) {
       logStep("No customer found, returning no subscription");
