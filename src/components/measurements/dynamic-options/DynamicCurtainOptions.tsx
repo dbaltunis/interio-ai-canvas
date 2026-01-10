@@ -14,7 +14,7 @@ import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
 import { useConditionalOptions } from "@/hooks/useConditionalOptions";
 import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
 import { getManufacturingPrice, getMethodAvailability } from "@/utils/pricing/headingPriceLookup";
-import { calculateAccessoriesFromOptionData } from "@/hooks/pricing/useHardwareAccessoryPricing";
+import { calculateAccessoriesFromOptionData, type HardwareAccessoryResult } from "@/hooks/pricing/useHardwareAccessoryPricing";
 import type { EyeletRing } from "@/hooks/useEyeletRings";
 import { validateTreatmentOptions } from "@/utils/treatmentOptionValidation";
 import { ValidationAlert } from "@/components/shared/ValidationAlert";
@@ -424,6 +424,7 @@ export const DynamicCurtainOptions = ({
       if (selectedValue) {
         let price = getOptionPrice(selectedValue);
         let accessoryBreakdown: string[] = [];
+        let accessoryResult: HardwareAccessoryResult | null = null;
         
         // ✅ NEW: Calculate hardware accessories for track/rod selections
         const isHardwareSelection = optionKey === 'track_selection' || optionKey === 'rod_selection';
@@ -450,7 +451,7 @@ export const DynamicCurtainOptions = ({
           }
           
           if (railWidthCm > 0) {
-            const accessoryResult = calculateAccessoriesFromOptionData(
+            accessoryResult = calculateAccessoriesFromOptionData(
               accessoryPrices,
               price,
               railWidthCm,
@@ -498,19 +499,50 @@ export const DynamicCurtainOptions = ({
           const pricingMethod = selectedValue.extra_data?.pricing_method || 'per-meter';
           const pricingGridData = selectedValue.extra_data?.pricing_grid_data;
           
-          // Add main hardware item with full price (includes accessories)
-          const displayName = accessoryBreakdown.length > 0 
-            ? `${option.label}: ${selectedValue.label} (incl. accessories)`
-            : `${option.label}: ${selectedValue.label}`;
+          // ✅ ENHANCED: For hardware with accessories, add ITEMIZED breakdown
+          if (isHardwareSelection && accessoryResult && accessoryResult.accessories.length > 0) {
+            // 1. Add base hardware item (without accessories total)
+            updatedOptions.push({ 
+              name: `${option.label}: ${selectedValue.label}`, 
+              price: accessoryResult.hardwareBasePrice, 
+              pricingMethod: 'fixed',
+              pricingGridData,
+              optionKey: optionKey,
+              category: 'hardware',
+              description: 'Base price'
+            } as any);
             
-          updatedOptions.push({ 
-            name: displayName, 
-            price, 
-            pricingMethod: isHardwareSelection ? 'fixed' : pricingMethod, // Hardware is fixed total
-            pricingGridData,
-            optionKey: optionKey,
-            accessoryBreakdown // Store breakdown for display in quotes
-          } as any);
+            // 2. Add each accessory as a separate line item
+            accessoryResult.accessories.forEach((acc, accIdx) => {
+              updatedOptions.push({
+                name: acc.name,
+                price: acc.totalPrice,
+                pricingMethod: 'fixed',
+                optionKey: `${optionKey}_accessory_${accIdx}`,
+                category: 'hardware_accessory',
+                parentOptionKey: optionKey,
+                quantity: acc.quantity,
+                unit_price: acc.unitPrice,
+                pricingDetails: acc.formulaDescription // e.g., "1 per 10cm"
+              } as any);
+            });
+            
+            console.log('🔧 Hardware breakdown itemized:', {
+              base: { name: selectedValue.label, price: accessoryResult.hardwareBasePrice },
+              accessories: accessoryResult.accessories,
+              totalItems: 1 + accessoryResult.accessories.length
+            });
+          } else {
+            // Non-hardware option or hardware without accessories
+            updatedOptions.push({ 
+              name: `${option.label}: ${selectedValue.label}`, 
+              price, 
+              pricingMethod: isHardwareSelection ? 'fixed' : pricingMethod,
+              pricingGridData,
+              optionKey: optionKey,
+              accessoryBreakdown // Store breakdown for display in quotes (legacy)
+            } as any);
+          }
           
           onSelectedOptionsChange(updatedOptions);
           console.log('🎨 Updated selectedOptions:', updatedOptions.map(o => o.name));
