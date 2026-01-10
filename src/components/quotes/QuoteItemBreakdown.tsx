@@ -36,7 +36,7 @@ const QuoteItemBreakdown: React.FC<QuoteItemBreakdownProps> = ({
         const pricingDetails = item.pricingDetails || '';
         
         // For accessories, create detailed description from quantity and unit price
-        const accessoryDescription = isAccessory && quantity > 1 && unitPrice > 0
+        const accessoryDescription = isAccessory && quantity > 0 && unitPrice > 0
           ? `${quantity} × ${formatCurrency(unitPrice)}${pricingDetails ? ` (${pricingDetails})` : ''}`
           : null;
         
