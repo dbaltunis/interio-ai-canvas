@@ -1765,7 +1765,28 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   ? selectedOptions 
                   : (Array.isArray(measurements.selected_options) ? measurements.selected_options : []);
                 
-                return optionsToUse
+                // MUTUAL EXCLUSIVITY FIX: Filter out hidden hardware based on hardware_type selection
+                // If hardware_type is "track", filter out all rod_selection items (and vice versa)
+                const hardwareTypeOpt = optionsToUse.find((o: any) => 
+                  o.optionKey === 'hardware_type' || o.name?.toLowerCase().includes('hardware type'));
+                const hardwareTypeValue = hardwareTypeOpt?.name?.toLowerCase() || hardwareTypeOpt?.value?.toLowerCase() || '';
+                const isTrackSelected = hardwareTypeValue.includes('track');
+                const isRodSelected = hardwareTypeValue.includes('rod');
+                
+                const filteredOptions = optionsToUse.filter((opt: any) => {
+                  const optKey = (opt.optionKey || '').toLowerCase();
+                  // Filter out rod items if track is selected
+                  if (isTrackSelected && optKey.startsWith('rod_selection')) {
+                    return false;
+                  }
+                  // Filter out track items if rod is selected
+                  if (isRodSelected && optKey.startsWith('track_selection')) {
+                    return false;
+                  }
+                  return true;
+                });
+                
+                return filteredOptions
                   .map((opt: any, idx: number) => {
                     let optionTotalCost = opt.price || opt.calculatedPrice || 0;
                     const isPerMeterOption = opt.pricingMethod === 'per-meter' || opt.pricingMethod === 'per-metre' || 
@@ -1778,13 +1799,35 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     
                     const extracted = extractOptionValue(opt);
                     
+                    // ACCESSORY PRESERVATION: For hardware_accessory items, use proper accessory data
+                    const isAccessory = opt.category === 'hardware_accessory';
+                    const accessoryQuantity = opt.quantity || 1;
+                    const accessoryUnitPrice = opt.unit_price || 0;
+                    
+                    // For accessories, create descriptive name from accessory data
+                    let displayName = extracted.name;
+                    let displayDescription = extracted.value;
+                    
+                    if (isAccessory) {
+                      // Use the accessory name directly (e.g., "Runners", "End Caps")
+                      displayName = opt.name || extracted.name;
+                      // Create pricing description (e.g., "12 × ₹10")
+                      displayDescription = accessoryQuantity > 1 && accessoryUnitPrice > 0 
+                        ? `${accessoryQuantity} × ₹${accessoryUnitPrice.toFixed(2)}`
+                        : extracted.value;
+                    }
+                    
                     return {
-                      id: `option-${idx}`,
-                      name: extracted.name,
-                      description: extracted.value,
+                      id: opt.optionKey || `option-${idx}`,
+                      name: displayName,
+                      description: displayDescription,
                       total_cost: optionTotalCost,
-                      category: 'option',
+                      category: opt.category || 'option', // PRESERVE original category (hardware_accessory)
+                      quantity: accessoryQuantity,
+                      unit_price: accessoryUnitPrice,
                       pricing_method: opt.pricingMethod,
+                      pricingDetails: opt.pricingDetails || '', // e.g., "1 per 10cm"
+                      parentOptionKey: opt.parentOptionKey, // Links to parent hardware
                       image_url: opt.image_url || null,
                       orderIndex: opt.orderIndex ?? idx,
                       isValid: extracted.isValid

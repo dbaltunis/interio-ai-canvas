@@ -812,8 +812,22 @@ const LivePreviewBlock = ({
             let displayName = child.name || 'Item';
             let displayDescription = child.description || '';
             
-            // If this is an option, parse the name format "key: value"
-            if (child.category === 'option' || child.category === 'options') {
+            // ACCESSORY HANDLING: Detect hardware_accessory category for special formatting
+            const isAccessory = child.category === 'hardware_accessory';
+            const accessoryQuantity = child.quantity || 1;
+            const accessoryUnitPrice = child.unit_price || 0;
+            const pricingDetails = child.pricingDetails || '';
+            
+            if (isAccessory) {
+              // For accessories, format description with quantity and pricing
+              if (accessoryQuantity > 1 && accessoryUnitPrice > 0) {
+                displayDescription = `${accessoryQuantity} × ₹${accessoryUnitPrice.toFixed(2)}`;
+                if (pricingDetails) {
+                  displayDescription += ` (${pricingDetails})`;
+                }
+              }
+            } else if (child.category === 'option' || child.category === 'options') {
+              // If this is an option, parse the name format "key: value"
               const colonIndex = displayName.indexOf(':');
               if (colonIndex > 0 && colonIndex < displayName.length - 1) {
                 // Split "vane_width: 89mm" into name and description
@@ -839,15 +853,16 @@ const LivePreviewBlock = ({
             
             breakdown.push({
               id: child.id || `${item.id}-child-${idx}`,
-              name: displayName,
+              name: isAccessory ? `└ ${displayName}` : displayName, // Indent accessory names
               category: child.category || 'Component',
               description: displayDescription,
-              quantity: child.quantity || 1,
+              quantity: accessoryQuantity,
               unit: child.unit || '',
-              unit_price: child.unit_price || 0,
+              unit_price: accessoryUnitPrice,
               total_cost: child.total || 0,
               image_url: childImageUrl,
-              color: child.color
+              color: child.color,
+              isAccessory: isAccessory // Flag for styling
             });
             
             console.log('[BREAKDOWN] Added child:', {
@@ -855,7 +870,8 @@ const LivePreviewBlock = ({
               description: displayDescription,
               unit_price: child.unit_price,
               total: child.total,
-              quantity: child.quantity
+              quantity: child.quantity,
+              isAccessory
             });
           });
         }
