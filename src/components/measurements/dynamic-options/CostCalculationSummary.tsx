@@ -760,21 +760,45 @@ export const CostCalculationSummary = ({
   // ✅ CRITICAL: Store curtain costs for useEffect to report to parent (NOT during render!)
   // This ensures save uses IDENTICAL values to what's displayed - no recalculation
   if (onCurtainCostsCalculated) {
-    // ✅ FIX: Add value field to optionDetails matching blind pattern
-    const optionDetails = selectedOptions.map(opt => ({
-      name: opt.name || 'Unknown Option',
-      // Extract value from "name: value" format or use available fields
-      value: (() => {
-        if ((opt as any).value) return (opt as any).value;
-        if ((opt as any).label) return (opt as any).label;
-        if (opt.name && opt.name.includes(':')) {
-          return opt.name.substring(opt.name.indexOf(':') + 1).trim();
+    // ✅ FIX: Preserve all accessory fields for hardware itemization
+    const optionDetails = selectedOptions.map(opt => {
+      const optAny = opt as any;
+      const isAccessory = optAny.category === 'hardware_accessory';
+      const quantity = optAny.quantity || 1;
+      const unitPrice = optAny.unit_price || 0;
+      const pricingDetails = optAny.pricingDetails || '';
+      
+      // Build proper value/description for accessories: "3 × ₹15.00 (1 per 10cm)"
+      let value = '';
+      if (isAccessory && quantity > 0 && unitPrice > 0) {
+        value = `${quantity} × ${unitPrice.toFixed(2)}`;
+        if (pricingDetails) {
+          value += ` (${pricingDetails})`;
         }
-        return (opt as any).optionKey || opt.name || '-';
-      })(),
-      cost: (opt as any).calculatedPrice ?? opt.price ?? 0,
-      pricingMethod: opt.pricingMethod || 'fixed'
-    }));
+      } else if (optAny.value) {
+        value = optAny.value;
+      } else if (optAny.label) {
+        value = optAny.label;
+      } else if (opt.name && opt.name.includes(':')) {
+        value = opt.name.substring(opt.name.indexOf(':') + 1).trim();
+      } else {
+        value = opt.name || '-';
+      }
+      
+      return {
+        name: opt.name || 'Unknown Option',
+        value,
+        cost: optAny.calculatedPrice ?? opt.price ?? 0,
+        pricingMethod: opt.pricingMethod || 'fixed',
+        // PRESERVE accessory fields for itemization
+        category: optAny.category,
+        quantity: quantity,
+        unit_price: unitPrice,
+        pricingDetails: pricingDetails,
+        optionKey: optAny.optionKey,
+        parentOptionKey: optAny.parentOptionKey,
+      };
+    });
     
     // ✅ FIX: Include selection changes in key for real-time updates
     const optionSelectionKey = selectedOptions.map(o => `${o.name}-${(o as any).value || (o as any).label || ''}`).join(',');

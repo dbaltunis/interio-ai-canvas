@@ -163,9 +163,21 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     liningCost: number;
     manufacturingCost: number;
     headingCost: number;
-    headingName?: string; // ✅ ADD: Heading name for correct save
+    headingName?: string;
     optionsCost: number;
-    optionDetails: Array<{ name: string; cost: number; pricingMethod: string }>;
+    optionDetails: Array<{ 
+      name: string; 
+      cost: number; 
+      pricingMethod: string;
+      // Accessory-specific fields for hardware itemization
+      category?: string;
+      quantity?: number;
+      unit_price?: number;
+      pricingDetails?: string;
+      optionKey?: string;
+      parentOptionKey?: string;
+      value?: string;
+    }>;
     totalCost: number;
     linearMeters: number;
   } | null>(null);
