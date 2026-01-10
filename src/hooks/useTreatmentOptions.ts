@@ -93,8 +93,9 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
           return [];
         }
         
-        // CRITICAL FIX: Filter to only show options belonging to THIS user's account
-        // AND filter out hidden option values based on template_option_settings.hidden_value_ids
+        // Process linked options - template_option_settings already provides data isolation
+        // (template belongs to user's account, so linked options are already properly scoped)
+        // Filter out hidden option values based on template_option_settings.hidden_value_ids
         // AND include per-template order_index for sorting
         const allLinkedOptions = (linkedOptions || [])
           .filter(lo => lo.treatment_options)
@@ -115,7 +116,8 @@ export const useTreatmentOptions = (templateIdOrCategory?: string, queryType: 't
             
             return opt;
           })
-          .filter(opt => opt.account_id === accountId) // Only show user's own options
+          // ✅ REMOVED: account_id filter - template_option_settings already provides data isolation
+          // The template belongs to the user's account, so linked options are properly scoped
           .sort((a, b) => (a.template_order_index ?? 999) - (b.template_order_index ?? 999)); // Sort by template order
         
         console.log('🔧 useTreatmentOptions (template query) loaded:', {
