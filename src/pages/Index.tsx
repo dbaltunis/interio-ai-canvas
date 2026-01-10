@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense, lazy } from "react";
+import { useState, useEffect, Suspense, lazy, ComponentType } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ResponsiveHeader } from "@/components/layout/ResponsiveHeader";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
@@ -10,186 +10,126 @@ import { useEnsureDefaultSequences } from "@/hooks/useNumberSequences";
 import { OrderingHubPage } from "@/components/ordering/OrderingHubPage";
 import { Button } from "@/components/ui/button";
 import { VersionFooter } from "@/components/version/VersionFooter";
+import { Loader2, RefreshCw } from "lucide-react";
 
 
-// Lazy load heavy components with proper error handling
-const Dashboard = lazy(() => 
-  import("@/components/dashboard/Dashboard").catch((error) => {
-    console.error('❌ Failed to load Dashboard:', error);
-    return { 
-      default: () => (
-        <div className="p-6 text-center space-y-3">
-          <p className="text-destructive">Failed to load Dashboard</p>
-          <p className="text-sm text-muted-foreground">{error?.message}</p>
-          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-            Retry
+/**
+ * Lazy load helper with automatic retry and exponential backoff.
+ * Handles intermittent module loading failures (HMR, caching, network).
+ */
+function lazyWithRetry<T extends ComponentType<any>>(
+  importFn: () => Promise<{ default: T }>,
+  moduleName: string,
+  maxRetries = 3
+): React.LazyExoticComponent<T> {
+  return lazy(async () => {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // Wait before retry with exponential backoff (1s, 2s, 4s)
+        if (attempt > 0) {
+          console.log(`🔄 Retrying ${moduleName} (attempt ${attempt + 1}/${maxRetries})...`);
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
+        
+        const module = await importFn();
+        if (attempt > 0) {
+          console.log(`✅ ${moduleName} loaded successfully after ${attempt + 1} attempts`);
+        }
+        return module;
+      } catch (error) {
+        lastError = error as Error;
+        console.warn(`⚠️ Failed to load ${moduleName} (attempt ${attempt + 1}/${maxRetries}):`, error);
+      }
+    }
+    
+    // All retries failed - return error component
+    console.error(`❌ Failed to load ${moduleName} after ${maxRetries} attempts:`, lastError);
+    
+    return {
+      default: (() => (
+        <div className="p-6 text-center space-y-4">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-destructive/10">
+            <RefreshCw className="h-6 w-6 text-destructive" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-destructive font-medium">Failed to load {moduleName}</p>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              {lastError?.message || 'An unexpected error occurred'}
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => window.location.reload()}
+            className="gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Reload Page
           </Button>
         </div>
-      )
+      )) as unknown as T
     };
-  })
+  });
+}
+
+// Lazy load heavy components with automatic retry
+const Dashboard = lazyWithRetry(
+  () => import("@/components/dashboard/Dashboard"),
+  "Dashboard"
 );
-const MyTasksPage = lazy(() => 
-  import("@/pages/MyTasksPage").then(m => ({ default: m.MyTasksPage })).catch((error) => {
-    console.error('❌ Failed to load Tasks:', error);
-    return { 
-      default: () => (
-        <div className="p-6 text-center space-y-3">
-          <p className="text-destructive">Failed to load Tasks</p>
-          <p className="text-sm text-muted-foreground">{error?.message}</p>
-          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </div>
-      )
-    };
-  })
+
+const MyTasksPage = lazyWithRetry(
+  () => import("@/pages/MyTasksPage").then(m => ({ default: m.MyTasksPage })),
+  "Tasks"
 );
-const OnlineStorePage = lazy(() =>
-  import("@/pages/OnlineStore").catch((error) => {
-    console.error('❌ Failed to load Online Store:', error);
-    return { 
-      default: () => (
-        <div className="p-6 text-center space-y-3">
-          <p className="text-destructive">Failed to load Online Store</p>
-          <p className="text-sm text-muted-foreground">{error?.message}</p>
-          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </div>
-      )
-    };
-  })
+
+const OnlineStorePage = lazyWithRetry(
+  () => import("@/pages/OnlineStore"),
+  "Online Store"
 );
-const JobsPage = lazy(() => 
-  import("@/components/jobs/JobsPage").catch((error) => {
-    console.error('❌ Failed to load Jobs:', error);
-    return { 
-      default: () => (
-        <div className="p-6 text-center space-y-3">
-          <p className="text-destructive">Failed to load Jobs</p>
-          <p className="text-sm text-muted-foreground">{error?.message}</p>
-          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </div>
-      )
-    };
-  })
+
+const JobsPage = lazyWithRetry(
+  () => import("@/components/jobs/JobsPage"),
+  "Jobs"
 );
-const LibraryPage = lazy(() => 
-  import("@/components/library/LibraryPage").catch((error) => {
-    console.error('❌ Failed to load Library:', error);
-    return { 
-      default: () => (
-        <div className="p-6 text-center space-y-3">
-          <p className="text-destructive">Failed to load Library</p>
-          <p className="text-sm text-muted-foreground">{error?.message}</p>
-          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </div>
-      )
-    };
-  })
+
+const LibraryPage = lazyWithRetry(
+  () => import("@/components/library/LibraryPage"),
+  "Library"
 );
-const ClientManagement = lazy(() => 
-  import("@/components/jobs/ClientManagement").then(module => ({
+
+const ClientManagement = lazyWithRetry(
+  () => import("@/components/jobs/ClientManagement").then(module => ({
     default: (props: any) => <module.default {...props} />
-  })).catch((error) => {
-    console.error('❌ Failed to load Clients:', error);
-    return { 
-      default: () => (
-        <div className="p-6 text-center space-y-3">
-          <p className="text-destructive">Failed to load Clients</p>
-          <p className="text-sm text-muted-foreground">{error?.message}</p>
-          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </div>
-      )
-    };
-  })
+  })),
+  "Clients"
 );
-const EmailManagement = lazy(() => 
-  import("@/components/jobs/EmailManagement").catch((error) => {
-    console.error('❌ Failed to load EmailManagement:', error);
-    return { 
-      default: () => (
-        <div className="p-6 text-center space-y-3">
-          <p className="text-destructive">Failed to load Emails</p>
-          <p className="text-sm text-muted-foreground">{error?.message}</p>
-          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </div>
-      )
-    };
-  })
+
+const EmailManagement = lazyWithRetry(
+  () => import("@/components/jobs/EmailManagement"),
+  "Emails"
 );
-const CalendarView = lazy(() => 
-  import("@/components/calendar/CalendarView").catch((error) => {
-    console.error('❌ Failed to load Calendar:', error);
-    return { 
-      default: () => (
-        <div className="p-6 text-center space-y-3">
-          <p className="text-destructive">Failed to load Calendar</p>
-          <p className="text-sm text-muted-foreground">{error?.message}</p>
-          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </div>
-      )
-    };
-  })
+
+const CalendarView = lazyWithRetry(
+  () => import("@/components/calendar/CalendarView"),
+  "Calendar"
 );
-const MobileSettings = lazy(() => 
-  import("@/pages/MobileSettings").catch((error) => {
-    console.error('❌ Failed to load Settings:', error);
-    return { 
-      default: () => (
-        <div className="p-6 text-center space-y-3">
-          <p className="text-destructive">Failed to load Settings</p>
-          <p className="text-sm text-muted-foreground">{error?.message}</p>
-          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </div>
-      )
-    };
-  })
+
+const MobileSettings = lazyWithRetry(
+  () => import("@/pages/MobileSettings"),
+  "Settings"
 );
-const MeasurementWizardDemo = lazy(() => 
-  import("@/components/measurement-wizard/MeasurementWizardDemo").catch((error) => {
-    console.error('❌ Failed to load Measurement Wizard:', error);
-    return { 
-      default: () => (
-        <div className="p-6 text-center space-y-3">
-          <p className="text-destructive">Failed to load Measurement Wizard</p>
-          <p className="text-sm text-muted-foreground">{error?.message}</p>
-          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </div>
-      )
-    };
-  })
+
+const MeasurementWizardDemo = lazyWithRetry(
+  () => import("@/components/measurement-wizard/MeasurementWizardDemo"),
+  "Measurement Wizard"
 );
-const BugReportsPage = lazy(() =>
-  import("@/pages/BugReportsPage").catch((error) => {
-    console.error('❌ Failed to load Bug Reports:', error);
-    return { 
-      default: () => (
-        <div className="p-6 text-center space-y-3">
-          <p className="text-destructive">Failed to load Bug Reports</p>
-          <p className="text-sm text-muted-foreground">{error?.message}</p>
-          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </div>
-      )
-    };
-  })
+
+const BugReportsPage = lazyWithRetry(
+  () => import("@/pages/BugReportsPage"),
+  "Bug Reports"
 );
 
 // Skeleton loading components
