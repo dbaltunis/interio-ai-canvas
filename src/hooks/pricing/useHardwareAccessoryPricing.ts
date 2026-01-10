@@ -7,10 +7,12 @@ export interface AccessoryItem {
   unitPrice: number;
   totalPrice: number;
   childItemKey: string;
+  formulaDescription: string; // e.g., "1 per 10cm"
 }
 
 export interface HardwareAccessoryResult {
   hardwareBasePrice: number;
+  hardwareName?: string; // Name of the base hardware for breakdown display
   accessories: AccessoryItem[];
   accessoriesTotalPrice: number;
   grandTotalPrice: number;
@@ -114,12 +116,17 @@ export const calculateHardwareAccessories = (
       const unitPrice = rule.child_unit_price || 0;
       const totalPrice = quantity * unitPrice;
       
+      // Look up formula description from defaults or use the formula itself
+      const formulaConfig = DEFAULT_ACCESSORY_FORMULAS[rule.child_item_key];
+      const formulaDescription = formulaConfig?.description || rule.qty_formula;
+      
       accessories.push({
         name: formatAccessoryName(rule.child_item_key),
         quantity,
         unitPrice,
         totalPrice,
         childItemKey: rule.child_item_key,
+        formulaDescription,
       });
       
       accessoriesTotalPrice += totalPrice;
@@ -234,12 +241,13 @@ export const calculateAccessoriesFromOptionData = (
         unitPrice,
         totalPrice,
         childItemKey: key,
+        formulaDescription: formulaConfig.description, // e.g., "1 per 10cm"
       });
       
       accessoriesTotalPrice += totalPrice;
       
-      // Build breakdown string
-      breakdown.push(`${formatAccessoryName(key)}: ${quantity} × ₹${unitPrice.toFixed(0)} = ₹${totalPrice.toFixed(0)}`);
+      // Build breakdown string with formula description
+      breakdown.push(`${formatAccessoryName(key)}: ${quantity} × ₹${unitPrice.toFixed(0)} = ₹${totalPrice.toFixed(0)} (${formulaConfig.description})`);
     } catch (error) {
       console.error(`Error calculating accessory ${key}:`, error);
     }
@@ -308,6 +316,7 @@ export const buildHardwareBreakdownItems = (
   total_cost: number;
   category: string;
   image_url?: string;
+  pricingDetails?: string;
 }> => {
   const items = [];
   
@@ -323,16 +332,17 @@ export const buildHardwareBreakdownItems = (
     image_url: imageUrl,
   });
   
-  // Accessories
+  // Accessories - now using 'hardware_accessory' category for proper indentation
   result.accessories.forEach((acc, idx) => {
     items.push({
       id: `hardware-acc-${idx}`,
       name: acc.name,
-      description: `${acc.quantity} @ ₹${acc.unitPrice.toFixed(0)} each`,
+      description: '-',
       quantity: acc.quantity,
       unit_price: acc.unitPrice,
       total_cost: acc.totalPrice,
-      category: 'hardware',
+      category: 'hardware_accessory',
+      pricingDetails: acc.formulaDescription, // e.g., "1 per 10cm"
     });
   });
   
