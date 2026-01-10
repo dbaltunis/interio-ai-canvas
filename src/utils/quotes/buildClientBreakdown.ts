@@ -256,23 +256,41 @@ export const buildClientBreakdown = (
       let formattedName = item.name || item.category || 'Item';
       let formattedDescription = '-';
       
-      // CRITICAL FIX: ALWAYS extract value from "option_key: value" format as description FIRST
-      if (formattedName && formattedName.includes(':')) {
-        const colonIndex = formattedName.indexOf(':');
-        if (colonIndex > 0) {
-          const key = formattedName.substring(0, colonIndex).trim();
-          const value = formattedName.substring(colonIndex + 1).trim();
-          formattedName = key
-            .replace(/_/g, ' ')
-            .replace(/\b\w/g, (c: string) => c.toUpperCase());
-          // ALWAYS set description from extracted value - never leave empty
-          formattedDescription = value || '-';
-        }
-      }
+      // ACCESSORY HANDLING: Detect hardware_accessory category for special formatting
+      const isAccessory = item.category === 'hardware_accessory';
+      const accessoryQuantity = item.quantity || 1;
+      const accessoryUnitPrice = item.unit_price || 0;
+      const pricingDetails = item.pricingDetails || '';
       
-      // Use explicit item.description as override ONLY if it has meaningful content
-      if (item.description && item.description !== '-' && item.description.trim().length > 0) {
-        formattedDescription = item.description;
+      if (isAccessory) {
+        // For accessories, format description with quantity and pricing
+        if (accessoryQuantity > 1 && accessoryUnitPrice > 0) {
+          formattedDescription = `${accessoryQuantity} × ₹${accessoryUnitPrice.toFixed(2)}`;
+          if (pricingDetails) {
+            formattedDescription += ` (${pricingDetails})`;
+          }
+        } else {
+          formattedDescription = item.description || '-';
+        }
+      } else {
+        // CRITICAL FIX: ALWAYS extract value from "option_key: value" format as description FIRST
+        if (formattedName && formattedName.includes(':')) {
+          const colonIndex = formattedName.indexOf(':');
+          if (colonIndex > 0) {
+            const key = formattedName.substring(0, colonIndex).trim();
+            const value = formattedName.substring(colonIndex + 1).trim();
+            formattedName = key
+              .replace(/_/g, ' ')
+              .replace(/\b\w/g, (c: string) => c.toUpperCase());
+            // ALWAYS set description from extracted value - never leave empty
+            formattedDescription = value || '-';
+          }
+        }
+        
+        // Use explicit item.description as override ONLY if it has meaningful content
+        if (item.description && item.description !== '-' && item.description.trim().length > 0) {
+          formattedDescription = item.description;
+        }
       }
       
       // Enrich items with color/image from source details
@@ -280,6 +298,7 @@ export const buildClientBreakdown = (
       // 1. Template/treatment rows: show template image
       // 2. Fabric/material rows: show fabric image OR color swatch fallback
       // 3. Option rows: show option image ONLY if it has one, NO color fallback
+      // 4. Hardware accessories: no image, indent display
       let itemColor: string | null = null;
       let itemImageUrl = item.image_url || null;
       
@@ -294,6 +313,10 @@ export const buildClientBreakdown = (
         // Hardware: image and color from hardware details
         itemImageUrl = itemImageUrl || summary.hardware_details?.image_url || null;
         itemColor = item.color || summary.hardware_details?.color || null;
+      } else if (item.category === 'hardware_accessory') {
+        // Hardware accessories: no image, no color
+        itemImageUrl = null;
+        itemColor = null;
       } else if (item.category === 'template' || item.category === 'treatment') {
         // Template row gets template image, no color
         itemImageUrl = itemImageUrl || summary.template_details?.image_url || summary.treatment_image_url || null;
@@ -313,6 +336,10 @@ export const buildClientBreakdown = (
         description: formattedDescription,
         color: itemColor,
         image_url: itemImageUrl,
+        // Preserve accessory-specific fields
+        quantity: accessoryQuantity,
+        unit_price: accessoryUnitPrice,
+        pricingDetails: pricingDetails,
       };
     });
     
@@ -530,17 +557,30 @@ export const buildClientBreakdown = (
       const price = Number(option.calculatedPrice || option.price || option.cost || option.total_cost || option.unit_price || 0);
       const basePrice = Number(option.basePrice || option.price || 0);
       
+      // ACCESSORY HANDLING: Preserve category and quantity for hardware accessories
+      const isAccessory = option.category === 'hardware_accessory';
+      const accessoryQuantity = option.quantity || 1;
+      const accessoryUnitPrice = option.unit_price || basePrice || 0;
+      
+      // For accessories, format description with quantity and pricing
+      if (isAccessory && accessoryQuantity > 1 && accessoryUnitPrice > 0) {
+        formattedDescription = `${accessoryQuantity} × ₹${accessoryUnitPrice.toFixed(2)}`;
+        if (option.pricingDetails) {
+          formattedDescription += ` (${option.pricingDetails})`;
+        }
+      }
+      
       // CRITICAL: Options only show image if they have one - NO color fallback
       optionItems.push({
         id: option.id || `option-${index}`,
         name: formattedName,
         description: formattedDescription !== '-' ? formattedDescription : undefined,
         total_cost: price,
-        unit_price: basePrice, // Show base rate for reference
-        quantity: 1,
+        unit_price: accessoryUnitPrice, // Use accessory unit price for display
+        quantity: accessoryQuantity, // Preserve quantity for accessories
         image_url: option.image_url || null, // Only option's own image
         color: null, // NO color fallback for options
-        category: 'option',
+        category: option.category || 'option', // PRESERVE hardware_accessory category
         pricingDetails: option.pricingDetails || '',
         details: option,
       });

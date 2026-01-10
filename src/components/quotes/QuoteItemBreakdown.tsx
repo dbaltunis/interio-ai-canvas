@@ -35,6 +35,11 @@ const QuoteItemBreakdown: React.FC<QuoteItemBreakdownProps> = ({
         // Check for pricing details text (e.g., "1 per 10cm")
         const pricingDetails = item.pricingDetails || '';
         
+        // For accessories, create detailed description from quantity and unit price
+        const accessoryDescription = isAccessory && quantity > 1 && unitPrice > 0
+          ? `${quantity} × ${formatCurrency(unitPrice)}${pricingDetails ? ` (${pricingDetails})` : ''}`
+          : null;
+        
         return (
           <div 
             key={item.id || `${item.category || 'row'}-${idx}`} 
@@ -57,22 +62,28 @@ const QuoteItemBreakdown: React.FC<QuoteItemBreakdownProps> = ({
               <div className={`${isAccessory ? 'text-muted-foreground' : 'font-medium text-foreground'}`}>
                 {isAccessory ? `└ ${item.name}` : (item.name || item.category || 'Item')}
               </div>
-              {/* Show description or pricing details */}
-              {(item.description || pricingDetails) && (
+              {/* For accessories: show quantity × unit price with pricing formula */}
+              {isAccessory && accessoryDescription && (
+                <div className="text-xs text-muted-foreground">
+                  {accessoryDescription}
+                </div>
+              )}
+              {/* For non-accessories: show description or pricing details */}
+              {!isAccessory && (item.description || pricingDetails) && (
                 <div className="text-xs text-muted-foreground">
                   {item.description !== '-' ? item.description : ''}
                   {pricingDetails && item.description !== '-' ? ' • ' : ''}
                   {pricingDetails}
                 </div>
               )}
-              {/* Show quantity × unit price calculation for items with both */}
-              {quantity > 0 && unitPrice > 0 && (
+              {/* Show quantity × unit price calculation for non-accessory items with both */}
+              {!isAccessory && quantity > 0 && unitPrice > 0 && (
                 <div className="text-xs text-muted-foreground">
                   {quantity}{item.unit ? ` ${item.unit}` : ''} × {formatCurrency(unitPrice)}
                 </div>
               )}
               {/* For items with only quantity (no unit price), show quantity with unit */}
-              {quantity > 0 && unitPrice === 0 && item.unit && (
+              {!isAccessory && quantity > 0 && unitPrice === 0 && item.unit && (
                 <div className="text-xs text-muted-foreground">
                   {quantity} {item.unit}
                 </div>
