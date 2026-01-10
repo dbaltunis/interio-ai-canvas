@@ -1801,7 +1801,15 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                         isValid: extracted.isValid
                       };
                     })
-                    .filter((opt: any) => opt.isValid)
+                    .filter((opt: any) => {
+                      // Filter out invalid options
+                      if (!opt.isValid) return false;
+                      // Filter out "Fullness Ratio" - it's included in heading description
+                      if (opt.name?.toLowerCase().includes('fullness ratio')) return false;
+                      // Filter out "Hardware Type" with ₹0 - accessories will show under Select Track
+                      if (opt.name?.toLowerCase() === 'hardware type' && (opt.total_cost === 0 || !opt.total_cost)) return false;
+                      return true;
+                    })
                     .sort((a: any, b: any) => (a.orderIndex ?? 999) - (b.orderIndex ?? 999));
                 }
                 
@@ -1878,8 +1886,16 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       isValid: extracted.isValid
                     };
                   })
-                  .filter((opt: any) => opt.isValid) // CRITICAL: Filter out N/A options
-                  .sort((a: any, b: any) => (a.orderIndex ?? 999) - (b.orderIndex ?? 999)); // Sort by order_index
+                  .filter((opt: any) => {
+                    // Filter out invalid options
+                    if (!opt.isValid) return false;
+                    // Filter out "Fullness Ratio" - it's included in heading description
+                    if (opt.name?.toLowerCase().includes('fullness ratio')) return false;
+                    // Filter out "Hardware Type" with ₹0 - accessories will show under Select Track
+                    if (opt.name?.toLowerCase() === 'hardware type' && (opt.total_cost === 0 || !opt.total_cost)) return false;
+                    return true;
+                  })
+                  .sort((a: any, b: any) => (a.orderIndex ?? 999) - (b.orderIndex ?? 999));
               };
               
               return [
@@ -1913,13 +1929,19 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   quantity: linearMeters,
                   unit: 'm'
                 }] : []),
-                // Heading
+                // Heading - include fullness ratio in description (e.g., "European Pleat x2")
                 ...(selectedHeading && selectedHeading !== 'standard' && selectedHeading !== 'none' ? [{
                   id: 'heading',
                   name: 'Heading',
                   description: (() => {
                     const headingOpt = headingOptionsFromSettings.find((h: any) => h.id === selectedHeading);
-                    return headingOpt?.name || selectedHeading;
+                    const headingName = headingOpt?.name || selectedHeading;
+                    // Include fullness ratio in heading description
+                    const fullness = measurements.fullness_ratio || measurements.heading_fullness || headingOpt?.fullness_ratio;
+                    if (fullness && fullness > 1) {
+                      return `${headingName} x${fullness}`;
+                    }
+                    return headingName;
                   })(),
                   total_cost: finalHeadingCost || 0,
                   category: 'heading'
