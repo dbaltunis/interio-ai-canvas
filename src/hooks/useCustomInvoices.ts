@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
-
+import type { Database } from "@/integrations/supabase/types";
 export interface CustomInvoice {
   id: string;
   user_id: string;
