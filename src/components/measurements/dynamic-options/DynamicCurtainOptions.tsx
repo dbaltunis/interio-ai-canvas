@@ -11,6 +11,7 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { Loader2, AlertCircle } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
+import { useConditionalOptions } from "@/hooks/useConditionalOptions";
 import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
 import { getManufacturingPrice, getMethodAvailability } from "@/utils/pricing/headingPriceLookup";
 import type { EyeletRing } from "@/hooks/useEyeletRings";
@@ -71,7 +72,10 @@ export const DynamicCurtainOptions = ({
   const { data: inventory = [], isLoading: headingsLoading, refetch: refetchInventory } = useEnhancedInventory({ forceRefresh: true });
   // Use template's treatment_category to fetch the correct options (e.g., 'roman_blinds', 'curtains')
   const treatmentCategory = template?.treatment_category || 'curtains';
-  const { data: treatmentOptions = [], isLoading: treatmentOptionsLoading } = useTreatmentOptions(treatmentCategory, 'category');
+  
+  // ✅ CRITICAL FIX: Fetch options by TEMPLATE ID to use template_option_settings filtering
+  // This ensures only options enabled for THIS template are shown, including hardware options
+  const { data: treatmentOptions = [], isLoading: treatmentOptionsLoading } = useTreatmentOptions(template?.id, 'template');
   
   // ✅ [v2.3.5] DEBUG: Log inventory state with heading filter verification
   console.log('🎯 [v2.3.5] DynamicCurtainOptions - Heading Debug:', {
@@ -105,6 +109,27 @@ export const DynamicCurtainOptions = ({
   
   // Get template option settings to filter hidden options
   const { isOptionEnabled, hasSettings, isLoading: settingsLoading, enabledOptionIds } = useEnabledTemplateOptions(template?.id);
+  
+  // ✅ NEW: Conditional options based on option_rules (e.g., show track_selection when hardware_type = track)
+  // Build selected options map for the conditional hook
+  const selectedOptionsForRules = useMemo(() => {
+    const result: Record<string, string> = { ...treatmentOptionSelections };
+    // Also include direct measurements that might be treatment options
+    Object.keys(measurements).forEach(key => {
+      if (key.startsWith('treatment_option_')) {
+        result[key.replace('treatment_option_', '')] = measurements[key];
+      }
+    });
+    return result;
+  }, [treatmentOptionSelections, measurements]);
+  
+  const { isOptionVisible, getDefaultValue, rules: conditionalRules } = useConditionalOptions(template?.id, selectedOptionsForRules);
+  
+  console.log('🔧 DynamicCurtainOptions - Conditional Rules Debug:', {
+    templateId: template?.id,
+    rulesCount: conditionalRules?.length || 0,
+    selectedOptionsForRules,
+  });
   
   // CRITICAL: Force refetch inventory when component mounts to ensure fresh data
   useEffect(() => {
@@ -909,26 +934,28 @@ export const DynamicCurtainOptions = ({
         })()
       )}
 
-      {/* Dynamic Treatment Options from Database - Filtered by template settings */}
+      {/* Dynamic Treatment Options from Database - Filtered by template settings AND conditional rules */}
       {(() => {
-        // Debug: Log options filtering
+        // Debug: Log options filtering with conditional visibility
         console.log('🔍 DynamicCurtainOptions - Options Filtering Debug:', {
           totalOptions: treatmentOptions.length,
           hasSettings,
           settingsLoading,
+          conditionalRulesCount: conditionalRules?.length || 0,
           options: treatmentOptions.map(opt => ({
             id: opt.id,
             key: opt.key,
             label: opt.label,
             visible: opt.visible,
             valuesCount: opt.option_values?.length || 0,
-            isEnabled: isOptionEnabled(opt.id)
+            isConditionallyVisible: isOptionVisible(opt.key)
           }))
         });
         return null;
       })()}
       {treatmentOptions.length > 0 && treatmentOptions.map(option => {
-        // Filter: check visibility AND template-level enabled setting
+        // Filter: check visibility AND has option values
+        // NOTE: Since we now fetch by template ID, only enabled options are returned
         if (!option.visible || !option.option_values || option.option_values.length === 0) {
           console.log(`⏭️ Skipping option ${option.key}: visible=${option.visible}, values=${option.option_values?.length || 0}`);
           return null;
@@ -941,13 +968,16 @@ export const DynamicCurtainOptions = ({
           return null;
         }
         
-        // Check if option is enabled in template settings
-        if (!isOptionEnabled(option.id)) {
-          console.log(`⏭️ Skipping option ${option.key}: NOT enabled in template settings`);
+        // ✅ NEW: Check conditional visibility from option_rules
+        // This hides track_selection until hardware_type = 'track', etc.
+        if (!isOptionVisible(option.key)) {
+          console.log(`⏭️ Skipping option ${option.key}: hidden by conditional rule`);
           return null;
         }
         
-        console.log(`✅ Rendering option: ${option.key} (${option.label})`);
+        // ✅ Options are now pre-filtered by template query - no need for isOptionEnabled check
+        console.log(`✅ Rendering option: ${option.key} (${option.label}) with ${option.option_values?.length || 0} values`);
+
 
 
         const selectedValueId = treatmentOptionSelections[option.key] || measurements[`treatment_option_${option.key}`];
