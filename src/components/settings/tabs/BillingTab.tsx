@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { useSubscriptionDetails } from "@/hooks/useSubscriptionDetails";
 import { useUserRole } from "@/hooks/useUserRole";
 import { InvoicesTable } from "@/components/billing/InvoicesTable";
+import { UpcomingPayments } from "@/components/billing/UpcomingPayments";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -19,6 +20,10 @@ export const BillingTab = () => {
   const navigate = useNavigate();
 
   const isOwner = userRole?.role === 'Owner' || userRole?.isSystemOwner;
+
+  // Check if this is a custom plan (not managed by Stripe recurring subscription)
+  const isCustomPlan = subscription?.plan?.name?.toLowerCase().includes('custom') || 
+                       subscription?.plan?.name?.toLowerCase().includes('all-in');
 
   const handleManageSubscription = async () => {
     setIsManaging(true);
@@ -120,44 +125,79 @@ export const BillingTab = () => {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-muted/50 rounded-lg border">
-              <p className="text-sm text-muted-foreground mb-1">Monthly Cost</p>
-              <p className="text-2xl font-bold">
-                {formatCurrency(subscription.monthlyTotal || 0, subscription.currency)}
-              </p>
-            </div>
-            <div className="p-4 bg-muted/50 rounded-lg border">
-              <div className="flex items-center gap-2 mb-1">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Active Seats</p>
+          {/* Key Metrics - Hide per-seat for custom plans */}
+          <div className={`grid grid-cols-1 gap-4 ${isCustomPlan ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
+            {!isCustomPlan && (
+              <div className="p-4 bg-muted/50 rounded-lg border">
+                <p className="text-sm text-muted-foreground mb-1">Monthly Cost</p>
+                <p className="text-2xl font-bold">
+                  {formatCurrency(subscription.monthlyTotal || 0, subscription.currency)}
+                </p>
               </div>
-              <p className="text-2xl font-bold">{subscription.currentSeats || 1}</p>
-              <p className="text-xs text-muted-foreground">
-                {formatCurrency(subscription.pricePerSeat || 0, subscription.currency)}/seat
-              </p>
-            </div>
+            )}
+            {!isCustomPlan && (
+              <div className="p-4 bg-muted/50 rounded-lg border">
+                <div className="flex items-center gap-2 mb-1">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Active Seats</p>
+                </div>
+                <p className="text-2xl font-bold">{subscription.currentSeats || 1}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatCurrency(subscription.pricePerSeat || 0, subscription.currency)}/seat
+                </p>
+              </div>
+            )}
             <div className="p-4 bg-muted/50 rounded-lg border">
               <div className="flex items-center gap-2 mb-1">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Next Billing</p>
-              </div>
-              <p className="text-2xl font-bold">
-                {subscription.nextBillingDate 
-                  ? format(new Date(subscription.nextBillingDate), 'MMM dd')
-                  : 'N/A'}
-              </p>
-              {subscription.daysRemaining !== undefined && (
-                <p className="text-xs text-muted-foreground">
-                  {subscription.daysRemaining} days remaining
+                <p className="text-sm text-muted-foreground">
+                  {isCustomPlan ? 'Subscription Period' : 'Next Billing'}
                 </p>
+              </div>
+              {isCustomPlan ? (
+                <>
+                  <p className="text-lg font-medium">
+                    {subscription.currentPeriodStart 
+                      ? format(new Date(subscription.currentPeriodStart), 'MMM dd, yyyy')
+                      : 'N/A'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    to {subscription.currentPeriodEnd 
+                      ? format(new Date(subscription.currentPeriodEnd), 'MMM dd, yyyy')
+                      : 'N/A'}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-2xl font-bold">
+                    {subscription.nextBillingDate 
+                      ? format(new Date(subscription.nextBillingDate), 'MMM dd')
+                      : 'N/A'}
+                  </p>
+                  {subscription.daysRemaining !== undefined && (
+                    <p className="text-xs text-muted-foreground">
+                      {subscription.daysRemaining} days remaining
+                    </p>
+                  )}
+                </>
               )}
             </div>
+            {isCustomPlan && (
+              <div className="p-4 bg-muted/50 rounded-lg border">
+                <p className="text-sm text-muted-foreground mb-1">Account Manager</p>
+                <a 
+                  href="mailto:darius@interioapp.co.uk" 
+                  className="text-primary hover:underline flex items-center gap-2"
+                >
+                  <Mail className="h-4 w-4" />
+                  darius@interioapp.co.uk
+                </a>
+              </div>
+            )}
           </div>
 
-          {/* Billing Period */}
-          {subscription.currentPeriodStart && subscription.currentPeriodEnd && (
+          {/* Billing Period - only show for non-custom plans */}
+          {!isCustomPlan && subscription.currentPeriodStart && subscription.currentPeriodEnd && (
             <>
               <Separator />
               <div className="text-sm text-muted-foreground">
@@ -167,8 +207,8 @@ export const BillingTab = () => {
             </>
           )}
 
-          {/* Manage Subscription Button */}
-          {subscription.isStripeManaged && (
+          {/* Manage Subscription Button - only show for Stripe managed subscriptions */}
+          {subscription.isStripeManaged && !isCustomPlan && (
             <Button onClick={handleManageSubscription} disabled={isManaging} className="w-full sm:w-auto">
               {isManaging ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -180,6 +220,9 @@ export const BillingTab = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Upcoming Payments - for custom plans */}
+      <UpcomingPayments />
 
       {/* Invoices */}
       <InvoicesTable />
