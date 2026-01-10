@@ -1740,24 +1740,57 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                 };
                 
                 if (liveOptions.length > 0) {
-                  return liveOptions
+                  // MUTUAL EXCLUSIVITY: Filter hidden hardware before processing
+                  const hwTypeOpt = liveOptions.find((o: any) => 
+                    o.optionKey === 'hardware_type' || o.name?.toLowerCase().includes('hardware type'));
+                  const hwTypeVal = ((hwTypeOpt as any)?.name?.toLowerCase() || (hwTypeOpt as any)?.selectedValue?.toLowerCase() || '');
+                  const isTrack = hwTypeVal.includes('track');
+                  const isRod = hwTypeVal.includes('rod');
+                  
+                  const filteredLiveOptions = liveOptions.filter((opt: any) => {
+                    const optKey = (opt.optionKey || '').toLowerCase();
+                    if (isTrack && optKey.startsWith('rod_selection')) return false;
+                    if (isRod && optKey.startsWith('track_selection')) return false;
+                    return true;
+                  });
+                  
+                  return filteredLiveOptions
                     .map((opt: any, idx: number) => {
                       const extracted = extractOptionValue(opt);
                       
+                      // CRITICAL: Detect hardware accessories and preserve their fields
+                      const isAccessory = opt.category === 'hardware_accessory';
+                      const quantity = opt.quantity || 1;
+                      const unitPrice = opt.unit_price || 0;
+                      const pricingDetails = opt.pricingDetails || '';
+                      
+                      // Build proper description for accessories: "12 × ₹10.00 (1 per 10cm)"
+                      let description = extracted.value;
+                      if (isAccessory && quantity > 0 && unitPrice > 0) {
+                        description = `${quantity} × ${unitPrice.toFixed(2)}`;
+                        if (pricingDetails) {
+                          description += ` (${pricingDetails})`;
+                        }
+                      }
+                      
                       return {
-                        id: opt.name || `option-${idx}`,
+                        id: opt.optionKey || opt.name || `option-${idx}`,
                         name: extracted.name,
-                        description: extracted.value,
-                        total_cost: opt.cost,
-                        category: 'option',
+                        description: description,
+                        total_cost: opt.cost || (quantity * unitPrice),
+                        category: opt.category || 'option', // Preserve hardware_accessory category!
+                        quantity: quantity,
+                        unit_price: unitPrice,
                         pricing_method: opt.pricingMethod,
+                        pricingDetails: pricingDetails,
+                        parentOptionKey: opt.parentOptionKey,
                         image_url: opt.image_url || null,
                         orderIndex: opt.orderIndex ?? idx,
                         isValid: extracted.isValid
                       };
                     })
-                    .filter((opt: any) => opt.isValid) // CRITICAL: Filter out N/A options
-                    .sort((a: any, b: any) => (a.orderIndex ?? 999) - (b.orderIndex ?? 999)); // Sort by order_index
+                    .filter((opt: any) => opt.isValid)
+                    .sort((a: any, b: any) => (a.orderIndex ?? 999) - (b.orderIndex ?? 999));
                 }
                 
                 // UNIVERSAL FALLBACK: Use selectedOptions array (works for ALL template types)
