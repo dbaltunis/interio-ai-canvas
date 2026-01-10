@@ -14,6 +14,7 @@ import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
 import { useConditionalOptions } from "@/hooks/useConditionalOptions";
 import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
 import { getManufacturingPrice, getMethodAvailability } from "@/utils/pricing/headingPriceLookup";
+import { calculateAccessoriesFromOptionData } from "@/hooks/pricing/useHardwareAccessoryPricing";
 import type { EyeletRing } from "@/hooks/useEyeletRings";
 import { validateTreatmentOptions } from "@/utils/treatmentOptionValidation";
 import { ValidationAlert } from "@/components/shared/ValidationAlert";
@@ -372,12 +373,107 @@ export const DynamicCurtainOptions = ({
   const handleTreatmentOptionChange = (optionKey: string, valueId: string) => {
     setTreatmentOptionSelections(prev => ({ ...prev, [optionKey]: valueId }));
     
+    // ✅ CRITICAL FIX: Mutual exclusivity for hardware_type
+    // When hardware_type changes, clear the OPPOSITE selection to prevent both showing in quotes
+    if (optionKey === 'hardware_type') {
+      const option = treatmentOptions.find(opt => opt.key === 'hardware_type');
+      const selectedValue = option?.option_values?.find(v => v.id === valueId);
+      const selectedLabel = selectedValue?.label?.toLowerCase() || '';
+      
+      console.log('🔧 Hardware type changed to:', selectedLabel, '- clearing opposite selection');
+      
+      if (selectedLabel.includes('track')) {
+        // User selected Track - clear Rod selection
+        setTreatmentOptionSelections(prev => {
+          const updated = { ...prev };
+          delete updated['rod_selection'];
+          return updated;
+        });
+        onChange('treatment_option_rod_selection', undefined);
+        // Remove rod from selectedOptions
+        if (onSelectedOptionsChange) {
+          const updatedOptions = selectedOptions.filter(opt => 
+            !(opt as any).optionKey?.startsWith('rod_selection') && 
+            !opt.name?.toLowerCase().includes('rod')
+          );
+          onSelectedOptionsChange(updatedOptions);
+        }
+      } else if (selectedLabel.includes('rod')) {
+        // User selected Rod - clear Track selection
+        setTreatmentOptionSelections(prev => {
+          const updated = { ...prev };
+          delete updated['track_selection'];
+          return updated;
+        });
+        onChange('treatment_option_track_selection', undefined);
+        // Remove track from selectedOptions
+        if (onSelectedOptionsChange) {
+          const updatedOptions = selectedOptions.filter(opt => 
+            !(opt as any).optionKey?.startsWith('track_selection') && 
+            !opt.name?.toLowerCase().includes('track')
+          );
+          onSelectedOptionsChange(updatedOptions);
+        }
+      }
+    }
+    
     // Find the selected option value and its price
     const option = treatmentOptions.find(opt => opt.key === optionKey);
     if (option && option.option_values) {
       const selectedValue = option.option_values.find(val => val.id === valueId);
       if (selectedValue) {
-        const price = getOptionPrice(selectedValue);
+        let price = getOptionPrice(selectedValue);
+        let accessoryBreakdown: string[] = [];
+        
+        // ✅ NEW: Calculate hardware accessories for track/rod selections
+        const isHardwareSelection = optionKey === 'track_selection' || optionKey === 'rod_selection';
+        const accessoryPrices = selectedValue.extra_data?.accessory_prices;
+        const mountTypeSelection = treatmentOptionSelections['mount_type'] || measurements['treatment_option_mount_type'];
+        
+        if (isHardwareSelection && accessoryPrices && Object.keys(accessoryPrices).length > 0) {
+          // Get rail width from measurements (stored in MM, convert to CM)
+          const railWidthMm = measurements.rail_width || measurements.wall_width || 0;
+          const railWidthCm = railWidthMm / 10;
+          const fullness = measurements.fullness_ratio || measurements.heading_fullness || 1;
+          
+          // Determine mount type from selection
+          let mountType: 'ceiling' | 'wall' | 'both' = 'wall';
+          if (mountTypeSelection) {
+            const mountOption = treatmentOptions.find(o => o.key === 'mount_type');
+            const mountValue = mountOption?.option_values?.find(v => v.id === mountTypeSelection);
+            const mountLabel = mountValue?.label?.toLowerCase() || '';
+            if (mountLabel.includes('ceiling') && mountLabel.includes('wall')) {
+              mountType = 'both';
+            } else if (mountLabel.includes('ceiling')) {
+              mountType = 'ceiling';
+            }
+          }
+          
+          if (railWidthCm > 0) {
+            const accessoryResult = calculateAccessoriesFromOptionData(
+              accessoryPrices,
+              price,
+              railWidthCm,
+              fullness,
+              mountType
+            );
+            
+            // Use grand total (base + accessories) as the price
+            price = accessoryResult.grandTotalPrice;
+            accessoryBreakdown = accessoryResult.breakdown;
+            
+            console.log('🔧 Hardware accessory calculation:', {
+              hardware: selectedValue.label,
+              basePrice: accessoryResult.hardwareBasePrice,
+              accessoriesTotal: accessoryResult.accessoriesTotalPrice,
+              grandTotal: accessoryResult.grandTotalPrice,
+              breakdown: accessoryBreakdown,
+              railWidthCm,
+              fullness,
+              mountType
+            });
+          }
+        }
         
         // Update parent's price tracking
         if (onOptionPriceChange) {
@@ -389,28 +485,33 @@ export const DynamicCurtainOptions = ({
         if (onSelectedOptionsChange) {
           // Remove ALL options that start with this option's key or label prefix
           // This ensures both main option and any sub-options are cleared
+          // Also remove any existing accessory items for this hardware
           const updatedOptions = selectedOptions.filter(opt => {
-            // Use optionKey stored in option object if available, otherwise check by label prefix
             const optKey = (opt as any).optionKey;
             if (optKey) {
-              return !optKey.startsWith(optionKey);
+              return !optKey.startsWith(optionKey) && !optKey.startsWith(`${optionKey}_accessory`);
             }
-            // Fallback: filter by exact label prefix match (e.g., "Hardware:" not just "Hardware")
             return !opt.name.startsWith(`${option.label}:`);
           });
           
           // ✅ FIX: Add ALL selected options regardless of price
-          // Even €0 options must be captured for quote display
           const pricingMethod = selectedValue.extra_data?.pricing_method || 'per-meter';
           const pricingGridData = selectedValue.extra_data?.pricing_grid_data;
           
+          // Add main hardware item with full price (includes accessories)
+          const displayName = accessoryBreakdown.length > 0 
+            ? `${option.label}: ${selectedValue.label} (incl. accessories)`
+            : `${option.label}: ${selectedValue.label}`;
+            
           updatedOptions.push({ 
-            name: `${option.label}: ${selectedValue.label}`, 
-            price, // Will be 0 for included options - that's OK
-            pricingMethod,
+            name: displayName, 
+            price, 
+            pricingMethod: isHardwareSelection ? 'fixed' : pricingMethod, // Hardware is fixed total
             pricingGridData,
-            optionKey: optionKey // Store key for reliable filtering
+            optionKey: optionKey,
+            accessoryBreakdown // Store breakdown for display in quotes
           } as any);
+          
           onSelectedOptionsChange(updatedOptions);
           console.log('🎨 Updated selectedOptions:', updatedOptions.map(o => o.name));
         }
