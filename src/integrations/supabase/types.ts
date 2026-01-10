@@ -2557,6 +2557,66 @@ export type Database = {
           },
         ]
       }
+      custom_invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string
+          due_date: string | null
+          hosted_url: string | null
+          id: string
+          invoice_date: string
+          notes: string | null
+          paid_at: string | null
+          payment_type: string
+          pdf_url: string | null
+          status: string
+          stripe_invoice_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description: string
+          due_date?: string | null
+          hosted_url?: string | null
+          id?: string
+          invoice_date?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_type?: string
+          pdf_url?: string | null
+          status?: string
+          stripe_invoice_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string
+          due_date?: string | null
+          hosted_url?: string | null
+          id?: string
+          invoice_date?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_type?: string
+          pdf_url?: string | null
+          status?: string
+          stripe_invoice_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       custom_options: {
         Row: {
           account_id: string
