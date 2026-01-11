@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useIsDealer } from "@/hooks/useIsDealer";
 
 interface CreateTemplateData {
   name: string;
@@ -43,6 +44,9 @@ export const SettingsView = () => {
   const navigate = useNavigate();
   const locationState = location.state as LocationState | null;
 
+  // Check if current user is a Dealer
+  const { data: isDealer } = useIsDealer();
+
   // Read initial tab from URL parameters or location state
   // Support both ?tab= and ?section= for backward compatibility
   const urlParams = new URLSearchParams(location.search);
@@ -50,6 +54,9 @@ export const SettingsView = () => {
   
   // Determine initial tab - location state takes precedence
   const getInitialTab = () => {
+    // Dealers can only access personal tab
+    if (isDealer) return "personal";
+    
     if (locationState?.createTemplate || locationState?.activeTab === 'templates' || locationState?.editTemplateId) {
       return "window-coverings";
     }
@@ -63,6 +70,13 @@ export const SettingsView = () => {
   const [editTemplateId, setEditTemplateId] = useState<string | null>(
     locationState?.editTemplateId || null
   );
+
+  // Reset to personal tab if dealer tries to navigate elsewhere
+  useEffect(() => {
+    if (isDealer && activeTab !== "personal") {
+      setActiveTab("personal");
+    }
+  }, [isDealer, activeTab]);
 
   // Clear location state after reading to prevent re-triggering on refresh
   useEffect(() => {
@@ -78,11 +92,14 @@ export const SettingsView = () => {
   const canViewWindowTreatmentsRaw = useHasPermission('view_window_treatments');
   
   // During loading (undefined), show tabs to prevent disappearing UI
-  const canViewSettings = canViewSettingsRaw !== false;
-  const canManageSettings = canManageSettingsRaw !== false;
-  const canManageUsers = canManageUsersRaw !== false;
-  const canViewWindowTreatments = canViewWindowTreatmentsRaw !== false;
-  const canManageMarkup = canManageSettingsRaw !== false; // Only owners/admins can manage pricing
+  // But dealers should never see these tabs
+  const canViewSettings = !isDealer && canViewSettingsRaw !== false;
+  const canManageSettings = !isDealer && canManageSettingsRaw !== false;
+  const canManageUsers = !isDealer && canManageUsersRaw !== false;
+  const canViewWindowTreatments = !isDealer && canViewWindowTreatmentsRaw !== false;
+  const canManageMarkup = !isDealer && canManageSettingsRaw !== false; // Only owners/admins can manage pricing
+  const canViewBilling = !isDealer; // Dealers don't see billing
+  const canViewNotifications = !isDealer; // Dealers don't see notifications settings
 
   return <div className="space-y-6 animate-fade-in">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -92,10 +109,10 @@ export const SettingsView = () => {
             <span className="hidden sm:inline">Personal</span>
           </TabsTrigger>
           
-          <TabsTrigger value="billing" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+          {canViewBilling && <TabsTrigger value="billing" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
             <CreditCard className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Billing</span>
-          </TabsTrigger>
+          </TabsTrigger>}
           
           {canViewSettings && <TabsTrigger value="business" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
               <Building2 className="h-3.5 w-3.5" />
@@ -139,10 +156,10 @@ export const SettingsView = () => {
               <span className="hidden sm:inline">Communications</span>
             </TabsTrigger>}
           
-          <TabsTrigger value="notifications" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+          {canViewNotifications && <TabsTrigger value="notifications" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
             <Bell className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Notifications</span>
-          </TabsTrigger>
+          </TabsTrigger>}
           
           {canViewSettings && <TabsTrigger value="integrations" className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
               <Zap className="h-3.5 w-3.5" />
@@ -154,13 +171,13 @@ export const SettingsView = () => {
           <PersonalSettingsTab />
         </TabsContent>
 
-        <TabsContent value="billing" className="animate-fade-in">
+        {canViewBilling && <TabsContent value="billing" className="animate-fade-in">
           <Card variant="elevated" className="transition-shadow">
             <CardContent className="p-5 md:p-6">
               <BillingTab />
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent>}
 
         {canViewSettings && <TabsContent value="business" className="animate-fade-in">
             <BusinessSettingsTab />
@@ -200,9 +217,9 @@ export const SettingsView = () => {
             <CommunicationsTab />
           </TabsContent>}
 
-        <TabsContent value="notifications" className="animate-fade-in">
+        {canViewNotifications && <TabsContent value="notifications" className="animate-fade-in">
           <NotificationManagementTab />
-        </TabsContent>
+        </TabsContent>}
 
         <TabsContent value="security" className="animate-fade-in">
           <SecurityPrivacyTab />
