@@ -11,6 +11,7 @@ import { Users, FileText, DollarSign } from "lucide-react";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { disableShopifyWidgets } from "@/utils/disableShopifyWidgets";
 import { DashboardDateProvider, useDashboardDate } from "@/contexts/DashboardDateContext";
+import { useIsDealer } from "@/hooks/useIsDealer";
 
 // Lazy load non-critical widgets for better initial load performance
 const UpcomingEventsWidget = lazy(() => import("./UpcomingEventsWidget").then(m => ({ default: m.UpcomingEventsWidget })));
@@ -40,11 +41,37 @@ const WidgetSkeleton = () => (
   </div>
 );
 
+// Simplified dealer dashboard component
+const DealerDashboard = () => {
+  return (
+    <div className="space-y-4 animate-fade-in">
+      {/* Welcome Header - no customize button for dealers */}
+      <WelcomeHeader />
+
+      {/* Jobs Status Chart - their jobs only */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Suspense fallback={<WidgetSkeleton />}>
+          <JobsStatusChart />
+        </Suspense>
+        <Suspense fallback={<WidgetSkeleton />}>
+          <RecentlyCreatedJobsWidget />
+        </Suspense>
+      </div>
+    </div>
+  );
+};
+
 
 const DashboardContent = () => {
+  const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
   const [showWidgetCustomizer, setShowWidgetCustomizer] = useState(false);
   const { dateRange } = useDashboardDate();
+  
+  // If user is a dealer, show simplified dashboard
+  if (!isDealerLoading && isDealer) {
+    return <DealerDashboard />;
+  }
   const { widgets, toggleWidget, reorderWidgets, getEnabledWidgets, getAvailableWidgets, updateWidgetSize } = useDashboardWidgets();
   
   // Use batched queries for better performance

@@ -436,6 +436,35 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_own_calendar',
     'view_settings',
     'view_profile'
+  ],
+  Dealer: [
+    // Dealers are external resellers with very limited access
+    // They can only create/view their own jobs and quote using company products
+    
+    // Jobs - own only (create and manage their quotes)
+    'view_assigned_jobs',
+    'create_jobs',
+    'edit_assigned_jobs',
+    
+    // Clients - own only (clients they create with jobs)
+    'view_assigned_clients',
+    'create_clients',
+    'edit_assigned_clients',
+    
+    // Library - view and select fabrics/products for quotes (read-only)
+    'view_inventory',
+    'view_templates',
+    'view_window_treatments',
+    
+    // Pricing - see selling prices only (no costs or margins)
+    'view_selling_prices',
+    
+    // Email - send quotes to clients
+    'send_emails',
+    
+    // Settings - personal profile only
+    'view_settings',
+    'view_profile'
   ]
 };
 

@@ -394,6 +394,36 @@ export type Database = {
           },
         ]
       }
+      account_feature_flags: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          enabled: boolean | null
+          feature_key: string
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          enabled?: boolean | null
+          feature_key: string
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          enabled?: boolean | null
+          feature_key?: string
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       account_overrides: {
         Row: {
           account_id: string
@@ -10275,6 +10305,10 @@ export type Database = {
         Returns: Json
       }
       generate_batch_number: { Args: { p_user_id: string }; Returns: string }
+      get_account_feature_config: {
+        Args: { _feature_key: string; _user_id: string }
+        Returns: Json
+      }
       get_account_owner: { Args: { user_id_param: string }; Returns: string }
       get_current_usage: {
         Args: { p_user_id: string }
@@ -10370,6 +10404,10 @@ export type Database = {
       }
       get_user_email: { Args: { user_id: string }; Returns: string }
       get_user_role: { Args: { _user_id: string }; Returns: string }
+      has_account_feature: {
+        Args: { _feature_key: string; _user_id: string }
+        Returns: boolean
+      }
       has_permission: { Args: { permission_name: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -10392,6 +10430,7 @@ export type Database = {
         | { Args: { _user_id: string }; Returns: boolean }
       is_admin_or_owner: { Args: never; Returns: boolean }
       is_bug_admin: { Args: never; Returns: boolean }
+      is_dealer: { Args: { _user_id: string }; Returns: boolean }
       is_same_account: { Args: { target_user_id: string }; Returns: boolean }
       is_valid_email: { Args: { email_address: string }; Returns: boolean }
       link_user_to_account: {
@@ -10502,6 +10541,7 @@ export type Database = {
         | "Staff"
         | "User"
         | "System Owner"
+        | "Dealer"
       modifier_method: "add" | "multiply" | "override"
       option_input_type:
         | "select"
@@ -10645,7 +10685,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["Owner", "Admin", "Manager", "Staff", "User", "System Owner"],
+      app_role: [
+        "Owner",
+        "Admin",
+        "Manager",
+        "Staff",
+        "User",
+        "System Owner",
+        "Dealer",
+      ],
       modifier_method: ["add", "multiply", "override"],
       option_input_type: ["select", "number", "boolean", "text", "multiselect"],
       price_list_status: ["draft", "ready", "live", "archived"],
