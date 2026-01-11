@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
 import { useHasPermission } from '@/hooks/usePermissions';
+import { useIsDealer } from '@/hooks/useIsDealer';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 // Hidden for now - TeachingHelpButton needs completion before deployment
@@ -52,6 +53,9 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   
   const { activeUsers, currentUser } = useUserPresence();
   const { conversations } = useDirectMessages();
+  
+  // Check if user is a dealer - they have restricted navigation
+  const { data: isDealer } = useIsDealer();
   
   // Permission checks - these return undefined while loading
   const canViewJobs = useHasPermission('view_jobs');
@@ -129,10 +133,16 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
   
-  // Filter nav items based on permissions
+  // Filter nav items based on permissions and dealer restrictions
   // During loading (undefined), show items to prevent disappearing UI
   const visibleNavItems = navItems.filter(item => {
     if (!item.permission) return true; // No permission required (dashboard)
+    
+    // Dealers: hide Messages and Calendar
+    if (isDealer) {
+      if (item.id === 'emails') return false; // Hide Messages for dealers
+      if (item.id === 'calendar') return false; // Hide Calendar for dealers
+    }
     
     // Only hide if explicitly false, not undefined (loading)
     if (item.permission === 'view_jobs') return canViewJobs !== false;

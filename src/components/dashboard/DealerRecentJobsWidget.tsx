@@ -87,7 +87,7 @@ export const DealerRecentJobsWidget = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/jobs')}
+            onClick={() => navigate('/?tab=projects')}
             className="h-7 text-xs"
           >
             View All
@@ -103,7 +103,7 @@ export const DealerRecentJobsWidget = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate('/jobs?action=new')}
+              onClick={() => navigate('/?tab=projects&action=new')}
               className="h-8"
             >
               <Plus className="h-3.5 w-3.5 mr-1.5" />
@@ -118,7 +118,7 @@ export const DealerRecentJobsWidget = () => {
                 <div
                   key={project.id}
                   className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
-                  onClick={() => navigate(`/jobs?jobId=${project.id}`)}
+                  onClick={() => navigate(`/?tab=projects&jobId=${project.id}`)}
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground truncate">

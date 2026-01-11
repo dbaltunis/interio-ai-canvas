@@ -117,12 +117,17 @@ const canViewJobsExplicit =
     (p: { permission_name: string }) => p.permission_name === 'create_jobs'
   ) ?? false;
   
+  // Dealers can always create their own jobs
+  const hasDealerCreateAccess = isDealer === true;
+  
   const canCreateJobsExplicit =
-  userRoleData?.isSystemOwner
-    ? true // System Owner always can create jobs
-    : isOwner && !hasAnyExplicitPermissions
-      ? true
-      : hasCreateJobsPermission;
+  hasDealerCreateAccess
+    ? true // Dealers can create their own jobs
+    : userRoleData?.isSystemOwner
+      ? true // System Owner always can create jobs
+      : isOwner && !hasAnyExplicitPermissions
+        ? true
+        : hasCreateJobsPermission;
   
   // Check if delete_jobs is explicitly in user_permissions table (enabled)
   const hasDeleteJobsPermission = explicitPermissions?.some(
