@@ -4,6 +4,7 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import type { CurtainTemplate } from "@/hooks/useCurtainTemplates";
 import { detectTreatmentType, getTreatmentConfig, getTreatmentDisplayName } from "@/utils/treatmentTypeDetection";
 import { RollerBlindVisualizer } from "./RollerBlindVisualizer";
+import { ZebraBlindVisualizer } from "@/components/treatment-visualizers/ZebraBlindVisualizer";
 import { CellularShadeVisualizer } from "@/components/treatment-visualizers/CellularShadeVisualizer";
 import { VerticalBlindVisualizer } from "@/components/treatment-visualizers/VerticalBlindVisualizer";
 import { PanelGlideVisualizer } from "@/components/treatment-visualizers/PanelGlideVisualizer";
@@ -209,6 +210,18 @@ export const DynamicTreatmentVisualizer = ({
             controlPosition={measurements.control_position}
             mountingType={measurements.mounting_type}
             transparency={measurements.fabric_transparency}
+          />
+        );
+      
+      case 'zebra_blinds':
+        return (
+          <ZebraBlindVisualizer
+            measurements={measurements}
+            selectedFabric={selectedFabric}
+            controlPosition={measurements.control_position || 'right'}
+            mountingType={measurements.mounting_type || 'inside'}
+            bandWidth={measurements.band_width || 'standard'}
+            bandAlignment={measurements.band_alignment || 'closed'}
           />
         );
       
