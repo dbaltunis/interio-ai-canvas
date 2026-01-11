@@ -46,7 +46,7 @@ const Sidebar = () => {
         icon: Briefcase,
       },
       {
-        path: "/library",
+        path: "/inventory",
         label: "Library",
         icon: Package,
       },
