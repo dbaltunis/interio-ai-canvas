@@ -51,6 +51,30 @@ serve(async (req) => {
       isTeamMember 
     });
 
+    // Check for custom billing configuration from account_feature_flags
+    const { data: featureFlags } = await supabaseClient
+      .from("account_feature_flags")
+      .select("feature_key, config, enabled")
+      .eq("user_id", effectiveOwnerId)
+      .eq("feature_key", "dealer_portal")
+      .maybeSingle();
+
+    const dealerConfig = featureFlags?.config as { 
+      dealer_seat_price?: number; 
+      unlimited_seats?: boolean;
+      pricing_note?: string;
+    } | null;
+
+    const hasDealerPortal = featureFlags?.enabled === true;
+    const hasUnlimitedSeats = dealerConfig?.unlimited_seats === true;
+    const customSeatPrice = dealerConfig?.dealer_seat_price;
+
+    logStep("Feature flags check", { 
+      hasDealerPortal,
+      hasUnlimitedSeats,
+      customSeatPrice
+    });
+
     // Get user's subscription from database using effectiveOwnerId
     const { data: subscription, error: subError } = await supabaseClient
       .from("user_subscriptions")
@@ -61,6 +85,7 @@ serve(async (req) => {
         status,
         current_period_start,
         current_period_end,
+        subscription_type,
         subscription_plans (
           id,
           name,
@@ -91,21 +116,56 @@ serve(async (req) => {
 
     logStep("Found subscription", { 
       subscriptionId: subscription.stripe_subscription_id,
-      status: subscription.status
+      status: subscription.status,
+      subscriptionType: subscription.subscription_type
     });
 
-    // If no Stripe subscription (e.g., trial), return basic info
-    if (!subscription.stripe_subscription_id) {
+    // Determine if this is a custom billing arrangement
+    const isCustomBillingType = ['partner', 'reseller', 'lifetime'].includes(subscription.subscription_type || '');
+    const isCustomBilling = isCustomBillingType || (hasDealerPortal && hasUnlimitedSeats);
+
+    // Count current team members
+    const { count: teamMemberCount } = await supabaseClient
+      .from("user_profiles")
+      .select("*", { count: 'exact', head: true })
+      .eq("parent_account_id", effectiveOwnerId);
+
+    const currentSeats = (teamMemberCount || 0) + 1; // +1 for owner
+
+    // If custom billing (partner/reseller/lifetime), return simplified info
+    if (isCustomBilling) {
+      logStep("Custom billing account, returning simplified info");
       return new Response(JSON.stringify({ 
         hasSubscription: true,
         status: subscription.status,
         plan: subscription.subscription_plans,
-        currentSeats: 1,
-        pricePerSeat: 99,
+        currentSeats: currentSeats,
+        pricePerSeat: customSeatPrice ?? 0,
         currency: "GBP",
         currentPeriodEnd: subscription.current_period_end,
         nextBillingDate: subscription.current_period_end,
         isStripeManaged: false,
+        isCustomBilling: true,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // If no Stripe subscription (e.g., trial), return basic info
+    if (!subscription.stripe_subscription_id) {
+      const defaultPricePerSeat = customSeatPrice ?? 99;
+      return new Response(JSON.stringify({ 
+        hasSubscription: true,
+        status: subscription.status,
+        plan: subscription.subscription_plans,
+        currentSeats: currentSeats,
+        pricePerSeat: defaultPricePerSeat,
+        currency: "GBP",
+        currentPeriodEnd: subscription.current_period_end,
+        nextBillingDate: subscription.current_period_end,
+        isStripeManaged: false,
+        isCustomBilling: false,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -130,7 +190,7 @@ serve(async (req) => {
     // Get the subscription item and period dates from it
     const subscriptionItem = stripeSubscription.items.data[0];
     const currentQuantity = subscriptionItem?.quantity || 1;
-    const pricePerSeat = 99; // £99 per seat
+    const pricePerSeat = customSeatPrice ?? 99; // Use custom price or default £99 per seat
 
     // Calculate billing period details - period dates are on the subscription item
     const currentPeriodStart = new Date((subscriptionItem?.current_period_start || stripeSubscription.created) * 1000);
@@ -184,6 +244,7 @@ serve(async (req) => {
       newMonthlyTotalAfterAddingSeat: (currentQuantity + 1) * pricePerSeat,
       upcomingInvoiceTotal: upcomingInvoiceTotal,
       isStripeManaged: true,
+      isCustomBilling: false,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
