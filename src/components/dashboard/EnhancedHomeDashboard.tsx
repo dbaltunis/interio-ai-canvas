@@ -12,6 +12,8 @@ import { useHasPermission } from "@/hooks/usePermissions";
 import { disableShopifyWidgets } from "@/utils/disableShopifyWidgets";
 import { DashboardDateProvider, useDashboardDate } from "@/contexts/DashboardDateContext";
 import { useIsDealer } from "@/hooks/useIsDealer";
+import { DealerWelcomeHeader } from "./DealerWelcomeHeader";
+import { DealerRecentJobsWidget } from "./DealerRecentJobsWidget";
 
 // Lazy load non-critical widgets for better initial load performance
 const UpcomingEventsWidget = lazy(() => import("./UpcomingEventsWidget").then(m => ({ default: m.UpcomingEventsWidget })));
@@ -41,22 +43,20 @@ const WidgetSkeleton = () => (
   </div>
 );
 
-// Simplified dealer dashboard component
+/**
+ * Simplified dealer dashboard component
+ * - No revenue, active projects count, team info
+ * - No charts showing all account data
+ * - Only their own recent jobs
+ */
 const DealerDashboard = () => {
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Welcome Header - no customize button for dealers */}
-      <WelcomeHeader />
+      {/* Simplified Dealer Welcome Header - no stats, no customize button */}
+      <DealerWelcomeHeader />
 
-      {/* Jobs Status Chart - their jobs only */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Suspense fallback={<WidgetSkeleton />}>
-          <JobsStatusChart />
-        </Suspense>
-        <Suspense fallback={<WidgetSkeleton />}>
-          <RecentlyCreatedJobsWidget />
-        </Suspense>
-      </div>
+      {/* Only their own recent jobs - no charts, no revenue */}
+      <DealerRecentJobsWidget />
     </div>
   );
 };

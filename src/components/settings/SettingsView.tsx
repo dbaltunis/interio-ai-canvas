@@ -90,14 +90,16 @@ export const SettingsView = () => {
   
   // During loading (undefined), show tabs to prevent disappearing UI
   // But dealers should never see these tabs (only apply restriction when we know they're a dealer)
-  const isDealerConfirmed = !isDealerLoading && isDealer === true;
-  const canViewSettings = !isDealerConfirmed && canViewSettingsRaw !== false;
-  const canManageSettings = !isDealerConfirmed && canManageSettingsRaw !== false;
-  const canManageUsers = !isDealerConfirmed && canManageUsersRaw !== false;
-  const canViewWindowTreatments = !isDealerConfirmed && canViewWindowTreatmentsRaw !== false;
-  const canManageMarkup = !isDealerConfirmed && canManageSettingsRaw !== false; // Only owners/admins can manage pricing
-  const canViewBilling = !isDealerConfirmed; // Dealers don't see billing
-  const canViewNotifications = !isDealerConfirmed; // Dealers don't see notifications settings
+  // CRITICAL: Hide tabs for dealers - check loading state to prevent flicker
+  // While loading, hide restricted tabs (false is safer than showing then hiding)
+  const isDealerOrLoading = isDealerLoading || isDealer === true;
+  const canViewSettings = !isDealerOrLoading && canViewSettingsRaw !== false;
+  const canManageSettings = !isDealerOrLoading && canManageSettingsRaw !== false;
+  const canManageUsers = !isDealerOrLoading && canManageUsersRaw !== false;
+  const canViewWindowTreatments = !isDealerOrLoading && canViewWindowTreatmentsRaw !== false;
+  const canManageMarkup = !isDealerOrLoading && canManageSettingsRaw !== false; // Only owners/admins can manage pricing
+  const canViewBilling = !isDealerOrLoading; // Dealers don't see billing - hide during loading too
+  const canViewNotifications = !isDealerOrLoading; // Dealers don't see notifications settings
 
   return <div className="space-y-6 animate-fade-in">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
