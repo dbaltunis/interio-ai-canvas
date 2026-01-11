@@ -135,7 +135,7 @@ export const DynamicCurtainOptions = ({
     return result;
   }, [treatmentOptionSelections, measurements, selectedHeading, selectedLining]);
   
-  const { isOptionVisible, getDefaultValue, rules: conditionalRules } = useConditionalOptions(template?.id, selectedOptionsForRules);
+  const { isOptionVisible, getDefaultValue, getAllowedValues, rules: conditionalRules } = useConditionalOptions(template?.id, selectedOptionsForRules);
   
   console.log('🔧 DynamicCurtainOptions - Conditional Rules Debug:', {
     templateId: template?.id,
@@ -1178,19 +1178,29 @@ export const DynamicCurtainOptions = ({
         // ✅ Options are now pre-filtered by template query - no need for isOptionEnabled check
         console.log(`✅ Rendering option: ${option.key} (${option.label}) with ${option.option_values?.length || 0} values`);
 
-
+        // ✅ NEW: Apply filter_values rules to restrict visible option values
+        const allowedValuesForOption = getAllowedValues(option.key);
+        const filteredOptionValues = allowedValuesForOption && allowedValuesForOption.length > 0
+          ? option.option_values.filter((v: any) => allowedValuesForOption.includes(v.id))
+          : option.option_values;
+        
+        console.log(`🔍 Value filtering for ${option.key}:`, {
+          totalValues: option.option_values.length,
+          allowedValues: allowedValuesForOption,
+          filteredCount: filteredOptionValues.length
+        });
 
         const selectedValueId = treatmentOptionSelections[option.key] || measurements[`treatment_option_${option.key}`];
-        const selectedValue = option.option_values.find(v => v.id === selectedValueId);
+        const selectedValue = filteredOptionValues.find((v: any) => v.id === selectedValueId);
         const subOptions = selectedValue?.extra_data?.sub_options;
         
-        // Auto-select if only one option value exists
-        const hasOnlyOneOption = option.option_values.length === 1;
+        // Auto-select if only one option value exists after filtering
+        const hasOnlyOneOption = filteredOptionValues.length === 1;
         const shouldAutoSelect = hasOnlyOneOption && !selectedValueId;
         
         // Trigger auto-selection for single options
         if (shouldAutoSelect) {
-          const singleOption = option.option_values[0];
+          const singleOption = filteredOptionValues[0];
           // Use setTimeout to avoid state update during render
           setTimeout(() => {
             console.log(`✅ Auto-selecting single option for ${option.label}:`, singleOption.label);
@@ -1252,7 +1262,7 @@ export const DynamicCurtainOptions = ({
                     position="popper"
                     sideOffset={5}
                   >
-                    {option.option_values.map(value => {
+                    {filteredOptionValues.map((value: any) => {
                       const priceLabel = formatPriceWithMethod(value);
                       return (
                         <SelectItem key={value.id} value={value.id}>
