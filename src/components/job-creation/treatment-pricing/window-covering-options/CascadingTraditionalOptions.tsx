@@ -77,9 +77,11 @@ export const CascadingTraditionalOptions = ({
     });
     
     // Then apply value-level filtering if rules specify allowed values for this option type
-    const allowedValuesForType = getAllowedValues(optionType);
+    // Check both the optionType (label) and the key (lowercase)
+    const optionKey = typeOptions[0]?.key || optionType.toLowerCase().replace(/\s+/g, '_');
+    const allowedValuesForType = getAllowedValues(optionType) || getAllowedValues(optionKey);
     if (allowedValuesForType && allowedValuesForType.length > 0) {
-      console.log(`🔍 Filtering ${optionType} to allowed values:`, allowedValuesForType);
+      console.log(`🔍 Filtering ${optionType} (key: ${optionKey}) to allowed values:`, allowedValuesForType);
       filtered = filtered.filter((opt: any) => allowedValuesForType.includes(opt.id));
     }
     
