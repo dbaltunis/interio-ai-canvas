@@ -4,6 +4,7 @@ import { RoomManagementTabs } from "./RoomManagementTabs";
 import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useIsDealer } from "@/hooks/useIsDealer";
 
 interface EnhancedRoomViewProps {
   project: any;
@@ -16,21 +17,28 @@ export const EnhancedRoomView = ({ project, clientId, isReadOnly: propIsReadOnly
   const [editingRoomName, setEditingRoomName] = useState("");
   const { toast } = useToast();
   const { user } = useAuth();
+  const { data: isDealer } = useIsDealer();
   const canEditAllJobs = useHasPermission('edit_all_jobs');
   const canEditAssignedJobs = useHasPermission('edit_assigned_jobs');
+  
+  // Dealers can ALWAYS edit their own jobs (this is their core function - generating quotes)
+  const isDealerOwnJob = isDealer === true && project?.user_id === user?.id;
+  
   // If both permissions are disabled, no job should be editable
   // If both are enabled, all jobs are editable
   // If only "Edit Any Job" is enabled, only jobs created by the user should be editable
   // If only "Edit Assigned Jobs" is enabled, only assigned jobs should be editable
-  const canEditJob = (!canEditAllJobs && !canEditAssignedJobs) 
-    ? false 
-    : (canEditAllJobs && canEditAssignedJobs) 
-      ? true 
-      : (canEditAllJobs && !canEditAssignedJobs) 
-        ? project?.user_id === user?.id 
-        : (canEditAssignedJobs && !canEditAllJobs) 
+  const canEditJob = isDealerOwnJob
+    ? true // Dealers can always edit their own jobs
+    : (!canEditAllJobs && !canEditAssignedJobs) 
+      ? false 
+      : (canEditAllJobs && canEditAssignedJobs) 
+        ? true 
+        : (canEditAllJobs && !canEditAssignedJobs) 
           ? project?.user_id === user?.id 
-          : false;
+          : (canEditAssignedJobs && !canEditAllJobs) 
+            ? project?.user_id === user?.id 
+            : false;
   const isReadOnly = propIsReadOnly !== undefined ? propIsReadOnly : !canEditJob;
 
   const {
