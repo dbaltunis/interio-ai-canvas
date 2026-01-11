@@ -46,6 +46,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Card, CardContent } from "@/components/ui/card";
 import { Shield } from "lucide-react";
 import { ContactClientDialog } from "@/components/messaging/ContactClientDialog";
+import { useIsDealer } from "@/hooks/useIsDealer";
 
 
 interface JobDetailPageProps {
@@ -75,6 +76,9 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   const { data: userRoleData, isLoading: roleLoading } = useUserRole();
   const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
   const isAdmin = userRoleData?.isAdmin || false;
+  
+  // Check if user is a Dealer (external reseller with restricted access)
+  const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
   
   // Check view permissions explicitly
   const { isLoading: permissionsLoading } = useUserPermissions();
@@ -146,12 +150,15 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   
   // System Owner: ALWAYS has full access
   // Owner: Only bypass restrictions if NO explicit permissions exist in table at all
+  // Dealers: NEVER have workroom access
   // Admins and Regular users: Always check explicit permissions
-  const canViewWorkroomExplicit = userRoleData?.isSystemOwner
-    ? true // System Owner ALWAYS has full access
-    : isOwner && !hasAnyExplicitPermissions 
-      ? true // Owner with no explicit permissions in table at all = full access
-      : hasViewWorkroomPermission;
+  const canViewWorkroomExplicit = isDealer
+    ? false // Dealers NEVER see workroom
+    : userRoleData?.isSystemOwner
+      ? true // System Owner ALWAYS has full access
+      : isOwner && !hasAnyExplicitPermissions 
+        ? true // Owner with no explicit permissions in table at all = full access
+        : hasViewWorkroomPermission;
   
   // Use useProject(id) instead of useProjects() to avoid filtering issues
   // This lets RLS handle permissions properly, especially for team members
@@ -174,13 +181,13 @@ export const JobDetailPage = ({ jobId, onBack }: JobDetailPageProps) => {
   // (This handles cases where user navigates directly via URL)
   // NOTE: This must be called before any conditional returns to follow Rules of Hooks
   useEffect(() => {
-    if (activeTab === 'workroom' && !canViewWorkroomExplicit && !permissionsLoading && !roleLoading) {
+    if (activeTab === 'workroom' && !canViewWorkroomExplicit && !permissionsLoading && !roleLoading && !isDealerLoading) {
       setActiveTab('details');
     }
-  }, [activeTab, canViewWorkroomExplicit, permissionsLoading, roleLoading]);
+  }, [activeTab, canViewWorkroomExplicit, permissionsLoading, roleLoading, isDealerLoading]);
   
   // Show loading skeleton while data is being fetched
-  if (projectLoading || permissionsLoading || roleLoading || explicitPermissions === undefined || userRoleData === undefined) {
+  if (projectLoading || permissionsLoading || roleLoading || isDealerLoading || explicitPermissions === undefined || userRoleData === undefined) {
     return <JobSkeleton />;
   }
 

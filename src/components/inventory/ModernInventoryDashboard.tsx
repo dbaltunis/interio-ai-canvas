@@ -18,6 +18,7 @@ import { MaterialInventoryView } from "./MaterialInventoryView";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useHasPermission, useHasAnyPermission } from "@/hooks/usePermissions";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useIsDealer } from "@/hooks/useIsDealer";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -42,6 +43,7 @@ export const ModernInventoryDashboard = () => {
   const { data: allInventory, refetch, isLoading: inventoryLoading, isFetching: inventoryFetching } = useEnhancedInventory();
   const { data: vendors } = useVendors();
   const { data: userRole, isLoading: userRoleLoading } = useUserRole();
+  const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
   const isMobile = useIsMobile();
   
   // Check if user is Owner/Admin for admin tab - log for debugging
@@ -280,25 +282,29 @@ export const ModernInventoryDashboard = () => {
             </>
           )}
 
-          {/* Primary Actions - Show on all devices */}
-          <Button
-            variant="outline"
-            size={isMobile ? "sm" : "default"}
-            onClick={() => setShowScanner(true)}
-          >
-            <QrCode className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
-            {!isMobile && "Scan"}
-          </Button>
-
-          <AddInventoryDialog
-            trigger={
-              <Button variant="default" size={isMobile ? "sm" : "default"}>
-                <Plus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
-                {!isMobile && "Add"}
+          {/* Primary Actions - Hide for dealers (read-only access) */}
+          {!isDealer && (
+            <>
+              <Button
+                variant="outline"
+                size={isMobile ? "sm" : "default"}
+                onClick={() => setShowScanner(true)}
+              >
+                <QrCode className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
+                {!isMobile && "Scan"}
               </Button>
-            }
-            onSuccess={refetch}
-          />
+
+              <AddInventoryDialog
+                trigger={
+                  <Button variant="default" size={isMobile ? "sm" : "default"}>
+                    <Plus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
+                    {!isMobile && "Add"}
+                  </Button>
+                }
+                onSuccess={refetch}
+              />
+            </>
+          )}
         </div>
       </div>
 
@@ -321,11 +327,14 @@ export const ModernInventoryDashboard = () => {
                 <Wallpaper className="h-4 w-4" />
                 Wallcoverings
               </TabsTrigger>
-              <TabsTrigger value="vendors" className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Vendors
-              </TabsTrigger>
-              {isOwnerOrAdmin && (
+              {/* Hide Vendors and Admin tabs for dealers */}
+              {!isDealer && (
+                <TabsTrigger value="vendors" className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Vendors
+                </TabsTrigger>
+              )}
+              {isOwnerOrAdmin && !isDealer && (
                 <TabsTrigger value="admin" className="flex items-center gap-2">
                   <Shield className="h-4 w-4" />
                   Admin
@@ -373,11 +382,13 @@ export const ModernInventoryDashboard = () => {
           />
         </TabsContent>
 
-        <TabsContent value="vendors" className="space-y-6">
-          <VendorDashboard />
-        </TabsContent>
+        {!isDealer && (
+          <TabsContent value="vendors" className="space-y-6">
+            <VendorDashboard />
+          </TabsContent>
+        )}
 
-        {isOwnerOrAdmin && (
+        {isOwnerOrAdmin && !isDealer && (
           <TabsContent value="admin" className="space-y-6">
             <InventoryAdminPanel />
           </TabsContent>
