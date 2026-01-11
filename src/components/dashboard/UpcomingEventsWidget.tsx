@@ -20,11 +20,13 @@ export const UpcomingEventsWidget = () => {
   // Only fetch appointments if user has calendar permission
   const { data: appointments, isLoading } = useAppointments();
   
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
+  const { integration: calendarIntegration } = useGoogleCalendarIntegration();
+  
   // Don't show widget at all if no calendar permission
   if (canViewCalendar === false) {
     return null;
   }
-  const { integration: calendarIntegration } = useGoogleCalendarIntegration();
 
   // Get user timezone and date format preferences
   const userTimezone = userPreferences?.timezone || 'UTC';

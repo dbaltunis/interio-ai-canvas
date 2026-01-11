@@ -15,11 +15,7 @@ export const RecentAppointmentsWidget = () => {
   const canViewCalendar = useHasPermission('view_calendar');
   const { effectiveOwnerId } = useEffectiveAccountOwner();
   
-  // Don't show widget at all if no calendar permission
-  if (canViewCalendar === false) {
-    return null;
-  }
-  
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["recent-appointment-bookings", effectiveOwnerId],
     queryFn: async () => {
@@ -57,6 +53,11 @@ export const RecentAppointmentsWidget = () => {
     staleTime: 30 * 1000, // 30 seconds
     enabled: canViewCalendar === true && !!effectiveOwnerId, // Only fetch if user has calendar permission
   });
+
+  // Don't show widget at all if no calendar permission - AFTER all hooks are called
+  if (canViewCalendar === false) {
+    return null;
+  }
 
   if (isLoading || canViewCalendar === undefined) {
     return (
