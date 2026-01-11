@@ -63,15 +63,11 @@ const DealerDashboard = () => {
 
 
 const DashboardContent = () => {
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
   const [showWidgetCustomizer, setShowWidgetCustomizer] = useState(false);
   const { dateRange } = useDashboardDate();
-  
-  // If user is a dealer, show simplified dashboard
-  if (!isDealerLoading && isDealer) {
-    return <DealerDashboard />;
-  }
   const { widgets, toggleWidget, reorderWidgets, getEnabledWidgets, getAvailableWidgets, updateWidgetSize } = useDashboardWidgets();
   
   // Use batched queries for better performance
@@ -79,6 +75,13 @@ const DashboardContent = () => {
   
   const { integration: shopifyIntegration } = useShopifyIntegrationReal();
   const isShopifyConnected = !!shopifyIntegration?.is_connected;
+
+  // Permission checks for widgets
+  const canViewCalendar = useHasPermission('view_calendar');
+  const canViewShopify = useHasPermission('view_shopify');
+  const canViewEmails = useHasPermission('view_emails');
+  const canViewInventory = useHasPermission('view_inventory');
+  const canViewTeamPerformance = useHasPermission('view_team_performance');
 
   // One-time cleanup: disable Shopify widgets if Shopify isn't connected
   useEffect(() => {
@@ -101,12 +104,10 @@ const DashboardContent = () => {
     };
   }, [criticalStats.data, secondaryStats.data]);
   
-  // Permission checks for widgets
-  const canViewCalendar = useHasPermission('view_calendar');
-  const canViewShopify = useHasPermission('view_shopify');
-  const canViewEmails = useHasPermission('view_emails');
-  const canViewInventory = useHasPermission('view_inventory');
-  const canViewTeamPerformance = useHasPermission('view_team_performance');
+  // If user is a dealer, show simplified dashboard (AFTER all hooks are called)
+  if (!isDealerLoading && isDealer) {
+    return <DealerDashboard />;
+  }
 
   // Filter enabled widgets by permissions AND integration type
   const enabledWidgets = useMemo(() => {
