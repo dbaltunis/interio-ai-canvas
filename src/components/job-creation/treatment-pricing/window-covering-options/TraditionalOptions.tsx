@@ -22,13 +22,17 @@ export const TraditionalOptions = ({
   hierarchicalSelections,
   templateId
 }: TraditionalOptionsProps) => {
+  // Build map of selected option types - use 'key' for rule matching
   const selectedOptionsMap = useMemo(() => {
     const map: Record<string, string> = {};
     options.forEach(opt => {
       if (selectedOptions.includes(opt.id)) {
-        map[opt.option_type || opt.name] = opt.id;
+        // Use opt.key for rule matching (e.g., "control_system"), fall back to option_type or name
+        const key = opt.key || opt.option_type || opt.name;
+        map[key] = opt.id;
       }
     });
+    console.log('🗺️ TraditionalOptions - selectedOptionsMap:', map);
     return { ...map, ...hierarchicalSelections };
   }, [selectedOptions, options, hierarchicalSelections]);
 
