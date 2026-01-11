@@ -15,7 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCreateInvitation } from "@/hooks/useUserInvitations";
-import { UserPlus, Mail, Send } from "lucide-react";
+import { UserPlus, Mail, Send, Store } from "lucide-react";
+import { useDealerPortalFeature } from "@/hooks/useAccountFeatures";
 
 const inviteSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -31,15 +32,28 @@ interface InviteChildAccountDialogProps {
   onClose: () => void;
 }
 
-const roleOptions = [
+// Base role options available to all accounts
+const baseRoleOptions = [
   { value: "Staff", label: "Staff", description: "Basic access to assigned tasks" },
   { value: "Manager", label: "Manager", description: "Can manage projects and team members" },
   { value: "Admin", label: "Admin", description: "Full access except billing" },
 ];
 
+// Dealer role option (only shown when dealer_portal feature is enabled)
+const dealerRoleOption = { 
+  value: "Dealer", 
+  label: "Dealer", 
+  description: "External reseller - can only create jobs and quote" 
+};
+
 export const InviteChildAccountDialog = ({ open, onClose }: InviteChildAccountDialogProps) => {
   const createInvitation = useCreateInvitation();
-
+  const { isEnabled: hasDealerPortal, dealerSeatPrice, unlimitedSeats } = useDealerPortalFeature();
+  
+  // Build role options based on features
+  const roleOptions = hasDealerPortal 
+    ? [...baseRoleOptions, dealerRoleOption]
+    : baseRoleOptions;
   const {
     register,
     handleSubmit,
