@@ -23,6 +23,7 @@ export interface SubscriptionDetails {
   newMonthlyTotalAfterAddingSeat?: number;
   upcomingInvoiceTotal?: number | null;
   isStripeManaged?: boolean;
+  isCustomBilling?: boolean;
   message?: string;
   error?: string;
 }
