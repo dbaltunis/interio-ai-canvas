@@ -42,7 +42,8 @@ import { useQuoteCustomData } from "@/hooks/useQuoteCustomData";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { getRegistrationLabels } from '@/utils/businessRegistrationLabels';
 import { DocumentHeaderBlock, LineItemsBlock, TotalsBlock, PaymentDetailsBlock, RegistrationFooterBlock, InstallationDetailsBlock, InstallerSignoffBlock, InvoiceStatusBlock, LatePaymentTermsBlock, TaxBreakdownBlock } from './shared/BlockRenderer';
-import { groupHardwareItems, filterMeaningfulHardwareItems, getItemPrice } from '@/utils/quotes/groupHardwareItems';
+// Chunk rebuild: 2026-01-11T14:25
+import { groupHardwareItems, filterMeaningfulHardwareItems } from '@/utils/quotes/groupHardwareItems';
 
 // Lazy load the editable version to avoid circular dependencies and reduce bundle size
 const EditableLivePreview = React.lazy(() => import('./EditableLivePreview'));
