@@ -35,11 +35,50 @@ serve(async (req) => {
 
     logStep("User authenticated", { userId: userData.user.id });
 
-    // Get user's subscription from database
+    // Check if user (or their parent account) has custom billing via feature flags
+    // First get effective owner ID (parent_account_id if team member)
+    const { data: profile } = await supabaseClient
+      .from("user_profiles")
+      .select("parent_account_id")
+      .eq("user_id", userData.user.id)
+      .single();
+
+    const effectiveOwnerId = profile?.parent_account_id || userData.user.id;
+    logStep("Effective owner ID", { effectiveOwnerId });
+
+    // Check for custom billing via dealer_portal feature flag
+    const { data: featureFlag } = await supabaseClient
+      .from("account_feature_flags")
+      .select("feature_key, config")
+      .eq("user_id", effectiveOwnerId)
+      .eq("feature_key", "dealer_portal")
+      .maybeSingle();
+
+    const dealerConfig = featureFlag?.config as { unlimited_seats?: boolean; dealer_seat_price?: number } | null;
+    const isCustomBilling = dealerConfig?.unlimited_seats || dealerConfig?.dealer_seat_price === 0;
+
+    logStep("Custom billing check", { isCustomBilling, dealerConfig });
+
+    // For custom billing accounts (like Homekaara), skip Stripe and return success
+    if (isCustomBilling) {
+      logStep("Custom billing account - skipping Stripe, seat added for free");
+      return new Response(JSON.stringify({ 
+        success: true,
+        message: "Seat added successfully (custom billing)",
+        isCustomBilling: true,
+        proratedCharge: 0,
+        currency: "GBP",
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Get user's subscription from database (for standard Stripe billing)
     const { data: subscription, error: subError } = await supabaseClient
       .from("user_subscriptions")
       .select("stripe_subscription_id, stripe_customer_id")
-      .eq("user_id", userData.user.id)
+      .eq("user_id", effectiveOwnerId)
       .eq("status", "active")
       .single();
 
