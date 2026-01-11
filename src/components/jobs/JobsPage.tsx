@@ -7,7 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Shield, FolderOpen, Columns3, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuotes, useCreateQuote, useUpdateQuote } from "@/hooks/useQuotes";
-import { useCreateProject, useProjects } from "@/hooks/useProjects";
+import { useCreateProject, useProjects, useDealerOwnProjects } from "@/hooks/useProjects";
+import { useIsDealer } from "@/hooks/useIsDealer";
 import { useClients } from "@/hooks/useClients";
 import { useToast } from "@/hooks/use-toast";
 import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
@@ -50,10 +51,13 @@ const JobsPage = () => {
   
   const isMobile = useIsMobile();
   
-  // Get user role to check if they're Owner/System Owner/Admin
+  // Get user role to check if they're Owner/System Owner/Admin/Dealer
   const { data: userRoleData, isLoading: roleLoading } = useUserRole();
   const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
   const isAdmin = userRoleData?.isAdmin || false;
+  
+  // Check if user is a Dealer - they only see their own jobs
+  const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
   
   // Explicit check: Check user_permissions table first, then fall back to role for Owners/Admins
   const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
@@ -148,9 +152,15 @@ const canViewJobsExplicit =
     enabled: shouldFetchQuotes
   });
   
-  const { data: allProjects = [] } = useProjects({
-    enabled: canViewJobsExplicit && !permissionsLoading
+  // Use dealer-specific hook if user is a dealer - they only see their own jobs
+  const { data: regularProjects = [] } = useProjects({
+    enabled: canViewJobsExplicit && !permissionsLoading && !isDealer
   });
+  const { data: dealerProjects = [] } = useDealerOwnProjects();
+  
+  // Use dealer projects if user is a dealer, otherwise use regular projects
+  const allProjects = isDealer ? dealerProjects : regularProjects;
+  
   const { data: allClients = [] } = useClients(canViewJobsExplicit && !permissionsLoading);
   
   const { filteredProjects, filteredQuotes } = useMemo(() => {
@@ -355,8 +365,8 @@ const canViewJobsExplicit =
   };
 
   // Check permissions - block access if user doesn't have view permissions
-  // Wait for permissions and role to load
-  if (permissionsLoading || roleLoading || explicitPermissions === undefined || userRoleData === undefined) {
+  // Wait for permissions and role to load (include dealer loading state)
+  if (permissionsLoading || roleLoading || isDealerLoading || explicitPermissions === undefined || userRoleData === undefined) {
     return (
       <div className="min-h-screen flex items-center justify-center animate-fade-in">
         <Card className="max-w-md">
@@ -369,9 +379,12 @@ const canViewJobsExplicit =
       </div>
     );
   }
+  
+  // Dealers always have view permission for their own jobs - bypass the check
+  const hasDealerAccess = isDealer === true;
 
-  // Block access if user doesn't have view permissions
-  if (!canViewJobsExplicit) {
+  // Block access if user doesn't have view permissions (dealers always have access to their own jobs)
+  if (!canViewJobsExplicit && !hasDealerAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center animate-fade-in">
         <Card className="max-w-md">
