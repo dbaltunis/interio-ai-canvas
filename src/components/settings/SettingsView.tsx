@@ -45,7 +45,7 @@ export const SettingsView = () => {
   const locationState = location.state as LocationState | null;
 
   // Check if current user is a Dealer
-  const { data: isDealer } = useIsDealer();
+  const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
 
   // Read initial tab from URL parameters or location state
   // Support both ?tab= and ?section= for backward compatibility
@@ -54,9 +54,6 @@ export const SettingsView = () => {
   
   // Determine initial tab - location state takes precedence
   const getInitialTab = () => {
-    // Dealers can only access personal tab
-    if (isDealer) return "personal";
-    
     if (locationState?.createTemplate || locationState?.activeTab === 'templates' || locationState?.editTemplateId) {
       return "window-coverings";
     }
@@ -73,10 +70,10 @@ export const SettingsView = () => {
 
   // Reset to personal tab if dealer tries to navigate elsewhere
   useEffect(() => {
-    if (isDealer && activeTab !== "personal") {
+    if (!isDealerLoading && isDealer && activeTab !== "personal") {
       setActiveTab("personal");
     }
-  }, [isDealer, activeTab]);
+  }, [isDealer, isDealerLoading, activeTab]);
 
   // Clear location state after reading to prevent re-triggering on refresh
   useEffect(() => {
@@ -92,14 +89,15 @@ export const SettingsView = () => {
   const canViewWindowTreatmentsRaw = useHasPermission('view_window_treatments');
   
   // During loading (undefined), show tabs to prevent disappearing UI
-  // But dealers should never see these tabs
-  const canViewSettings = !isDealer && canViewSettingsRaw !== false;
-  const canManageSettings = !isDealer && canManageSettingsRaw !== false;
-  const canManageUsers = !isDealer && canManageUsersRaw !== false;
-  const canViewWindowTreatments = !isDealer && canViewWindowTreatmentsRaw !== false;
-  const canManageMarkup = !isDealer && canManageSettingsRaw !== false; // Only owners/admins can manage pricing
-  const canViewBilling = !isDealer; // Dealers don't see billing
-  const canViewNotifications = !isDealer; // Dealers don't see notifications settings
+  // But dealers should never see these tabs (only apply restriction when we know they're a dealer)
+  const isDealerConfirmed = !isDealerLoading && isDealer === true;
+  const canViewSettings = !isDealerConfirmed && canViewSettingsRaw !== false;
+  const canManageSettings = !isDealerConfirmed && canManageSettingsRaw !== false;
+  const canManageUsers = !isDealerConfirmed && canManageUsersRaw !== false;
+  const canViewWindowTreatments = !isDealerConfirmed && canViewWindowTreatmentsRaw !== false;
+  const canManageMarkup = !isDealerConfirmed && canManageSettingsRaw !== false; // Only owners/admins can manage pricing
+  const canViewBilling = !isDealerConfirmed; // Dealers don't see billing
+  const canViewNotifications = !isDealerConfirmed; // Dealers don't see notifications settings
 
   return <div className="space-y-6 animate-fade-in">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
