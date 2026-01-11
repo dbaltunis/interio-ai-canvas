@@ -36,7 +36,7 @@ export const CascadingTraditionalOptions = ({
     return { ...map, ...hierarchicalSelections };
   }, [selectedOptions, options, hierarchicalSelections]);
 
-  const { isOptionVisible } = useConditionalOptions(templateId, selectedOptionsMap);
+  const { isOptionVisible, getAllowedValues } = useConditionalOptions(templateId, selectedOptionsMap);
   const { isOptionEnabled } = useEnabledTemplateOptions(templateId);
 
   // Build set of disabled option keys
@@ -62,10 +62,12 @@ export const CascadingTraditionalOptions = ({
     }, {} as Record<string, any[]>);
   }, [options]);
 
-  // Get filtered options for a type
+  // Get filtered options for a type, including value-level filtering
   const getFilteredOptionsForType = useCallback((optionType: string) => {
     const typeOptions = groupedOptions[optionType] || [];
-    return typeOptions.filter((opt: any) => {
+    
+    // First filter by visibility and enabled state
+    let filtered = typeOptions.filter((opt: any) => {
       if (opt.key && disabledKeys.has(opt.key)) {
         return false;
       }
@@ -73,7 +75,16 @@ export const CascadingTraditionalOptions = ({
       const enabled = isOptionEnabled(opt.id);
       return visible && enabled;
     });
-  }, [groupedOptions, disabledKeys, isOptionVisible, isOptionEnabled]);
+    
+    // Then apply value-level filtering if rules specify allowed values for this option type
+    const allowedValuesForType = getAllowedValues(optionType);
+    if (allowedValuesForType && allowedValuesForType.length > 0) {
+      console.log(`🔍 Filtering ${optionType} to allowed values:`, allowedValuesForType);
+      filtered = filtered.filter((opt: any) => allowedValuesForType.includes(opt.id));
+    }
+    
+    return filtered;
+  }, [groupedOptions, disabledKeys, isOptionVisible, isOptionEnabled, getAllowedValues]);
 
   // Get currently selected option ID for a given type
   const getSelectedForType = useCallback((optionType: string): string | null => {
@@ -124,15 +135,8 @@ export const CascadingTraditionalOptions = ({
   return (
     <div className="space-y-4">
       {Object.entries(groupedOptions).map(([optionType, typeOptions]) => {
-        // Filter options based on visibility and enabled state
-        const filteredOptions = (typeOptions as any[]).filter((opt: any) => {
-          if (opt.key && disabledKeys.has(opt.key)) {
-            return false;
-          }
-          const visible = isOptionVisible(opt.key || opt.option_type || opt.name || opt.id);
-          const enabled = isOptionEnabled(opt.id);
-          return visible && enabled;
-        });
+        // Use the shared filtering function (includes value-level filtering)
+        const filteredOptions = getFilteredOptionsForType(optionType);
         
         if (filteredOptions.length === 0) {
           return null;

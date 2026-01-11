@@ -11,9 +11,9 @@ export interface OptionRule {
     value: string | string[];
   };
   effect: {
-    action: 'show_option' | 'hide_option' | 'require_option' | 'set_default';
+    action: 'show_option' | 'hide_option' | 'require_option' | 'set_default' | 'filter_values';
     target_option_key: string;
-    target_value?: string;
+    target_value?: string | string[];
   };
   description?: string;
   created_at?: string;
