@@ -888,10 +888,11 @@ const LivePreviewBlock = ({
           const meaningfulHardware = filterMeaningfulHardwareItems(hardwareGroup.items);
           
           if (meaningfulHardware.length > 0) {
-            // Create a hardware group summary row
+            // Create a hardware group summary row with image from option (NOT hardcoded emoji)
             const hardwareSummary = {
-              id: 'hardware-group',
-              name: '🔧 Hardware',
+              id: hardwareGroup.id,
+              name: hardwareGroup.name,  // Dynamic: "Track & Hardware", "Rod & Hardware", etc.
+              image_url: hardwareGroup.image_url,  // Option's image (if configured)
               category: 'hardware_group',
               description: `${meaningfulHardware.length} item${meaningfulHardware.length > 1 ? 's' : ''}`,
               quantity: 1,
@@ -904,6 +905,8 @@ const LivePreviewBlock = ({
             
             console.log('[BREAKDOWN] Hardware grouped:', {
               item_name: item.name,
+              hardware_name: hardwareGroup.name,
+              hardware_image: hardwareGroup.image_url,
               hardware_total: hardwareGroup.total,
               hardware_items: meaningfulHardware.map((h: any) => ({ name: h.name, total: h.total_cost })),
               other_items: otherItems.length
@@ -1210,13 +1213,25 @@ const LivePreviewBlock = ({
                             breakdownItem.isHardwareGroup ? (
                               // Hardware Group - render summary row + sub-items
                               <React.Fragment key={`hw-group-${bidx}`}>
-                                {/* Hardware Group Summary Row */}
+                                {/* Hardware Group Summary Row - with option image (NOT hardcoded emoji) */}
                                 <tr style={{ 
                                   backgroundColor: '#f8fafc',
                                   borderBottom: isPrintMode ? 'none' : '1px solid #e2e8f0'
                                 }}>
                                   <td style={{ padding: '4px 6px 4px 20px', fontSize: '12px', fontWeight: '600', color: '#334155', backgroundColor: '#f8fafc' }}>
-                                    {breakdownItem.name}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      {/* Show option image if available (NOT emoji) */}
+                                      {showImages && breakdownItem.image_url && (
+                                        <ProductImageWithColorFallback
+                                          imageUrl={breakdownItem.image_url}
+                                          productName={breakdownItem.name || 'Hardware'}
+                                          size={22}
+                                          rounded="sm"
+                                          category="hardware"
+                                        />
+                                      )}
+                                      <span>{breakdownItem.name}</span>
+                                    </div>
                                   </td>
                                   <td style={{ padding: '4px 6px', fontSize: '12px', color: '#64748b', backgroundColor: '#f8fafc' }}>
                                     {breakdownItem.description}

@@ -1,8 +1,10 @@
 /**
- * Hardware Item Grouping Utility
- * ===============================
- * Groups hardware-related items into a single collapsible section for client-friendly display.
- * Shows total hardware price first, with expandable breakdown of components.
+ * Option Item Grouping Utility
+ * =============================
+ * Groups related items (hardware, accessories, etc.) into collapsible sections
+ * for client-friendly display. Shows total price first, with expandable breakdown.
+ * 
+ * UNIVERSAL: Works for ALL accounts and option types - no hardcoded emojis or names.
  */
 
 interface BreakdownItem {
@@ -17,16 +19,21 @@ interface BreakdownItem {
   quantity?: number;
   unit_price?: number;
   unit?: string;
+  image_url?: string;
   [key: string]: any;
 }
 
-interface GroupedHardware {
-  items: BreakdownItem[];
+interface GroupedOption {
+  id: string;
+  name: string;
+  image_url?: string;  // Option's image (NOT hardcoded emoji)
   total: number;
+  items: BreakdownItem[];
+  category: string;
 }
 
 interface GroupedResult {
-  hardwareGroup: GroupedHardware | null;
+  hardwareGroup: GroupedOption | null;
   otherItems: BreakdownItem[];
 }
 
@@ -82,8 +89,8 @@ export function getItemPrice(item: BreakdownItem): number {
 }
 
 /**
- * Filters out hardware "type" selections that have ₹0 price
- * These are just category choices (track vs rod), not actual products
+ * Filters out zero-priced category selections (e.g., "Hardware Type: Rod" with ₹0)
+ * These are just category choices, not actual products
  */
 export function filterMeaningfulHardwareItems(items: BreakdownItem[]): BreakdownItem[] {
   return items.filter(item => {
@@ -100,7 +107,39 @@ export function filterMeaningfulHardwareItems(items: BreakdownItem[]): Breakdown
 }
 
 /**
+ * Gets the primary image from hardware items (first non-accessory with an image)
+ */
+export function getGroupImage(items: BreakdownItem[]): string | undefined {
+  // Priority: main hardware item image > any accessory image
+  const mainItem = items.find(item => 
+    isMainHardwareItem(item) && item.image_url
+  );
+  if (mainItem?.image_url) return mainItem.image_url;
+  
+  // Fallback to first item with an image
+  const anyWithImage = items.find(item => item.image_url);
+  return anyWithImage?.image_url;
+}
+
+/**
+ * Gets the display name for the hardware group (based on main item type)
+ */
+export function getGroupName(items: BreakdownItem[]): string {
+  const mainItem = items.find(item => isMainHardwareItem(item));
+  
+  if (mainItem) {
+    const name = (mainItem.name || '').toLowerCase();
+    if (name.includes('track')) return 'Track & Hardware';
+    if (name.includes('rod')) return 'Rod & Hardware';
+    if (name.includes('pole')) return 'Pole & Hardware';
+  }
+  
+  return 'Hardware';
+}
+
+/**
  * Groups hardware items together and separates from other items
+ * Returns group with image_url (from option) instead of hardcoded emoji
  */
 export function groupHardwareItems<T extends BreakdownItem>(items: T[]): GroupedResult {
   const hardwareItems: T[] = [];
@@ -125,8 +164,12 @@ export function groupHardwareItems<T extends BreakdownItem>(items: T[]): Grouped
   
   return {
     hardwareGroup: {
+      id: 'hardware-group',
+      name: getGroupName(hardwareItems),
+      image_url: getGroupImage(hardwareItems),
       items: hardwareItems,
-      total: hardwareTotal
+      total: hardwareTotal,
+      category: 'hardware_group'
     },
     otherItems
   };

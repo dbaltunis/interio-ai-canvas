@@ -15,7 +15,8 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { applyMarkup } from "@/utils/pricing/markupResolver";
 import type { MarkupSettings } from "@/hooks/useMarkupSettings";
-import { groupHardwareItems } from "@/utils/quotes/groupHardwareItems";
+import { groupHardwareItems, filterMeaningfulHardwareItems } from "@/utils/quotes/groupHardwareItems";
+import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
 
 // Simple SVG icons (same as CostCalculationSummary)
 const FabricSwatchIcon = ({ className }: { className?: string }) => (
@@ -184,13 +185,24 @@ export const SavedCostBreakdownDisplay = ({
           </div>
         )}
 
-        {/* Hardware - Grouped with collapsible breakdown */}
-        {hardwareGroup && hardwareGroup.items.length > 0 && (
+        {/* Hardware - Grouped with collapsible breakdown and option image */}
+        {hardwareGroup && filterMeaningfulHardwareItems(hardwareGroup.items).length > 0 && (
           <details className="py-1.5 border-b border-border/50 group/hw">
             <summary className="flex items-center justify-between cursor-pointer list-none">
               <div className="flex items-center gap-2">
-                <Wrench className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="text-card-foreground font-medium">Hardware</span>
+                {/* Show option image if available (NOT hardcoded emoji) */}
+                {hardwareGroup.image_url ? (
+                  <ProductImageWithColorFallback
+                    imageUrl={hardwareGroup.image_url}
+                    productName={hardwareGroup.name}
+                    size={16}
+                    rounded="sm"
+                    category="hardware"
+                  />
+                ) : (
+                  <Wrench className="h-3.5 w-3.5 text-primary shrink-0" />
+                )}
+                <span className="text-card-foreground font-medium">{hardwareGroup.name}</span>
                 <ChevronDown className="h-3 w-3 text-muted-foreground transition-transform group-open/hw:rotate-180" />
               </div>
               <span className="font-semibold text-card-foreground ml-2">
@@ -200,7 +212,7 @@ export const SavedCostBreakdownDisplay = ({
             
             {/* Hardware breakdown items */}
             <div className="ml-6 mt-2 space-y-1 border-l-2 border-muted pl-3">
-              {hardwareGroup.items.map((item, index) => {
+              {filterMeaningfulHardwareItems(hardwareGroup.items).map((item, index) => {
                 const isAccessory = item.category === 'hardware_accessory';
                 const itemPrice = item.total_cost || 0;
                 
