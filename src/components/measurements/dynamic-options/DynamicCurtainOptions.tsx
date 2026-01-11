@@ -115,6 +115,17 @@ export const DynamicCurtainOptions = ({
   // Build selected options map for the conditional hook
   const selectedOptionsForRules = useMemo(() => {
     const result: Record<string, string> = { ...treatmentOptionSelections };
+    
+    // ✅ CRITICAL FIX: Include selectedHeading for heading→hardware rules to evaluate
+    if (selectedHeading) {
+      result['selected_heading'] = selectedHeading;
+    }
+    
+    // ✅ CRITICAL FIX: Include selectedLining for lining-based rules
+    if (selectedLining) {
+      result['selected_lining'] = selectedLining;
+    }
+    
     // Also include direct measurements that might be treatment options
     Object.keys(measurements).forEach(key => {
       if (key.startsWith('treatment_option_')) {
@@ -122,7 +133,7 @@ export const DynamicCurtainOptions = ({
       }
     });
     return result;
-  }, [treatmentOptionSelections, measurements]);
+  }, [treatmentOptionSelections, measurements, selectedHeading, selectedLining]);
   
   const { isOptionVisible, getDefaultValue, rules: conditionalRules } = useConditionalOptions(template?.id, selectedOptionsForRules);
   
