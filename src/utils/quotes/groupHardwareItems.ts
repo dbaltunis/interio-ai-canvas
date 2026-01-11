@@ -77,8 +77,26 @@ export function isHardwareItem(item: BreakdownItem): boolean {
 /**
  * Gets the display price from various possible fields
  */
-function getItemPrice(item: BreakdownItem): number {
+export function getItemPrice(item: BreakdownItem): number {
   return item.calculatedPrice ?? item.total_cost ?? item.price ?? 0;
+}
+
+/**
+ * Filters out hardware "type" selections that have ₹0 price
+ * These are just category choices (track vs rod), not actual products
+ */
+export function filterMeaningfulHardwareItems(items: BreakdownItem[]): BreakdownItem[] {
+  return items.filter(item => {
+    const price = getItemPrice(item);
+    const optionKey = (item.optionKey || '').toLowerCase();
+    
+    // If it's hardware_type with ₹0, hide it (just a category selection)
+    if (optionKey === 'hardware_type' && price === 0) {
+      return false;
+    }
+    
+    return true;
+  });
 }
 
 /**
