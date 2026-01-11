@@ -4,8 +4,10 @@
  * This component ONLY displays pre-calculated values from cost_breakdown.
  * It performs ZERO calculations - all values come from the database.
  * 
- * COST VISIBILITY: Respects canViewCosts and canViewMarkup permissions.
- * Dealers and restricted users only see the quote price (selling price).
+ * UNIFIED QUOTE SUMMARY STYLE:
+ * - Uses "Quote Summary" header for ALL users
+ * - Shows actual prices for authorized users (canViewCosts = true)
+ * - Shows "Included" for dealers/restricted users (canViewCosts = false)
  */
 
 import { Calculator, Settings, Info, TrendingUp } from "lucide-react";
@@ -52,7 +54,7 @@ interface SavedCostBreakdownDisplayProps {
   templateName?: string;
   treatmentCategory?: string;
   selectedColor?: string;
-  /** Permission flag - if false, hide individual costs, show only quote price */
+  /** Permission flag - if false, show "Included" instead of prices */
   canViewCosts?: boolean;
   /** Permission flag - if false, hide markup percentages */
   canViewMarkup?: boolean;
@@ -93,121 +95,14 @@ export const SavedCostBreakdownDisplay = ({
   const optionsTotal = optionItems.reduce((sum, item) => sum + (item.total_cost || 0), 0);
 
   // =========================================================
-  // RESTRICTED VIEW: Dealers and users without cost visibility
-  // Show only the quote price with item names (no prices)
-  // =========================================================
-  if (!canViewCosts) {
-    return (
-      <div className="bg-card border border-border rounded-lg p-3 space-y-3">
-        <div className="flex items-center gap-2 pb-2 border-b border-border">
-          <Calculator className="h-4 w-4 text-primary" />
-          <h3 className="text-base font-semibold text-card-foreground">Quote Summary</h3>
-        </div>
-
-        {/* Show included items without prices */}
-        <div className="grid gap-2 text-sm">
-          {fabricItem && (
-            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
-                <div className="flex flex-col min-w-0">
-                  <span className="text-card-foreground font-medium">{fabricItem.name}</span>
-                  {selectedColor && (
-                    <div className="flex items-center gap-1.5">
-                      <div 
-                        className="w-4 h-4 rounded-full border border-border shadow-sm" 
-                        style={{ backgroundColor: selectedColor.startsWith('#') ? selectedColor : selectedColor.toLowerCase() }}
-                      />
-                      <span className="text-xs text-muted-foreground capitalize">{selectedColor}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <span className="text-sm text-muted-foreground">Included</span>
-            </div>
-          )}
-
-          {liningItem && liningItem.total_cost > 0 && (
-            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-              <div className="flex items-center gap-2">
-                <FabricSwatchIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <span className="text-card-foreground font-medium">{liningItem.name}</span>
-              </div>
-              <span className="text-sm text-muted-foreground">Included</span>
-            </div>
-          )}
-
-          {manufacturingItem && manufacturingItem.total_cost > 0 && (
-            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-              <div className="flex items-center gap-2">
-                <AssemblyIcon className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="text-card-foreground font-medium">Manufacturing</span>
-              </div>
-              <span className="text-sm text-muted-foreground">Included</span>
-            </div>
-          )}
-
-          {headingItem && headingItem.total_cost > 0 && (
-            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-              <div className="flex items-center gap-2">
-                <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="text-card-foreground font-medium">{headingItem.name}</span>
-              </div>
-              <span className="text-sm text-muted-foreground">Included</span>
-            </div>
-          )}
-
-          {hardwareItem && hardwareItem.total_cost > 0 && (
-            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-              <div className="flex items-center gap-2">
-                <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="text-card-foreground font-medium">{hardwareItem.name}</span>
-              </div>
-              <span className="text-sm text-muted-foreground">Included</span>
-            </div>
-          )}
-
-          {optionItems.length > 0 && (
-            <div className="py-1.5 border-b border-border/50">
-              <div className="flex items-center gap-2 mb-2">
-                <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="text-card-foreground font-medium">Additional Options</span>
-              </div>
-              <div className="pl-6 space-y-1">
-                {optionItems.map((option, index) => (
-                  <div key={index} className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">• {option.name}</span>
-                    <span className="text-muted-foreground">Included</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Quote Price - Only show selling price for dealers */}
-        <div className="border-t-2 border-primary/20 pt-2.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <TrendingUp className="h-4 w-4 text-emerald-600" />
-              <span className="text-lg font-bold text-emerald-600">Quote Price</span>
-            </div>
-            <span className="text-xl font-bold text-emerald-600">{formatPrice(quotePrice)}</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // =========================================================
-  // FULL VIEW: Owners, Admins, and authorized users
-  // Show full cost breakdown with individual prices
+  // UNIFIED QUOTE SUMMARY - Same style for ALL users
+  // Shows prices for authorized users, "Included" for dealers
   // =========================================================
   return (
     <div className="bg-card border border-border rounded-lg p-3 space-y-3">
       <div className="flex items-center gap-2 pb-2 border-b border-border">
         <Calculator className="h-4 w-4 text-primary" />
-        <h3 className="text-base font-semibold text-card-foreground">Cost Summary</h3>
+        <h3 className="text-base font-semibold text-card-foreground">Quote Summary</h3>
       </div>
 
       <div className="grid gap-2 text-sm">
@@ -216,111 +111,90 @@ export const SavedCostBreakdownDisplay = ({
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
-              <div className="flex flex-col min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-card-foreground font-medium">{fabricItem.name}</span>
-                  {selectedColor && (
-                    <div className="flex items-center gap-1.5">
-                      <div 
-                        className="w-4 h-4 rounded-full border border-border shadow-sm" 
-                        style={{ backgroundColor: selectedColor.startsWith('#') ? selectedColor : selectedColor.toLowerCase() }}
-                      />
-                      <span className="text-xs text-muted-foreground capitalize">{selectedColor}</span>
-                    </div>
-                  )}
-                </div>
-                <span className="text-xs text-muted-foreground truncate">
-                  {fabricItem.uses_pricing_grid 
-                    ? 'Pricing grid applied' 
-                    : fabricItem.quantity && fabricItem.unit_price 
-                      ? `${fabricItem.quantity.toFixed(2)}${fabricItem.unit || 'm'} @ ${formatPrice(fabricItem.unit_price)}/${fabricItem.unit || 'm'}`
-                      : 'Saved calculation'
-                  }
-                  {fabricItem.uses_leftover && ' (using leftover)'}
-                </span>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-card-foreground font-medium">{fabricItem.name}</span>
+                {selectedColor && (
+                  <div className="flex items-center gap-1.5">
+                    <div 
+                      className="w-4 h-4 rounded-full border border-border shadow-sm" 
+                      style={{ backgroundColor: selectedColor.startsWith('#') ? selectedColor : selectedColor.toLowerCase() }}
+                    />
+                    <span className="text-xs text-muted-foreground capitalize">{selectedColor}</span>
+                  </div>
+                )}
               </div>
             </div>
-            <span className="font-semibold text-card-foreground ml-2">{formatPrice(fabricItem.total_cost)}</span>
+            <span className={`font-semibold ${canViewCosts ? 'text-card-foreground' : 'text-muted-foreground text-sm'} ml-2`}>
+              {canViewCosts ? formatPrice(fabricItem.total_cost) : 'Included'}
+            </span>
           </div>
         )}
 
         {/* Lining */}
         {liningItem && liningItem.total_cost > 0 && (
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="flex items-center gap-2">
               <FabricSwatchIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <div className="flex flex-col min-w-0">
-                <span className="text-card-foreground font-medium">{liningItem.name}</span>
-                {liningItem.quantity && (
-                  <span className="text-xs text-muted-foreground truncate">
-                    {liningItem.quantity.toFixed(2)}{liningItem.unit || 'm'}
-                  </span>
-                )}
-              </div>
+              <span className="text-card-foreground font-medium">{liningItem.name}</span>
             </div>
-            <span className="font-semibold text-card-foreground ml-2">{formatPrice(liningItem.total_cost)}</span>
+            <span className={`font-semibold ${canViewCosts ? 'text-card-foreground' : 'text-muted-foreground text-sm'} ml-2`}>
+              {canViewCosts ? formatPrice(liningItem.total_cost) : 'Included'}
+            </span>
           </div>
         )}
 
         {/* Manufacturing */}
         {manufacturingItem && manufacturingItem.total_cost > 0 && (
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="flex items-center gap-2">
               <AssemblyIcon className="h-3.5 w-3.5 text-primary shrink-0" />
-              <div className="flex flex-col min-w-0">
-                <span className="text-card-foreground font-medium">Assembly & Manufacturing</span>
-                <span className="text-xs text-muted-foreground truncate">{manufacturingItem.name}</span>
-              </div>
+              <span className="text-card-foreground font-medium">Manufacturing</span>
             </div>
-            <span className="font-semibold text-card-foreground ml-2">{formatPrice(manufacturingItem.total_cost)}</span>
+            <span className={`font-semibold ${canViewCosts ? 'text-card-foreground' : 'text-muted-foreground text-sm'} ml-2`}>
+              {canViewCosts ? formatPrice(manufacturingItem.total_cost) : 'Included'}
+            </span>
           </div>
         )}
 
         {/* Heading */}
         {headingItem && headingItem.total_cost > 0 && (
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="flex items-center gap-2">
               <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="text-card-foreground font-medium">{headingItem.name}</span>
             </div>
-            <span className="font-semibold text-card-foreground ml-2">{formatPrice(headingItem.total_cost)}</span>
+            <span className={`font-semibold ${canViewCosts ? 'text-card-foreground' : 'text-muted-foreground text-sm'} ml-2`}>
+              {canViewCosts ? formatPrice(headingItem.total_cost) : 'Included'}
+            </span>
           </div>
         )}
 
         {/* Hardware */}
         {hardwareItem && hardwareItem.total_cost > 0 && (
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="flex items-center gap-2">
               <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="text-card-foreground font-medium">{hardwareItem.name}</span>
             </div>
-            <span className="font-semibold text-card-foreground ml-2">{formatPrice(hardwareItem.total_cost)}</span>
+            <span className={`font-semibold ${canViewCosts ? 'text-card-foreground' : 'text-muted-foreground text-sm'} ml-2`}>
+              {canViewCosts ? formatPrice(hardwareItem.total_cost) : 'Included'}
+            </span>
           </div>
         )}
 
         {/* Options */}
-        {optionItems.length > 0 && optionsTotal > 0 && (
+        {optionItems.length > 0 && (
           <div className="py-1.5 border-b border-border/50">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="text-card-foreground font-medium">Additional Options</span>
-              </div>
-              <span className="font-semibold text-card-foreground">{formatPrice(optionsTotal)}</span>
+            <div className="flex items-center gap-2 mb-2">
+              <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span className="text-card-foreground font-medium">Options</span>
             </div>
-            <div className="pl-6 space-y-1.5">
+            <div className="pl-6 space-y-1">
               {optionItems.map((option, index) => (
-                <div key={index} className="flex items-start justify-between text-xs">
-                  <div className="flex-1 min-w-0 mr-2">
-                    <div className="text-muted-foreground">• {option.name}</div>
-                    {option.description && (
-                      <div className="text-[10px] text-muted-foreground/70 ml-2 mt-0.5">
-                        {option.description}
-                      </div>
-                    )}
-                  </div>
-                  <span className="font-medium text-card-foreground whitespace-nowrap">
-                    {formatPrice(option.total_cost)}
+                <div key={index} className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">• {option.name}</span>
+                  <span className={canViewCosts ? 'font-medium text-card-foreground' : 'text-muted-foreground'}>
+                    {canViewCosts ? formatPrice(option.total_cost) : 'Included'}
                   </span>
                 </div>
               ))}
@@ -329,32 +203,31 @@ export const SavedCostBreakdownDisplay = ({
         )}
       </div>
 
-      {/* Cost Total */}
+      {/* Quote Price - Unified footer for all users */}
       <div className="border-t-2 border-primary/20 pt-2.5">
-        <div className="flex items-center justify-between">
-          <span className="text-lg font-bold text-card-foreground">Cost Total</span>
-          <span className="text-xl font-bold text-primary">{formatPrice(totalCost)}</span>
-        </div>
-        
-        {/* Quote Price with markup - only show markup % if authorized */}
-        {markupPercentage > 0 && (
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
-            <div className="flex items-center gap-1.5">
-              <TrendingUp className="h-4 w-4 text-emerald-600" />
-              <span className="font-semibold text-emerald-600">Quote Price</span>
-              {canViewMarkup && (
-                <span className="text-xs text-muted-foreground">({markupPercentage}% markup)</span>
-              )}
-            </div>
-            <span className="text-xl font-bold text-emerald-600">
-              {formatPrice(quotePrice)}
-            </span>
+        {/* Cost Total - Only for authorized users */}
+        {canViewCosts && (
+          <div className="flex items-center justify-between mb-2 pb-2 border-b border-border/50">
+            <span className="text-sm font-medium text-muted-foreground">Cost Total</span>
+            <span className="font-semibold text-muted-foreground">{formatPrice(totalCost)}</span>
           </div>
         )}
+        
+        {/* Quote Price - Always visible */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <TrendingUp className="h-4 w-4 text-emerald-600" />
+            <span className="text-lg font-bold text-emerald-600">Quote Price</span>
+            {canViewMarkup && markupPercentage > 0 && (
+              <span className="text-xs text-muted-foreground">({markupPercentage}% markup)</span>
+            )}
+          </div>
+          <span className="text-xl font-bold text-emerald-600">{formatPrice(quotePrice)}</span>
+        </div>
       </div>
 
-      {/* Details */}
-      {templateName && (
+      {/* Details - Only for authorized users */}
+      {canViewCosts && templateName && (
         <details className="text-xs text-muted-foreground group">
           <summary className="cursor-pointer font-medium text-card-foreground flex items-center gap-1.5 py-1.5 hover:text-primary transition-colors border-t border-border/50 pt-2">
             <Info className="h-3.5 w-3.5" />
