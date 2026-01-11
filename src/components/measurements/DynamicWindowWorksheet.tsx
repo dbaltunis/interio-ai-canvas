@@ -1841,12 +1841,15 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                 
                 return filteredOptions
                   .map((opt: any, idx: number) => {
-                    let optionTotalCost = opt.price || opt.calculatedPrice || 0;
+                    // ✅ CRITICAL FIX: Use calculatedPrice if exists to prevent double-calculation
+                    // Only recalculate if price exists but calculatedPrice doesn't
+                    let optionTotalCost = opt.calculatedPrice ?? opt.price ?? 0;
                     const isPerMeterOption = opt.pricingMethod === 'per-meter' || opt.pricingMethod === 'per-metre' || 
                                             opt.pricingMethod === 'per_meter' || opt.pricingMethod === 'per_metre' ||
                                             opt.name?.toLowerCase().includes('lining');
                     
-                    if (isPerMeterOption && linearMeters > 0 && opt.price > 0) {
+                    // Only recalculate per-meter IF no calculatedPrice exists
+                    if (!opt.calculatedPrice && isPerMeterOption && linearMeters > 0 && opt.price > 0) {
                       optionTotalCost = opt.price * linearMeters;
                     }
                     
