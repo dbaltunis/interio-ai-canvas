@@ -2,6 +2,8 @@ import React from "react";
 import { useFormattedCurrency } from "@/hooks/useFormattedCurrency";
 import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
 import type { ClientBreakdownItem } from "@/utils/quotes/buildClientBreakdown";
+import { groupHardwareItems } from "@/utils/quotes/groupHardwareItems";
+import { Wrench, ChevronDown } from "lucide-react";
 
 interface QuoteItemBreakdownProps {
   breakdown: ClientBreakdownItem[];
@@ -11,7 +13,7 @@ interface QuoteItemBreakdownProps {
 
 /**
  * Displays breakdown items with selling prices (markup already applied at source)
- * Enhanced to show hardware accessories as indented sub-items with quantity details
+ * Enhanced to group hardware into collapsible section for client-friendly display
  */
 const QuoteItemBreakdown: React.FC<QuoteItemBreakdownProps> = ({ 
   breakdown, 
@@ -21,34 +23,73 @@ const QuoteItemBreakdown: React.FC<QuoteItemBreakdownProps> = ({
   const { formatCurrency } = useFormattedCurrency();
 
   if (!Array.isArray(breakdown) || breakdown.length === 0) return null;
+  
+  // Group hardware items for client-friendly display
+  const { hardwareGroup, otherItems } = groupHardwareItems(breakdown.map(item => ({
+    ...item,
+    calculatedPrice: item.total_cost
+  })));
 
   return (
     <div className="mt-2 space-y-1">
-      {breakdown.map((item, idx) => {
-        // Prices already include markup from buildClientBreakdown/useQuotationSync
+      {/* Hardware Section - Grouped with collapsible breakdown */}
+      {hardwareGroup && hardwareGroup.items.length > 0 && (
+        <details className="py-1 group/hw">
+          <summary className="flex items-center justify-between cursor-pointer list-none text-sm">
+            <div className="flex items-center gap-2">
+              <Wrench className="h-3.5 w-3.5 text-primary" />
+              <span className="font-medium text-foreground">Hardware</span>
+              <ChevronDown className="h-3 w-3 text-muted-foreground transition-transform group-open/hw:rotate-180" />
+            </div>
+            <span className="font-medium text-foreground">
+              {formatCurrency(hardwareGroup.total)}
+            </span>
+          </summary>
+          
+          {/* Hardware breakdown items */}
+          <div className="ml-6 mt-1 space-y-0.5 border-l-2 border-muted pl-3">
+            {hardwareGroup.items.map((item, idx) => {
+              const isAccessory = item.category === 'hardware_accessory';
+              const totalPrice = Number(item.total_cost) || 0;
+              const unitPrice = Number(item.unit_price) || 0;
+              const quantity = Number(item.quantity) || 0;
+              const pricingDetails = item.pricingDetails || '';
+              
+              return (
+                <div key={item.id || `hw-${idx}`} className="flex items-start justify-between text-xs gap-2">
+                  <div className="flex-1">
+                    <span className={isAccessory ? 'text-muted-foreground' : 'text-foreground'}>
+                      {isAccessory ? `└ ${item.name}` : item.name}
+                    </span>
+                    {quantity > 0 && unitPrice > 0 && (
+                      <div className="text-[10px] text-muted-foreground/70">
+                        {quantity} × {formatCurrency(unitPrice)}{pricingDetails ? ` (${pricingDetails})` : ''}
+                      </div>
+                    )}
+                  </div>
+                  <span className={`tabular-nums ${isAccessory ? 'text-muted-foreground' : 'text-foreground'}`}>
+                    {totalPrice > 0 ? formatCurrency(totalPrice) : <span className="text-muted-foreground">Included</span>}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </details>
+      )}
+      
+      {/* Non-hardware items */}
+      {otherItems.map((item, idx) => {
         const totalPrice = Number(item.total_cost) || 0;
         const unitPrice = Number(item.unit_price) || 0;
         const quantity = Number(item.quantity) || 0;
-        
-        // Check if this is a hardware accessory item (indented sub-item)
-        const isAccessory = item.category === 'hardware_accessory';
-        // Check for pricing details text (e.g., "1 per 10cm")
         const pricingDetails = item.pricingDetails || '';
-        
-        // For accessories, create detailed description from quantity and unit price
-        const accessoryDescription = isAccessory && quantity > 0 && unitPrice > 0
-          ? `${quantity} × ${formatCurrency(unitPrice)}${pricingDetails ? ` (${pricingDetails})` : ''}`
-          : null;
         
         return (
           <div 
             key={item.id || `${item.category || 'row'}-${idx}`} 
-            className={`flex items-start justify-between text-sm gap-2 ${
-              isAccessory ? 'ml-4 pl-2 border-l-2 border-muted' : ''
-            }`}
+            className="flex items-start justify-between text-sm gap-2"
           >
-            {/* Optional image/color swatch - skip for accessories */}
-            {showImages && !isAccessory && (
+            {showImages && (
               <ProductImageWithColorFallback
                 imageUrl={item.image_url}
                 color={item.color}
@@ -59,37 +100,28 @@ const QuoteItemBreakdown: React.FC<QuoteItemBreakdownProps> = ({
               />
             )}
             <div className="flex-1 pr-2">
-              <div className={`${isAccessory ? 'text-muted-foreground' : 'font-medium text-foreground'}`}>
-                {isAccessory ? `└ ${item.name}` : (item.name || item.category || 'Item')}
+              <div className="font-medium text-foreground">
+                {item.name || item.category || 'Item'}
               </div>
-              {/* For accessories: show quantity × unit price with pricing formula */}
-              {isAccessory && accessoryDescription && (
-                <div className="text-xs text-muted-foreground">
-                  {accessoryDescription}
-                </div>
-              )}
-              {/* For non-accessories: show description or pricing details */}
-              {!isAccessory && (item.description || pricingDetails) && (
+              {(item.description || pricingDetails) && (
                 <div className="text-xs text-muted-foreground">
                   {item.description !== '-' ? item.description : ''}
                   {pricingDetails && item.description !== '-' ? ' • ' : ''}
                   {pricingDetails}
                 </div>
               )}
-              {/* Show quantity × unit price calculation for non-accessory items with both */}
-              {!isAccessory && quantity > 0 && unitPrice > 0 && (
+              {quantity > 0 && unitPrice > 0 && (
                 <div className="text-xs text-muted-foreground">
                   {quantity}{item.unit ? ` ${item.unit}` : ''} × {formatCurrency(unitPrice)}
                 </div>
               )}
-              {/* For items with only quantity (no unit price), show quantity with unit */}
-              {!isAccessory && quantity > 0 && unitPrice === 0 && item.unit && (
+              {quantity > 0 && unitPrice === 0 && item.unit && (
                 <div className="text-xs text-muted-foreground">
                   {quantity} {item.unit}
                 </div>
               )}
             </div>
-            <div className={`text-right ${isAccessory ? 'text-muted-foreground' : 'font-medium'}`}>
+            <div className="text-right font-medium">
               {totalPrice > 0 ? formatCurrency(totalPrice) : <span className="text-muted-foreground text-sm">Included</span>}
             </div>
           </div>

@@ -10,11 +10,12 @@
  * - Shows "Included" for dealers/restricted users (canViewCosts = false)
  */
 
-import { Calculator, Settings, Info, TrendingUp } from "lucide-react";
+import { Calculator, Settings, Info, TrendingUp, Wrench, ChevronDown } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { applyMarkup } from "@/utils/pricing/markupResolver";
 import type { MarkupSettings } from "@/hooks/useMarkupSettings";
+import { groupHardwareItems } from "@/utils/quotes/groupHardwareItems";
 
 // Simple SVG icons (same as CostCalculationSummary)
 const FabricSwatchIcon = ({ className }: { className?: string }) => (
@@ -94,10 +95,19 @@ export const SavedCostBreakdownDisplay = ({
   const optionItems = costBreakdown.filter(item => item.category === 'option' && item.total_cost > 0);
   const liningItem = costBreakdown.find(item => item.category === 'lining');
   const headingItem = costBreakdown.find(item => item.category === 'heading');
-  const hardwareItem = costBreakdown.find(item => item.category === 'hardware');
+  
+  // Group hardware items for client-friendly display
+  const allHardwareAndOptions = costBreakdown.filter(item => 
+    item.category === 'hardware' || 
+    item.category === 'hardware_accessory' ||
+    item.category === 'option'
+  );
+  const { hardwareGroup, otherItems: nonHardwareOptions } = groupHardwareItems(allHardwareAndOptions);
 
-  // Calculate options total from saved breakdown
-  const optionsTotal = optionItems.reduce((sum, item) => sum + (item.total_cost || 0), 0);
+  // Calculate options total from saved breakdown (excluding hardware)
+  const optionsTotal = nonHardwareOptions
+    .filter(item => item.category === 'option' && (item.total_cost || 0) > 0)
+    .reduce((sum, item) => sum + (item.total_cost || 0), 0);
 
   // =========================================================
   // UNIFIED QUOTE SUMMARY - Same style for ALL users
@@ -174,35 +184,66 @@ export const SavedCostBreakdownDisplay = ({
           </div>
         )}
 
-        {/* Hardware */}
-        {hardwareItem && hardwareItem.total_cost > 0 && (
-          <div className="flex items-center justify-between py-1.5 border-b border-border/50">
-            <div className="flex items-center gap-2">
-              <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span className="text-card-foreground font-medium">{hardwareItem.name}</span>
+        {/* Hardware - Grouped with collapsible breakdown */}
+        {hardwareGroup && hardwareGroup.items.length > 0 && (
+          <details className="py-1.5 border-b border-border/50 group/hw">
+            <summary className="flex items-center justify-between cursor-pointer list-none">
+              <div className="flex items-center gap-2">
+                <Wrench className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="text-card-foreground font-medium">Hardware</span>
+                <ChevronDown className="h-3 w-3 text-muted-foreground transition-transform group-open/hw:rotate-180" />
+              </div>
+              <span className="font-semibold text-card-foreground ml-2">
+                {formatPrice(getSellingPrice(hardwareGroup.total))}
+              </span>
+            </summary>
+            
+            {/* Hardware breakdown items */}
+            <div className="ml-6 mt-2 space-y-1 border-l-2 border-muted pl-3">
+              {hardwareGroup.items.map((item, index) => {
+                const isAccessory = item.category === 'hardware_accessory';
+                const itemPrice = item.total_cost || 0;
+                
+                return (
+                  <div key={index} className="flex items-start justify-between text-xs gap-2">
+                    <div className="flex flex-col">
+                      <span className={isAccessory ? 'text-muted-foreground' : 'text-card-foreground'}>
+                        {isAccessory ? `└ ${item.name}` : item.name}
+                      </span>
+                      {item.quantity && item.unit_price && (
+                        <span className="text-[10px] text-muted-foreground/70">
+                          {item.quantity} × {formatPrice(item.unit_price)}
+                        </span>
+                      )}
+                    </div>
+                    <span className={`tabular-nums ${isAccessory ? 'text-muted-foreground' : 'font-medium text-card-foreground'}`}>
+                      {itemPrice > 0 ? formatPrice(getSellingPrice(itemPrice)) : <span className="text-muted-foreground">Included</span>}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-            <span className="font-semibold text-card-foreground ml-2">
-              {formatPrice(getSellingPrice(hardwareItem.total_cost))}
-            </span>
-          </div>
+          </details>
         )}
 
-        {/* Options */}
-        {optionItems.length > 0 && (
+        {/* Non-hardware Options */}
+        {nonHardwareOptions.filter(item => item.category === 'option' && (item.total_cost || 0) > 0).length > 0 && (
           <div className="py-1.5 border-b border-border/50">
             <div className="flex items-center gap-2 mb-2">
               <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="text-card-foreground font-medium">Options</span>
             </div>
             <div className="pl-6 space-y-1">
-              {optionItems.map((option, index) => (
-                <div key={index} className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">• {option.name}</span>
-                  <span className="font-medium text-card-foreground">
-                    {formatPrice(getSellingPrice(option.total_cost))}
-                  </span>
-                </div>
-              ))}
+              {nonHardwareOptions
+                .filter(item => item.category === 'option' && (item.total_cost || 0) > 0)
+                .map((option, index) => (
+                  <div key={index} className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">• {option.name}</span>
+                    <span className="font-medium text-card-foreground">
+                      {formatPrice(getSellingPrice(option.total_cost))}
+                    </span>
+                  </div>
+                ))}
             </div>
           </div>
         )}
