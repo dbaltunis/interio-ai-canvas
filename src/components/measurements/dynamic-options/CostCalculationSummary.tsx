@@ -473,6 +473,11 @@ export const CostCalculationSummary = ({
     const markupPercentage = markupSettings?.default_markup_percentage || 0;
     const quotePrice = markupPercentage > 0 ? applyMarkup(blindCosts.totalCost, markupPercentage) : blindCosts.totalCost;
 
+    // ✅ SELLING PRICES: Calculate item selling price (cost + markup) for ALL users
+    const getSellingPrice = (costPrice: number) => {
+      return markupPercentage > 0 ? applyMarkup(costPrice, markupPercentage) : costPrice;
+    };
+
     return (
       <div className="bg-card border border-border rounded-lg p-3 space-y-3">
         <div className="flex items-center gap-2 pb-2 border-b border-border">
@@ -498,8 +503,8 @@ export const CostCalculationSummary = ({
                 )}
               </div>
             </div>
-            <span className={`font-semibold ${canViewCosts ? 'text-card-foreground' : 'text-muted-foreground text-sm'} ml-2`}>
-              {canViewCosts ? formatPrice(blindCosts.fabricCost) : 'Included'}
+            <span className="font-semibold text-card-foreground ml-2">
+              {formatPrice(getSellingPrice(blindCosts.fabricCost))}
             </span>
           </div>
 
@@ -510,8 +515,8 @@ export const CostCalculationSummary = ({
                 <AssemblyIcon className="h-3.5 w-3.5 text-primary shrink-0" />
                 <span className="text-card-foreground font-medium">Manufacturing</span>
               </div>
-              <span className={`font-semibold ${canViewCosts ? 'text-card-foreground' : 'text-muted-foreground text-sm'} ml-2`}>
-                {canViewCosts ? formatPrice(blindCosts.manufacturingCost) : 'Included'}
+              <span className="font-semibold text-card-foreground ml-2">
+                {formatPrice(getSellingPrice(blindCosts.manufacturingCost))}
               </span>
             </div>
           )}
@@ -534,30 +539,29 @@ export const CostCalculationSummary = ({
                   .map((option, index) => {
                     let displayPrice = option.price || 0;
                     
-                    if (canViewCosts) {
-                      if (option.pricingMethod === 'per-meter') {
-                        displayPrice = (option.price || 0) * (width / 100);
-                      } else if (option.pricingMethod === 'per-sqm') {
-                        displayPrice = (option.price || 0) * blindCosts.squareMeters;
-                      } else if (option.pricingMethod === 'pricing-grid' && option.pricingGridData) {
-                        if (Array.isArray(option.pricingGridData) && option.pricingGridData.length > 0 && 'width' in option.pricingGridData[0]) {
-                          const widthValues = option.pricingGridData.map((entry: any) => parseInt(entry.width));
-                          const closestWidth = widthValues.reduce((prev: number, curr: number) => {
-                            return Math.abs(curr - width) < Math.abs(prev - width) ? curr : prev;
-                          });
-                          const matchingEntry = option.pricingGridData.find((entry: any) => parseInt(entry.width) === closestWidth);
-                          displayPrice = matchingEntry ? parseFloat(matchingEntry.price) : 0;
-                        } else {
-                          displayPrice = getPriceFromGrid(option.pricingGridData, width, height);
-                        }
+                    // Calculate display price based on pricing method
+                    if (option.pricingMethod === 'per-meter') {
+                      displayPrice = (option.price || 0) * (width / 100);
+                    } else if (option.pricingMethod === 'per-sqm') {
+                      displayPrice = (option.price || 0) * blindCosts.squareMeters;
+                    } else if (option.pricingMethod === 'pricing-grid' && option.pricingGridData) {
+                      if (Array.isArray(option.pricingGridData) && option.pricingGridData.length > 0 && 'width' in option.pricingGridData[0]) {
+                        const widthValues = option.pricingGridData.map((entry: any) => parseInt(entry.width));
+                        const closestWidth = widthValues.reduce((prev: number, curr: number) => {
+                          return Math.abs(curr - width) < Math.abs(prev - width) ? curr : prev;
+                        });
+                        const matchingEntry = option.pricingGridData.find((entry: any) => parseInt(entry.width) === closestWidth);
+                        displayPrice = matchingEntry ? parseFloat(matchingEntry.price) : 0;
+                      } else {
+                        displayPrice = getPriceFromGrid(option.pricingGridData, width, height);
                       }
                     }
                     
                     return (
                       <div key={index} className="flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">• {option.name}</span>
-                        <span className={canViewCosts ? 'font-medium text-card-foreground' : 'text-muted-foreground'}>
-                          {canViewCosts ? formatPrice(displayPrice) : 'Included'}
+                        <span className="font-medium text-card-foreground">
+                          {formatPrice(getSellingPrice(displayPrice))}
                         </span>
                       </div>
                     );
@@ -628,7 +632,7 @@ export const CostCalculationSummary = ({
                     <div key={index} className="flex items-center justify-between">
                       <span>• {option.name}</span>
                       <span className="font-medium text-card-foreground">
-                        {option.price && option.price > 0 ? formatPrice(option.price) : 'Included'}
+                        {formatPrice(getSellingPrice(option.price || 0))}
                       </span>
                     </div>
                   ))}
