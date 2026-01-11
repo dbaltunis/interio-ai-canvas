@@ -175,6 +175,29 @@ export const DynamicCurtainOptions = ({
     }
   }, [template?.id, measurements]); // Re-initialize when template or measurements change
   
+  // ✅ CRITICAL FIX: Apply heading→hardware defaults from option_rules
+  // When heading changes, check if rules specify a hardware_type default and apply it
+  useEffect(() => {
+    const hardwareDefault = getDefaultValue('hardware_type');
+    
+    // Only apply if:
+    // 1. We have a heading selected
+    // 2. Rules computed a hardware default
+    // 3. No hardware is currently selected OR current hardware differs from default
+    const currentHardware = treatmentOptionSelections['hardware_type'];
+    
+    if (selectedHeading && hardwareDefault && !currentHardware) {
+      console.log('🎯 Auto-applying hardware default from heading rule:', {
+        selectedHeading,
+        hardwareDefault,
+        currentHardware
+      });
+      
+      // Apply the default hardware selection
+      handleTreatmentOptionChange('hardware_type', hardwareDefault);
+    }
+  }, [selectedHeading, getDefaultValue, treatmentOptionSelections]);
+  
   // ❌ REMOVED: Auto-select first option logic
   // WHITELIST approach: User must explicitly select options
   // No auto-selection prevents "random" values appearing
@@ -258,6 +281,39 @@ export const DynamicCurtainOptions = ({
     
     const heading = headingOptions.find(h => h.id === headingId);
     console.log('🔥🔥🔥 Found heading:', heading);
+    
+    // ✅ CRITICAL FIX: Clear ALL hardware selections when heading changes
+    // This allows the new heading→hardware default rule to apply
+    console.log('🔧 Clearing hardware selections for new heading');
+    setTreatmentOptionSelections(prev => {
+      const updated = { ...prev };
+      delete updated['hardware_type'];
+      delete updated['track_selection'];
+      delete updated['rod_selection'];
+      // Also delete any accessories
+      Object.keys(updated).forEach(k => {
+        if (k.startsWith('track_selection_') || k.startsWith('rod_selection_')) {
+          delete updated[k];
+        }
+      });
+      return updated;
+    });
+    
+    // Clear from measurements too
+    onChange('treatment_option_hardware_type', undefined);
+    onChange('treatment_option_track_selection', undefined);
+    onChange('treatment_option_rod_selection', undefined);
+    
+    // Clear from parent's selectedOptions
+    if (onSelectedOptionsChange) {
+      const updatedOptions = selectedOptions.filter(opt => {
+        const optKey = (opt as any).optionKey || '';
+        return !optKey.startsWith('hardware_type') && 
+               !optKey.startsWith('track_selection') && 
+               !optKey.startsWith('rod_selection');
+      });
+      onSelectedOptionsChange(updatedOptions);
+    }
     
     if (heading && onOptionPriceChange) {
       // Headings are stored in enhanced_inventory_items - use correct pricing fields
