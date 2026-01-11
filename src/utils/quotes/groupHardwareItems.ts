@@ -39,10 +39,11 @@ interface GroupedResult {
 
 /**
  * Detects if an item is hardware-related based on category or option key
+ * UNIVERSAL: Works for curtains, roman blinds, roller/zebra blinds, venetians, etc.
  */
 export function isHardwareItem(item: BreakdownItem): boolean {
   const category = (item.category || '').toLowerCase();
-  const optionKey = (item.optionKey || '').toLowerCase();
+  const optionKey = (item.optionKey || item.id || '').toLowerCase();
   const name = (item.name || '').toLowerCase();
   
   // Check by category
@@ -50,20 +51,34 @@ export function isHardwareItem(item: BreakdownItem): boolean {
     return true;
   }
   
-  // Check by option key patterns
+  // Check by option key patterns - UNIVERSAL for all treatments
   if (
+    // Curtain hardware
     optionKey.includes('hardware') ||
     optionKey.includes('track_selection') ||
     optionKey.includes('rod_selection') ||
     optionKey.includes('track') ||
     optionKey.includes('rod') ||
-    optionKey.includes('pole')
+    optionKey.includes('pole') ||
+    // Roman Blind hardware
+    optionKey.includes('headrail') ||
+    optionKey.includes('head_rail') ||
+    optionKey.includes('control_system') ||
+    optionKey.includes('chain_length') ||
+    optionKey.includes('motor_type') ||
+    optionKey.includes('remote_type') ||
+    // Roller/Zebra/Venetian hardware
+    optionKey.includes('bottom_rail') ||
+    optionKey.includes('fascia') ||
+    optionKey.includes('cassette') ||
+    optionKey.includes('valance')
   ) {
     return true;
   }
   
-  // Check by name patterns (hardware-related names)
+  // Check by name patterns (hardware-related names) - UNIVERSAL
   if (
+    // Curtain hardware
     name.includes('track') ||
     name.includes('rod') ||
     name.includes('pole') ||
@@ -73,7 +88,20 @@ export function isHardwareItem(item: BreakdownItem): boolean {
     name.includes('end cap') ||
     name.includes('endcap') ||
     name.includes('glider') ||
-    name.includes('curtain rail')
+    name.includes('curtain rail') ||
+    // Roman Blind hardware
+    name.includes('headrail') ||
+    name.includes('head rail') ||
+    name.includes('control system') ||
+    name.includes('chain length') ||
+    name.includes('chain') ||
+    name.includes('motor') ||
+    name.includes('remote') ||
+    // Roller/Zebra/Venetian hardware
+    name.includes('bottom rail') ||
+    name.includes('fascia') ||
+    name.includes('cassette') ||
+    name.includes('valance')
   ) {
     return true;
   }
@@ -123,15 +151,35 @@ export function getGroupImage(items: BreakdownItem[]): string | undefined {
 
 /**
  * Gets the display name for the hardware group (based on main item type)
+ * UNIVERSAL: Returns appropriate group names for all treatment types
  */
 export function getGroupName(items: BreakdownItem[]): string {
   const mainItem = items.find(item => isMainHardwareItem(item));
   
   if (mainItem) {
     const name = (mainItem.name || '').toLowerCase();
-    if (name.includes('track')) return 'Track & Hardware';
-    if (name.includes('rod')) return 'Rod & Hardware';
-    if (name.includes('pole')) return 'Pole & Hardware';
+    const optionKey = (mainItem.optionKey || mainItem.id || '').toLowerCase();
+    
+    // Curtain hardware
+    if (name.includes('track') || optionKey.includes('track')) return 'Track & Hardware';
+    if (name.includes('rod') || optionKey.includes('rod')) return 'Rod & Hardware';
+    if (name.includes('pole') || optionKey.includes('pole')) return 'Pole & Hardware';
+    
+    // Roman Blind hardware
+    if (name.includes('headrail') || name.includes('head rail') || 
+        optionKey.includes('headrail') || optionKey.includes('head_rail')) {
+      // Check if motorised
+      const hasMotor = items.some(i => 
+        (i.name || '').toLowerCase().includes('motor') || 
+        (i.optionKey || i.id || '').toLowerCase().includes('motor')
+      );
+      return hasMotor ? 'Motorised System' : 'Headrail & Control';
+    }
+    
+    // Roller/Zebra/Venetian hardware  
+    if (name.includes('cassette') || optionKey.includes('cassette')) return 'Cassette & Hardware';
+    if (name.includes('fascia') || optionKey.includes('fascia')) return 'Fascia & Hardware';
+    if (name.includes('bottom rail') || optionKey.includes('bottom_rail')) return 'Rails & Hardware';
   }
   
   return 'Hardware';
@@ -177,25 +225,51 @@ export function groupHardwareItems<T extends BreakdownItem>(items: T[]): Grouped
 
 /**
  * Determines if an item is the main hardware item (not an accessory)
+ * UNIVERSAL: Recognizes main hardware items for all treatment types
  */
 export function isMainHardwareItem(item: BreakdownItem): boolean {
   const category = (item.category || '').toLowerCase();
-  const optionKey = (item.optionKey || '').toLowerCase();
+  const optionKey = (item.optionKey || item.id || '').toLowerCase();
+  const name = (item.name || '').toLowerCase();
   
-  // Accessories have their own category
+  // Accessories have their own category - never main item
   if (category === 'hardware_accessory') {
     return false;
   }
   
-  // Track/Rod selections are main items
+  // Curtain hardware - Track/Rod selections are main items
   if (
     optionKey.includes('track_selection') ||
-    optionKey.includes('rod_selection')
+    optionKey.includes('rod_selection') ||
+    optionKey === 'track' ||
+    optionKey === 'rod' ||
+    optionKey === 'pole'
   ) {
     return true;
   }
   
-  // Hardware type is main item
+  // Roman Blind hardware - Headrail is the main item
+  if (
+    optionKey === 'headrail' ||
+    optionKey === 'head_rail' ||
+    name.includes('headrail') ||
+    name.includes('head rail')
+  ) {
+    return true;
+  }
+  
+  // Roller/Zebra/Venetian hardware - Cassette/Fascia/Bottom Rail are main items
+  if (
+    optionKey === 'cassette' ||
+    optionKey === 'fascia' ||
+    optionKey === 'bottom_rail' ||
+    name.includes('cassette') ||
+    name.includes('fascia')
+  ) {
+    return true;
+  }
+  
+  // Hardware category is main item
   if (category === 'hardware') {
     return true;
   }

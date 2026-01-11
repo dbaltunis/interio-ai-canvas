@@ -1787,6 +1787,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                       
                       return {
                         id: opt.optionKey || opt.name || `option-${idx}`,
+                        optionKey: opt.optionKey || '', // CRITICAL: Preserve for hardware grouping
                         name: extracted.name,
                         description: description,
                         total_cost: opt.cost || (quantity * unitPrice),
@@ -1875,6 +1876,7 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                     
                     return {
                       id: opt.optionKey || `option-${idx}`,
+                      optionKey: opt.optionKey || '', // CRITICAL: Preserve for hardware grouping
                       name: displayName,
                       description: displayDescription,
                       total_cost: optionTotalCost,
