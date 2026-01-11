@@ -30,7 +30,10 @@ export const useTreatmentOptionRules = (templateId?: string) => {
         .from('option_rules')
         .select('*')
         .eq('template_id', templateId)
+        .eq('active', true)
         .order('created_at', { ascending: true });
+      
+      console.log('[OptionRules] Fetched rules for template:', templateId, 'Count:', data?.length, 'Rules:', data);
       
       if (error) throw error;
       return (data || []) as unknown as OptionRule[];
