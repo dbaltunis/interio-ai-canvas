@@ -1092,70 +1092,15 @@ export const CostCalculationSummary = ({
 
         {/* Options with Hardware Grouping for Client-Friendly Display */}
         {selectedOptions && selectedOptions.length > 0 && (() => {
-          // Process options to get display prices
+          // ✅ CRITICAL FIX: Do NOT recalculate option prices - use pre-calculated values ONLY
+          // Previous bug: recalculating prices here caused double-calculation (50 × 2 = 150 instead of 100)
           const processedOptions = selectedOptions.map((option) => {
             const optionAny = option as any;
-            const basePrice = option.price || 0;
             
-            const hasPreCalculatedPrice = optionAny.calculatedPrice != null && optionAny.calculatedPrice !== basePrice;
-            
-            let displayPrice = hasPreCalculatedPrice ? optionAny.calculatedPrice : basePrice;
-            let pricingDetails = hasPreCalculatedPrice ? (optionAny.pricingDetails || '') : '';
-            
-            if (!hasPreCalculatedPrice && basePrice > 0) {
-              const rawWidth = safeParseFloat(measurements?.rail_width, 0) || safeParseFloat(measurements?.width, 0);
-              const rawHeight = safeParseFloat(measurements?.drop, 0) || safeParseFloat(measurements?.height, 0);
-              const measurementUnit = measurements?.unit?.toLowerCase() || 'mm';
-              
-              let widthCm: number, heightCm: number;
-              if (measurementUnit === 'cm') {
-                widthCm = rawWidth;
-                heightCm = rawHeight;
-              } else if (measurementUnit === 'm') {
-                widthCm = rawWidth * 100;
-                heightCm = rawHeight * 100;
-              } else {
-                widthCm = rawWidth > 10000 ? rawWidth / 10 : rawWidth;
-                heightCm = rawHeight > 10000 ? rawHeight / 10 : rawHeight;
-              }
-              
-              const fabricLinearMeters = engineResult?.linear_meters 
-                ?? fabricDisplayData?.linearMeters 
-                ?? fabricCalculation?.linearMeters 
-                ?? (widthCm / 100);
-              
-              const optionNameLower = (option.name || '').toLowerCase();
-              const optionKeyLower = (option.optionKey || '').toLowerCase();
-              const isHardwareOpt = optionNameLower.includes('hardware') || 
-                                optionNameLower.includes('track') || 
-                                optionNameLower.includes('pole') || 
-                                optionNameLower.includes('rod') ||
-                                optionNameLower.includes('rail') ||
-                                optionKeyLower.includes('hardware') ||
-                                optionKeyLower.includes('track') ||
-                                optionKeyLower.includes('pole');
-              
-              const metersForCalculation = isHardwareOpt ? (widthCm / 100) : fabricLinearMeters;
-              const fixedLengthMatch = optionNameLower.match(/(\d+\.?\d*)\s*m\b/);
-              const hasFixedLength = isHardwareOpt && fixedLengthMatch;
-              
-              if (option.pricingMethod === 'per-meter') {
-                if (hasFixedLength) {
-                  displayPrice = basePrice;
-                  pricingDetails = `${formatPrice(basePrice)} per unit`;
-                } else {
-                  displayPrice = basePrice * metersForCalculation;
-                  pricingDetails = `${formatPricePerFabricUnit(basePrice)} × ${formatFabricLength(metersForCalculation)}`;
-                }
-              } else if (option.pricingMethod === 'per-sqm') {
-                const sqm = (widthCm * heightCm) / 10000;
-                displayPrice = basePrice * sqm;
-                pricingDetails = `${formatPrice(basePrice)}/sqm × ${sqm.toFixed(2)}sqm`;
-              } else if (option.pricingMethod === 'pricing-grid' && option.pricingGridData) {
-                displayPrice = getPriceFromGrid(option.pricingGridData, widthCm, heightCm);
-                pricingDetails = `Grid lookup`;
-              }
-            }
+            // ✅ ALWAYS use calculatedPrice if it exists - it was calculated correctly upstream
+            // Only fall back to basePrice for legacy data or display-only options
+            const displayPrice = optionAny.calculatedPrice ?? option.price ?? 0;
+            const pricingDetails = optionAny.pricingDetails || '';
             
             return {
               ...option,
