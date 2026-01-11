@@ -71,6 +71,15 @@ export const useUserRole = () => {
 
       // Check if user is System Owner based on role
       const isSystemOwner = role === 'System Owner';
+      
+      // Check if user is a Dealer (external reseller with restricted access)
+      const isDealer = role === 'Dealer';
+      
+      // Dealers should NEVER see costs or margins
+      if (isDealer) {
+        canViewVendorCosts = false;
+        canViewMarkup = false;
+      }
 
       return {
         role,
@@ -78,7 +87,8 @@ export const useUserRole = () => {
         isSystemOwner, // Check role directly
         isAdmin: isAdminData || false, // Use secure function result
         isManager: isManagerOrAdmin || isOwner,
-        canManageMarkup: isAdminData || false, // Use secure function result
+        isDealer, // Dealer flag for restricted access
+        canManageMarkup: isDealer ? false : (isAdminData || false), // Dealers can never manage markup
         canViewMarkup,
         canViewVendorCosts,
         parentAccountId: profile?.parent_account_id
