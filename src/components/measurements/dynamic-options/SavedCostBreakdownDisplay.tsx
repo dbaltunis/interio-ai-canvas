@@ -4,13 +4,15 @@
  * This component ONLY displays pre-calculated values from cost_breakdown.
  * It performs ZERO calculations - all values come from the database.
  * 
- * This eliminates the recalculation anti-pattern where display components
- * would recalculate costs with different unit assumptions, causing mismatches.
+ * COST VISIBILITY: Respects canViewCosts and canViewMarkup permissions.
+ * Dealers and restricted users only see the quote price (selling price).
  */
 
-import { Calculator, Settings, Info } from "lucide-react";
+import { Calculator, Settings, Info, TrendingUp } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
+import { applyMarkup } from "@/utils/pricing/markupResolver";
+import type { MarkupSettings } from "@/hooks/useMarkupSettings";
 
 // Simple SVG icons (same as CostCalculationSummary)
 const FabricSwatchIcon = ({ className }: { className?: string }) => (
@@ -50,6 +52,12 @@ interface SavedCostBreakdownDisplayProps {
   templateName?: string;
   treatmentCategory?: string;
   selectedColor?: string;
+  /** Permission flag - if false, hide individual costs, show only quote price */
+  canViewCosts?: boolean;
+  /** Permission flag - if false, hide markup percentages */
+  canViewMarkup?: boolean;
+  /** Markup settings for calculating quote price */
+  markupSettings?: MarkupSettings | null;
 }
 
 export const SavedCostBreakdownDisplay = ({
@@ -57,7 +65,10 @@ export const SavedCostBreakdownDisplay = ({
   totalCost,
   templateName,
   treatmentCategory,
-  selectedColor
+  selectedColor,
+  canViewCosts = true, // Default to true for backward compatibility
+  canViewMarkup = true,
+  markupSettings
 }: SavedCostBreakdownDisplayProps) => {
   const { units } = useMeasurementUnits();
   
@@ -65,6 +76,10 @@ export const SavedCostBreakdownDisplay = ({
     const symbol = getCurrencySymbol(units.currency);
     return `${symbol}${price.toFixed(2)}`;
   };
+
+  // Calculate quote price with markup
+  const markupPercentage = markupSettings?.default_markup_percentage || 0;
+  const quotePrice = markupPercentage > 0 ? applyMarkup(totalCost, markupPercentage) : totalCost;
 
   // Group breakdown by category
   const fabricItem = costBreakdown.find(item => item.category === 'fabric');
@@ -77,6 +92,117 @@ export const SavedCostBreakdownDisplay = ({
   // Calculate options total from saved breakdown
   const optionsTotal = optionItems.reduce((sum, item) => sum + (item.total_cost || 0), 0);
 
+  // =========================================================
+  // RESTRICTED VIEW: Dealers and users without cost visibility
+  // Show only the quote price with item names (no prices)
+  // =========================================================
+  if (!canViewCosts) {
+    return (
+      <div className="bg-card border border-border rounded-lg p-3 space-y-3">
+        <div className="flex items-center gap-2 pb-2 border-b border-border">
+          <Calculator className="h-4 w-4 text-primary" />
+          <h3 className="text-base font-semibold text-card-foreground">Quote Summary</h3>
+        </div>
+
+        {/* Show included items without prices */}
+        <div className="grid gap-2 text-sm">
+          {fabricItem && (
+            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-card-foreground font-medium">{fabricItem.name}</span>
+                  {selectedColor && (
+                    <div className="flex items-center gap-1.5">
+                      <div 
+                        className="w-4 h-4 rounded-full border border-border shadow-sm" 
+                        style={{ backgroundColor: selectedColor.startsWith('#') ? selectedColor : selectedColor.toLowerCase() }}
+                      />
+                      <span className="text-xs text-muted-foreground capitalize">{selectedColor}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <span className="text-sm text-muted-foreground">Included</span>
+            </div>
+          )}
+
+          {liningItem && liningItem.total_cost > 0 && (
+            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+              <div className="flex items-center gap-2">
+                <FabricSwatchIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-card-foreground font-medium">{liningItem.name}</span>
+              </div>
+              <span className="text-sm text-muted-foreground">Included</span>
+            </div>
+          )}
+
+          {manufacturingItem && manufacturingItem.total_cost > 0 && (
+            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+              <div className="flex items-center gap-2">
+                <AssemblyIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="text-card-foreground font-medium">Manufacturing</span>
+              </div>
+              <span className="text-sm text-muted-foreground">Included</span>
+            </div>
+          )}
+
+          {headingItem && headingItem.total_cost > 0 && (
+            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+              <div className="flex items-center gap-2">
+                <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="text-card-foreground font-medium">{headingItem.name}</span>
+              </div>
+              <span className="text-sm text-muted-foreground">Included</span>
+            </div>
+          )}
+
+          {hardwareItem && hardwareItem.total_cost > 0 && (
+            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+              <div className="flex items-center gap-2">
+                <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="text-card-foreground font-medium">{hardwareItem.name}</span>
+              </div>
+              <span className="text-sm text-muted-foreground">Included</span>
+            </div>
+          )}
+
+          {optionItems.length > 0 && (
+            <div className="py-1.5 border-b border-border/50">
+              <div className="flex items-center gap-2 mb-2">
+                <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="text-card-foreground font-medium">Additional Options</span>
+              </div>
+              <div className="pl-6 space-y-1">
+                {optionItems.map((option, index) => (
+                  <div key={index} className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">• {option.name}</span>
+                    <span className="text-muted-foreground">Included</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Quote Price - Only show selling price for dealers */}
+        <div className="border-t-2 border-primary/20 pt-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <TrendingUp className="h-4 w-4 text-emerald-600" />
+              <span className="text-lg font-bold text-emerald-600">Quote Price</span>
+            </div>
+            <span className="text-xl font-bold text-emerald-600">{formatPrice(quotePrice)}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================
+  // FULL VIEW: Owners, Admins, and authorized users
+  // Show full cost breakdown with individual prices
+  // =========================================================
   return (
     <div className="bg-card border border-border rounded-lg p-3 space-y-3">
       <div className="flex items-center gap-2 pb-2 border-b border-border">
@@ -203,12 +329,28 @@ export const SavedCostBreakdownDisplay = ({
         )}
       </div>
 
-      {/* Total */}
+      {/* Cost Total */}
       <div className="border-t-2 border-primary/20 pt-2.5">
         <div className="flex items-center justify-between">
-          <span className="text-lg font-bold text-card-foreground">Total</span>
+          <span className="text-lg font-bold text-card-foreground">Cost Total</span>
           <span className="text-xl font-bold text-primary">{formatPrice(totalCost)}</span>
         </div>
+        
+        {/* Quote Price with markup - only show markup % if authorized */}
+        {markupPercentage > 0 && (
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+            <div className="flex items-center gap-1.5">
+              <TrendingUp className="h-4 w-4 text-emerald-600" />
+              <span className="font-semibold text-emerald-600">Quote Price</span>
+              {canViewMarkup && (
+                <span className="text-xs text-muted-foreground">({markupPercentage}% markup)</span>
+              )}
+            </div>
+            <span className="text-xl font-bold text-emerald-600">
+              {formatPrice(quotePrice)}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Details */}

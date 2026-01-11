@@ -20,6 +20,7 @@ import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { SavedCostBreakdownDisplay } from "./SavedCostBreakdownDisplay";
 import { useMarkupSettings } from "@/hooks/useMarkupSettings";
 import { applyMarkup, resolveMarkup } from "@/utils/pricing/markupResolver";
+import { useUserRole } from "@/hooks/useUserRole";
 
 // Simple SVG icons
 const FabricSwatchIcon = ({ className }: { className?: string }) => (
@@ -205,6 +206,11 @@ export const CostCalculationSummary = ({
   const { units } = useMeasurementUnits();
   const { data: headingOptionsFromSettings = [] } = useHeadingOptions();
   const { data: markupSettings } = useMarkupSettings();
+  const { data: roleData } = useUserRole();
+  
+  // ✅ COST VISIBILITY CONTROLS: Dealers and restricted users should only see quote prices
+  const canViewCosts = roleData?.canViewVendorCosts ?? false;
+  const canViewMarkup = roleData?.canViewMarkup ?? false;
   
   // ✅ CRITICAL: Refs for deferred callback to prevent infinite render loop
   // The blind costs are stored here during render, then reported via useEffect AFTER render
@@ -259,6 +265,9 @@ export const CostCalculationSummary = ({
         templateName={template?.name}
         treatmentCategory={detectTreatmentType(template)}
         selectedColor={measurements?.selected_color}
+        canViewCosts={canViewCosts}
+        canViewMarkup={canViewMarkup}
+        markupSettings={markupSettings}
       />
     );
   }
@@ -455,6 +464,75 @@ export const CostCalculationSummary = ({
         key: blindCostsKey,
       };
 
+    // =========================================================
+    // RESTRICTED VIEW for Blinds: Dealers only see quote price
+    // =========================================================
+    if (!canViewCosts) {
+      const markupPercentage = markupSettings?.default_markup_percentage || 0;
+      const quotePrice = markupPercentage > 0 ? applyMarkup(blindCosts.totalCost, markupPercentage) : blindCosts.totalCost;
+      
+      return (
+        <div className="bg-card border border-border rounded-lg p-3 space-y-3">
+          <div className="flex items-center gap-2 pb-2 border-b border-border">
+            <Calculator className="h-4 w-4 text-primary" />
+            <h3 className="text-base font-semibold text-card-foreground">Quote Summary</h3>
+          </div>
+
+          <div className="grid gap-2 text-sm">
+            {/* Show items without prices */}
+            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+              <div className="flex items-center gap-2">
+                <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="text-card-foreground font-medium">{isBlindCategory(treatmentCategory, template.name) ? 'Material' : 'Fabric'}</span>
+              </div>
+              <span className="text-sm text-muted-foreground">Included</span>
+            </div>
+
+            {blindCosts.manufacturingCost > 0 && (
+              <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+                <div className="flex items-center gap-2">
+                  <AssemblyIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span className="text-card-foreground font-medium">Manufacturing</span>
+                </div>
+                <span className="text-sm text-muted-foreground">Included</span>
+              </div>
+            )}
+
+            {blindCosts.optionsCost > 0 && selectedOptions.length > 0 && (
+              <div className="py-1.5 border-b border-border/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span className="text-card-foreground font-medium">Options</span>
+                </div>
+                <div className="pl-6 space-y-1">
+                  {selectedOptions.filter(opt => opt.price && opt.price > 0).map((option, index) => (
+                    <div key={index} className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">• {option.name}</span>
+                      <span className="text-muted-foreground">Included</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Quote Price only */}
+          <div className="border-t-2 border-primary/20 pt-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <TrendingUp className="h-4 w-4 text-emerald-600" />
+                <span className="text-lg font-bold text-emerald-600">Quote Price</span>
+              </div>
+              <span className="text-xl font-bold text-emerald-600">{formatPrice(quotePrice)}</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // =========================================================
+    // FULL VIEW for Blinds: Owners/Admins see all costs
+    // =========================================================
     return (
       <div className="bg-card border border-border rounded-lg p-3 space-y-3">
         <div className="flex items-center gap-2 pb-2 border-b border-border">
@@ -576,24 +654,34 @@ export const CostCalculationSummary = ({
           )}
         </div>
 
-        {/* Cost Total */}
+        {/* Cost Total - Hidden from dealers and restricted users */}
         <div className="border-t-2 border-primary/20 pt-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-card-foreground">Cost Total</span>
-            <span className="text-xl font-bold text-primary">{formatPrice(blindCosts.totalCost)}</span>
-          </div>
+          {canViewCosts && (
+            <div className="flex items-center justify-between">
+              <span className="text-lg font-bold text-card-foreground">Cost Total</span>
+              <span className="text-xl font-bold text-primary">{formatPrice(blindCosts.totalCost)}</span>
+            </div>
+          )}
           
-          {/* Quote Price - Shows retail price with markup for sales team */}
-          {markupSettings && markupSettings.default_markup_percentage > 0 && (
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+          {/* Quote Price - Always shown, but markup % only visible to authorized users */}
+          {markupSettings && markupSettings.default_markup_percentage > 0 ? (
+            <div className={`flex items-center justify-between ${canViewCosts ? 'mt-2 pt-2 border-t border-border/50' : ''}`}>
               <div className="flex items-center gap-1.5">
                 <TrendingUp className="h-4 w-4 text-emerald-600" />
                 <span className="font-semibold text-emerald-600">Quote Price</span>
-                <span className="text-xs text-muted-foreground">({markupSettings.default_markup_percentage}% markup)</span>
+                {canViewMarkup && (
+                  <span className="text-xs text-muted-foreground">({markupSettings.default_markup_percentage}% markup)</span>
+                )}
               </div>
               <span className="text-xl font-bold text-emerald-600">
                 {formatPrice(applyMarkup(blindCosts.totalCost, markupSettings.default_markup_percentage))}
               </span>
+            </div>
+          ) : !canViewCosts && (
+            // If no markup settings but user can't see costs, show total as quote price
+            <div className="flex items-center justify-between">
+              <span className="text-lg font-bold text-card-foreground">Quote Price</span>
+              <span className="text-xl font-bold text-primary">{formatPrice(blindCosts.totalCost)}</span>
             </div>
           )}
         </div>
@@ -840,6 +928,109 @@ export const CostCalculationSummary = ({
     };
   }
 
+  // =========================================================
+  // RESTRICTED VIEW for Curtains: Dealers only see quote price
+  // =========================================================
+  if (!canViewCosts) {
+    const markupPercentage = markupSettings?.default_markup_percentage || 0;
+    const quotePrice = markupPercentage > 0 ? applyMarkup(totalCost, markupPercentage) : totalCost;
+    
+    return (
+      <div className="bg-card border border-border rounded-lg p-3 space-y-3">
+        <div className="flex items-center gap-2 pb-2 border-b border-border">
+          <Calculator className="h-4 w-4 text-primary" />
+          <h3 className="text-base font-semibold text-card-foreground">Quote Summary</h3>
+        </div>
+
+        <div className="grid gap-2 text-sm">
+          {/* Show items without prices */}
+          {fabricCost > 0 && (
+            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+              <div className="flex items-center gap-2">
+                <FabricSwatchIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="text-card-foreground font-medium">Fabric</span>
+                {measurements?.selected_color && (
+                  <div className="flex items-center gap-1.5">
+                    <div 
+                      className="w-4 h-4 rounded-full border border-border shadow-sm" 
+                      style={{ backgroundColor: measurements.selected_color.startsWith('#') ? measurements.selected_color : measurements.selected_color.toLowerCase() }}
+                    />
+                    <span className="text-xs text-muted-foreground capitalize">{measurements.selected_color}</span>
+                  </div>
+                )}
+              </div>
+              <span className="text-sm text-muted-foreground">Included</span>
+            </div>
+          )}
+
+          {liningCost > 0 && (
+            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+              <div className="flex items-center gap-2">
+                <FabricSwatchIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-card-foreground font-medium">Lining</span>
+              </div>
+              <span className="text-sm text-muted-foreground">Included</span>
+            </div>
+          )}
+
+          {manufacturingCost > 0 && (
+            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+              <div className="flex items-center gap-2">
+                <SewingMachineIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="text-card-foreground font-medium">Manufacturing</span>
+              </div>
+              <span className="text-sm text-muted-foreground">Included</span>
+            </div>
+          )}
+
+          {headingCost > 0 && (
+            <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+              <div className="flex items-center gap-2">
+                <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="text-card-foreground font-medium">Heading</span>
+              </div>
+              <span className="text-sm text-muted-foreground">Included</span>
+            </div>
+          )}
+
+          {optionsCost > 0 && selectedOptions.length > 0 && (
+            <div className="py-1.5 border-b border-border/50">
+              <div className="flex items-center gap-2 mb-2">
+                <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="text-card-foreground font-medium">Options</span>
+              </div>
+              <div className="pl-6 space-y-1">
+                {selectedOptions.filter(opt => {
+                  const optionName = (opt.name || '').toLowerCase();
+                  return !optionName.includes('lining') && (opt.price && opt.price > 0);
+                }).map((option, index) => (
+                  <div key={index} className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">• {option.name}</span>
+                    <span className="text-muted-foreground">Included</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Quote Price only */}
+        <div className="border-t-2 border-primary/20 pt-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <TrendingUp className="h-4 w-4 text-emerald-600" />
+              <span className="text-lg font-bold text-emerald-600">Quote Price</span>
+            </div>
+            <span className="text-xl font-bold text-emerald-600">{formatPrice(quotePrice)}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================
+  // FULL VIEW for Curtains: Owners/Admins see all costs
+  // =========================================================
   return (
     <div className="bg-card border border-border rounded-lg p-3 space-y-3">
       <div className="flex items-center gap-2 pb-2 border-b border-border">
@@ -1150,24 +1341,34 @@ export const CostCalculationSummary = ({
         })}
       </div>
 
-      {/* Cost Total */}
+      {/* Cost Total - Hidden from dealers and restricted users */}
       <div className="border-t-2 border-primary/20 pt-2.5">
-        <div className="flex items-center justify-between">
-          <span className="text-lg font-bold text-card-foreground">Cost Total</span>
-          <span className="text-xl font-bold text-primary">{formatPrice(totalCost)}</span>
-        </div>
+        {canViewCosts && (
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-bold text-card-foreground">Cost Total</span>
+            <span className="text-xl font-bold text-primary">{formatPrice(totalCost)}</span>
+          </div>
+        )}
         
-        {/* Quote Price - Shows retail price with markup for sales team */}
-        {markupSettings && markupSettings.default_markup_percentage > 0 && (
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+        {/* Quote Price - Always shown, but markup % only visible to authorized users */}
+        {markupSettings && markupSettings.default_markup_percentage > 0 ? (
+          <div className={`flex items-center justify-between ${canViewCosts ? 'mt-2 pt-2 border-t border-border/50' : ''}`}>
             <div className="flex items-center gap-1.5">
               <TrendingUp className="h-4 w-4 text-emerald-600" />
               <span className="font-semibold text-emerald-600">Quote Price</span>
-              <span className="text-xs text-muted-foreground">({markupSettings.default_markup_percentage}% markup)</span>
+              {canViewMarkup && (
+                <span className="text-xs text-muted-foreground">({markupSettings.default_markup_percentage}% markup)</span>
+              )}
             </div>
             <span className="text-xl font-bold text-emerald-600">
               {formatPrice(applyMarkup(totalCost, markupSettings.default_markup_percentage))}
             </span>
+          </div>
+        ) : !canViewCosts && (
+          // If no markup settings but user can't see costs, show total as quote price
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-bold text-card-foreground">Quote Price</span>
+            <span className="text-xl font-bold text-primary">{formatPrice(totalCost)}</span>
           </div>
         )}
       </div>
