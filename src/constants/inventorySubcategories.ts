@@ -43,6 +43,14 @@ export const TREATMENT_SUBCATEGORIES: Record<TreatmentCategory, {
     description: 'Roller blind fabrics and materials'
   },
   
+  zebra_blinds: {
+    category: 'both',
+    subcategories: ['zebra_fabric', 'roller_fabric', 'blind_material'],
+    fabricSubcategories: ['zebra_fabric', 'roller_fabric'],
+    materialSubcategories: ['blind_material', 'zebra_fabric'],
+    description: 'Zebra/Day-Night blind fabrics with alternating sheer and opaque bands'
+  },
+  
   blinds: {
     category: 'fabric',
     subcategories: ['roller_fabric', 'roller_blind_fabric', 'roller', 'blind_material'],
