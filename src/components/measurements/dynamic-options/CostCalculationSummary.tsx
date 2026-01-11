@@ -841,6 +841,11 @@ export const CostCalculationSummary = ({
   const markupPercentage = markupSettings?.default_markup_percentage || 0;
   const quotePrice = markupPercentage > 0 ? applyMarkup(totalCost, markupPercentage) : totalCost;
 
+  // ✅ SELLING PRICES: Calculate item selling price (cost + markup) for ALL users
+  const getSellingPrice = (costPrice: number) => {
+    return markupPercentage > 0 ? applyMarkup(costPrice, markupPercentage) : costPrice;
+  };
+
   return (
     <div className="bg-card border border-border rounded-lg p-3 space-y-3">
       <div className="flex items-center gap-2 pb-2 border-b border-border">
@@ -983,8 +988,8 @@ export const CostCalculationSummary = ({
                   )}
                 </div>
               </div>
-              <span className={`font-semibold ${canViewCosts ? 'text-card-foreground' : 'text-muted-foreground text-sm'} ml-2`}>
-                {canViewCosts ? formatPrice(fabricCost) : 'Included'}
+              <span className="font-semibold text-card-foreground ml-2">
+                {formatPrice(getSellingPrice(fabricCost))}
               </span>
             </div>
           </div>
@@ -1016,8 +1021,8 @@ export const CostCalculationSummary = ({
                 </span>
               )}
             </div>
-            <span className={`font-semibold ${canViewCosts ? 'text-card-foreground' : 'text-muted-foreground text-sm'}`}>
-              {canViewCosts ? formatPrice(manufacturingCost) : 'Included'}
+            <span className="font-semibold text-card-foreground">
+              {formatPrice(getSellingPrice(manufacturingCost))}
             </span>
           </div>
         ) : (
@@ -1058,8 +1063,8 @@ export const CostCalculationSummary = ({
         {headingCost > 0 && (
           <div className="flex justify-between py-1.5 border-b border-border/50">
             <span className="text-card-foreground font-medium">Heading</span>
-            <span className={`font-semibold ${canViewCosts ? 'text-card-foreground' : 'text-muted-foreground text-sm'}`}>
-              {canViewCosts ? formatPrice(headingCost) : 'Included'}
+            <span className="font-semibold text-card-foreground">
+              {formatPrice(getSellingPrice(headingCost))}
             </span>
           </div>
         )}
@@ -1149,11 +1154,8 @@ export const CostCalculationSummary = ({
                   </span>
                 )}
               </div>
-              <span className={`font-semibold ${canViewCosts ? 'text-card-foreground' : 'text-muted-foreground text-sm'}`}>
-                {canViewCosts 
-                  ? (displayPrice > 0 ? formatPrice(displayPrice) : <span className="text-muted-foreground text-sm">Included</span>)
-                  : 'Included'
-                }
+              <span className="font-semibold text-card-foreground">
+                {displayPrice > 0 ? formatPrice(getSellingPrice(displayPrice)) : <span className="text-muted-foreground text-sm">Included</span>}
               </span>
             </div>
           );

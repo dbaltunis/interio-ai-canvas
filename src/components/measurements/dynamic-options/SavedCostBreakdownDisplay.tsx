@@ -83,6 +83,11 @@ export const SavedCostBreakdownDisplay = ({
   const markupPercentage = markupSettings?.default_markup_percentage || 0;
   const quotePrice = markupPercentage > 0 ? applyMarkup(totalCost, markupPercentage) : totalCost;
 
+  // ✅ SELLING PRICES: Calculate item selling price (cost + markup)
+  const getSellingPrice = (costPrice: number) => {
+    return markupPercentage > 0 ? applyMarkup(costPrice, markupPercentage) : costPrice;
+  };
+
   // Group breakdown by category
   const fabricItem = costBreakdown.find(item => item.category === 'fabric');
   const manufacturingItem = costBreakdown.find(item => item.category === 'manufacturing');
@@ -124,8 +129,8 @@ export const SavedCostBreakdownDisplay = ({
                 )}
               </div>
             </div>
-            <span className={`font-semibold ${canViewCosts ? 'text-card-foreground' : 'text-muted-foreground text-sm'} ml-2`}>
-              {canViewCosts ? formatPrice(fabricItem.total_cost) : 'Included'}
+            <span className="font-semibold text-card-foreground ml-2">
+              {formatPrice(getSellingPrice(fabricItem.total_cost))}
             </span>
           </div>
         )}
@@ -137,8 +142,8 @@ export const SavedCostBreakdownDisplay = ({
               <FabricSwatchIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <span className="text-card-foreground font-medium">{liningItem.name}</span>
             </div>
-            <span className={`font-semibold ${canViewCosts ? 'text-card-foreground' : 'text-muted-foreground text-sm'} ml-2`}>
-              {canViewCosts ? formatPrice(liningItem.total_cost) : 'Included'}
+            <span className="font-semibold text-card-foreground ml-2">
+              {formatPrice(getSellingPrice(liningItem.total_cost))}
             </span>
           </div>
         )}
@@ -150,8 +155,8 @@ export const SavedCostBreakdownDisplay = ({
               <AssemblyIcon className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="text-card-foreground font-medium">Manufacturing</span>
             </div>
-            <span className={`font-semibold ${canViewCosts ? 'text-card-foreground' : 'text-muted-foreground text-sm'} ml-2`}>
-              {canViewCosts ? formatPrice(manufacturingItem.total_cost) : 'Included'}
+            <span className="font-semibold text-card-foreground ml-2">
+              {formatPrice(getSellingPrice(manufacturingItem.total_cost))}
             </span>
           </div>
         )}
@@ -163,8 +168,8 @@ export const SavedCostBreakdownDisplay = ({
               <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="text-card-foreground font-medium">{headingItem.name}</span>
             </div>
-            <span className={`font-semibold ${canViewCosts ? 'text-card-foreground' : 'text-muted-foreground text-sm'} ml-2`}>
-              {canViewCosts ? formatPrice(headingItem.total_cost) : 'Included'}
+            <span className="font-semibold text-card-foreground ml-2">
+              {formatPrice(getSellingPrice(headingItem.total_cost))}
             </span>
           </div>
         )}
@@ -176,8 +181,8 @@ export const SavedCostBreakdownDisplay = ({
               <Settings className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="text-card-foreground font-medium">{hardwareItem.name}</span>
             </div>
-            <span className={`font-semibold ${canViewCosts ? 'text-card-foreground' : 'text-muted-foreground text-sm'} ml-2`}>
-              {canViewCosts ? formatPrice(hardwareItem.total_cost) : 'Included'}
+            <span className="font-semibold text-card-foreground ml-2">
+              {formatPrice(getSellingPrice(hardwareItem.total_cost))}
             </span>
           </div>
         )}
@@ -193,8 +198,8 @@ export const SavedCostBreakdownDisplay = ({
               {optionItems.map((option, index) => (
                 <div key={index} className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">• {option.name}</span>
-                  <span className={canViewCosts ? 'font-medium text-card-foreground' : 'text-muted-foreground'}>
-                    {canViewCosts ? formatPrice(option.total_cost) : 'Included'}
+                  <span className="font-medium text-card-foreground">
+                    {formatPrice(getSellingPrice(option.total_cost))}
                   </span>
                 </div>
               ))}
