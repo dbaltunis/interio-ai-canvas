@@ -5,7 +5,7 @@ interface DynamicBlindVisualProps {
   windowType: string;
   measurements: Record<string, any>;
   template?: any;
-  blindType: 'roller' | 'venetian' | 'vertical' | 'roman' | 'cellular';
+  blindType: 'roller' | 'venetian' | 'vertical' | 'roman' | 'cellular' | 'zebra';
   mountType?: 'inside' | 'outside';
   chainSide?: 'left' | 'right';
   controlType?: string;
@@ -439,10 +439,87 @@ export const DynamicBlindVisual: React.FC<DynamicBlindVisualProps> = ({
     );
   };
 
+  const renderZebraBlind = () => {
+    const isInsideMount = mountType === 'inside';
+    const blindWidth = isInsideMount ? 'left-16 right-16' : 'left-12 right-12';
+    const blindTop = isInsideMount ? 'top-24' : 'top-20';
+    const bandCount = 12;
+    
+    return (
+      <>
+        {/* Roller Tube/Mechanism */}
+        <div className={`absolute ${blindTop} ${blindWidth} h-4 bg-gradient-to-b from-muted-foreground to-muted rounded-sm shadow-md z-20`}>
+          <div className="absolute -left-2 -top-1 w-3 h-6 bg-foreground/80 rounded-sm"></div>
+          <div className="absolute -right-2 -top-1 w-3 h-6 bg-foreground/80 rounded-sm"></div>
+          
+          {/* Chain/Control - Only show if not motorized */}
+          {showChain && (
+            <>
+              {chainSide === 'right' ? (
+                <div className="absolute -right-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
+                  <div className="absolute -right-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
+                </div>
+              ) : (
+                <div className="absolute -left-1 top-full w-0.5 h-32 bg-muted-foreground/60 z-30">
+                  <div className="absolute -left-1 bottom-0 w-2 h-8 bg-muted-foreground/80 rounded-sm"></div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Zebra Blind - Alternating sheer and opaque bands */}
+        <div className={`absolute ${blindWidth} shadow-lg overflow-hidden`}
+             style={{
+               top: `calc(${blindTop.includes('24') ? '6rem' : '5rem'} + 1rem)`,
+               bottom: '4rem'
+             }}>
+          {/* Alternating horizontal bands */}
+          {Array.from({ length: bandCount }).map((_, i) => {
+            const isSheerBand = i % 2 === 0;
+            return (
+              <div
+                key={i}
+                className="absolute left-0 right-0"
+                style={{ 
+                  height: `${100 / bandCount}%`,
+                  top: `${(i / bandCount) * 100}%`,
+                  backgroundColor: isSheerBand 
+                    ? (selectedColor ? `${blindColor}20` : 'hsl(var(--primary) / 0.1)')
+                    : (selectedColor ? `${blindColor}90` : 'hsl(var(--primary) / 0.55)'),
+                  borderBottom: isSheerBand 
+                    ? `1px solid ${selectedColor ? `${blindColor}40` : 'hsl(var(--primary) / 0.25)'}`
+                    : 'none'
+                }}
+              >
+                {/* Texture for opaque bands */}
+                {!isSheerBand && material?.image_url && (
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center opacity-40"
+                    style={{
+                      backgroundImage: `url(${material.image_url})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
+          
+          {/* Bottom bar/hembar */}
+          <div className="absolute -bottom-1 left-0 right-0 h-2 bg-gradient-to-b from-muted-foreground/60 to-muted-foreground/80 rounded-sm shadow-md z-10"></div>
+        </div>
+      </>
+    );
+  };
+
   const renderBlindVisualization = () => {
     switch (blindType) {
       case 'roller':
         return renderRollerBlind();
+      case 'zebra':
+        return renderZebraBlind();
       case 'venetian':
         return renderVenetianBlind();
       case 'vertical':
