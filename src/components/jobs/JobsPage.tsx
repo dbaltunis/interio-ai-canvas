@@ -164,7 +164,15 @@ const canViewJobsExplicit =
   const { data: dealerProjects = [] } = useDealerOwnProjects();
   
   // Use dealer projects if user is a dealer, otherwise use regular projects
-  const allProjects = isDealer ? dealerProjects : regularProjects;
+  // Wait for dealer check to complete to avoid showing wrong data
+  const allProjects = useMemo(() => {
+    // If still loading dealer status, return empty array to prevent flash of wrong data
+    if (isDealerLoading) return [];
+    // If dealer, use dealer projects
+    if (isDealer === true) return dealerProjects;
+    // Otherwise use regular projects
+    return regularProjects;
+  }, [isDealerLoading, isDealer, dealerProjects, regularProjects]);
   
   const { data: allClients = [] } = useClients(canViewJobsExplicit && !permissionsLoading);
   
