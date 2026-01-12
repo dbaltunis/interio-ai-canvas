@@ -69,10 +69,11 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
   const { data: emails = [], isLoading } = useEmails();
   const { toast } = useToast();
   const { canViewEmailKPIs, isPermissionLoaded } = useCanViewEmailKPIs();
-  const { data: userRoleData } = useUserRole();
+  const { data: userRoleData, isLoading: userRoleLoading } = useUserRole();
   
   // Owner/System Owner/Admin always has access - bypass permission loading
-  const hasOwnerAccess = userRoleData?.isOwner || userRoleData?.isSystemOwner || userRoleData?.isAdmin;
+  // Also check role string directly as fallback (isAdmin uses RPC which may be slow)
+  const hasOwnerAccess = userRoleData?.isOwner || userRoleData?.isSystemOwner || userRoleData?.isAdmin || userRoleData?.role === 'Admin';
   const hasAccess = hasOwnerAccess || (isPermissionLoaded && canViewEmailKPIs);
   
   // Filter emails for this project
