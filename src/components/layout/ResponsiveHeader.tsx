@@ -240,7 +240,8 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                 const isEmailsTab = item.id === 'emails';
                 const isEmailsDisabled = isEmailsTab && explicitPermissions !== undefined && !permissionsLoading && !canViewEmails;
                 // Also check if emails are configured (SendGrid) for emails tab
-                const isEmailsNotConfigured = isEmailsTab && hasEmailsConfigured === false;
+                // Only disable if explicitly false (not undefined/loading)
+                const isEmailsNotConfigured = isEmailsTab && hasEmailsConfigured === false && hasEmailsConfigured !== undefined;
                 const shouldDisableEmails = isEmailsDisabled || isEmailsNotConfigured;
                 
                 const handleClick = () => {
