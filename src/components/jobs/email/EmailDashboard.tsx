@@ -16,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { EmailDashboardSkeleton } from "./skeleton/EmailDashboardSkeleton";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCanViewEmailKPIs } from "@/hooks/useCanViewEmailKPIs";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +42,10 @@ export const EmailDashboard = ({
   const { user } = useAuth();
   const { toast } = useToast();
   const { canViewEmailKPIs, isPermissionLoaded } = useCanViewEmailKPIs();
+  const { data: userRoleData } = useUserRole();
+  
+  // Owner/System Owner always has access - bypass permission loading
+  const hasOwnerAccess = userRoleData?.isOwner || userRoleData?.isSystemOwner;
   const { data: messages = [], isLoading, refetch } = useUnifiedCommunications();
   
   // Set up real-time subscriptions for email updates
@@ -130,8 +135,9 @@ export const EmailDashboard = ({
   };
 
   const openClientThread = (clientId: string, filter: 'all' | 'email' | 'whatsapp' = 'all') => {
-    // Check permissions before opening thread
-    if (!isPermissionLoaded || !canViewEmailKPIs) {
+    // Owner always has access - don't wait for permission loading
+    const hasAccess = hasOwnerAccess || (isPermissionLoaded && canViewEmailKPIs);
+    if (!hasAccess) {
       toast({
         title: "Permission Denied",
         description: "You don't have permission to view email performance metrics.",
@@ -145,8 +151,9 @@ export const EmailDashboard = ({
   };
 
   const handleMessageClick = (message: UnifiedMessage, clientId: string) => {
-    // Check permissions before viewing message details
-    if (!isPermissionLoaded || !canViewEmailKPIs) {
+    // Owner always has access - don't wait for permission loading
+    const hasAccess = hasOwnerAccess || (isPermissionLoaded && canViewEmailKPIs);
+    if (!hasAccess) {
       toast({
         title: "Permission Denied",
         description: "You don't have permission to view email performance metrics.",
@@ -317,10 +324,10 @@ export const EmailDashboard = ({
                             <button
                               key={msg.id}
                               onClick={() => handleMessageClick(msg, group.clientId)}
-                              disabled={!isPermissionLoaded || !canViewEmailKPIs}
+                              disabled={!(hasOwnerAccess || (isPermissionLoaded && canViewEmailKPIs))}
                               className={cn(
                                 "w-full flex items-center gap-3 px-4 py-2.5 pl-14 hover:bg-muted/30 transition-colors text-left",
-                                (!isPermissionLoaded || !canViewEmailKPIs) && "opacity-50 cursor-not-allowed"
+                                !(hasOwnerAccess || (isPermissionLoaded && canViewEmailKPIs)) && "opacity-50 cursor-not-allowed"
                               )}
                             >
                               {/* Channel Icon */}
@@ -367,10 +374,10 @@ export const EmailDashboard = ({
                           {group.messages.length > 5 && (
                             <button
                               onClick={() => openClientThread(group.clientId)}
-                              disabled={!isPermissionLoaded || !canViewEmailKPIs}
+                              disabled={!(hasOwnerAccess || (isPermissionLoaded && canViewEmailKPIs))}
                               className={cn(
                                 "w-full px-4 py-2 pl-14 text-sm text-primary hover:bg-muted/30 transition-colors text-left",
-                                (!isPermissionLoaded || !canViewEmailKPIs) && "opacity-50 cursor-not-allowed"
+                                !(hasOwnerAccess || (isPermissionLoaded && canViewEmailKPIs)) && "opacity-50 cursor-not-allowed"
                               )}
                             >
                               View all {group.messages.length} messages →

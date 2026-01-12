@@ -38,6 +38,7 @@ import { matchesUnifiedSupplier } from "@/hooks/useUnifiedSuppliers";
 import { useVendors } from "@/hooks/useVendors";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { InventoryMobileCard } from "./InventoryMobileCard";
+import { useIsDealer } from "@/hooks/useIsDealer";
 
 interface FabricInventoryViewProps {
   searchQuery: string;
@@ -69,6 +70,7 @@ const ITEMS_PER_PAGE = 24;
 export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: externalVendor, selectedCollection, selectedStorageLocation, canManageInventory = false }: FabricInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { data: vendors = [] } = useVendors();
+  const { data: isDealer } = useIsDealer();
   const { toast } = useToast();
   const { formatCurrency: formatPrice } = useFormattedCurrency();
   const { units } = useMeasurementUnits();
@@ -242,7 +244,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
               </Button>
             )}
           </div>
-          {canManageInventory && (
+          {canManageInventory && !isDealer && (
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
