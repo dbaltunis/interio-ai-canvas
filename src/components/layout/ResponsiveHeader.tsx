@@ -151,7 +151,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
     refetchOnMount: 'always',
   });
 
-  // Check if user has SendGrid configured - emails menu should only show if they have it set up
+  // Check if user has email provider configured (SendGrid OR Resend)
   const { data: hasEmailsConfigured } = useQuery({
     queryKey: ['has-emails-configured'],
     queryFn: async () => {
@@ -163,18 +163,21 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
         user_id_param: user.id 
       });
 
-      const { data: integration } = await supabase
+      // Check for SendGrid OR Resend integration
+      const { data: integrations } = await supabase
         .from('integration_settings')
-        .select('active, configuration')
+        .select('active, configuration, integration_type')
         .eq('account_owner_id', accountOwnerId || user.id)
-        .eq('integration_type', 'sendgrid')
-        .eq('active', true)
-        .maybeSingle();
+        .in('integration_type', ['sendgrid', 'resend'])
+        .eq('active', true);
 
-      const config = integration?.configuration as { api_key?: string } | null;
-      const hasValidApiKey = config?.api_key && config.api_key.trim().length > 0;
+      // Check if any email provider has a valid API key
+      const hasValidProvider = integrations?.some(integration => {
+        const config = integration.configuration as { api_key?: string } | null;
+        return config?.api_key && config.api_key.trim().length > 0;
+      });
       
-      return !!integration && !!hasValidApiKey;
+      return !!hasValidProvider;
     },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
@@ -238,10 +241,11 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
                 
                 // Check if emails tab should be disabled
                 const isEmailsTab = item.id === 'emails';
-                const isEmailsDisabled = isEmailsTab && explicitPermissions !== undefined && !permissionsLoading && !canViewEmails;
-                // Also check if emails are configured (SendGrid) for emails tab
-                // Only disable if explicitly false (not undefined/loading)
-                const isEmailsNotConfigured = isEmailsTab && hasEmailsConfigured === false && hasEmailsConfigured !== undefined;
+                // Owners/Admins always have access to emails tab (they can configure providers from there)
+                const isOwnerOrAdmin = userRoleData?.isOwner || userRoleData?.isSystemOwner || userRoleData?.isAdmin;
+                const isEmailsDisabled = isEmailsTab && !isOwnerOrAdmin && explicitPermissions !== undefined && !permissionsLoading && !canViewEmails;
+                // Only check email configuration for non-owners/admins
+                const isEmailsNotConfigured = isEmailsTab && !isOwnerOrAdmin && hasEmailsConfigured === false && hasEmailsConfigured !== undefined;
                 const shouldDisableEmails = isEmailsDisabled || isEmailsNotConfigured;
                 
                 const handleClick = () => {
