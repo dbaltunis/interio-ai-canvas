@@ -71,8 +71,8 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
   const { canViewEmailKPIs, isPermissionLoaded } = useCanViewEmailKPIs();
   const { data: userRoleData } = useUserRole();
   
-  // Owner/System Owner always has access - bypass permission loading
-  const hasOwnerAccess = userRoleData?.isOwner || userRoleData?.isSystemOwner;
+  // Owner/System Owner/Admin always has access - bypass permission loading
+  const hasOwnerAccess = userRoleData?.isOwner || userRoleData?.isSystemOwner || userRoleData?.isAdmin;
   const hasAccess = hasOwnerAccess || (isPermissionLoaded && canViewEmailKPIs);
   
   // Filter emails for this project
