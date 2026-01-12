@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Plus, User, Building, Edit } from "lucide-react";
-import { useClients, useCreateClient, useUpdateClient } from "@/hooks/useClients";
+import { useClients, useCreateClient, useUpdateClient, useDealerOwnClients } from "@/hooks/useClients";
+import { useIsDealer } from "@/hooks/useIsDealer";
 
 interface ClientSearchStepProps {
   formData: any;
@@ -48,7 +49,15 @@ export const ClientSearchStep = ({ formData, updateFormData }: ClientSearchStepP
     business_phone: ""
   });
 
-  const { data: clients, isLoading } = useClients();
+  // Dealer-specific client filtering
+  const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
+  const { data: regularClients, isLoading: regularLoading } = useClients();
+  const { data: dealerClients, isLoading: dealerLoading } = useDealerOwnClients();
+  
+  // Use dealer clients if user is a dealer, otherwise use regular clients
+  const clients = isDealer ? dealerClients : regularClients;
+  const isLoading = isDealerLoading || (isDealer ? dealerLoading : regularLoading);
+  
   const createClient = useCreateClient();
   const updateClient = useUpdateClient();
 

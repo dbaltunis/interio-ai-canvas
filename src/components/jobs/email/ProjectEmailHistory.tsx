@@ -44,6 +44,7 @@ import { EmailDetailDialog } from "../email-components/EmailDetailDialog";
 import type { Email } from "@/hooks/useEmails";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCanViewEmailKPIs } from "@/hooks/useCanViewEmailKPIs";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
 
 interface AttachmentData {
@@ -68,6 +69,11 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
   const { data: emails = [], isLoading } = useEmails();
   const { toast } = useToast();
   const { canViewEmailKPIs, isPermissionLoaded } = useCanViewEmailKPIs();
+  const { data: userRoleData } = useUserRole();
+  
+  // Owner/System Owner always has access - bypass permission loading
+  const hasOwnerAccess = userRoleData?.isOwner || userRoleData?.isSystemOwner;
+  const hasAccess = hasOwnerAccess || (isPermissionLoaded && canViewEmailKPIs);
   
   // Filter emails for this project
   const projectEmails = emails.filter(email => {
@@ -125,7 +131,7 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
   }, [currentPage]);
 
   const handleEmailClick = (email: Email) => {
-    if (!isPermissionLoaded || !canViewEmailKPIs) {
+    if (!hasAccess) {
       toast({
         title: "Permission Denied",
         description: "You don't have permission to view email performance metrics.",
@@ -240,7 +246,7 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
               key={email.id}
               className={`flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors ${
                 index === focusedIndex ? 'bg-muted/50 ring-2 ring-primary/20' : ''
-              } ${!isPermissionLoaded || !canViewEmailKPIs ? "cursor-default" : "cursor-pointer"}`}
+              } ${!hasAccess ? "cursor-default" : "cursor-pointer"}`}
               onClick={() => handleEmailClick(email)}
               onMouseEnter={() => setFocusedIndex(index)}
             >
@@ -292,7 +298,7 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
                   <DropdownMenuItem 
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (!isPermissionLoaded || !canViewEmailKPIs) {
+                      if (!hasAccess) {
                         toast({
                           title: "Permission Denied",
                           description: "You don't have permission to view email performance metrics.",
@@ -302,8 +308,8 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
                       }
                       handleEmailClick(email);
                     }}
-                    disabled={!isPermissionLoaded || !canViewEmailKPIs}
-                    className={!isPermissionLoaded || !canViewEmailKPIs ? "opacity-50 cursor-not-allowed" : ""}
+                    disabled={!hasAccess}
+                    className={!hasAccess ? "opacity-50 cursor-not-allowed" : ""}
                   >
                     <Eye className="h-4 w-4 mr-2" />
                     View Details

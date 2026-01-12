@@ -32,6 +32,7 @@ import { matchesUnifiedSupplier } from "@/hooks/useUnifiedSuppliers";
 import { useVendors } from "@/hooks/useVendors";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { InventoryMobileCard } from "./InventoryMobileCard";
+import { useIsDealer } from "@/hooks/useIsDealer";
 
 interface HardwareInventoryViewProps {
   searchQuery: string;
@@ -56,6 +57,7 @@ const ITEMS_PER_PAGE = 24;
 export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: externalVendor, selectedCollection, selectedStorageLocation, canManageInventory = false }: HardwareInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { data: vendors = [] } = useVendors();
+  const { data: isDealer } = useIsDealer();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [activeCategory, setActiveCategory] = useState("all");
@@ -180,7 +182,7 @@ export const HardwareInventoryView = ({ searchQuery, viewMode, selectedVendor: e
             category="hardware"
           />
         </div>
-        {canManageInventory && (
+        {canManageInventory && !isDealer && (
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline">

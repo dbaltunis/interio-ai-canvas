@@ -30,6 +30,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { InventoryMobileCard } from "./InventoryMobileCard";
 import { matchesUnifiedSupplier } from "@/hooks/useUnifiedSuppliers";
 import { useVendors } from "@/hooks/useVendors";
+import { useIsDealer } from "@/hooks/useIsDealer";
 
 interface WallcoveringInventoryViewProps {
   searchQuery: string;
@@ -52,6 +53,7 @@ const ITEMS_PER_PAGE = 24;
 export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendor, selectedCollection, selectedStorageLocation, canManageInventory = false }: WallcoveringInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { data: vendors = [] } = useVendors();
+  const { data: isDealer } = useIsDealer();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [activeCategory, setActiveCategory] = useState("all");
@@ -161,7 +163,7 @@ export const WallcoveringInventoryView = ({ searchQuery, viewMode, selectedVendo
         <p className="text-sm text-muted-foreground">
           {filteredItems.length} wallcovering{filteredItems.length !== 1 ? 's' : ''} found
         </p>
-        {canManageInventory && (
+        {canManageInventory && !isDealer && (
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline">

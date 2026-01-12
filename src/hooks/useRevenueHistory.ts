@@ -20,7 +20,11 @@ const REVENUE_STATUS_NAMES = [
   'installed',
   'closed',
   'delivered',
-  'paid'
+  'paid',
+  // Universal status names that count as revenue
+  'order',           // Matches "ORDER"
+  'invoice',         // Matches "INVOICE"  
+  'online store sale' // Matches "Online Store Sale"
 ];
 
 export const useRevenueHistory = () => {

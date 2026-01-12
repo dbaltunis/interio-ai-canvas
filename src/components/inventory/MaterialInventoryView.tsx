@@ -33,6 +33,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useIsDealer } from "@/hooks/useIsDealer";
 
 interface MaterialInventoryViewProps {
   searchQuery: string;
@@ -64,6 +65,7 @@ const ITEMS_PER_PAGE = 24;
 export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: externalVendor, selectedCollection, selectedStorageLocation, canManageInventory = false }: MaterialInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { data: vendors = [] } = useVendors();
+  const { data: isDealer } = useIsDealer();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const [activeCategory, setActiveCategory] = useState("all");
@@ -222,7 +224,7 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
               </Button>
             )}
           </div>
-          {canManageInventory && (
+          {canManageInventory && !isDealer && (
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
