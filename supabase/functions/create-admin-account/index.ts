@@ -198,16 +198,15 @@ serve(async (req) => {
       'view_analytics', 'view_profile',
       'view_own_jobs', 'view_assigned_jobs', 'edit_assigned_jobs',
       'view_workroom', 'view_materials',
-      'view_primary_kpis', 'view_email_kpis', 'view_revenue_kpis',
+      'view_email_kpis',
       'view_window_treatments', 'manage_window_treatments', 'manage_users',
-      'view_cost_prices', 'view_selling_prices', 'view_profit_margins',
       'view_projects', 'create_projects', 'edit_projects', 'delete_projects',
       'view_templates', 'manage_templates',
       'view_purchasing', 'manage_purchasing',
       'view_billing', 'view_documents',
       'export_data', 'export_clients', 'export_jobs', 'export_inventory',
       'import_clients', 'import_jobs', 'import_inventory',
-      'manage_integrations', 'manage_pricing',
+      'manage_integrations',
       'view_shopify', 'manage_shopify',
       'create_appointments', 'delete_appointments'
     ];

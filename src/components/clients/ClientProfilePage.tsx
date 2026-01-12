@@ -46,7 +46,7 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
   const { user } = useAuth();
   const { data: clientFiles } = useClientFiles(clientId, user?.id || '');
   const { formatCurrency } = useFormattedCurrency();
-  const { canEditClient, isLoading: editPermissionLoading } = useCanEditClient(client);
+  const { canEditClient, canEditAllClients, isLoading: editPermissionLoading } = useCanEditClient(client);
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedClient, setEditedClient] = useState<any>(null);
@@ -433,6 +433,10 @@ export const ClientProfilePage = ({ clientId, onBack, onTabChange }: ClientProfi
         </div>
       </div>
 
+      {/* Client Projects Section - Only show if user has edit_all_clients permission */}
+      {canEditClient && (
+        <ClientProjectsList clientId={clientId} onTabChange={onTabChange} />
+      )}
       {/* Secondary Content Tabs - Notes, Activity, Measurements only */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="h-8 w-auto bg-muted/30 p-0.5">

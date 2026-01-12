@@ -10,6 +10,10 @@ import { X, Plus, Send, Paperclip, Users } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
 import { useSendEmail } from "@/hooks/useSendEmail";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useCanSendEmails } from "@/hooks/useCanSendEmails";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface ProjectEmailComposerProps {
   projectId: string;
@@ -35,6 +39,8 @@ export const ProjectEmailComposer = ({
   const { data: clients = [] } = useClients();
   const sendEmailMutation = useSendEmail();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { canSendEmails, isPermissionLoaded } = useCanSendEmails();
 
   const emailTemplates = [
     {
@@ -96,6 +102,15 @@ export const ProjectEmailComposer = ({
   };
 
   const handleSendEmail = async () => {
+    if (!isPermissionLoaded || !canSendEmails) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to send emails.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (emailData.recipients.length === 0) {
       toast({
         title: "Error",
@@ -159,6 +174,15 @@ export const ProjectEmailComposer = ({
       </CardHeader>
 
       <CardContent className="space-y-6">
+        {isPermissionLoaded && !canSendEmails && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              You don't have permission to send emails.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {/* Email Template Selection */}
         <div className="space-y-2">
           <Label>Email Template</Label>
@@ -298,7 +322,7 @@ export const ProjectEmailComposer = ({
           )}
           <Button
             onClick={handleSendEmail}
-            disabled={sendEmailMutation.isPending}
+            disabled={sendEmailMutation.isPending || !isPermissionLoaded || !canSendEmails}
             className="flex items-center gap-2"
           >
             <Send className="h-4 w-4" />

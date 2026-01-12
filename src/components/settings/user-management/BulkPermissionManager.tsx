@@ -26,7 +26,7 @@ const PERMISSION_GROUPS = {
   },
   admin: {
     label: "Administration",
-    permissions: ['delete_jobs', 'delete_clients', 'manage_settings', 'manage_users']
+    permissions: ['delete_jobs', 'delete_clients', 'manage_settings', 'manage_team']
   }
 };
 

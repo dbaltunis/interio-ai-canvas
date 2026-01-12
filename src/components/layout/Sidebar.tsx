@@ -16,10 +16,14 @@ import { BrandHeader } from "./BrandHeader";
 import { UserProfile } from "./UserProfile";
 import { Badge } from "@/components/ui/badge";
 import { useHasPermission, useHasAnyPermission } from "@/hooks/usePermissions";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import { useIsDealer } from "@/hooks/useIsDealer";
 
 const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
   // Check if current user is a Dealer
   const { data: isDealer } = useIsDealer();
@@ -159,15 +163,32 @@ const Sidebar = () => {
         {navigationItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
+          const isSettings = item.path === '/settings';
+          const isSettingsDisabled = isSettings && canViewSettings === false;
+          
+          const handleClick = (e: React.MouseEvent) => {
+            if (isSettingsDisabled) {
+              e.preventDefault();
+              toast({
+                title: "Permission Denied",
+                description: "You don't have permission to view settings.",
+                variant: "destructive",
+              });
+              return;
+            }
+          };
           
           return (
             <NavLink
               key={item.path}
               to={item.path}
+              onClick={handleClick}
               className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover-lift interactive-bounce ${
                 isActive
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              } ${
+                isSettingsDisabled ? "opacity-50 cursor-not-allowed pointer-events-none" : ""
               }`}
             >
               <Icon className="h-5 w-5" />

@@ -45,6 +45,7 @@ interface FabricInventoryViewProps {
   selectedVendor?: string;
   selectedCollection?: string;
   selectedStorageLocation?: string;
+  canManageInventory?: boolean;
 }
 // Fabrics = ONLY soft goods for curtains/romans (sewn products)
 // Blind materials (roller, venetian, etc.) are in MaterialInventoryView
@@ -65,7 +66,7 @@ const BLIND_MATERIAL_SUBCATEGORIES = [
 
 const ITEMS_PER_PAGE = 24;
 
-export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: externalVendor, selectedCollection, selectedStorageLocation }: FabricInventoryViewProps) => {
+export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: externalVendor, selectedCollection, selectedStorageLocation, canManageInventory = false }: FabricInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { data: vendors = [] } = useVendors();
   const { toast } = useToast();
@@ -241,20 +242,22 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
               </Button>
             )}
           </div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <FileSpreadsheet className="h-4 w-4" />
-                Import/Export
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Import/Export Fabrics</DialogTitle>
-              </DialogHeader>
-              <CategoryImportExport category="fabrics" onImportComplete={refetch} />
-            </DialogContent>
-          </Dialog>
+          {canManageInventory && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Import/Export
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Import/Export Fabrics</DialogTitle>
+                </DialogHeader>
+                <CategoryImportExport category="fabrics" onImportComplete={refetch} />
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
         
         {/* Tag Filter Chips */}
@@ -285,7 +288,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
 
         {FABRIC_CATEGORIES.map((cat) => (
           <TabsContent key={cat.key} value={cat.key} className="mt-6 space-y-4">
-            {selectedItems.length > 0 && (
+            {selectedItems.length > 0 && canManageInventory && (
         <InventoryBulkActionsBar
           selectedCount={selectedItems.length}
           onClearSelection={clearSelection}
@@ -322,32 +325,34 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
                         size={200}
                         rounded="none"
                       />
-                      <div className="absolute top-2 right-2 flex gap-1">
-                        <EditInventoryDialog 
-                          item={item}
-                          trigger={
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          }
-                        />
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(item.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {canManageInventory && (
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <EditInventoryDialog 
+                            item={item}
+                            trigger={
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            }
+                          />
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(item.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between gap-2">
@@ -457,6 +462,8 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
                       item={item}
                       isSelected={selectedItems.includes(item.id)}
                       onSelect={(checked) => selectItem(item.id, checked)}
+                      onEdit={canManageInventory ? () => {} : undefined}
+                      onDelete={canManageInventory ? () => handleDelete(item.id) : undefined}
                       onClick={() => {
                         setQuickViewItem(item);
                         setShowQuickView(true);
@@ -498,7 +505,7 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
                         <TableHead>Stock</TableHead>
                         <TableHead className="hidden xl:table-cell">Tags</TableHead>
                         <TableHead className="hidden lg:table-cell w-10">QR</TableHead>
-                        <TableHead className="w-20">Actions</TableHead>
+                        {canManageInventory && <TableHead className="w-20">Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -601,26 +608,28 @@ export const FabricInventoryView = ({ searchQuery, viewMode, selectedVendor: ext
                                 </PopoverContent>
                               </Popover>
                             </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1">
-                                <EditInventoryDialog 
-                                  item={item}
-                                  trigger={
-                                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                      <Edit className="h-3 w-3" />
-                                    </Button>
-                                  }
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => handleDelete(item.id)}
-                                >
-                                  <Trash2 className="h-3 w-3 text-destructive" />
-                                </Button>
-                              </div>
-                            </TableCell>
+                            {canManageInventory && (
+                              <TableCell>
+                                <div className="flex items-center gap-1">
+                                  <EditInventoryDialog 
+                                    item={item}
+                                    trigger={
+                                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                        <Edit className="h-3 w-3" />
+                                      </Button>
+                                    }
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    onClick={() => handleDelete(item.id)}
+                                  >
+                                    <Trash2 className="h-3 w-3 text-destructive" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            )}
                           </TableRow>
                         );
                       })}

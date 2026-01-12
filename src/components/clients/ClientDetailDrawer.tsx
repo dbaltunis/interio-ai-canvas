@@ -17,6 +17,7 @@ import { ClientEmailHistory } from "./ClientEmailHistory";
 import { ClientQuickActionsBar } from "./ClientQuickActionsBar";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useUpdateClient } from "@/hooks/useClients";
+import { useCanEditClient } from "@/hooks/useClientEditPermissions";
 import { FUNNEL_STAGES, getStageByValue } from "@/constants/clientConstants";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
@@ -51,6 +52,7 @@ interface ClientDetailDrawerProps {
 export const ClientDetailDrawer = ({ open, onOpenChange, client, canEdit = true }: ClientDetailDrawerProps) => {
   const { user } = useAuth();
   const updateClient = useUpdateClient();
+  const { canEditClient } = useCanEditClient(client);
   
   // Inline editing state
   const [editingField, setEditingField] = useState<string | null>(null);
@@ -241,7 +243,7 @@ export const ClientDetailDrawer = ({ open, onOpenChange, client, canEdit = true 
 
           {/* Quick Actions Bar */}
           <div className="px-5 pb-4">
-            <ClientQuickActionsBar client={client} />
+            <ClientQuickActionsBar client={client} canEditClient={canEditClient} />
           </div>
         </div>
 

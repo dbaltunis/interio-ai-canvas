@@ -63,7 +63,7 @@ export const ClientManagementPage = ({
 
   // Explicit check: Check user_permissions table first, then fall back to role for Owners/Admins
   const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
-  const { data: explicitPermissions } = useQuery({
+  const { data: explicitPermissions, isLoading: explicitPermissionsLoading } = useQuery({
     queryKey: ['explicit-user-permissions', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -75,18 +75,20 @@ export const ClientManagementPage = ({
         console.error('[CLIENTS] Error fetching explicit permissions:', error);
         return [];
       }
+      console.log('[CLIENTS] Fetched explicit permissions:', data);
       return data || [];
     },
     enabled: !!user && !permissionsLoading,
   });
 
   // Check if view permissions are explicitly in user_permissions table
-  const hasViewAllClientsPermission = explicitPermissions?.some(
+  // IMPORTANT: Only check if explicitPermissions is loaded (not undefined)
+  const hasViewAllClientsPermission = explicitPermissions !== undefined && explicitPermissions.some(
     (p: { permission_name: string }) => p.permission_name === 'view_all_clients'
-  ) ?? false;
-  const hasViewAssignedClientsPermission = explicitPermissions?.some(
+  );
+  const hasViewAssignedClientsPermission = explicitPermissions !== undefined && explicitPermissions.some(
     (p: { permission_name: string }) => p.permission_name === 'view_assigned_clients'
-  ) ?? false;
+  );
 
   const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
   const hasExplicitViewPermissions = hasViewAllClientsPermission || hasViewAssignedClientsPermission;
@@ -95,19 +97,55 @@ export const ClientManagementPage = ({
   const hasDealerAccess = isDealer === true;
 
   // Owners and System Owners always have full access, regardless of explicit permissions
-  // Dealers also get access (filtered to their own clients)
+  // For viewing clients: 
+  // - If view_all_clients is enabled → show all clients
+  // - If view_all_clients is disabled BUT view_assigned_clients is enabled → show only clients created by current user
+  // - If view_all_clients is disabled AND view_assigned_clients is disabled → show "Access Denied"
+  // Logic matches JobDetailPage:
+  // - System Owner: ALWAYS has full access regardless of explicit permissions
+  // - Owner: Only bypass restrictions if NO explicit permissions exist in table at all
+  // - Admin: if NO explicit permissions exist, they have full access; if explicit permissions exist, MUST respect them (no bypass)
+  // - Regular users: Always check explicit permissions
+  // - Dealers: Always have access (filtered to their own clients via separate hook)
   const canViewClientsExplicit =
     hasDealerAccess
       ? true // Dealers can view (their own clients only)
-      : userRoleData?.isSystemOwner || isOwner
-        ? true
-        : isAdmin
-            ? !hasAnyExplicitPermissions || hasViewAllClientsPermission || hasViewAssignedClientsPermission
-            : hasViewAllClientsPermission || hasViewAssignedClientsPermission;
-
-  // Owners never filter by assignment - they always see all clients
-  // Dealers use a separate hook that filters to their own clients
-  const shouldFilterByAssignment = !isOwner && !hasDealerAccess && !hasViewAllClientsPermission && hasViewAssignedClientsPermission;
+      : userRoleData?.isSystemOwner
+        ? true  // System Owner ALWAYS has full access
+        : isOwner && !hasAnyExplicitPermissions
+          ? true  // Owner with no explicit permissions in table at all = full access
+          : isAdmin && !hasAnyExplicitPermissions
+            ? true  // Admin with no explicit permissions = full access
+            : hasViewAllClientsPermission || hasViewAssignedClientsPermission;  // Owner/Admin with explicit permissions OR regular users: need view permission
+  
+  // Filter by creation (show only clients created by current user) if:
+  // - User is NOT System Owner (System Owners see everything)
+  // - AND (User is not Owner, OR Owner has explicit permissions)
+  // - AND they don't have view_all_clients permission
+  // - AND they have view_assigned_clients permission
+  // - AND they are NOT a dealer (dealers use separate hook)
+  // Note: Owner without explicit permissions never filters, they always see all clients
+  // But Owner with explicit permissions must respect them
+  const shouldFilterByAssignment = 
+    !userRoleData?.isSystemOwner && 
+    !hasDealerAccess &&
+    (!isOwner || hasAnyExplicitPermissions) && 
+    !hasViewAllClientsPermission && 
+    hasViewAssignedClientsPermission;
+  
+  // Debug logging to help troubleshoot permission issues
+  console.log('[CLIENTS] Permission check:', {
+    isSystemOwner: userRoleData?.isSystemOwner,
+    isOwner,
+    isAdmin,
+    hasDealerAccess,
+    hasAnyExplicitPermissions,
+    hasViewAllClientsPermission,
+    hasViewAssignedClientsPermission,
+    canViewClientsExplicit,
+    shouldFilterByAssignment,
+    explicitPermissions: explicitPermissions?.map(p => p.permission_name)
+  });
 
   // Check if create_clients is explicitly in user_permissions table (enabled)
   const hasCreateClientsPermission = explicitPermissions?.some(
@@ -140,7 +178,17 @@ export const ClientManagementPage = ({
   const canDeleteClients = canDeleteClientsExplicit;
 
   // Only fetch clients if user has view permissions
+  // IMPORTANT: This prevents fetching clients from the database if permission is denied
   const shouldFetchClients = canViewClientsExplicit && !permissionsLoading && !roleLoading && !isDealerLoading;
+  
+  console.log('[CLIENTS] Fetch decision:', {
+    canViewClientsExplicit,
+    permissionsLoading,
+    roleLoading,
+    isDealerLoading,
+    shouldFetchClients,
+    isDealer
+  });
   
   // Use dealer-specific hook if user is a dealer - they only see their own clients
   const { data: regularClients, isLoading: regularClientsLoading } = useClients(shouldFetchClients && !isDealer);
@@ -149,13 +197,14 @@ export const ClientManagementPage = ({
   // Use appropriate data source based on user type
   const allClients = isDealer ? dealerClients : regularClients;
   const isLoading = isDealer ? dealerClientsLoading : regularClientsLoading;
-  
   const {
     data: clientStats,
     isLoading: isLoadingStats
   } = useClientStats();
 
-  // Filter clients by assignment if needed (must be before conditional returns)
+  // Filter clients by creation if needed (must be before conditional returns)
+  // When user only has view_assigned_clients permission (and view_all_clients is disabled),
+  // show only clients created by the current logged in user
   const filteredClientsByPermission = useMemo(() => {
     if (isDealer) {
       // Dealers already get filtered data from useDealerOwnClients
@@ -166,8 +215,25 @@ export const ClientManagementPage = ({
       return allClients || [];
     }
     
-    // Filter to only show clients assigned to the current user
-    return allClients.filter((client: any) => client.assigned_to === user.id);
+    // Filter to only show clients created by the current user
+    // Check both created_by and assigned_to as fallback (for older clients that might not have created_by set)
+    const filtered = allClients.filter((client: any) => 
+      client.created_by === user.id || 
+      (client.created_by === null && client.assigned_to === user.id)
+    );
+    console.log('[CLIENTS] Filtering by created_by:', {
+      totalClients: allClients.length,
+      filteredCount: filtered.length,
+      userId: user.id,
+      shouldFilterByAssignment,
+      sampleClients: allClients.slice(0, 3).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        created_by: c.created_by,
+        assigned_to: c.assigned_to
+      }))
+    });
+    return filtered;
   }, [allClients, shouldFilterByAssignment, user, isDealer]);
 
   // Merge clients with their stats (must be before conditional returns)
@@ -189,7 +255,8 @@ export const ClientManagementPage = ({
   }, [filteredClientsByPermission, clientStats]);
 
   // Handle permission loading and preserve navigation state
-  if (permissionsLoading || roleLoading || isDealerLoading) {
+  // IMPORTANT: Wait for explicitPermissions to be loaded before making permission decisions
+  if (permissionsLoading || roleLoading || isDealerLoading || explicitPermissionsLoading || explicitPermissions === undefined) {
     // If we're showing client profile, keep showing it during permission refetch
     if (showClientProfile && selectedClient) {
       return <ClientProfilePage clientId={selectedClient.id} onBack={() => {
@@ -203,7 +270,13 @@ export const ClientManagementPage = ({
   }
 
   // If user doesn't have permission to view clients, show access denied
+  // Only check this AFTER permissions have been loaded (explicitPermissions !== undefined)
   if (!canViewClientsExplicit) {
+    console.log('[CLIENTS] Access denied - no view permissions:', {
+      hasViewAllClientsPermission,
+      hasViewAssignedClientsPermission,
+      explicitPermissions: explicitPermissions?.map(p => p.permission_name)
+    });
     return <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-semibold text-foreground mb-2">Access Denied</h2>

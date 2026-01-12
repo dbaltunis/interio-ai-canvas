@@ -20,10 +20,13 @@ import { useUserPresence } from "@/hooks/useUserPresence";
 import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { TeamCollaborationCenter } from "../collaboration/TeamCollaborationCenter";
 import { useMaterialQueueCount } from "@/hooks/useMaterialQueueCount";
-import { useHasPermission } from "@/hooks/usePermissions";
+import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
 import { useIsDealer } from "@/hooks/useIsDealer";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useToast } from "@/hooks/use-toast";
 
 interface MobileBottomNavProps {
   activeTab: string;
@@ -40,6 +43,8 @@ const navItems = [
 export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps) => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [presencePanelOpen, setPresencePanelOpen] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
   
   const { activeUsers, currentUser } = useUserPresence();
   const { conversations } = useDirectMessages();
@@ -50,12 +55,44 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
   const canViewClients = useHasPermission('view_clients');
   const canViewCalendar = useHasPermission('view_calendar');
   
+  // Check view_settings permission
+  const { data: userRoleData } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  const { isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-mobile', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[MobileBottomNav] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+  
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+  const hasViewSettingsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_settings'
+  ) ?? false;
+  
+  const canViewSettings = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasViewSettingsPermission
+        : hasViewSettingsPermission;
   // Check if user is a dealer - they have restricted navigation
   const { data: isDealer } = useIsDealer();
   
   // Check if ANY permission is still loading (undefined)
   // Only show skeleton when truly loading, not when permissions are determined
-  const permissionsLoading = canViewJobs === undefined || 
+  const navPermissionsLoading = canViewJobs === undefined || 
                              canViewClients === undefined || 
                              canViewCalendar === undefined;
   
@@ -113,8 +150,8 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-background/98 backdrop-blur-lg border-t border-border/60 shadow-lg pb-safe">
-        {permissionsLoading ? (
+      <nav className="fixed bottom-0 left-0 right-0 lg:hidden z-50 bg-background/95 backdrop-blur-md border-t border-border shadow-lg pb-safe">
+        {navPermissionsLoading ? (
           // Show skeleton while permissions are loading
           <div className="grid grid-cols-5 h-16">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -213,6 +250,14 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
         onTabChange={onTabChange}
         queueCount={queueCount}
         onOpenSettings={() => {
+          if (canViewSettings === false) {
+            toast({
+              title: "Permission Denied",
+              description: "You don't have permission to view settings.",
+              variant: "destructive",
+            });
+            return;
+          }
           // Navigate to settings - could open a settings route
           window.location.href = '/settings';
         }}

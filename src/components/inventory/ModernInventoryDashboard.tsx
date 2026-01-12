@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,8 +16,10 @@ import { VendorDashboard } from "../vendors/VendorDashboard";
 import { useVendors } from "@/hooks/useVendors";
 import { MaterialInventoryView } from "./MaterialInventoryView";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
-import { useHasPermission, useHasAnyPermission } from "@/hooks/usePermissions";
+import { useHasPermission, useHasAnyPermission, useUserPermissions } from "@/hooks/usePermissions";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useIsDealer } from "@/hooks/useIsDealer";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
@@ -46,31 +48,71 @@ export const ModernInventoryDashboard = () => {
   const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
   const isMobile = useIsMobile();
   
-  // Check if user is Owner/Admin for admin tab - log for debugging
-  const isOwnerOrAdmin = !userRoleLoading && (
-    userRole?.role === 'Owner' || 
-    userRole?.role === 'Admin' || 
-    userRole?.role === 'System Owner' || 
-    userRole?.isAdmin === true || 
-    userRole?.isOwner === true ||
-    userRole?.isSystemOwner === true
-  );
-  
-  // Debug logging - remove after confirming it works
-  console.log('[Admin Tab Debug]', { 
-    role: userRole?.role, 
-    isOwner: userRole?.isOwner, 
-    isAdmin: userRole?.isAdmin, 
-    isSystemOwner: userRole?.isSystemOwner,
-    isOwnerOrAdmin,
-    userRoleLoading 
+  // Permission checks - CRITICAL for data security
+  // Check explicit permissions first, like jobs and clients
+  const { user } = useAuth();
+  const { data: userRoleData } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  const isOwnerOrAdmin = isOwner || isAdmin;
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-inventory-dashboard', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[ModernInventoryDashboard] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
   });
   
-  // Permission checks - CRITICAL for data security
-  const canViewInventory = useHasPermission('view_inventory');
-  const canManageInventory = useHasPermission('manage_inventory');
-  const hasAnyInventoryAccessFromHook = useHasAnyPermission(['view_inventory', 'manage_inventory']);
-  const { user } = useAuth();
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+  const hasViewInventoryPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_inventory'
+  ) ?? false;
+  const hasManageInventoryPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'manage_inventory'
+  ) ?? false;
+  const hasManageInventoryAdminPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'manage_inventory_admin'
+  ) ?? false;
+  
+  // Works like jobs and clients - check explicit permissions first
+  const canViewInventory = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasViewInventoryPermission
+        : hasViewInventoryPermission;
+  
+  const canManageInventory = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasManageInventoryPermission
+        : hasManageInventoryPermission;
+
+  // Only allow admin access if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include manage_inventory_admin)
+  const canManageInventoryAdmin =
+    userRoleData?.isSystemOwner
+      ? true
+      : (isOwner || isAdmin)
+          ? !hasAnyExplicitPermissions || hasManageInventoryAdminPermission
+          : hasManageInventoryAdminPermission;
+
+  // Redirect away from admin tab if user doesn't have permission
+  useEffect(() => {
+    if (activeTab === "admin" && !canManageInventoryAdmin && !permissionsLoading && !userRoleLoading && explicitPermissions !== undefined) {
+      setActiveTab("fabrics");
+    }
+  }, [activeTab, canManageInventoryAdmin, permissionsLoading, userRoleLoading, explicitPermissions]);
+  
+  const hasAnyInventoryAccessFromHook = canViewInventory || canManageInventory;
   
   // Dealers always have browse-only access to the Library
   // Use direct dealer check instead of problematic timeout fallback
@@ -259,15 +301,17 @@ export const ModernInventoryDashboard = () => {
                 {!isMobile && "Scan"}
               </Button>
 
-              <AddInventoryDialog
-                trigger={
-                  <Button variant="default" size={isMobile ? "sm" : "default"}>
-                    <Plus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
-                    {!isMobile && "Add"}
-                  </Button>
-                }
-                onSuccess={refetch}
-              />
+              {canManageInventory && (
+                <AddInventoryDialog
+                  trigger={
+                    <Button variant="default" size={isMobile ? "sm" : "default"}>
+                      <Plus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
+                      {!isMobile && "Add"}
+                    </Button>
+                  }
+                  onSuccess={refetch}
+                />
+              )}
             </>
           )}
         </div>
@@ -299,8 +343,13 @@ export const ModernInventoryDashboard = () => {
                   Vendors
                 </TabsTrigger>
               )}
-              {isOwnerOrAdmin && !isDealer && (
-                <TabsTrigger value="admin" className="flex items-center gap-2">
+              {canManageInventoryAdmin && !isDealer && (
+                <TabsTrigger 
+                  value="admin" 
+                  className="flex items-center gap-2"
+                  disabled={!canManageInventoryAdmin && !permissionsLoading && !userRoleLoading && explicitPermissions !== undefined}
+                  title={!canManageInventoryAdmin && !permissionsLoading && !userRoleLoading && explicitPermissions !== undefined ? "You don't have permission to access inventory administration" : undefined}
+                >
                   <Shield className="h-4 w-4" />
                   Admin
                 </TabsTrigger>
@@ -314,6 +363,7 @@ export const ModernInventoryDashboard = () => {
             selectedVendor={selectedVendor}
             selectedCollection={selectedCollection}
             selectedStorageLocation={selectedStorageLocation}
+            canManageInventory={canManageInventory}
           />
         </TabsContent>
 
@@ -324,6 +374,7 @@ export const ModernInventoryDashboard = () => {
             selectedVendor={selectedVendor}
             selectedCollection={selectedCollection}
             selectedStorageLocation={selectedStorageLocation}
+            canManageInventory={canManageInventory}
           />
         </TabsContent>
 
@@ -334,11 +385,13 @@ export const ModernInventoryDashboard = () => {
             selectedVendor={selectedVendor}
             selectedCollection={selectedCollection}
             selectedStorageLocation={selectedStorageLocation}
+            canManageInventory={canManageInventory}
           />
         </TabsContent>
 
         <TabsContent value="wallcoverings" className="space-y-6">
-          <WallcoveringInventoryView 
+          <WallcoveringInventoryView
+            canManageInventory={canManageInventory} 
             searchQuery={searchQuery} 
             viewMode={viewMode}
             selectedVendor={selectedVendor}
@@ -353,7 +406,7 @@ export const ModernInventoryDashboard = () => {
           </TabsContent>
         )}
 
-        {isOwnerOrAdmin && !isDealer && (
+        {canManageInventoryAdmin && !isDealer && (
           <TabsContent value="admin" className="space-y-6">
             <InventoryAdminPanel />
           </TabsContent>

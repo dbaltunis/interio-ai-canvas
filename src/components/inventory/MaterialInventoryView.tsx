@@ -40,6 +40,7 @@ interface MaterialInventoryViewProps {
   selectedVendor?: string;
   selectedCollection?: string;
   selectedStorageLocation?: string;
+  canManageInventory?: boolean;
 }
 
 const MATERIAL_CATEGORIES = [
@@ -60,7 +61,7 @@ const BLIND_MATERIAL_SUBCATEGORIES = [
 
 const ITEMS_PER_PAGE = 24;
 
-export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: externalVendor, selectedCollection, selectedStorageLocation }: MaterialInventoryViewProps) => {
+export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: externalVendor, selectedCollection, selectedStorageLocation, canManageInventory = false }: MaterialInventoryViewProps) => {
   const { data: inventory, refetch } = useEnhancedInventory();
   const { data: vendors = [] } = useVendors();
   const { toast } = useToast();
@@ -221,20 +222,22 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
               </Button>
             )}
           </div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <FileSpreadsheet className="h-4 w-4" />
-                Import/Export
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Import/Export Blind Materials</DialogTitle>
-              </DialogHeader>
-              <CategoryImportExport category="hardware" onImportComplete={refetch} />
-            </DialogContent>
-          </Dialog>
+          {canManageInventory && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Import/Export
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Import/Export Blind Materials</DialogTitle>
+                </DialogHeader>
+                <CategoryImportExport category="hardware" onImportComplete={refetch} />
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
         
         {/* Tag Filter Chips */}
@@ -249,11 +252,11 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
         )}
       </div>
 
-      {selectionStats.selected > 0 && (
-        <InventoryBulkActionsBar
-          selectedCount={selectionStats.selected}
-          onClearSelection={clearSelection}
-          onBulkDelete={async () => {
+      {selectionStats.selected > 0 && canManageInventory && (
+          <InventoryBulkActionsBar
+            selectedCount={selectionStats.selected}
+            onClearSelection={clearSelection}
+            onBulkDelete={async () => {
             if (!confirm(`Delete ${selectionStats.selected} selected materials?`)) return;
             
             const { error } = await supabase
@@ -300,6 +303,8 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                       isSelected={selectedItems.includes(item.id)}
                       onSelect={(checked) => selectItem(item.id, checked)}
                       onClick={() => handleCardClick(item)}
+                      onEdit={canManageInventory ? () => {} : undefined}
+                      onDelete={canManageInventory ? () => handleDelete(item.id) : undefined}
                       stockUnit="units"
                       showPriceGroup={true}
                     />
@@ -336,7 +341,7 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                     <TableHead>Stock</TableHead>
                     <TableHead className="hidden xl:table-cell">Tags</TableHead>
                     <TableHead className="hidden lg:table-cell w-10">QR</TableHead>
-                    <TableHead className="w-20">Actions</TableHead>
+                    {canManageInventory && <TableHead className="w-20">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -464,30 +469,32 @@ export const MaterialInventoryView = ({ searchQuery, viewMode, selectedVendor: e
                               </PopoverContent>
                             </Popover>
                           </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <EditInventoryDialog
-                                item={item}
-                                trigger={
-                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                    <Edit className="h-3 w-3" />
-                                  </Button>
-                                }
-                                onSuccess={refetch}
-                              />
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDelete(item.id);
-                                }}
-                              >
-                                <Trash2 className="h-3 w-3 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                          {canManageInventory && (
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <EditInventoryDialog
+                                  item={item}
+                                  trigger={
+                                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                      <Edit className="h-3 w-3" />
+                                    </Button>
+                                  }
+                                  onSuccess={refetch}
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete(item.id);
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))
                     )}

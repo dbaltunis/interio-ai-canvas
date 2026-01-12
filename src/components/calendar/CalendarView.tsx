@@ -6,7 +6,10 @@ import { useIsTablet } from "@/hooks/use-tablet";
 import { useState, useEffect } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addDays, isToday, addWeeks, subWeeks } from "date-fns";
 import { MobileCalendarView } from "./MobileCalendarView";
-import { useHasPermission } from "@/hooks/usePermissions";
+import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useAppointments, Appointment } from "@/hooks/useAppointments";
 import { useAppointmentSchedulers } from "@/hooks/useAppointmentSchedulers";
 import { useBookedAppointments } from "@/hooks/useBookedAppointments";
@@ -61,10 +64,50 @@ interface CalendarViewProps {
 }
 
 const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const canViewCalendar = useHasPermission('view_calendar');
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
   const isDesktop = !isMobile && !isTablet;
+
+  // Permission checks for creating appointments
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-calendar-view', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[CalendarView] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+
+  // Check if create_appointments is explicitly in user_permissions table
+  const hasCreateAppointmentsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'create_appointments'
+  ) ?? false;
+
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+
+  // Only allow create if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include create_appointments)
+  const canCreateAppointments =
+    userRoleData?.isSystemOwner
+      ? true
+      : (isOwner || isAdmin)
+          ? !hasAnyExplicitPermissions || hasCreateAppointmentsPermission
+          : hasCreateAppointmentsPermission;
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date()); // Pre-select today
   const [selectedStartTime, setSelectedStartTime] = useState<string>("09:00");
@@ -114,7 +157,6 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   const { data: clients } = useClients();
   const { getColorForSource, getVisibilityForSource, addCalendarSource } = useCalendarColors();
   const createAppointment = useCreateAppointment();
-  const { toast } = useToast();
   const { userTimezone, isTimezoneDifferent } = useTimezone();
   const { data: preferences } = useCalendarPreferences();
   const { data: userPreferences } = useUserPreferences();
@@ -352,6 +394,25 @@ const CalendarView = ({ projectId }: CalendarViewProps = {}) => {
   };
 
   const proceedWithEventCreation = (date: Date, time: string) => {
+    // Check permission before opening create dialog
+    const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+    if (isPermissionLoaded && !canCreateAppointments) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to create appointments.",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Don't allow creation while permissions are loading
+    if (!isPermissionLoaded) {
+      toast({
+        title: "Loading",
+        description: "Please wait while permissions are being checked...",
+      });
+      return;
+    }
+
     setSelectedDate(date);
     
     // Parse time range if it contains a dash (from drag creation)

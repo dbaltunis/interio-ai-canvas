@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Settings, MessageSquare, Shield, Send, Users } from "lucide-react";
+import { Mail, Settings, MessageSquare, Shield, Send, Users, Filter } from "lucide-react";
 import { EmailDashboard } from "./email/EmailDashboard";
 import { EmailComposer } from "./email/EmailComposer";
 import { EmailCampaigns } from "./email/EmailCampaigns";
@@ -16,13 +16,20 @@ import { useEmails } from "@/hooks/useEmails";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { useHasPermission } from "@/hooks/usePermissions";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useCanSendEmails } from "@/hooks/useCanSendEmails";
+import { useToast } from "@/hooks/use-toast";
 
 export const EmailManagement = () => {
   const [activeTab, setActiveTab] = useState("messages");
   const canAccessEmails = useHasPermission('view_jobs');
   const [showHelp, setShowHelp] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const { hasEmailSettings, isLoading: integrationLoading } = useEmailSetupStatus();
   const { data: emails = [] } = useEmails();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { canSendEmails, isPermissionLoaded } = useCanSendEmails();
 
   if (canAccessEmails === undefined) {
     return (
@@ -90,19 +97,50 @@ export const EmailManagement = () => {
           </Badge>
         </div>
         <div className="flex items-center gap-2">
+          {activeTab === "messages" && (
+            <Button 
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="bg-background border-input text-foreground hover:bg-accent hover:text-accent-foreground rounded-md"
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              Filters
+            </Button>
+          )}
+          
           <div className="relative group">
             <Button 
-              onClick={() => setActiveTab("composer")}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-              disabled={!hasEmailSettings}
+              onClick={() => {
+                if (!isPermissionLoaded || !canSendEmails) {
+                  toast({
+                    title: "Permission Denied",
+                    description: "You don't have permission to send emails.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                if (!hasEmailSettings) {
+                  toast({
+                    title: "Email Settings Required",
+                    description: "Please configure your sender name and email in Settings first.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                setActiveTab("composer");
+              }}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!hasEmailSettings || !isPermissionLoaded || !canSendEmails}
             >
               <Send className="h-4 w-4 mr-2" />
               New Message
             </Button>
-            {!hasEmailSettings && (
+            {(!hasEmailSettings || !isPermissionLoaded || !canSendEmails) && (
               <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block z-50">
                 <div className="bg-popover text-popover-foreground text-xs rounded-md p-2 shadow-lg border whitespace-nowrap">
-                  Configure your sender email in Settings first
+                  {!isPermissionLoaded || !canSendEmails 
+                    ? "You don't have permission to send emails."
+                    : "Configure your sender email in Settings first"}
                 </div>
               </div>
             )}
@@ -183,7 +221,7 @@ export const EmailManagement = () => {
           <div className="space-y-6 animate-fade-in">
             <EmailIntegrationBanners onEmailSettingsClick={handleEmailSettingsClick} />
             <EmailAnalytics />
-            <EmailDashboard showFilters={false} setShowFilters={() => {}} />
+            <EmailDashboard showFilters={showFilters} setShowFilters={setShowFilters} />
           </div>
         );
     }

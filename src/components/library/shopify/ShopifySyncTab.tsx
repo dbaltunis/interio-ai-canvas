@@ -9,6 +9,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type ShopifyIntegration = Database['public']['Tables']['shopify_integrations']['Row'];
 
@@ -17,11 +22,66 @@ interface ShopifySyncTabProps {
 }
 
 export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isSyncing, setIsSyncing] = React.useState(false);
 
+  // Permission checks - following the same pattern as other settings
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-shopify-sync', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[ShopifySyncTab] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+
+  // Check if manage_shopify is explicitly in user_permissions table
+  const hasManageShopifyPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'manage_shopify'
+  ) ?? false;
+
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+
+  // Check manage_shopify permission using the same pattern
+  const canManageShopify = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasManageShopifyPermission
+        : hasManageShopifyPermission;
+
+  const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+
   const handleSyncSettingChange = async (field: string, value: boolean) => {
+    if (!isPermissionLoaded) {
+      toast({
+        title: "Loading",
+        description: "Please wait while permissions are being checked...",
+      });
+      return;
+    }
+    if (!canManageShopify) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to manage Shopify settings.",
+        variant: "destructive"
+      });
+      return;
+    }
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
@@ -48,6 +108,21 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
   };
 
   const handleFullSync = async () => {
+    if (!isPermissionLoaded) {
+      toast({
+        title: "Loading",
+        description: "Please wait while permissions are being checked...",
+      });
+      return;
+    }
+    if (!canManageShopify) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to manage Shopify settings.",
+        variant: "destructive"
+      });
+      return;
+    }
     setIsSyncing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -100,6 +175,17 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
 
   return (
     <div className="space-y-6">
+      {isPermissionLoaded && !canManageShopify && (
+        <Alert className="border-orange-200 bg-orange-50">
+          <AlertDescription>
+            <p className="font-semibold text-orange-900 mb-1">Permission Required</p>
+            <p className="text-sm text-orange-800">
+              You don't have permission to manage Shopify settings. Contact your administrator to configure Shopify integration.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Sync Configuration</CardTitle>
@@ -114,6 +200,7 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
               id="sync-inventory"
               checked={integration?.sync_inventory || false}
               onCheckedChange={(checked) => handleSyncSettingChange("sync_inventory", checked)}
+              disabled={!canManageShopify && isPermissionLoaded}
             />
           </div>
 
@@ -126,6 +213,7 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
               id="sync-prices"
               checked={integration?.sync_prices || false}
               onCheckedChange={(checked) => handleSyncSettingChange("sync_prices", checked)}
+              disabled={!canManageShopify && isPermissionLoaded}
             />
           </div>
 
@@ -138,6 +226,7 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
               id="sync-images"
               checked={integration?.sync_images || false}
               onCheckedChange={(checked) => handleSyncSettingChange("sync_images", checked)}
+              disabled={!canManageShopify && isPermissionLoaded}
             />
           </div>
         </CardContent>
@@ -150,7 +239,7 @@ export const ShopifySyncTab = ({ integration }: ShopifySyncTabProps) => {
         <CardContent>
           <Button 
             className="w-full" 
-            disabled={!integration?.is_connected || isSyncing}
+            disabled={!integration?.is_connected || isSyncing || (!canManageShopify && isPermissionLoaded)}
             onClick={handleFullSync}
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />

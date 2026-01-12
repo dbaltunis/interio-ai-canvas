@@ -9,6 +9,9 @@ import { useClientEmails } from "@/hooks/useClientEmails";
 import { formatDistanceToNow } from "date-fns";
 import { useState, useRef, useEffect } from "react";
 import { EmailComposer } from "../jobs/email/EmailComposer";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useCanSendEmails } from "@/hooks/useCanSendEmails";
+import { useToast } from "@/hooks/use-toast";
 
 interface EnhancedClientEmailHistoryProps {
   clientId: string;
@@ -27,6 +30,9 @@ export const EnhancedClientEmailHistory = ({
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
   const [showComposer, setShowComposer] = useState(false);
   const emailSectionRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { canSendEmails, isPermissionLoaded } = useCanSendEmails();
 
   useEffect(() => {
     // Store ref in window for external scrolling
@@ -95,6 +101,14 @@ export const EnhancedClientEmailHistory = ({
   };
 
   const handleComposeClick = () => {
+    if (!isPermissionLoaded || !canSendEmails) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to send emails.",
+        variant: "destructive",
+      });
+      return;
+    }
     setShowComposer(true);
     if (onComposeEmail) {
       onComposeEmail();
@@ -200,7 +214,7 @@ export const EnhancedClientEmailHistory = ({
                     variant="outline" 
                     className="mt-2 border-orange-300 hover:bg-orange-100"
                     onClick={handleComposeClick}
-                    disabled={!canEditClient}
+                    disabled={!canEditClient || !isPermissionLoaded || !canSendEmails}
                   >
                     <Mail className="h-4 w-4 mr-2" />
                     Send Follow-up
@@ -217,7 +231,11 @@ export const EnhancedClientEmailHistory = ({
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Email History</CardTitle>
           {clientEmail && onComposeEmail && (
-            <Button onClick={handleComposeClick} size="sm" disabled={!canEditClient}>
+            <Button 
+              onClick={handleComposeClick} 
+              size="sm" 
+              disabled={!canEditClient || !isPermissionLoaded || !canSendEmails}
+            >
               <Mail className="h-4 w-4 mr-2" />
               Compose Email
             </Button>
@@ -229,7 +247,11 @@ export const EnhancedClientEmailHistory = ({
               <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground mb-4">No emails sent yet</p>
               {clientEmail && onComposeEmail && (
-                <Button onClick={handleComposeClick} variant="outline" disabled={!canEditClient}>
+                <Button 
+                  onClick={handleComposeClick} 
+                  variant="outline" 
+                  disabled={!canEditClient || !isPermissionLoaded || !canSendEmails}
+                >
                   <Mail className="h-4 w-4 mr-2" />
                   Send First Email
                 </Button>

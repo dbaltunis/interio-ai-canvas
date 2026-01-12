@@ -26,6 +26,11 @@ import { useCurrentUserProfile } from "@/hooks/useUserProfile";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface CalendarSidebarProps {
   currentDate: Date;
@@ -34,6 +39,7 @@ interface CalendarSidebarProps {
 }
 
 export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: CalendarSidebarProps) => {
+  const { user } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
       return localStorage.getItem("calendar.sidebarCollapsed") === "true";
@@ -65,6 +71,57 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
   const { toast } = useToast();
   const updateAppointment = useUpdateAppointment();
   const deleteAppointment = useDeleteAppointment();
+
+  // Permission checks - following the same pattern as jobs
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-calendar-sidebar', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[CalendarSidebar] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+
+  // Check if create_appointments is explicitly in user_permissions table
+  const hasCreateAppointmentsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'create_appointments'
+  ) ?? false;
+
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+
+  // Only allow create if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include create_appointments)
+  const canCreateAppointments =
+    userRoleData?.isSystemOwner
+      ? true
+      : (isOwner || isAdmin)
+          ? !hasAnyExplicitPermissions || hasCreateAppointmentsPermission
+          : hasCreateAppointmentsPermission;
+
+  // Debug logging to help troubleshoot permission issues
+  console.log('[CalendarSidebar] Permission check:', {
+    isSystemOwner: userRoleData?.isSystemOwner,
+    isOwner,
+    isAdmin,
+    hasAnyExplicitPermissions,
+    hasCreateAppointmentsPermission,
+    canCreateAppointments,
+    permissionsLoading,
+    roleLoading,
+    explicitPermissionsDefined: explicitPermissions !== undefined
+  });
 
   // Get upcoming events (next 7 days)
   const upcomingEvents = appointments?.filter(appointment => {
@@ -365,17 +422,39 @@ export const CalendarSidebar = ({ currentDate, onDateChange, onBookingLinks }: C
             </CardHeader>
             <CardContent className="space-y-3 px-3 pb-4 pointer-events-auto">
               {/* Primary Action - Create New Scheduler */}
-              <Button 
-                onClick={() => {
-                  console.log('[CalendarSidebar] New Booking Template clicked');
-                  onBookingLinks();
-                }}
-                className="w-full pointer-events-auto relative z-10"
-                size="sm"
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                New Booking Template
-              </Button>
+              {(() => {
+                // Calculate if button should be disabled
+                const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+                const shouldDisable = isPermissionLoaded && !canCreateAppointments;
+                
+                return (
+                  <Button 
+                    onClick={() => {
+                      // Only allow if user has permission and permissions have loaded
+                      if (!isPermissionLoaded) {
+                        return; // Don't do anything while loading
+                      }
+                      if (!canCreateAppointments) {
+                        toast({
+                          title: "Permission Denied",
+                          description: "You don't have permission to create appointments.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      console.log('[CalendarSidebar] New Booking Template clicked');
+                      onBookingLinks();
+                    }}
+                    className="w-full pointer-events-auto relative z-10"
+                    size="sm"
+                    disabled={shouldDisable}
+                    title={shouldDisable ? "You don't have permission to create appointments" : undefined}
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    New Booking Template
+                  </Button>
+                );
+              })()}
               
               {/* Management Section */}
               <div className="space-y-2 pt-1">

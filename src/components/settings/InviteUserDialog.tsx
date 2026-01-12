@@ -10,8 +10,11 @@ import { Mail, User, Shield, CreditCard, Calendar, Info } from "lucide-react";
 import { ROLE_PERMISSIONS, PERMISSION_LABELS } from "@/constants/permissions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPermissions } from "@/hooks/usePermissions";
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { useSubscriptionDetails } from "@/hooks/useSubscriptionDetails";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +27,7 @@ interface InviteUserDialogProps {
 
 export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [formData, setFormData] = useState<{
     invited_email: string;
     invited_name: string;
@@ -38,6 +42,44 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
   const [confirmBilling, setConfirmBilling] = useState(false);
 
   const createInvitation = useCreateInvitation();
+
+  // Permission checks - following the same pattern as jobs
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdminFromRole = userRoleData?.isAdmin || false;
+  
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-invite-dialog', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[InviteUserDialog] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+
+  // Check if manage_team is explicitly in user_permissions table
+  const hasManageTeamPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'manage_team'
+  ) ?? false;
+
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+
+  // Only allow manage if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include manage_team)
+  const canManageTeam =
+    userRoleData?.isSystemOwner
+      ? true
+      : (isOwner || isAdminFromRole)
+          ? !hasAnyExplicitPermissions || hasManageTeamPermission
+          : hasManageTeamPermission;
 
   // Check if current user is admin (admins don't need to pay for seats)
   const { data: userProfile } = useQuery({
@@ -70,6 +112,25 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Check permission before submitting
+    const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+    if (isPermissionLoaded && !canManageTeam) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to invite team members.",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Don't allow submitting while permissions are loading
+    if (!isPermissionLoaded) {
+      toast({
+        title: "Loading",
+        description: "Please wait while permissions are being checked...",
+      });
+      return;
+    }
+
     // Require billing confirmation for non-admins
     if (requiresBilling && !confirmBilling) {
       return;
@@ -135,7 +196,16 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Billing information with proration preview for non-admin users */}
+          {/* Permission denied alert */}
+          {explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                You don't have permission to invite team members.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Billing information with proration preview for non-admin users */}
           {requiresBilling && (
             <div className="rounded-lg border border-amber-500/50 bg-amber-50 dark:bg-amber-950/30 p-4 space-y-3">
               <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
@@ -207,6 +277,7 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
                 onChange={(e) => setFormData(prev => ({ ...prev, invited_email: e.target.value }))}
                 className="pl-10"
                 required
+                disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam}
               />
             </div>
           </div>
@@ -218,12 +289,17 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
               placeholder="John Smith"
               value={formData.invited_name}
               onChange={(e) => setFormData(prev => ({ ...prev, invited_name: e.target.value }))}
+              disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam}
             />
           </div>
 
           <div className="space-y-2">
             <Label>Role</Label>
-            <Select value={formData.role} onValueChange={handleRoleChange}>
+            <Select 
+              value={formData.role} 
+              onValueChange={handleRoleChange}
+              disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a role..." />
               </SelectTrigger>
@@ -260,6 +336,7 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
                     id={permission}
                     checked={formData.customPermissions.includes(permission)}
                     onCheckedChange={(checked) => handlePermissionChange(permission, checked as boolean)}
+                    disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam}
                   />
                   <Label htmlFor={permission} className="text-sm">
                     {PERMISSION_LABELS[permission as keyof typeof PERMISSION_LABELS]}
@@ -290,7 +367,11 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
             </Button>
             <Button 
               type="submit" 
-              disabled={createInvitation.isPending || (requiresBilling && !confirmBilling)}
+              disabled={
+                createInvitation.isPending || 
+                (explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam) ||
+                (requiresBilling && !confirmBilling)
+              }
             >
               {createInvitation.isPending ? "Sending..." : "Send Invitation"}
             </Button>

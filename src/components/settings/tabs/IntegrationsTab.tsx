@@ -16,10 +16,76 @@ import { StripeIntegrationTab } from "./StripeIntegrationTab";
 import { useIntegrations } from "@/hooks/useIntegrations";
 import { useShopifyIntegrationReal } from "@/hooks/useShopifyIntegrationReal";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export const IntegrationsTab = () => {
+  const { user } = useAuth();
   const { integrations } = useIntegrations();
   const { integration: shopifyIntegration } = useShopifyIntegrationReal();
+  const [activeTab, setActiveTab] = useState("email");
+  
+  // Permission checks - following the same pattern as other settings
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-integrations', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[IntegrationsTab] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+
+  // Check if view_shopify is explicitly in user_permissions table
+  const hasViewShopifyPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_shopify'
+  ) ?? false;
+
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+
+  // Check view_shopify permission using the same pattern
+  const canViewShopify = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasViewShopifyPermission
+        : hasViewShopifyPermission;
+
+  // Handle tab change with permission check
+  const handleTabChange = (value: string) => {
+    if (value === "shopify") {
+      const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+      if (isPermissionLoaded && !canViewShopify) {
+        toast.error("Permission Denied", {
+          description: "You don't have permission to view Shopify integration.",
+        });
+        return;
+      }
+      if (!isPermissionLoaded) {
+        toast("Loading", {
+          description: "Please wait while permissions are being checked...",
+        });
+        return;
+      }
+    }
+    setActiveTab(value);
+  };
   
   const getIntegrationByType = (type: string) => 
     integrations.find(integration => integration.integration_type === type);
@@ -54,7 +120,7 @@ export const IntegrationsTab = () => {
         </AlertDescription>
       </Alert>
 
-      <Tabs defaultValue="email" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList className="flex gap-1 w-full overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
           <TabsTrigger value="email" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
@@ -92,7 +158,12 @@ export const IntegrationsTab = () => {
             <Truck className="h-4 w-4" />
             Suppliers
           </TabsTrigger>
-          <TabsTrigger value="shopify" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="shopify" 
+            className="flex items-center gap-2"
+            disabled={!canViewShopify && !permissionsLoading && !roleLoading && explicitPermissions !== undefined}
+            title={!canViewShopify && !permissionsLoading && !roleLoading && explicitPermissions !== undefined ? "You don't have permission to view Shopify integration" : undefined}
+          >
             <Package className="h-4 w-4" />
             Shopify
           </TabsTrigger>
@@ -147,12 +218,14 @@ export const IntegrationsTab = () => {
           <TWCIntegrationTab />
         </TabsContent>
 
-        <TabsContent value="shopify">
-          <div className="space-y-6">
-            <ShopifySetupTab integration={shopifyIntegration} />
-            {shopifyIntegration?.is_connected && <ShopifyStatusManagementTab />}
-          </div>
-        </TabsContent>
+        {canViewShopify && (
+          <TabsContent value="shopify">
+            <div className="space-y-6">
+              <ShopifySetupTab integration={shopifyIntegration} />
+              {shopifyIntegration?.is_connected && <ShopifyStatusManagementTab />}
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

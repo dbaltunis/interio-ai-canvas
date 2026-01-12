@@ -8,9 +8,11 @@ import { PERMISSION_CATEGORIES, PERMISSION_DETAILS } from "@/constants/permissio
 interface PermissionGridProps {
   permissions: string[];
   onToggle: (permission: string, enabled: boolean) => void;
+  disabled?: boolean;
+  userRole?: string;
 }
 
-export const PermissionGrid = ({ permissions, onToggle }: PermissionGridProps) => {
+export const PermissionGrid = ({ permissions, onToggle, disabled = false, userRole }: PermissionGridProps) => {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Filter permissions based on search
@@ -62,6 +64,11 @@ export const PermissionGrid = ({ permissions, onToggle }: PermissionGridProps) =
         {Object.entries(permissionsByCategory).map(([categoryKey, categoryPermissions]) => {
           const category = PERMISSION_CATEGORIES[categoryKey as keyof typeof PERMISSION_CATEGORIES];
           if (!category || categoryPermissions.length === 0) return null;
+          
+          // Hide Financial & Pricing category for roles other than Admin or System Owner
+          if (categoryKey === 'financial' && userRole && userRole !== 'Admin' && userRole !== 'System Owner') {
+            return null;
+          }
 
           return (
             <div key={categoryKey} className="space-y-2">
@@ -83,6 +90,7 @@ export const PermissionGrid = ({ permissions, onToggle }: PermissionGridProps) =
                         checked={isEnabled}
                         onCheckedChange={(checked) => onToggle(permissionKey, !!checked)}
                         className="mt-0.5"
+                        disabled={disabled}
                       />
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">

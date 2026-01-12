@@ -104,6 +104,9 @@ const DashboardContent = () => {
     };
   }, [criticalStats.data, secondaryStats.data]);
   
+  // Permission checks for widgets
+  const canViewTeamMembers = useHasPermission('view_team_members');
+  const canViewEmailKPIs = useHasPermission('view_email_kpis');
   // If user is a dealer, show simplified dashboard (AFTER all hooks are called)
   if (!isDealerLoading && isDealer) {
     return <DealerDashboard />;
@@ -140,12 +143,13 @@ const DashboardContent = () => {
       if (widget.requiredPermission === 'view_emails') return canViewEmails !== false;
       if (widget.requiredPermission === 'view_inventory') return canViewInventory !== false;
       if (widget.requiredPermission === 'view_team_performance') return canViewTeamPerformance !== false;
+      if (widget.requiredPermission === 'view_team_members') return canViewTeamMembers !== false;
 
       return true; // Default to showing during loading
     });
     
     return filtered;
-  }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, isShopifyConnected, hasOnlineStore.data, hasOnlineStore.isLoading]);
+  }, [getEnabledWidgets, canViewCalendar, canViewShopify, canViewEmails, canViewInventory, canViewTeamMembers, isShopifyConnected, hasOnlineStore.data, hasOnlineStore.isLoading]);
 
   // Debug logging for Shopify status
   console.log('[Dashboard] Integration Status:', {

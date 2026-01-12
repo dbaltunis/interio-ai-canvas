@@ -8,6 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -15,12 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Send, Loader2, Eye, Edit } from 'lucide-react';
+import { Send, Loader2, AlertCircle, Eye, Edit } from 'lucide-react';
 import { RichTextEditor } from '@/components/jobs/email-components/RichTextEditor';
 import { EmailTemplateWithBusiness } from '@/components/email/EmailTemplateWithBusiness';
 import { EmailSpamScore } from '@/components/email/EmailSpamScore';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { useCanSendEmails } from '@/hooks/useCanSendEmails';
 import { useGeneralEmailTemplates } from '@/hooks/useGeneralEmailTemplates';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 import { processTemplateVariables, getTemplateTypeLabel } from '@/utils/emailTemplateVariables';
@@ -47,6 +50,8 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
   const [spamResult, setSpamResult] = useState<{ score: number; issues: string[]; suggestions: string[] } | null>(null);
   const [isCheckingSpam, setIsCheckingSpam] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { canSendEmails, isPermissionLoaded } = useCanSendEmails();
   const { checkSpamRisk } = useCampaignAssistant();
   
   const { data: templates, isLoading: templatesLoading } = useGeneralEmailTemplates();
@@ -117,10 +122,19 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
   };
 
   const handleSend = async () => {
-    if (!subject.trim() || !message.trim()) {
+    if (!isPermissionLoaded || !canSendEmails) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to send emails.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!toEmail.trim() || !subject.trim() || !message.trim()) {
       toast({
         title: "Error",
-        description: "Please fill in both subject and message",
+        description: "Please fill in recipient email, subject, and message",
         variant: "destructive",
       });
       return;
@@ -201,6 +215,15 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
         </DialogHeader>
         
         <div className="space-y-4 pt-4">
+          {isPermissionLoaded && !canSendEmails && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                You don't have permission to send emails.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div className="space-y-2">
             <Label htmlFor="template">Email Template</Label>
             <Select 
@@ -313,7 +336,14 @@ export const QuickEmailDialog = ({ open, onOpenChange, client }: QuickEmailDialo
             </Button>
             <Button
               onClick={handleSend}
-              disabled={sending || !toEmail.trim() || !subject.trim() || !message.trim()}
+              disabled={
+                sending || 
+                !toEmail.trim() || 
+                !subject.trim() || 
+                !message.trim() || 
+                !isPermissionLoaded || 
+                !canSendEmails
+              }
             >
               {sending ? (
                 <>

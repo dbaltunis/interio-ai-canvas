@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,8 +13,13 @@ import { MessagePreviewDrawer } from "@/components/messaging/MessagePreviewDrawe
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
+import { EmailDashboardSkeleton } from "./skeleton/EmailDashboardSkeleton";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useCanViewEmailKPIs } from "@/hooks/useCanViewEmailKPIs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface EmailDashboardProps {
   showFilters?: boolean;
@@ -33,7 +38,64 @@ export const EmailDashboard = ({
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { canViewEmailKPIs, isPermissionLoaded } = useCanViewEmailKPIs();
   const { data: messages = [], isLoading, refetch } = useUnifiedCommunications();
+  
+  // Set up real-time subscriptions for email updates
+  useEffect(() => {
+    const channelName = `email-updates-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const emailChannel = supabase.channel(channelName).on('postgres_changes', {
+      event: '*',
+      // Listen to all events (INSERT, UPDATE, DELETE)
+      schema: 'public',
+      table: 'emails'
+    }, payload => {
+      console.log('Email table change detected:', payload);
+      // Invalidate email queries to refresh data
+      queryClient.invalidateQueries({
+        queryKey: ['emails']
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['email-kpis']
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['unified-communications']
+      });
+    }).on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'email_analytics'
+    }, payload => {
+      console.log('Email analytics change detected:', payload);
+      // Invalidate all email-related queries
+      queryClient.invalidateQueries({
+        queryKey: ['emails']
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['email-kpis']
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['email-analytics']
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['unified-communications']
+      });
+    }).on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'whatsapp_message_logs'
+    }, payload => {
+      console.log('WhatsApp message change detected:', payload);
+      queryClient.invalidateQueries({
+        queryKey: ['unified-communications']
+      });
+    }).subscribe();
+    return () => {
+      supabase.removeChannel(emailChannel);
+    };
+  }, [queryClient]);
   
   const handleRefresh = async () => {
     await refetch();
@@ -68,8 +130,32 @@ export const EmailDashboard = ({
   };
 
   const openClientThread = (clientId: string, filter: 'all' | 'email' | 'whatsapp' = 'all') => {
+    // Check permissions before opening thread
+    if (!isPermissionLoaded || !canViewEmailKPIs) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to view email performance metrics.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSelectedClientId(clientId);
     setChannelFilter(filter);
+    setDrawerOpen(true);
+  };
+
+  const handleMessageClick = (message: UnifiedMessage, clientId: string) => {
+    // Check permissions before viewing message details
+    if (!isPermissionLoaded || !canViewEmailKPIs) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to view email performance metrics.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSelectedMessage(message);
+    setSelectedClientId(clientId);
     setDrawerOpen(true);
   };
 
@@ -230,12 +316,12 @@ export const EmailDashboard = ({
                           {group.messages.slice(0, 5).map((msg) => (
                             <button
                               key={msg.id}
-                              onClick={() => {
-                                setSelectedMessage(msg);
-                                setSelectedClientId(group.clientId);
-                                setDrawerOpen(true);
-                              }}
-                              className="w-full flex items-center gap-3 px-4 py-2.5 pl-14 hover:bg-muted/30 transition-colors text-left"
+                              onClick={() => handleMessageClick(msg, group.clientId)}
+                              disabled={!isPermissionLoaded || !canViewEmailKPIs}
+                              className={cn(
+                                "w-full flex items-center gap-3 px-4 py-2.5 pl-14 hover:bg-muted/30 transition-colors text-left",
+                                (!isPermissionLoaded || !canViewEmailKPIs) && "opacity-50 cursor-not-allowed"
+                              )}
                             >
                               {/* Channel Icon */}
                               <div className={cn(
@@ -281,7 +367,11 @@ export const EmailDashboard = ({
                           {group.messages.length > 5 && (
                             <button
                               onClick={() => openClientThread(group.clientId)}
-                              className="w-full px-4 py-2 pl-14 text-sm text-primary hover:bg-muted/30 transition-colors text-left"
+                              disabled={!isPermissionLoaded || !canViewEmailKPIs}
+                              className={cn(
+                                "w-full px-4 py-2 pl-14 text-sm text-primary hover:bg-muted/30 transition-colors text-left",
+                                (!isPermissionLoaded || !canViewEmailKPIs) && "opacity-50 cursor-not-allowed"
+                              )}
                             >
                               View all {group.messages.length} messages →
                             </button>

@@ -16,6 +16,12 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useIsTablet } from "@/hooks/use-tablet";
 import { useTimezone } from "@/hooks/useTimezone";
 import { TimezoneUtils } from "@/utils/timezoneUtils";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPermissions } from "@/hooks/usePermissions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 type CalendarView = 'month' | 'week' | 'day';
 
@@ -111,6 +117,68 @@ export const CalendarSyncToolbar = ({
   const isMobile = useIsMobile();
   const isDesktop = !isMobile && !isTablet;
   const { userTimezone, getCurrentOffset } = useTimezone();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  // Permission checks for creating appointments
+  const { data: userRoleData, isLoading: roleLoading } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-calendar-toolbar', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[CalendarSyncToolbar] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+
+  // Check if create_appointments is explicitly in user_permissions table
+  const hasCreateAppointmentsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'create_appointments'
+  ) ?? false;
+
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+
+  // Only allow create if user is System Owner OR (Owner/Admin *without* explicit permissions) OR (explicit permissions include create_appointments)
+  const canCreateAppointments =
+    userRoleData?.isSystemOwner
+      ? true
+      : (isOwner || isAdmin)
+          ? !hasAnyExplicitPermissions || hasCreateAppointmentsPermission
+          : hasCreateAppointmentsPermission;
+
+  // Handler for scheduler click with permission check
+  const handleSchedulerClick = () => {
+    const isPermissionLoaded = explicitPermissions !== undefined && !permissionsLoading && !roleLoading;
+    if (isPermissionLoaded && !canCreateAppointments) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to create appointments.",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Don't allow creation while permissions are loading
+    if (!isPermissionLoaded) {
+      toast({
+        title: "Loading",
+        description: "Please wait while permissions are being checked...",
+      });
+      return;
+    }
+    onSchedulerClick?.();
+  };
 
   // Format last sync time - shorter for mobile
   const getLastSyncText = () => {
@@ -224,8 +292,9 @@ export const CalendarSyncToolbar = ({
               <DropdownMenuItem 
                 onSelect={(e) => {
                   e.preventDefault();
-                  onSchedulerClick?.();
+                  handleSchedulerClick();
                 }}
+                disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canCreateAppointments}
                 className="pointer-events-auto cursor-pointer"
               >
                 <UserPlus className="h-4 w-4 mr-2" />
@@ -302,7 +371,8 @@ export const CalendarSyncToolbar = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={onSchedulerClick}
+            onClick={handleSchedulerClick}
+            disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canCreateAppointments}
             className="h-7 w-7 p-0"
             title="Booking Templates"
           >

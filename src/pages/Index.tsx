@@ -10,6 +10,10 @@ import { useEnsureDefaultSequences } from "@/hooks/useNumberSequences";
 import { OrderingHubPage } from "@/components/ordering/OrderingHubPage";
 import { Button } from "@/components/ui/button";
 import { VersionFooter } from "@/components/version/VersionFooter";
+import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2, RefreshCw } from "lucide-react";
 
 
@@ -153,25 +157,167 @@ const Index = () => {
   });
   const { signOut, user } = useAuth();
   
+  // Permission checks for tab access control - works like jobs and clients
+  // Check explicit permissions first, then fall back to role-based
+  const { data: userRoleData } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[Index] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user && !permissionsLoading,
+  });
+  
+  // Check if user has ANY explicit permissions in the table
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+  
+  // Check if view_inventory is explicitly in user_permissions table
+  const hasViewInventoryPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_inventory'
+  ) ?? false;
+  
+  // Check if view_emails is explicitly in user_permissions table
+  const hasViewEmailsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_emails'
+  ) ?? false;
+  
+  // Works like jobs and clients:
+  // - System Owner: always has access
+  // - Owner/Admin: only bypass restrictions if NO explicit permissions exist in table at all
+  //   If ANY explicit permissions exist, respect ALL settings (missing = disabled)
+  // - Staff/Regular users: Always check explicit permissions
+  const canViewInventory = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasViewInventoryPermission
+        : hasViewInventoryPermission;
+
+  const canViewEmails = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasViewEmailsPermission
+        : hasViewEmailsPermission;
+  
   // Session timeout removed in v2.3.7 - users stay logged in via Supabase auto-refresh
   
   // Ensure default number sequences exist for all new users
   useEnsureDefaultSequences();
 
-  console.log('Index: Rendering with activeTab =', activeTab, 'user =', user?.email || 'no user');
+  console.log('Index: Rendering with activeTab =', activeTab, 'canViewInventory =', canViewInventory, 'hasAnyExplicitPermissions =', hasAnyExplicitPermissions, 'hasViewInventoryPermission =', hasViewInventoryPermission, 'user =', user?.email || 'no user');
   console.log('Index: Render time =', new Date().toISOString());
 
-  // Sync activeTab with URL (single source of truth)
+  // CRITICAL: Redirect away from inventory tab if user doesn't have permission
+  // This must run FIRST and check both URL and current state
+  // Works like jobs and clients - checks explicit permissions first
+  useEffect(() => {
+    // Wait for permissions to load
+    if (permissionsLoading || explicitPermissions === undefined) return;
+    
+    // Only redirect if permissions have loaded and user doesn't have permission
+    if (canViewInventory === false) {
+      const urlTab = searchParams.get('tab');
+      const currentTab = activeTab;
+      
+      // If URL has inventory tab, redirect immediately
+      if (urlTab === 'inventory') {
+        console.warn('[NAV] Index: Blocking inventory tab in URL - user lacks permission, redirecting to dashboard');
+        setSearchParams({ tab: 'dashboard' }, { replace: true });
+        setActiveTab('dashboard');
+        sessionStorage.setItem('active_tab', 'dashboard');
+        return;
+      }
+      
+      // If current active tab is inventory, redirect immediately
+      if (currentTab === 'inventory') {
+        console.warn('[NAV] Index: User lacks view_inventory permission, redirecting from inventory tab');
+        setSearchParams({ tab: 'dashboard' }, { replace: true });
+        setActiveTab('dashboard');
+        sessionStorage.setItem('active_tab', 'dashboard');
+      }
+    }
+
+    // Redirect away from emails tab if user doesn't have permission
+    if (canViewEmails === false) {
+      const urlTab = searchParams.get('tab');
+      const currentTab = activeTab;
+      
+      // If URL has emails tab, redirect immediately
+      if (urlTab === 'emails') {
+        console.warn('[NAV] Index: Blocking emails tab in URL - user lacks permission, redirecting to dashboard');
+        setSearchParams({ tab: 'dashboard' }, { replace: true });
+        setActiveTab('dashboard');
+        sessionStorage.setItem('active_tab', 'dashboard');
+        return;
+      }
+      
+      // If current active tab is emails, redirect immediately
+      if (currentTab === 'emails') {
+        console.warn('[NAV] Index: User lacks view_emails permission, redirecting from emails tab');
+        setSearchParams({ tab: 'dashboard' }, { replace: true });
+        setActiveTab('dashboard');
+        sessionStorage.setItem('active_tab', 'dashboard');
+      }
+    }
+  }, [canViewInventory, canViewEmails, activeTab, searchParams, setSearchParams, permissionsLoading, explicitPermissions]);
+
+  // Sync activeTab with URL (single source of truth) - but validate permissions first
   useEffect(() => {
     const urlTab = searchParams.get('tab');
     // ONLY sync from URL if URL actually has a tab parameter
     // Don't override sessionStorage when URL has no tab
     if (urlTab && urlTab !== activeTab) {
+      // BLOCK inventory tab if user doesn't have permission (works like jobs and clients)
+      if (urlTab === 'inventory') {
+        // Wait for permissions to load
+        if (permissionsLoading || explicitPermissions === undefined) {
+          console.warn('[NAV] Index: Permission loading, deferring inventory tab until permission check completes');
+          return;
+        }
+        // If permission is explicitly false, block it
+        if (canViewInventory === false) {
+          console.warn('[NAV] Index: Blocking inventory tab access - user lacks permission');
+          setSearchParams({ tab: 'dashboard' }, { replace: true });
+          setActiveTab('dashboard');
+          sessionStorage.setItem('active_tab', 'dashboard');
+          return;
+        }
+      }
+
+      // BLOCK emails tab if user doesn't have permission (works like inventory)
+      if (urlTab === 'emails') {
+        // Wait for permissions to load
+        if (permissionsLoading || explicitPermissions === undefined) {
+          console.warn('[NAV] Index: Permission loading, deferring emails tab until permission check completes');
+          return;
+        }
+        // If permission is explicitly false, block it
+        if (canViewEmails === false) {
+          console.warn('[NAV] Index: Blocking emails tab access - user lacks permission');
+          setSearchParams({ tab: 'dashboard' }, { replace: true });
+          setActiveTab('dashboard');
+          sessionStorage.setItem('active_tab', 'dashboard');
+          return;
+        }
+      }
+      
       console.warn('[NAV] Index: Syncing activeTab from URL:', urlTab);
       setActiveTab(urlTab);
       sessionStorage.setItem('active_tab', urlTab);
     }
-  }, [searchParams, activeTab]);
+  }, [searchParams, activeTab, canViewInventory, setSearchParams, permissionsLoading, explicitPermissions]);
 
   const handleTabChange = (tabId: string) => {
     console.warn('[NAV] Index: handleTabChange called with:', tabId);
@@ -228,6 +374,14 @@ const Index = () => {
           </Suspense>
         );
       case "emails":
+        // Only render if user has permission (after permissions are loaded)
+        if (explicitPermissions !== undefined && !permissionsLoading && !canViewEmails) {
+          return (
+            <div className="p-6 text-center">
+              <p className="text-destructive">You don't have permission to view emails.</p>
+            </div>
+          );
+        }
         return (
           <Suspense fallback={<EmailManagementSkeleton />}>
             <ComponentWrapper>
@@ -236,6 +390,34 @@ const Index = () => {
           </Suspense>
         );
       case "inventory":
+        // Check permission before rendering - redirect handled in useEffect above
+        // Works like jobs and clients - checks explicit permissions first
+        // If permissions are still loading, show loading state
+        if (permissionsLoading || explicitPermissions === undefined) {
+          return (
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="flex items-center gap-3">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <div className="text-lg text-muted-foreground">Loading permissions...</div>
+              </div>
+            </div>
+          );
+        }
+        // If permission is explicitly false, show access denied
+        if (canViewInventory === false) {
+          return (
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center space-y-3">
+                <p className="text-lg font-semibold">Access Denied</p>
+                <p className="text-sm text-muted-foreground">You don't have permission to view the Library.</p>
+                <Button variant="outline" onClick={() => handleTabChange('dashboard')}>
+                  Go to Dashboard
+                </Button>
+              </div>
+            </div>
+          );
+        }
+        // Only render if permission is true
         return (
           <Suspense fallback={<InventorySkeleton />}>
             <ComponentWrapper>

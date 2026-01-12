@@ -159,12 +159,16 @@ export const useCreateClient = () => {
         ? client.assigned_to 
         : (currentUserId && currentUserId !== effectiveOwnerId ? currentUserId : null);
 
+      // Set created_by to the current user who is creating the client
+      const createdBy = currentUserId || user.id;
+
       const { data, error } = await supabase
         .from("clients")
         .insert({
           ...client,
           user_id: effectiveOwnerId,
-          assigned_to: assignedTo
+          assigned_to: assignedTo,
+          created_by: createdBy
         })
         .select()
         .single();

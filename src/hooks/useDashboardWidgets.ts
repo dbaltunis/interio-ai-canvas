@@ -112,6 +112,7 @@ export const DEFAULT_WIDGETS: DashboardWidget[] = [
   },
   {
     id: "team",
+    requiredPermission: "view_team_members",
     name: "Team Members",
     description: "View and message your team",
     enabled: true,

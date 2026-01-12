@@ -10,10 +10,12 @@ import { AINotificationToast } from '../collaboration/AINotificationToast';
 import { Button } from '@/components/ui/button';
 import { useUserPresence } from '@/hooks/useUserPresence';
 import { useDirectMessages } from '@/hooks/useDirectMessages';
-import { useHasPermission } from '@/hooks/usePermissions';
+import { useHasPermission, useUserPermissions } from '@/hooks/usePermissions';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useIsDealer } from '@/hooks/useIsDealer';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 // Hidden for now - TeachingHelpButton needs completion before deployment
 // import { TeachingHelpButton } from '@/components/teaching/TeachingHelpButton';
 import { 
@@ -39,7 +41,7 @@ const navItems = [
   { id: "dashboard", label: "Home", icon: LayoutDashboard, tourId: "dashboard-tab" },
   { id: "clients", label: "Clients", icon: Users, tourId: "crm-tab", permission: "view_clients" },
   { id: "projects", label: "Jobs", icon: FolderOpen, tourId: "projects-tab", permission: "view_jobs" },
-  { id: "emails", label: "Messages", icon: FileText, tourId: "emails-tab", permission: "view_jobs" },
+  { id: "emails", label: "Emails", icon: FileText, tourId: "emails-tab", permission: "view_emails" },
   { id: "calendar", label: "Calendar", icon: Calendar, tourId: "calendar-tab", permission: "view_calendar" },
   { id: "inventory", label: "Library", icon: Package, tourId: "library-tab", permission: "view_inventory" },
   { id: "online-store", label: "Store", icon: Store, tourId: "online-store-tab", permission: "has_online_store" },
@@ -53,6 +55,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   
   const { activeUsers, currentUser } = useUserPresence();
   const { conversations } = useDirectMessages();
+  const { toast } = useToast();
   
   // Check if user is a dealer - they have restricted navigation
   const { data: isDealer } = useIsDealer();
@@ -61,14 +64,57 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
   const canViewJobs = useHasPermission('view_jobs');
   const canViewClients = useHasPermission('view_clients');
   const canViewCalendar = useHasPermission('view_calendar');
-  const canViewInventory = useHasPermission('view_inventory');
+  
+  // For inventory, check explicit permissions like jobs and clients
+  const { data: userRoleData } = useUserRole();
+  const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
+  const isAdmin = userRoleData?.isAdmin || false;
+  const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
+  const { data: explicitPermissions } = useQuery({
+    queryKey: ['explicit-user-permissions-inventory', userRoleData?.role],
+    queryFn: async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('permission_name')
+        .eq('user_id', authUser.id);
+      if (error) {
+        console.error('[ResponsiveHeader] Error fetching explicit permissions:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!userRoleData && !permissionsLoading,
+  });
+  
+  const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
+  const hasViewInventoryPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_inventory'
+  ) ?? false;
+  const hasViewEmailsPermission = explicitPermissions?.some(
+    (p: { permission_name: string }) => p.permission_name === 'view_emails'
+  ) ?? false;
+  
+  // Works like jobs and clients - check explicit permissions first
+  const canViewInventory = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasViewInventoryPermission
+        : hasViewInventoryPermission;
+
+  const canViewEmails = userRoleData?.isSystemOwner
+    ? true
+    : (isOwner || isAdmin)
+        ? !hasAnyExplicitPermissions || hasViewEmailsPermission
+        : hasViewEmailsPermission;
   
   // Check if ANY permission is still loading (undefined)
   // Only show skeleton when truly loading, not when permissions are determined
-  const permissionsLoading = canViewJobs === undefined || 
+  const permissionsLoadingState = canViewJobs === undefined || 
                              canViewClients === undefined || 
                              canViewCalendar === undefined || 
-                             canViewInventory === undefined;
+                             (explicitPermissions === undefined && !userRoleData);
   
   // Check if user has InteriorApp store AND NOT using Shopify
   const { data: hasOnlineStore } = useQuery({
@@ -133,7 +179,7 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
   
-  // Filter nav items based on permissions and dealer restrictions
+  // Filter nav items based on permissions (but keep emails visible, just disabled)
   // During loading (undefined), show items to prevent disappearing UI
   const visibleNavItems = navItems.filter(item => {
     if (!item.permission) return true; // No permission required (dashboard)
@@ -148,7 +194,13 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
     if (item.permission === 'view_jobs') return canViewJobs !== false;
     if (item.permission === 'view_clients') return canViewClients !== false;
     if (item.permission === 'view_calendar') return canViewCalendar !== false;
-    if (item.permission === 'view_inventory') return canViewInventory !== false;
+    if (item.permission === 'view_inventory') {
+      // Wait for explicit permissions to load
+      if (explicitPermissions === undefined && !userRoleData) return true; // Show during loading
+      return canViewInventory;
+    }
+    // Keep emails tab visible but will be disabled
+    if (item.permission === 'view_emails') return true;
     if (item.permission === 'has_online_store') return hasOnlineStore === true;
     
     return true; // Default to showing during loading
@@ -172,8 +224,8 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
           </div>
 
           {/* Center: Navigation items */}
-          <nav className="flex items-center gap-1">
-            {permissionsLoading ? (
+          <nav className="flex items-center space-x-2 lg:space-x-3">
+            {permissionsLoadingState ? (
               // Show skeleton while permissions are loading
               <>
                 {[1, 2, 3, 4, 5].map((i) => (
@@ -184,15 +236,44 @@ export const ResponsiveHeader = ({ activeTab, onTabChange }: ResponsiveHeaderPro
               visibleNavItems.map((item) => {
                 const Icon = item.icon;
                 
+                // Check if emails tab should be disabled
+                const isEmailsTab = item.id === 'emails';
+                const isEmailsDisabled = isEmailsTab && explicitPermissions !== undefined && !permissionsLoading && !canViewEmails;
+                // Also check if emails are configured (SendGrid) for emails tab
+                const isEmailsNotConfigured = isEmailsTab && hasEmailsConfigured === false;
+                const shouldDisableEmails = isEmailsDisabled || isEmailsNotConfigured;
+                
+                const handleClick = () => {
+                  if (isEmailsDisabled) {
+                    toast({
+                      title: "Permission Denied",
+                      description: "You don't have permission to view emails.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  if (isEmailsNotConfigured) {
+                    toast({
+                      title: "Emails Not Configured",
+                      description: "Please configure SendGrid integration to access emails.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  onTabChange(item.id);
+                };
+                
                 return (
                   <button
                     key={item.id}
-                    onClick={() => onTabChange(item.id)}
+                    onClick={handleClick}
+                    disabled={shouldDisableEmails}
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative",
                       activeTab === item.id 
-                        ? "bg-primary text-primary-foreground shadow-sm" 
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                        ? "bg-primary text-primary-foreground shadow-sm border border-primary/20" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                      shouldDisableEmails && "opacity-50 cursor-not-allowed"
                     )}
                     data-tour-id={item.tourId}
                   >

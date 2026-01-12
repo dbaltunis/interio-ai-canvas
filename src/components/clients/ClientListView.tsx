@@ -20,6 +20,9 @@ import { useClientCommunicationStats } from "@/hooks/useClientCommunicationStats
 import { BulkActionsBar } from "./BulkActionsBar";
 import { CampaignWizard } from "@/components/campaigns/CampaignWizard";
 import { useClientSelection, SelectedClient } from "@/hooks/useClientSelection";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useCanSendEmails } from "@/hooks/useCanSendEmails";
+import { useToast } from "@/hooks/use-toast";
 import { WhatsAppMessageDialog } from "@/components/messaging/WhatsAppMessageDialog";
 
 interface Client {
@@ -68,6 +71,9 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
   const [whatsAppDialogOpen, setWhatsAppDialogOpen] = useState(false);
   const deleteClient = useDeleteClient();
   const { formatCurrency } = useFormattedCurrency();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { canSendEmails, isPermissionLoaded } = useCanSendEmails();
   
   // Multi-selection
   const {
@@ -120,7 +126,10 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
 
   const handleExportSelected = () => {
     // Export logic - for now just show a toast
-    toast.success(`Exporting ${selectedCount} clients...`);
+    toast({
+      title: `Exporting ${selectedCount} clients...`,
+      variant: "success",
+    });
   };
 
   const handleDeleteClick = (e: React.MouseEvent, client: Client) => {
@@ -131,7 +140,10 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
 
   const handleConfirmDelete = () => {
     if (!canDeleteClients) {
-      toast.error("You don't have permission to delete clients");
+      toast({
+        title: "You don't have permission to delete clients",
+        variant: "destructive",
+      });
       setDeleteDialogOpen(false);
       setClientToDelete(null);
       return;
@@ -140,12 +152,18 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
     if (clientToDelete) {
       deleteClient.mutate(clientToDelete.id, {
         onSuccess: () => {
-          toast.success(`Client "${clientToDelete.name}" has been deleted`);
+          toast({
+            title: `Client "${clientToDelete.name}" has been deleted`,
+            variant: "success",
+          });
           setDeleteDialogOpen(false);
           setClientToDelete(null);
         },
         onError: (error) => {
-          toast.error("Failed to delete client");
+          toast({
+            title: "Failed to delete client",
+            variant: "destructive",
+          });
           console.error("Delete error:", error);
         }
       });
@@ -386,7 +404,22 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                             View Details
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isPermissionLoaded || !canSendEmails) {
+                                toast({
+                                  title: "Permission Denied",
+                                  description: "You don't have permission to send emails.",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              // TODO: Open email dialog
+                            }}
+                            disabled={!isPermissionLoaded || !canSendEmails}
+                            className={!isPermissionLoaded || !canSendEmails ? "opacity-50 cursor-not-allowed" : ""}
+                          >
                             <Mail className="mr-2 h-4 w-4" />
                             Send Email
                           </DropdownMenuItem>
