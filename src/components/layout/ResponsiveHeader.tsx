@@ -41,7 +41,7 @@ const navItems = [
   { id: "dashboard", label: "Home", icon: LayoutDashboard, tourId: "dashboard-tab" },
   { id: "clients", label: "Clients", icon: Users, tourId: "crm-tab", permission: "view_clients" },
   { id: "projects", label: "Jobs", icon: FolderOpen, tourId: "projects-tab", permission: "view_jobs" },
-  { id: "emails", label: "Emails", icon: FileText, tourId: "emails-tab", permission: "view_emails" },
+  { id: "emails", label: "Messages", icon: FileText, tourId: "emails-tab", permission: "view_emails" },
   { id: "calendar", label: "Calendar", icon: Calendar, tourId: "calendar-tab", permission: "view_calendar" },
   { id: "inventory", label: "Library", icon: Package, tourId: "library-tab", permission: "view_inventory" },
   { id: "online-store", label: "Store", icon: Store, tourId: "online-store-tab", permission: "has_online_store" },
