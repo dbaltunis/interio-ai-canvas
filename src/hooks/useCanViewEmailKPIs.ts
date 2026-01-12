@@ -44,18 +44,12 @@ export const useCanViewEmailKPIs = () => {
     (p: { permission_name: string }) => p.permission_name === 'view_email_kpis'
   );
 
-  // System Owner: ALWAYS has full access regardless of explicit permissions
-  // Owner: Only bypass restrictions if NO explicit permissions exist in table at all
-  // Admin: if NO explicit permissions exist, they have full access; if explicit permissions exist, MUST respect them (no bypass)
-  // Staff: Always check explicit permissions (no special bypass)
-  // Logic matches view/edit permissions pattern
-  const canViewEmailKPIs = userRoleData?.isSystemOwner
-    ? true // System Owner ALWAYS has full access
-    : isOwner && !hasAnyExplicitPermissions
-      ? true // Owner with no explicit permissions = full access
-      : isAdmin && !hasAnyExplicitPermissions
-        ? true // Admin with no explicit permissions = full access
-        : hasViewEmailKPIsPermission; // Owner/Admin with explicit permissions OR Staff: need view_email_kpis permission
+  // System Owner/Owner/Admin: ALWAYS have full access regardless of explicit permissions
+  // Staff: Always check explicit permissions
+  const canViewEmailKPIs = 
+    userRoleData?.isSystemOwner || isOwner || isAdmin
+      ? true  // Owner/Admin/System Owner ALWAYS have full access
+      : hasViewEmailKPIsPermission;  // Staff: need view_email_kpis permission
 
   const isPermissionLoaded = explicitPermissions !== undefined && !userRoleLoading && !permissionsLoading;
   
