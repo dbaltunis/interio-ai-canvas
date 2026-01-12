@@ -175,6 +175,11 @@ export const CustomPermissionsManager = ({ userId, userRole, userName, canManage
           const category = PERMISSION_CATEGORIES[categoryKey as keyof typeof PERMISSION_CATEGORIES];
           if (!category) return null;
           
+          // Hide Financial & Pricing category for roles other than Admin or System Owner
+          if (categoryKey === 'financial' && userRole !== 'Admin' && userRole !== 'System Owner') {
+            return null;
+          }
+          
           const enabledCount = permissions.filter(p => isPermissionEnabled(p.key)).length;
           
           return (

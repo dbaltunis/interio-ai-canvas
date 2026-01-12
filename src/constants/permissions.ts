@@ -18,7 +18,7 @@ export const PERMISSION_ALIASES: Record<string, string[]> = {
   'view_jobs': ['view_all_jobs', 'view_assigned_jobs'],
   'view_clients': ['view_all_clients', 'view_assigned_clients'],
   'view_calendar': ['view_all_calendar', 'view_own_calendar'],
-  'view_analytics': ['view_team_performance', 'view_primary_kpis'],
+  'view_analytics': ['view_team_performance'],
   'view_inventory': ['view_inventory', 'manage_inventory'], // Added alias for inventory
   // Edit permissions - map "own" to "assigned"
   'edit_own_jobs': ['edit_assigned_jobs'],
@@ -199,35 +199,6 @@ export const PERMISSION_DETAILS: Record<string, {
     required: [] 
   },
   
-  // ===== FINANCIAL & PRICING =====
-  view_selling_prices: { 
-    label: 'View Selling Prices', 
-    description: 'See customer-facing prices in quotes', 
-    category: 'financial', 
-    required: [] 
-  },
-  view_cost_prices: { 
-    label: 'View Cost Prices', 
-    description: 'See supplier costs and purchase prices', 
-    category: 'financial', 
-    required: [], 
-    warning: true 
-  },
-  view_profit_margins: { 
-    label: 'View Profit Margins', 
-    description: 'See markup percentages and profit calculations', 
-    category: 'financial', 
-    required: ['view_cost_prices'], 
-    warning: true 
-  },
-  manage_pricing: { 
-    label: 'Manage Pricing', 
-    description: 'Change prices, markups, and discounts', 
-    category: 'financial', 
-    required: ['view_profit_margins'], 
-    warning: true 
-  },
-  
   // ===== TEAM =====
   view_team_members: { 
     label: 'View Team Members', 
@@ -314,24 +285,11 @@ export const PERMISSION_DETAILS: Record<string, {
     category: 'jobs', 
     required: [] 
   },
-  view_primary_kpis: { 
-    label: 'View Primary KPIs', 
-    description: 'See main dashboard metrics', 
-    category: 'financial', 
-    required: [] 
-  },
   view_email_kpis: { 
     label: 'View Email KPIs', 
     description: 'See email performance metrics', 
     category: 'team', 
     required: [] 
-  },
-  view_revenue_kpis: { 
-    label: 'View Revenue KPIs', 
-    description: 'See revenue and sales metrics', 
-    category: 'financial', 
-    required: [], 
-    warning: true 
   },
   view_purchasing: { 
     label: 'View Purchasing', 
@@ -360,12 +318,11 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_all_clients', 'view_assigned_clients', 'create_clients', 'edit_all_clients', 'edit_assigned_clients', 'delete_clients',
     'view_all_calendar', 'view_own_calendar', 'create_appointments',
     'view_inventory', 'manage_inventory', 'manage_inventory_admin', 'view_templates', 'manage_templates', 'view_window_treatments',
-    'view_selling_prices', 'view_cost_prices', 'view_profit_margins', 'manage_pricing',
     'view_team_members', 'view_team_performance', 'send_team_messages', 'manage_team',
     'view_settings', 'manage_business_settings', 'manage_integrations',
     // Additional permissions
     'view_profile', 'view_shopify', 'manage_shopify', 'view_emails', 'send_emails',
-    'view_workroom', 'view_primary_kpis', 'view_email_kpis', 'view_revenue_kpis',
+    'view_workroom', 'view_email_kpis',
     'view_purchasing', 'manage_purchasing'
   ],
   Owner: [
@@ -374,12 +331,11 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_all_clients', 'view_assigned_clients', 'create_clients', 'edit_all_clients', 'edit_assigned_clients', 'delete_clients',
     'view_all_calendar', 'view_own_calendar', 'create_appointments',
     'view_inventory', 'manage_inventory', 'manage_inventory_admin', 'view_templates', 'manage_templates', 'view_window_treatments',
-    'view_selling_prices', 'view_cost_prices', 'view_profit_margins', 'manage_pricing',
     'view_team_members', 'view_team_performance', 'send_team_messages', 'manage_team',
     'view_settings', 'manage_business_settings', 'manage_integrations',
     // Additional permissions
     'view_profile', 'view_shopify', 'manage_shopify', 'view_emails', 'send_emails',
-    'view_workroom', 'view_primary_kpis', 'view_email_kpis', 'view_revenue_kpis',
+    'view_workroom', 'view_email_kpis',
     'view_purchasing', 'manage_purchasing'
   ],
   Admin: [
@@ -388,12 +344,11 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_all_clients', 'view_assigned_clients', 'create_clients', 'edit_all_clients', 'edit_assigned_clients', 'delete_clients',
     'view_all_calendar', 'view_own_calendar', 'create_appointments',
     'view_inventory', 'manage_inventory', 'view_templates', 'manage_templates', 'view_window_treatments',
-    'view_selling_prices', 'view_cost_prices', 'view_profit_margins', 'manage_pricing',
     'view_team_members', 'view_team_performance', 'send_team_messages', 'manage_team',
     'view_settings', 'manage_business_settings',
     // Additional permissions
     'view_profile', 'view_shopify', 'view_emails', 'send_emails',
-    'view_workroom', 'view_primary_kpis', 'view_email_kpis', 'view_revenue_kpis',
+    'view_workroom', 'view_email_kpis',
     'view_purchasing', 'manage_purchasing'
   ],
   Manager: [
@@ -402,12 +357,11 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_all_clients', 'view_assigned_clients', 'create_clients', 'edit_all_clients', 'edit_assigned_clients',
     'view_all_calendar', 'view_own_calendar', 'create_appointments',
     'view_inventory', 'manage_inventory', 'view_templates', 'view_window_treatments',
-    'view_selling_prices', 'view_cost_prices', 'view_profit_margins',
     'view_team_members', 'view_team_performance', 'send_team_messages',
     'view_settings',
     // Additional permissions
     'view_profile', 'view_emails', 'send_emails', 'view_workroom',
-    'view_primary_kpis', 'view_email_kpis', 'view_revenue_kpis',
+    'view_email_kpis',
     'view_purchasing'
   ],
   Staff: [
@@ -416,7 +370,6 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'view_assigned_clients', 'create_clients', 'edit_assigned_clients',
     'view_own_calendar', 'create_appointments',
     'view_inventory', 'view_templates', 'view_window_treatments',
-    'view_selling_prices', // Can see what to quote customers
     'view_team_members', 'send_team_messages',
     'view_settings',
     // Additional permissions

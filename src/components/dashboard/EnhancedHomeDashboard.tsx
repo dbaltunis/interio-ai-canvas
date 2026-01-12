@@ -81,9 +81,7 @@ const DashboardContent = () => {
   const canViewInventory = useHasPermission('view_inventory');
   const canViewTeamPerformance = useHasPermission('view_team_performance');
   const canViewTeamMembers = useHasPermission('view_team_members');
-  const canViewPrimaryKPIs = useHasPermission('view_primary_kpis');
   const canViewEmailKPIs = useHasPermission('view_email_kpis');
-  const canViewRevenueKPIs = useHasPermission('view_revenue_kpis');
 
   // Filter enabled widgets by permissions AND integration type
   const enabledWidgets = useMemo(() => {

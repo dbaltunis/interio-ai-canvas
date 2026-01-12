@@ -359,6 +359,7 @@ export const PermissionManager = () => {
                   permissions={customPermissions}
                   onToggle={handlePermissionToggle}
                   disabled={explicitPermissions !== undefined && !permissionsLoading && !roleLoading && !canManageTeam}
+                  userRole={selectedUser?.role}
                 />
               </TabsContent>
 
