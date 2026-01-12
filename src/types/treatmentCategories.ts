@@ -7,6 +7,11 @@ export const TREATMENT_CATEGORIES = {
     display_name: 'Roller Blinds',
     singular: 'roller_blind'
   },
+  ZEBRA_BLINDS: {
+    db_value: 'zebra_blinds',
+    display_name: 'Zebra Blinds',
+    singular: 'zebra_blind'
+  },
   ROMAN_BLINDS: {
     db_value: 'roman_blinds',
     display_name: 'Roman Blinds',
@@ -155,6 +160,14 @@ export const UNIFIED_CATEGORIES: Record<string, UnifiedCategoryConfig> = {
     pricing_method: 'grid',
     inventory_subcategories: ['roller_fabric', 'blind_material'],
     description: 'Roller blinds with various fabrics'
+  },
+  zebra_blinds: {
+    db_value: 'zebra_blinds',
+    display_name: 'Zebra Blinds',
+    product_type: 'hard_material',
+    pricing_method: 'grid',
+    inventory_subcategories: ['zebra_fabric', 'roller_fabric', 'blind_material'],
+    description: 'Day & Night / Zebra blinds with alternating sheer and opaque bands'
   },
   venetian_blinds: {
     db_value: 'venetian_blinds',

@@ -1258,6 +1258,7 @@ export const WindowTreatmentOptionsManager = () => {
   const getTreatmentLabel = (category: TreatmentCategoryDbValue) => {
     const labels: Record<TreatmentCategoryDbValue, string> = {
       roller_blinds: 'Roller Blinds',
+      zebra_blinds: 'Zebra Blinds',
       roman_blinds: 'Roman Blinds',
       venetian_blinds: 'Venetian Blinds',
       vertical_blinds: 'Vertical Blinds',

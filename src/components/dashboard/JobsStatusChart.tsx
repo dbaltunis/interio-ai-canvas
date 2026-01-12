@@ -56,26 +56,43 @@ export const JobsStatusChart = () => {
     filteredProjects.forEach(project => {
       const statusId = project.status_id || project.status || 'pending';
       
-      // Try to get from job_statuses first (by ID)
+      // Try to get from job_statuses first (by ID - UUIDs)
       const statusInfo = statusMap.get(statusId);
       
       if (statusInfo) {
+        // Found in job_statuses lookup - use proper name
         if (!statusCounts[statusId]) {
           statusCounts[statusId] = { count: 0, name: statusInfo.name, color: statusInfo.color };
         }
         statusCounts[statusId].count++;
       } else {
-        // Fallback to status string
-        const statusKey = String(statusId);
-        if (!statusCounts[statusKey]) {
-          const displayName = statusKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-          statusCounts[statusKey] = { 
-            count: 0, 
-            name: displayName,
-            color: FALLBACK_COLORS[statusKey] || 'hsl(var(--muted-foreground))'
-          };
+        // Not found in job_statuses - check if it's a UUID (36 chars with dashes)
+        const isUUID = typeof statusId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(statusId);
+        
+        if (isUUID) {
+          // UUID not found in statusMap - group as "Unknown" to avoid showing raw UUIDs
+          const unknownKey = 'unknown';
+          if (!statusCounts[unknownKey]) {
+            statusCounts[unknownKey] = { 
+              count: 0, 
+              name: 'Unknown',
+              color: 'hsl(var(--muted-foreground))'
+            };
+          }
+          statusCounts[unknownKey].count++;
+        } else {
+          // Legacy string status - format nicely
+          const statusKey = String(statusId);
+          if (!statusCounts[statusKey]) {
+            const displayName = statusKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            statusCounts[statusKey] = { 
+              count: 0, 
+              name: displayName,
+              color: FALLBACK_COLORS[statusKey] || 'hsl(var(--muted-foreground))'
+            };
+          }
+          statusCounts[statusKey].count++;
         }
-        statusCounts[statusKey].count++;
       }
     });
 

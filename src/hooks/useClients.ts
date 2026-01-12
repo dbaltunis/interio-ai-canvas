@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
+import { useAuth } from "@/components/auth/AuthProvider";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type Client = Tables<"clients">;
@@ -29,6 +30,67 @@ export const useClients = (enabled: boolean = true) => {
     },
     enabled: enabled && !!effectiveOwnerId,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+/**
+ * Hook for dealers to fetch only their own clients
+ * Returns clients that are either:
+ * 1. Created by the dealer (created_by === user.id)
+ * 2. Linked to projects the dealer created
+ */
+export const useDealerOwnClients = () => {
+  const { user } = useAuth();
+  const { effectiveOwnerId } = useEffectiveAccountOwner();
+
+  return useQuery({
+    queryKey: ["dealer-clients", user?.id, effectiveOwnerId],
+    queryFn: async () => {
+      if (!user || !effectiveOwnerId) return [];
+
+      // First, get project client IDs from dealer's own projects
+      const { data: projects, error: projectError } = await supabase
+        .from("projects")
+        .select("client_id")
+        .eq("user_id", user.id)
+        .not("client_id", "is", null);
+
+      if (projectError) {
+        console.error("[useDealerOwnClients] Error fetching projects:", projectError);
+      }
+
+      const projectClientIds = projects?.map(p => p.client_id).filter(Boolean) || [];
+
+      // Get clients created by dealer OR linked to their projects
+      let query = supabase
+        .from("clients")
+        .select("*")
+        .eq("user_id", effectiveOwnerId)
+        .order("created_at", { ascending: false });
+
+      // Build OR filter for created_by and project client IDs
+      const orConditions: string[] = [];
+      orConditions.push(`created_by.eq.${user.id}`);
+      
+      if (projectClientIds.length > 0) {
+        orConditions.push(`id.in.(${projectClientIds.join(",")})`);
+      }
+
+      if (orConditions.length > 0) {
+        query = query.or(orConditions.join(","));
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("[useDealerOwnClients] Error fetching clients:", error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: !!user && !!effectiveOwnerId,
+    staleTime: 5 * 60 * 1000,
   });
 };
 

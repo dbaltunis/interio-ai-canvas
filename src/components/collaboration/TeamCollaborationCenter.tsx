@@ -32,6 +32,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { formatDisplayName, formatLastSeen, getInitials } from '@/utils/userDisplay';
 import { Clock, Coffee, Briefcase } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsDealer } from '@/hooks/useIsDealer';
 
 interface TeamCollaborationCenterProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
   const isMobile = useIsMobile();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { data: isDealer } = useIsDealer();
   const { activeUsers = [] } = useUserPresence();
   const { openConversation, totalUnreadCount = 0, conversations = [] } = useDirectMessages();
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
@@ -421,20 +423,22 @@ export const TeamCollaborationCenter = ({ isOpen, onToggle }: TeamCollaborationC
                           
                           <div className="h-4 w-px bg-border mx-1" />
                           
-                          {/* Support */}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setSupportDialogOpen(true)}
-                                className="h-8 w-8 p-0"
-                              >
-                                <LifeBuoy className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Support</TooltipContent>
-                          </Tooltip>
+                          {/* Support - Hidden for dealers */}
+                          {!isDealer && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setSupportDialogOpen(true)}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <LifeBuoy className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Support</TooltipContent>
+                            </Tooltip>
+                          )}
                           
                           {/* Settings */}
                           <Tooltip>

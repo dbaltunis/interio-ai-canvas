@@ -59,10 +59,11 @@ export const useConditionalOptions = (templateId?: string, selectedOptions: Sele
     const shownOptions = new Set<string>();
     const requiredOptions = new Set<string>();
     const defaultValues: Record<string, string> = {};
+    const allowedValues: Record<string, Set<string>> = {};
 
     console.log('🎯 Processing rules with selections:', selectedOptions);
 
-    // First pass: Find all options controlled by "show_option" rules
+    // First pass: Find all options controlled by "show_option" or "filter_values" rules
     // These should be HIDDEN by default unless their condition is met
     const optionsControlledByShowRules = new Set<string>();
     rules.forEach(rule => {
@@ -136,8 +137,24 @@ export const useConditionalOptions = (templateId?: string, selectedOptions: Sele
             
             case 'set_default':
               if (target_value && !defaultValues[target_option_key]) {
-                console.log(`🎯 SETTING DEFAULT for ${target_option_key}: ${target_value}`);
-                defaultValues[target_option_key] = target_value;
+                const defaultVal = Array.isArray(target_value) ? target_value[0] : target_value;
+                console.log(`🎯 SETTING DEFAULT for ${target_option_key}: ${defaultVal}`);
+                defaultValues[target_option_key] = defaultVal;
+                hasChanges = true;
+              }
+              break;
+
+            case 'filter_values':
+              // Filter values within a dropdown - only show specific value IDs
+              if (target_value) {
+                const values = Array.isArray(target_value) ? target_value : [target_value];
+                if (!allowedValues[target_option_key]) {
+                  allowedValues[target_option_key] = new Set();
+                }
+                values.forEach(v => {
+                  allowedValues[target_option_key].add(v);
+                  console.log(`🔍 FILTERING values for ${target_option_key}: allowing ${v}`);
+                });
                 hasChanges = true;
               }
               break;
@@ -150,7 +167,10 @@ export const useConditionalOptions = (templateId?: string, selectedOptions: Sele
       hidden: Array.from(hiddenOptions),
       shown: Array.from(shownOptions),
       required: Array.from(requiredOptions),
-      defaults: defaultValues
+      defaults: defaultValues,
+      allowedValues: Object.fromEntries(
+        Object.entries(allowedValues).map(([k, v]) => [k, Array.from(v)])
+      )
     });
 
     return {
@@ -158,6 +178,9 @@ export const useConditionalOptions = (templateId?: string, selectedOptions: Sele
       shownOptions: Array.from(shownOptions),
       requiredOptions: Array.from(requiredOptions),
       defaultValues,
+      allowedValues: Object.fromEntries(
+        Object.entries(allowedValues).map(([k, v]) => [k, Array.from(v)])
+      ),
     };
   }, [rules, JSON.stringify(selectedOptions)]);
 
@@ -173,11 +196,20 @@ export const useConditionalOptions = (templateId?: string, selectedOptions: Sele
     return conditionalState.defaultValues[optionKey];
   };
 
+  const getAllowedValues = (optionKey: string): string[] | null => {
+    const allowed = conditionalState.allowedValues?.[optionKey];
+    if (allowed && allowed.length > 0) {
+      return allowed;
+    }
+    return null; // null means no filtering, show all
+  };
+
   return {
     ...conditionalState,
     isOptionVisible,
     isOptionRequired,
     getDefaultValue,
+    getAllowedValues,
     rules,
   };
 };

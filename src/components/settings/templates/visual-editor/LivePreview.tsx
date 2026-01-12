@@ -42,6 +42,8 @@ import { useQuoteCustomData } from "@/hooks/useQuoteCustomData";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { getRegistrationLabels } from '@/utils/businessRegistrationLabels';
 import { DocumentHeaderBlock, LineItemsBlock, TotalsBlock, PaymentDetailsBlock, RegistrationFooterBlock, InstallationDetailsBlock, InstallerSignoffBlock, InvoiceStatusBlock, LatePaymentTermsBlock, TaxBreakdownBlock } from './shared/BlockRenderer';
+// Chunk rebuild: 2026-01-11T14:25
+import { groupHardwareItems, filterMeaningfulHardwareItems } from '@/utils/quotes/groupHardwareItems';
 
 // Lazy load the editable version to avoid circular dependencies and reduce bundle size
 const EditableLivePreview = React.lazy(() => import('./EditableLivePreview'));
@@ -812,8 +814,22 @@ const LivePreviewBlock = ({
             let displayName = child.name || 'Item';
             let displayDescription = child.description || '';
             
-            // If this is an option, parse the name format "key: value"
-            if (child.category === 'option' || child.category === 'options') {
+            // ACCESSORY HANDLING: Detect hardware_accessory category for special formatting
+            const isAccessory = child.category === 'hardware_accessory';
+            const accessoryQuantity = child.quantity || 1;
+            const accessoryUnitPrice = child.unit_price || 0;
+            const pricingDetails = child.pricingDetails || '';
+            
+            if (isAccessory) {
+              // For accessories, format description with quantity and pricing
+              if (accessoryQuantity > 1 && accessoryUnitPrice > 0) {
+                displayDescription = `${accessoryQuantity} × ₹${accessoryUnitPrice.toFixed(2)}`;
+                if (pricingDetails) {
+                  displayDescription += ` (${pricingDetails})`;
+                }
+              }
+            } else if (child.category === 'option' || child.category === 'options') {
+              // If this is an option, parse the name format "key: value"
               const colonIndex = displayName.indexOf(':');
               if (colonIndex > 0 && colonIndex < displayName.length - 1) {
                 // Split "vane_width: 89mm" into name and description
@@ -839,15 +855,16 @@ const LivePreviewBlock = ({
             
             breakdown.push({
               id: child.id || `${item.id}-child-${idx}`,
-              name: displayName,
+              name: isAccessory ? `└ ${displayName}` : displayName, // Indent accessory names
               category: child.category || 'Component',
               description: displayDescription,
-              quantity: child.quantity || 1,
+              quantity: accessoryQuantity,
               unit: child.unit || '',
-              unit_price: child.unit_price || 0,
+              unit_price: accessoryUnitPrice,
               total_cost: child.total || 0,
               image_url: childImageUrl,
-              color: child.color
+              color: child.color,
+              isAccessory: isAccessory // Flag for styling
             });
             
             console.log('[BREAKDOWN] Added child:', {
@@ -855,13 +872,50 @@ const LivePreviewBlock = ({
               description: displayDescription,
               unit_price: child.unit_price,
               total: child.total,
-              quantity: child.quantity
+              quantity: child.quantity,
+              isAccessory
             });
           });
         }
         
         // Apply smart grouping to merge related options (e.g., "Headrail Selection" + "Headrail Selection Colour")
         const groupedBreakdown = groupRelatedOptionsInBreakdown(breakdown);
+        
+        // Apply hardware grouping - consolidate hardware items into a single group
+        const { hardwareGroup, otherItems } = groupHardwareItems(groupedBreakdown);
+        
+        if (hardwareGroup && hardwareGroup.items.length > 0) {
+          // Filter out meaningless ₹0 category selections (e.g., "Hardware Type: Rod")
+          const meaningfulHardware = filterMeaningfulHardwareItems(hardwareGroup.items);
+          
+          if (meaningfulHardware.length > 0) {
+            // Create a hardware group summary row with image from option (NOT hardcoded emoji)
+            const hardwareSummary = {
+              id: hardwareGroup.id,
+              name: hardwareGroup.name,  // Dynamic: "Track & Hardware", "Rod & Hardware", etc.
+              image_url: hardwareGroup.image_url,  // Option's image (if configured)
+              category: 'hardware_group',
+              description: `${meaningfulHardware.length} item${meaningfulHardware.length > 1 ? 's' : ''}`,
+              quantity: 1,
+              unit: '',
+              unit_price: hardwareGroup.total,
+              total_cost: hardwareGroup.total,
+              isHardwareGroup: true,
+              hardwareItems: meaningfulHardware
+            };
+            
+            console.log('[BREAKDOWN] Hardware grouped:', {
+              item_name: item.name,
+              hardware_name: hardwareGroup.name,
+              hardware_image: hardwareGroup.image_url,
+              hardware_total: hardwareGroup.total,
+              hardware_items: meaningfulHardware.map((h: any) => ({ name: h.name, total: h.total_cost })),
+              other_items: otherItems.length
+            });
+            
+            return [hardwareSummary, ...otherItems];
+          }
+        }
         
         console.log('[BREAKDOWN] Final breakdown after grouping:', {
           item_name: item.name,
@@ -1157,38 +1211,97 @@ const LivePreviewBlock = ({
                           
                           {/* Detailed breakdown rows - only show in detailed mode */}
                           {breakdown.length > 0 && effectiveShowDetailed && breakdown.map((breakdownItem: any, bidx: number) => (
-                            <tr key={bidx} style={{ 
-                              backgroundColor: '#fff',
-                              borderBottom: isPrintMode ? 'none' : (bidx === breakdown.length - 1 ? '1px solid #ddd' : '1px solid #e8e8e8')
-                            }}>
-                              <td style={{ padding: '3px 6px 3px 20px', fontSize: '12px', color: '#666', fontWeight: '400', backgroundColor: '#ffffff' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  {showImages && (breakdownItem.image_url || breakdownItem.color) && (
-                                    <ProductImageWithColorFallback
-                                      imageUrl={breakdownItem.image_url}
-                                      color={breakdownItem.color}
-                                      productName={breakdownItem.name || 'Component'}
-                                      size={25}
-                                      rounded="sm"
-                                      category={breakdownItem.category}
-                                    />
-                                  )}
-                                  <span>{breakdownItem.name}</span>
-                                </div>
-                              </td>
-                              <td style={{ padding: '3px 6px', fontSize: '12px', color: '#666', fontWeight: '400', wordWrap: 'break-word', overflowWrap: 'break-word', backgroundColor: '#ffffff' }}>
-                                {breakdownItem.description || '-'}
-                              </td>
-                              <td style={{ padding: '3px 6px', fontSize: '12px', color: '#666', fontWeight: '400', textAlign: 'center', backgroundColor: '#ffffff' }}>
-                                {breakdownItem.quantity > 0 ? `${Number(breakdownItem.quantity).toFixed(2)} ${breakdownItem.unit || ''}`.trim() : '-'}
-                              </td>
-                              <td style={{ padding: '3px 6px', fontSize: '12px', fontWeight: '400', color: '#666', textAlign: 'right', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
-                                {breakdownItem.unit_price > 0 ? formatCurrency(breakdownItem.unit_price, projectData?.currency || getDefaultCurrency()) : '-'}
-                              </td>
-                              <td style={{ padding: '3px 6px', fontSize: '12px', fontWeight: '400', color: '#666', textAlign: 'right', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
-                                {formatCurrency(breakdownItem.total_cost || 0, projectData?.currency || getDefaultCurrency())}
-                              </td>
-                            </tr>
+                            breakdownItem.isHardwareGroup ? (
+                              // Hardware Group - render summary row + sub-items
+                              <React.Fragment key={`hw-group-${bidx}`}>
+                                {/* Hardware Group Summary Row - with option image (NOT hardcoded emoji) */}
+                                <tr style={{ 
+                                  backgroundColor: '#f8fafc',
+                                  borderBottom: isPrintMode ? 'none' : '1px solid #e2e8f0'
+                                }}>
+                                  <td style={{ padding: '4px 6px 4px 20px', fontSize: '12px', fontWeight: '600', color: '#334155', backgroundColor: '#f8fafc' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      {/* Show option image if available (NOT emoji) */}
+                                      {showImages && breakdownItem.image_url && (
+                                        <ProductImageWithColorFallback
+                                          imageUrl={breakdownItem.image_url}
+                                          productName={breakdownItem.name || 'Hardware'}
+                                          size={22}
+                                          rounded="sm"
+                                          category="hardware"
+                                        />
+                                      )}
+                                      <span>{breakdownItem.name}</span>
+                                    </div>
+                                  </td>
+                                  <td style={{ padding: '4px 6px', fontSize: '12px', color: '#64748b', backgroundColor: '#f8fafc' }}>
+                                    {breakdownItem.description}
+                                  </td>
+                                  <td style={{ padding: '4px 6px', fontSize: '12px', textAlign: 'center', color: '#64748b', backgroundColor: '#f8fafc' }}>-</td>
+                                  <td style={{ padding: '4px 6px', fontSize: '12px', textAlign: 'right', color: '#64748b', backgroundColor: '#f8fafc' }}>-</td>
+                                  <td style={{ padding: '4px 6px', fontSize: '12px', fontWeight: '600', textAlign: 'right', color: '#334155', backgroundColor: '#f8fafc' }}>
+                                    {formatCurrency(breakdownItem.total_cost || 0, projectData?.currency || getDefaultCurrency())}
+                                  </td>
+                                </tr>
+                                {/* Hardware Sub-items */}
+                                {breakdownItem.hardwareItems?.map((hwItem: any, hIdx: number) => (
+                                  <tr key={`hw-item-${hIdx}`} style={{ 
+                                    backgroundColor: '#fff',
+                                    borderBottom: isPrintMode ? 'none' : (hIdx === breakdownItem.hardwareItems.length - 1 && bidx === breakdown.length - 1 ? '1px solid #ddd' : '1px solid #f1f5f9')
+                                  }}>
+                                    <td style={{ padding: '2px 6px 2px 32px', fontSize: '11px', color: '#94a3b8', backgroundColor: '#ffffff' }}>
+                                      └ {(hwItem.name || '').replace(/^(Select Rod|Select Track|Hardware Type):\s*/i, '').replace(/^└\s*/, '')}
+                                    </td>
+                                    <td style={{ padding: '2px 6px', fontSize: '11px', color: '#94a3b8', backgroundColor: '#ffffff' }}>
+                                      {hwItem.description || hwItem.pricingDetails || '-'}
+                                    </td>
+                                    <td style={{ padding: '2px 6px', fontSize: '11px', textAlign: 'center', color: '#94a3b8', backgroundColor: '#ffffff' }}>
+                                      {hwItem.quantity > 0 ? hwItem.quantity : '-'}
+                                    </td>
+                                    <td style={{ padding: '2px 6px', fontSize: '11px', textAlign: 'right', color: '#94a3b8', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
+                                      {hwItem.unit_price > 0 ? formatCurrency(hwItem.unit_price, projectData?.currency || getDefaultCurrency()) : '-'}
+                                    </td>
+                                    <td style={{ padding: '2px 6px', fontSize: '11px', textAlign: 'right', color: '#94a3b8', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
+                                      {formatCurrency(hwItem.total_cost || 0, projectData?.currency || getDefaultCurrency())}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </React.Fragment>
+                            ) : (
+                              // Regular breakdown row
+                              <tr key={bidx} style={{ 
+                                backgroundColor: '#fff',
+                                borderBottom: isPrintMode ? 'none' : (bidx === breakdown.length - 1 ? '1px solid #ddd' : '1px solid #e8e8e8')
+                              }}>
+                                <td style={{ padding: '3px 6px 3px 20px', fontSize: '12px', color: '#666', fontWeight: '400', backgroundColor: '#ffffff' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    {showImages && (breakdownItem.image_url || breakdownItem.color) && (
+                                      <ProductImageWithColorFallback
+                                        imageUrl={breakdownItem.image_url}
+                                        color={breakdownItem.color}
+                                        productName={breakdownItem.name || 'Component'}
+                                        size={25}
+                                        rounded="sm"
+                                        category={breakdownItem.category}
+                                      />
+                                    )}
+                                    <span>{breakdownItem.name}</span>
+                                  </div>
+                                </td>
+                                <td style={{ padding: '3px 6px', fontSize: '12px', color: '#666', fontWeight: '400', wordWrap: 'break-word', overflowWrap: 'break-word', backgroundColor: '#ffffff' }}>
+                                  {breakdownItem.description || '-'}
+                                </td>
+                                <td style={{ padding: '3px 6px', fontSize: '12px', color: '#666', fontWeight: '400', textAlign: 'center', backgroundColor: '#ffffff' }}>
+                                  {breakdownItem.quantity > 0 ? `${Number(breakdownItem.quantity).toFixed(2)} ${breakdownItem.unit || ''}`.trim() : '-'}
+                                </td>
+                                <td style={{ padding: '3px 6px', fontSize: '12px', fontWeight: '400', color: '#666', textAlign: 'right', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
+                                  {breakdownItem.unit_price > 0 ? formatCurrency(breakdownItem.unit_price, projectData?.currency || getDefaultCurrency()) : '-'}
+                                </td>
+                                <td style={{ padding: '3px 6px', fontSize: '12px', fontWeight: '400', color: '#666', textAlign: 'right', whiteSpace: 'nowrap', backgroundColor: '#ffffff' }}>
+                                  {formatCurrency(breakdownItem.total_cost || 0, projectData?.currency || getDefaultCurrency())}
+                                </td>
+                              </tr>
+                            )
                           ))}
                         </React.Fragment>
                       );

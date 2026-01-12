@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { useEffectiveAccountOwner } from "@/hooks/useEffectiveAccountOwner";
 import { generateSequenceNumber, getEntityTypeFromStatusId, shouldRegenerateNumberByIds } from "./useNumberSequenceGeneration";
+import { useAuth } from "@/components/auth/AuthProvider";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import type { EntityType } from "./useNumberSequences";
 
@@ -32,6 +33,38 @@ export const useProjects = (options?: { enabled?: boolean }) => {
       return data || [];
     },
     enabled: enabled && !!effectiveOwnerId,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+};
+
+/**
+ * Hook for Dealers to fetch ONLY their own projects
+ * This explicitly filters by the current user's ID, not the account owner
+ * Used by the Dealer Portal to show only jobs created by the dealer
+ */
+export const useDealerOwnProjects = () => {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ["dealer-projects", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      // Dealers only see their own projects - explicit user_id filter
+      // This bypasses the normal account-wide RLS and shows ONLY their created jobs
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*, clients(name), parent_job_id")
+        .eq("user_id", user.id) // ONLY their own projects
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

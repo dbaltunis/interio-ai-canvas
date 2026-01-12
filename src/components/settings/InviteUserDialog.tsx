@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSubscriptionDetails } from "@/hooks/useSubscriptionDetails";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDealerPortalFeature } from "@/hooks/useAccountFeatures";
 
 interface InviteUserDialogProps {
   open: boolean;
@@ -96,7 +97,14 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
   });
 
   const isAdmin = userProfile?.role === 'admin' || userProfile?.role === 'super_admin';
-  const requiresBilling = !isAdmin;
+
+  // Get dealer portal feature settings
+  const { isEnabled: hasDealerPortal, dealerSeatPrice, unlimitedSeats } = useDealerPortalFeature();
+
+  // Determine if billing is needed based on role selection
+  const selectedIsDealer = formData.role === 'Dealer';
+  const dealerIsFree = selectedIsDealer && (unlimitedSeats || dealerSeatPrice === 0);
+  const requiresBilling = !isAdmin && !dealerIsFree;
 
   // Get subscription details for proration preview
   const { data: subscription, isLoading: subscriptionLoading } = useSubscriptionDetails();
@@ -304,6 +312,14 @@ export const InviteUserDialog = ({ open, onOpenChange }: InviteUserDialogProps) 
                 </SelectItem>
                 <SelectItem value="Manager">Manager</SelectItem>
                 <SelectItem value="Staff">Staff</SelectItem>
+                {hasDealerPortal && (
+                  <SelectItem value="Dealer">
+                    <div className="flex flex-col">
+                      <span className="font-medium">Dealer</span>
+                      <span className="text-xs text-muted-foreground">External reseller - limited access</span>
+                    </div>
+                  </SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>

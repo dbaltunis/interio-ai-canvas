@@ -17,6 +17,7 @@ import { SimplifiedTemplateFormManufacturing } from "./SimplifiedTemplateFormMan
 import { HeadingStyleSelector } from "./HeadingStyleSelector";
 import { TemplateOptionsManager } from "./TemplateOptionsManager";
 import { TWCOptionsPreview } from "./TWCOptionsPreview";
+import { OptionRulesManager } from "./OptionRulesManager";
 
 interface PrefilledData {
   name: string;
@@ -255,9 +256,10 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
   // Curtains get Heading tab, Roman Blinds do NOT (they use lift systems/fold styles instead)
   const isCurtainOnly = formData.treatment_category === 'curtains';
   const isCurtainOrRoman = formData.treatment_category === 'curtains' || formData.treatment_category === 'roman_blinds';
-  // Calculate visible tabs: Basic + Options + Pricing + (Heading for curtains) + (Manufacturing for curtains/romans)
-  const visibleTabCount = 3 + (isCurtainOnly ? 1 : 0) + (isCurtainOrRoman ? 1 : 0);
-
+  // Rules tab only shown for saved templates
+  const hasRulesTab = !!template?.id;
+  // Calculate visible tabs: Basic + Options + Pricing + (Heading for curtains) + (Manufacturing for curtains/romans) + (Rules for saved templates)
+  const visibleTabCount = 3 + (isCurtainOnly ? 1 : 0) + (isCurtainOrRoman ? 1 : 0) + (hasRulesTab ? 1 : 0);
   return (
     <div className="space-y-6">
       <Tabs defaultValue="basic" className="w-full">
@@ -267,6 +269,7 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
           <TabsTrigger value="options">Options</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
           {isCurtainOrRoman && <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>}
+          {hasRulesTab && <TabsTrigger value="rules">Rules</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="basic" className="space-y-4 mt-4">
@@ -409,6 +412,12 @@ export const CurtainTemplateForm = ({ template, onClose, prefilledData }: Curtai
               formData={formData}
               handleInputChange={handleInputChange}
             />
+          </TabsContent>
+        )}
+
+        {hasRulesTab && (
+          <TabsContent value="rules" className="space-y-4 mt-4">
+            <OptionRulesManager templateId={template!.id} />
           </TabsContent>
         )}
       </Tabs>

@@ -4,14 +4,69 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FileText, Download, ExternalLink, Loader2, Receipt } from "lucide-react";
 import { useInvoices, StripeInvoice } from "@/hooks/useInvoices";
+import { usePaidCustomInvoices, CustomInvoice } from "@/hooks/useCustomInvoices";
 import { format } from "date-fns";
 
+// Unified invoice type for display
+interface UnifiedInvoice {
+  id: string;
+  number: string;
+  date: Date;
+  description: string;
+  amount: number;
+  currency: string;
+  status: string;
+  hostedUrl: string | null;
+  pdfUrl: string | null;
+  source: 'stripe' | 'custom';
+}
+
+// Convert Stripe invoice to unified format
+const normalizeStripeInvoice = (invoice: StripeInvoice): UnifiedInvoice => ({
+  id: invoice.id,
+  number: invoice.number || invoice.id.slice(-8).toUpperCase(),
+  date: new Date(invoice.created * 1000),
+  description: invoice.lines?.data?.[0]?.description || 'Subscription payment',
+  amount: (invoice.amount_paid || invoice.amount_due) / 100,
+  currency: invoice.currency.toUpperCase(),
+  status: invoice.status,
+  hostedUrl: invoice.hosted_invoice_url,
+  pdfUrl: invoice.invoice_pdf,
+  source: 'stripe',
+});
+
+// Convert custom invoice to unified format
+const normalizeCustomInvoice = (invoice: CustomInvoice): UnifiedInvoice => ({
+  id: invoice.id,
+  number: invoice.description,
+  date: new Date(invoice.invoice_date),
+  description: invoice.description,
+  amount: invoice.amount,
+  currency: invoice.currency,
+  status: invoice.status,
+  hostedUrl: invoice.hosted_url,
+  pdfUrl: invoice.pdf_url,
+  source: 'custom',
+});
+
 export function InvoicesTable() {
-  const { data: invoices, isLoading, error } = useInvoices();
+  const { data: stripeInvoices, isLoading: stripeLoading, error: stripeError } = useInvoices();
+  const { data: customInvoices, isLoading: customLoading, error: customError } = usePaidCustomInvoices();
+
+  const isLoading = stripeLoading || customLoading;
+  const error = stripeError || customError;
+
+  // Merge and sort invoices
+  const allInvoices: UnifiedInvoice[] = [
+    ...(stripeInvoices?.map(normalizeStripeInvoice) || []),
+    ...(customInvoices?.map(normalizeCustomInvoice) || []),
+  ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
   const formatCurrency = (amount: number, currency: string) => {
-    const symbol = currency === 'gbp' ? '£' : currency === 'eur' ? '€' : '$';
-    return `${symbol}${(amount / 100).toFixed(2)}`;
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
   };
 
   const getStatusBadge = (status: string) => {
@@ -61,7 +116,7 @@ export function InvoicesTable() {
     );
   }
 
-  if (!invoices || invoices.length === 0) {
+  if (allInvoices.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -94,49 +149,45 @@ export function InvoicesTable() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Invoice</TableHead>
+                <TableHead>Description</TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead>Period</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
+              {allInvoices.map((invoice) => (
+                <TableRow key={`${invoice.source}-${invoice.id}`}>
                   <TableCell className="font-medium">
-                    {invoice.number || invoice.id.slice(-8).toUpperCase()}
+                    {invoice.description}
                   </TableCell>
                   <TableCell>
-                    {format(new Date(invoice.created * 1000), 'MMM d, yyyy')}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {format(new Date(invoice.period_start * 1000), 'MMM d')} – {format(new Date(invoice.period_end * 1000), 'MMM d')}
+                    {format(invoice.date, 'MMM d, yyyy')}
                   </TableCell>
                   <TableCell className="font-semibold">
-                    {formatCurrency(invoice.amount_paid || invoice.amount_due, invoice.currency)}
+                    {formatCurrency(invoice.amount, invoice.currency)}
                   </TableCell>
                   <TableCell>
                     {getStatusBadge(invoice.status)}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      {invoice.hosted_invoice_url && (
+                      {invoice.hostedUrl && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => window.open(invoice.hosted_invoice_url!, '_blank')}
+                          onClick={() => window.open(invoice.hostedUrl!, '_blank')}
                           title="View Invoice"
                         >
                           <ExternalLink className="h-4 w-4" />
                         </Button>
                       )}
-                      {invoice.invoice_pdf && (
+                      {invoice.pdfUrl && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => window.open(invoice.invoice_pdf!, '_blank')}
+                          onClick={() => window.open(invoice.pdfUrl!, '_blank')}
                           title="Download PDF"
                         >
                           <Download className="h-4 w-4" />

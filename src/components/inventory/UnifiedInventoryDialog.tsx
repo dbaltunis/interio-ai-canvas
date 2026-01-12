@@ -60,6 +60,8 @@ export const UnifiedInventoryDialog = ({
   const { data: vendors = [] } = useVendors();
   const { data: userRole } = useUserRole();
   const canViewMarkup = userRole?.canViewMarkup || false;
+  const canViewCosts = userRole?.canViewVendorCosts || false;
+  const isDealer = userRole?.isDealer || false;
   const { data: businessSettings } = useBusinessSettings();
   const { data: userPreferences } = useUserPreferences();
   const { data: pricingGrids = [] } = usePricingGrids();
@@ -797,17 +799,20 @@ export const UnifiedInventoryDialog = ({
 
                     {(pricingMethod === 'linear' || pricingMethod === 'per_sqm') && (
                       <div className="space-y-4 p-4 border rounded-lg">
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div>
-                            <Label>Cost Price ({currencySymbol} per {pricingMethod === 'per_sqm' ? sqUnitLabel : pricingUnitLabel})</Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={formData.cost_price || ""}
-                              onChange={(e) => setFormData(prev => ({ ...prev, cost_price: parseFloat(e.target.value) || 0 }))}
-                              placeholder="20.00"
-                            />
-                          </div>
+                        <div className={`grid gap-4 ${canViewCosts && !isDealer ? 'md:grid-cols-2' : 'md:grid-cols-1'}`}>
+                          {/* Cost Price - HIDDEN from dealers */}
+                          {canViewCosts && !isDealer && (
+                            <div>
+                              <Label>Cost Price ({currencySymbol} per {pricingMethod === 'per_sqm' ? sqUnitLabel : pricingUnitLabel})</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={formData.cost_price || ""}
+                                onChange={(e) => setFormData(prev => ({ ...prev, cost_price: parseFloat(e.target.value) || 0 }))}
+                                placeholder="20.00"
+                              />
+                            </div>
+                          )}
 
                           <div>
                             <Label>Selling Price ({currencySymbol} per {pricingMethod === 'per_sqm' ? sqUnitLabel : pricingUnitLabel})</Label>
@@ -821,7 +826,8 @@ export const UnifiedInventoryDialog = ({
                           </div>
                         </div>
 
-                        {canViewMarkup && formData.cost_price > 0 && formData.selling_price > 0 && (
+                        {/* Profit calculations - HIDDEN from dealers */}
+                        {canViewMarkup && !isDealer && formData.cost_price > 0 && formData.selling_price > 0 && (
                           <div className="grid gap-3 md:grid-cols-3 p-3 bg-muted/50 rounded">
                             <div>
                               <div className="text-xs text-muted-foreground">Profit</div>
@@ -844,7 +850,7 @@ export const UnifiedInventoryDialog = ({
 
                     {pricingMethod === 'fixed' && (
                       <div className="space-y-4 p-4 border rounded-lg">
-                        <div className="grid gap-4 md:grid-cols-3">
+                        <div className={`grid gap-4 ${canViewCosts && !isDealer ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                           <div>
                             <Label>Unit</Label>
                             <Select 
@@ -862,16 +868,19 @@ export const UnifiedInventoryDialog = ({
                             </Select>
                           </div>
 
-                          <div>
-                            <Label>Cost Price ({currencySymbol})</Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={formData.cost_price || ""}
-                              onChange={(e) => setFormData(prev => ({ ...prev, cost_price: parseFloat(e.target.value) || 0 }))}
-                              placeholder="20.00"
-                            />
-                          </div>
+                          {/* Cost Price - HIDDEN from dealers */}
+                          {canViewCosts && !isDealer && (
+                            <div>
+                              <Label>Cost Price ({currencySymbol})</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={formData.cost_price || ""}
+                                onChange={(e) => setFormData(prev => ({ ...prev, cost_price: parseFloat(e.target.value) || 0 }))}
+                                placeholder="20.00"
+                              />
+                            </div>
+                          )}
 
                           <div>
                             <Label>Selling Price ({currencySymbol})</Label>
@@ -885,7 +894,8 @@ export const UnifiedInventoryDialog = ({
                           </div>
                         </div>
 
-                        {canViewMarkup && formData.cost_price > 0 && formData.selling_price > 0 && (
+                        {/* Profit calculations - HIDDEN from dealers */}
+                        {canViewMarkup && !isDealer && formData.cost_price > 0 && formData.selling_price > 0 && (
                           <div className="grid gap-3 md:grid-cols-3 p-3 bg-muted/50 rounded">
                             <div>
                               <div className="text-xs text-muted-foreground">Profit</div>

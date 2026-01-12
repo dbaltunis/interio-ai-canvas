@@ -11,9 +11,9 @@ export interface OptionRule {
     value: string | string[];
   };
   effect: {
-    action: 'show_option' | 'hide_option' | 'require_option' | 'set_default';
+    action: 'show_option' | 'hide_option' | 'require_option' | 'set_default' | 'filter_values';
     target_option_key: string;
-    target_value?: string;
+    target_value?: string | string[];
   };
   description?: string;
   created_at?: string;
@@ -30,7 +30,10 @@ export const useTreatmentOptionRules = (templateId?: string) => {
         .from('option_rules')
         .select('*')
         .eq('template_id', templateId)
+        .eq('active', true)
         .order('created_at', { ascending: true });
+      
+      console.log('[OptionRules] Fetched rules for template:', templateId, 'Count:', data?.length, 'Rules:', data);
       
       if (error) throw error;
       return (data || []) as unknown as OptionRule[];

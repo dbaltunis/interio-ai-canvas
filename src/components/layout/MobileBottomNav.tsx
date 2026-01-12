@@ -21,6 +21,7 @@ import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { TeamCollaborationCenter } from "../collaboration/TeamCollaborationCenter";
 import { useMaterialQueueCount } from "@/hooks/useMaterialQueueCount";
 import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
+import { useIsDealer } from "@/hooks/useIsDealer";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -86,6 +87,8 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
     : (isOwner || isAdmin)
         ? !hasAnyExplicitPermissions || hasViewSettingsPermission
         : hasViewSettingsPermission;
+  // Check if user is a dealer - they have restricted navigation
+  const { data: isDealer } = useIsDealer();
   
   // Check if ANY permission is still loading (undefined)
   // Only show skeleton when truly loading, not when permissions are determined
@@ -117,10 +120,13 @@ export const MobileBottomNav = ({ activeTab, onTabChange }: MobileBottomNavProps
     refetchOnMount: 'always', // Always refetch when component mounts
   });
   
-  // Filter nav items based on permissions
+  // Filter nav items based on permissions and dealer restrictions
   // During loading (undefined), show items to prevent disappearing UI
   const visibleNavItems = navItems.filter(item => {
     if (!item.permission) return true;
+    
+    // Dealers: hide Calendar (they only see Home, Jobs, Clients)
+    if (isDealer && item.id === 'calendar') return false;
     
     // Dashboard/Home should always be visible for authenticated users
     if (item.permission === 'view_dashboard') return true;

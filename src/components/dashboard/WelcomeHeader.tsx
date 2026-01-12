@@ -13,7 +13,7 @@ import { TeamCollaborationCenter } from "../collaboration/TeamCollaborationCente
 import { DashboardDateFilter } from "./DashboardDateFilter";
 
 interface WelcomeHeaderProps {
-  onCustomizeClick: () => void;
+  onCustomizeClick?: () => void;
 }
 
 export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
@@ -110,15 +110,17 @@ export const WelcomeHeader = ({ onCustomizeClick }: WelcomeHeaderProps) => {
             <Moon className="h-4 w-4" />
           )}
         </Button>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={onCustomizeClick}
-          className="h-8 w-8 rounded-lg hover:bg-muted"
-          title="Customize dashboard"
-        >
-          <Settings2 className="h-4 w-4" />
-        </Button>
+        {onCustomizeClick && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onCustomizeClick}
+            className="h-8 w-8 rounded-lg hover:bg-muted"
+            title="Customize dashboard"
+          >
+            <Settings2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       <TeamCollaborationCenter 

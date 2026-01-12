@@ -11,8 +11,10 @@ import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { Loader2, AlertCircle } from "lucide-react";
 import { useEnhancedInventory } from "@/hooks/useEnhancedInventory";
 import { useTreatmentOptions } from "@/hooks/useTreatmentOptions";
+import { useConditionalOptions } from "@/hooks/useConditionalOptions";
 import { getOptionPrice, getOptionPricingMethod } from "@/utils/optionDataAdapter";
 import { getManufacturingPrice, getMethodAvailability } from "@/utils/pricing/headingPriceLookup";
+import { calculateAccessoriesFromOptionData, type HardwareAccessoryResult } from "@/hooks/pricing/useHardwareAccessoryPricing";
 import type { EyeletRing } from "@/hooks/useEyeletRings";
 import { validateTreatmentOptions } from "@/utils/treatmentOptionValidation";
 import { ValidationAlert } from "@/components/shared/ValidationAlert";
@@ -71,7 +73,10 @@ export const DynamicCurtainOptions = ({
   const { data: inventory = [], isLoading: headingsLoading, refetch: refetchInventory } = useEnhancedInventory({ forceRefresh: true });
   // Use template's treatment_category to fetch the correct options (e.g., 'roman_blinds', 'curtains')
   const treatmentCategory = template?.treatment_category || 'curtains';
-  const { data: treatmentOptions = [], isLoading: treatmentOptionsLoading } = useTreatmentOptions(treatmentCategory, 'category');
+  
+  // ✅ CRITICAL FIX: Fetch options by TEMPLATE ID to use template_option_settings filtering
+  // This ensures only options enabled for THIS template are shown, including hardware options
+  const { data: treatmentOptions = [], isLoading: treatmentOptionsLoading } = useTreatmentOptions(template?.id, 'template');
   
   // ✅ [v2.3.5] DEBUG: Log inventory state with heading filter verification
   console.log('🎯 [v2.3.5] DynamicCurtainOptions - Heading Debug:', {
@@ -106,6 +111,38 @@ export const DynamicCurtainOptions = ({
   // Get template option settings to filter hidden options
   const { isOptionEnabled, hasSettings, isLoading: settingsLoading, enabledOptionIds } = useEnabledTemplateOptions(template?.id);
   
+  // ✅ NEW: Conditional options based on option_rules (e.g., show track_selection when hardware_type = track)
+  // Build selected options map for the conditional hook
+  const selectedOptionsForRules = useMemo(() => {
+    const result: Record<string, string> = { ...treatmentOptionSelections };
+    
+    // ✅ CRITICAL FIX: Include selectedHeading for heading→hardware rules to evaluate
+    if (selectedHeading) {
+      result['selected_heading'] = selectedHeading;
+    }
+    
+    // ✅ CRITICAL FIX: Include selectedLining for lining-based rules
+    if (selectedLining) {
+      result['selected_lining'] = selectedLining;
+    }
+    
+    // Also include direct measurements that might be treatment options
+    Object.keys(measurements).forEach(key => {
+      if (key.startsWith('treatment_option_')) {
+        result[key.replace('treatment_option_', '')] = measurements[key];
+      }
+    });
+    return result;
+  }, [treatmentOptionSelections, measurements, selectedHeading, selectedLining]);
+  
+  const { isOptionVisible, getDefaultValue, getAllowedValues, rules: conditionalRules } = useConditionalOptions(template?.id, selectedOptionsForRules);
+  
+  console.log('🔧 DynamicCurtainOptions - Conditional Rules Debug:', {
+    templateId: template?.id,
+    rulesCount: conditionalRules?.length || 0,
+    selectedOptionsForRules,
+  });
+  
   // CRITICAL: Force refetch inventory when component mounts to ensure fresh data
   useEffect(() => {
     console.log('🔄 [v2.0.4] Force refetching inventory on mount');
@@ -137,6 +174,29 @@ export const DynamicCurtainOptions = ({
       setTreatmentOptionSelections(initialSelections);
     }
   }, [template?.id, measurements]); // Re-initialize when template or measurements change
+  
+  // ✅ CRITICAL FIX: Apply heading→hardware defaults from option_rules
+  // When heading changes, check if rules specify a hardware_type default and apply it
+  useEffect(() => {
+    const hardwareDefault = getDefaultValue('hardware_type');
+    
+    // Only apply if:
+    // 1. We have a heading selected
+    // 2. Rules computed a hardware default
+    // 3. No hardware is currently selected OR current hardware differs from default
+    const currentHardware = treatmentOptionSelections['hardware_type'];
+    
+    if (selectedHeading && hardwareDefault && !currentHardware) {
+      console.log('🎯 Auto-applying hardware default from heading rule:', {
+        selectedHeading,
+        hardwareDefault,
+        currentHardware
+      });
+      
+      // Apply the default hardware selection
+      handleTreatmentOptionChange('hardware_type', hardwareDefault);
+    }
+  }, [selectedHeading, getDefaultValue, treatmentOptionSelections]);
   
   // ❌ REMOVED: Auto-select first option logic
   // WHITELIST approach: User must explicitly select options
@@ -221,6 +281,39 @@ export const DynamicCurtainOptions = ({
     
     const heading = headingOptions.find(h => h.id === headingId);
     console.log('🔥🔥🔥 Found heading:', heading);
+    
+    // ✅ CRITICAL FIX: Clear ALL hardware selections when heading changes
+    // This allows the new heading→hardware default rule to apply
+    console.log('🔧 Clearing hardware selections for new heading');
+    setTreatmentOptionSelections(prev => {
+      const updated = { ...prev };
+      delete updated['hardware_type'];
+      delete updated['track_selection'];
+      delete updated['rod_selection'];
+      // Also delete any accessories
+      Object.keys(updated).forEach(k => {
+        if (k.startsWith('track_selection_') || k.startsWith('rod_selection_')) {
+          delete updated[k];
+        }
+      });
+      return updated;
+    });
+    
+    // Clear from measurements too
+    onChange('treatment_option_hardware_type', undefined);
+    onChange('treatment_option_track_selection', undefined);
+    onChange('treatment_option_rod_selection', undefined);
+    
+    // Clear from parent's selectedOptions
+    if (onSelectedOptionsChange) {
+      const updatedOptions = selectedOptions.filter(opt => {
+        const optKey = (opt as any).optionKey || '';
+        return !optKey.startsWith('hardware_type') && 
+               !optKey.startsWith('track_selection') && 
+               !optKey.startsWith('rod_selection');
+      });
+      onSelectedOptionsChange(updatedOptions);
+    }
     
     if (heading && onOptionPriceChange) {
       // Headings are stored in enhanced_inventory_items - use correct pricing fields
@@ -347,12 +440,108 @@ export const DynamicCurtainOptions = ({
   const handleTreatmentOptionChange = (optionKey: string, valueId: string) => {
     setTreatmentOptionSelections(prev => ({ ...prev, [optionKey]: valueId }));
     
+    // ✅ CRITICAL FIX: Mutual exclusivity for hardware_type
+    // When hardware_type changes, clear the OPPOSITE selection to prevent both showing in quotes
+    if (optionKey === 'hardware_type') {
+      const option = treatmentOptions.find(opt => opt.key === 'hardware_type');
+      const selectedValue = option?.option_values?.find(v => v.id === valueId);
+      const selectedLabel = selectedValue?.label?.toLowerCase() || '';
+      
+      console.log('🔧 Hardware type changed to:', selectedLabel, '- clearing opposite selection');
+      
+      if (selectedLabel.includes('track')) {
+        // User selected Track - clear Rod selection
+        setTreatmentOptionSelections(prev => {
+          const updated = { ...prev };
+          delete updated['rod_selection'];
+          return updated;
+        });
+        onChange('treatment_option_rod_selection', undefined);
+        // Remove rod from selectedOptions
+        if (onSelectedOptionsChange) {
+          const updatedOptions = selectedOptions.filter(opt => 
+            !(opt as any).optionKey?.startsWith('rod_selection') && 
+            !opt.name?.toLowerCase().includes('rod')
+          );
+          onSelectedOptionsChange(updatedOptions);
+        }
+      } else if (selectedLabel.includes('rod')) {
+        // User selected Rod - clear Track selection
+        setTreatmentOptionSelections(prev => {
+          const updated = { ...prev };
+          delete updated['track_selection'];
+          return updated;
+        });
+        onChange('treatment_option_track_selection', undefined);
+        // Remove track from selectedOptions
+        if (onSelectedOptionsChange) {
+          const updatedOptions = selectedOptions.filter(opt => 
+            !(opt as any).optionKey?.startsWith('track_selection') && 
+            !opt.name?.toLowerCase().includes('track')
+          );
+          onSelectedOptionsChange(updatedOptions);
+        }
+      }
+    }
+    
     // Find the selected option value and its price
     const option = treatmentOptions.find(opt => opt.key === optionKey);
     if (option && option.option_values) {
       const selectedValue = option.option_values.find(val => val.id === valueId);
       if (selectedValue) {
-        const price = getOptionPrice(selectedValue);
+        let price = getOptionPrice(selectedValue);
+        let accessoryBreakdown: string[] = [];
+        let accessoryResult: HardwareAccessoryResult | null = null;
+        
+        // ✅ NEW: Calculate hardware accessories for track/rod selections
+        const isHardwareSelection = optionKey === 'track_selection' || optionKey === 'rod_selection';
+        const accessoryPrices = selectedValue.extra_data?.accessory_prices;
+        const mountTypeSelection = treatmentOptionSelections['mount_type'] || measurements['treatment_option_mount_type'];
+        
+        if (isHardwareSelection && accessoryPrices && Object.keys(accessoryPrices).length > 0) {
+          // Get rail width from measurements (stored in MM, convert to CM)
+          const railWidthMm = measurements.rail_width || measurements.wall_width || 0;
+          const railWidthCm = railWidthMm / 10;
+          const fullness = measurements.fullness_ratio || measurements.heading_fullness || 1;
+          
+          // Determine mount type from selection
+          let mountType: 'ceiling' | 'wall' | 'both' = 'wall';
+          if (mountTypeSelection) {
+            const mountOption = treatmentOptions.find(o => o.key === 'mount_type');
+            const mountValue = mountOption?.option_values?.find(v => v.id === mountTypeSelection);
+            const mountLabel = mountValue?.label?.toLowerCase() || '';
+            if (mountLabel.includes('ceiling') && mountLabel.includes('wall')) {
+              mountType = 'both';
+            } else if (mountLabel.includes('ceiling')) {
+              mountType = 'ceiling';
+            }
+          }
+          
+          if (railWidthCm > 0) {
+            accessoryResult = calculateAccessoriesFromOptionData(
+              accessoryPrices,
+              price,
+              railWidthCm,
+              fullness,
+              mountType
+            );
+            
+            // Use grand total (base + accessories) as the price
+            price = accessoryResult.grandTotalPrice;
+            accessoryBreakdown = accessoryResult.breakdown;
+            
+            console.log('🔧 Hardware accessory calculation:', {
+              hardware: selectedValue.label,
+              basePrice: accessoryResult.hardwareBasePrice,
+              accessoriesTotal: accessoryResult.accessoriesTotalPrice,
+              grandTotal: accessoryResult.grandTotalPrice,
+              breakdown: accessoryBreakdown,
+              railWidthCm,
+              fullness,
+              mountType
+            });
+          }
+        }
         
         // Update parent's price tracking
         if (onOptionPriceChange) {
@@ -364,28 +553,64 @@ export const DynamicCurtainOptions = ({
         if (onSelectedOptionsChange) {
           // Remove ALL options that start with this option's key or label prefix
           // This ensures both main option and any sub-options are cleared
+          // Also remove any existing accessory items for this hardware
           const updatedOptions = selectedOptions.filter(opt => {
-            // Use optionKey stored in option object if available, otherwise check by label prefix
             const optKey = (opt as any).optionKey;
             if (optKey) {
-              return !optKey.startsWith(optionKey);
+              return !optKey.startsWith(optionKey) && !optKey.startsWith(`${optionKey}_accessory`);
             }
-            // Fallback: filter by exact label prefix match (e.g., "Hardware:" not just "Hardware")
             return !opt.name.startsWith(`${option.label}:`);
           });
           
           // ✅ FIX: Add ALL selected options regardless of price
-          // Even €0 options must be captured for quote display
           const pricingMethod = selectedValue.extra_data?.pricing_method || 'per-meter';
           const pricingGridData = selectedValue.extra_data?.pricing_grid_data;
           
-          updatedOptions.push({ 
-            name: `${option.label}: ${selectedValue.label}`, 
-            price, // Will be 0 for included options - that's OK
-            pricingMethod,
-            pricingGridData,
-            optionKey: optionKey // Store key for reliable filtering
-          } as any);
+          // ✅ ENHANCED: For hardware with accessories, add ITEMIZED breakdown
+          if (isHardwareSelection && accessoryResult && accessoryResult.accessories.length > 0) {
+            // 1. Add base hardware item (without accessories total)
+            updatedOptions.push({ 
+              name: `${option.label}: ${selectedValue.label}`, 
+              price: accessoryResult.hardwareBasePrice, 
+              pricingMethod: 'fixed',
+              pricingGridData,
+              optionKey: optionKey,
+              category: 'hardware',
+              description: 'Base price'
+            } as any);
+            
+            // 2. Add each accessory as a separate line item
+            accessoryResult.accessories.forEach((acc, accIdx) => {
+              updatedOptions.push({
+                name: acc.name,
+                price: acc.totalPrice,
+                pricingMethod: 'fixed',
+                optionKey: `${optionKey}_accessory_${accIdx}`,
+                category: 'hardware_accessory',
+                parentOptionKey: optionKey,
+                quantity: acc.quantity,
+                unit_price: acc.unitPrice,
+                pricingDetails: acc.formulaDescription // e.g., "1 per 10cm"
+              } as any);
+            });
+            
+            console.log('🔧 Hardware breakdown itemized:', {
+              base: { name: selectedValue.label, price: accessoryResult.hardwareBasePrice },
+              accessories: accessoryResult.accessories,
+              totalItems: 1 + accessoryResult.accessories.length
+            });
+          } else {
+            // Non-hardware option or hardware without accessories
+            updatedOptions.push({ 
+              name: `${option.label}: ${selectedValue.label}`, 
+              price, 
+              pricingMethod: isHardwareSelection ? 'fixed' : pricingMethod,
+              pricingGridData,
+              optionKey: optionKey,
+              accessoryBreakdown // Store breakdown for display in quotes (legacy)
+            } as any);
+          }
+          
           onSelectedOptionsChange(updatedOptions);
           console.log('🎨 Updated selectedOptions:', updatedOptions.map(o => o.name));
         }
@@ -909,26 +1134,28 @@ export const DynamicCurtainOptions = ({
         })()
       )}
 
-      {/* Dynamic Treatment Options from Database - Filtered by template settings */}
+      {/* Dynamic Treatment Options from Database - Filtered by template settings AND conditional rules */}
       {(() => {
-        // Debug: Log options filtering
+        // Debug: Log options filtering with conditional visibility
         console.log('🔍 DynamicCurtainOptions - Options Filtering Debug:', {
           totalOptions: treatmentOptions.length,
           hasSettings,
           settingsLoading,
+          conditionalRulesCount: conditionalRules?.length || 0,
           options: treatmentOptions.map(opt => ({
             id: opt.id,
             key: opt.key,
             label: opt.label,
             visible: opt.visible,
             valuesCount: opt.option_values?.length || 0,
-            isEnabled: isOptionEnabled(opt.id)
+            isConditionallyVisible: isOptionVisible(opt.key)
           }))
         });
         return null;
       })()}
       {treatmentOptions.length > 0 && treatmentOptions.map(option => {
-        // Filter: check visibility AND template-level enabled setting
+        // Filter: check visibility AND has option values
+        // NOTE: Since we now fetch by template ID, only enabled options are returned
         if (!option.visible || !option.option_values || option.option_values.length === 0) {
           console.log(`⏭️ Skipping option ${option.key}: visible=${option.visible}, values=${option.option_values?.length || 0}`);
           return null;
@@ -941,26 +1168,39 @@ export const DynamicCurtainOptions = ({
           return null;
         }
         
-        // Check if option is enabled in template settings
-        if (!isOptionEnabled(option.id)) {
-          console.log(`⏭️ Skipping option ${option.key}: NOT enabled in template settings`);
+        // ✅ NEW: Check conditional visibility from option_rules
+        // This hides track_selection until hardware_type = 'track', etc.
+        if (!isOptionVisible(option.key)) {
+          console.log(`⏭️ Skipping option ${option.key}: hidden by conditional rule`);
           return null;
         }
         
-        console.log(`✅ Rendering option: ${option.key} (${option.label})`);
+        // ✅ Options are now pre-filtered by template query - no need for isOptionEnabled check
+        console.log(`✅ Rendering option: ${option.key} (${option.label}) with ${option.option_values?.length || 0} values`);
 
+        // ✅ NEW: Apply filter_values rules to restrict visible option values
+        const allowedValuesForOption = getAllowedValues(option.key);
+        const filteredOptionValues = allowedValuesForOption && allowedValuesForOption.length > 0
+          ? option.option_values.filter((v: any) => allowedValuesForOption.includes(v.id))
+          : option.option_values;
+        
+        console.log(`🔍 Value filtering for ${option.key}:`, {
+          totalValues: option.option_values.length,
+          allowedValues: allowedValuesForOption,
+          filteredCount: filteredOptionValues.length
+        });
 
         const selectedValueId = treatmentOptionSelections[option.key] || measurements[`treatment_option_${option.key}`];
-        const selectedValue = option.option_values.find(v => v.id === selectedValueId);
+        const selectedValue = filteredOptionValues.find((v: any) => v.id === selectedValueId);
         const subOptions = selectedValue?.extra_data?.sub_options;
         
-        // Auto-select if only one option value exists
-        const hasOnlyOneOption = option.option_values.length === 1;
+        // Auto-select if only one option value exists after filtering
+        const hasOnlyOneOption = filteredOptionValues.length === 1;
         const shouldAutoSelect = hasOnlyOneOption && !selectedValueId;
         
         // Trigger auto-selection for single options
         if (shouldAutoSelect) {
-          const singleOption = option.option_values[0];
+          const singleOption = filteredOptionValues[0];
           // Use setTimeout to avoid state update during render
           setTimeout(() => {
             console.log(`✅ Auto-selecting single option for ${option.label}:`, singleOption.label);
@@ -1022,7 +1262,7 @@ export const DynamicCurtainOptions = ({
                     position="popper"
                     sideOffset={5}
                   >
-                    {option.option_values.map(value => {
+                    {filteredOptionValues.map((value: any) => {
                       const priceLabel = formatPriceWithMethod(value);
                       return (
                         <SelectItem key={value.id} value={value.id}>

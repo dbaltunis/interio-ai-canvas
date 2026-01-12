@@ -11,6 +11,9 @@ import { Users, FileText, DollarSign } from "lucide-react";
 import { useHasPermission } from "@/hooks/usePermissions";
 import { disableShopifyWidgets } from "@/utils/disableShopifyWidgets";
 import { DashboardDateProvider, useDashboardDate } from "@/contexts/DashboardDateContext";
+import { useIsDealer } from "@/hooks/useIsDealer";
+import { DealerWelcomeHeader } from "./DealerWelcomeHeader";
+import { DealerRecentJobsWidget } from "./DealerRecentJobsWidget";
 
 // Lazy load non-critical widgets for better initial load performance
 const UpcomingEventsWidget = lazy(() => import("./UpcomingEventsWidget").then(m => ({ default: m.UpcomingEventsWidget })));
@@ -40,8 +43,28 @@ const WidgetSkeleton = () => (
   </div>
 );
 
+/**
+ * Simplified dealer dashboard component
+ * - No revenue, active projects count, team info
+ * - No charts showing all account data
+ * - Only their own recent jobs
+ */
+const DealerDashboard = () => {
+  return (
+    <div className="space-y-4 animate-fade-in">
+      {/* Simplified Dealer Welcome Header - no stats, no customize button */}
+      <DealerWelcomeHeader />
+
+      {/* Only their own recent jobs - no charts, no revenue */}
+      <DealerRecentJobsWidget />
+    </div>
+  );
+};
+
 
 const DashboardContent = () => {
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
+  const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
   const [showShopifyDialog, setShowShopifyDialog] = useState(false);
   const [showWidgetCustomizer, setShowWidgetCustomizer] = useState(false);
   const { dateRange } = useDashboardDate();
@@ -52,6 +75,13 @@ const DashboardContent = () => {
   
   const { integration: shopifyIntegration } = useShopifyIntegrationReal();
   const isShopifyConnected = !!shopifyIntegration?.is_connected;
+
+  // Permission checks for widgets
+  const canViewCalendar = useHasPermission('view_calendar');
+  const canViewShopify = useHasPermission('view_shopify');
+  const canViewEmails = useHasPermission('view_emails');
+  const canViewInventory = useHasPermission('view_inventory');
+  const canViewTeamPerformance = useHasPermission('view_team_performance');
 
   // One-time cleanup: disable Shopify widgets if Shopify isn't connected
   useEffect(() => {
@@ -75,13 +105,12 @@ const DashboardContent = () => {
   }, [criticalStats.data, secondaryStats.data]);
   
   // Permission checks for widgets
-  const canViewCalendar = useHasPermission('view_calendar');
-  const canViewShopify = useHasPermission('view_shopify');
-  const canViewEmails = useHasPermission('view_emails');
-  const canViewInventory = useHasPermission('view_inventory');
-  const canViewTeamPerformance = useHasPermission('view_team_performance');
   const canViewTeamMembers = useHasPermission('view_team_members');
   const canViewEmailKPIs = useHasPermission('view_email_kpis');
+  // If user is a dealer, show simplified dashboard (AFTER all hooks are called)
+  if (!isDealerLoading && isDealer) {
+    return <DealerDashboard />;
+  }
 
   // Filter enabled widgets by permissions AND integration type
   const enabledWidgets = useMemo(() => {

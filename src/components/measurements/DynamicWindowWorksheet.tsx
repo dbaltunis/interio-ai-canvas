@@ -163,9 +163,21 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
     liningCost: number;
     manufacturingCost: number;
     headingCost: number;
-    headingName?: string; // ✅ ADD: Heading name for correct save
+    headingName?: string;
     optionsCost: number;
-    optionDetails: Array<{ name: string; cost: number; pricingMethod: string }>;
+    optionDetails: Array<{ 
+      name: string; 
+      cost: number; 
+      pricingMethod: string;
+      // Accessory-specific fields for hardware itemization
+      category?: string;
+      quantity?: number;
+      unit_price?: number;
+      pricingDetails?: string;
+      optionKey?: string;
+      parentOptionKey?: string;
+      value?: string;
+    }>;
     totalCost: number;
     linearMeters: number;
   } | null>(null);
@@ -1740,24 +1752,66 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                 };
                 
                 if (liveOptions.length > 0) {
-                  return liveOptions
+                  // MUTUAL EXCLUSIVITY: Filter hidden hardware before processing
+                  const hwTypeOpt = liveOptions.find((o: any) => 
+                    o.optionKey === 'hardware_type' || o.name?.toLowerCase().includes('hardware type'));
+                  const hwTypeVal = ((hwTypeOpt as any)?.name?.toLowerCase() || (hwTypeOpt as any)?.selectedValue?.toLowerCase() || '');
+                  const isTrack = hwTypeVal.includes('track');
+                  const isRod = hwTypeVal.includes('rod');
+                  
+                  const filteredLiveOptions = liveOptions.filter((opt: any) => {
+                    const optKey = (opt.optionKey || '').toLowerCase();
+                    if (isTrack && optKey.startsWith('rod_selection')) return false;
+                    if (isRod && optKey.startsWith('track_selection')) return false;
+                    return true;
+                  });
+                  
+                  return filteredLiveOptions
                     .map((opt: any, idx: number) => {
                       const extracted = extractOptionValue(opt);
                       
+                      // CRITICAL: Detect hardware accessories and preserve their fields
+                      const isAccessory = opt.category === 'hardware_accessory';
+                      const quantity = opt.quantity || 1;
+                      const unitPrice = opt.unit_price || 0;
+                      const pricingDetails = opt.pricingDetails || '';
+                      
+                      // Build proper description for accessories: "12 × ₹10.00 (1 per 10cm)"
+                      let description = extracted.value;
+                      if (isAccessory && quantity > 0 && unitPrice > 0) {
+                        description = `${quantity} × ${unitPrice.toFixed(2)}`;
+                        if (pricingDetails) {
+                          description += ` (${pricingDetails})`;
+                        }
+                      }
+                      
                       return {
-                        id: opt.name || `option-${idx}`,
+                        id: opt.optionKey || opt.name || `option-${idx}`,
+                        optionKey: opt.optionKey || '', // CRITICAL: Preserve for hardware grouping
                         name: extracted.name,
-                        description: extracted.value,
-                        total_cost: opt.cost,
-                        category: 'option',
+                        description: description,
+                        total_cost: opt.cost || (quantity * unitPrice),
+                        category: opt.category || 'option', // Preserve hardware_accessory category!
+                        quantity: quantity,
+                        unit_price: unitPrice,
                         pricing_method: opt.pricingMethod,
+                        pricingDetails: pricingDetails,
+                        parentOptionKey: opt.parentOptionKey,
                         image_url: opt.image_url || null,
                         orderIndex: opt.orderIndex ?? idx,
                         isValid: extracted.isValid
                       };
                     })
-                    .filter((opt: any) => opt.isValid) // CRITICAL: Filter out N/A options
-                    .sort((a: any, b: any) => (a.orderIndex ?? 999) - (b.orderIndex ?? 999)); // Sort by order_index
+                    .filter((opt: any) => {
+                      // Filter out invalid options
+                      if (!opt.isValid) return false;
+                      // Filter out "Fullness Ratio" - it's included in heading description
+                      if (opt.name?.toLowerCase().includes('fullness ratio')) return false;
+                      // Filter out "Hardware Type" with ₹0 - accessories will show under Select Track
+                      if (opt.name?.toLowerCase() === 'hardware type' && (opt.total_cost === 0 || !opt.total_cost)) return false;
+                      return true;
+                    })
+                    .sort((a: any, b: any) => (a.orderIndex ?? 999) - (b.orderIndex ?? 999));
                 }
                 
                 // UNIVERSAL FALLBACK: Use selectedOptions array (works for ALL template types)
@@ -1765,33 +1819,88 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   ? selectedOptions 
                   : (Array.isArray(measurements.selected_options) ? measurements.selected_options : []);
                 
-                return optionsToUse
+                // MUTUAL EXCLUSIVITY FIX: Filter out hidden hardware based on hardware_type selection
+                // If hardware_type is "track", filter out all rod_selection items (and vice versa)
+                const hardwareTypeOpt = optionsToUse.find((o: any) => 
+                  o.optionKey === 'hardware_type' || o.name?.toLowerCase().includes('hardware type'));
+                const hardwareTypeValue = hardwareTypeOpt?.name?.toLowerCase() || hardwareTypeOpt?.value?.toLowerCase() || '';
+                const isTrackSelected = hardwareTypeValue.includes('track');
+                const isRodSelected = hardwareTypeValue.includes('rod');
+                
+                const filteredOptions = optionsToUse.filter((opt: any) => {
+                  const optKey = (opt.optionKey || '').toLowerCase();
+                  // Filter out rod items if track is selected
+                  if (isTrackSelected && optKey.startsWith('rod_selection')) {
+                    return false;
+                  }
+                  // Filter out track items if rod is selected
+                  if (isRodSelected && optKey.startsWith('track_selection')) {
+                    return false;
+                  }
+                  return true;
+                });
+                
+                return filteredOptions
                   .map((opt: any, idx: number) => {
-                    let optionTotalCost = opt.price || opt.calculatedPrice || 0;
+                    // ✅ CRITICAL FIX: Use calculatedPrice if exists to prevent double-calculation
+                    // Only recalculate if price exists but calculatedPrice doesn't
+                    let optionTotalCost = opt.calculatedPrice ?? opt.price ?? 0;
                     const isPerMeterOption = opt.pricingMethod === 'per-meter' || opt.pricingMethod === 'per-metre' || 
                                             opt.pricingMethod === 'per_meter' || opt.pricingMethod === 'per_metre' ||
                                             opt.name?.toLowerCase().includes('lining');
                     
-                    if (isPerMeterOption && linearMeters > 0 && opt.price > 0) {
+                    // Only recalculate per-meter IF no calculatedPrice exists
+                    if (!opt.calculatedPrice && isPerMeterOption && linearMeters > 0 && opt.price > 0) {
                       optionTotalCost = opt.price * linearMeters;
                     }
                     
                     const extracted = extractOptionValue(opt);
                     
+                    // ACCESSORY PRESERVATION: For hardware_accessory items, use proper accessory data
+                    const isAccessory = opt.category === 'hardware_accessory';
+                    const accessoryQuantity = opt.quantity || 1;
+                    const accessoryUnitPrice = opt.unit_price || 0;
+                    
+                    // For accessories, create descriptive name from accessory data
+                    let displayName = extracted.name;
+                    let displayDescription = extracted.value;
+                    
+                    if (isAccessory) {
+                      // Use the accessory name directly (e.g., "Runners", "End Caps")
+                      displayName = opt.name || extracted.name;
+                      // Create pricing description (e.g., "12 × ₹10")
+                      displayDescription = accessoryQuantity > 1 && accessoryUnitPrice > 0 
+                        ? `${accessoryQuantity} × ₹${accessoryUnitPrice.toFixed(2)}`
+                        : extracted.value;
+                    }
+                    
                     return {
-                      id: `option-${idx}`,
-                      name: extracted.name,
-                      description: extracted.value,
+                      id: opt.optionKey || `option-${idx}`,
+                      optionKey: opt.optionKey || '', // CRITICAL: Preserve for hardware grouping
+                      name: displayName,
+                      description: displayDescription,
                       total_cost: optionTotalCost,
-                      category: 'option',
+                      category: opt.category || 'option', // PRESERVE original category (hardware_accessory)
+                      quantity: accessoryQuantity,
+                      unit_price: accessoryUnitPrice,
                       pricing_method: opt.pricingMethod,
+                      pricingDetails: opt.pricingDetails || '', // e.g., "1 per 10cm"
+                      parentOptionKey: opt.parentOptionKey, // Links to parent hardware
                       image_url: opt.image_url || null,
                       orderIndex: opt.orderIndex ?? idx,
                       isValid: extracted.isValid
                     };
                   })
-                  .filter((opt: any) => opt.isValid) // CRITICAL: Filter out N/A options
-                  .sort((a: any, b: any) => (a.orderIndex ?? 999) - (b.orderIndex ?? 999)); // Sort by order_index
+                  .filter((opt: any) => {
+                    // Filter out invalid options
+                    if (!opt.isValid) return false;
+                    // Filter out "Fullness Ratio" - it's included in heading description
+                    if (opt.name?.toLowerCase().includes('fullness ratio')) return false;
+                    // Filter out "Hardware Type" with ₹0 - accessories will show under Select Track
+                    if (opt.name?.toLowerCase() === 'hardware type' && (opt.total_cost === 0 || !opt.total_cost)) return false;
+                    return true;
+                  })
+                  .sort((a: any, b: any) => (a.orderIndex ?? 999) - (b.orderIndex ?? 999));
               };
               
               return [
@@ -1825,13 +1934,19 @@ export const DynamicWindowWorksheet = forwardRef<DynamicWindowWorksheetRef, Dyna
                   quantity: linearMeters,
                   unit: 'm'
                 }] : []),
-                // Heading
+                // Heading - include fullness ratio in description (e.g., "European Pleat x2")
                 ...(selectedHeading && selectedHeading !== 'standard' && selectedHeading !== 'none' ? [{
                   id: 'heading',
                   name: 'Heading',
                   description: (() => {
                     const headingOpt = headingOptionsFromSettings.find((h: any) => h.id === selectedHeading);
-                    return headingOpt?.name || selectedHeading;
+                    const headingName = headingOpt?.name || selectedHeading;
+                    // Include fullness ratio in heading description
+                    const fullness = measurements.fullness_ratio || measurements.heading_fullness || headingOpt?.fullness_ratio;
+                    if (fullness && fullness > 1) {
+                      return `${headingName} x${fullness}`;
+                    }
+                    return headingName;
                   })(),
                   total_cost: finalHeadingCost || 0,
                   category: 'heading'

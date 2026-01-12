@@ -1,4 +1,4 @@
-export type TreatmentCategory = 'curtains' | 'blinds' | 'roller_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_blinds' | 'panel_glide' | 'plantation_shutters' | 'shutters' | 'shutter' | 'awning' | 'wallpaper';
+export type TreatmentCategory = 'curtains' | 'blinds' | 'roller_blinds' | 'zebra_blinds' | 'roman_blinds' | 'venetian_blinds' | 'vertical_blinds' | 'cellular_blinds' | 'panel_glide' | 'plantation_shutters' | 'shutters' | 'shutter' | 'awning' | 'wallpaper';
 
 export interface TreatmentConfig {
   requiresFullness: boolean;
@@ -36,6 +36,9 @@ export const detectTreatmentType = (template: any): TreatmentCategory => {
   if (template?.curtain_type) {
     const curtainType = template.curtain_type.toLowerCase();
     
+    if (curtainType === 'zebra_blind' || curtainType === 'zebra blind' || curtainType.includes('zebra') || curtainType.includes('day_night') || curtainType.includes('dual_blind') || curtainType.includes('vision_blind')) {
+      return 'zebra_blinds';
+    }
     if (curtainType === 'roller_blind' || curtainType === 'roller blind' || curtainType.includes('roller')) {
       return 'roller_blinds';
     }
@@ -74,6 +77,7 @@ export const detectTreatmentType = (template: any): TreatmentCategory => {
   const description = template?.description?.toLowerCase() || '';
   
   if (name.includes('honeycomb') || name.includes('cellular')) return 'cellular_blinds';
+  if (name.includes('zebra') || name.includes('day night') || name.includes('day & night') || name.includes('vision blind') || description.includes('zebra') || description.includes('day night')) return 'zebra_blinds';
   if (name.includes('roller') || description.includes('roller blind')) return 'roller_blinds';
   if (name.includes('roman') || description.includes('roman blind')) return 'roman_blinds';
   if (name.includes('venetian')) return 'venetian_blinds';
@@ -116,6 +120,17 @@ export const getTreatmentConfig = (category: TreatmentCategory): TreatmentConfig
       inventoryCategory: 'roller_blind_fabric',
       specificFields: ['control_position', 'mounting_type', 'fabric_transparency', 'chain_length'],
       visualComponent: 'RollerBlindVisualizer',
+    },
+    zebra_blinds: {
+      requiresFullness: false,
+      requiresHardwareType: false,
+      requiresFabricOrientation: false,
+      requiresHeading: false,
+      requiresLining: false,
+      showPooling: false,
+      inventoryCategory: 'zebra_fabric',
+      specificFields: ['control_position', 'mounting_type', 'band_width', 'chain_length'],
+      visualComponent: 'ZebraBlindVisualizer',
     },
     roman_blinds: {
       requiresFullness: false,
@@ -237,6 +252,7 @@ export const getTreatmentDisplayName = (category: TreatmentCategory): string => 
     curtains: 'Curtains',
     blinds: 'Blinds',
     roller_blinds: 'Roller Blinds',
+    zebra_blinds: 'Zebra Blinds',
     roman_blinds: 'Roman Blinds',
     venetian_blinds: 'Venetian Blinds',
     vertical_blinds: 'Vertical Blinds',
@@ -271,6 +287,12 @@ export const getMeasurementLabels = (category: TreatmentCategory): MeasurementLa
       heightShort: 'Drop'
     },
     roller_blinds: {
+      width: 'Headrail Width',
+      height: 'Blind Drop',
+      widthShort: 'Headrail',
+      heightShort: 'Drop'
+    },
+    zebra_blinds: {
       width: 'Headrail Width',
       height: 'Blind Drop',
       widthShort: 'Headrail',

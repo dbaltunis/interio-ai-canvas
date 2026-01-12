@@ -2,11 +2,12 @@ import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Filter, Download, Users, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useClients } from "@/hooks/useClients";
+import { useClients, useDealerOwnClients } from "@/hooks/useClients";
 import { useClientStats } from "@/hooks/useClientJobs";
 import { useHasPermission, useUserPermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useIsDealer } from "@/hooks/useIsDealer";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -56,6 +57,9 @@ export const ClientManagementPage = ({
   const { data: userRoleData, isLoading: roleLoading } = useUserRole();
   const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
   const isAdmin = userRoleData?.isAdmin || false;
+  
+  // Check if user is a Dealer - they see only their own clients
+  const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
 
   // Explicit check: Check user_permissions table first, then fall back to role for Owners/Admins
   const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
@@ -89,6 +93,9 @@ export const ClientManagementPage = ({
   const hasAnyExplicitPermissions = (explicitPermissions?.length ?? 0) > 0;
   const hasExplicitViewPermissions = hasViewAllClientsPermission || hasViewAssignedClientsPermission;
 
+  // Dealers always have access to view their own clients
+  const hasDealerAccess = isDealer === true;
+
   // Owners and System Owners always have full access, regardless of explicit permissions
   // For viewing clients: 
   // - If view_all_clients is enabled → show all clients
@@ -99,24 +106,29 @@ export const ClientManagementPage = ({
   // - Owner: Only bypass restrictions if NO explicit permissions exist in table at all
   // - Admin: if NO explicit permissions exist, they have full access; if explicit permissions exist, MUST respect them (no bypass)
   // - Regular users: Always check explicit permissions
+  // - Dealers: Always have access (filtered to their own clients via separate hook)
   const canViewClientsExplicit =
-    userRoleData?.isSystemOwner
-      ? true  // System Owner ALWAYS has full access
-      : isOwner && !hasAnyExplicitPermissions
-        ? true  // Owner with no explicit permissions in table at all = full access
-        : isAdmin && !hasAnyExplicitPermissions
-          ? true  // Admin with no explicit permissions = full access
-          : hasViewAllClientsPermission || hasViewAssignedClientsPermission;  // Owner/Admin with explicit permissions OR regular users: need view permission
+    hasDealerAccess
+      ? true // Dealers can view (their own clients only)
+      : userRoleData?.isSystemOwner
+        ? true  // System Owner ALWAYS has full access
+        : isOwner && !hasAnyExplicitPermissions
+          ? true  // Owner with no explicit permissions in table at all = full access
+          : isAdmin && !hasAnyExplicitPermissions
+            ? true  // Admin with no explicit permissions = full access
+            : hasViewAllClientsPermission || hasViewAssignedClientsPermission;  // Owner/Admin with explicit permissions OR regular users: need view permission
   
   // Filter by creation (show only clients created by current user) if:
   // - User is NOT System Owner (System Owners see everything)
   // - AND (User is not Owner, OR Owner has explicit permissions)
   // - AND they don't have view_all_clients permission
   // - AND they have view_assigned_clients permission
+  // - AND they are NOT a dealer (dealers use separate hook)
   // Note: Owner without explicit permissions never filters, they always see all clients
   // But Owner with explicit permissions must respect them
   const shouldFilterByAssignment = 
     !userRoleData?.isSystemOwner && 
+    !hasDealerAccess &&
     (!isOwner || hasAnyExplicitPermissions) && 
     !hasViewAllClientsPermission && 
     hasViewAssignedClientsPermission;
@@ -126,6 +138,7 @@ export const ClientManagementPage = ({
     isSystemOwner: userRoleData?.isSystemOwner,
     isOwner,
     isAdmin,
+    hasDealerAccess,
     hasAnyExplicitPermissions,
     hasViewAllClientsPermission,
     hasViewAssignedClientsPermission,
@@ -166,19 +179,24 @@ export const ClientManagementPage = ({
 
   // Only fetch clients if user has view permissions
   // IMPORTANT: This prevents fetching clients from the database if permission is denied
-  const shouldFetchClients = canViewClientsExplicit && !permissionsLoading && !roleLoading;
+  const shouldFetchClients = canViewClientsExplicit && !permissionsLoading && !roleLoading && !isDealerLoading;
   
   console.log('[CLIENTS] Fetch decision:', {
     canViewClientsExplicit,
     permissionsLoading,
     roleLoading,
-    shouldFetchClients
+    isDealerLoading,
+    shouldFetchClients,
+    isDealer
   });
   
-  const {
-    data: allClients,
-    isLoading
-  } = useClients(shouldFetchClients);
+  // Use dealer-specific hook if user is a dealer - they only see their own clients
+  const { data: regularClients, isLoading: regularClientsLoading } = useClients(shouldFetchClients && !isDealer);
+  const { data: dealerClients, isLoading: dealerClientsLoading } = useDealerOwnClients();
+  
+  // Use appropriate data source based on user type
+  const allClients = isDealer ? dealerClients : regularClients;
+  const isLoading = isDealer ? dealerClientsLoading : regularClientsLoading;
   const {
     data: clientStats,
     isLoading: isLoadingStats
@@ -188,6 +206,11 @@ export const ClientManagementPage = ({
   // When user only has view_assigned_clients permission (and view_all_clients is disabled),
   // show only clients created by the current logged in user
   const filteredClientsByPermission = useMemo(() => {
+    if (isDealer) {
+      // Dealers already get filtered data from useDealerOwnClients
+      return allClients || [];
+    }
+    
     if (!shouldFilterByAssignment || !user || !allClients) {
       return allClients || [];
     }
@@ -211,7 +234,7 @@ export const ClientManagementPage = ({
       }))
     });
     return filtered;
-  }, [allClients, shouldFilterByAssignment, user]);
+  }, [allClients, shouldFilterByAssignment, user, isDealer]);
 
   // Merge clients with their stats (must be before conditional returns)
   const clientsWithStats = useMemo(() => {
@@ -233,7 +256,7 @@ export const ClientManagementPage = ({
 
   // Handle permission loading and preserve navigation state
   // IMPORTANT: Wait for explicitPermissions to be loaded before making permission decisions
-  if (permissionsLoading || roleLoading || explicitPermissionsLoading || explicitPermissions === undefined) {
+  if (permissionsLoading || roleLoading || isDealerLoading || explicitPermissionsLoading || explicitPermissions === undefined) {
     // If we're showing client profile, keep showing it during permission refetch
     if (showClientProfile && selectedClient) {
       return <ClientProfilePage clientId={selectedClient.id} onBack={() => {

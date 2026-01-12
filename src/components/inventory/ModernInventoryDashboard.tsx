@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import { useHasPermission, useHasAnyPermission, useUserPermissions } from "@/hoo
 import { useUserRole } from "@/hooks/useUserRole";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsDealer } from "@/hooks/useIsDealer";
 import { HelpDrawer } from "@/components/ui/help-drawer";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -44,6 +45,7 @@ export const ModernInventoryDashboard = () => {
   const { data: allInventory, refetch, isLoading: inventoryLoading, isFetching: inventoryFetching } = useEnhancedInventory();
   const { data: vendors } = useVendors();
   const { data: userRole, isLoading: userRoleLoading } = useUserRole();
+  const { data: isDealer, isLoading: isDealerLoading } = useIsDealer();
   const isMobile = useIsMobile();
   
   // Permission checks - CRITICAL for data security
@@ -52,6 +54,7 @@ export const ModernInventoryDashboard = () => {
   const { data: userRoleData } = useUserRole();
   const isOwner = userRoleData?.isOwner || userRoleData?.isSystemOwner || false;
   const isAdmin = userRoleData?.isAdmin || false;
+  const isOwnerOrAdmin = isOwner || isAdmin;
   const { data: userPermissions, isLoading: permissionsLoading } = useUserPermissions();
   const { data: explicitPermissions } = useQuery({
     queryKey: ['explicit-user-permissions-inventory-dashboard', user?.id],
@@ -111,41 +114,16 @@ export const ModernInventoryDashboard = () => {
   
   const hasAnyInventoryAccessFromHook = canViewInventory || canManageInventory;
   
-  // Timeout fallback - if permissions don't load within 5 seconds, grant access to authenticated users
-  const [permissionTimeout, setPermissionTimeout] = useState(false);
-  const [showRetry, setShowRetry] = useState(false);
-  
-  useEffect(() => {
-    if (hasAnyInventoryAccessFromHook !== undefined) {
-      // Permissions loaded, clear any pending timeout
-      setPermissionTimeout(false);
-      setShowRetry(false);
-      return;
-    }
-    
-    // Set a timeout to auto-grant access after 5 seconds if permissions are still loading
-    const timer = setTimeout(() => {
-      if (hasAnyInventoryAccessFromHook === undefined && user) {
-        console.log('[ModernInventoryDashboard] Permission timeout - granting fallback access for authenticated user');
-        setPermissionTimeout(true);
-      }
-    }, 5000);
-    
-    // Show retry button after 8 seconds
-    const retryTimer = setTimeout(() => {
-      if (hasAnyInventoryAccessFromHook === undefined) {
-        setShowRetry(true);
-      }
-    }, 8000);
-    
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(retryTimer);
-    };
-  }, [hasAnyInventoryAccessFromHook, user]);
-  
-  // Use fallback if timeout occurred and user is authenticated
-  const hasAnyInventoryAccess = permissionTimeout && user ? true : hasAnyInventoryAccessFromHook;
+  // Dealers always have browse-only access to the Library
+  // Use direct dealer check instead of problematic timeout fallback
+  const hasAnyInventoryAccess = useMemo(() => {
+    // If dealer check is still loading, return undefined to show loading state
+    if (isDealerLoading) return undefined;
+    // Dealers always have browse access
+    if (isDealer === true) return true;
+    // Otherwise use the permission hook result
+    return hasAnyInventoryAccessFromHook;
+  }, [isDealerLoading, isDealer, hasAnyInventoryAccessFromHook]);
   
   // Filter out treatment options - only show physical inventory
   const allPhysicalInventory = allInventory?.filter(item => item.category !== 'treatment_option') || [];
@@ -217,23 +195,13 @@ export const ModernInventoryDashboard = () => {
     );
   }
 
-  // During permission loading, show loading state with retry option
+  // During permission loading, show loading state
   if (hasAnyInventoryAccess === undefined) {
     return (
       <div className="flex-1 flex items-center justify-center p-12">
         <div className="text-center space-y-4">
           <Package className="h-16 w-16 text-muted-foreground mx-auto animate-pulse" />
           <p className="text-muted-foreground">Loading inventory...</p>
-          {showRetry && (
-            <Button 
-              variant="outline" 
-              onClick={() => window.location.reload()}
-              className="mt-4"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
-            </Button>
-          )}
         </div>
       </div>
     );
@@ -321,26 +289,30 @@ export const ModernInventoryDashboard = () => {
             </>
           )}
 
-          {/* Primary Actions - Show on all devices */}
-          <Button
-            variant="outline"
-            size={isMobile ? "sm" : "default"}
-            onClick={() => setShowScanner(true)}
-          >
-            <QrCode className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
-            {!isMobile && "Scan"}
-          </Button>
+          {/* Primary Actions - Hide for dealers (read-only access) */}
+          {!isDealer && (
+            <>
+              <Button
+                variant="outline"
+                size={isMobile ? "sm" : "default"}
+                onClick={() => setShowScanner(true)}
+              >
+                <QrCode className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
+                {!isMobile && "Scan"}
+              </Button>
 
-          {canManageInventory && (
-            <AddInventoryDialog
-              trigger={
-                <Button variant="default" size={isMobile ? "sm" : "default"}>
-                  <Plus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
-                  {!isMobile && "Add"}
-                </Button>
-              }
-              onSuccess={refetch}
-            />
+              {canManageInventory && (
+                <AddInventoryDialog
+                  trigger={
+                    <Button variant="default" size={isMobile ? "sm" : "default"}>
+                      <Plus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4 mr-2")} />
+                      {!isMobile && "Add"}
+                    </Button>
+                  }
+                  onSuccess={refetch}
+                />
+              )}
+            </>
           )}
         </div>
       </div>
@@ -364,19 +336,24 @@ export const ModernInventoryDashboard = () => {
                 <Wallpaper className="h-4 w-4" />
                 Wallcoverings
               </TabsTrigger>
-              <TabsTrigger value="vendors" className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Vendors
-              </TabsTrigger>
-              <TabsTrigger 
-                value="admin" 
-                className="flex items-center gap-2"
-                disabled={!canManageInventoryAdmin && !permissionsLoading && !userRoleLoading && explicitPermissions !== undefined}
-                title={!canManageInventoryAdmin && !permissionsLoading && !userRoleLoading && explicitPermissions !== undefined ? "You don't have permission to access inventory administration" : undefined}
-              >
-                <Shield className="h-4 w-4" />
-                Admin
-              </TabsTrigger>
+              {/* Hide Vendors and Admin tabs for dealers */}
+              {!isDealer && (
+                <TabsTrigger value="vendors" className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Vendors
+                </TabsTrigger>
+              )}
+              {canManageInventoryAdmin && !isDealer && (
+                <TabsTrigger 
+                  value="admin" 
+                  className="flex items-center gap-2"
+                  disabled={!canManageInventoryAdmin && !permissionsLoading && !userRoleLoading && explicitPermissions !== undefined}
+                  title={!canManageInventoryAdmin && !permissionsLoading && !userRoleLoading && explicitPermissions !== undefined ? "You don't have permission to access inventory administration" : undefined}
+                >
+                  <Shield className="h-4 w-4" />
+                  Admin
+                </TabsTrigger>
+              )}
             </TabsList>
 
         <TabsContent value="fabrics" className="space-y-6">
@@ -423,11 +400,13 @@ export const ModernInventoryDashboard = () => {
           />
         </TabsContent>
 
-        <TabsContent value="vendors" className="space-y-6">
-          <VendorDashboard />
-        </TabsContent>
+        {!isDealer && (
+          <TabsContent value="vendors" className="space-y-6">
+            <VendorDashboard />
+          </TabsContent>
+        )}
 
-        {canManageInventoryAdmin && (
+        {canManageInventoryAdmin && !isDealer && (
           <TabsContent value="admin" className="space-y-6">
             <InventoryAdminPanel />
           </TabsContent>
