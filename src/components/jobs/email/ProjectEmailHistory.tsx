@@ -238,12 +238,11 @@ export const ProjectEmailHistory = ({ projectId }: ProjectEmailHistoryProps) => 
           paginatedEmails.map((email, index) => (
             <div
               key={email.id}
-              className={`flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors cursor-pointer ${
+              className={`flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors ${
                 index === focusedIndex ? 'bg-muted/50 ring-2 ring-primary/20' : ''
-              }`}
+              } ${!isPermissionLoaded || !canViewEmailKPIs ? "cursor-default" : "cursor-pointer"}`}
               onClick={() => handleEmailClick(email)}
               onMouseEnter={() => setFocusedIndex(index)}
-              className={!isPermissionLoaded || !canViewEmailKPIs ? "cursor-default" : ""}
             >
               {/* Status Indicator */}
               <div className="flex-shrink-0">

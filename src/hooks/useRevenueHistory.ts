@@ -17,7 +17,10 @@ const REVENUE_STATUS_NAMES = [
   'approved', 
   'completed',
   'in production',
-  'installed'
+  'installed',
+  'closed',
+  'delivered',
+  'paid'
 ];
 
 export const useRevenueHistory = () => {
