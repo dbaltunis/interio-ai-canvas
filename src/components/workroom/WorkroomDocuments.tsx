@@ -219,6 +219,7 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId,
             availableTreatments={availableTreatments}
             activeFiltersCount={activeFiltersCount}
             onClearFilters={handleClearFilters}
+            projectId={projectId}
           />
           <div className="flex flex-col items-center justify-center p-12 space-y-4 border-2 border-dashed border-muted-foreground/30 rounded-lg">
             <p className="text-lg font-medium">No items match the current filters</p>
@@ -274,6 +275,7 @@ export const WorkroomDocuments: React.FC<WorkroomDocumentsProps> = ({ projectId,
           availableTreatments={availableTreatments}
           activeFiltersCount={activeFiltersCount}
           onClearFilters={handleClearFilters}
+          projectId={projectId}
         />
 
       {templateError && (
