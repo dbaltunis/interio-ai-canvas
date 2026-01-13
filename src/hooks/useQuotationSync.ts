@@ -808,9 +808,8 @@ export const useQuotationSync = ({
       quote.project_id === projectId && quote.status === 'draft'
     );
 
-    // CRITICAL GUARD: Prevent quote zeroing when viewing other users' jobs
-    // If we see empty data but existing quote has value, this may be an RLS issue
-    // Skip sync to avoid accidentally zeroing out valid quotes
+    // CRITICAL GUARD: Completely disable sync for non-project-owners
+    // This prevents any accidental quote zeroing when viewing team members' jobs
     const { data: { user } } = await supabase.auth.getUser();
     const { data: projectOwnership } = await supabase
       .from('projects')
@@ -819,23 +818,12 @@ export const useQuotationSync = ({
       .maybeSingle();
     
     const isProjectOwner = projectOwnership?.user_id === user?.id;
-    const hasEmptyData = quotationData.items.length === 0 && quotationData.baseSubtotal === 0;
-    const existingQuoteHasValue = existingQuote && (existingQuote.total_amount || 0) > 0;
     
-    // STRENGTHENED GUARD: Block sync if:
-    // 1. Not project owner AND data appears empty AND existing quote has value
-    // 2. Project summaries data hasn't loaded yet (undefined vs empty array)
-    const summariesNotLoaded = projectSummaries === undefined;
-    
-    if (!isProjectOwner && (hasEmptyData || summariesNotLoaded) && existingQuoteHasValue) {
-      console.warn('[QuotationSync] BLOCKED - Not project owner, data empty or not loaded (RLS protection)');
-      console.warn('[QuotationSync] Details:', { 
-        hasEmptyData, 
-        summariesNotLoaded, 
-        existingQuoteValue: existingQuote.total_amount,
-        itemCount: quotationData.items.length
-      });
-      return; // Don't zero out the quote
+    // ABSOLUTE GUARD: Non-owners should NEVER modify quotes
+    // They can only VIEW - any sync would risk corrupting data
+    if (!isProjectOwner) {
+      console.log('[QuotationSync] SKIPPED - Not project owner, sync disabled for safety');
+      return; // Don't sync at all for non-owners
     }
 
     let quoteId: string;
