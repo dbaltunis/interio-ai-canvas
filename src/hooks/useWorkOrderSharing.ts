@@ -5,6 +5,7 @@ import { copyToClipboard } from '@/lib/clipboard';
 interface ShareResult {
   token: string;
   url: string;
+  pin?: string | null;
 }
 
 export function useWorkOrderSharing(projectId: string | undefined) {
@@ -117,6 +118,32 @@ export function useWorkOrderSharing(projectId: string | undefined) {
     }
   }, [projectId]);
 
+  // Remove PIN protection (keep the link active)
+  const removeWorkOrderPIN = useCallback(async (): Promise<boolean> => {
+    if (!projectId) return false;
+    
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ work_order_pin: null })
+        .eq('id', projectId);
+
+      if (error) throw error;
+      
+      // Update local state to reflect PIN removal
+      if (shareData) {
+        setShareData({ ...shareData, pin: null });
+      }
+      
+      showSuccessToast('PIN removed', 'Work order is now accessible without a PIN', 'normal');
+      return true;
+    } catch (error) {
+      console.error('Error removing PIN:', error);
+      showErrorToast('Failed to remove PIN');
+      return false;
+    }
+  }, [projectId, shareData]);
+
   // Get existing share data
   const getShareData = useCallback(async (): Promise<ShareResult | null> => {
     if (!projectId) return null;
@@ -124,7 +151,7 @@ export function useWorkOrderSharing(projectId: string | undefined) {
     try {
       const { data, error } = await supabase
         .from('projects')
-        .select('work_order_token, work_order_shared_at')
+        .select('work_order_token, work_order_pin, work_order_shared_at')
         .eq('id', projectId)
         .maybeSingle();
 
@@ -132,7 +159,11 @@ export function useWorkOrderSharing(projectId: string | undefined) {
       
       if (data?.work_order_token) {
         const url = `${window.location.origin}/work-order/${data.work_order_token}`;
-        const result = { token: data.work_order_token, url };
+        const result = { 
+          token: data.work_order_token, 
+          url,
+          pin: data.work_order_pin 
+        };
         setShareData(result);
         return result;
       }
@@ -149,6 +180,7 @@ export function useWorkOrderSharing(projectId: string | undefined) {
     generateToken,
     copyShareLink,
     setWorkOrderPIN,
+    removeWorkOrderPIN,
     revokeAccess,
     getShareData
   };
