@@ -186,15 +186,16 @@ export async function fetchProjectByToken(token: string): Promise<any | null> {
 export async function fetchTreatmentsForProject(projectId: string): Promise<any[]> {
   try {
     const { data, error } = await supabase
-      .from('project_treatments' as any)
+      .from('treatments')
       .select(`
         id,
         treatment_type,
-        width,
-        height,
-        mount_type,
+        treatment_name,
+        product_name,
+        mounting_type,
+        measurements,
         notes,
-        selected_options,
+        status,
         rooms (
           id,
           name
