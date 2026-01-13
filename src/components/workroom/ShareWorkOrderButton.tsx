@@ -54,10 +54,21 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
   }, [projectId, getShareData]);
 
   const handleCopyLink = async () => {
-    const success = await copyShareLink();
-    if (success) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+    // If we already have share data, copy immediately (no async before clipboard!)
+    if (shareData?.url) {
+      const success = await copyToClipboard(shareData.url);
+      if (success) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+      return;
+    }
+    
+    // Otherwise, generate first then show QR dialog for manual copy
+    const result = await generateToken();
+    if (result) {
+      setQrUrl(result.url);
+      setShowQRDialog(true);
     }
   };
 
@@ -112,10 +123,15 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
                 <Check className="h-4 w-4 text-green-500" />
                 <span>Link Copied!</span>
               </>
-            ) : (
+            ) : shareData ? (
               <>
                 <Link2 className="h-4 w-4" />
                 <span>Copy Link</span>
+              </>
+            ) : (
+              <>
+                <Link2 className="h-4 w-4" />
+                <span>Generate & Copy Link</span>
               </>
             )}
           </DropdownMenuItem>
