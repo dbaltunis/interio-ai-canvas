@@ -19,11 +19,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Share2, Link2, QrCode, Lock, X, ChevronDown, Check, Copy, ExternalLink } from 'lucide-react';
+import { Share2, Link2, QrCode, Lock, X, ChevronDown, Check, Copy, ExternalLink, LockOpen, Eye, EyeOff } from 'lucide-react';
 import { useWorkOrderSharing } from '@/hooks/useWorkOrderSharing';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/clipboard';
+import { showSuccessToast } from '@/components/ui/use-toast';
 
 interface ShareWorkOrderButtonProps {
   projectId: string | undefined;
@@ -36,14 +37,20 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
     copyShareLink, 
     generateToken, 
     setWorkOrderPIN, 
+    removeWorkOrderPIN,
     revokeAccess,
     getShareData 
   } = useWorkOrderSharing(projectId);
 
   const [showQRDialog, setShowQRDialog] = useState(false);
   const [showPINDialog, setShowPINDialog] = useState(false);
+  const [showPINSuccessDialog, setShowPINSuccessDialog] = useState(false);
+  const [showViewPINDialog, setShowViewPINDialog] = useState(false);
   const [pin, setPin] = useState('');
+  const [savedPIN, setSavedPIN] = useState<string | null>(null);
+  const [showPINValue, setShowPINValue] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [pinCopied, setPinCopied] = useState(false);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
 
   // Check for existing share data on mount
@@ -84,9 +91,28 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
     if (pin.length === 4) {
       const success = await setWorkOrderPIN(pin);
       if (success) {
+        setSavedPIN(pin);
         setShowPINDialog(false);
+        setShowPINSuccessDialog(true);
         setPin('');
+        // Refresh share data to get updated PIN
+        getShareData();
       }
+    }
+  };
+
+  const handleRemovePIN = async () => {
+    const success = await removeWorkOrderPIN();
+    if (success) {
+      setShowViewPINDialog(false);
+    }
+  };
+
+  const handleCopyPIN = async (pinValue: string) => {
+    const success = await copyToClipboard(pinValue);
+    if (success) {
+      setPinCopied(true);
+      setTimeout(() => setPinCopied(false), 2000);
     }
   };
 
@@ -95,6 +121,7 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
   };
 
   const isShared = !!shareData;
+  const hasPIN = !!shareData?.pin;
 
   return (
     <>
@@ -110,11 +137,20 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
             <span className="hidden sm:inline">
               {isSharing ? 'Sharing...' : isShared ? 'Shared' : 'Share'}
             </span>
+            {hasPIN && <Lock className="h-3 w-3" />}
             <ChevronDown className="h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56 bg-background z-50">
-          <DropdownMenuLabel>Share Work Order</DropdownMenuLabel>
+        <DropdownMenuContent align="end" className="w-64 bg-background z-50">
+          <DropdownMenuLabel className="flex items-center gap-2">
+            Share Work Order
+            {hasPIN && (
+              <Badge variant="secondary" className="text-xs gap-1">
+                <Lock className="h-3 w-3" />
+                Protected
+              </Badge>
+            )}
+          </DropdownMenuLabel>
           <DropdownMenuSeparator />
           
           <DropdownMenuItem onClick={handleCopyLink} className="gap-2">
@@ -144,11 +180,22 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
           {isShared && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setShowPINDialog(true)} className="gap-2">
-                <Lock className="h-4 w-4" />
-                <span>Set PIN Protection</span>
-              </DropdownMenuItem>
               
+              {hasPIN ? (
+                <>
+                  <DropdownMenuItem onClick={() => setShowViewPINDialog(true)} className="gap-2">
+                    <Eye className="h-4 w-4" />
+                    <span>View PIN: ****</span>
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <DropdownMenuItem onClick={() => setShowPINDialog(true)} className="gap-2">
+                  <Lock className="h-4 w-4" />
+                  <span>Add PIN Protection</span>
+                </DropdownMenuItem>
+              )}
+              
+              <DropdownMenuSeparator />
               <DropdownMenuItem 
                 onClick={handleRevokeAccess} 
                 className="gap-2 text-destructive focus:text-destructive"
@@ -227,7 +274,7 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
         </DialogContent>
       </Dialog>
 
-      {/* PIN Dialog */}
+      {/* Set PIN Dialog */}
       <Dialog open={showPINDialog} onOpenChange={setShowPINDialog}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
@@ -264,6 +311,121 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
               disabled={pin.length !== 4}
             >
               Set PIN
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PIN Success Dialog - Shows PIN after setting */}
+      <Dialog open={showPINSuccessDialog} onOpenChange={setShowPINSuccessDialog}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Check className="h-5 w-5 text-green-500" />
+              PIN Set Successfully
+            </DialogTitle>
+            <DialogDescription>
+              Share this PIN with the installer so they can access the work order.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-6 flex flex-col items-center gap-4">
+            <div className="text-4xl font-mono font-bold tracking-[0.3em] bg-muted px-6 py-3 rounded-lg">
+              {savedPIN}
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="gap-2"
+              onClick={() => savedPIN && handleCopyPIN(savedPIN)}
+            >
+              {pinCopied ? (
+                <>
+                  <Check className="h-4 w-4 text-green-500" />
+                  PIN Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" />
+                  Copy PIN
+                </>
+              )}
+            </Button>
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => setShowPINSuccessDialog(false)}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View/Manage PIN Dialog */}
+      <Dialog open={showViewPINDialog} onOpenChange={setShowViewPINDialog}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>PIN Protection</DialogTitle>
+            <DialogDescription>
+              This work order is protected with a PIN.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-6 flex flex-col items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="text-4xl font-mono font-bold tracking-[0.3em] bg-muted px-6 py-3 rounded-lg">
+                {showPINValue ? shareData?.pin : '****'}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowPINValue(!showPINValue)}
+              >
+                {showPINValue ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+            
+            {showPINValue && shareData?.pin && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="gap-2"
+                onClick={() => handleCopyPIN(shareData.pin!)}
+              >
+                {pinCopied ? (
+                  <>
+                    <Check className="h-4 w-4 text-green-500" />
+                    PIN Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" />
+                    Copy PIN
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowViewPINDialog(false);
+                setShowPINDialog(true);
+              }}
+              className="gap-2"
+            >
+              <Lock className="h-4 w-4" />
+              Change PIN
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleRemovePIN}
+              className="gap-2"
+            >
+              <LockOpen className="h-4 w-4" />
+              Remove PIN
             </Button>
           </DialogFooter>
         </DialogContent>
