@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calculator, Percent, Receipt, Grid3X3, Settings2 } from "lucide-react";
+import { Calculator, Percent, Receipt, Grid3X3, Settings2, Info } from "lucide-react";
 import { PricingGridCardDashboard } from "../pricing-grids/PricingGridCardDashboard";
 import { PricingGridUploadWizard } from "../pricing-grids/PricingGridUploadWizard";
 import { useMarkupSettings, useUpdateMarkupSettings, MarkupSettings } from "@/hooks/useMarkupSettings";
@@ -171,6 +171,41 @@ export const PricingRulesTab = () => {
 
         {/* Settings Tab (Markup & Tax) */}
         <TabsContent value="settings" className="space-y-6">
+          {/* Markup Hierarchy Guide */}
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Info className="h-4 w-4 text-primary" />
+                How Markup is Applied
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <div className="flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-full font-medium text-primary">
+                  <Grid3X3 className="h-3.5 w-3.5" />
+                  Pricing Grid
+                </div>
+                <span className="text-muted-foreground">→</span>
+                <div className="flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-full font-medium">
+                  <Percent className="h-3.5 w-3.5" />
+                  Category
+                </div>
+                <span className="text-muted-foreground">→</span>
+                <div className="flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-full font-medium">
+                  <Calculator className="h-3.5 w-3.5" />
+                  Default
+                </div>
+                <span className="text-muted-foreground">→</span>
+                <div className="flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-full font-medium border-2 border-dashed border-muted-foreground/30">
+                  Minimum Floor
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                The system checks each level in order. If a pricing grid has markup set, it uses that. Otherwise, it falls back to category markup, then default, with minimum floor as the absolute lowest.
+              </p>
+            </CardContent>
+          </Card>
+
           {/* Tax Settings */}
           <Card>
             <CardHeader>

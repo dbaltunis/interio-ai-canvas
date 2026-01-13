@@ -381,9 +381,12 @@ export const CostCalculationSummary = ({
 
     return (
       <div className="bg-card border border-border rounded-lg p-3 space-y-3">
-        <div className="flex items-center gap-2 pb-2 border-b border-border">
-          <Calculator className="h-4 w-4 text-primary" />
-          <h3 className="text-base font-semibold text-card-foreground">Wallpaper Cost Summary</h3>
+        <div className="flex items-center justify-between pb-2 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Calculator className="h-4 w-4 text-primary" />
+            <h3 className="text-base font-semibold text-card-foreground">Wallpaper Cost Summary</h3>
+          </div>
+          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Trade Prices</span>
         </div>
 
         <div className="grid gap-2 text-sm">

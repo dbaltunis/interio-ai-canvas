@@ -7,6 +7,8 @@ import { ChevronDown, ChevronRight, Eye, EyeOff, List, ListX } from "lucide-reac
 import { formatCurrency } from "@/utils/currency";
 import QuoteItemBreakdown from "@/components/quotes/QuoteItemBreakdown";
 import { QuoteItemImage } from "@/components/quotes/QuoteItemImage";
+import { LineItemProfitColumn } from "@/components/pricing/LineItemProfitColumn";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface DetailedQuotationTableProps {
   quotationData: any;
@@ -169,6 +171,8 @@ const QuotationItemRow: React.FC<{
   onToggleItem: (id: string) => void;
   currency: string;
 }> = ({ item, showDetailedView, showAllOptions, expandedItems, onToggleItem, currency }) => {
+  const { data: roleData } = useUserRole();
+  const canViewMarkup = roleData?.canViewMarkup ?? false;
   const isExpanded = expandedItems.has(item.id);
   const hasBreakdown = item.breakdown && Array.isArray(item.breakdown) && item.breakdown.length > 0;
   const hasChildren = item.children && Array.isArray(item.children) && item.children.length > 0;
@@ -296,9 +300,16 @@ const QuotationItemRow: React.FC<{
             )}
           </div>
           
-          {/* Total Price - already includes markup from source */}
-          <div className="text-right flex-shrink-0">
+          {/* Total Price + GP% Badge - already includes markup from source */}
+          <div className="text-right flex-shrink-0 flex flex-col items-end gap-1">
             <div className="text-lg font-semibold text-foreground">{formatCurrency(item.total || 0, currency)}</div>
+            {canViewMarkup && item.cost_price && item.total && (
+              <LineItemProfitColumn
+                costPrice={item.cost_price}
+                sellingPrice={item.total}
+                variant="badge-only"
+              />
+            )}
           </div>
         </div>
       </div>
@@ -344,12 +355,19 @@ const QuotationItemRow: React.FC<{
             )}
           </div>
         </div>
-        <div className="text-right">
+        <div className="text-right flex flex-col items-end gap-1">
           <div className="font-medium text-foreground">{formatCurrency(item.total || 0, currency)}</div>
           {item.quantity && item.unit_price && (
             <div className="text-xs text-muted-foreground">
               {formatCurrency(item.unit_price, currency)} per unit
             </div>
+          )}
+          {canViewMarkup && item.cost_price && item.total && (
+            <LineItemProfitColumn
+              costPrice={item.cost_price}
+              sellingPrice={item.total}
+              variant="badge-only"
+            />
           )}
         </div>
       </div>
