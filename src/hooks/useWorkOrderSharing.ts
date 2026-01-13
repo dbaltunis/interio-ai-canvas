@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccessToast, showErrorToast } from '@/components/ui/use-toast';
-
+import { copyToClipboard } from '@/lib/clipboard';
 interface ShareResult {
   token: string;
   url: string;
@@ -60,9 +60,14 @@ export function useWorkOrderSharing(projectId: string | undefined) {
   const copyShareLink = useCallback(async (): Promise<boolean> => {
     const result = await generateToken();
     if (result) {
-      await navigator.clipboard.writeText(result.url);
-      showSuccessToast('Link copied!', 'Share this link with your installer', 'normal');
-      return true;
+      const success = await copyToClipboard(result.url);
+      if (success) {
+        showSuccessToast('Link copied!', 'Share this link with your installer', 'normal');
+        return true;
+      } else {
+        showErrorToast('Could not copy', 'Please copy the link manually');
+        return false;
+      }
     }
     return false;
   }, [generateToken]);
