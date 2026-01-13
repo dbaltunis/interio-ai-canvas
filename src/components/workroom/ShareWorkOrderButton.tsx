@@ -13,16 +13,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { 
-  Share2, Link2, Lock, X, Check, Copy, 
-  LockOpen, Eye, EyeOff, Circle
+  Share2, Link2, Lock, X, Check, Eye, EyeOff, Circle
 } from 'lucide-react';
 import { useWorkOrderSharing } from '@/hooks/useWorkOrderSharing';
 import { useWorkOrderRecipients, ShareRecipient } from '@/hooks/useWorkOrderRecipients';
 import { copyToClipboard } from '@/lib/clipboard';
 import { formatDistanceToNow } from 'date-fns';
+import { showSuccessToast } from '@/components/ui/use-toast';
 
 interface ShareWorkOrderButtonProps {
   projectId: string | undefined;
@@ -49,7 +55,6 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
 
   const {
     recipients,
-    activeCount,
     addRecipient,
     removeRecipient
   } = useWorkOrderRecipients(projectId);
@@ -144,6 +149,7 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
     
     if (success) {
       setNewEmail('');
+      showSuccessToast('Email added for tracking', 'Now send them the link!', 'normal');
     }
     setIsAddingEmail(false);
   };
@@ -176,100 +182,98 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
             {hasPIN && <Lock className="h-3 w-3" />}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-64 p-3" sideOffset={8}>
-          {/* Document Type Tabs */}
-          <div className="flex border-b border-border mb-3">
-            {(['work_order', 'installation', 'fitting'] as DocumentType[]).map((type) => (
-              <button
-                key={type}
-                onClick={() => setDocumentType(type)}
-                className={`flex-1 py-1.5 text-xs font-medium border-b-2 transition-colors ${
-                  documentType === type 
-                    ? 'border-primary text-primary' 
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {DOC_LABELS[type]}
-              </button>
-            ))}
+        <PopoverContent align="end" className="w-72 p-0" sideOffset={8}>
+          {/* Header with dropdown */}
+          <div className="p-3 border-b border-border">
+            <Select value={documentType} onValueChange={(v) => setDocumentType(v as DocumentType)}>
+              <SelectTrigger className="h-8 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="work_order">Work Order</SelectItem>
+                <SelectItem value="installation">Installation Instructions</SelectItem>
+                <SelectItem value="fitting">Fitting Instructions</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Copy Link Button */}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full mb-2"
-            onClick={handleCopyLink}
-          >
-            {copied ? (
-              <>
-                <Check className="h-4 w-4 mr-2 text-green-500" />
-                Copied!
-              </>
-            ) : (
-              <>
-                <Link2 className="h-4 w-4 mr-2" />
-                Copy Link
-              </>
-            )}
-          </Button>
-
-          {/* Preview Link */}
-          <button 
-            onClick={handlePreview}
-            className="text-xs text-muted-foreground hover:text-primary mb-3 block w-full text-center"
-          >
-            Preview what they'll see →
-          </button>
-
-          {/* Recipients */}
-          {activeRecipients.length > 0 && (
-            <div className="border-t border-border pt-3 mb-3 space-y-1.5">
-              {activeRecipients.slice(0, 3).map((recipient) => (
-                <RecipientRow 
-                  key={recipient.id} 
-                  recipient={recipient} 
-                  onRemove={removeRecipient}
-                />
-              ))}
-              {activeRecipients.length > 3 && (
-                <p className="text-xs text-muted-foreground">
-                  +{activeRecipients.length - 3} more
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Add Email */}
-          <div className="flex gap-1.5 mb-3">
-            <Input
-              type="email"
-              placeholder="Add email..."
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="h-7 text-xs"
-              disabled={isAddingEmail}
-            />
+          {/* Main Actions */}
+          <div className="p-3 flex gap-2">
             <Button 
+              variant="default" 
               size="sm" 
-              variant="secondary"
-              onClick={handleAddEmail}
-              disabled={!newEmail.includes('@') || isAddingEmail}
-              className="h-7 px-2 text-xs"
+              className="flex-1"
+              onClick={handleCopyLink}
             >
-              Add
+              {copied ? (
+                <>
+                  <Check className="h-4 w-4 mr-1.5" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Link2 className="h-4 w-4 mr-1.5" />
+                  Copy Link
+                </>
+              )}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handlePreview}
+            >
+              <Eye className="h-4 w-4" />
             </Button>
           </div>
 
+          {/* Tracking Section */}
+          <div className="px-3 pb-3">
+            <p className="text-[10px] text-muted-foreground mb-2">
+              Track who viewed (you send the link):
+            </p>
+            <div className="flex gap-1.5 mb-2">
+              <Input
+                type="email"
+                placeholder="email@example.com"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="h-7 text-xs"
+                disabled={isAddingEmail}
+              />
+              <Button 
+                size="sm" 
+                variant="secondary"
+                onClick={handleAddEmail}
+                disabled={!newEmail.includes('@') || isAddingEmail}
+                className="h-7 px-2 text-xs"
+              >
+                Add
+              </Button>
+            </div>
+
+            {/* Recipients List */}
+            {activeRecipients.length > 0 && (
+              <div className="space-y-1 max-h-24 overflow-y-auto">
+                {activeRecipients.map((recipient) => (
+                  <RecipientRow 
+                    key={recipient.id} 
+                    recipient={recipient} 
+                    onRemove={removeRecipient}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Footer */}
-          <div className="flex items-center justify-between text-xs border-t border-border pt-2">
+          <div className="flex items-center justify-between text-xs border-t border-border px-3 py-2 bg-muted/30">
             {hasPIN ? (
               <button 
                 onClick={() => { setIsOpen(false); setShowViewPINDialog(true); }}
                 className="text-muted-foreground hover:text-foreground flex items-center gap-1"
               >
-                <Lock className="h-3 w-3" /> PIN
+                <Lock className="h-3 w-3" /> Protected
               </button>
             ) : (
               <button 
@@ -283,9 +287,9 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
             {isShared && (
               <button 
                 onClick={() => { revokeAccess(); setIsOpen(false); }}
-                className="text-destructive hover:text-destructive/80 flex items-center gap-1"
+                className="text-destructive hover:text-destructive/80"
               >
-                <X className="h-3 w-3" /> Revoke
+                Revoke Access
               </button>
             )}
           </div>
