@@ -10353,6 +10353,7 @@ export type Database = {
         Args: { owner_id: string; team_member_id: string }
         Returns: Json
       }
+      current_user_account_owner: { Args: never; Returns: string }
       current_user_has_permission: {
         Args: { permission_name: string }
         Returns: boolean
