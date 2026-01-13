@@ -178,11 +178,11 @@ export const QuotationTab = ({
     enabled: !!projectId && !!projects
   });
 
-  // Fetch workshop items
+  // Fetch workshop items - include user.id for cache isolation
   const {
     data: workshopItems
   } = useQuery({
-    queryKey: ["workshop-items", projectId],
+    queryKey: ["workshop-items", user?.id, projectId],
     queryFn: async () => {
       if (!projectId) return [];
       const {
