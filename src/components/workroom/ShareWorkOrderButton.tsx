@@ -22,25 +22,16 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { 
-  Share2, Link2, Lock, X, Check, Eye, EyeOff, Circle
+  Share2, Link2, Lock, Check, Eye, EyeOff
 } from 'lucide-react';
 import { useWorkOrderSharing } from '@/hooks/useWorkOrderSharing';
-import { useWorkOrderRecipients, ShareRecipient } from '@/hooks/useWorkOrderRecipients';
 import { copyToClipboard } from '@/lib/clipboard';
-import { formatDistanceToNow } from 'date-fns';
-import { showSuccessToast } from '@/components/ui/use-toast';
 
 interface ShareWorkOrderButtonProps {
   projectId: string | undefined;
 }
 
 type DocumentType = 'work_order' | 'installation' | 'fitting';
-
-const DOC_LABELS: Record<DocumentType, string> = {
-  work_order: 'Work Order',
-  installation: 'Installation',
-  fitting: 'Fitting',
-};
 
 export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ projectId }) => {
   const { 
@@ -53,12 +44,6 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
     getShareData,
   } = useWorkOrderSharing(projectId);
 
-  const {
-    recipients,
-    addRecipient,
-    removeRecipient
-  } = useWorkOrderRecipients(projectId);
-
   const [documentType, setDocumentType] = useState<DocumentType>('work_order');
   const [showPINDialog, setShowPINDialog] = useState(false);
   const [showViewPINDialog, setShowViewPINDialog] = useState(false);
@@ -66,8 +51,6 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
   const [showPINValue, setShowPINValue] = useState(false);
   const [copied, setCopied] = useState(false);
   const [pinCopied, setPinCopied] = useState(false);
-  const [newEmail, setNewEmail] = useState('');
-  const [isAddingEmail, setIsAddingEmail] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -133,37 +116,8 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
     }
   };
 
-  const handleAddEmail = async () => {
-    if (!newEmail.trim() || !newEmail.includes('@')) return;
-    
-    setIsAddingEmail(true);
-    
-    if (!shareData) {
-      await generateToken();
-    }
-    
-    const success = await addRecipient({
-      name: newEmail.split('@')[0],
-      email: newEmail.trim()
-    });
-    
-    if (success) {
-      setNewEmail('');
-      showSuccessToast('Email added for tracking', 'Now send them the link!', 'normal');
-    }
-    setIsAddingEmail(false);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddEmail();
-    }
-  };
-
   const isShared = !!shareData;
   const hasPIN = !!shareData?.pin;
-  const activeRecipients = recipients.filter(r => r.is_active);
 
   return (
     <>
@@ -182,7 +136,7 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
             {hasPIN && <Lock className="h-3 w-3" />}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-72 p-0" sideOffset={8}>
+        <PopoverContent align="end" className="w-64 p-0" sideOffset={8}>
           {/* Header with dropdown */}
           <div className="p-3 border-b border-border">
             <Select value={documentType} onValueChange={(v) => setDocumentType(v as DocumentType)}>
@@ -221,49 +175,10 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
               variant="outline" 
               size="sm"
               onClick={handlePreview}
+              title="Preview"
             >
               <Eye className="h-4 w-4" />
             </Button>
-          </div>
-
-          {/* Tracking Section */}
-          <div className="px-3 pb-3">
-            <p className="text-[10px] text-muted-foreground mb-2">
-              Track who viewed (you send the link):
-            </p>
-            <div className="flex gap-1.5 mb-2">
-              <Input
-                type="email"
-                placeholder="email@example.com"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="h-7 text-xs"
-                disabled={isAddingEmail}
-              />
-              <Button 
-                size="sm" 
-                variant="secondary"
-                onClick={handleAddEmail}
-                disabled={!newEmail.includes('@') || isAddingEmail}
-                className="h-7 px-2 text-xs"
-              >
-                Add
-              </Button>
-            </div>
-
-            {/* Recipients List */}
-            {activeRecipients.length > 0 && (
-              <div className="space-y-1 max-h-24 overflow-y-auto">
-                {activeRecipients.map((recipient) => (
-                  <RecipientRow 
-                    key={recipient.id} 
-                    recipient={recipient} 
-                    onRemove={removeRecipient}
-                  />
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Footer */}
@@ -366,28 +281,5 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
         </DialogContent>
       </Dialog>
     </>
-  );
-};
-
-// Recipient row
-const RecipientRow: React.FC<{
-  recipient: ShareRecipient;
-  onRemove: (id: string) => Promise<boolean>;
-}> = ({ recipient, onRemove }) => {
-  const hasViewed = recipient.access_count > 0;
-  
-  return (
-    <div className="flex items-center gap-2 group">
-      <Circle className={`h-2 w-2 ${hasViewed ? 'fill-green-500 text-green-500' : 'fill-muted text-muted'}`} />
-      <span className="text-xs flex-1 truncate">
-        {recipient.recipient_email || recipient.recipient_name}
-      </span>
-      <button
-        onClick={() => onRemove(recipient.id)}
-        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-      >
-        <X className="h-3 w-3" />
-      </button>
-    </div>
   );
 };
