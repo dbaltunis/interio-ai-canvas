@@ -13,21 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { 
   Share2, Link2, Lock, X, Check, Copy, 
-  ExternalLink, LockOpen, Eye, EyeOff, Circle,
-  FileText, Wrench, Ruler
+  LockOpen, Eye, EyeOff, Circle
 } from 'lucide-react';
 import { useWorkOrderSharing } from '@/hooks/useWorkOrderSharing';
 import { useWorkOrderRecipients, ShareRecipient } from '@/hooks/useWorkOrderRecipients';
@@ -39,31 +29,12 @@ interface ShareWorkOrderButtonProps {
 }
 
 type DocumentType = 'work_order' | 'installation' | 'fitting';
-type ContentFilter = 'all' | 'field_ready' | 'specs_only';
 
-const DOCUMENT_OPTIONS = [
-  { value: 'work_order', label: 'Work Order', icon: FileText },
-  { value: 'installation', label: 'Installation', icon: Wrench },
-  { value: 'fitting', label: 'Fitting', icon: Ruler },
-] as const;
-
-const CONTENT_OPTIONS = [
-  { 
-    value: 'all', 
-    label: 'All content', 
-    description: 'Full details with pricing'
-  },
-  { 
-    value: 'field_ready', 
-    label: 'Field-ready', 
-    description: 'Address, phone, specs'
-  },
-  { 
-    value: 'specs_only', 
-    label: 'Specs only', 
-    description: 'Measurements & treatments'
-  },
-] as const;
+const DOC_LABELS: Record<DocumentType, string> = {
+  work_order: 'Work Order',
+  installation: 'Installation',
+  fitting: 'Fitting',
+};
 
 export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ projectId }) => {
   const { 
@@ -74,7 +45,6 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
     removeWorkOrderPIN,
     revokeAccess,
     getShareData,
-    updateShareSettings
   } = useWorkOrderSharing(projectId);
 
   const {
@@ -85,7 +55,6 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
   } = useWorkOrderRecipients(projectId);
 
   const [documentType, setDocumentType] = useState<DocumentType>('work_order');
-  const [contentFilter, setContentFilter] = useState<ContentFilter>('field_ready');
   const [showPINDialog, setShowPINDialog] = useState(false);
   const [showViewPINDialog, setShowViewPINDialog] = useState(false);
   const [pin, setPin] = useState('');
@@ -131,16 +100,6 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
     if (url) {
       window.open(url, '_blank');
     }
-  };
-
-  const handleDocumentTypeChange = async (value: DocumentType) => {
-    setDocumentType(value);
-    await updateShareSettings({ documentType: value, contentFilter });
-  };
-
-  const handleContentFilterChange = async (value: ContentFilter) => {
-    setContentFilter(value);
-    await updateShareSettings({ documentType, contentFilter: value });
   };
 
   const handleSetPIN = async () => {
@@ -198,9 +157,7 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
 
   const isShared = !!shareData;
   const hasPIN = !!shareData?.pin;
-
-  const selectedDocOption = DOCUMENT_OPTIONS.find(o => o.value === documentType);
-  const selectedContentOption = CONTENT_OPTIONS.find(o => o.value === contentFilter);
+  const activeRecipients = recipients.filter(r => r.is_active);
 
   return (
     <>
@@ -219,193 +176,117 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
             {hasPIN && <Lock className="h-3 w-3" />}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-80 p-0" sideOffset={8}>
-          {/* Header */}
-          <div className="px-4 py-3 border-b border-border">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold">Share</span>
-              {hasPIN && (
-                <Badge variant="secondary" className="text-xs gap-1 h-5">
-                  <Lock className="h-3 w-3" />
-                  PIN
-                </Badge>
-              )}
-            </div>
+        <PopoverContent align="end" className="w-64 p-3" sideOffset={8}>
+          {/* Document Type Tabs */}
+          <div className="flex border-b border-border mb-3">
+            {(['work_order', 'installation', 'fitting'] as DocumentType[]).map((type) => (
+              <button
+                key={type}
+                onClick={() => setDocumentType(type)}
+                className={`flex-1 py-1.5 text-xs font-medium border-b-2 transition-colors ${
+                  documentType === type 
+                    ? 'border-primary text-primary' 
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {DOC_LABELS[type]}
+              </button>
+            ))}
           </div>
-          
-          {/* Settings */}
-          <div className="p-4 space-y-4">
-            {/* Document Type */}
-            <div className="grid grid-cols-3 gap-1.5">
-              {DOCUMENT_OPTIONS.map((option) => {
-                const Icon = option.icon;
-                const isSelected = documentType === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    onClick={() => handleDocumentTypeChange(option.value as DocumentType)}
-                    className={`
-                      flex flex-col items-center gap-1.5 p-2.5 rounded-lg border text-xs font-medium transition-all
-                      ${isSelected 
-                        ? 'border-primary bg-primary/5 text-primary' 
-                        : 'border-border hover:border-primary/50 hover:bg-muted/50 text-muted-foreground'
-                      }
-                    `}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{option.label}</span>
-                  </button>
-                );
-              })}
-            </div>
 
-            {/* Content Filter */}
-            <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Include</Label>
-              <Select value={contentFilter} onValueChange={(v) => handleContentFilterChange(v as ContentFilter)}>
-                <SelectTrigger className="h-9">
-                  <SelectValue>
-                    <div className="flex flex-col items-start">
-                      <span className="text-sm">{selectedContentOption?.label}</span>
-                    </div>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {CONTENT_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="py-2">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{option.label}</span>
-                        <span className="text-xs text-muted-foreground">{option.description}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Actions */}
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex-1 h-9"
-                onClick={handleCopyLink}
-              >
-                {copied ? (
-                  <>
-                    <Check className="h-4 w-4 mr-2 text-green-500" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Link2 className="h-4 w-4 mr-2" />
-                    Copy Link
-                  </>
-                )}
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="h-9"
-                onClick={handlePreview}
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Preview
-              </Button>
-            </div>
-          </div>
-          
-          <Separator />
-          
-          {/* People with Access */}
-          <div className="p-4 space-y-3">
-            <Label className="text-xs text-muted-foreground">People with access</Label>
-            
-            {/* Recipients List */}
-            <div className="space-y-1 max-h-28 overflow-y-auto">
-              {recipients.filter(r => r.is_active).map((recipient) => (
+          {/* Copy Link Button */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full mb-2"
+            onClick={handleCopyLink}
+          >
+            {copied ? (
+              <>
+                <Check className="h-4 w-4 mr-2 text-green-500" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Link2 className="h-4 w-4 mr-2" />
+                Copy Link
+              </>
+            )}
+          </Button>
+
+          {/* Preview Link */}
+          <button 
+            onClick={handlePreview}
+            className="text-xs text-muted-foreground hover:text-primary mb-3 block w-full text-center"
+          >
+            Preview what they'll see →
+          </button>
+
+          {/* Recipients */}
+          {activeRecipients.length > 0 && (
+            <div className="border-t border-border pt-3 mb-3 space-y-1.5">
+              {activeRecipients.slice(0, 3).map((recipient) => (
                 <RecipientRow 
                   key={recipient.id} 
                   recipient={recipient} 
                   onRemove={removeRecipient}
                 />
               ))}
-              
-              {activeCount === 0 && (
-                <p className="text-xs text-muted-foreground py-1">
-                  Anyone with the link can access
+              {activeRecipients.length > 3 && (
+                <p className="text-xs text-muted-foreground">
+                  +{activeRecipients.length - 3} more
                 </p>
               )}
             </div>
-            
-            {/* Add Email */}
-            <div className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="Add email..."
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="h-8 text-sm"
-                disabled={isAddingEmail}
-              />
-              <Button 
-                size="sm" 
-                variant="secondary"
-                onClick={handleAddEmail}
-                disabled={!newEmail.includes('@') || isAddingEmail}
-                className="h-8 px-3"
-              >
-                Add
-              </Button>
-            </div>
+          )}
+
+          {/* Add Email */}
+          <div className="flex gap-1.5 mb-3">
+            <Input
+              type="email"
+              placeholder="Add email..."
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="h-7 text-xs"
+              disabled={isAddingEmail}
+            />
+            <Button 
+              size="sm" 
+              variant="secondary"
+              onClick={handleAddEmail}
+              disabled={!newEmail.includes('@') || isAddingEmail}
+              className="h-7 px-2 text-xs"
+            >
+              Add
+            </Button>
           </div>
-          
-          <Separator />
-          
-          {/* Footer Actions */}
-          <div className="p-2 flex gap-1">
+
+          {/* Footer */}
+          <div className="flex items-center justify-between text-xs border-t border-border pt-2">
             {hasPIN ? (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="flex-1 justify-start h-8 text-xs"
-                onClick={() => {
-                  setIsOpen(false);
-                  setShowViewPINDialog(true);
-                }}
+              <button 
+                onClick={() => { setIsOpen(false); setShowViewPINDialog(true); }}
+                className="text-muted-foreground hover:text-foreground flex items-center gap-1"
               >
-                <Eye className="h-3.5 w-3.5 mr-2" />
-                View PIN
-              </Button>
+                <Lock className="h-3 w-3" /> PIN
+              </button>
             ) : (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="flex-1 justify-start h-8 text-xs"
-                onClick={() => {
-                  setIsOpen(false);
-                  setShowPINDialog(true);
-                }}
+              <button 
+                onClick={() => { setIsOpen(false); setShowPINDialog(true); }}
+                className="text-muted-foreground hover:text-foreground flex items-center gap-1"
               >
-                <Lock className="h-3.5 w-3.5 mr-2" />
-                Add PIN
-              </Button>
+                <Lock className="h-3 w-3" /> Add PIN
+              </button>
             )}
             
             {isShared && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="flex-1 justify-start h-8 text-xs text-destructive hover:text-destructive"
-                onClick={() => {
-                  revokeAccess();
-                  setIsOpen(false);
-                }}
+              <button 
+                onClick={() => { revokeAccess(); setIsOpen(false); }}
+                className="text-destructive hover:text-destructive/80 flex items-center gap-1"
               >
-                <X className="h-3.5 w-3.5 mr-2" />
-                Revoke
-              </Button>
+                <X className="h-3 w-3" /> Revoke
+              </button>
             )}
           </div>
         </PopoverContent>
@@ -413,111 +294,69 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
 
       {/* Set PIN Dialog */}
       <Dialog open={showPINDialog} onOpenChange={setShowPINDialog}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-xs">
           <DialogHeader>
-            <DialogTitle>Set PIN Protection</DialogTitle>
+            <DialogTitle>Set PIN</DialogTitle>
             <DialogDescription>
-              Add a 4-digit PIN to protect this work order.
+              4-digit PIN to protect access
             </DialogDescription>
           </DialogHeader>
           
-          <div className="py-4">
-            <Label htmlFor="pin">4-Digit PIN</Label>
-            <Input
-              id="pin"
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={4}
-              placeholder="0000"
-              value={pin}
-              onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-              className="text-center text-2xl tracking-[0.5em] mt-2"
-            />
-          </div>
+          <Input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={4}
+            placeholder="0000"
+            value={pin}
+            onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            className="text-center text-2xl tracking-[0.5em]"
+          />
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setShowPINDialog(false);
-              setPin('');
-            }}>
+            <Button variant="outline" size="sm" onClick={() => { setShowPINDialog(false); setPin(''); }}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleSetPIN}
-              disabled={pin.length !== 4}
-            >
+            <Button size="sm" onClick={handleSetPIN} disabled={pin.length !== 4}>
               Set PIN
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* View/Manage PIN Dialog */}
+      {/* View PIN Dialog */}
       <Dialog open={showViewPINDialog} onOpenChange={setShowViewPINDialog}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-xs">
           <DialogHeader>
             <DialogTitle>PIN Protection</DialogTitle>
-            <DialogDescription>
-              This work order is protected with a PIN.
-            </DialogDescription>
           </DialogHeader>
           
-          <div className="py-6 flex flex-col items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="text-4xl font-mono font-bold tracking-[0.3em] bg-muted px-6 py-3 rounded-lg">
-                {showPINValue ? shareData?.pin : '****'}
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowPINValue(!showPINValue)}
-              >
-                {showPINValue ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
+          <div className="flex items-center justify-center gap-2 py-4">
+            <div className="text-3xl font-mono font-bold tracking-[0.3em] bg-muted px-4 py-2 rounded">
+              {showPINValue ? shareData?.pin : '••••'}
             </div>
-            
-            {showPINValue && shareData?.pin && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="gap-2"
-                onClick={() => handleCopyPIN(shareData.pin!)}
-              >
-                {pinCopied ? (
-                  <>
-                    <Check className="h-4 w-4 text-green-500" />
-                    PIN Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4" />
-                    Copy PIN
-                  </>
-                )}
-              </Button>
-            )}
+            <Button variant="ghost" size="icon" onClick={() => setShowPINValue(!showPINValue)}>
+              {showPINValue ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
           </div>
-
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          
+          {showPINValue && shareData?.pin && (
             <Button 
               variant="outline" 
-              onClick={() => {
-                setShowViewPINDialog(false);
-                setShowPINDialog(true);
-              }}
-              className="gap-2"
+              size="sm"
+              className="w-full"
+              onClick={() => handleCopyPIN(shareData.pin!)}
             >
-              <Lock className="h-4 w-4" />
-              Change PIN
+              {pinCopied ? 'Copied!' : 'Copy PIN'}
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleRemovePIN}
-              className="gap-2"
-            >
-              <LockOpen className="h-4 w-4" />
-              Remove PIN
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setShowViewPINDialog(false); setShowPINDialog(true); }}>
+              Change
+            </Button>
+            <Button variant="destructive" size="sm" onClick={handleRemovePIN}>
+              Remove
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -526,44 +365,25 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
   );
 };
 
-// Inline recipient row component
-interface RecipientRowProps {
+// Recipient row
+const RecipientRow: React.FC<{
   recipient: ShareRecipient;
   onRemove: (id: string) => Promise<boolean>;
-}
-
-const RecipientRow: React.FC<RecipientRowProps> = ({ recipient, onRemove }) => {
+}> = ({ recipient, onRemove }) => {
   const hasViewed = recipient.access_count > 0;
-  const [isRemoving, setIsRemoving] = useState(false);
-  
-  const handleRemove = async () => {
-    setIsRemoving(true);
-    await onRemove(recipient.id);
-    setIsRemoving(false);
-  };
   
   return (
-    <div className="flex items-center gap-2 py-1 group">
-      <Circle 
-        className={`h-2 w-2 flex-shrink-0 ${hasViewed ? 'fill-green-500 text-green-500' : 'fill-muted-foreground/30 text-muted-foreground/30'}`} 
-      />
-      <span className="text-sm flex-1 truncate">
+    <div className="flex items-center gap-2 group">
+      <Circle className={`h-2 w-2 ${hasViewed ? 'fill-green-500 text-green-500' : 'fill-muted text-muted'}`} />
+      <span className="text-xs flex-1 truncate">
         {recipient.recipient_email || recipient.recipient_name}
       </span>
-      {hasViewed && recipient.last_accessed_at && (
-        <span className="text-xs text-muted-foreground">
-          {formatDistanceToNow(new Date(recipient.last_accessed_at), { addSuffix: false })}
-        </span>
-      )}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-        onClick={handleRemove}
-        disabled={isRemoving}
+      <button
+        onClick={() => onRemove(recipient.id)}
+        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
       >
         <X className="h-3 w-3" />
-      </Button>
+      </button>
     </div>
   );
 };
