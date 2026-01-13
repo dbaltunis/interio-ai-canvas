@@ -39,6 +39,7 @@ const AcceptInvitation = lazy(() => import("./pages/AcceptInvitation"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const PublicBookingPage = lazy(() => import("./components/calendar/PublicBookingPage").then(m => ({ default: m.PublicBookingPage })));
 const PublicStorePage = lazy(() => import("./components/public-store/PublicStorePage").then(m => ({ default: m.PublicStorePage })));
+const PublicWorkOrder = lazy(() => import("./pages/PublicWorkOrder"));
 const SubscriptionTest = lazy(() => import("./pages/SubscriptionTest").then(m => ({ default: m.SubscriptionTest })));
 const ManualQuoteTest = lazy(() => import("./pages/ManualQuoteTest").then(m => ({ default: m.ManualQuoteTest })));
 const Billing = lazy(() => import("./pages/Billing"));
@@ -183,6 +184,13 @@ const App = () => {
                   </ErrorBoundary>
                 } />
                 <Route path="/book" element={<NotFound />} />
+                
+                {/* Public work order route */}
+                <Route path="/work-order/:token" element={
+                  <ErrorBoundary>
+                    <PublicWorkOrder />
+                  </ErrorBoundary>
+                } />
                 
                 {/* Invitation acceptance route */}
                 <Route path="/accept-invitation" element={
