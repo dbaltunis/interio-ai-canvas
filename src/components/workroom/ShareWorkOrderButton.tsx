@@ -23,6 +23,7 @@ import { Share2, Link2, QrCode, Lock, X, ChevronDown, Check, Copy, ExternalLink 
 import { useWorkOrderSharing } from '@/hooks/useWorkOrderSharing';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
+import { copyToClipboard } from '@/lib/clipboard';
 
 interface ShareWorkOrderButtonProps {
   projectId: string | undefined;
@@ -178,10 +179,12 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => {
-                      navigator.clipboard.writeText(qrUrl);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2000);
+                    onClick={async () => {
+                      const success = await copyToClipboard(qrUrl);
+                      if (success) {
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }
                     }}
                   >
                     {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
