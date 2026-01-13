@@ -19,12 +19,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Share2, Link2, QrCode, Lock, X, ChevronDown, Check, Copy, ExternalLink, LockOpen, Eye, EyeOff } from 'lucide-react';
+import { 
+  Share2, Link2, QrCode, Lock, X, ChevronDown, Check, Copy, 
+  ExternalLink, LockOpen, Eye, EyeOff, Users, UserPlus 
+} from 'lucide-react';
 import { useWorkOrderSharing } from '@/hooks/useWorkOrderSharing';
+import { useWorkOrderRecipients } from '@/hooks/useWorkOrderRecipients';
 import { QRCodeSVG } from 'qrcode.react';
-import { cn } from '@/lib/utils';
 import { copyToClipboard } from '@/lib/clipboard';
-import { showSuccessToast } from '@/components/ui/use-toast';
+import { SharePreviewInfo } from './SharePreviewInfo';
+import { AddRecipientDialog } from './AddRecipientDialog';
+import { SharedRecipientsDialog } from './SharedRecipientsDialog';
 
 interface ShareWorkOrderButtonProps {
   projectId: string | undefined;
@@ -34,7 +39,6 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
   const { 
     isSharing, 
     shareData, 
-    copyShareLink, 
     generateToken, 
     setWorkOrderPIN, 
     removeWorkOrderPIN,
@@ -42,10 +46,20 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
     getShareData 
   } = useWorkOrderSharing(projectId);
 
+  const {
+    recipients,
+    activeCount,
+    isLoading: isLoadingRecipients,
+    addRecipient,
+    removeRecipient
+  } = useWorkOrderRecipients(projectId);
+
   const [showQRDialog, setShowQRDialog] = useState(false);
   const [showPINDialog, setShowPINDialog] = useState(false);
   const [showPINSuccessDialog, setShowPINSuccessDialog] = useState(false);
   const [showViewPINDialog, setShowViewPINDialog] = useState(false);
+  const [showAddRecipientDialog, setShowAddRecipientDialog] = useState(false);
+  const [showRecipientsDialog, setShowRecipientsDialog] = useState(false);
   const [pin, setPin] = useState('');
   const [savedPIN, setSavedPIN] = useState<string | null>(null);
   const [showPINValue, setShowPINValue] = useState(false);
@@ -120,6 +134,25 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
     await revokeAccess();
   };
 
+  const handlePreview = () => {
+    if (shareData?.url) {
+      window.open(shareData.url, '_blank');
+    }
+  };
+
+  const handleAddRecipient = async (recipient: {
+    name: string;
+    email?: string;
+    phone?: string;
+    notes?: string;
+  }) => {
+    // Ensure token exists first
+    if (!shareData) {
+      await generateToken();
+    }
+    return addRecipient(recipient);
+  };
+
   const isShared = !!shareData;
   const hasPIN = !!shareData?.pin;
 
@@ -138,10 +171,15 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
               {isSharing ? 'Sharing...' : isShared ? 'Shared' : 'Share'}
             </span>
             {hasPIN && <Lock className="h-3 w-3" />}
+            {activeCount > 0 && (
+              <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                {activeCount}
+              </Badge>
+            )}
             <ChevronDown className="h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-64 bg-background z-50">
+        <DropdownMenuContent align="end" className="w-72 bg-background z-50">
           <DropdownMenuLabel className="flex items-center gap-2">
             Share Work Order
             {hasPIN && (
@@ -151,6 +189,15 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
               </Badge>
             )}
           </DropdownMenuLabel>
+          
+          {/* Preview Info - shows what's included */}
+          <div className="px-2 py-2">
+            <SharePreviewInfo 
+              shareUrl={shareData?.url} 
+              onPreview={handlePreview}
+            />
+          </div>
+          
           <DropdownMenuSeparator />
           
           <DropdownMenuItem onClick={handleCopyLink} className="gap-2">
@@ -181,13 +228,35 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
             <>
               <DropdownMenuSeparator />
               
+              {/* Recipients section */}
+              <DropdownMenuItem 
+                onClick={() => setShowRecipientsDialog(true)} 
+                className="gap-2"
+              >
+                <Users className="h-4 w-4" />
+                <span>Shared With</span>
+                {activeCount > 0 && (
+                  <Badge variant="outline" className="ml-auto text-xs">
+                    {activeCount}
+                  </Badge>
+                )}
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem 
+                onClick={() => setShowAddRecipientDialog(true)} 
+                className="gap-2"
+              >
+                <UserPlus className="h-4 w-4" />
+                <span>Add Recipient</span>
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+              
               {hasPIN ? (
-                <>
-                  <DropdownMenuItem onClick={() => setShowViewPINDialog(true)} className="gap-2">
-                    <Eye className="h-4 w-4" />
-                    <span>View PIN: ****</span>
-                  </DropdownMenuItem>
-                </>
+                <DropdownMenuItem onClick={() => setShowViewPINDialog(true)} className="gap-2">
+                  <Eye className="h-4 w-4" />
+                  <span>View PIN: ****</span>
+                </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem onClick={() => setShowPINDialog(true)} className="gap-2">
                   <Lock className="h-4 w-4" />
@@ -430,6 +499,28 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Add Recipient Dialog */}
+      <AddRecipientDialog
+        open={showAddRecipientDialog}
+        onOpenChange={setShowAddRecipientDialog}
+        onAdd={handleAddRecipient}
+        shareUrl={shareData?.url}
+        pin={shareData?.pin}
+      />
+
+      {/* Shared Recipients Dialog */}
+      <SharedRecipientsDialog
+        open={showRecipientsDialog}
+        onOpenChange={setShowRecipientsDialog}
+        recipients={recipients}
+        onRemove={removeRecipient}
+        onAddRecipient={() => {
+          setShowRecipientsDialog(false);
+          setShowAddRecipientDialog(true);
+        }}
+        isLoading={isLoadingRecipients}
+      />
     </>
   );
 };
