@@ -822,9 +822,19 @@ export const useQuotationSync = ({
     const hasEmptyData = quotationData.items.length === 0 && quotationData.baseSubtotal === 0;
     const existingQuoteHasValue = existingQuote && (existingQuote.total_amount || 0) > 0;
     
-    if (!isProjectOwner && hasEmptyData && existingQuoteHasValue) {
-      console.warn('[QuotationSync] Skipping sync - not project owner and data appears empty (RLS protection)');
-      console.warn('[QuotationSync] Existing quote has value:', existingQuote.total_amount);
+    // STRENGTHENED GUARD: Block sync if:
+    // 1. Not project owner AND data appears empty AND existing quote has value
+    // 2. Project summaries data hasn't loaded yet (undefined vs empty array)
+    const summariesNotLoaded = projectSummaries === undefined;
+    
+    if (!isProjectOwner && (hasEmptyData || summariesNotLoaded) && existingQuoteHasValue) {
+      console.warn('[QuotationSync] BLOCKED - Not project owner, data empty or not loaded (RLS protection)');
+      console.warn('[QuotationSync] Details:', { 
+        hasEmptyData, 
+        summariesNotLoaded, 
+        existingQuoteValue: existingQuote.total_amount,
+        itemCount: quotationData.items.length
+      });
       return; // Don't zero out the quote
     }
 
