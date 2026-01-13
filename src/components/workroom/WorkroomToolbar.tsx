@@ -68,6 +68,7 @@ export const WorkroomToolbar: React.FC<WorkroomToolbarProps> = ({
   availableTreatments,
   activeFiltersCount,
   onClearFilters,
+  projectId,
 }) => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
@@ -230,6 +231,8 @@ export const WorkroomToolbar: React.FC<WorkroomToolbarProps> = ({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 ml-auto md:ml-0">
+          <ShareWorkOrderButton projectId={projectId} />
+          
           <Button 
             variant="default" 
             size="sm" 
