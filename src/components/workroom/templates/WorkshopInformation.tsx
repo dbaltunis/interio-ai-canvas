@@ -127,6 +127,28 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
                   Saved {lastSaved.toLocaleTimeString()}
                 </div>
               )}
+              {!isReadOnly && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditing(!editing)}
+                  className="h-8"
+                >
+                  <Pencil className="h-3.5 w-3.5 mr-1" />
+                  {editing ? "Done" : "Edit"}
+                </Button>
+              )}
+              {editing && hasOverrides && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleReset}
+                  className="h-8"
+                >
+                  <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                  Reset
+                </Button>
+              )}
               <Button
                 variant="default"
                 size="sm"
@@ -143,24 +165,12 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-            <div>
-              <span className="font-medium">Order #:</span> {data.header.orderNumber ?? "—"}
-            </div>
-            <div>
-              <span className="font-medium">Client:</span> {data.header.clientName ?? "—"}
-            </div>
-            <div>
-              <span className="font-medium">Project:</span> {data.header.projectName ?? "—"}
-            </div>
-            <div>
-              <span className="font-medium">Due Date:</span> {data.header.dueDate ?? "—"}
-            </div>
-            <div>
-              <span className="font-medium">Created:</span> {data.header.createdDate ?? "—"}
-            </div>
-            <div>
-              <span className="font-medium">Maker:</span> {data.header.assignedMaker ?? "—"}
-            </div>
+            <EditableField label="Order #:" field="orderNumber" />
+            <EditableField label="Client:" field="clientName" />
+            <EditableField label="Project:" field="projectName" />
+            <EditableField label="Due Date:" field="dueDate" />
+            <EditableField label="Created:" field="createdDate" />
+            <EditableField label="Maker:" field="assignedMaker" />
           </div>
         </CardContent>
       </Card>
