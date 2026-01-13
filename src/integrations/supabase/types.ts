@@ -6278,6 +6278,8 @@ export type Database = {
           status_id: string | null
           updated_at: string
           user_id: string
+          work_order_content_filter: Json | null
+          work_order_document_type: string | null
           work_order_pin: string | null
           work_order_shared_at: string | null
           work_order_token: string | null
@@ -6308,6 +6310,8 @@ export type Database = {
           status_id?: string | null
           updated_at?: string
           user_id: string
+          work_order_content_filter?: Json | null
+          work_order_document_type?: string | null
           work_order_pin?: string | null
           work_order_shared_at?: string | null
           work_order_token?: string | null
@@ -6338,6 +6342,8 @@ export type Database = {
           status_id?: string | null
           updated_at?: string
           user_id?: string
+          work_order_content_filter?: Json | null
+          work_order_document_type?: string | null
           work_order_pin?: string | null
           work_order_shared_at?: string | null
           work_order_token?: string | null

@@ -1,7 +1,18 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccessToast, showErrorToast } from '@/components/ui/use-toast';
-import { ShareRecipient } from '@/components/workroom/SharedRecipientsDialog';
+
+export interface ShareRecipient {
+  id: string;
+  recipient_name: string;
+  recipient_email?: string | null;
+  recipient_phone?: string | null;
+  shared_at: string;
+  last_accessed_at?: string | null;
+  access_count: number;
+  is_active: boolean;
+  notes?: string | null;
+}
 
 export function useWorkOrderRecipients(projectId: string | undefined) {
   const [recipients, setRecipients] = useState<ShareRecipient[]>([]);
@@ -62,7 +73,7 @@ export function useWorkOrderRecipients(projectId: string | undefined) {
 
       if (error) throw error;
       
-      showSuccessToast('Recipient added', `${recipient.name} can now be tracked`, 'normal');
+      showSuccessToast('Recipient added', undefined, 'normal');
       await fetchRecipients();
       return true;
     } catch (error) {
@@ -82,7 +93,6 @@ export function useWorkOrderRecipients(projectId: string | undefined) {
 
       if (error) throw error;
       
-      showSuccessToast('Recipient removed', 'They can still access the link if they have it', 'normal');
       await fetchRecipients();
       return true;
     } catch (error) {

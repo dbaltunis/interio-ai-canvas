@@ -174,6 +174,35 @@ export function useWorkOrderSharing(projectId: string | undefined) {
     }
   }, [projectId]);
 
+  // Update share settings (document type & content filter)
+  const updateShareSettings = useCallback(async (settings: {
+    documentType?: string;
+    contentFilter?: string;
+  }): Promise<boolean> => {
+    if (!projectId) return false;
+    
+    try {
+      const updateData: Record<string, unknown> = {};
+      if (settings.documentType) {
+        updateData.work_order_document_type = settings.documentType;
+      }
+      if (settings.contentFilter) {
+        updateData.work_order_content_filter = { type: settings.contentFilter };
+      }
+      
+      const { error } = await supabase
+        .from('projects')
+        .update(updateData)
+        .eq('id', projectId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error updating share settings:', error);
+      return false;
+    }
+  }, [projectId]);
+
   return {
     isSharing,
     shareData,
@@ -182,7 +211,8 @@ export function useWorkOrderSharing(projectId: string | undefined) {
     setWorkOrderPIN,
     removeWorkOrderPIN,
     revokeAccess,
-    getShareData
+    getShareData,
+    updateShareSettings
   };
 }
 

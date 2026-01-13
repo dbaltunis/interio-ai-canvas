@@ -4,7 +4,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -16,24 +15,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Share2, Link2, QrCode, Lock, X, ChevronDown, Check, Copy, 
-  ExternalLink, LockOpen, Eye, EyeOff, Users, UserPlus 
+  Share2, Link2, Lock, X, Check, Copy, 
+  ExternalLink, LockOpen, Eye, EyeOff, Circle
 } from 'lucide-react';
 import { useWorkOrderSharing } from '@/hooks/useWorkOrderSharing';
-import { useWorkOrderRecipients } from '@/hooks/useWorkOrderRecipients';
-import { QRCodeSVG } from 'qrcode.react';
+import { useWorkOrderRecipients, ShareRecipient } from '@/hooks/useWorkOrderRecipients';
 import { copyToClipboard } from '@/lib/clipboard';
-import { SharePreviewInfo } from './SharePreviewInfo';
-import { AddRecipientDialog } from './AddRecipientDialog';
-import { SharedRecipientsDialog } from './SharedRecipientsDialog';
+import { formatDistanceToNow } from 'date-fns';
 
 interface ShareWorkOrderButtonProps {
   projectId: string | undefined;
 }
+
+type DocumentType = 'work_order' | 'installation' | 'fitting';
+type ContentFilter = 'all' | 'client_only';
 
 export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ projectId }) => {
   const { 
@@ -43,31 +49,28 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
     setWorkOrderPIN, 
     removeWorkOrderPIN,
     revokeAccess,
-    getShareData 
+    getShareData,
+    updateShareSettings
   } = useWorkOrderSharing(projectId);
 
   const {
     recipients,
     activeCount,
-    isLoading: isLoadingRecipients,
     addRecipient,
     removeRecipient
   } = useWorkOrderRecipients(projectId);
 
-  const [showQRDialog, setShowQRDialog] = useState(false);
+  const [documentType, setDocumentType] = useState<DocumentType>('work_order');
+  const [contentFilter, setContentFilter] = useState<ContentFilter>('all');
   const [showPINDialog, setShowPINDialog] = useState(false);
-  const [showPINSuccessDialog, setShowPINSuccessDialog] = useState(false);
   const [showViewPINDialog, setShowViewPINDialog] = useState(false);
-  const [showAddRecipientDialog, setShowAddRecipientDialog] = useState(false);
-  const [showRecipientsDialog, setShowRecipientsDialog] = useState(false);
   const [pin, setPin] = useState('');
-  const [savedPIN, setSavedPIN] = useState<string | null>(null);
   const [showPINValue, setShowPINValue] = useState(false);
   const [copied, setCopied] = useState(false);
   const [pinCopied, setPinCopied] = useState(false);
-  const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [newEmail, setNewEmail] = useState('');
+  const [isAddingEmail, setIsAddingEmail] = useState(false);
 
-  // Check for existing share data on mount
   useEffect(() => {
     if (projectId) {
       getShareData();
@@ -75,7 +78,6 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
   }, [projectId, getShareData]);
 
   const handleCopyLink = async () => {
-    // If we already have share data, copy immediately (no async before clipboard!)
     if (shareData?.url) {
       const success = await copyToClipboard(shareData.url);
       if (success) {
@@ -85,31 +87,43 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
       return;
     }
     
-    // Otherwise, generate first then show QR dialog for manual copy
     const result = await generateToken();
     if (result) {
-      setQrUrl(result.url);
-      setShowQRDialog(true);
+      const success = await copyToClipboard(result.url);
+      if (success) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
     }
   };
 
-  const handleShowQR = async () => {
-    const result = await generateToken();
-    if (result) {
-      setQrUrl(result.url);
-      setShowQRDialog(true);
+  const handlePreview = async () => {
+    let url = shareData?.url;
+    if (!url) {
+      const result = await generateToken();
+      url = result?.url;
     }
+    if (url) {
+      window.open(url, '_blank');
+    }
+  };
+
+  const handleDocumentTypeChange = async (value: DocumentType) => {
+    setDocumentType(value);
+    await updateShareSettings({ documentType: value, contentFilter });
+  };
+
+  const handleContentFilterChange = async (value: ContentFilter) => {
+    setContentFilter(value);
+    await updateShareSettings({ documentType, contentFilter: value });
   };
 
   const handleSetPIN = async () => {
     if (pin.length === 4) {
       const success = await setWorkOrderPIN(pin);
       if (success) {
-        setSavedPIN(pin);
         setShowPINDialog(false);
-        setShowPINSuccessDialog(true);
         setPin('');
-        // Refresh share data to get updated PIN
         getShareData();
       }
     }
@@ -130,27 +144,32 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
     }
   };
 
-  const handleRevokeAccess = async () => {
-    await revokeAccess();
-  };
-
-  const handlePreview = () => {
-    if (shareData?.url) {
-      window.open(shareData.url, '_blank');
-    }
-  };
-
-  const handleAddRecipient = async (recipient: {
-    name: string;
-    email?: string;
-    phone?: string;
-    notes?: string;
-  }) => {
-    // Ensure token exists first
+  const handleAddEmail = async () => {
+    if (!newEmail.trim() || !newEmail.includes('@')) return;
+    
+    setIsAddingEmail(true);
+    
+    // Ensure share link exists first
     if (!shareData) {
       await generateToken();
     }
-    return addRecipient(recipient);
+    
+    const success = await addRecipient({
+      name: newEmail.split('@')[0],
+      email: newEmail.trim()
+    });
+    
+    if (success) {
+      setNewEmail('');
+    }
+    setIsAddingEmail(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddEmail();
+    }
   };
 
   const isShared = !!shareData;
@@ -171,177 +190,158 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
               {isSharing ? 'Sharing...' : isShared ? 'Shared' : 'Share'}
             </span>
             {hasPIN && <Lock className="h-3 w-3" />}
-            {activeCount > 0 && (
-              <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                {activeCount}
-              </Badge>
-            )}
-            <ChevronDown className="h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-72 bg-background z-50">
-          <DropdownMenuLabel className="flex items-center gap-2">
-            Share Work Order
-            {hasPIN && (
-              <Badge variant="secondary" className="text-xs gap-1">
-                <Lock className="h-3 w-3" />
-                Protected
-              </Badge>
-            )}
-          </DropdownMenuLabel>
-          
-          {/* Preview Info - shows what's included */}
-          <div className="px-2 py-2">
-            <SharePreviewInfo 
-              shareUrl={shareData?.url} 
-              onPreview={handlePreview}
-            />
+        <DropdownMenuContent align="end" className="w-80 bg-background z-50 p-0">
+          {/* Share Section */}
+          <div className="p-3 space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Share</span>
+              {hasPIN && (
+                <Badge variant="secondary" className="text-xs gap-1">
+                  <Lock className="h-3 w-3" />
+                  Protected
+                </Badge>
+              )}
+            </div>
+            
+            {/* Document Type Selector */}
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Document</Label>
+              <Select value={documentType} onValueChange={(v) => handleDocumentTypeChange(v as DocumentType)}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="work_order">Work Order</SelectItem>
+                  <SelectItem value="installation">Installation Instructions</SelectItem>
+                  <SelectItem value="fitting">Fitting Instructions</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Content Filter */}
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Include</Label>
+              <Select value={contentFilter} onValueChange={(v) => handleContentFilterChange(v as ContentFilter)}>
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All content</SelectItem>
+                  <SelectItem value="client_only">Client details only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Copy Link + Preview Row */}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1 gap-2"
+                onClick={handleCopyLink}
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-4 w-4 text-green-500" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Link2 className="h-4 w-4" />
+                    Copy Link
+                  </>
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handlePreview}
+                className="gap-2"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Preview
+              </Button>
+            </div>
           </div>
           
-          <DropdownMenuSeparator />
+          <DropdownMenuSeparator className="my-0" />
           
-          <DropdownMenuItem onClick={handleCopyLink} className="gap-2">
-            {copied ? (
-              <>
-                <Check className="h-4 w-4 text-green-500" />
-                <span>Link Copied!</span>
-              </>
-            ) : shareData ? (
-              <>
-                <Link2 className="h-4 w-4" />
-                <span>Copy Link</span>
-              </>
-            ) : (
-              <>
-                <Link2 className="h-4 w-4" />
-                <span>Generate & Copy Link</span>
-              </>
-            )}
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem onClick={handleShowQR} className="gap-2">
-            <QrCode className="h-4 w-4" />
-            <span>Show QR Code</span>
-          </DropdownMenuItem>
-
-          {isShared && (
-            <>
-              <DropdownMenuSeparator />
+          {/* People with Access Section */}
+          <div className="p-3 space-y-2">
+            <Label className="text-xs text-muted-foreground uppercase tracking-wider">
+              People with access
+            </Label>
+            
+            {/* Recipients List */}
+            <div className="space-y-1 max-h-32 overflow-y-auto">
+              {recipients.filter(r => r.is_active).map((recipient) => (
+                <RecipientRow 
+                  key={recipient.id} 
+                  recipient={recipient} 
+                  onRemove={removeRecipient}
+                />
+              ))}
               
-              {/* Recipients section */}
-              <DropdownMenuItem 
-                onClick={() => setShowRecipientsDialog(true)} 
-                className="gap-2"
-              >
-                <Users className="h-4 w-4" />
-                <span>Shared With</span>
-                {activeCount > 0 && (
-                  <Badge variant="outline" className="ml-auto text-xs">
-                    {activeCount}
-                  </Badge>
-                )}
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem 
-                onClick={() => setShowAddRecipientDialog(true)} 
-                className="gap-2"
-              >
-                <UserPlus className="h-4 w-4" />
-                <span>Add Recipient</span>
-              </DropdownMenuItem>
-              
-              <DropdownMenuSeparator />
-              
-              {hasPIN ? (
-                <DropdownMenuItem onClick={() => setShowViewPINDialog(true)} className="gap-2">
-                  <Eye className="h-4 w-4" />
-                  <span>View PIN: ****</span>
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onClick={() => setShowPINDialog(true)} className="gap-2">
-                  <Lock className="h-4 w-4" />
-                  <span>Add PIN Protection</span>
-                </DropdownMenuItem>
+              {activeCount === 0 && (
+                <p className="text-xs text-muted-foreground py-2">
+                  No one has been added yet
+                </p>
               )}
-              
-              <DropdownMenuSeparator />
+            </div>
+            
+            {/* Add Email Input */}
+            <div className="flex gap-2">
+              <Input
+                type="email"
+                placeholder="Add email..."
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="h-8 text-sm"
+                disabled={isAddingEmail}
+              />
+              <Button 
+                size="sm" 
+                variant="secondary"
+                onClick={handleAddEmail}
+                disabled={!newEmail.includes('@') || isAddingEmail}
+                className="h-8"
+              >
+                Add
+              </Button>
+            </div>
+          </div>
+          
+          <DropdownMenuSeparator className="my-0" />
+          
+          {/* PIN & Revoke Section */}
+          <div className="p-2">
+            {hasPIN ? (
+              <DropdownMenuItem onClick={() => setShowViewPINDialog(true)} className="gap-2">
+                <Eye className="h-4 w-4" />
+                <span>View PIN: ****</span>
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => setShowPINDialog(true)} className="gap-2">
+                <Lock className="h-4 w-4" />
+                <span>Add PIN Protection</span>
+              </DropdownMenuItem>
+            )}
+            
+            {isShared && (
               <DropdownMenuItem 
-                onClick={handleRevokeAccess} 
+                onClick={revokeAccess} 
                 className="gap-2 text-destructive focus:text-destructive"
               >
                 <X className="h-4 w-4" />
                 <span>Revoke Access</span>
               </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* QR Code Dialog */}
-      <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Share Work Order</DialogTitle>
-            <DialogDescription>
-              Scan this QR code to open the work order on a mobile device.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex flex-col items-center gap-4 py-4">
-            {qrUrl && (
-              <div className="bg-white p-4 rounded-lg">
-                <QRCodeSVG 
-                  value={qrUrl} 
-                  size={200}
-                  level="M"
-                  includeMargin
-                />
-              </div>
-            )}
-            
-            {qrUrl && (
-              <div className="w-full space-y-2">
-                <Label className="text-sm text-muted-foreground">Or copy link:</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    value={qrUrl} 
-                    readOnly 
-                    className="text-xs"
-                  />
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={async () => {
-                      const success = await copyToClipboard(qrUrl);
-                      if (success) {
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      }
-                    }}
-                  >
-                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
             )}
           </div>
-
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => setShowQRDialog(false)}>
-              Close
-            </Button>
-            <Button 
-              onClick={() => {
-                if (qrUrl) window.open(qrUrl, '_blank');
-              }}
-              className="gap-2"
-            >
-              <ExternalLink className="h-4 w-4" />
-              Open Link
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* Set PIN Dialog */}
       <Dialog open={showPINDialog} onOpenChange={setShowPINDialog}>
@@ -349,7 +349,7 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
           <DialogHeader>
             <DialogTitle>Set PIN Protection</DialogTitle>
             <DialogDescription>
-              Add a 4-digit PIN to protect this work order from unauthorized access.
+              Add a 4-digit PIN to protect this work order.
             </DialogDescription>
           </DialogHeader>
           
@@ -380,51 +380,6 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
               disabled={pin.length !== 4}
             >
               Set PIN
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* PIN Success Dialog - Shows PIN after setting */}
-      <Dialog open={showPINSuccessDialog} onOpenChange={setShowPINSuccessDialog}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-green-500" />
-              PIN Set Successfully
-            </DialogTitle>
-            <DialogDescription>
-              Share this PIN with the installer so they can access the work order.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-6 flex flex-col items-center gap-4">
-            <div className="text-4xl font-mono font-bold tracking-[0.3em] bg-muted px-6 py-3 rounded-lg">
-              {savedPIN}
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="gap-2"
-              onClick={() => savedPIN && handleCopyPIN(savedPIN)}
-            >
-              {pinCopied ? (
-                <>
-                  <Check className="h-4 w-4 text-green-500" />
-                  PIN Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="h-4 w-4" />
-                  Copy PIN
-                </>
-              )}
-            </Button>
-          </div>
-
-          <DialogFooter>
-            <Button onClick={() => setShowPINSuccessDialog(false)}>
-              Done
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -499,28 +454,48 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Add Recipient Dialog */}
-      <AddRecipientDialog
-        open={showAddRecipientDialog}
-        onOpenChange={setShowAddRecipientDialog}
-        onAdd={handleAddRecipient}
-        shareUrl={shareData?.url}
-        pin={shareData?.pin}
-      />
-
-      {/* Shared Recipients Dialog */}
-      <SharedRecipientsDialog
-        open={showRecipientsDialog}
-        onOpenChange={setShowRecipientsDialog}
-        recipients={recipients}
-        onRemove={removeRecipient}
-        onAddRecipient={() => {
-          setShowRecipientsDialog(false);
-          setShowAddRecipientDialog(true);
-        }}
-        isLoading={isLoadingRecipients}
-      />
     </>
+  );
+};
+
+// Inline recipient row component
+interface RecipientRowProps {
+  recipient: ShareRecipient;
+  onRemove: (id: string) => Promise<boolean>;
+}
+
+const RecipientRow: React.FC<RecipientRowProps> = ({ recipient, onRemove }) => {
+  const hasViewed = recipient.access_count > 0;
+  const [isRemoving, setIsRemoving] = useState(false);
+  
+  const handleRemove = async () => {
+    setIsRemoving(true);
+    await onRemove(recipient.id);
+    setIsRemoving(false);
+  };
+  
+  return (
+    <div className="flex items-center gap-2 py-1 group">
+      <Circle 
+        className={`h-2 w-2 flex-shrink-0 ${hasViewed ? 'fill-green-500 text-green-500' : 'fill-muted-foreground/30 text-muted-foreground/30'}`} 
+      />
+      <span className="text-sm flex-1 truncate">
+        {recipient.recipient_email || recipient.recipient_name}
+      </span>
+      {hasViewed && recipient.last_accessed_at && (
+        <span className="text-xs text-muted-foreground">
+          {formatDistanceToNow(new Date(recipient.last_accessed_at), { addSuffix: false })}
+        </span>
+      )}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+        onClick={handleRemove}
+        disabled={isRemoving}
+      >
+        <X className="h-3 w-3" />
+      </Button>
+    </div>
   );
 };
