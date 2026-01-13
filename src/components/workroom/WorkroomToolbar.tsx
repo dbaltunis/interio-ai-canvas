@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/popover";
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ShareWorkOrderButton } from "./ShareWorkOrderButton";
 
 interface WorkroomToolbarProps {
   selectedTemplate: string;
@@ -39,6 +40,9 @@ interface WorkroomToolbarProps {
   availableTreatments: string[];
   activeFiltersCount: number;
   onClearFilters: () => void;
+  
+  // Project ID for sharing
+  projectId?: string;
 }
 
 interface Template {
