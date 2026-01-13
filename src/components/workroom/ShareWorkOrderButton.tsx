@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Dialog,
   DialogContent,
@@ -25,9 +23,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { 
   Share2, Link2, Lock, X, Check, Copy, 
-  ExternalLink, LockOpen, Eye, EyeOff, Circle
+  ExternalLink, LockOpen, Eye, EyeOff, Circle,
+  FileText, Wrench, Ruler
 } from 'lucide-react';
 import { useWorkOrderSharing } from '@/hooks/useWorkOrderSharing';
 import { useWorkOrderRecipients, ShareRecipient } from '@/hooks/useWorkOrderRecipients';
@@ -39,7 +39,31 @@ interface ShareWorkOrderButtonProps {
 }
 
 type DocumentType = 'work_order' | 'installation' | 'fitting';
-type ContentFilter = 'all' | 'client_only';
+type ContentFilter = 'all' | 'field_ready' | 'specs_only';
+
+const DOCUMENT_OPTIONS = [
+  { value: 'work_order', label: 'Work Order', icon: FileText },
+  { value: 'installation', label: 'Installation', icon: Wrench },
+  { value: 'fitting', label: 'Fitting', icon: Ruler },
+] as const;
+
+const CONTENT_OPTIONS = [
+  { 
+    value: 'all', 
+    label: 'All content', 
+    description: 'Full details with pricing'
+  },
+  { 
+    value: 'field_ready', 
+    label: 'Field-ready', 
+    description: 'Address, phone, specs'
+  },
+  { 
+    value: 'specs_only', 
+    label: 'Specs only', 
+    description: 'Measurements & treatments'
+  },
+] as const;
 
 export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ projectId }) => {
   const { 
@@ -61,7 +85,7 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
   } = useWorkOrderRecipients(projectId);
 
   const [documentType, setDocumentType] = useState<DocumentType>('work_order');
-  const [contentFilter, setContentFilter] = useState<ContentFilter>('all');
+  const [contentFilter, setContentFilter] = useState<ContentFilter>('field_ready');
   const [showPINDialog, setShowPINDialog] = useState(false);
   const [showViewPINDialog, setShowViewPINDialog] = useState(false);
   const [pin, setPin] = useState('');
@@ -70,6 +94,7 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
   const [pinCopied, setPinCopied] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [isAddingEmail, setIsAddingEmail] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (projectId) {
@@ -149,7 +174,6 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
     
     setIsAddingEmail(true);
     
-    // Ensure share link exists first
     if (!shareData) {
       await generateToken();
     }
@@ -175,10 +199,13 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
   const isShared = !!shareData;
   const hasPIN = !!shareData?.pin;
 
+  const selectedDocOption = DOCUMENT_OPTIONS.find(o => o.value === documentType);
+  const selectedContentOption = CONTENT_OPTIONS.find(o => o.value === contentFilter);
+
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
           <Button 
             variant={isShared ? "default" : "outline"} 
             size="sm" 
@@ -191,65 +218,87 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
             </span>
             {hasPIN && <Lock className="h-3 w-3" />}
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-80 bg-background z-50 p-0">
-          {/* Share Section */}
-          <div className="p-3 space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Share</span>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-80 p-0" sideOffset={8}>
+          {/* Header */}
+          <div className="px-4 py-3 border-b border-border">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold">Share</span>
               {hasPIN && (
-                <Badge variant="secondary" className="text-xs gap-1">
+                <Badge variant="secondary" className="text-xs gap-1 h-5">
                   <Lock className="h-3 w-3" />
-                  Protected
+                  PIN
                 </Badge>
               )}
             </div>
-            
-            {/* Document Type Selector */}
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Document</Label>
-              <Select value={documentType} onValueChange={(v) => handleDocumentTypeChange(v as DocumentType)}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="work_order">Work Order</SelectItem>
-                  <SelectItem value="installation">Installation Instructions</SelectItem>
-                  <SelectItem value="fitting">Fitting Instructions</SelectItem>
-                </SelectContent>
-              </Select>
+          </div>
+          
+          {/* Settings */}
+          <div className="p-4 space-y-4">
+            {/* Document Type */}
+            <div className="grid grid-cols-3 gap-1.5">
+              {DOCUMENT_OPTIONS.map((option) => {
+                const Icon = option.icon;
+                const isSelected = documentType === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() => handleDocumentTypeChange(option.value as DocumentType)}
+                    className={`
+                      flex flex-col items-center gap-1.5 p-2.5 rounded-lg border text-xs font-medium transition-all
+                      ${isSelected 
+                        ? 'border-primary bg-primary/5 text-primary' 
+                        : 'border-border hover:border-primary/50 hover:bg-muted/50 text-muted-foreground'
+                      }
+                    `}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{option.label}</span>
+                  </button>
+                );
+              })}
             </div>
-            
+
             {/* Content Filter */}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Include</Label>
               <Select value={contentFilter} onValueChange={(v) => handleContentFilterChange(v as ContentFilter)}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue />
+                <SelectTrigger className="h-9">
+                  <SelectValue>
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm">{selectedContentOption?.label}</span>
+                    </div>
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All content</SelectItem>
-                  <SelectItem value="client_only">Client details only</SelectItem>
+                  {CONTENT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value} className="py-2">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{option.label}</span>
+                        <span className="text-xs text-muted-foreground">{option.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             
-            {/* Copy Link + Preview Row */}
+            {/* Actions */}
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex-1 gap-2"
+                className="flex-1 h-9"
                 onClick={handleCopyLink}
               >
                 {copied ? (
                   <>
-                    <Check className="h-4 w-4 text-green-500" />
+                    <Check className="h-4 w-4 mr-2 text-green-500" />
                     Copied!
                   </>
                 ) : (
                   <>
-                    <Link2 className="h-4 w-4" />
+                    <Link2 className="h-4 w-4 mr-2" />
                     Copy Link
                   </>
                 )}
@@ -257,25 +306,23 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
               <Button 
                 variant="outline" 
                 size="sm"
+                className="h-9"
                 onClick={handlePreview}
-                className="gap-2"
               >
-                <ExternalLink className="h-4 w-4" />
+                <ExternalLink className="h-4 w-4 mr-2" />
                 Preview
               </Button>
             </div>
           </div>
           
-          <DropdownMenuSeparator className="my-0" />
+          <Separator />
           
-          {/* People with Access Section */}
-          <div className="p-3 space-y-2">
-            <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-              People with access
-            </Label>
+          {/* People with Access */}
+          <div className="p-4 space-y-3">
+            <Label className="text-xs text-muted-foreground">People with access</Label>
             
             {/* Recipients List */}
-            <div className="space-y-1 max-h-32 overflow-y-auto">
+            <div className="space-y-1 max-h-28 overflow-y-auto">
               {recipients.filter(r => r.is_active).map((recipient) => (
                 <RecipientRow 
                   key={recipient.id} 
@@ -285,13 +332,13 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
               ))}
               
               {activeCount === 0 && (
-                <p className="text-xs text-muted-foreground py-2">
-                  No one has been added yet
+                <p className="text-xs text-muted-foreground py-1">
+                  Anyone with the link can access
                 </p>
               )}
             </div>
             
-            {/* Add Email Input */}
+            {/* Add Email */}
             <div className="flex gap-2">
               <Input
                 type="email"
@@ -307,41 +354,62 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
                 variant="secondary"
                 onClick={handleAddEmail}
                 disabled={!newEmail.includes('@') || isAddingEmail}
-                className="h-8"
+                className="h-8 px-3"
               >
                 Add
               </Button>
             </div>
           </div>
           
-          <DropdownMenuSeparator className="my-0" />
+          <Separator />
           
-          {/* PIN & Revoke Section */}
-          <div className="p-2">
+          {/* Footer Actions */}
+          <div className="p-2 flex gap-1">
             {hasPIN ? (
-              <DropdownMenuItem onClick={() => setShowViewPINDialog(true)} className="gap-2">
-                <Eye className="h-4 w-4" />
-                <span>View PIN: ****</span>
-              </DropdownMenuItem>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="flex-1 justify-start h-8 text-xs"
+                onClick={() => {
+                  setIsOpen(false);
+                  setShowViewPINDialog(true);
+                }}
+              >
+                <Eye className="h-3.5 w-3.5 mr-2" />
+                View PIN
+              </Button>
             ) : (
-              <DropdownMenuItem onClick={() => setShowPINDialog(true)} className="gap-2">
-                <Lock className="h-4 w-4" />
-                <span>Add PIN Protection</span>
-              </DropdownMenuItem>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="flex-1 justify-start h-8 text-xs"
+                onClick={() => {
+                  setIsOpen(false);
+                  setShowPINDialog(true);
+                }}
+              >
+                <Lock className="h-3.5 w-3.5 mr-2" />
+                Add PIN
+              </Button>
             )}
             
             {isShared && (
-              <DropdownMenuItem 
-                onClick={revokeAccess} 
-                className="gap-2 text-destructive focus:text-destructive"
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="flex-1 justify-start h-8 text-xs text-destructive hover:text-destructive"
+                onClick={() => {
+                  revokeAccess();
+                  setIsOpen(false);
+                }}
               >
-                <X className="h-4 w-4" />
-                <span>Revoke Access</span>
-              </DropdownMenuItem>
+                <X className="h-3.5 w-3.5 mr-2" />
+                Revoke
+              </Button>
             )}
           </div>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </PopoverContent>
+      </Popover>
 
       {/* Set PIN Dialog */}
       <Dialog open={showPINDialog} onOpenChange={setShowPINDialog}>
