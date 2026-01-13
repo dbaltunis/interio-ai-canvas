@@ -808,6 +808,26 @@ export const useQuotationSync = ({
       quote.project_id === projectId && quote.status === 'draft'
     );
 
+    // CRITICAL GUARD: Prevent quote zeroing when viewing other users' jobs
+    // If we see empty data but existing quote has value, this may be an RLS issue
+    // Skip sync to avoid accidentally zeroing out valid quotes
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: projectOwnership } = await supabase
+      .from('projects')
+      .select('user_id')
+      .eq('id', projectId)
+      .maybeSingle();
+    
+    const isProjectOwner = projectOwnership?.user_id === user?.id;
+    const hasEmptyData = quotationData.items.length === 0 && quotationData.baseSubtotal === 0;
+    const existingQuoteHasValue = existingQuote && (existingQuote.total_amount || 0) > 0;
+    
+    if (!isProjectOwner && hasEmptyData && existingQuoteHasValue) {
+      console.warn('[QuotationSync] Skipping sync - not project owner and data appears empty (RLS protection)');
+      console.warn('[QuotationSync] Existing quote has value:', existingQuote.total_amount);
+      return; // Don't zero out the quote
+    }
+
     let quoteId: string;
 
     if (existingQuote) {
