@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Download, Printer, Eye, X, ChevronDown, Filter, Layout, FileText } from "lucide-react";
+import { Download, X, ChevronDown, Filter, Layout, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -23,16 +23,12 @@ interface WorkroomToolbarProps {
   onTemplateChange: (value: string) => void;
   groupByRoom: boolean;
   onToggleGroupBy: () => void;
-  onPrint: () => void;
-  onPreview: () => void;
   onDownloadPDF: () => void;
   isGenerating?: boolean;
   
   // Layout controls
   orientation: 'portrait' | 'landscape';
   onOrientationChange: (orientation: 'portrait' | 'landscape') => void;
-  margins: number;
-  onMarginsChange: (margins: number) => void;
   
   // Filtering
   selectedRoom?: string;
@@ -56,14 +52,10 @@ export const WorkroomToolbar: React.FC<WorkroomToolbarProps> = ({
   onTemplateChange,
   groupByRoom,
   onToggleGroupBy,
-  onPrint,
-  onPreview,
   onDownloadPDF,
   isGenerating = false,
   orientation,
   onOrientationChange,
-  margins,
-  onMarginsChange,
   selectedRoom,
   onRoomChange,
   selectedTreatment,
@@ -95,12 +87,6 @@ export const WorkroomToolbar: React.FC<WorkroomToolbarProps> = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  const getMarginLabel = () => {
-    if (margins === 5) return 'Narrow';
-    if (margins === 12) return 'Wide';
-    return 'Normal';
   };
 
   return (
@@ -235,64 +221,11 @@ export const WorkroomToolbar: React.FC<WorkroomToolbarProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Margins Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
-              <span className="hidden sm:inline">Margins:</span>
-              <span>{getMarginLabel()}</span>
-              <ChevronDown className="h-3 w-3" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="bg-background z-50">
-            <DropdownMenuLabel>Page Margins</DropdownMenuLabel>
-            <DropdownMenuItem 
-              onClick={() => onMarginsChange(5)}
-              className={margins === 5 ? 'bg-accent' : ''}
-            >
-              Narrow (5mm)
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => onMarginsChange(8)}
-              className={margins === 8 ? 'bg-accent' : ''}
-            >
-              Normal (8mm)
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => onMarginsChange(12)}
-              className={margins === 12 ? 'bg-accent' : ''}
-            >
-              Wide (12mm)
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
         {/* Spacer to push action buttons to the right on desktop */}
         <div className="flex-1 hidden md:block" />
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 ml-auto md:ml-0">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onPreview}
-            className="gap-2"
-            aria-label="Preview document"
-          >
-            <Eye className="h-4 w-4" />
-            <span className="hidden lg:inline">Preview</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onPrint} 
-            className="gap-2"
-            aria-label="Print document"
-            disabled={isGenerating}
-          >
-            <Printer className="h-4 w-4" />
-            <span className="hidden lg:inline">Print</span>
-          </Button>
           <Button 
             variant="default" 
             size="sm" 
