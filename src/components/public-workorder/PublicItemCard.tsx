@@ -11,11 +11,16 @@ interface PublicItemCardProps {
   treatment: {
     id: string;
     treatment_type: string;
-    width?: number;
-    height?: number;
-    mount_type?: string;
+    treatment_name?: string;
+    product_name?: string;
+    mounting_type?: string;
+    measurements?: {
+      width?: number;
+      height?: number;
+      [key: string]: any;
+    };
     notes?: string;
-    selected_options?: any;
+    status?: string;
     rooms?: {
       id: string;
       name: string;
@@ -32,10 +37,11 @@ export const PublicItemCard: React.FC<PublicItemCardProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
-  const treatmentType = treatment.treatment_type || 'Treatment';
-  const width = treatment.width;
-  const height = treatment.height;
-  const mountType = treatment.mount_type;
+  const treatmentType = treatment.treatment_name || treatment.product_name || treatment.treatment_type || 'Treatment';
+  const measurements = treatment.measurements || {};
+  const width = measurements.width;
+  const height = measurements.height;
+  const mountType = treatment.mounting_type;
   const notes = treatment.notes;
 
   // Determine treatment category for checklist

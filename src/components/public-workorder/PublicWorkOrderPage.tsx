@@ -22,11 +22,16 @@ interface PublicWorkOrderPageProps {
   treatments: Array<{
     id: string;
     treatment_type: string;
-    width?: number;
-    height?: number;
-    mount_type?: string;
+    treatment_name?: string;
+    product_name?: string;
+    mounting_type?: string;
+    measurements?: {
+      width?: number;
+      height?: number;
+      [key: string]: any;
+    };
     notes?: string;
-    selected_options?: any;
+    status?: string;
     rooms?: {
       id: string;
       name: string;
