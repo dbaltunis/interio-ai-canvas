@@ -10028,6 +10028,62 @@ export type Database = {
         }
         Relationships: []
       }
+      work_order_shares: {
+        Row: {
+          access_count: number
+          created_at: string
+          id: string
+          is_active: boolean
+          last_accessed_at: string | null
+          notes: string | null
+          project_id: string
+          recipient_email: string | null
+          recipient_name: string
+          recipient_phone: string | null
+          shared_at: string
+          shared_by: string
+          updated_at: string
+        }
+        Insert: {
+          access_count?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_accessed_at?: string | null
+          notes?: string | null
+          project_id: string
+          recipient_email?: string | null
+          recipient_name: string
+          recipient_phone?: string | null
+          shared_at?: string
+          shared_by: string
+          updated_at?: string
+        }
+        Update: {
+          access_count?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_accessed_at?: string | null
+          notes?: string | null
+          project_id?: string
+          recipient_email?: string | null
+          recipient_name?: string
+          recipient_phone?: string | null
+          shared_at?: string
+          shared_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_shares_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_order_templates: {
         Row: {
           active: boolean

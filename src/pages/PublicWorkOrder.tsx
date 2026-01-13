@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchProjectByToken, fetchTreatmentsForProject } from '@/hooks/useWorkOrderSharing';
+import { trackWorkOrderAccess } from '@/hooks/useWorkOrderRecipients';
 import { PublicWorkOrderPage } from '@/components/public-workorder/PublicWorkOrderPage';
 import { PINEntryDialog } from '@/components/public-workorder/PINEntryDialog';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -41,9 +42,13 @@ const PublicWorkOrder: React.FC = () => {
         return;
       }
 
-      // Load treatments
+      // Load treatments and track access
       const treatmentsData = await fetchTreatmentsForProject(projectData.id);
       setTreatments(treatmentsData);
+      
+      // Track access (fire and forget)
+      trackWorkOrderAccess(projectData.id);
+      
       setLoading(false);
     } catch (err) {
       console.error('Error loading work order:', err);
@@ -64,6 +69,9 @@ const PublicWorkOrder: React.FC = () => {
     if (project) {
       const treatmentsData = await fetchTreatmentsForProject(project.id);
       setTreatments(treatmentsData);
+      
+      // Track access after PIN verification
+      trackWorkOrderAccess(project.id);
     }
   }, [project]);
 
