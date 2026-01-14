@@ -794,7 +794,67 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
         </EditableContainer>
       );
 
-    case 'terms-conditions':
+    case 'terms-conditions': {
+      // Convert legacy format (term1, term2, term3, term4) to array format
+      const getTermsArray = (): string[] => {
+        if (content.terms && Array.isArray(content.terms)) {
+          return content.terms;
+        }
+        // Legacy format - convert to array
+        const legacyTerms: string[] = [];
+        if (content.term1) legacyTerms.push(content.term1);
+        if (content.term2) legacyTerms.push(content.term2);
+        if (content.term3) legacyTerms.push(content.term3);
+        if (content.term4) legacyTerms.push(content.term4);
+        // If no terms, provide defaults
+        if (legacyTerms.length === 0) {
+          return [
+            "1. Payment Terms: 50% deposit required upon acceptance of this quote. Remaining balance due upon completion.",
+            "2. Timeline: Project completion is estimated at 2-3 weeks from deposit receipt and final measurements.",
+            "3. Warranty: All work comes with a 1-year warranty against defects in workmanship.",
+            "4. Cancellation: This quote is valid for 30 days. Cancellation after work begins subject to materials and labor charges."
+          ];
+        }
+        return legacyTerms;
+      };
+
+      const termsArray = getTermsArray();
+
+      const handleTermChange = (index: number, value: string) => {
+        const newTerms = [...termsArray];
+        newTerms[index] = value;
+        // Save as array format, clear legacy fields
+        updateBlockContent({ 
+          terms: newTerms,
+          term1: undefined,
+          term2: undefined,
+          term3: undefined,
+          term4: undefined
+        });
+      };
+
+      const handleAddTerm = () => {
+        const newTerms = [...termsArray, `${termsArray.length + 1}. New term...`];
+        updateBlockContent({ 
+          terms: newTerms,
+          term1: undefined,
+          term2: undefined,
+          term3: undefined,
+          term4: undefined
+        });
+      };
+
+      const handleDeleteTerm = (index: number) => {
+        const newTerms = termsArray.filter((_, i) => i !== index);
+        updateBlockContent({ 
+          terms: newTerms,
+          term1: undefined,
+          term2: undefined,
+          term3: undefined,
+          term4: undefined
+        });
+      };
+
       return (
         <EditableContainer 
           onStyleChange={updateBlockStyle}
@@ -812,41 +872,40 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
             placeholder="Section Title"
           />
           <div className="text-sm space-y-3">
-            <div>
-              <EditableText
-                value={content.term1 || "1. Payment Terms: 50% deposit required upon acceptance of this quote. Remaining balance due upon completion."}
-                onChange={(value) => updateBlockContent({ term1: value })}
-                multiline
-                placeholder="Payment terms..."
-              />
-            </div>
-            <div>
-              <EditableText
-                value={content.term2 || "2. Timeline: Project completion is estimated at 2-3 weeks from deposit receipt and final measurements."}
-                onChange={(value) => updateBlockContent({ term2: value })}
-                multiline
-                placeholder="Timeline information..."
-              />
-            </div>
-            <div>
-              <EditableText
-                value={content.term3 || "3. Warranty: All work comes with a 1-year warranty against defects in workmanship."}
-                onChange={(value) => updateBlockContent({ term3: value })}
-                multiline
-                placeholder="Warranty details..."
-              />
-            </div>
-            <div>
-              <EditableText
-                value={content.term4 || "4. Cancellation: This quote is valid for 30 days. Cancellation after work begins subject to materials and labor charges."}
-                onChange={(value) => updateBlockContent({ term4: value })}
-                multiline
-                placeholder="Cancellation policy..."
-              />
-            </div>
+            {termsArray.map((term, index) => (
+              <div key={index} className="flex items-start gap-2 group">
+                <div className="flex-1">
+                  <EditableText
+                    value={term}
+                    onChange={(value) => handleTermChange(index, value)}
+                    multiline
+                    placeholder={`Term ${index + 1}...`}
+                  />
+                </div>
+                <button
+                  onClick={() => handleDeleteTerm(index)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-destructive hover:bg-destructive/10 rounded mt-1"
+                  title="Delete term"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                  </svg>
+                </button>
+              </div>
+            ))}
           </div>
+          <button
+            onClick={handleAddTerm}
+            className="mt-3 text-sm text-primary hover:text-primary/80 flex items-center gap-1"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 5v14"/><path d="M5 12h14"/>
+            </svg>
+            Add Term
+          </button>
         </EditableContainer>
       );
+    }
 
     case 'payment-info':
       return (

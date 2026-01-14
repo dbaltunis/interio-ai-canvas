@@ -69,6 +69,9 @@ export interface BusinessSettings {
   show_vendor_costs_to_staff?: boolean;
   features_enabled?: FeatureFlags;
   inventory_config?: InventoryConfig;
+  // Terms and conditions
+  general_terms_and_conditions?: string;
+  privacy_policy?: string;
   created_at: string;
   updated_at: string;
 }
