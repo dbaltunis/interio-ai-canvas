@@ -2,6 +2,8 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccessToast, showErrorToast } from '@/components/ui/use-toast';
 import { copyToClipboard } from '@/lib/clipboard';
+import type { WorkshopData, WorkshopRoomSection, WorkshopRoomItem } from '@/hooks/useWorkshopData';
+
 interface ShareResult {
   token: string;
   url: string;
@@ -224,10 +226,12 @@ export async function fetchProjectByToken(token: string): Promise<any | null> {
       .select(`
         id,
         name,
+        job_number,
         order_number,
         work_order_pin,
         work_order_shared_at,
         due_date,
+        created_at,
         clients (
           id,
           name,
@@ -248,7 +252,166 @@ export async function fetchProjectByToken(token: string): Promise<any | null> {
   }
 }
 
-// Fetch treatments for a project (for public page)
+// Fetch workshop data for a project - returns same structure as useWorkshopData
+// This fetches from workshop_items which contains the denormalized work order data
+export async function fetchWorkshopDataForProject(projectId: string, projectMeta?: {
+  name?: string;
+  job_number?: string;
+  order_number?: string;
+  due_date?: string;
+  created_at?: string;
+  clients?: { name?: string };
+}): Promise<WorkshopData | null> {
+  try {
+    const { data, error } = await supabase
+      .from('workshop_items')
+      .select(`
+        id,
+        treatment_type,
+        surface_name,
+        room_name,
+        fabric_details,
+        measurements,
+        manufacturing_details,
+        notes,
+        status,
+        linear_meters,
+        widths_required
+      `)
+      .eq('project_id', projectId);
+
+    if (error) throw error;
+    if (!data || data.length === 0) return null;
+    
+    // Group items by room
+    const roomsMap = new Map<string, WorkshopRoomSection>();
+    
+    data.forEach(item => {
+      const roomName = item.room_name || 'Unassigned';
+      
+      if (!roomsMap.has(roomName)) {
+        roomsMap.set(roomName, {
+          roomName,
+          items: [],
+          totals: { count: 0 }
+        });
+      }
+      
+      const room = roomsMap.get(roomName)!;
+      
+      // Extract JSONB fields
+      const fabricDetails = item.fabric_details as Record<string, any> | null;
+      const manufacturingDetails = item.manufacturing_details as Record<string, any> | null;
+      const measurements = item.measurements as Record<string, any> | null;
+      
+      // Build workshop item matching the WorkshopRoomItem interface
+      const workshopItem: WorkshopRoomItem = {
+        id: item.id,
+        name: item.surface_name || 'Window',
+        roomName: roomName,
+        location: item.surface_name || 'Window',
+        quantity: 1,
+        measurements: {
+          width: measurements?.rail_width ? Math.round(measurements.rail_width / 10) : undefined, // Convert mm to cm
+          height: measurements?.drop ? Math.round(measurements.drop / 10) : undefined,
+          drop: measurements?.drop ? Math.round(measurements.drop / 10) : undefined,
+          pooling: measurements?.pooling_amount || measurements?.pooling,
+          unit: 'cm',
+        },
+        treatmentType: formatTreatmentType(item.treatment_type || 'Treatment'),
+        notes: item.notes || undefined,
+        
+        // Fabric details
+        fabricDetails: fabricDetails ? {
+          name: fabricDetails.name || 'Unknown Fabric',
+          fabricWidth: fabricDetails.fabric_width || 0,
+          imageUrl: fabricDetails.image_url,
+          pricePerUnit: fabricDetails.selling_price,
+          rollDirection: manufacturingDetails?.fabric_rotated ? 'Horizontal' : 'Vertical',
+          patternRepeat: fabricDetails.pattern_repeat,
+          color: fabricDetails.color,
+        } : undefined,
+        
+        // Fabric usage from calculated fields
+        fabricUsage: {
+          linearMeters: item.linear_meters || 0,
+          linearYards: (item.linear_meters || 0) * 1.09361,
+          widthsRequired: item.widths_required || 1,
+          seamsRequired: Math.max(0, (item.widths_required || 1) - 1),
+        },
+        
+        // Hems from manufacturing details
+        hems: manufacturingDetails ? {
+          header: manufacturingDetails.header_hem || manufacturingDetails.header_allowance || 0,
+          bottom: manufacturingDetails.bottom_hem || 0,
+          side: manufacturingDetails.side_hem || manufacturingDetails.side_hems || 0,
+          seam: manufacturingDetails.seam_hem || manufacturingDetails.seam_hems || 0,
+        } : undefined,
+        
+        // Fullness
+        fullness: manufacturingDetails ? {
+          ratio: manufacturingDetails.fullness_ratio || 1.0,
+          headingType: manufacturingDetails.heading_type || 'Standard',
+        } : undefined,
+        
+        // Options
+        options: manufacturingDetails?.selected_options?.map((opt: any) => ({
+          name: opt.name || opt.option_name || 'Option',
+          optionKey: opt.optionKey || opt.option_key || '',
+          price: opt.price || 0,
+          quantity: opt.quantity || 1,
+        })) || [],
+        
+        // Lining
+        liningDetails: manufacturingDetails?.lining_type ? {
+          type: manufacturingDetails.lining_type,
+          name: manufacturingDetails.lining_name || manufacturingDetails.lining_type,
+        } : undefined,
+        
+        // Visual
+        visualDetails: {
+          thumbnailUrl: fabricDetails?.image_url,
+          showImage: true,
+        },
+      };
+      
+      room.items.push(workshopItem);
+      room.totals = { count: room.items.length };
+    });
+    
+    // Convert to array and sort
+    const rooms = Array.from(roomsMap.values()).sort((a, b) => 
+      a.roomName.localeCompare(b.roomName)
+    );
+    
+    // Build WorkshopData structure
+    return {
+      header: {
+        orderNumber: projectMeta?.job_number || projectMeta?.order_number || undefined,
+        clientName: projectMeta?.clients?.name || undefined,
+        projectName: projectMeta?.name || undefined,
+        createdDate: projectMeta?.created_at ? String(projectMeta.created_at).slice(0, 10) : undefined,
+        dueDate: projectMeta?.due_date || undefined,
+        assignedMaker: undefined,
+        shippingAddress: undefined,
+      },
+      rooms,
+      projectTotals: { itemsCount: data.length },
+    };
+  } catch (error) {
+    console.error('Error fetching workshop data:', error);
+    return null;
+  }
+}
+
+// Helper to format treatment types nicely
+function formatTreatmentType(type: string): string {
+  return type
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// Legacy: Fetch treatments for a project (for public page)
 // Uses workshop_items table which contains the actual work order data
 export async function fetchTreatmentsForProject(projectId: string): Promise<any[]> {
   try {
@@ -268,13 +431,6 @@ export async function fetchTreatmentsForProject(projectId: string): Promise<any[
       .eq('project_id', projectId);
 
     if (error) throw error;
-    
-    // Helper to format treatment types nicely
-    const formatTreatmentType = (type: string): string => {
-      return type
-        .replace(/_/g, ' ')
-        .replace(/\b\w/g, c => c.toUpperCase());
-    };
     
     // Transform to match expected format with meaningful display names
     return (data || []).map(item => {
