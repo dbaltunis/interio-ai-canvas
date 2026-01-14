@@ -155,7 +155,7 @@ export const useWorkshopNotes = (projectId?: string): WorkshopNotesHook => {
         console.log("✅ [NOTES SAVE] Production note inserted successfully");
       }
 
-      // Save item notes to surfaces table
+      // Save item notes to surfaces table AND workshop_items directly
       console.log("📝 [NOTES SAVE] Saving item notes, count:", Object.keys(itemNotes).length);
       const updatePromises = Object.entries(itemNotes).map(async ([itemId, note]) => {
         console.log(`🔄 [NOTES SAVE] Updating surface ${itemId} with note:`, note.substring(0, 50));
@@ -171,7 +171,16 @@ export const useWorkshopNotes = (projectId?: string): WorkshopNotesHook => {
           throw surfaceError;
         }
         
-        // Note: workshop_items sync handled separately via database trigger or workroom sync
+        // Also directly update workshop_items to ensure sync (backup for trigger)
+        const { error: workshopError } = await supabase
+          .from("workshop_items")
+          .update({ notes: note } as any)
+          .eq("window_id", itemId);
+        
+        if (workshopError) {
+          console.warn(`⚠️ [NOTES SAVE] Could not sync to workshop_items for ${itemId}:`, workshopError);
+          // Don't throw - this is a fallback sync
+        }
         
         console.log(`✅ [NOTES SAVE] Surface ${itemId} updated successfully`);
         return true;
