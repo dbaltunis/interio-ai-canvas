@@ -3,8 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Phone, MapPin, Calendar, Package } from 'lucide-react';
 import { format } from 'date-fns';
-import { WorkshopInformation } from '@/components/workroom/templates/WorkshopInformation';
-import { ItemStatusToggle, type ItemStatus } from './ItemStatusToggle';
+import { ItemStatusToggle, filterInternalNotes, type ItemStatus, type DocumentType } from './ItemStatusToggle';
 import { supabase } from '@/integrations/supabase/client';
 import type { WorkshopData } from '@/hooks/useWorkshopData';
 
@@ -15,6 +14,7 @@ interface PublicWorkOrderPageProps {
     job_number?: string;
     order_number?: string;
     due_date?: string;
+    work_order_document_type?: string;
     clients?: {
       name: string;
       phone?: string;
@@ -35,6 +35,7 @@ export const PublicWorkOrderPage: React.FC<PublicWorkOrderPageProps> = ({
   const clientPhone = project.clients?.phone;
   const siteAddress = project.clients?.address;
   const installationDate = project.due_date;
+  const documentType = (project.work_order_document_type || 'work_order') as DocumentType;
 
   // Track status changes in state for real-time UI updates
   const [itemStatuses, setItemStatuses] = useState<Record<string, ItemStatus>>({});
@@ -102,7 +103,10 @@ export const PublicWorkOrderPage: React.FC<PublicWorkOrderPageProps> = ({
         <div className="px-4 py-3 max-w-4xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs opacity-80">Work Order</p>
+              <p className="text-xs opacity-80">
+                {documentType === 'installation' ? 'Installation' : 
+                 documentType === 'fitting' ? 'Fitting Sheet' : 'Work Order'}
+              </p>
               <h1 className="font-bold text-lg">
                 {project.job_number || project.order_number || project.name}
               </h1>
@@ -261,10 +265,10 @@ export const PublicWorkOrderPage: React.FC<PublicWorkOrderPageProps> = ({
                         )}
                       </div>
 
-                      {/* Notes if any */}
-                      {item.notes && (
+                      {/* Notes if any - filter out auto-generated internal notes */}
+                      {filterInternalNotes(item.notes) && (
                         <div className="text-xs text-muted-foreground bg-yellow-50 p-2 rounded">
-                          {item.notes}
+                          {filterInternalNotes(item.notes)}
                         </div>
                       )}
 
@@ -274,6 +278,7 @@ export const PublicWorkOrderPage: React.FC<PublicWorkOrderPageProps> = ({
                           itemId={item.id}
                           currentStatus={itemStatuses[item.id] || 'pending'}
                           canEdit={canEdit}
+                          documentType={documentType}
                           onStatusChange={handleStatusChange}
                         />
                       </div>
