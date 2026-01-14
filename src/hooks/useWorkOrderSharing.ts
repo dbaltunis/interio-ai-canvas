@@ -227,8 +227,7 @@ export async function fetchProjectByToken(token: string): Promise<any | null> {
         order_number,
         work_order_pin,
         work_order_shared_at,
-        site_address,
-        installation_date,
+        due_date,
         clients (
           id,
           name,
