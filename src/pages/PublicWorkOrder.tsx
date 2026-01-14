@@ -67,6 +67,8 @@ const PublicWorkOrder: React.FC = () => {
             email: viewer.recipient_email || undefined,
             sessionToken
           });
+          // Set permission level from session data
+          setPermissionLevel((viewer.permission_level as PermissionLevel) || 'edit');
           setViewerIdentified(true);
         }
       });
@@ -154,6 +156,8 @@ const PublicWorkOrder: React.FC = () => {
           email: viewer.email,
           sessionToken: session.session_token
         });
+        // Set permission level from session response
+        setPermissionLevel((session.permission_level as PermissionLevel) || 'edit');
         setViewerIdentified(true);
       } else {
         // Fallback: allow access even if session creation failed

@@ -53,28 +53,53 @@ export const useWorkshopNotes = (projectId?: string, options?: UseWorkshopNotesO
     loadProductionNotes();
   }, [projectId]);
 
-  // Load item notes from surfaces table
+  // Load item notes - from workshop_items for public page, surfaces for authenticated app
   useEffect(() => {
     if (!projectId) return;
 
     const loadItemNotes = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("surfaces")
-          .select("id, notes")
-          .eq("project_id", projectId);
+        // For public page (has sessionToken), load from workshop_items keyed by workshop_items.id
+        // This matches the IDs used in the workshopData on public pages
+        if (sessionToken) {
+          console.log("📝 [NOTES LOAD] Loading notes from workshop_items (public page mode)");
+          const { data, error } = await supabase
+            .from("workshop_items")
+            .select("id, notes")
+            .eq("project_id", projectId);
 
-        if (error) throw error;
-        
-        const notesMap: Record<string, string> = {};
-        (data || []).forEach((surface: any) => {
-          if (surface.notes) {
-            notesMap[surface.id] = surface.notes;
-          }
-        });
-        
-        setItemNotes(notesMap);
+          if (error) throw error;
+          
+          const notesMap: Record<string, string> = {};
+          (data || []).forEach((item: any) => {
+            if (item.notes) {
+              notesMap[item.id] = item.notes;
+            }
+          });
+          
+          console.log("📝 [NOTES LOAD] Loaded", Object.keys(notesMap).length, "notes from workshop_items");
+          setItemNotes(notesMap);
+        } else {
+          // For authenticated app, load from surfaces keyed by surfaces.id
+          console.log("📝 [NOTES LOAD] Loading notes from surfaces (app mode)");
+          const { data, error } = await supabase
+            .from("surfaces")
+            .select("id, notes")
+            .eq("project_id", projectId);
+
+          if (error) throw error;
+          
+          const notesMap: Record<string, string> = {};
+          (data || []).forEach((surface: any) => {
+            if (surface.notes) {
+              notesMap[surface.id] = surface.notes;
+            }
+          });
+          
+          console.log("📝 [NOTES LOAD] Loaded", Object.keys(notesMap).length, "notes from surfaces");
+          setItemNotes(notesMap);
+        }
       } catch (error) {
         console.error("Error loading item notes:", error);
       } finally {
@@ -83,7 +108,7 @@ export const useWorkshopNotes = (projectId?: string, options?: UseWorkshopNotesO
     };
 
     loadItemNotes();
-  }, [projectId]);
+  }, [projectId, sessionToken]);
 
   const setItemNote = (itemId: string, note: string) => {
     setItemNotes(prev => ({ ...prev, [itemId]: note }));
