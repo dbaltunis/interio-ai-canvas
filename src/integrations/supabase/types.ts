@@ -6283,6 +6283,7 @@ export type Database = {
           work_order_pin: string | null
           work_order_shared_at: string | null
           work_order_token: string | null
+          work_order_treatment_filter: Json | null
         }
         Insert: {
           client_id?: string | null
@@ -6315,6 +6316,7 @@ export type Database = {
           work_order_pin?: string | null
           work_order_shared_at?: string | null
           work_order_token?: string | null
+          work_order_treatment_filter?: Json | null
         }
         Update: {
           client_id?: string | null
@@ -6347,6 +6349,7 @@ export type Database = {
           work_order_pin?: string | null
           work_order_shared_at?: string | null
           work_order_token?: string | null
+          work_order_treatment_filter?: Json | null
         }
         Relationships: [
           {
