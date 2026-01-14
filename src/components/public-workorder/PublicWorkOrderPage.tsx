@@ -10,8 +10,7 @@ interface PublicWorkOrderPageProps {
     id: string;
     name: string;
     order_number?: string;
-    site_address?: string;
-    installation_date?: string;
+    due_date?: string;
     clients?: {
       name: string;
       phone?: string;
@@ -88,7 +87,8 @@ export const PublicWorkOrderPage: React.FC<PublicWorkOrderPageProps> = ({
 
   const clientName = project.clients?.name || 'Client';
   const clientPhone = project.clients?.phone;
-  const siteAddress = project.site_address || project.clients?.address;
+  const siteAddress = project.clients?.address;
+  const installationDate = project.due_date;
 
   // Format Google Maps URL
   const mapsUrl = siteAddress 
@@ -132,11 +132,11 @@ export const PublicWorkOrderPage: React.FC<PublicWorkOrderPageProps> = ({
                   </a>
                 )}
               </div>
-              {project.installation_date && (
+              {installationDate && (
                 <div className="text-right text-sm">
                   <p className="text-muted-foreground flex items-center gap-1 justify-end">
                     <Calendar className="h-4 w-4" />
-                    {format(new Date(project.installation_date), 'dd MMM yyyy')}
+                    {format(new Date(installationDate), 'dd MMM yyyy')}
                   </p>
                 </div>
               )}
