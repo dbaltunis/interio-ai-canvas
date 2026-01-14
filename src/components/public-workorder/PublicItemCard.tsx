@@ -14,6 +14,7 @@ interface PublicItemCardProps {
     treatment_name?: string;
     product_name?: string;
     mounting_type?: string;
+    surface_name?: string;
     measurements?: {
       width?: number;
       height?: number;
@@ -98,6 +99,13 @@ export const PublicItemCard: React.FC<PublicItemCardProps> = ({
                 </Badge>
               )}
             </div>
+            
+            {/* Surface/Window name */}
+            {treatment.surface_name && (
+              <span className="text-xs text-muted-foreground block">
+                {treatment.surface_name}
+              </span>
+            )}
             
             {/* Measurements */}
             {(width || height) && (
