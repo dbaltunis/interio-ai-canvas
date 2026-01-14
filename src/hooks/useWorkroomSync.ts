@@ -48,7 +48,7 @@ export const useWorkroomSync = ({
             window_id: window.window_id,
             room_name: room?.name || 'Unassigned Room',
             surface_name: window.surface_name || 'Window',
-            treatment_type: window.summary.template_details?.treatment_category || 'curtains',
+            treatment_type: window.summary.treatment_type || window.summary.template_name || window.summary.template_details?.treatment_category || 'curtains',
             fabric_details: window.summary.fabric_details,
             measurements: {
               // CRITICAL: Database stores rail_width and drop in MM (database standard)
