@@ -10569,7 +10569,15 @@ export type Database = {
         Returns: number
       }
       sync_inventory_usage: { Args: { p_user_id: string }; Returns: undefined }
+      sync_project_to_workshop: {
+        Args: { p_project_id: string }
+        Returns: undefined
+      }
       sync_user_role_from_profile: { Args: never; Returns: undefined }
+      sync_window_to_workshop: {
+        Args: { p_window_id: string }
+        Returns: undefined
+      }
       trigger_automation_workflow: {
         Args: {
           entity_id: string

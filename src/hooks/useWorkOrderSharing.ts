@@ -387,15 +387,15 @@ export async function fetchWorkshopDataForProject(
           totalWidthCm: manufacturingDetails?.total_width_cm || manufacturingDetails?.cut_width_cm,
         },
         
-        // Hems from manufacturing details
+        // Hems from manufacturing details (check nested hems object first, then flat fields)
         hems: manufacturingDetails ? {
-          header: manufacturingDetails.header_hem || manufacturingDetails.header_allowance || 0,
-          bottom: manufacturingDetails.bottom_hem || 0,
-          side: manufacturingDetails.side_hem || manufacturingDetails.side_hems || 0,
-          seam: manufacturingDetails.seam_hem || manufacturingDetails.seam_hems || 0,
+          header: manufacturingDetails.hems?.header || manufacturingDetails.header_hem || manufacturingDetails.header_allowance || 0,
+          bottom: manufacturingDetails.hems?.bottom || manufacturingDetails.bottom_hem || 0,
+          side: manufacturingDetails.hems?.side || manufacturingDetails.side_hem || manufacturingDetails.side_hems || 0,
+          seam: manufacturingDetails.hems?.seam || manufacturingDetails.seam_hem || manufacturingDetails.seam_hems || 0,
         } : undefined,
         
-        // Fullness
+        // Fullness - check manufacturing_details directly  
         fullness: manufacturingDetails ? {
           ratio: manufacturingDetails.fullness_ratio || 1.0,
           headingType: manufacturingDetails.heading_type || 'Standard',
