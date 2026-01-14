@@ -18,6 +18,13 @@ const FittingInstructions = React.lazy(() =>
   import('@/components/workroom/templates/FittingInstructions').then(m => ({ default: m.FittingInstructions }))
 );
 
+interface ShareLinkInfo {
+  id: string;
+  document_type: 'work_order' | 'installation' | 'fitting';
+  content_filter: 'all' | 'field_ready' | 'specs_only';
+  treatment_filter: string[];
+}
+
 interface PublicWorkOrderPageProps {
   project: {
     id: string;
@@ -37,6 +44,8 @@ interface PublicWorkOrderPageProps {
   workshopData: WorkshopData | null;
   permissionLevel?: 'view' | 'edit' | 'admin';
   viewerName?: string;
+  shareLink?: ShareLinkInfo;
+  sessionToken?: string;
 }
 
 // Template loading fallback
@@ -51,14 +60,17 @@ export const PublicWorkOrderPage: React.FC<PublicWorkOrderPageProps> = ({
   project, 
   workshopData,
   permissionLevel = 'view',
-  viewerName
+  viewerName,
+  shareLink,
+  sessionToken
 }) => {
   const clientName = project.clients?.name || 'Client';
   const clientPhone = project.clients?.phone;
   const siteAddress = project.clients?.address;
   const installationDate = project.due_date;
-  const documentType = (project.work_order_document_type || 'work_order') as DocumentType;
-  const contentFilter = (project.work_order_content_filter as any)?.type || 'all';
+  // Use shareLink settings if provided, otherwise fallback to project settings
+  const documentType = (shareLink?.document_type || project.work_order_document_type || 'work_order') as DocumentType;
+  const contentFilter = shareLink?.content_filter || (project.work_order_content_filter as any)?.type || 'all';
 
   // Track status changes in state for real-time UI updates
   const [itemStatuses, setItemStatuses] = useState<Record<string, ItemStatus>>({});

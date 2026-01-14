@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchProjectByToken, fetchWorkshopDataForProject, createViewerSession, getViewerSession } from '@/hooks/useWorkOrderSharing';
+import { fetchWorkshopDataForProject, createViewerSession, getViewerSession } from '@/hooks/useWorkOrderSharing';
+import { fetchShareLinkByToken, fetchProjectByShareLink, type ShareLink } from '@/hooks/useShareLinks';
 import { PublicWorkOrderPage } from '@/components/public-workorder/PublicWorkOrderPage';
 import { PINEntryDialog } from '@/components/public-workorder/PINEntryDialog';
 import { ViewerIdentityDialog } from '@/components/public-workorder/ViewerIdentityDialog';
@@ -19,6 +20,7 @@ interface ViewerInfo {
 
 const PublicWorkOrder: React.FC = () => {
   const { token } = useParams<{ token: string }>();
+  const [shareLink, setShareLink] = useState<ShareLink | null>(null);
   const [project, setProject] = useState<any>(null);
   const [workshopData, setWorkshopData] = useState<WorkshopData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,8 +32,9 @@ const PublicWorkOrder: React.FC = () => {
   const [isSubmittingIdentity, setIsSubmittingIdentity] = useState(false);
   const [permissionLevel, setPermissionLevel] = useState<PermissionLevel>('edit');
 
-  const loadWorkshopData = useCallback(async (projectData: any) => {
-    const treatmentFilter = projectData.work_order_treatment_filter;
+  const loadWorkshopData = useCallback(async (projectData: any, link: ShareLink) => {
+    // Use treatment filter from the share link
+    const treatmentFilter = link.treatment_filter;
     const treatmentTypes = Array.isArray(treatmentFilter) && treatmentFilter.length > 0 
       ? treatmentFilter.filter((t: string) => t !== 'all')
       : undefined;
@@ -70,7 +73,7 @@ const PublicWorkOrder: React.FC = () => {
     }
   }, [token]);
 
-  const loadProject = useCallback(async () => {
+  const loadShareLink = useCallback(async () => {
     if (!token) {
       setError('Invalid link');
       setLoading(false);
@@ -78,10 +81,22 @@ const PublicWorkOrder: React.FC = () => {
     }
 
     try {
-      const projectData = await fetchProjectByToken(token);
+      // First, look up the share link by token
+      const link = await fetchShareLinkByToken(token);
+      
+      if (!link) {
+        setError('Work order not found or link has expired');
+        setLoading(false);
+        return;
+      }
+
+      setShareLink(link);
+
+      // Then fetch the project data using the project_id from the share link
+      const projectData = await fetchProjectByShareLink(link.project_id);
       
       if (!projectData) {
-        setError('Work order not found or link has expired');
+        setError('Project not found');
         setLoading(false);
         return;
       }
@@ -89,7 +104,7 @@ const PublicWorkOrder: React.FC = () => {
       setProject(projectData);
 
       // Check if PIN is required
-      if (projectData.work_order_pin) {
+      if (link.pin) {
         setRequiresPIN(true);
         setLoading(false);
         return;
@@ -104,15 +119,15 @@ const PublicWorkOrder: React.FC = () => {
   }, [token]);
 
   useEffect(() => {
-    loadProject();
-  }, [loadProject]);
+    loadShareLink();
+  }, [loadShareLink]);
 
   // Load workshop data when viewer is identified
   useEffect(() => {
-    if (viewerIdentified && project && !workshopData) {
-      loadWorkshopData(project);
+    if (viewerIdentified && project && shareLink && !workshopData) {
+      loadWorkshopData(project, shareLink);
     }
-  }, [viewerIdentified, project, workshopData, loadWorkshopData]);
+  }, [viewerIdentified, project, shareLink, workshopData, loadWorkshopData]);
 
   const handlePINVerified = useCallback(() => {
     setPinVerified(true);
@@ -120,15 +135,15 @@ const PublicWorkOrder: React.FC = () => {
   }, []);
 
   const verifyPIN = useCallback((enteredPIN: string): boolean => {
-    return project?.work_order_pin === enteredPIN;
-  }, [project]);
+    return shareLink?.pin === enteredPIN;
+  }, [shareLink]);
 
   const handleViewerIdentified = useCallback(async (viewer: { name: string; email?: string }) => {
-    if (!project?.id || !token) return;
+    if (!project?.id || !token || !shareLink) return;
     
     setIsSubmittingIdentity(true);
     try {
-      const session = await createViewerSession(project.id, viewer.name, viewer.email);
+      const session = await createViewerSession(project.id, viewer.name, viewer.email, shareLink.id);
       
       if (session) {
         // Store session token locally
@@ -151,7 +166,7 @@ const PublicWorkOrder: React.FC = () => {
     } finally {
       setIsSubmittingIdentity(false);
     }
-  }, [project?.id, token]);
+  }, [project?.id, token, shareLink]);
 
   if (loading) {
     return (
@@ -205,7 +220,7 @@ const PublicWorkOrder: React.FC = () => {
     );
   }
 
-  if (!project) {
+  if (!project || !shareLink) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
@@ -229,6 +244,8 @@ const PublicWorkOrder: React.FC = () => {
       workshopData={workshopData}
       permissionLevel={permissionLevel}
       viewerName={currentViewer?.name}
+      shareLink={shareLink}
+      sessionToken={currentViewer?.sessionToken}
     />
   );
 };
