@@ -1,21 +1,35 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchProjectByToken, fetchTreatmentsForProject } from '@/hooks/useWorkOrderSharing';
+import { fetchProjectByToken, fetchWorkshopDataForProject } from '@/hooks/useWorkOrderSharing';
 import { trackWorkOrderAccess } from '@/hooks/useWorkOrderRecipients';
 import { PublicWorkOrderPage } from '@/components/public-workorder/PublicWorkOrderPage';
 import { PINEntryDialog } from '@/components/public-workorder/PINEntryDialog';
 import { LoadingState } from '@/components/ui/loading-state';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, FileX } from 'lucide-react';
+import type { WorkshopData } from '@/hooks/useWorkshopData';
 
 const PublicWorkOrder: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const [project, setProject] = useState<any>(null);
-  const [treatments, setTreatments] = useState<any[]>([]);
+  const [workshopData, setWorkshopData] = useState<WorkshopData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [requiresPIN, setRequiresPIN] = useState(false);
   const [pinVerified, setPinVerified] = useState(false);
+
+  const loadWorkshopData = useCallback(async (projectData: any) => {
+    // Fetch workshop data with project metadata for header
+    const data = await fetchWorkshopDataForProject(projectData.id, {
+      name: projectData.name,
+      job_number: projectData.job_number,
+      order_number: projectData.order_number,
+      due_date: projectData.due_date,
+      created_at: projectData.created_at,
+      clients: projectData.clients,
+    });
+    setWorkshopData(data);
+  }, []);
 
   const loadProject = useCallback(async () => {
     if (!token) {
@@ -42,9 +56,8 @@ const PublicWorkOrder: React.FC = () => {
         return;
       }
 
-      // Load treatments and track access
-      const treatmentsData = await fetchTreatmentsForProject(projectData.id);
-      setTreatments(treatmentsData);
+      // Load workshop data and track access
+      await loadWorkshopData(projectData);
       
       // Track access (fire and forget)
       trackWorkOrderAccess(projectData.id);
@@ -55,7 +68,7 @@ const PublicWorkOrder: React.FC = () => {
       setError('Failed to load work order');
       setLoading(false);
     }
-  }, [token]);
+  }, [token, loadWorkshopData]);
 
   useEffect(() => {
     loadProject();
@@ -65,15 +78,14 @@ const PublicWorkOrder: React.FC = () => {
     setPinVerified(true);
     setRequiresPIN(false);
     
-    // Load treatments after PIN verification
+    // Load workshop data after PIN verification
     if (project) {
-      const treatmentsData = await fetchTreatmentsForProject(project.id);
-      setTreatments(treatmentsData);
+      await loadWorkshopData(project);
       
       // Track access after PIN verification
       trackWorkOrderAccess(project.id);
     }
-  }, [project]);
+  }, [project, loadWorkshopData]);
 
   const verifyPIN = useCallback((enteredPIN: string): boolean => {
     return project?.work_order_pin === enteredPIN;
@@ -139,7 +151,7 @@ const PublicWorkOrder: React.FC = () => {
   return (
     <PublicWorkOrderPage 
       project={project} 
-      treatments={treatments} 
+      workshopData={workshopData}
     />
   );
 };
