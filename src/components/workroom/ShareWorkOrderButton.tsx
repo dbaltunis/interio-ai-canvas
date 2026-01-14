@@ -17,11 +17,17 @@ import { Input } from '@/components/ui/input';
 import { 
   Share2, Link2, Lock, Check, Eye, EyeOff
 } from 'lucide-react';
-import { useWorkOrderSharing } from '@/hooks/useWorkOrderSharing';
+import { useWorkOrderSharing, getAvailableTreatments } from '@/hooks/useWorkOrderSharing';
 import { useWorkOrderRecipients } from '@/hooks/useWorkOrderRecipients';
 import { copyToClipboard } from '@/lib/clipboard';
 import { RecipientsList } from './RecipientsList';
-import { ShareSettingsSection, type DocumentType, type ContentFilter } from './ShareSettingsSection';
+import { 
+  ShareSettingsSection, 
+  WORKSHOP_PRESETS,
+  type DocumentType, 
+  type ContentFilter,
+  type TreatmentFilter 
+} from './ShareSettingsSection';
 
 interface ShareWorkOrderButtonProps {
   projectId: string | undefined;
@@ -46,8 +52,15 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
     removeRecipient,
   } = useWorkOrderRecipients(projectId);
 
+  // Share settings state
   const [documentType, setDocumentType] = useState<DocumentType>('work_order');
   const [contentFilter, setContentFilter] = useState<ContentFilter>('all');
+  const [treatmentFilter, setTreatmentFilter] = useState<TreatmentFilter>('all');
+  const [selectedTreatments, setSelectedTreatments] = useState<string[]>([]);
+  const [availableTreatments, setAvailableTreatments] = useState<string[]>([]);
+  const [activePreset, setActivePreset] = useState<string | null>(null);
+
+  // Dialog states
   const [showPINDialog, setShowPINDialog] = useState(false);
   const [showViewPINDialog, setShowViewPINDialog] = useState(false);
   const [pin, setPin] = useState('');
@@ -56,20 +69,66 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
   const [pinCopied, setPinCopied] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
+  // Load share data and available treatments
   useEffect(() => {
     if (projectId) {
       getShareData();
+      loadAvailableTreatments();
     }
   }, [projectId, getShareData]);
 
+  const loadAvailableTreatments = async () => {
+    if (!projectId) return;
+    const treatments = await getAvailableTreatments(projectId);
+    setAvailableTreatments(treatments);
+  };
+
   const handleDocumentTypeChange = async (type: DocumentType) => {
     setDocumentType(type);
+    setActivePreset(null);
     await updateShareSettings({ documentType: type });
   };
 
   const handleContentFilterChange = async (filter: ContentFilter) => {
     setContentFilter(filter);
+    setActivePreset(null);
     await updateShareSettings({ contentFilter: filter });
+  };
+
+  const handleTreatmentFilterChange = async (filter: TreatmentFilter, selected: string[]) => {
+    setTreatmentFilter(filter);
+    setSelectedTreatments(selected);
+    setActivePreset(null);
+    
+    // Build treatment types array for saving
+    let treatmentTypes: string[] = [];
+    if (filter === 'all') {
+      treatmentTypes = []; // Empty means all
+    } else if (filter === 'custom') {
+      treatmentTypes = selected;
+    } else {
+      treatmentTypes = [filter];
+    }
+    
+    await updateShareSettings({ treatmentTypes });
+  };
+
+  const handlePresetApply = async (presetKey: string) => {
+    const preset = WORKSHOP_PRESETS[presetKey as keyof typeof WORKSHOP_PRESETS];
+    if (!preset) return;
+
+    setActivePreset(presetKey);
+    setDocumentType(preset.documentType);
+    setContentFilter(preset.contentFilter);
+    setTreatmentFilter(preset.treatmentFilter);
+    setSelectedTreatments(preset.selectedTreatments);
+
+    // Save all settings
+    await updateShareSettings({
+      documentType: preset.documentType,
+      contentFilter: preset.contentFilter,
+      treatmentTypes: preset.treatmentFilter === 'all' ? [] : preset.selectedTreatments,
+    });
   };
 
   const handleCopyLink = async () => {
@@ -169,13 +228,19 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-72 p-0" sideOffset={8}>
-          {/* Share Settings - Document Type & Content Filter */}
+        <PopoverContent align="end" className="w-80 p-0" sideOffset={8}>
+          {/* Share Settings - Presets, Treatment Filter, Document Type, Content Filter */}
           <ShareSettingsSection
             documentType={documentType}
             contentFilter={contentFilter}
+            treatmentFilter={treatmentFilter}
+            selectedTreatments={selectedTreatments}
+            availableTreatments={availableTreatments}
+            activePreset={activePreset}
             onDocumentTypeChange={handleDocumentTypeChange}
             onContentFilterChange={handleContentFilterChange}
+            onTreatmentFilterChange={handleTreatmentFilterChange}
+            onPresetApply={handlePresetApply}
           />
 
           {/* Main Actions */}

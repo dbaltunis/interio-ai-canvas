@@ -176,10 +176,11 @@ export function useWorkOrderSharing(projectId: string | undefined) {
     }
   }, [projectId]);
 
-  // Update share settings (document type & content filter)
+  // Update share settings (document type, content filter, treatment types)
   const updateShareSettings = useCallback(async (settings: {
     documentType?: string;
     contentFilter?: string;
+    treatmentTypes?: string[];
   }): Promise<boolean> => {
     if (!projectId) return false;
     
@@ -190,6 +191,9 @@ export function useWorkOrderSharing(projectId: string | undefined) {
       }
       if (settings.contentFilter) {
         updateData.work_order_content_filter = { type: settings.contentFilter };
+      }
+      if (settings.treatmentTypes !== undefined) {
+        updateData.work_order_treatment_filter = settings.treatmentTypes;
       }
       
       const { error } = await supabase
@@ -218,6 +222,31 @@ export function useWorkOrderSharing(projectId: string | undefined) {
   };
 }
 
+// Get available treatment types for a project
+export async function getAvailableTreatments(projectId: string): Promise<string[]> {
+  try {
+    const { data, error } = await supabase
+      .from('workshop_items')
+      .select('treatment_type')
+      .eq('project_id', projectId);
+
+    if (error) throw error;
+    
+    // Get unique treatment types
+    const types = new Set<string>();
+    data?.forEach(item => {
+      if (item.treatment_type) {
+        types.add(item.treatment_type);
+      }
+    });
+    
+    return Array.from(types);
+  } catch (error) {
+    console.error('Error getting available treatments:', error);
+    return [];
+  }
+}
+
 // Fetch project by token (for public page)
 export async function fetchProjectByToken(token: string): Promise<any | null> {
   try {
@@ -232,6 +261,7 @@ export async function fetchProjectByToken(token: string): Promise<any | null> {
         work_order_shared_at,
         work_order_document_type,
         work_order_content_filter,
+        work_order_treatment_filter,
         due_date,
         created_at,
         clients (
@@ -254,18 +284,23 @@ export async function fetchProjectByToken(token: string): Promise<any | null> {
   }
 }
 
-// Fetch workshop data for a project - returns same structure as useWorkshopData
-// This fetches from workshop_items which contains the denormalized work order data
-export async function fetchWorkshopDataForProject(projectId: string, projectMeta?: {
-  name?: string;
-  job_number?: string;
-  order_number?: string;
-  due_date?: string;
-  created_at?: string;
-  clients?: { name?: string };
-}): Promise<WorkshopData | null> {
+// Fetch workshop data for a project with optional treatment type filtering
+export async function fetchWorkshopDataForProject(
+  projectId: string, 
+  projectMeta?: {
+    name?: string;
+    job_number?: string;
+    order_number?: string;
+    due_date?: string;
+    created_at?: string;
+    clients?: { name?: string; phone?: string; address?: string };
+  },
+  options?: {
+    treatmentTypes?: string[];
+  }
+): Promise<WorkshopData | null> {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('workshop_items')
       .select(`
         id,
@@ -281,6 +316,13 @@ export async function fetchWorkshopDataForProject(projectId: string, projectMeta
         widths_required
       `)
       .eq('project_id', projectId);
+
+    // Apply treatment type filter if specified
+    if (options?.treatmentTypes && options.treatmentTypes.length > 0) {
+      query = query.in('treatment_type', options.treatmentTypes);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
     if (!data || data.length === 0) return null;
@@ -314,7 +356,7 @@ export async function fetchWorkshopDataForProject(projectId: string, projectMeta
         location: item.surface_name || 'Window',
         quantity: 1,
         measurements: {
-          width: measurements?.rail_width ? Math.round(measurements.rail_width / 10) : undefined, // Convert mm to cm
+          width: measurements?.rail_width ? Math.round(measurements.rail_width / 10) : undefined,
           height: measurements?.drop ? Math.round(measurements.drop / 10) : undefined,
           drop: measurements?.drop ? Math.round(measurements.drop / 10) : undefined,
           pooling: measurements?.pooling_amount || measurements?.pooling,
@@ -340,6 +382,9 @@ export async function fetchWorkshopDataForProject(projectId: string, projectMeta
           linearYards: (item.linear_meters || 0) * 1.09361,
           widthsRequired: item.widths_required || 1,
           seamsRequired: Math.max(0, (item.widths_required || 1) - 1),
+          // Add cut dimensions
+          totalDropCm: manufacturingDetails?.total_drop_cm || manufacturingDetails?.cut_length_cm,
+          totalWidthCm: manufacturingDetails?.total_width_cm || manufacturingDetails?.cut_width_cm,
         },
         
         // Hems from manufacturing details
@@ -356,13 +401,8 @@ export async function fetchWorkshopDataForProject(projectId: string, projectMeta
           headingType: manufacturingDetails.heading_type || 'Standard',
         } : undefined,
         
-        // Options
-        options: manufacturingDetails?.selected_options?.map((opt: any) => ({
-          name: opt.name || opt.option_name || 'Option',
-          optionKey: opt.optionKey || opt.option_key || '',
-          price: opt.price || 0,
-          quantity: opt.quantity || 1,
-        })) || [],
+        // Options - parse from manufacturing details
+        options: parseOptions(manufacturingDetails?.selected_options),
         
         // Lining
         liningDetails: manufacturingDetails?.lining_type ? {
@@ -391,11 +431,11 @@ export async function fetchWorkshopDataForProject(projectId: string, projectMeta
       header: {
         orderNumber: projectMeta?.job_number || projectMeta?.order_number || undefined,
         clientName: projectMeta?.clients?.name || undefined,
+        shippingAddress: projectMeta?.clients?.address || undefined,
         projectName: projectMeta?.name || undefined,
         createdDate: projectMeta?.created_at ? String(projectMeta.created_at).slice(0, 10) : undefined,
         dueDate: projectMeta?.due_date || undefined,
         assignedMaker: undefined,
-        shippingAddress: undefined,
       },
       rooms,
       projectTotals: { itemsCount: data.length },
@@ -406,6 +446,18 @@ export async function fetchWorkshopDataForProject(projectId: string, projectMeta
   }
 }
 
+// Parse options from manufacturing details
+function parseOptions(selectedOptions: any): Array<{ name: string; optionKey: string; price: number; quantity: number }> {
+  if (!selectedOptions || !Array.isArray(selectedOptions)) return [];
+  
+  return selectedOptions.map((opt: any) => ({
+    name: opt.name || opt.option_name || opt.label || 'Option',
+    optionKey: opt.optionKey || opt.option_key || '',
+    price: opt.price || 0,
+    quantity: opt.quantity || 1,
+  }));
+}
+
 // Helper to format treatment types nicely
 function formatTreatmentType(type: string): string {
   return type
@@ -414,7 +466,6 @@ function formatTreatmentType(type: string): string {
 }
 
 // Legacy: Fetch treatments for a project (for public page)
-// Uses workshop_items table which contains the actual work order data
 export async function fetchTreatmentsForProject(projectId: string): Promise<any[]> {
   try {
     const { data, error } = await supabase
