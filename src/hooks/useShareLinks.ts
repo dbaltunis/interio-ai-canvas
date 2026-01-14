@@ -2,6 +2,13 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccessToast, showErrorToast } from '@/components/ui/use-toast';
 
+export interface ShareLinkViewer {
+  id: string;
+  recipient_name: string;
+  recipient_email?: string;
+  last_accessed_at?: string;
+}
+
 export interface ShareLink {
   id: string;
   project_id: string;
@@ -16,6 +23,7 @@ export interface ShareLink {
   expires_at: string | null;
   is_active: boolean;
   viewer_count?: number;
+  viewers?: ShareLinkViewer[];
 }
 
 export interface CreateShareLinkInput {
@@ -46,15 +54,25 @@ export function useShareLinks(projectId: string | undefined) {
 
       if (error) throw error;
 
-      // Get viewer counts for each link
+      // Get viewer counts and viewer names for each link
       const linksWithCounts = await Promise.all(
         (data || []).map(async (link) => {
-          const { count } = await supabase
+          // Fetch viewers with their names
+          const { data: viewersData, count } = await supabase
             .from('work_order_shares')
-            .select('*', { count: 'exact', head: true })
+            .select('id, recipient_name, recipient_email, last_accessed_at', { count: 'exact' })
             .eq('share_link_id', link.id)
-            .eq('is_active', true);
+            .not('last_accessed_at', 'is', null)
+            .order('last_accessed_at', { ascending: false })
+            .limit(5);
           
+          const viewers: ShareLinkViewer[] = (viewersData || []).map(v => ({
+            id: v.id,
+            recipient_name: v.recipient_name || 'Unknown',
+            recipient_email: v.recipient_email || undefined,
+            last_accessed_at: v.last_accessed_at || undefined,
+          }));
+
           return {
             id: link.id,
             project_id: link.project_id,
@@ -71,6 +89,7 @@ export function useShareLinks(projectId: string | undefined) {
             expires_at: link.expires_at,
             is_active: link.is_active,
             viewer_count: count || 0,
+            viewers,
           } as ShareLink;
         })
       );

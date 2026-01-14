@@ -8,14 +8,15 @@ import { useWorkshopNotes } from "@/hooks/useWorkshopNotes";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { formatFromCM, getUnitLabel } from "@/utils/measurementFormatters";
 
-interface WorkshopInformationLandscapeProps {
+export interface WorkshopInformationLandscapeProps {
   data: WorkshopData;
   projectId?: string;
   isPrintMode?: boolean;
   isReadOnly?: boolean;
+  sessionToken?: string;
 }
 
-export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscapeProps> = ({ data, projectId, isPrintMode = false, isReadOnly = false }) => {
+export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscapeProps> = ({ data, projectId, isPrintMode = false, isReadOnly = false, sessionToken }) => {
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
   const { units } = useMeasurementUnits();
@@ -29,7 +30,7 @@ export const WorkshopInformationLandscape: React.FC<WorkshopInformationLandscape
     saveNotes,
     isLoading,
     isSaving
-  } = useWorkshopNotes(projectId);
+  } = useWorkshopNotes(projectId, { sessionToken });
   
   const hasOverrides = Object.keys(overrides).length > 0;
   

@@ -16,21 +16,22 @@ interface WorkshopInformationProps {
   projectId?: string;
   isPrintMode?: boolean;
   isReadOnly?: boolean;
+  sessionToken?: string;
 }
 
-export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, orientation = 'portrait', projectId, isPrintMode = false, isReadOnly = false }) => {
+export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, orientation = 'portrait', projectId, isPrintMode = false, isReadOnly = false, sessionToken }) => {
   // Use landscape layout for landscape orientation
   if (orientation === 'landscape') {
-    return <WorkshopInformationLandscape data={data} projectId={projectId} isPrintMode={isPrintMode} isReadOnly={isReadOnly} />;
+    return <WorkshopInformationLandscape data={data} projectId={projectId} isPrintMode={isPrintMode} isReadOnly={isReadOnly} sessionToken={sessionToken} />;
   }
 
-  console.log('🔍 [WorkshopInformation] projectId:', projectId);
+  console.log('🔍 [WorkshopInformation] projectId:', projectId, 'sessionToken:', !!sessionToken);
 
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
-  // Integrate workshop notes hook
+  // Integrate workshop notes hook with session token for public page saves
   const {
     productionNotes,
     itemNotes,
@@ -39,7 +40,7 @@ export const WorkshopInformation: React.FC<WorkshopInformationProps> = ({ data, 
     saveNotes,
     isLoading: notesLoading,
     isSaving
-  } = useWorkshopNotes(projectId);
+  } = useWorkshopNotes(projectId, { sessionToken });
   
   console.log('🔍 [WorkshopInformation] Notes state:', { 
     hasProjectId: !!projectId,

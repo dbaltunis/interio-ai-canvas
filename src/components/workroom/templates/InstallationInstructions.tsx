@@ -14,6 +14,7 @@ interface InstallationInstructionsProps {
   projectId?: string;
   isPrintMode?: boolean;
   isReadOnly?: boolean;
+  sessionToken?: string;
 }
 
 export const InstallationInstructions: React.FC<InstallationInstructionsProps> = ({ 
@@ -21,7 +22,8 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
   orientation = 'portrait',
   projectId,
   isPrintMode = false,
-  isReadOnly = false
+  isReadOnly = false,
+  sessionToken
 }) => {
   const [editing, setEditing] = useState(false);
   const [overrides, setOverrides] = useState<Partial<typeof data.header>>({});
@@ -35,7 +37,7 @@ export const InstallationInstructions: React.FC<InstallationInstructionsProps> =
     setItemNote,
     saveNotes,
     isSaving
-  } = useWorkshopNotes(projectId);
+  } = useWorkshopNotes(projectId, { sessionToken });
   
   const hasOverrides = Object.keys(overrides).length > 0;
   

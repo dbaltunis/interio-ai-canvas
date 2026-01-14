@@ -74,14 +74,26 @@ export const ShareLinkCard: React.FC<ShareLinkCardProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-          {link.viewer_count !== undefined && link.viewer_count > 0 && (
-            <span className="flex items-center gap-1">
+        <div className="flex flex-col gap-1">
+          {/* Viewers list */}
+          {link.viewers && link.viewers.length > 0 ? (
+            <div className="flex items-center gap-1 flex-wrap">
+              <Users className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="text-[10px] text-muted-foreground">
+                {link.viewers.slice(0, 3).map(v => v.recipient_name).join(', ')}
+                {link.viewers.length > 3 && ` +${link.viewers.length - 3} more`}
+              </span>
+            </div>
+          ) : link.viewer_count !== undefined && link.viewer_count > 0 ? (
+            <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
               <Users className="h-3 w-3" />
               {link.viewer_count} viewer{link.viewer_count !== 1 ? 's' : ''}
             </span>
+          ) : (
+            <span className="text-[10px] text-muted-foreground italic">No views yet</span>
           )}
-          <span>
+          
+          <span className="text-[10px] text-muted-foreground">
             Created {new Date(link.created_at).toLocaleDateString()}
           </span>
         </div>

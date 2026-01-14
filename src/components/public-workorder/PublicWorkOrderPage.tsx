@@ -240,6 +240,7 @@ export const PublicWorkOrderPage: React.FC<PublicWorkOrderPageProps> = ({
                 projectId={project.id}
                 isPrintMode={false}
                 isReadOnly={isReadOnly}
+                sessionToken={sessionToken}
               />
             )}
             {documentType === 'installation' && (
@@ -248,6 +249,7 @@ export const PublicWorkOrderPage: React.FC<PublicWorkOrderPageProps> = ({
                 projectId={project.id}
                 isPrintMode={false}
                 isReadOnly={isReadOnly}
+                sessionToken={sessionToken}
               />
             )}
             {documentType === 'fitting' && (
@@ -256,6 +258,7 @@ export const PublicWorkOrderPage: React.FC<PublicWorkOrderPageProps> = ({
                 projectId={project.id}
                 isPrintMode={false}
                 isReadOnly={isReadOnly}
+                sessionToken={sessionToken}
               />
             )}
           </Suspense>
