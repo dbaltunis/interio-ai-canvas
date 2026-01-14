@@ -269,18 +269,40 @@ export async function fetchTreatmentsForProject(projectId: string): Promise<any[
 
     if (error) throw error;
     
-    // Transform to match expected format
+    // Helper to format treatment types nicely
+    const formatTreatmentType = (type: string): string => {
+      return type
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase());
+    };
+    
+    // Transform to match expected format with meaningful display names
     return (data || []).map(item => {
       const fabricDetails = item.fabric_details as Record<string, any> | null;
       const manufacturingDetails = item.manufacturing_details as Record<string, any> | null;
+      const measurements = item.measurements as Record<string, any> | null;
+      
+      // Build a meaningful treatment display name
+      const fabricName = fabricDetails?.name;
+      const treatmentType = item.treatment_type || 'Treatment';
+      
+      // Format: "Curtains - ADARA" or just "Roller Blinds"
+      const displayName = fabricName 
+        ? `${formatTreatmentType(treatmentType)} - ${fabricName}`
+        : formatTreatmentType(treatmentType);
       
       return {
         id: item.id,
-        treatment_type: item.treatment_type,
-        treatment_name: item.surface_name,
-        product_name: fabricDetails?.name,
-        mounting_type: manufacturingDetails?.type,
-        measurements: item.measurements,
+        treatment_type: treatmentType,
+        treatment_name: displayName,
+        product_name: fabricName,
+        mounting_type: manufacturingDetails?.mounting_type || undefined,
+        surface_name: item.surface_name,
+        measurements: {
+          width: measurements?.rail_width,
+          height: measurements?.drop,
+          ...measurements
+        },
         notes: item.notes,
         status: item.status,
         rooms: { 
