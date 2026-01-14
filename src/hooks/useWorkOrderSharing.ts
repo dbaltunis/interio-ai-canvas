@@ -532,7 +532,7 @@ export async function createViewerSession(
   name: string,
   email?: string,
   shareLinkId?: string
-): Promise<{ session_token: string } | null> {
+): Promise<{ session_token: string; permission_level: string } | null> {
   try {
     const sessionToken = crypto.randomUUID();
     
@@ -552,7 +552,7 @@ export async function createViewerSession(
     const { data, error } = await supabase
       .from('work_order_shares')
       .insert(insertData)
-      .select('session_token')
+      .select('session_token, permission_level')
       .single();
 
     if (error) {
@@ -571,11 +571,12 @@ export async function createViewerSession(
 export async function getViewerSession(sessionToken: string): Promise<{
   recipient_name: string;
   recipient_email?: string;
+  permission_level: string;
 } | null> {
   try {
     const { data, error } = await supabase
       .from('work_order_shares')
-      .select('recipient_name, recipient_email')
+      .select('recipient_name, recipient_email, permission_level')
       .eq('session_token', sessionToken)
       .maybeSingle();
 
