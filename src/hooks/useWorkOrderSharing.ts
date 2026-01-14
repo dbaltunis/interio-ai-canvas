@@ -230,6 +230,8 @@ export async function fetchProjectByToken(token: string): Promise<any | null> {
         order_number,
         work_order_pin,
         work_order_shared_at,
+        work_order_document_type,
+        work_order_content_filter,
         due_date,
         created_at,
         clients (
