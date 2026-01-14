@@ -21,9 +21,9 @@ export const RecipientsList: React.FC<RecipientsListProps> = ({
   recipients,
   isLoading,
 }) => {
-  // Only show active recipients, sorted by most recent access
+  // Show all recipients who have accessed (have last_accessed_at), sorted by most recent
   const activeRecipients = recipients
-    .filter(r => r.is_active)
+    .filter(r => r.is_active || r.last_accessed_at) // Include viewer-created sessions even if is_active=false
     .sort((a, b) => {
       const aTime = a.last_accessed_at ? new Date(a.last_accessed_at).getTime() : 0;
       const bTime = b.last_accessed_at ? new Date(b.last_accessed_at).getTime() : 0;
