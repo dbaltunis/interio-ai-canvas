@@ -159,15 +159,20 @@ export const useWorkshopNotes = (projectId?: string): WorkshopNotesHook => {
       console.log("📝 [NOTES SAVE] Saving item notes, count:", Object.keys(itemNotes).length);
       const updatePromises = Object.entries(itemNotes).map(async ([itemId, note]) => {
         console.log(`🔄 [NOTES SAVE] Updating surface ${itemId} with note:`, note.substring(0, 50));
-        const { error } = await supabase
+        
+        // Update surface notes
+        const { error: surfaceError } = await supabase
           .from("surfaces")
           .update({ notes: note } as any)
           .eq("id", itemId);
         
-        if (error) {
-          console.error(`❌ [NOTES SAVE] Error updating surface ${itemId}:`, error);
-          throw error;
+        if (surfaceError) {
+          console.error(`❌ [NOTES SAVE] Error updating surface ${itemId}:`, surfaceError);
+          throw surfaceError;
         }
+        
+        // Note: workshop_items sync handled separately via database trigger or workroom sync
+        
         console.log(`✅ [NOTES SAVE] Surface ${itemId} updated successfully`);
         return true;
       });

@@ -36,6 +36,7 @@ interface PublicWorkOrderPageProps {
   };
   workshopData: WorkshopData | null;
   permissionLevel?: 'view' | 'edit' | 'admin';
+  viewerName?: string;
 }
 
 // Template loading fallback
@@ -49,7 +50,8 @@ const TemplateLoader = () => (
 export const PublicWorkOrderPage: React.FC<PublicWorkOrderPageProps> = ({ 
   project, 
   workshopData,
-  permissionLevel = 'view'
+  permissionLevel = 'view',
+  viewerName
 }) => {
   const clientName = project.clients?.name || 'Client';
   const clientPhone = project.clients?.phone;
@@ -152,6 +154,11 @@ export const PublicWorkOrderPage: React.FC<PublicWorkOrderPageProps> = ({
               </h1>
             </div>
             <div className="flex items-center gap-2">
+              {viewerName && (
+                <span className="text-xs opacity-80">
+                  Viewing as: {viewerName}
+                </span>
+              )}
               {completedCount > 0 && (
                 <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
                   {completedCount} Done

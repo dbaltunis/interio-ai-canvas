@@ -10041,6 +10041,7 @@ export type Database = {
         Row: {
           access_count: number
           created_at: string
+          created_by_viewer: boolean | null
           id: string
           is_active: boolean
           last_accessed_at: string | null
@@ -10050,13 +10051,15 @@ export type Database = {
           recipient_email: string | null
           recipient_name: string
           recipient_phone: string | null
+          session_token: string | null
           shared_at: string
-          shared_by: string
+          shared_by: string | null
           updated_at: string
         }
         Insert: {
           access_count?: number
           created_at?: string
+          created_by_viewer?: boolean | null
           id?: string
           is_active?: boolean
           last_accessed_at?: string | null
@@ -10066,13 +10069,15 @@ export type Database = {
           recipient_email?: string | null
           recipient_name: string
           recipient_phone?: string | null
+          session_token?: string | null
           shared_at?: string
-          shared_by: string
+          shared_by?: string | null
           updated_at?: string
         }
         Update: {
           access_count?: number
           created_at?: string
+          created_by_viewer?: boolean | null
           id?: string
           is_active?: boolean
           last_accessed_at?: string | null
@@ -10082,8 +10087,9 @@ export type Database = {
           recipient_email?: string | null
           recipient_name?: string
           recipient_phone?: string | null
+          session_token?: string | null
           shared_at?: string
-          shared_by?: string
+          shared_by?: string | null
           updated_at?: string
         }
         Relationships: [

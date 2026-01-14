@@ -1,15 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchProjectByToken, fetchWorkshopDataForProject } from '@/hooks/useWorkOrderSharing';
-import { trackWorkOrderAccess } from '@/hooks/useWorkOrderRecipients';
+import { fetchProjectByToken, fetchWorkshopDataForProject, createViewerSession, getViewerSession } from '@/hooks/useWorkOrderSharing';
 import { PublicWorkOrderPage } from '@/components/public-workorder/PublicWorkOrderPage';
 import { PINEntryDialog } from '@/components/public-workorder/PINEntryDialog';
+import { ViewerIdentityDialog } from '@/components/public-workorder/ViewerIdentityDialog';
 import { LoadingState } from '@/components/ui/loading-state';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, FileX } from 'lucide-react';
 import type { WorkshopData } from '@/hooks/useWorkshopData';
 
 type PermissionLevel = 'view' | 'edit' | 'admin';
+
+interface ViewerInfo {
+  name: string;
+  email?: string;
+  sessionToken: string;
+}
 
 const PublicWorkOrder: React.FC = () => {
   const { token } = useParams<{ token: string }>();
@@ -19,16 +25,17 @@ const PublicWorkOrder: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [requiresPIN, setRequiresPIN] = useState(false);
   const [pinVerified, setPinVerified] = useState(false);
-  const [permissionLevel, setPermissionLevel] = useState<PermissionLevel>('edit'); // Default to edit for shared work orders
+  const [viewerIdentified, setViewerIdentified] = useState(false);
+  const [currentViewer, setCurrentViewer] = useState<ViewerInfo | null>(null);
+  const [isSubmittingIdentity, setIsSubmittingIdentity] = useState(false);
+  const [permissionLevel, setPermissionLevel] = useState<PermissionLevel>('edit');
 
   const loadWorkshopData = useCallback(async (projectData: any) => {
-    // Parse treatment filter - ensure it's an array or undefined
     const treatmentFilter = projectData.work_order_treatment_filter;
     const treatmentTypes = Array.isArray(treatmentFilter) && treatmentFilter.length > 0 
       ? treatmentFilter.filter((t: string) => t !== 'all')
       : undefined;
     
-    // Fetch workshop data with project metadata for header
     const data = await fetchWorkshopDataForProject(
       projectData.id, 
       {
@@ -43,6 +50,25 @@ const PublicWorkOrder: React.FC = () => {
     );
     setWorkshopData(data);
   }, []);
+
+  // Check for existing viewer session on mount
+  useEffect(() => {
+    if (!token) return;
+    
+    const sessionToken = localStorage.getItem(`wo_viewer_${token}`);
+    if (sessionToken) {
+      getViewerSession(sessionToken).then(viewer => {
+        if (viewer) {
+          setCurrentViewer({
+            name: viewer.recipient_name,
+            email: viewer.recipient_email || undefined,
+            sessionToken
+          });
+          setViewerIdentified(true);
+        }
+      });
+    }
+  }, [token]);
 
   const loadProject = useCallback(async () => {
     if (!token) {
@@ -69,40 +95,63 @@ const PublicWorkOrder: React.FC = () => {
         return;
       }
 
-      // Load workshop data and track access
-      await loadWorkshopData(projectData);
-      
-      // Track access (fire and forget)
-      trackWorkOrderAccess(projectData.id);
-      
       setLoading(false);
     } catch (err) {
       console.error('Error loading work order:', err);
       setError('Failed to load work order');
       setLoading(false);
     }
-  }, [token, loadWorkshopData]);
+  }, [token]);
 
   useEffect(() => {
     loadProject();
   }, [loadProject]);
 
-  const handlePINVerified = useCallback(async () => {
+  // Load workshop data when viewer is identified
+  useEffect(() => {
+    if (viewerIdentified && project && !workshopData) {
+      loadWorkshopData(project);
+    }
+  }, [viewerIdentified, project, workshopData, loadWorkshopData]);
+
+  const handlePINVerified = useCallback(() => {
     setPinVerified(true);
     setRequiresPIN(false);
-    
-    // Load workshop data after PIN verification
-    if (project) {
-      await loadWorkshopData(project);
-      
-      // Track access after PIN verification
-      trackWorkOrderAccess(project.id);
-    }
-  }, [project, loadWorkshopData]);
+  }, []);
 
   const verifyPIN = useCallback((enteredPIN: string): boolean => {
     return project?.work_order_pin === enteredPIN;
   }, [project]);
+
+  const handleViewerIdentified = useCallback(async (viewer: { name: string; email?: string }) => {
+    if (!project?.id || !token) return;
+    
+    setIsSubmittingIdentity(true);
+    try {
+      const session = await createViewerSession(project.id, viewer.name, viewer.email);
+      
+      if (session) {
+        // Store session token locally
+        localStorage.setItem(`wo_viewer_${token}`, session.session_token);
+        
+        setCurrentViewer({
+          name: viewer.name,
+          email: viewer.email,
+          sessionToken: session.session_token
+        });
+        setViewerIdentified(true);
+      } else {
+        // Fallback: allow access even if session creation failed
+        setViewerIdentified(true);
+      }
+    } catch (err) {
+      console.error('Error creating viewer session:', err);
+      // Allow access anyway
+      setViewerIdentified(true);
+    } finally {
+      setIsSubmittingIdentity(false);
+    }
+  }, [project?.id, token]);
 
   if (loading) {
     return (
@@ -133,12 +182,25 @@ const PublicWorkOrder: React.FC = () => {
     );
   }
 
+  // Step 1: PIN verification (if required)
   if (requiresPIN && !pinVerified) {
     return (
       <PINEntryDialog 
         open={true}
         onVerify={verifyPIN}
         onSuccess={handlePINVerified}
+      />
+    );
+  }
+
+  // Step 2: Viewer identification
+  if (!viewerIdentified) {
+    return (
+      <ViewerIdentityDialog
+        open={true}
+        onIdentified={handleViewerIdentified}
+        projectName={project?.name}
+        isSubmitting={isSubmittingIdentity}
       />
     );
   }
@@ -166,6 +228,7 @@ const PublicWorkOrder: React.FC = () => {
       project={project} 
       workshopData={workshopData}
       permissionLevel={permissionLevel}
+      viewerName={currentViewer?.name}
     />
   );
 };

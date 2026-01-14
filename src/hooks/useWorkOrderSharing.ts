@@ -525,3 +525,77 @@ export async function fetchTreatmentsForProject(projectId: string): Promise<any[
     return [];
   }
 }
+
+// Create a viewer session when someone accesses the public work order
+export async function createViewerSession(
+  projectId: string,
+  name: string,
+  email?: string
+): Promise<{ session_token: string } | null> {
+  try {
+    const sessionToken = crypto.randomUUID();
+    
+    // Use type assertion since shared_by is now nullable for viewer-created sessions
+    const insertData = {
+      project_id: projectId,
+      recipient_name: name,
+      recipient_email: email || null,
+      permission_level: 'view',
+      session_token: sessionToken,
+      created_by_viewer: true,
+      last_accessed_at: new Date().toISOString(),
+      access_count: 1
+    } as any;
+    
+    const { data, error } = await supabase
+      .from('work_order_shares')
+      .insert(insertData)
+      .select('session_token')
+      .single();
+
+    if (error) {
+      console.error('Error creating viewer session:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error creating viewer session:', error);
+    return null;
+  }
+}
+
+// Get viewer session by token
+export async function getViewerSession(sessionToken: string): Promise<{
+  recipient_name: string;
+  recipient_email?: string;
+} | null> {
+  try {
+    const { data, error } = await supabase
+      .from('work_order_shares')
+      .select('recipient_name, recipient_email')
+      .eq('session_token', sessionToken)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error getting viewer session:', error);
+      return null;
+    }
+
+    if (data) {
+      // Update last accessed time
+      await supabase
+        .from('work_order_shares')
+        .update({ 
+          last_accessed_at: new Date().toISOString(),
+          access_count: supabase.rpc ? undefined : 1 // Increment handled by trigger if available
+        })
+        .eq('session_token', sessionToken);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error getting viewer session:', error);
+    return null;
+  }
+}
