@@ -22,15 +22,25 @@ const PublicWorkOrder: React.FC = () => {
   const [permissionLevel, setPermissionLevel] = useState<PermissionLevel>('edit'); // Default to edit for shared work orders
 
   const loadWorkshopData = useCallback(async (projectData: any) => {
+    // Parse treatment filter - ensure it's an array or undefined
+    const treatmentFilter = projectData.work_order_treatment_filter;
+    const treatmentTypes = Array.isArray(treatmentFilter) && treatmentFilter.length > 0 
+      ? treatmentFilter.filter((t: string) => t !== 'all')
+      : undefined;
+    
     // Fetch workshop data with project metadata for header
-    const data = await fetchWorkshopDataForProject(projectData.id, {
-      name: projectData.name,
-      job_number: projectData.job_number,
-      order_number: projectData.order_number,
-      due_date: projectData.due_date,
-      created_at: projectData.created_at,
-      clients: projectData.clients,
-    });
+    const data = await fetchWorkshopDataForProject(
+      projectData.id, 
+      {
+        name: projectData.name,
+        job_number: projectData.job_number,
+        order_number: projectData.order_number,
+        due_date: projectData.due_date,
+        created_at: projectData.created_at,
+        clients: projectData.clients,
+      },
+      treatmentTypes && treatmentTypes.length > 0 ? { treatmentTypes } : undefined
+    );
     setWorkshopData(data);
   }, []);
 
