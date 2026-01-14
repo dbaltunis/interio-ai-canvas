@@ -249,28 +249,46 @@ export async function fetchProjectByToken(token: string): Promise<any | null> {
 }
 
 // Fetch treatments for a project (for public page)
+// Uses workshop_items table which contains the actual work order data
 export async function fetchTreatmentsForProject(projectId: string): Promise<any[]> {
   try {
     const { data, error } = await supabase
-      .from('treatments')
+      .from('workshop_items')
       .select(`
         id,
         treatment_type,
-        treatment_name,
-        product_name,
-        mounting_type,
+        surface_name,
+        room_name,
+        fabric_details,
         measurements,
+        manufacturing_details,
         notes,
-        status,
-        rooms (
-          id,
-          name
-        )
+        status
       `)
       .eq('project_id', projectId);
 
     if (error) throw error;
-    return data || [];
+    
+    // Transform to match expected format
+    return (data || []).map(item => {
+      const fabricDetails = item.fabric_details as Record<string, any> | null;
+      const manufacturingDetails = item.manufacturing_details as Record<string, any> | null;
+      
+      return {
+        id: item.id,
+        treatment_type: item.treatment_type,
+        treatment_name: item.surface_name,
+        product_name: fabricDetails?.name,
+        mounting_type: manufacturingDetails?.type,
+        measurements: item.measurements,
+        notes: item.notes,
+        status: item.status,
+        rooms: { 
+          id: item.room_name, 
+          name: item.room_name 
+        }
+      };
+    });
   } catch (error) {
     console.error('Error fetching treatments:', error);
     return [];
