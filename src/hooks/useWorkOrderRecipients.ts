@@ -44,12 +44,13 @@ export function useWorkOrderRecipients(projectId: string | undefined) {
     fetchRecipients();
   }, [fetchRecipients]);
 
-  // Add a new recipient
+  // Add a new recipient with optional permission level
   const addRecipient = useCallback(async (recipient: {
     name: string;
     email?: string;
     phone?: string;
     notes?: string;
+    permission?: 'view' | 'edit';
   }): Promise<boolean> => {
     if (!projectId) return false;
 
@@ -68,6 +69,7 @@ export function useWorkOrderRecipients(projectId: string | undefined) {
           recipient_email: recipient.email || null,
           recipient_phone: recipient.phone || null,
           notes: recipient.notes || null,
+          permission_level: recipient.permission || 'view',
           shared_by: user.id
         });
 

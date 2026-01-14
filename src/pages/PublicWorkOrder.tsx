@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, FileX } from 'lucide-react';
 import type { WorkshopData } from '@/hooks/useWorkshopData';
 
+type PermissionLevel = 'view' | 'edit' | 'admin';
+
 const PublicWorkOrder: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const [project, setProject] = useState<any>(null);
@@ -17,6 +19,7 @@ const PublicWorkOrder: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [requiresPIN, setRequiresPIN] = useState(false);
   const [pinVerified, setPinVerified] = useState(false);
+  const [permissionLevel, setPermissionLevel] = useState<PermissionLevel>('edit'); // Default to edit for shared work orders
 
   const loadWorkshopData = useCallback(async (projectData: any) => {
     // Fetch workshop data with project metadata for header
@@ -152,6 +155,7 @@ const PublicWorkOrder: React.FC = () => {
     <PublicWorkOrderPage 
       project={project} 
       workshopData={workshopData}
+      permissionLevel={permissionLevel}
     />
   );
 };

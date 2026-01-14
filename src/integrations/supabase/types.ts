@@ -10042,6 +10042,7 @@ export type Database = {
           is_active: boolean
           last_accessed_at: string | null
           notes: string | null
+          permission_level: string | null
           project_id: string
           recipient_email: string | null
           recipient_name: string
@@ -10057,6 +10058,7 @@ export type Database = {
           is_active?: boolean
           last_accessed_at?: string | null
           notes?: string | null
+          permission_level?: string | null
           project_id: string
           recipient_email?: string | null
           recipient_name: string
@@ -10072,6 +10074,7 @@ export type Database = {
           is_active?: boolean
           last_accessed_at?: string | null
           notes?: string | null
+          permission_level?: string | null
           project_id?: string
           recipient_email?: string | null
           recipient_name?: string
