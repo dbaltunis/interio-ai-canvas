@@ -8,16 +8,22 @@ interface WorkshopNotesHook {
   setProductionNotes: (notes: string) => void;
   setItemNote: (itemId: string, note: string) => void;
   saveNotes: () => Promise<void>;
+  saveItemNotePublic: (itemId: string, note: string) => Promise<void>;
   isLoading: boolean;
   isSaving: boolean;
 }
 
-export const useWorkshopNotes = (projectId?: string): WorkshopNotesHook => {
+interface UseWorkshopNotesOptions {
+  sessionToken?: string;
+}
+
+export const useWorkshopNotes = (projectId?: string, options?: UseWorkshopNotesOptions): WorkshopNotesHook => {
   const [productionNotes, setProductionNotes] = useState<string>("");
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const sessionToken = options?.sessionToken;
 
   // Load production notes from project_notes table
   useEffect(() => {
@@ -83,6 +89,59 @@ export const useWorkshopNotes = (projectId?: string): WorkshopNotesHook => {
     setItemNotes(prev => ({ ...prev, [itemId]: note }));
   };
 
+  // Save a single item note via edge function (for public/anonymous users)
+  const saveItemNotePublic = async (itemId: string, note: string) => {
+    if (!sessionToken) {
+      console.error("❌ [NOTES SAVE PUBLIC] No session token provided");
+      throw new Error("No session token - cannot save notes");
+    }
+
+    console.log("=== 📝 SAVING NOTE VIA EDGE FUNCTION ===");
+    console.log("📌 Item ID:", itemId);
+    console.log("📝 Note length:", note?.length);
+
+    setIsSaving(true);
+    try {
+      const response = await supabase.functions.invoke('update-workshop-notes', {
+        body: {
+          session_token: sessionToken,
+          item_id: itemId,
+          notes: note,
+        }
+      });
+
+      if (response.error) {
+        console.error("❌ [NOTES SAVE PUBLIC] Edge function error:", response.error);
+        throw new Error(response.error.message || "Failed to save notes");
+      }
+
+      const result = response.data;
+      if (!result.success) {
+        console.error("❌ [NOTES SAVE PUBLIC] Failed:", result.error);
+        throw new Error(result.error || "Failed to save notes");
+      }
+
+      console.log("✅ [NOTES SAVE PUBLIC] Saved successfully by:", result.updated_by);
+      
+      toast({
+        title: "Notes saved",
+        description: "Your notes have been saved successfully.",
+      });
+      
+      return result;
+    } catch (error) {
+      console.error("❌ [NOTES SAVE PUBLIC] Error:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to save notes. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const saveNotes = async () => {
     if (!projectId) {
       console.error("❌ [NOTES SAVE] No projectId provided");
@@ -94,16 +153,30 @@ export const useWorkshopNotes = (projectId?: string): WorkshopNotesHook => {
     console.log("📝 Production notes:", productionNotes);
     console.log("📝 Item notes count:", Object.keys(itemNotes).length);
     console.log("📝 Item notes:", itemNotes);
+    console.log("🔑 Has session token:", !!sessionToken);
 
     setIsSaving(true);
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) {
-        console.error("❌ [NOTES SAVE] Auth error:", userError);
-        throw userError;
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // If no authenticated user but we have a session token, use edge function
+      if (!user && sessionToken) {
+        console.log("🔄 [NOTES SAVE] Using edge function for anonymous save");
+        
+        // Save each item note via edge function
+        const savePromises = Object.entries(itemNotes).map(([itemId, note]) => 
+          saveItemNotePublic(itemId, note)
+        );
+        
+        await Promise.all(savePromises);
+        console.log("✅ [NOTES SAVE] All notes saved via edge function");
+        return;
       }
+
+      // Otherwise, require authenticated user for direct save
       if (!user) {
-        console.error("❌ [NOTES SAVE] No authenticated user");
+        console.error("❌ [NOTES SAVE] No authenticated user and no session token");
         throw new Error("Not authenticated");
       }
 
@@ -214,6 +287,7 @@ export const useWorkshopNotes = (projectId?: string): WorkshopNotesHook => {
     setProductionNotes,
     setItemNote,
     saveNotes,
+    saveItemNotePublic,
     isLoading,
     isSaving,
   };
