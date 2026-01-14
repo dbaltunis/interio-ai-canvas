@@ -265,6 +265,11 @@ export async function fetchShareLinkByToken(token: string): Promise<ShareLink | 
     if (error) throw error;
     if (!data) return null;
 
+    // Check if expired
+    if (data.expires_at && new Date(data.expires_at) < new Date()) {
+      return null;
+    }
+
     return {
       id: data.id,
       project_id: data.project_id,
@@ -283,6 +288,37 @@ export async function fetchShareLinkByToken(token: string): Promise<ShareLink | 
     } as ShareLink;
   } catch (error) {
     console.error('Error fetching share link by token:', error);
+    return null;
+  }
+}
+
+// Fetch project data by project ID (for public page after getting share link)
+export async function fetchProjectByShareLink(projectId: string): Promise<any | null> {
+  try {
+    const { data, error } = await supabase
+      .from('projects')
+      .select(`
+        id,
+        name,
+        job_number,
+        order_number,
+        due_date,
+        created_at,
+        clients (
+          id,
+          name,
+          phone,
+          email,
+          address
+        )
+      `)
+      .eq('id', projectId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching project by ID:', error);
     return null;
   }
 }

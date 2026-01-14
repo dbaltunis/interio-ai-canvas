@@ -530,7 +530,8 @@ export async function fetchTreatmentsForProject(projectId: string): Promise<any[
 export async function createViewerSession(
   projectId: string,
   name: string,
-  email?: string
+  email?: string,
+  shareLinkId?: string
 ): Promise<{ session_token: string } | null> {
   try {
     const sessionToken = crypto.randomUUID();
@@ -540,11 +541,12 @@ export async function createViewerSession(
       project_id: projectId,
       recipient_name: name,
       recipient_email: email || null,
-      permission_level: 'view',
+      permission_level: 'edit', // Default to edit so viewers can save notes
       session_token: sessionToken,
       created_by_viewer: true,
       last_accessed_at: new Date().toISOString(),
-      access_count: 1
+      access_count: 1,
+      share_link_id: shareLinkId || null,
     } as any;
     
     const { data, error } = await supabase
