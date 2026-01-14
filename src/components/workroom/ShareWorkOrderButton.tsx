@@ -13,25 +13,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { 
   Share2, Link2, Lock, Check, Eye, EyeOff
 } from 'lucide-react';
 import { useWorkOrderSharing } from '@/hooks/useWorkOrderSharing';
+import { useWorkOrderRecipients } from '@/hooks/useWorkOrderRecipients';
 import { copyToClipboard } from '@/lib/clipboard';
+import { RecipientsList } from './RecipientsList';
+import { ShareSettingsSection, type DocumentType, type ContentFilter } from './ShareSettingsSection';
 
 interface ShareWorkOrderButtonProps {
   projectId: string | undefined;
 }
-
-type DocumentType = 'work_order' | 'installation' | 'fitting';
 
 export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ projectId }) => {
   const { 
@@ -42,9 +36,18 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
     removeWorkOrderPIN,
     revokeAccess,
     getShareData,
+    updateShareSettings,
   } = useWorkOrderSharing(projectId);
 
+  const {
+    recipients,
+    isLoading: recipientsLoading,
+    addRecipient,
+    removeRecipient,
+  } = useWorkOrderRecipients(projectId);
+
   const [documentType, setDocumentType] = useState<DocumentType>('work_order');
+  const [contentFilter, setContentFilter] = useState<ContentFilter>('all');
   const [showPINDialog, setShowPINDialog] = useState(false);
   const [showViewPINDialog, setShowViewPINDialog] = useState(false);
   const [pin, setPin] = useState('');
@@ -58,6 +61,16 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
       getShareData();
     }
   }, [projectId, getShareData]);
+
+  const handleDocumentTypeChange = async (type: DocumentType) => {
+    setDocumentType(type);
+    await updateShareSettings({ documentType: type });
+  };
+
+  const handleContentFilterChange = async (filter: ContentFilter) => {
+    setContentFilter(filter);
+    await updateShareSettings({ contentFilter: filter });
+  };
 
   const handleCopyLink = async () => {
     if (shareData?.url) {
@@ -116,8 +129,23 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
     }
   };
 
+  const handleAddRecipient = async (recipient: {
+    name: string;
+    email?: string;
+    phone?: string;
+    permission?: string;
+  }): Promise<boolean> => {
+    return addRecipient({
+      name: recipient.name,
+      email: recipient.email,
+      phone: recipient.phone,
+      notes: recipient.permission ? `Permission: ${recipient.permission}` : undefined,
+    });
+  };
+
   const isShared = !!shareData;
   const hasPIN = !!shareData?.pin;
+  const activeRecipientsCount = recipients.filter(r => r.is_active).length;
 
   return (
     <>
@@ -134,22 +162,21 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
               {isSharing ? 'Sharing...' : isShared ? 'Shared' : 'Share'}
             </span>
             {hasPIN && <Lock className="h-3 w-3" />}
+            {activeRecipientsCount > 0 && (
+              <span className="ml-1 bg-primary-foreground/20 text-primary-foreground px-1.5 py-0.5 rounded text-xs">
+                {activeRecipientsCount}
+              </span>
+            )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-64 p-0" sideOffset={8}>
-          {/* Header with dropdown */}
-          <div className="p-3 border-b border-border">
-            <Select value={documentType} onValueChange={(v) => setDocumentType(v as DocumentType)}>
-              <SelectTrigger className="h-8 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="work_order">Work Order</SelectItem>
-                <SelectItem value="installation">Installation Instructions</SelectItem>
-                <SelectItem value="fitting">Fitting Instructions</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <PopoverContent align="end" className="w-72 p-0" sideOffset={8}>
+          {/* Share Settings - Document Type & Content Filter */}
+          <ShareSettingsSection
+            documentType={documentType}
+            contentFilter={contentFilter}
+            onDocumentTypeChange={handleDocumentTypeChange}
+            onContentFilterChange={handleContentFilterChange}
+          />
 
           {/* Main Actions */}
           <div className="p-3 flex gap-2">
@@ -180,6 +207,14 @@ export const ShareWorkOrderButton: React.FC<ShareWorkOrderButtonProps> = ({ proj
               <Eye className="h-4 w-4" />
             </Button>
           </div>
+
+          {/* Recipients List */}
+          <RecipientsList
+            recipients={recipients}
+            isLoading={recipientsLoading}
+            onAddRecipient={handleAddRecipient}
+            onRemoveRecipient={removeRecipient}
+          />
 
           {/* Footer */}
           <div className="flex items-center justify-between text-xs border-t border-border px-3 py-2 bg-muted/30">
