@@ -156,3 +156,6 @@ verify_jwt = true
 
 [functions.get-account-health]
 verify_jwt = true
+
+[functions.update-workshop-notes]
+verify_jwt = false

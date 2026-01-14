@@ -10037,6 +10037,62 @@ export type Database = {
         }
         Relationships: []
       }
+      work_order_share_links: {
+        Row: {
+          content_filter: string
+          created_at: string
+          created_by: string | null
+          document_type: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          name: string | null
+          pin: string | null
+          project_id: string
+          token: string
+          treatment_filter: Json | null
+          updated_at: string
+        }
+        Insert: {
+          content_filter?: string
+          created_at?: string
+          created_by?: string | null
+          document_type?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string | null
+          pin?: string | null
+          project_id: string
+          token?: string
+          treatment_filter?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          content_filter?: string
+          created_at?: string
+          created_by?: string | null
+          document_type?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string | null
+          pin?: string | null
+          project_id?: string
+          token?: string
+          treatment_filter?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_share_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_order_shares: {
         Row: {
           access_count: number
@@ -10052,6 +10108,7 @@ export type Database = {
           recipient_name: string
           recipient_phone: string | null
           session_token: string | null
+          share_link_id: string | null
           shared_at: string
           shared_by: string | null
           updated_at: string
@@ -10070,6 +10127,7 @@ export type Database = {
           recipient_name: string
           recipient_phone?: string | null
           session_token?: string | null
+          share_link_id?: string | null
           shared_at?: string
           shared_by?: string | null
           updated_at?: string
@@ -10088,6 +10146,7 @@ export type Database = {
           recipient_name?: string
           recipient_phone?: string | null
           session_token?: string | null
+          share_link_id?: string | null
           shared_at?: string
           shared_by?: string | null
           updated_at?: string
@@ -10098,6 +10157,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_shares_share_link_id_fkey"
+            columns: ["share_link_id"]
+            isOneToOne: false
+            referencedRelation: "work_order_share_links"
             referencedColumns: ["id"]
           },
         ]
