@@ -4,17 +4,18 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Bell, Shield, Database, Download } from "lucide-react";
+import { Mail, Bell, Shield, Database, Download, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useCompactMode } from "@/hooks/useCompactMode";
 import { FeatureFlagsSettings } from "@/components/settings/FeatureFlagsSettings";
 import { SettingsInheritanceInfo } from "../SettingsInheritanceInfo";
 import { useCurrentUserProfile } from "@/hooks/useUserProfile";
-import { useBusinessSettings } from "@/hooks/useBusinessSettings";
+import { useBusinessSettings, useUpdateBusinessSettings } from "@/hooks/useBusinessSettings";
 import { NumberSequenceSettings } from "@/components/settings/NumberSequenceSettings";
 import { InventoryDeductionSettings } from "@/components/settings/InventoryDeductionSettings";
 import { StatusManagement } from "../user-management/StatusManagement";
+import { toast } from "sonner";
 
 export const SystemSettingsTab = () => {
   const [notifications, setNotifications] = useState({
@@ -28,9 +29,41 @@ export const SystemSettingsTab = () => {
   const [accent, setAccent] = useState<'primary' | 'secondary'>('primary');
   const { data: profile } = useCurrentUserProfile();
   const { data: businessSettings } = useBusinessSettings();
+  const updateBusinessSettings = useUpdateBusinessSettings();
+  
+  // Terms & Conditions state
+  const [termsAndConditions, setTermsAndConditions] = useState('');
+  const [privacyPolicy, setPrivacyPolicy] = useState('');
+  
+  // Load existing values when businessSettings loads
+  useEffect(() => {
+    if (businessSettings) {
+      setTermsAndConditions(businessSettings.general_terms_and_conditions || '');
+      setPrivacyPolicy(businessSettings.privacy_policy || '');
+    }
+  }, [businessSettings]);
   
   const isTeamMember = profile?.parent_account_id && profile.parent_account_id !== profile.user_id;
   const isInheritingSettings = isTeamMember && businessSettings?.user_id !== profile?.user_id;
+
+  const handleSaveTerms = async () => {
+    if (!businessSettings?.id) {
+      toast.error('Business settings not found');
+      return;
+    }
+    
+    try {
+      await updateBusinessSettings.mutateAsync({
+        id: businessSettings.id,
+        general_terms_and_conditions: termsAndConditions,
+        privacy_policy: privacyPolicy,
+      });
+      toast.success('Terms & Conditions saved successfully');
+    } catch (error) {
+      console.error('Error saving terms:', error);
+      toast.error('Failed to save Terms & Conditions');
+    }
+  };
 
   useEffect(() => {
     const existing = document.documentElement.getAttribute('data-accent') as 'primary' | 'secondary' | null;
@@ -232,6 +265,8 @@ export const SystemSettingsTab = () => {
             <Textarea 
               placeholder="Enter your general terms and conditions..."
               className="min-h-32"
+              value={termsAndConditions}
+              onChange={(e) => setTermsAndConditions(e.target.value)}
             />
           </div>
           
@@ -240,11 +275,21 @@ export const SystemSettingsTab = () => {
             <Textarea 
               placeholder="Enter your privacy policy..."
               className="min-h-32"
+              value={privacyPolicy}
+              onChange={(e) => setPrivacyPolicy(e.target.value)}
             />
           </div>
 
           <div className="flex gap-2">
-            <Button>Save Changes</Button>
+            <Button 
+              onClick={handleSaveTerms}
+              disabled={updateBusinessSettings.isPending}
+            >
+              {updateBusinessSettings.isPending && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
+              Save Changes
+            </Button>
             <Button variant="outline">
               <Download className="h-4 w-4 mr-2" />
               Export PDF

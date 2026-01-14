@@ -1605,6 +1605,7 @@ export type Database = {
           features_enabled: Json | null
           financial_year_end_day: number | null
           financial_year_end_month: number | null
+          general_terms_and_conditions: string | null
           id: string
           inventory_config: Json | null
           late_payment_fee_amount: number | null
@@ -1617,6 +1618,7 @@ export type Database = {
           organization_type: string | null
           payment_reference_prefix: string | null
           pricing_settings: Json | null
+          privacy_policy: string | null
           registration_number: string | null
           show_profit_margins_to_staff: boolean | null
           show_vendor_costs_to_managers: boolean | null
@@ -1655,6 +1657,7 @@ export type Database = {
           features_enabled?: Json | null
           financial_year_end_day?: number | null
           financial_year_end_month?: number | null
+          general_terms_and_conditions?: string | null
           id?: string
           inventory_config?: Json | null
           late_payment_fee_amount?: number | null
@@ -1667,6 +1670,7 @@ export type Database = {
           organization_type?: string | null
           payment_reference_prefix?: string | null
           pricing_settings?: Json | null
+          privacy_policy?: string | null
           registration_number?: string | null
           show_profit_margins_to_staff?: boolean | null
           show_vendor_costs_to_managers?: boolean | null
@@ -1705,6 +1709,7 @@ export type Database = {
           features_enabled?: Json | null
           financial_year_end_day?: number | null
           financial_year_end_month?: number | null
+          general_terms_and_conditions?: string | null
           id?: string
           inventory_config?: Json | null
           late_payment_fee_amount?: number | null
@@ -1717,6 +1722,7 @@ export type Database = {
           organization_type?: string | null
           payment_reference_prefix?: string | null
           pricing_settings?: Json | null
+          privacy_policy?: string | null
           registration_number?: string | null
           show_profit_margins_to_staff?: boolean | null
           show_vendor_costs_to_managers?: boolean | null

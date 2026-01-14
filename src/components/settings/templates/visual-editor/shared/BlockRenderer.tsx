@@ -756,6 +756,22 @@ export const TermsConditionsBlock: React.FC<BlockRendererProps> = ({
   const content = block.content || {};
   const style = block.style || {};
 
+  // Support both new array format and legacy term1-4 format
+  const getTermsToRender = (): string[] => {
+    if (content.terms && Array.isArray(content.terms)) {
+      return content.terms;
+    }
+    // Legacy format
+    const legacyTerms: string[] = [];
+    if (content.term1) legacyTerms.push(content.term1);
+    if (content.term2) legacyTerms.push(content.term2);
+    if (content.term3) legacyTerms.push(content.term3);
+    if (content.term4) legacyTerms.push(content.term4);
+    return legacyTerms;
+  };
+
+  const termsToRender = getTermsToRender();
+
   return (
     <div 
       className="mb-6 rounded-lg"
@@ -768,11 +784,11 @@ export const TermsConditionsBlock: React.FC<BlockRendererProps> = ({
         {content.title || 'Terms & Conditions'}
       </h3>
       <div className="text-sm text-gray-600 space-y-3">
-        {content.term1 && <p>{content.term1}</p>}
-        {content.term2 && <p>{content.term2}</p>}
-        {content.term3 && <p>{content.term3}</p>}
-        {content.term4 && <p>{content.term4}</p>}
-        {!content.term1 && !content.term2 && !content.term3 && !content.term4 && (
+        {termsToRender.length > 0 ? (
+          termsToRender.map((term, index) => (
+            <p key={index}>{term}</p>
+          ))
+        ) : (
           <>
             <p>1. Payment Terms: 50% deposit required upon acceptance. Remaining balance due upon completion.</p>
             <p>2. Timeline: Project completion estimated at 2-3 weeks from deposit receipt.</p>
