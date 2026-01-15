@@ -55,11 +55,40 @@ serve(async (req) => {
       .maybeSingle();
 
     const dealerConfig = featureFlag?.config as { unlimited_seats?: boolean; dealer_seat_price?: number } | null;
-    const isCustomBilling = dealerConfig?.unlimited_seats || dealerConfig?.dealer_seat_price === 0;
+    const hasUnlimitedSeatsFlag = dealerConfig?.unlimited_seats || dealerConfig?.dealer_seat_price === 0;
 
-    logStep("Custom billing check", { isCustomBilling, dealerConfig });
+    logStep("Feature flag check", { hasUnlimitedSeatsFlag, dealerConfig });
 
-    // For custom billing accounts (like Homekaara), skip Stripe and return success
+    // Get user's subscription from database
+    const { data: subscription, error: subError } = await supabaseClient
+      .from("user_subscriptions")
+      .select("stripe_subscription_id, stripe_customer_id, subscription_type, status")
+      .eq("user_id", effectiveOwnerId)
+      .in("status", ["active", "trial"])
+      .maybeSingle();
+
+    if (subError) {
+      logStep("Error fetching subscription", { error: subError.message });
+      throw new Error("Failed to fetch subscription details.");
+    }
+
+    if (!subscription) {
+      throw new Error("No active subscription found. Please subscribe first.");
+    }
+
+    logStep("Found subscription", { 
+      subscriptionId: subscription.stripe_subscription_id,
+      subscriptionType: subscription.subscription_type,
+      status: subscription.status
+    });
+
+    // Check if this is a custom billing arrangement (invoice, partner, reseller, lifetime, or has unlimited seats flag)
+    const isCustomBillingType = ['partner', 'reseller', 'lifetime', 'invoice'].includes(subscription.subscription_type || '');
+    const isCustomBilling = isCustomBillingType || hasUnlimitedSeatsFlag;
+
+    logStep("Custom billing check", { isCustomBilling, isCustomBillingType, hasUnlimitedSeatsFlag });
+
+    // For custom billing accounts, skip Stripe and return success
     if (isCustomBilling) {
       logStep("Custom billing account - skipping Stripe, seat added for free");
       return new Response(JSON.stringify({ 
@@ -74,16 +103,9 @@ serve(async (req) => {
       });
     }
 
-    // Get user's subscription from database (for standard Stripe billing)
-    const { data: subscription, error: subError } = await supabaseClient
-      .from("user_subscriptions")
-      .select("stripe_subscription_id, stripe_customer_id")
-      .eq("user_id", effectiveOwnerId)
-      .eq("status", "active")
-      .single();
-
-    if (subError || !subscription?.stripe_subscription_id) {
-      throw new Error("No active subscription found. Please subscribe first.");
+    // For standard Stripe billing, we need a Stripe subscription ID
+    if (!subscription.stripe_subscription_id) {
+      throw new Error("No Stripe subscription found. Please contact support.");
     }
 
     logStep("Found subscription", { 
