@@ -342,10 +342,14 @@ export const ClientListView = ({ clients, onClientClick, isLoading, canDeleteCli
                     
                     {!isTablet && (
                       <TableCell>
-                        <Badge variant="muted" className="text-xs flex items-center gap-1.5 w-fit">
-                          <FolderKanban className="h-3 w-3" />
-                          {client.projectCount || 0}
-                        </Badge>
+                        {client.projectCount && client.projectCount > 0 ? (
+                          <Badge variant="muted" className="text-xs flex items-center gap-1.5 w-fit">
+                            <FolderKanban className="h-3 w-3" />
+                            {client.projectCount}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground/60 text-sm">—</span>
+                        )}
                       </TableCell>
                     )}
                     
