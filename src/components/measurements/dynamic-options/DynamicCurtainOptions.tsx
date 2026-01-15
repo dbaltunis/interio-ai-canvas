@@ -998,8 +998,8 @@ export const DynamicCurtainOptions = ({
             </div>
             <div className="w-64">
               <Select
-                value={measurements.selected_pricing_method || ''}
-                onValueChange={handlePricingMethodChange}
+                value={measurements.selected_pricing_method || '__none__'}
+                onValueChange={(val) => handlePricingMethodChange(val === '__none__' ? '' : val)}
               >
                 <SelectTrigger className="bg-background border-input">
                   <SelectValue placeholder="Select width type..." />
@@ -1010,6 +1010,7 @@ export const DynamicCurtainOptions = ({
                   sideOffset={5}
                   align="end"
                 >
+                  <SelectItem value="__none__">Select width type...</SelectItem>
                   {template.pricing_methods.map((method: any) => (
                     <SelectItem key={method.id} value={method.id}>
                       <div className="flex items-center justify-between w-full gap-4">

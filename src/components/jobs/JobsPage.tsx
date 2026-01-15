@@ -25,6 +25,7 @@ import { JobsFocusHandler } from "./JobsFocusHandler";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ColumnCustomizationModal } from "./ColumnCustomizationModal";
 import { useColumnPreferences } from "@/hooks/useColumnPreferences";
+import { JobNotFound } from "./JobNotFound";
 
 
 const JobsPage = () => {
@@ -413,8 +414,53 @@ const canViewJobsExplicit =
     );
   }
 
+  // Validate job exists before rendering
+  const { data: jobExists, isLoading: validatingJob } = useQuery({
+    queryKey: ['validate-job-exists', selectedJobId],
+    queryFn: async () => {
+      if (!selectedJobId) return null;
+      const { data } = await supabase
+        .from('measurement_jobs')
+        .select('id')
+        .eq('id', selectedJobId)
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!selectedJobId,
+    staleTime: 30000,
+  });
+
   // Direct rendering - no intermediate pages
   if (selectedJobId) {
+    // Still validating - show loading
+    if (validatingJob) {
+      return (
+        <div className="min-h-screen flex items-center justify-center animate-fade-in">
+          <Card className="max-w-md">
+            <CardContent className="text-center p-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <h2 className="text-xl font-semibold text-foreground mb-2">Loading Project</h2>
+              <p className="text-muted-foreground">Validating project access...</p>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+    
+    // Job doesn't exist - show error and allow clearing URL
+    if (jobExists === false) {
+      return (
+        <JobNotFound onBack={() => {
+          setSearchParams(prev => {
+            prev.delete('jobId');
+            prev.delete('templateId');
+            prev.delete('windowId');
+            return prev;
+          });
+        }} />
+      );
+    }
+    
     return <JobDetailPage jobId={selectedJobId} onBack={handleBackFromJob} />;
   }
 
