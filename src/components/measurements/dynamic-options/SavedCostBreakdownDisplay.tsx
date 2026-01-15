@@ -10,13 +10,14 @@
  * - Shows "Included" for dealers/restricted users (canViewCosts = false)
  */
 
-import { Calculator, Settings, Info, TrendingUp, Wrench, ChevronDown } from "lucide-react";
+import { Calculator, Settings, Info, TrendingUp, ChevronDown } from "lucide-react";
 import { useMeasurementUnits } from "@/hooks/useMeasurementUnits";
 import { getCurrencySymbol } from "@/utils/formatCurrency";
 import { applyMarkup } from "@/utils/pricing/markupResolver";
 import type { MarkupSettings } from "@/hooks/useMarkupSettings";
-import { groupHardwareItems, filterMeaningfulHardwareItems } from "@/utils/quotes/groupHardwareItems";
+import { groupHardwareItems, filterMeaningfulHardwareItems, getGroupName } from "@/utils/quotes/groupHardwareItems";
 import { ProductImageWithColorFallback } from "@/components/ui/ProductImageWithColorFallback";
+import { getHardwareIcon, SewingIcon } from "@/components/icons/IndustryIcons";
 
 // Simple SVG icons (same as CostCalculationSummary)
 const FabricSwatchIcon = ({ className }: { className?: string }) => (
@@ -33,6 +34,69 @@ const AssemblyIcon = ({ className }: { className?: string }) => (
     <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
   </svg>
 );
+
+// Hardware section with industry-specific icons
+const HardwareSectionDisplay = ({ 
+  hardwareGroup, 
+  formatPrice, 
+  getSellingPrice 
+}: { 
+  hardwareGroup: any; 
+  formatPrice: (n: number) => string; 
+  getSellingPrice: (n: number) => number;
+}) => {
+  const filteredItems = filterMeaningfulHardwareItems(hardwareGroup.items);
+  const groupName = getGroupName(filteredItems);
+  const HardwareIconComponent = getHardwareIcon(groupName);
+
+  return (
+    <details className="py-1.5 border-b border-border/50 group/hw">
+      <summary className="flex items-center justify-between cursor-pointer list-none">
+        <div className="flex items-center gap-2">
+          {hardwareGroup.image_url ? (
+            <ProductImageWithColorFallback
+              imageUrl={hardwareGroup.image_url}
+              productName={hardwareGroup.name}
+              size={16}
+              rounded="sm"
+              category="hardware"
+            />
+          ) : (
+            <HardwareIconComponent className="h-3.5 w-3.5 text-primary shrink-0" />
+          )}
+          <span className="text-card-foreground font-medium">{groupName || hardwareGroup.name}</span>
+          <ChevronDown className="h-3 w-3 text-muted-foreground transition-transform group-open/hw:rotate-180" />
+        </div>
+        <span className="font-semibold text-card-foreground ml-2">
+          {formatPrice(getSellingPrice(hardwareGroup.total))}
+        </span>
+      </summary>
+      <div className="ml-6 mt-2 space-y-1 border-l-2 border-muted pl-3">
+        {filteredItems.map((item: any, index: number) => {
+          const isAccessory = item.category === 'hardware_accessory';
+          const itemPrice = item.total_cost || 0;
+          return (
+            <div key={index} className="flex items-start justify-between text-xs gap-2">
+              <div className="flex flex-col">
+                <span className={isAccessory ? 'text-muted-foreground' : 'text-card-foreground'}>
+                  {isAccessory ? `└ ${item.name}` : item.name}
+                </span>
+                {item.quantity && item.unit_price && (
+                  <span className="text-[10px] text-muted-foreground/70">
+                    {item.quantity} × {formatPrice(item.unit_price)}
+                  </span>
+                )}
+              </div>
+              <span className={`tabular-nums ${isAccessory ? 'text-muted-foreground' : 'font-medium text-card-foreground'}`}>
+                {itemPrice > 0 ? formatPrice(getSellingPrice(itemPrice)) : <span className="text-muted-foreground">Included</span>}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </details>
+  );
+};
 
 interface CostBreakdownItem {
   id: string;
@@ -159,11 +223,11 @@ export const SavedCostBreakdownDisplay = ({
           </div>
         )}
 
-        {/* Manufacturing */}
+        {/* Manufacturing - Using sewing icon for industry relevance */}
         {manufacturingItem && manufacturingItem.total_cost > 0 && (
           <div className="flex items-center justify-between py-1.5 border-b border-border/50">
             <div className="flex items-center gap-2">
-              <AssemblyIcon className="h-3.5 w-3.5 text-primary shrink-0" />
+              <SewingIcon className="h-3.5 w-3.5 text-primary shrink-0" />
               <span className="text-card-foreground font-medium">Manufacturing</span>
             </div>
             <span className="font-semibold text-card-foreground ml-2">
@@ -187,55 +251,11 @@ export const SavedCostBreakdownDisplay = ({
 
         {/* Hardware - Grouped with collapsible breakdown and option image */}
         {hardwareGroup && filterMeaningfulHardwareItems(hardwareGroup.items).length > 0 && (
-          <details className="py-1.5 border-b border-border/50 group/hw">
-            <summary className="flex items-center justify-between cursor-pointer list-none">
-              <div className="flex items-center gap-2">
-                {/* Show option image if available (NOT hardcoded emoji) */}
-                {hardwareGroup.image_url ? (
-                  <ProductImageWithColorFallback
-                    imageUrl={hardwareGroup.image_url}
-                    productName={hardwareGroup.name}
-                    size={16}
-                    rounded="sm"
-                    category="hardware"
-                  />
-                ) : (
-                  <Wrench className="h-3.5 w-3.5 text-primary shrink-0" />
-                )}
-                <span className="text-card-foreground font-medium">{hardwareGroup.name}</span>
-                <ChevronDown className="h-3 w-3 text-muted-foreground transition-transform group-open/hw:rotate-180" />
-              </div>
-              <span className="font-semibold text-card-foreground ml-2">
-                {formatPrice(getSellingPrice(hardwareGroup.total))}
-              </span>
-            </summary>
-            
-            {/* Hardware breakdown items */}
-            <div className="ml-6 mt-2 space-y-1 border-l-2 border-muted pl-3">
-              {filterMeaningfulHardwareItems(hardwareGroup.items).map((item, index) => {
-                const isAccessory = item.category === 'hardware_accessory';
-                const itemPrice = item.total_cost || 0;
-                
-                return (
-                  <div key={index} className="flex items-start justify-between text-xs gap-2">
-                    <div className="flex flex-col">
-                      <span className={isAccessory ? 'text-muted-foreground' : 'text-card-foreground'}>
-                        {isAccessory ? `└ ${item.name}` : item.name}
-                      </span>
-                      {item.quantity && item.unit_price && (
-                        <span className="text-[10px] text-muted-foreground/70">
-                          {item.quantity} × {formatPrice(item.unit_price)}
-                        </span>
-                      )}
-                    </div>
-                    <span className={`tabular-nums ${isAccessory ? 'text-muted-foreground' : 'font-medium text-card-foreground'}`}>
-                      {itemPrice > 0 ? formatPrice(getSellingPrice(itemPrice)) : <span className="text-muted-foreground">Included</span>}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </details>
+          <HardwareSectionDisplay
+            hardwareGroup={hardwareGroup}
+            formatPrice={formatPrice}
+            getSellingPrice={getSellingPrice}
+          />
         )}
 
         {/* Non-hardware Options */}

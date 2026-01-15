@@ -142,8 +142,11 @@ export const JobsStatusChart = () => {
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">Jobs by Status</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[180px]">
-          <p className="text-xs text-muted-foreground">No jobs for this period</p>
+        <CardContent className="flex flex-col items-center justify-center h-[180px] text-center">
+          {/* Retro pixel art style icon */}
+          <div className="mb-3 text-2xl opacity-60">🎯</div>
+          <p className="text-sm font-medium text-foreground mb-1">Ready for your first project!</p>
+          <p className="text-xs text-muted-foreground">Great things start here</p>
         </CardContent>
       </Card>
     );

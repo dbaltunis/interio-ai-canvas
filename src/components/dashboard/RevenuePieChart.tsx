@@ -68,8 +68,10 @@ export const RevenuePieChart = () => {
       <CardContent className="pt-0">
         {!hasData ? (
           <div className="text-center py-8 text-muted-foreground">
-            <DollarSign className="h-10 w-10 mx-auto mb-2 opacity-20" />
-            <p className="text-xs">No revenue data yet</p>
+            {/* Retro pixel art style icon */}
+            <div className="mb-3 text-3xl opacity-60">💰</div>
+            <p className="text-sm font-medium text-foreground mb-1">Revenue starts here!</p>
+            <p className="text-xs text-muted-foreground">Your success story begins now</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={200}>
