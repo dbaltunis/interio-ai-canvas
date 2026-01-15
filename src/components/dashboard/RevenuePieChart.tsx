@@ -67,9 +67,26 @@ export const RevenuePieChart = () => {
       </CardHeader>
       <CardContent className="pt-0">
         {!hasData ? (
-          <div className="text-center py-8 text-muted-foreground">
-            {/* Retro pixel art style icon */}
-            <div className="mb-3 text-3xl opacity-60">💰</div>
+          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+            {/* Nokia 3310-inspired pixel art money/coin icon */}
+            <svg width="48" height="48" viewBox="0 0 24 24" className="mb-3 opacity-70">
+              {/* Coin stack - bottom */}
+              <ellipse cx="12" cy="18" rx="8" ry="3" fill="currentColor" className="text-muted-foreground/40" />
+              <rect x="4" y="15" width="16" height="3" fill="currentColor" className="text-muted-foreground/40" />
+              <ellipse cx="12" cy="15" rx="8" ry="3" fill="currentColor" className="text-muted-foreground/50" />
+              {/* Coin stack - middle */}
+              <rect x="4" y="11" width="16" height="4" fill="currentColor" className="text-primary/50" />
+              <ellipse cx="12" cy="11" rx="8" ry="3" fill="currentColor" className="text-primary/60" />
+              {/* Coin stack - top */}
+              <rect x="4" y="7" width="16" height="4" fill="currentColor" className="text-primary/70" />
+              <ellipse cx="12" cy="7" rx="8" ry="3" fill="currentColor" className="text-primary" />
+              {/* Dollar sign pixels */}
+              <rect x="11" y="5" width="2" height="1" fill="currentColor" className="text-background" />
+              <rect x="10" y="6" width="4" height="1" fill="currentColor" className="text-background" />
+              <rect x="11" y="7" width="2" height="1" fill="currentColor" className="text-background" />
+              <rect x="10" y="8" width="4" height="1" fill="currentColor" className="text-background" />
+              <rect x="11" y="9" width="2" height="1" fill="currentColor" className="text-background" />
+            </svg>
             <p className="text-sm font-medium text-foreground mb-1">Revenue starts here!</p>
             <p className="text-xs text-muted-foreground">Your success story begins now</p>
           </div>
