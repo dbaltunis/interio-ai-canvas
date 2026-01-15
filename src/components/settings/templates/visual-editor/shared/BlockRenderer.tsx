@@ -225,6 +225,10 @@ export const resolveToken = (
     tax_amount: formatCurrency(projectData?.taxAmount || 0, getDefaultCurrency()),
     tax_rate: projectData?.taxRate ? `${(projectData.taxRate * 100).toFixed(1)}%` : '10%',
     total: formatCurrency(projectData?.total || 0, getDefaultCurrency()),
+    
+    // System Terms & Conditions (from Settings → System)
+    system_terms: businessSettings?.general_terms_and_conditions || '',
+    privacy_policy: businessSettings?.privacy_policy || '',
   };
   
   return tokens[token] !== undefined ? tokens[token] : '';
