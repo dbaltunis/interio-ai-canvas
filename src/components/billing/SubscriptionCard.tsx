@@ -149,23 +149,31 @@ export function SubscriptionCard() {
           </div>
         </div>
 
-        {subscription.isCustomBilling && (
+        {/* Subscription period info - show for all accounts with period data */}
+        {(subscription.currentPeriodStart || subscription.currentPeriodEnd) && (
           <div className="bg-muted/50 rounded-lg p-3">
             <p className="text-sm text-muted-foreground">
-              Your subscription is billed annually via invoice. Contact support for billing inquiries.
-            </p>
-          </div>
-        )}
-
-        {subscription.currentPeriodStart && subscription.currentPeriodEnd && (
-          <div className="bg-muted/50 rounded-lg p-3">
-            <p className="text-sm text-muted-foreground">
-              Current billing period: {format(new Date(subscription.currentPeriodStart), 'MMM d')} – {format(new Date(subscription.currentPeriodEnd), 'MMM d, yyyy')}
-              {subscription.daysRemaining !== undefined && (
+              {subscription.isCustomBilling ? 'Subscription period: ' : 'Current billing period: '}
+              {subscription.currentPeriodStart 
+                ? format(new Date(subscription.currentPeriodStart), 'MMM d, yyyy')
+                : 'N/A'} 
+              {' – '}
+              {subscription.currentPeriodEnd
+                ? format(new Date(subscription.currentPeriodEnd), 'MMM d, yyyy')
+                : 'N/A'}
+              {subscription.daysRemaining !== undefined && !subscription.isCustomBilling && (
                 <span className="ml-2 text-foreground font-medium">
                   ({subscription.daysRemaining} days remaining)
                 </span>
               )}
+            </p>
+          </div>
+        )}
+
+        {subscription.isCustomBilling && (
+          <div className="bg-muted/50 rounded-lg p-3">
+            <p className="text-sm text-muted-foreground">
+              Your subscription is billed annually via invoice. Contact support for billing inquiries.
             </p>
           </div>
         )}
