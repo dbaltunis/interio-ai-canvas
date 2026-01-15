@@ -2,6 +2,7 @@ import { useAppointments } from "@/hooks/useAppointments";
 import { useGoogleCalendarIntegration } from "@/hooks/useGoogleCalendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, MapPin, Video, CheckCircle2 } from "lucide-react";
+import { PixelCalendarIcon } from "@/components/icons/PixelArtIcons";
 import { format, isToday, isTomorrow, isPast, isWithinInterval, addHours } from "date-fns";
 import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -99,9 +100,12 @@ export const UpcomingEventsWidget = () => {
       </CardHeader>
         <CardContent className="pt-0">
         {upcomingAppointments.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
-            <Calendar className="h-8 w-8 mx-auto mb-1.5 opacity-20" />
-            <p className="text-xs">No upcoming appointments</p>
+          <div className="text-center py-8">
+            <div className="flex justify-center mb-3">
+              <PixelCalendarIcon size={48} />
+            </div>
+            <p className="text-sm font-medium text-foreground mb-1">Your schedule is clear</p>
+            <p className="text-xs text-muted-foreground">No upcoming appointments</p>
           </div>
         ) : (
           <ScrollArea className="h-[280px] pr-3">

@@ -1,6 +1,7 @@
 import { useProjects } from "@/hooks/useProjects";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, Calendar, User } from "lucide-react";
+import { PixelBriefcaseIcon } from "@/components/icons/PixelArtIcons";
 import { format, formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -47,9 +48,12 @@ export const RecentlyCreatedJobsWidget = () => {
       </CardHeader>
       <CardContent className="pt-0">
         {recentJobs.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
-            <Briefcase className="h-8 w-8 mx-auto mb-1.5 opacity-20" />
-            <p className="text-xs">No jobs created yet</p>
+          <div className="text-center py-8">
+            <div className="flex justify-center mb-3">
+              <PixelBriefcaseIcon size={48} />
+            </div>
+            <p className="text-sm font-medium text-foreground mb-1">Your first project awaits</p>
+            <p className="text-xs text-muted-foreground">No jobs created yet</p>
           </div>
         ) : (
           <ScrollArea className="h-[280px] pr-3">

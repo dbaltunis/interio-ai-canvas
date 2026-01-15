@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Plus, Mail, MessageCircle, MoreHorizontal } from "lucide-react";
+import { PixelTeamIcon } from "@/components/icons/PixelArtIcons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -246,9 +247,12 @@ export const TeamMembersWidget = () => {
       </CardHeader>
       <CardContent className="pt-0">
         {sortedTeamMembers.length === 0 ? (
-        <div className="text-center py-6 text-muted-foreground">
-            <Users className="h-8 w-8 mx-auto mb-2 opacity-20" />
-            <p className="text-xs">No team members yet</p>
+        <div className="text-center py-8">
+            <div className="flex justify-center mb-3">
+              <PixelTeamIcon size={48} />
+            </div>
+            <p className="text-sm font-medium text-foreground mb-1">Build your team</p>
+            <p className="text-xs text-muted-foreground">Add team members to collaborate</p>
           </div>
         ) : (
           <ScrollArea className="h-[280px] pr-4">
