@@ -485,27 +485,27 @@ const EditableLivePreviewBlock = ({ block, projectData, onBlockUpdate, onBlockRe
     return tokens[token] || token;
   };
 
+  // Custom EditableText renderer for editable mode - defined outside switch for scope access
+  const renderEditableText = ({ value, onChange, className, placeholder, multiline }: {
+    value: string;
+    onChange: (value: string) => void;
+    className?: string;
+    placeholder?: string;
+    multiline?: boolean;
+  }) => (
+    <EditableText
+      value={value}
+      onChange={onChange}
+      className={className}
+      placeholder={placeholder}
+      multiline={multiline}
+    />
+  );
+
   switch (block.type) {
     case 'document-header':
       const docConfig = getDocumentTypeConfig(documentType);
       const headerLayout = content.layout || 'centered';
-      
-      // Custom EditableText renderer for editable mode
-      const renderEditableText = ({ value, onChange, className, placeholder, multiline }: {
-        value: string;
-        onChange: (value: string) => void;
-        className?: string;
-        placeholder?: string;
-        multiline?: boolean;
-      }) => (
-        <EditableText
-          value={value}
-          onChange={onChange}
-          className={className}
-          placeholder={placeholder}
-          multiline={multiline}
-        />
-      );
 
       return (
         <EditableContainer 
