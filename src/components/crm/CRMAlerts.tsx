@@ -61,7 +61,7 @@ export const CRMAlerts = () => {
           id: c.id,
           type: "hot_lead",
           title: "Hot Lead Needs Action",
-          message: `${c.company_name || c.name} - Score: ${c.lead_score}, No activity for ${c.last_activity_date ? formatDistanceToNow(new Date(c.last_activity_date)) : 'unknown time'}`,
+          message: `${c.company_name || c.name}${c.lead_score && c.lead_score > 0 ? ` - Score: ${c.lead_score}` : ''}, No activity for ${c.last_activity_date ? formatDistanceToNow(new Date(c.last_activity_date)) : 'unknown time'}`,
           icon: TrendingUp,
           color: "text-orange-600",
           client: c,
