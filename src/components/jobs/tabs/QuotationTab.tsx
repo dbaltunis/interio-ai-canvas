@@ -13,11 +13,10 @@ import { useSurfaces } from "@/hooks/useSurfaces";
 import { useProjectWindowSummaries } from "@/hooks/useProjectWindowSummaries";
 import { useBusinessSettings } from "@/hooks/useBusinessSettings";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useQuotes, useCreateQuote } from "@/hooks/useQuotes";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Mail, MoreVertical, Percent, FileText, DollarSign, ImageIcon as ImageIconLucide, Printer, FileCheck, CreditCard, Sparkles, Package, FileSpreadsheet, Banknote, ChevronDown } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LivePreview } from "@/components/settings/templates/visual-editor/LivePreview";
 import { useQuotationSync } from "@/hooks/useQuotationSync";
@@ -71,6 +70,40 @@ export const QuotationTab = ({
   // Persist template selection in URL params
   const urlTemplateId = searchParams.get('templateId');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(urlTemplateId || '');
+  
+  // Validate template exists in database before using
+  const { data: templateExists } = useQuery({
+    queryKey: ['validate-template-exists', urlTemplateId],
+    queryFn: async () => {
+      if (!urlTemplateId) return null;
+      const { data } = await supabase
+        .from('curtain_templates')
+        .select('id')
+        .eq('id', urlTemplateId)
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!urlTemplateId,
+    staleTime: 30000,
+  });
+  
+  // Clear invalid template ID from URL
+  useEffect(() => {
+    if (urlTemplateId && templateExists === false) {
+      setSearchParams(prev => {
+        prev.delete('templateId');
+        prev.delete('windowId');
+        return prev;
+      }, { replace: true });
+      setSelectedTemplateId('');
+      
+      toast({
+        title: "Template not found",
+        description: "The template in the URL no longer exists. Please select a new template.",
+        variant: "destructive",
+      });
+    }
+  }, [urlTemplateId, templateExists, setSearchParams, toast]);
   
   // Handle template change with URL persistence
   const handleTemplateChange = (newTemplateId: string) => {

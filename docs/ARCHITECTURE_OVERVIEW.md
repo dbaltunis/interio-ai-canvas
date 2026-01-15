@@ -668,5 +668,58 @@ ORDER BY ct.user_id;
 
 ---
 
+## 12. URL Parameter Validation (CRITICAL!)
+
+### Required Validations
+
+ALWAYS validate URL parameters before using them in queries or passing to components.
+
+| Parameter | Table | Action if Invalid |
+|-----------|-------|-------------------|
+| `jobId` | `measurement_jobs` | Show `JobNotFound`, clear URL params |
+| `templateId` | `curtain_templates` | Clear from URL, show toast notification |
+| `windowId` | `job_windows` | Clear from URL |
+
+### Validation Pattern
+
+```typescript
+// 1. Query to validate ID exists
+const { data: jobExists, isLoading: validatingJob } = useQuery({
+  queryKey: ['validate-job-exists', selectedJobId],
+  queryFn: async () => {
+    if (!selectedJobId) return null;
+    const { data } = await supabase
+      .from('measurement_jobs')
+      .select('id')
+      .eq('id', selectedJobId)
+      .maybeSingle();
+    return !!data;
+  },
+  enabled: !!selectedJobId,
+  staleTime: 30000,
+});
+
+// 2. While validating: show skeleton/loading
+if (validatingJob) {
+  return <LoadingState />;
+}
+
+// 3. If invalid: clear from URL + show error
+if (jobExists === false) {
+  return <JobNotFound onBack={clearInvalidParams} />;
+}
+
+// 4. If valid: proceed with rendering
+return <JobDetailPage jobId={selectedJobId} />;
+```
+
+### Key Files
+
+- `JobsPage.tsx`: Validates `jobId` before rendering `JobDetailPage`
+- `QuotationTab.tsx`: Validates `templateId` and clears if invalid
+- `JobNotFound.tsx`: Friendly error component for invalid job IDs
+
+---
+
 *Last Updated: January 2025*
 *Maintainers: Development Team*
