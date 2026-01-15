@@ -1,20 +1,11 @@
 // Centralized funnel stages - single source of truth
-// Includes all stages from database to ensure all clients are displayed
 export const FUNNEL_STAGES = [
   { value: 'lead', label: 'Lead', color: 'bg-gray-100 text-gray-700', description: 'New potential customer' },
   { value: 'contacted', label: 'Contacted', color: 'bg-blue-100 text-blue-700', description: 'Initial contact made' },
   { value: 'qualified', label: 'Qualified', color: 'bg-yellow-100 text-yellow-700', description: 'Confirmed interest and budget' },
-  { value: 'measuring_scheduled', label: 'Measuring', color: 'bg-indigo-100 text-indigo-700', description: 'Measurement scheduled' },
-  { value: 'quoted', label: 'Quoted', color: 'bg-purple-100 text-purple-700', description: 'Quote sent to client' },
-  { value: 'proposal', label: 'Proposal', color: 'bg-purple-100 text-purple-700', description: 'Proposal sent' },
+  { value: 'proposal', label: 'Proposal', color: 'bg-purple-100 text-purple-700', description: 'Quote/proposal sent' },
   { value: 'negotiation', label: 'Negotiation', color: 'bg-orange-100 text-orange-700', description: 'Discussing terms' },
-  { value: 'approved', label: 'Approved', color: 'bg-teal-100 text-teal-700', description: 'Quote approved' },
-  { value: 'in_production', label: 'In Production', color: 'bg-cyan-100 text-cyan-700', description: 'Order in production' },
-  { value: 'closed', label: 'Closed', color: 'bg-emerald-100 text-emerald-700', description: 'Project completed' },
-  { value: 'client', label: 'Client', color: 'bg-green-100 text-green-700', description: 'Active customer' },
-  { value: 'customer', label: 'Customer', color: 'bg-green-100 text-green-700', description: 'Converted customer' },
-  { value: 'trial', label: 'Trial', color: 'bg-sky-100 text-sky-700', description: 'On trial period' },
-  { value: 'churned', label: 'Churned', color: 'bg-gray-200 text-gray-600', description: 'No longer active' },
+  { value: 'client', label: 'Client', color: 'bg-green-100 text-green-700', description: 'Converted to customer' },
   { value: 'lost', label: 'Lost', color: 'bg-red-100 text-red-700', description: 'Did not convert' },
 ] as const;
 
