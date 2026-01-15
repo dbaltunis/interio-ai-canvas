@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { ExternalLink, Loader2, RefreshCw, Package, GripVertical, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { ExternalLink, Loader2, RefreshCw, Package, GripVertical, Eye, EyeOff, CheckCircle2, Link2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAllTreatmentOptions } from "@/hooks/useTreatmentOptionsManagement";
 import { 
@@ -14,7 +14,9 @@ import {
   useToggleValueVisibility,
   useBulkToggleValueVisibility
 } from "@/hooks/useTemplateOptionSettings";
+import { useTreatmentOptionRules } from "@/hooks/useOptionRules";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -53,6 +55,7 @@ interface SortableOptionItemProps {
   isTWCOption: boolean;
   templateId?: string;
   hiddenValueIds: string[];
+  ruleInfo?: { action: string; description: string }[];
   onToggle: (optionId: string, currentEnabled: boolean) => void;
   onToggleValue: (optionId: string, valueId: string, hide: boolean) => void;
   onBulkToggle: (optionId: string, valueIds: string[], hide: boolean) => void;
@@ -65,6 +68,7 @@ const SortableOptionItem = ({
   isTWCOption, 
   templateId, 
   hiddenValueIds,
+  ruleInfo,
   onToggle,
   onToggleValue,
   onBulkToggle,
@@ -134,6 +138,25 @@ const SortableOptionItem = ({
                 <Badge variant="outline" className="text-xs text-muted-foreground">
                   {hiddenCount} hidden
                 </Badge>
+              )}
+              {ruleInfo && ruleInfo.length > 0 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="outline" className="bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-[10px] cursor-help">
+                        <Link2 className="h-3 w-3 mr-1" />
+                        {ruleInfo[0].action === 'show_option' ? 'Shows when...' : 
+                         ruleInfo[0].action === 'hide_option' ? 'Hides when...' : 
+                         'Rule-controlled'}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      {ruleInfo.map((r, i) => (
+                        <p key={i} className="text-xs">{r.description}</p>
+                      ))}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
               {!enabled && (
                 <Badge variant="destructive" className="text-xs">
@@ -232,10 +255,28 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
   
   const { data: allOptions = [], isLoading, error, refetch } = useAllTreatmentOptions();
   const { data: templateSettings = [] } = useTemplateOptionSettings(templateId);
+  const { data: rules = [] } = useTreatmentOptionRules(templateId);
   const toggleOption = useToggleTemplateOption();
   const updateOrder = useUpdateTemplateOptionOrder();
   const toggleValueVisibility = useToggleValueVisibility();
   const bulkToggleVisibility = useBulkToggleValueVisibility();
+  
+  // Build a map of option key -> rules that affect it
+  const optionRuleMap = useMemo(() => {
+    const map: Record<string, { action: string; description: string }[]> = {};
+    rules.forEach(rule => {
+      const key = rule.effect.target_option_key;
+      if (!map[key]) map[key] = [];
+      map[key].push({ 
+        action: rule.effect.action, 
+        description: rule.description 
+      });
+    });
+    return map;
+  }, [rules]);
+  
+  // Count rule-controlled options
+  const ruleControlledCount = useMemo(() => Object.keys(optionRuleMap).length, [optionRuleMap]);
   
   // Get hidden value IDs for a specific option
   const getHiddenValueIds = (optionId: string): string[] => {
@@ -545,7 +586,22 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Available Options</CardTitle>
+          <div className="flex items-center gap-3">
+            <CardTitle>Available Options</CardTitle>
+            {localOrderedOptions.length > 0 && (
+              <div className="flex gap-2">
+                <Badge variant="secondary" className="text-xs">
+                  {templateSettings.filter(s => s.is_enabled).length} enabled
+                </Badge>
+                {ruleControlledCount > 0 && (
+                  <Badge variant="outline" className="bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-xs">
+                    <Link2 className="h-3 w-3 mr-1" />
+                    {ruleControlledCount} rule-controlled
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
           {templateId && localOrderedOptions.length > 0 && (
             <Button
               variant="outline"
@@ -646,6 +702,7 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
                     const enabled = isOptionEnabled(option.id);
                     const isTWCOption = (option as any).source === 'twc';
                     const hiddenValueIds = getHiddenValueIds(option.id);
+                    const ruleInfo = optionRuleMap[option.key];
                     
                     return (
                       <SortableOptionItem
@@ -655,6 +712,7 @@ export const TemplateOptionsManager = ({ treatmentCategory, templateId, linkedTW
                         isTWCOption={isTWCOption}
                         templateId={templateId}
                         hiddenValueIds={hiddenValueIds}
+                        ruleInfo={ruleInfo}
                         onToggle={handleToggle}
                         onToggleValue={handleToggleValue}
                         onBulkToggle={handleBulkToggle}
